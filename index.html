@@ -1870,7 +1870,7 @@ function parseScanReply(text){
    a field is filled only when the listing states it, preferably on its own line ("Process: Washed"), and the person checks every line before anything reaches the form.
    The listing's HTML is turned into plain text and only ever shown as text. A value that could mean two things is left empty and listed as not found. */
 const SHOP_LABELS = {
-  origin:['origin', 'country', 'country of origin'], region:['region', 'growing region', 'location'],
+  origin:['origin', 'country', 'country of origin', 'origin/region', 'origin / region', 'country/region', 'country / region', 'region/country'], region:['region', 'growing region', 'location'],
   process:['process', 'processing', 'process method', 'processing method'], varietal:['variety', 'varieties', 'varietal', 'varietals', 'cultivar', 'cultivars'],
   roast:['roast', 'roast level', 'roast profile'], elevation:['elevation', 'altitude', 'growing altitude'],
   notes:['tasting notes', 'taste notes', 'cupping notes', 'flavor notes', 'flavour notes', 'notes', 'flavor', 'flavour', 'flavors', 'flavours', 'taste', 'in the cup', 'cup']
@@ -1907,7 +1907,14 @@ function shopText(html){
   return s.replace(/[ \t ]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 const shopTokens = s => norm(s).replace(/[^a-z0-9]+/g, ' ').split(' ').filter(w => w.length > 1 && !SHOP_STOP.has(w));
-const shopSame = (a, b) => a === b || (a.length >= 5 && b.length >= 5 && (a.startsWith(b) || b.startsWith(a)));   /* "ethiopia" and "ethiopian" are the same word here */
+/* one letter added, dropped or changed in a word of six or more letters ("Chelbesa" and "Chelbessa"): roasters and bags spell Ethiopian and other names in more than one way */
+function shopNear(a, b){
+  if (a.length < 6 || b.length < 6 || Math.abs(a.length - b.length) > 1) return false;
+  let i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++;
+  if (a.length === b.length) return a.slice(i + 1) === b.slice(i + 1);
+  const sh = a.length < b.length ? a : b, lg = a.length < b.length ? b : a; return sh.slice(i) === lg.slice(i + 1);
+}
+const shopSame = (a, b) => a === b || (a.length >= 5 && b.length >= 5 && (a.startsWith(b) || b.startsWith(a))) || shopNear(a, b);   /* "ethiopia" and "ethiopian" are the same word here, and so are two spellings one letter apart */
 /* Products whose title contains every word of the name (best first), else, for names of three or more words, those with at least 60% of them. */
 function shopMatch(products, name){
   const q = shopTokens(name); if (!q.length || !Array.isArray(products)) return [];
@@ -1937,12 +1944,44 @@ function shopOnly(phrases, toKey){
   const keys = Object.keys(by); return keys.length === 1 ? by[keys[0]][0] : '';
 }
 const SHOP_PROC_WORD = '(?:washed|natural|honey|anaerobic|carbonic maceration|wet[- ]hulled|pulped natural|extended fermentation|experimental)';
-const SHOP_PROC_RE = new RegExp('\\b(' + SHOP_PROC_WORD + ')\\s+(?:process|processed|processing)\\b|\\bprocess(?:ed|ing)?\\s*(?:is|:|-)?\\s*(' + SHOP_PROC_WORD + ')\\b', 'gi');
+const SHOP_PROC_RE = new RegExp('\\b(' + SHOP_PROC_WORD + ')\\s+(?:process|processed|processing|method)\\b|\\bprocess(?:ed|ing)?\\s*(?:is|:|-)?\\s*(' + SHOP_PROC_WORD + ')\\b', 'gi');
 const SHOP_PROC_TAG = new RegExp('^' + SHOP_PROC_WORD + '$', 'i');
 const SHOP_ROAST_WORD = '(?:light|medium[- ]light|light[- ]medium|medium[- ]dark|dark[- ]medium|medium|dark)';
 const SHOP_ROAST_RE = new RegExp('\\b' + SHOP_ROAST_WORD + '\\s+roast\\b', 'gi');
 const SHOP_ROAST_TAG = new RegExp('^' + SHOP_ROAST_WORD + '(?:\\s+roast)?$', 'i');
 const SHOP_ELEV_RE = /\d[\d,.]*(?:\s*(?:-|–|to)\s*\d[\d,.]*)?\s*(?:masl|m\.a\.s\.l\.?|meters|metres|ft|feet)\b/i;
+/* A process word that ends the title ("Ethiopia Danche Natural", "Worka Chelbessa Washed [Limited]"): roasters often put it there. */
+function shopTitleProcess(title){
+  const t = String(title || '').trim(), re = new RegExp('(?:^|[\\s(\\[-])(' + SHOP_PROC_WORD + ')\\s*[)\\]]?\\s*$', 'i');
+  const m = re.exec(t) || re.exec(t.replace(/\s*[\[(][^\])]*[\])]\s*$/, ''));   /* also when a bracketed note follows it: "Worka Chelbessa Washed [Limited]" */
+  return m ? [m[1]] : [];
+}
+/* Origin written as prose. The country is the one the title names, else the only one the description names (the app's own country list and place names); the region is a place called "the X district / region / zone". */
+function shopCountries(text){
+  const t = ' ' + norm(text).replace(/[^a-z0-9]+/g, ' ') + ' ';
+  return ORIGINS.filter(o => (o.aliases || []).some(a => t.includes(' ' + norm(a) + ' ')));
+}
+function shopOriginGuess(title, body){
+  const inTitle = shopCountries(title), inBody = shopCountries(body);
+  const c = inTitle.length === 1 ? inTitle[0] : (!inTitle.length && inBody.length === 1 ? inBody[0] : null); if (!c) return '';
+  const m = /\b(?:from|in|near|around)\s+the\s+([A-Z][a-z]{2,}(?:\s[A-Z][a-z]{2,})?)\s+(?:district|region|zone|province|department|area|woreda)\b/.exec(String(body || ''));
+  return c.name + (m && norm(m[1]) !== norm(c.name) ? ', ' + m[1] : '');
+}
+/* Variety names written as prose: capitalised names beside the word "varieties" ("Wolisho and Dega, two varieties", "varieties such as Bourbon and Caturra"), leaving out country and place words. */
+const SHOP_VAR_SKIP = new Set(['the', 'these', 'those', 'both', 'many', 'several', 'some', 'our', 'this', 'that', 'and', 'of', 'in', 'with', 'all', 'most', 'other', 'each', 'every', 'two', 'three', 'four', 'its', 'their', 'coffee', 'coffees', 'we', 'it', 'as', 'such', 'including', 'like', 'a', 'an']);
+function shopVarieties(text){
+  const out = [], KEY = /\b(varieties|variety|varietals?|cultivars?)\b/i, place = w => shopCountries(w).length > 0;
+  const take = chunk => (String(chunk).match(/[A-Z][A-Za-z'’-]{2,}/g) || []).forEach(w => { if (!SHOP_VAR_SKIP.has(w.toLowerCase()) && !place(w) && !out.includes(w)) out.push(w); });
+  String(text || '').replace(/([.!?])\s+/g, '$1\n').split(/\n+/).forEach(sent => {
+    const k = KEY.exec(sent); if (!k) return;
+    const after = /^\s*(?:such as|including|include|like|are|is|:|-)\s+([^.;]{0,70})/i.exec(sent.slice(k.index + k[0].length));
+    if (after) take(after[1]);
+    else { const from = Math.max(0, k.index - 60); let b = sent.slice(from, k.index);
+      if (from === 0 && !/^\s*[A-Z][A-Za-z'’-]+\s*(?:,|&|and\b)\s*[A-Z]/.test(b)) b = b.replace(/^\s*[A-Za-z'’-]+/, '');   /* the first word of a sentence is capitalised anyway ("Grown from ...") */
+      take(b); }
+  });
+  return out.slice(0, 6).join(', ');
+}
 /* What one product listing states. Returns { data, how, unclear }: data is shaped like a scan result (so the same review step reads it), how says where each value came from
    ('line' = its own "Label: value" line, 'text' = a phrase in the title, tags or description), unclear lists what the listing did not state. */
 function shopFacts(p){
@@ -1954,11 +1993,13 @@ function shopFacts(p){
   if (country || region){ data.origin = country && region && !norm(country).includes(norm(region)) ? country + ', ' + region : (country || region); how.origin = 'line'; }
   const proc = shopFirst(pairs, L.process);
   if (proc){ data.process = proc; how.process = 'line'; }
-  else { const t = shopOnly(Array.from(loose.matchAll(SHOP_PROC_RE)).map(m => m[1] || m[2]).concat(tags.filter(x => SHOP_PROC_TAG.test(x))), x => readProcess(x, data.origin).value); if (t){ data.process = t; how.process = 'text'; } }
+  else { const t = shopOnly(Array.from(loose.matchAll(SHOP_PROC_RE)).map(m => m[1] || m[2]).concat(tags.filter(x => SHOP_PROC_TAG.test(x)), shopTitleProcess(title)), x => readProcess(x, data.origin).value); if (t){ data.process = t; how.process = 'text'; } }
   const vr = shopFirst(pairs, L.varietal); if (vr){ data.varietal = vr; how.varietal = 'line'; }
   const roast = shopFirst(pairs, L.roast);
   if (roast && mapRoast(roast)){ data.roast_level = roast; how.roast = 'line'; }
   else { const t = shopOnly(Array.from(loose.matchAll(SHOP_ROAST_RE)).map(m => m[0]).concat(tags.filter(x => SHOP_ROAST_TAG.test(x))), mapRoast); if (t){ data.roast_level = t; how.roast = 'text'; } }
+  if (!data.origin){ const g = shopOriginGuess(title, body); if (g){ data.origin = g; how.origin = 'text'; } }
+  if (!data.varietal){ const v = shopVarieties(body); if (v){ data.varietal = v; how.varietal = 'text'; } }
   const el = shopFirst(pairs, L.elevation);
   if (el && mapElevation(el).cls){ data.elevation = el; how.elevation = 'line'; }
   else { const m = SHOP_ELEV_RE.exec(loose); if (m && mapElevation(m[0]).cls){ data.elevation = m[0]; how.elevation = 'text'; } }
@@ -4211,6 +4252,17 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 28,
+  "at": "2026-10-06T19:14:11Z",
+  "date": "2026-10-06",
+  "title": "Look-up reads real listings",
+  "notes": [
+   "Look up this coffee now reads listings that are written as paragraphs, not just ones with labelled lines: origin and region, varieties, process and elevation are picked out of the text.",
+   "A spelling difference between your coffee name and the shop's (such as Chelbesa and Chelbessa) no longer stops the match, and a process word at the end of the title (Washed, Natural) is read.",
+   "Values taken from a paragraph are marked so you check them before keeping them."
+  ]
+ },
  {
   "release": 27,
   "at": "2026-10-06T18:03:20Z",

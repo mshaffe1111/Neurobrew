@@ -2,6 +2,14 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 28: Look-up reads real listings
+
+2026-10-06 19:14:11 UTC
+
+- Look up this coffee now reads listings that are written as paragraphs, not just ones with labelled lines: origin and region, varieties, process and elevation are picked out of the text.
+- A spelling difference between your coffee name and the shop's (such as Chelbesa and Chelbessa) no longer stops the match, and a process word at the end of the title (Washed, Natural) is read.
+- Values taken from a paragraph are marked so you check them before keeping them.
+
 ## Release 27: Look up a coffee from the roaster's own shop
 
 2026-10-06 18:03:20 UTC
