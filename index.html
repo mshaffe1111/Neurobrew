@@ -65,8 +65,10 @@ body[data-screen="coffee"] .wrap, body[data-screen="recipe"] .wrap{ padding-bott
 .back[hidden]{ display:none; }
 .toptitle{ flex:1; text-align:center; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 body[data-screen="start"] .stick{ display:none; }
-.markbtn{ border:0; background:transparent; min-width:64px; min-height:44px; display:flex; align-items:center; justify-content:flex-end; padding:0 4px; }
-.markbtn svg{ display:block; }
+.menubtn{ display:flex; align-items:center; gap:8px; min-height:44px; padding:0 14px 0 12px; border:1px solid var(--line); border-radius:12px; background:var(--surface); color:var(--ink); font-family:inherit; font-weight:600; font-size:15px; cursor:pointer; }
+.menubtn:hover{ background:var(--tint); }
+.menubtn:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
+.menubtn .burger{ display:block; flex:none; }
 .brand{ display:flex; align-items:center; gap:14px; margin:22px 0 4px; }
 .brand .mk{ flex:none; display:block; line-height:0; }
 .wm{ font-size:36px; line-height:1; letter-spacing:-0.035em; }
@@ -345,8 +347,6 @@ details.more textarea{ width:100%; min-height:64px; margin-top:8px; padding:10px
   :root:not([data-theme="light"]) .logo-dark{ display:block !important; }
 }
 .signin{ border-left:3px solid var(--warn); padding-left:10px; }
-.startmenu{ position:absolute; top:0; right:0; margin:0 !important; z-index:1; }
-.markbtn .miniicon{ display:block; height:38px; width:auto; }
 .progress{ align-items:stretch; gap:2px; padding:4px 8px 6px; }
 .pstep{ flex-direction:column; justify-content:flex-start; gap:3px; font-family:inherit; font-size:11.5px; text-align:center; background:transparent; border:0; padding:4px 0 2px; min-height:50px; cursor:pointer; border-radius:10px; }
 .pstep .pl{ line-height:1.1; max-width:100%; }
@@ -357,7 +357,7 @@ details.more textarea{ width:100%; min-height:64px; margin-top:8px; padding:10px
 .progressmsg{ padding:6px 16px; font-size:13.5px; background:var(--tint); color:var(--ink); border-bottom:1px solid var(--line); }
 .progressmsg[hidden]{ display:none; }
 body[data-screen="start"] .stick{ display:block; }
-body[data-screen="start"] .topbar, body[data-screen="start"] .scorebar{ display:none; }
+body[data-screen="start"] .scorebar{ display:none; }
 .krow.flash{ animation:flashbg 2.6s ease-out 1; border-radius:10px; }
 @keyframes flashbg{ 0%{ background:var(--tint); box-shadow:0 0 0 6px var(--tint); } 100%{ background:transparent; box-shadow:0 0 0 6px transparent; } }
 /* levels, field labels, progress */
@@ -479,8 +479,6 @@ details.help summary{ color:var(--accent); }
 .rvrow{ display:grid; grid-template-columns:28px 1fr; gap:10px; padding:10px 0; border-top:1px solid var(--line); align-items:start; }
 .rvrow input[type=checkbox]{ width:22px; height:22px; margin-top:24px; }
 .rvrow .plain{ width:100%; font-size:16px; padding:9px 10px; border:1px solid var(--line); border-radius:9px; background:var(--bg); }
-.markbtn .ml{ font-size:13px; font-weight:600; color:var(--muted); margin-right:6px; }
-.markbtn{ gap:0; }
 #mount.selmode{ padding-bottom:90px; }
 .selbar{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin:0 0 10px; padding:8px 12px; background:var(--tint); border-radius:12px; }
 .selbar[hidden]{ display:none; }
@@ -567,6 +565,18 @@ details.help summary{ color:var(--accent); }
 .presets{ flex-wrap:nowrap; gap:6px; }
 .presets .choice{ flex:1 1 auto; font-size:12.5px; padding:9px 3px; text-align:center; min-width:0; letter-spacing:-0.01em; line-height:1.2; }
 .presets{ gap:5px; }
+/* the menu on a wide screen: a panel under the header, in the same column as the page, not a sheet from the bottom */
+@media (min-width:760px){
+  .overlay.menupanel{ align-items:flex-start; }
+  .overlay.menupanel .sheet{ margin-top:58px; max-height:calc(100% - 78px); border-radius:16px; box-shadow:0 24px 48px -24px rgba(10,14,16,.55); }
+}
+.menufoot{ margin-top:16px; padding-top:12px; border-top:1px solid var(--line); text-align:center; }
+.menufoot .rel{ font-size:13.5px; color:var(--muted); margin:0; }
+.menufoot .rel b{ color:var(--ink); }
+.menufoot .btn.link{ margin:2px 0 0; min-height:40px; }
+/* links inside a sheet (the listing found by Look up this coffee) and the choices it offers */
+.sheet a{ color:var(--leaf); font-weight:600; text-underline-offset:2px; }
+.sheet .shoppick{ text-align:left; }
 @media (max-width:380px){ .presets{ flex-wrap:wrap; } .presets .choice{ flex:1 1 44%; padding:9px 6px; } }
 #techCard .choice:not([aria-pressed="true"]) small{ display:none; }
 .stepcard .cardlabel{ margin:12px 0 6px; }
@@ -603,7 +613,6 @@ h1{ letter-spacing:-0.028em; }
 .lede{ line-height:1.42; }
 .fieldmeta .req, .fieldmeta .opt{ font-size:12px; }
 .bands .band, .scale .tick b{ font-size:12px; }
-.startmenu{ min-height:40px !important; padding:6px 14px !important; font-size:14.5px !important; background:var(--surface) !important; }
 .term{ padding:3px 0; margin:-3px 0; }
 .mcard .meta.techhint{ color:var(--accent); }
 ::selection{ background:color-mix(in srgb, var(--gold) 45%, transparent); }
@@ -648,7 +657,7 @@ h1{ letter-spacing:-0.028em; }
   <div class="topbar">
     <button type="button" class="back" id="backBtn" hidden>Back</button>
     <div class="toptitle" id="topTitle"></div>
-    <button type="button" class="markbtn" id="homeBtn" aria-label="Menu"></button>
+    <button type="button" class="menubtn" id="homeBtn" aria-label="Menu" aria-haspopup="dialog"></button>
   </div>
   <div class="progress" id="progress" hidden></div>
   <div class="progressmsg" id="progressMsg" role="status" hidden></div>
@@ -1856,6 +1865,115 @@ function parseScanReply(text){
   if (a < 0 || b <= a) return null;
   try { const o = JSON.parse(t.slice(a, b + 1)); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : null; } catch(e){ return null; }
 }
+/* ---------- what a roaster's shop listing can tell us ----------
+   A Shopify shop publishes its products as JSON (title, tags, a description in HTML). A listing is free text written by the roaster, so nothing here is assumed to be there:
+   a field is filled only when the listing states it, preferably on its own line ("Process: Washed"), and the person checks every line before anything reaches the form.
+   The listing's HTML is turned into plain text and only ever shown as text. A value that could mean two things is left empty and listed as not found. */
+const SHOP_LABELS = {
+  origin:['origin', 'country', 'country of origin'], region:['region', 'growing region', 'location'],
+  process:['process', 'processing', 'process method', 'processing method'], varietal:['variety', 'varieties', 'varietal', 'varietals', 'cultivar', 'cultivars'],
+  roast:['roast', 'roast level', 'roast profile'], elevation:['elevation', 'altitude', 'growing altitude'],
+  notes:['tasting notes', 'taste notes', 'cupping notes', 'flavor notes', 'flavour notes', 'notes', 'flavor', 'flavour', 'flavors', 'flavours', 'taste', 'in the cup', 'cup']
+};
+const SHOP_STOP = new Set(['coffee', 'coffees', 'whole', 'bean', 'beans', 'ground', 'bag', 'roast', 'roasted', 'roasters', 'roaster', 'the', 'and', 'of', 'a', 'an', 'oz', 'lb', 'lbs', 'g', 'kg']);
+const shopKey = s => norm(s).replace(/[^a-z0-9]+/g, ' ').trim();   /* a roaster's name, flattened so "Caffè Vita" and "caffe vita" are the same key */
+/* The shop's address from whatever was typed or pasted: https only, a real dotted host name, nothing after it. Returns '' when it is not one. */
+function shopOrigin(input){
+  let s = String(input || '').trim().slice(0, 400); if (!s) return '';
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(s)) s = 'https://' + s;
+  const m = /^https?:\/\/([^\/?#\s]+)/i.exec(s); if (!m) return '';
+  const host = m[1].toLowerCase().replace(/^[^@]*@/, '').replace(/:\d+$/, '');
+  if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(host)) return '';
+  if (/^[0-9.]+$/.test(host) || /\.(local|localhost|internal|lan|home|corp|test|invalid)$/.test(host)) return '';
+  return 'https://' + host;
+}
+/* The product's handle when a product page link was pasted (https://shop.com/products/the-handle, with or without a collection before it). */
+function shopHandle(input){
+  const m = /\/products\/([a-z0-9][a-z0-9_%-]*)/i.exec(String(input || '').split(/[?#]/)[0]); if (!m) return '';
+  try { return decodeURIComponent(m[1]).toLowerCase().slice(0, 200); } catch(e){ return m[1].toLowerCase().slice(0, 200); }
+}
+const shopCatalogUrl = (origin, page) => origin + '/products.json?limit=250&page=' + (page > 0 ? Math.floor(page) : 1);
+const shopProductJsonUrl = (origin, handle) => origin + '/products/' + encodeURIComponent(handle) + '.json';
+const shopPageUrl = (origin, handle) => origin + '/products/' + encodeURIComponent(handle);
+const SHOP_ENT = { amp:'&', lt:'<', gt:'>', quot:'"', apos:"'", nbsp:' ', rsquo:"'", lsquo:"'", rdquo:'"', ldquo:'"', ndash:'-', mdash:'-', deg:'°', eacute:'é', egrave:'è' };
+/* The listing's HTML as plain text: line breaks kept, tags dropped, a few entities read. The result is only ever used as text. */
+function shopText(html){
+  let s = String(html == null ? '' : html).slice(0, 20000);
+  s = s.replace(/<(script|style)[\s\S]*?<\/\1\s*>/gi, ' ').replace(/<\s*(?:br|\/p|\/div|\/li|\/tr|\/h[1-6]|\/ul|\/ol|\/table)\b[^>]*>/gi, '\n').replace(/<\/t[dh]\s*>/gi, ' | ').replace(/<[^>]*>/g, ' ');
+  s = s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (all, e) => {
+    if (e[0] === '#'){ const n = e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10); return n > 31 && n < 65536 ? String.fromCharCode(n) : ' '; }
+    return Object.prototype.hasOwnProperty.call(SHOP_ENT, e.toLowerCase()) ? SHOP_ENT[e.toLowerCase()] : ' ';
+  });
+  return s.replace(/[ \t ]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+const shopTokens = s => norm(s).replace(/[^a-z0-9]+/g, ' ').split(' ').filter(w => w.length > 1 && !SHOP_STOP.has(w));
+const shopSame = (a, b) => a === b || (a.length >= 5 && b.length >= 5 && (a.startsWith(b) || b.startsWith(a)));   /* "ethiopia" and "ethiopian" are the same word here */
+/* Products whose title contains every word of the name (best first), else, for names of three or more words, those with at least 60% of them. */
+function shopMatch(products, name){
+  const q = shopTokens(name); if (!q.length || !Array.isArray(products)) return [];
+  const all = [];
+  products.forEach(p => {
+    if (!p || typeof p.title !== 'string' || typeof p.handle !== 'string' || !p.handle) return;
+    const t = shopTokens(p.title), hit = q.filter(w => t.some(x => shopSame(w, x))).length; if (!hit) return;
+    const extra = t.filter(x => !q.some(w => shopSame(w, x))).length;
+    all.push({ product:p, full:hit === q.length, cover:hit / q.length, score:hit / (q.length + extra) });
+  });
+  const full = all.filter(o => o.full), pool = full.length ? full : all.filter(o => o.cover >= 0.6);
+  return pool.sort((a, b) => b.score - a.score).slice(0, 5);
+}
+/* "Label: value" pairs, one per line (or per bullet). Separators: a colon, a bar (from table cells), or a spaced dash. */
+function shopPairs(text){
+  const out = [];
+  String(text || '').split('\n').forEach(line => line.split(/\s+[•·]\s+/).forEach(seg => {
+    const m = /^\s*[•*·-]?\s*([A-Za-z][A-Za-z ./&]{1,28}?)\s*(?::|\||\s[–—-]\s)\s*(.+)$/.exec(seg); if (!m) return;
+    const value = m[2].split(/\s\|\s/)[0].trim().replace(/[\s.;,|]+$/, '').slice(0, 200); if (value.length >= 2) out.push({ label:m[1].trim().toLowerCase(), value });
+  }));
+  return out;
+}
+const shopFirst = (pairs, labels) => { const p = pairs.find(x => labels.includes(x.label)); return p ? p.value : ''; };
+/* Of several phrases, the first one for the single meaning they all agree on; '' when there are none or they disagree (a listing that says both "washed" and "natural" is not telling us which). */
+function shopOnly(phrases, toKey){
+  const by = {}; phrases.forEach(x => { const k = toKey(x); if (k) (by[k] = by[k] || []).push(x); });
+  const keys = Object.keys(by); return keys.length === 1 ? by[keys[0]][0] : '';
+}
+const SHOP_PROC_WORD = '(?:washed|natural|honey|anaerobic|carbonic maceration|wet[- ]hulled|pulped natural|extended fermentation|experimental)';
+const SHOP_PROC_RE = new RegExp('\\b(' + SHOP_PROC_WORD + ')\\s+(?:process|processed|processing)\\b|\\bprocess(?:ed|ing)?\\s*(?:is|:|-)?\\s*(' + SHOP_PROC_WORD + ')\\b', 'gi');
+const SHOP_PROC_TAG = new RegExp('^' + SHOP_PROC_WORD + '$', 'i');
+const SHOP_ROAST_WORD = '(?:light|medium[- ]light|light[- ]medium|medium[- ]dark|dark[- ]medium|medium|dark)';
+const SHOP_ROAST_RE = new RegExp('\\b' + SHOP_ROAST_WORD + '\\s+roast\\b', 'gi');
+const SHOP_ROAST_TAG = new RegExp('^' + SHOP_ROAST_WORD + '(?:\\s+roast)?$', 'i');
+const SHOP_ELEV_RE = /\d[\d,.]*(?:\s*(?:-|–|to)\s*\d[\d,.]*)?\s*(?:masl|m\.a\.s\.l\.?|meters|metres|ft|feet)\b/i;
+/* What one product listing states. Returns { data, how, unclear }: data is shaped like a scan result (so the same review step reads it), how says where each value came from
+   ('line' = its own "Label: value" line, 'text' = a phrase in the title, tags or description), unclear lists what the listing did not state. */
+function shopFacts(p){
+  p = p && typeof p === 'object' ? p : {};
+  const title = String(p.title || ''), body = shopText(p.body_html), tags = (Array.isArray(p.tags) ? p.tags : String(p.tags || '').split(',')).map(t => String(t).trim().slice(0, 80)).filter(Boolean);
+  const tagPairs = tags.filter(t => /^[A-Za-z ]{2,24}:\s*\S/.test(t)).map(t => ({ label:t.split(':')[0].trim().toLowerCase(), value:t.slice(t.indexOf(':') + 1).trim() }));
+  const pairs = shopPairs(body).concat(tagPairs), L = SHOP_LABELS, how = {}, data = {}, loose = [title].concat(tags, body.slice(0, 3000)).join('\n');
+  const country = shopFirst(pairs, L.origin), region = shopFirst(pairs, L.region);
+  if (country || region){ data.origin = country && region && !norm(country).includes(norm(region)) ? country + ', ' + region : (country || region); how.origin = 'line'; }
+  const proc = shopFirst(pairs, L.process);
+  if (proc){ data.process = proc; how.process = 'line'; }
+  else { const t = shopOnly(Array.from(loose.matchAll(SHOP_PROC_RE)).map(m => m[1] || m[2]).concat(tags.filter(x => SHOP_PROC_TAG.test(x))), x => readProcess(x, data.origin).value); if (t){ data.process = t; how.process = 'text'; } }
+  const vr = shopFirst(pairs, L.varietal); if (vr){ data.varietal = vr; how.varietal = 'line'; }
+  const roast = shopFirst(pairs, L.roast);
+  if (roast && mapRoast(roast)){ data.roast_level = roast; how.roast = 'line'; }
+  else { const t = shopOnly(Array.from(loose.matchAll(SHOP_ROAST_RE)).map(m => m[0]).concat(tags.filter(x => SHOP_ROAST_TAG.test(x))), mapRoast); if (t){ data.roast_level = t; how.roast = 'text'; } }
+  const el = shopFirst(pairs, L.elevation);
+  if (el && mapElevation(el).cls){ data.elevation = el; how.elevation = 'line'; }
+  else { const m = SHOP_ELEV_RE.exec(loose); if (m && mapElevation(m[0]).cls){ data.elevation = m[0]; how.elevation = 'text'; } }
+  const notes = shopFirst(pairs, L.notes); if (notes){ data.tasting_notes = notes; how.notes = 'line'; }
+  if (/\bdecaf(?:feinated)?\b/i.test(title + ' ' + tags.join(' '))) data.decaf = true;
+  const FIELDS = [['origin', 'origin', 'origin'], ['process', 'process', 'process'], ['varietal', 'varietal', 'varietal'], ['roast', 'roast_level', 'roast level'], ['elevation', 'elevation', 'elevation'], ['notes', 'tasting_notes', 'tasting notes']];
+  return { data, how, unclear:FIELDS.filter(f => !data[f[1]]).map(f => f[2]) };
+}
+/* One product as a review sheet's worth of fields: the same items the bag scan produces (so the same review step shows them), a note on any value that was not on its own line, and a link back to the listing. */
+function shopDraft(p, origin){
+  const f = shopFacts(p), res = mapScan(f.data), HOW = { process:'process', roast:'roast', density:'elevation', bag_notes:'notes' };
+  res.items.forEach(it => { if (f.how[HOW[it.key] || it.key] === 'text') it.hint = ((it.hint || '') + ' It was a phrase in the listing, not its own line, so check it.').trim(); });
+  res.unclear = f.unclear.slice();
+  return { res, title:String(p && p.title || '').slice(0, 200), url:p && p.handle && origin ? shopPageUrl(origin, p.handle) : '' };
+}
 /* ---------- cupping instructions, results analysis ---------- */
 const CUP_PHASES = [
   { n:1, title:'Smell', when:'Before you taste', text:'Smell the dry grounds first (fragrance), then the coffee once the water touches it (aroma).' },
@@ -2025,20 +2143,6 @@ function historyForCoffee(objs, c){
 const WATER_PLAIN = 'Use clean water that tastes good. Filtered tap water works well. Distilled water has no minerals, so the coffee can taste flat.';
 const SCORE_GUIDE_SHORT = 'Each card runs from 6 (good) to 10 (outstanding). A 6 does not mean bad. Your total is out of 100. It is a home score for comparing your own cups, not an official grade.';
 const BREW_EXPLAINER = 'Hot water pulls flavor out of the coffee. If too little comes out, the cup often tastes sour and thin. If too much comes out, it often tastes harsh or dry. In between, it tends to taste sweet and balanced. How bitter a cup tastes also depends on how strong it is. Every number on this page helps you land in the middle.';
-const HOWTO = [
-  ['How a brew works', BREW_EXPLAINER],
-  ['The six steps', 'Coffee, Facts, Method, Recipe, Cup, Dial in. The bar at the top shows where you are. Tap a step to jump back to it. Steps unlock as you go, and a locked step tells you what it needs.'],
-  ['1. Coffee', 'Enter what is on the bag. Only the name is required. Every field says what it changes: your recipe, your guide, your advice, or just your saved record. Origin and varietal are pickers, so there is no spelling to worry about: choose from the list, and add a region or farm if the bag names one. Not on the list? Choose Other and type it. If you are unsure about something, choose "Not sure" and we will tell you what we assumed. If you leave elevation or process blank, we use the origin to make a labeled guess, except for a blend.'],
-  ['2. Facts', 'A plain-language guide to your bag, with what to expect in the cup (acidity, body, sweetness) and what to look for. If you entered a roast date, it also says whether the coffee is ready for filter and for espresso.'],
-  ['3. Method', 'Pick how you are brewing. Methods marked "Good match" suit your roast, process, and bag notes.'],
-  ['4. Recipe', 'Choose a size and how strong you like it. You can also try pulse pours or iced coffee, adjust the water temperature (open "How we chose" to see why), and change the pour style. Then follow the recipe, or tap Start guided brew for a timer with scale targets. It also shows how much coffee you will end up with in the cup.'],
-  ['5. Cup', 'Smell, then sip while hot, then again as it cools. Score each card with the + and − buttons, from 6 (Good) up, with 9.75 the top of the SCA scale and 10 a theoretical top. Press and hold to move faster. Cards start folded to save space, so you can score straight from the row. Tap a card\'s name to open it and describe what you notice. The words you pick for acidity and body set how strong each feels, and some other words can suggest a score. You can always change either. Tap All cards to see everything at once. If you have a refractometer, you can enter your TDS to see your extraction.'],
-  ['6. Dial in', 'Your scores point to one change to try next time. Change one thing at a time, brew again, and compare. If you entered the alkalinity of your water and the cup is flat, it checks the water before suggesting a grind or ratio change.'],
-  ['Tap the underlined words', 'Words with a dotted underline are tappable. Tap one for a short, plain definition. The Glossary in this menu lists every term.'],
-  ['Help levels', 'New to brewing keeps things short. Comfortable explains the reasons. Expert shows every number. You can change it any time from this menu.'],
-  ['Your data', 'Everything stays in your browser until you save a file. Your cuppings live in the CSV file you download. You can load it again later, fix a mistake in a coffee\'s name or details from its history page (the scores never change), and delete cuppings you do not want. If your view cannot save files, use Back up my history as text in the Menu. It makes a code you can paste into Notes or an email, and paste back to restore.']
-];
-
 /* ---------- keywords that set the strength and score suggestions (Piece 2A) ---------- */
 const ACID_WORDS = [
   { w:'flat',  level:1, tone:'poor', tip:'Very little brightness. Low-acid coffees can taste this way, but so can old or dull coffee. Check the roast date.' },
@@ -2795,6 +2899,18 @@ function filterGlossary(list, q, group){
   q = String(q || '').trim().toLowerCase();
   return list.filter(x => (!group || group === 'All' || x.group === group) && (!q || x.term.toLowerCase().includes(q) || x.def.toLowerCase().includes(q)));
 }
+/* what NeuroBrew is, in the words the About screen opens with */
+const ABOUT_INTRO = [
+  'NeuroBrew helps you brew a better cup of coffee, and understand why it tastes the way it does. Brew it. Cup it. Perfect it.',
+  'You tell it about your coffee, and it builds a recipe for that coffee and the way you brew. You taste the cup and score it. Then it uses what you tasted to suggest one change at a time, and it keeps every try, so you can see what helped.',
+  'Over time your saved cups show what you tend to like, so you can recognise it on a bag the next time you buy.'
+];
+const ABOUT_NOT = [
+  'It is not a grader. A single-cup total is a home score for comparing your own cups, not an official grade.',
+  'It is not an account or a service. There is no sign-in and no server for your cuppings: your data stays in your browser until you save a file.',
+  'It does not know your taste better than you do. Recipes and advice are starting points, and your own cup has the last word.'
+];
+const ABOUT_CREDIT = 'NeuroBrew was created by Matt Shaffer.';
 const ABOUT_SOURCES = [
   'The SCA cupping form (2004) and its 2024 Coffee Value Assessment, for how coffee is scored and described.',
   'The World Coffee Research Sensory Lexicon, for the words used to describe flavor.',
@@ -2807,6 +2923,8 @@ const ABOUT_LIMITS = [
   'Recipes are starting points. The roast adjustments to temperature and grind come from brewer experience, not lab results, and the app says so wherever they appear. Process, decaf and elevation do not change your recipe on their own; they offer optional tips.',
   "The flavor wheels are NeuroBrew's own. They are not the official SCA / World Coffee Research wheel.",
   'Le Nez du Café is a trademark of Éditions Jean Lenoir. NeuroBrew is not affiliated with or endorsed by them, the SCA, World Coffee Research, or any brand named here.',
+  'Where NeuroBrew uses its own rule of thumb, it says so. These include the one point a total must move before a try counts as better or worse, a bag a week older that can change the taste, three coffees that must agree before a starting point is offered, and five coffees before your tendencies are shown. They are sensible limits, not published standards.',
+  "Looking a coffee up reads the roaster's own shop listing, in the roaster's words. It works only with shops built on Shopify. NeuroBrew fills in only what the listing states, you check every line first, and it remembers each roaster's shop address in this browser. Your browser asks the roaster's website directly, so that website sees the visit, as it would if you opened the page yourself. Nothing about your cuppings is sent.",
   'Your data stays in your browser until you save a file.'
 ];
 
@@ -3472,6 +3590,55 @@ function csvToSheetText(csv){
   return [ex.header].concat(ex.rows).map(r => r.map(cell).join('\t')).join('\n');
 }
 
+/* ---------- the instruction guide ----------
+   Each section: id, title, lead (one line shown when the section is closed), paras (plain paragraphs), and optional tips (short do-this lines).
+   Everything here describes something the app does today. When a feature changes, change its section in the same release. */
+const GUIDE_SECTIONS = [
+  { id:'quick', title:'The short version', lead:'Six steps, in a loop.',
+    paras:['NeuroBrew works as a loop: tell it about your coffee, brew it with a recipe made for that coffee, taste and score the cup, then use what you tasted to make the next cup better. The bar at the top shows the six steps: Coffee, Facts, Method, Recipe, Cup and Dial in. Tap a step to jump back to it. A step you have not reached yet is locked, and it tells you what it needs.',
+      'The more cups you save, the more NeuroBrew can show you: how each coffee improved, what you tend to like, and what to look for when you buy.'],
+    tips:['Only the coffee name is required. Everything else makes the recipe and the guide better.', 'Change one thing at a time when you dial in, so you know what helped.'] },
+  { id:'coffee', title:'1. Coffee: tell it what you are brewing', lead:'Start with the bag.',
+    paras:['Type the coffee name, then add what the bag says: roaster, origin, process, roast level, elevation, roast date and tasting notes. Each field says what it changes: your recipe, your guide, your advice, or only your saved record. Origin and varietal are pickers, so there is no spelling to worry about. Not on the list? Choose Other and type it.',
+      'If you are unsure about something, choose Not sure and NeuroBrew tells you what it assumed. If you leave out the process or the elevation, it makes a labelled guess from the origin, except for a blend.',
+      'Inside Claude you can scan a photo of the bag, or paste the label text, and check every line before anything fills in. Anywhere else, you can ask Claude in a chat to read the bag and paste its answer here, or just type it.',
+      "Under the coffee name and roaster, Look up this coffee reads the roaster's own online shop listing and offers the origin, process, varietal, elevation, roast level and tasting notes it states. It works with shops built on Shopify. Type the roaster's website once (or paste a link to the coffee's page), and NeuroBrew remembers it for that roaster. You check every line first, and it never replaces something you already entered unless you tick it.",
+      'Add the roast date if you have it. It tells NeuroBrew whether the coffee is still resting, and it is how a new bag of a coffee you have brewed before is recognised.'] },
+  { id:'facts', title:'2. Facts: what to expect from this bag', lead:'A plain-language guide to your coffee.',
+    paras:['This screen explains your bag in plain words: what to expect in the cup (acidity, body, sweetness) and what to look for as you taste. If you entered a roast date, it says whether the coffee is ready for filter and for espresso.',
+      'At the bottom you choose Brew it, to make a recipe, or Cup it, to score a coffee you are tasting without brewing it here, such as an SCA cupping.'] },
+  { id:'method', title:'3. Method: choose how you brew', lead:'Pick from the list.',
+    paras:['Choose how you are brewing: pour-over (V60, Kalita Wave, Chemex), Hario Switch, Clever Dripper, siphon, AeroPress, French press, moka pot, Turkish coffee, Vietnamese phin, espresso, a drip machine or cold brew. Methods marked Good match suit your roast, process and bag notes.',
+      'If you have a Philips 5500 LatteGo, it has its own simple setup that suggests the drink settings for your beans.'] },
+  { id:'recipe', title:'4. Recipe and guided brew', lead:'A recipe for this coffee, with the reasons.',
+    paras:['Pick a size and how strong you like it (Lighter, Standard or Stronger). You get the amount of coffee and water, the grind in microns and in plain words, the water temperature, the ratio and the steps. Each line has a reason behind it: tap Why? where you see it, or read the line under it.',
+      'Open Adjust your brew to try pulse pours or iced coffee, to change the pour style, or to set the water temperature yourself. Choose your grinder to get a suggested setting; if there is no settings table for it yet, you can teach NeuroBrew from your own results. Add your water type, and the alkalinity if you know it, and it checks your water before blaming the grind.',
+      'Tap Start guided brew for a timer with scale targets. You can switch sound off, use a beep, or have a voice read each step. The voice can tell you where you should be along the way, so you do not have to watch the screen. When you have brewed it, tap I brewed it: cup this.'],
+    tips:['If you already have earlier tries of this coffee, this screen offers them, and offers a new bag of a coffee you know to start from the recipe you dialed in.'] },
+  { id:'cup', title:'5. Cup: taste and score it', lead:'Smell, sip hot, sip as it cools.',
+    paras:['Score each card with the + and − buttons, from 6 (Good) up to 9.75, the top of the SCA scale. Press and hold to move faster. Tap a card\'s name to open it and describe what you notice. The words you pick for acidity and body set how strong each feels, and some words can suggest a score. You can change either at any time. Tap All cards to see everything at once.',
+      'Choose Single cup for one brewed cup, which gives a home score out of 100 for comparing your own cups, or Five cups (SCA) for the official method. These two scores are never compared with each other. You can add a star rating of your own, and, if you have a refractometer, your TDS to see the extraction.',
+      'When you save, you choose whether you already have a cupping file. Saving downloads a file called cuppings.csv with your whole history. If you are cupping several coffees in one sitting, keep each one in this browser and save one file at the end.'] },
+  { id:'dial', title:'6. Dial in: make the next cup better', lead:'Your scores point to one change.',
+    paras:['After a cup, Dial it in looks at your scores and the words you picked and suggests one change: grind, ratio, water temperature or pour style. Say what you tasted if it chose differently from you. Then brew again with that one change.',
+      'It keeps every try of a coffee on a method in order. Each try shows what changed and whether the total went up or down. A change counts as helped or hurt only when the total moves by at least a point, which is NeuroBrew\'s own rule of thumb, because one cup scored by one person is noisy. Brew the same recipe twice and it measures your own variation, and uses that instead if it is bigger.',
+      'The next brew starts from your best try, not just your last. If a change scored lower, it is not suggested again; it offers a different one. If the problem looks like the coffee itself (stale or off words, an old bag), it says so, and if several changes in a row did not help, it says the recipe may not be the problem.',
+      'When a cup tastes great, lock it in as your recipe for that coffee and method. New brews start from it until you unlock it. A new bag of the same coffee (a different roast date) starts from your locked recipe, or your best on the last bag, and the first cup on the new bag is marked, because the bag is mixed in.',
+      'For a coffee you have never brewed on a method, NeuroBrew can offer a starting point from where your other coffees ended up, but only when at least three of them agree. It is a suggestion; you choose whether to use it.'] },
+  { id:'history', title:'Your cuppings, files and backups', lead:'Everything stays with you.',
+    paras:['Everything stays in your browser until you save a file. Your history is the cuppings.csv file you download: upload it when you come back and each new cupping is added to it. Replace your old file with the newest copy, because it holds everything.',
+      'Your cuppings list lets you search, sort, open a cupping, fix a mistake in a coffee\'s name or details (the scores never change), brew or cup that coffee again, dial it in, and delete cuppings you do not want.',
+      'If your view cannot save files, use Back up my history as text in the menu. It makes a code you can paste into Notes or an email and paste back to restore. Clear everything on this device removes the copy in this browser, but not files you downloaded.'] },
+  { id:'learn', title:'Understanding coffee: your tendencies', lead:'What you like, and how to shop for it.',
+    paras:['After you have cupped five different coffees, NeuroBrew can show which details your higher-scored coffees share (roast, process, elevation, origin, varietal), how sure that is, and what to look for on a bag. Cups of the same coffee are averaged first, so brewing one coffee five times does not count as five coffees.',
+      'This describes what you scored, not what is true of the coffee. Taste is personal, and a handful of coffees is a small sample. The same screen explains what every detail on a bag means, and compares two things side by side.'] },
+  { id:'helpers', title:'Levels, underlined words and the glossary', lead:'Ways to get more or less explanation.',
+    paras:['New to brewing keeps things short, Comfortable explains the reasons, and Expert shows every number. Change it any time from the start screen or the menu.',
+      'Words with a dotted underline are tappable and give a short definition. The Glossary in the menu lists every term and can be searched.'] },
+  { id:'trust', title:'What to trust', lead:'Starting points, not rules.',
+    paras:['Recipes are starting points. The roast adjustments to temperature and grind come from brewer experience, not lab results, and the app says so wherever they appear. A single-cup total is a home score for comparing your own cups, not an official grade.',
+      'Where NeuroBrew uses its own rule of thumb, it says so: the one-point change needed to call a try better or worse, the roughly one-week bag age that can change the taste, and the three coffees that must agree before it offers a starting point. About NeuroBrew in the menu lists the sources and the limits.'] }
+];
 /* ---------- origin guesses, blend, and freshness by method ---------- */
 const BLEND_OPTS = [{ v:'single', label:'Single origin' }, { v:'blend', label:'Blend' }];
 /* Typical altitude (meters) and processing for each origin. These are the same figures the origin guide already shows people. */
@@ -4042,6 +4209,80 @@ function grindGuide(key, methodKey, um, stepUm, calib){
   if (g.also && g.also.word === 'turns') res.turns = Math.round(clicks / g.also.per * 10) / 10;
   return res;
 }
+/* ---------- releases ---------- */
+const RELEASES = [
+ {
+  "release": 27,
+  "at": "2026-10-06T18:03:20Z",
+  "date": "2026-10-06",
+  "title": "Look up a coffee from the roaster's own shop",
+  "notes": [
+   "New \"Look up this coffee\" button under the coffee name and roaster. It reads the roaster's own online shop listing (shops built on Shopify) and offers the origin, process, varietal, elevation, roast level and tasting notes the listing states. You check every line before anything fills in.",
+   "Type the roaster's website once, or paste a link to the coffee's own page. NeuroBrew remembers the website for that roaster in this browser, and never replaces something you already entered unless you tick it.",
+   "Your browser asks the roaster's website directly. Nothing goes through NeuroBrew, and nothing about your cuppings is sent. About NeuroBrew and the guide explain this."
+  ]
+ },
+ {
+  "release": 26,
+  "at": "2026-10-06T16:31:21Z",
+  "date": "2026-10-06",
+  "title": "A tidier menu, a user guide and release notes",
+  "notes": [
+   "The Menu button now sits in the same place at the top right of every screen, including the first one. On wide screens it opens as a panel under the header.",
+   "New \"How to use NeuroBrew\" guide in the menu: the six steps, what each screen does, and how your history helps. Tap a section to open it.",
+   "\"About NeuroBrew\" is rewritten to say what the app is, what it is not, where its guidance comes from and what to keep in mind.",
+   "The bottom of the menu now shows which release you are on, with the date and time it was made, and a Release notes page lists what changed in each release."
+  ]
+ },
+ {
+  "release": 25,
+  "at": "",
+  "date": "2026-10-06",
+  "title": "Dial it in knows about new bags",
+  "notes": [
+   "A new bag of a coffee you have already brewed is recognised from its roast date, and your dialed-in recipe carries over to it.",
+   "The trail marks cups from a new bag, and does not count a change made on a new bag as something you tried, because the bag is mixed in.",
+   "A first brew of a coffee can start from where your other coffees ended up, when at least three of them agree. It is only a suggestion, and you choose whether to use it."
+  ]
+ },
+ {
+  "release": 24,
+  "at": "",
+  "date": "2026-10-06",
+  "title": "Dial it in remembers and lets you lock a recipe",
+  "notes": [
+   "Dial it in remembers what it suggested and what you tasted, and compares each try with the cup it started from.",
+   "A change that already scored lower is not suggested again; it offers a different change instead.",
+   "Lock in a cup as your recipe for a coffee and method. New brews start from it, and you can unlock it any time.",
+   "Notices when the problem looks like the coffee (stale or off-tasting words, an old bag) rather than the recipe, and when several changes in a row have not helped."
+  ]
+ },
+ {
+  "release": 23,
+  "at": "",
+  "date": "2026-10-06",
+  "title": "Dial it in is now a workflow",
+  "notes": [
+   "Dial it in shows every try of a coffee on a method, in order, with what changed and whether it helped.",
+   "It starts from what you already cupped: your scores point to what to change next, and the next brew starts from your best try.",
+   "Open it from the start screen, your history, a saved cup or the recipe screen. The start screen and history list the coffees you are still dialing in."
+  ]
+ }
+];
+const releaseLatest = () => RELEASES[0];
+/* a release time for people: in the reader's own time zone when the time is known, else the date alone. opts.timeZone and opts.locale exist for the tests. */
+function releaseWhen(r, opts){
+  opts = opts || {};
+  if (!r) return { text:'', hasTime:false };
+  try {
+    if (r.at){
+      const f = new Intl.DateTimeFormat(opts.locale || undefined, { year:'numeric', month:'short', day:'numeric', hour:'numeric', minute:'2-digit', timeZoneName:'short', timeZone:opts.timeZone || undefined });
+      return { text:f.format(new Date(r.at)), hasTime:true };
+    }
+    const f2 = new Intl.DateTimeFormat(opts.locale || undefined, { year:'numeric', month:'short', day:'numeric', timeZone:'UTC' });
+    return { text:f2.format(new Date(r.date + 'T12:00:00Z')), hasTime:false };
+  } catch(e){ return { text:r.at || r.date || '', hasTime:!!r.at }; }
+}
 /* ---------- pickers: an origin (a country and a region) and a varietal (one or several) ---------- */
 /* Region names people see on bags, as suggestions for each country. Every one is checked to lead back to its own country. */
 const ORIGIN_REGIONS = {
@@ -4345,10 +4586,10 @@ const $ = id => document.getElementById(id);
 
 /* ---------- state ---------- */
 function newCoffee(){
-  return { id:newId(), name:'', roaster:'', origin:'', varietal:'', roast:'', process:'', decaf:'', density:'', elevText:'', roast_date:'', bag_notes:'', scanned:'', roastUnsure:'', blend:'', varietalUnsure:'' };
+  return { id:newId(), name:'', roaster:'', origin:'', varietal:'', roast:'', process:'', decaf:'', density:'', elevText:'', roast_date:'', bag_notes:'', scanned:'', scannedFrom:'', roastUnsure:'', blend:'', varietalUnsure:'' };
 }
 function newApp(){
-  return { screen:'start', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', sound:'off', coach:'guide', level:'', calib:{} }, adjust:{ grind:0, ratio:0, agit:'' }, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
+  return { screen:'start', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', sound:'off', coach:'guide', level:'', calib:{}, roasterSites:{} }, adjust:{ grind:0, ratio:0, agit:'' }, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
 }
 function newCup(){
   const scores = {}; ATTRS.forEach(a => scores[a.key] = null);
@@ -4391,6 +4632,9 @@ function loadDraft(){
       if (['guide', 'steps'].includes(src.prefs.coach)) a.prefs.coach = src.prefs.coach;
       if (['new', 'comfortable', 'expert'].includes(src.prefs.level)) a.prefs.level = src.prefs.level;
       a.prefs.calib = calibClean(src.prefs.calib);
+      if (src.prefs.roasterSites && typeof src.prefs.roasterSites === 'object' && !Array.isArray(src.prefs.roasterSites)){   /* the shop address remembered for each roaster */
+        Object.keys(src.prefs.roasterSites).slice(0, 60).forEach(k => { const o = shopOrigin(src.prefs.roasterSites[k]), key = shopKey(k); if (o && key) a.prefs.roasterSites[key.slice(0, 60)] = o; });
+      }
     }
     if (src.adjust){ a.adjust = { grind:+src.adjust.grind || 0, ratio:+src.adjust.ratio || 0, agit:['gentle', 'active'].includes(src.adjust.agit) ? src.adjust.agit : '' }; }
     a.attempt = +src.attempt || 0;
@@ -4401,7 +4645,7 @@ function loadDraft(){
     a.lastTotal = typeof src.lastTotal === 'number' ? src.lastTotal : null;
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
-    const ok = ['start','coffee','brew','recipe','timer','cup','dial','history','detail','learn'];
+    const ok = ['start','coffee','brew','recipe','timer','cup','dial','history','detail','learn','guide'];
     a.screen = ok.includes(src.screen) ? src.screen : 'start';
     /* a saved timer comes back only if it is recent: running for under 45 minutes in all, or paused within the last 30 minutes */
     { const ts = src.timerSave, now = Date.now();
@@ -4454,7 +4698,8 @@ function changed(){ refreshAll(); updateBar(); scheduleDraft(); }
 const PARENT = {
   start:null, coffee:'start', brew:'coffee', recipe:'brew', timer:'recipe',
   cup:() => app.cupBrew ? 'recipe' : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', detail:'history',
-  learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'start')
+  learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'start'),
+  guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'start')
 };
 /* ---------- the phone's Back button ----------
    Every screen change adds one browser-history entry, so Back goes to the previous screen instead of leaving the app, and a Back press with a menu or dialog open closes it first.
@@ -4498,9 +4743,8 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { start:'', coffee:app.coffee.name || 'Your coffee', brew:'Choose a method', recipe:'Recipe', timer:'Guided brew', cup:'Cupping', dial:'Dial it in', history:'Your cuppings', learn:'Understanding coffee', detail:'Cupping details' };
+  const titles = { start:'', coffee:app.coffee.name || 'Your coffee', brew:'Choose a method', recipe:'Recipe', timer:'Guided brew', cup:'Cupping', dial:'Dial it in', history:'Your cuppings', learn:'Understanding coffee', guide:'User guide', detail:'Cupping details' };
   $('topTitle').textContent = sc === 'start' ? '' : (titles[sc] || 'NeuroBrew');
-  $('homeBtn').style.visibility = sc === 'start' ? 'hidden' : 'visible';
   SCREENS[sc](m);
   refreshAll(); updateBar();
   window.scrollTo({ top:0 });
@@ -4874,14 +5118,14 @@ function screenStart(m){
     varPick.el];
   const originBlock = [blendSel, blendNote, pick.el];
   if (lv === 'new'){
-    m.append(h('div', { class:'card' }, nameIn), ...roastSec, h('div', { class:'card' }, processSel, processNote));
+    m.append(h('div', { class:'card' }, nameIn, shopLookupRow()), ...roastSec, h('div', { class:'card' }, processSel, processNote));
     const more = h('details', { class:'card gcard moredetails' },
       h('summary', null, h('span', { class:'gt', text:'Add more details (optional)' }), h('span', { class:'gs', text:'Roaster, origin, decaf, elevation, roast date, tasting notes, varietal' })),
       h('div', { class:'gbody' }, h('div', { class:'card' }, roasterIn, ...originBlock), h('div', { class:'card' }, decaf, decafNote, elevSel, elevTyped, elevNote, ...bagFields)));
     more.open = !!(c.roaster || c.origin || c.decaf || c.density || c.elevText || c.roast_date || c.bag_notes || c.varietal || c.varietalUnsure || c.blend);
     m.append(more);
   } else {
-    m.append(h('div', { class:'card' }, nameIn, roasterIn, ...originBlock), ...roastSec,
+    m.append(h('div', { class:'card' }, nameIn, roasterIn, shopLookupRow(), ...originBlock), ...roastSec,
       sectionHead('More from the bag'), h('div', { class:'card' }, processSel, processNote, decaf, decafNote, elevSel, elevTyped, elevNote, ...bagFields));
   }
   nameIn.querySelector('input').addEventListener('input', e => { if (e.target.value.trim()){ e.target.removeAttribute('aria-invalid'); e.target.removeAttribute('aria-describedby'); err.textContent = ''; } });
@@ -5026,7 +5270,7 @@ function screenCoffee(m){
     const same = tn && nn && (tn === nn || (typedM.origin && typedM.origin.key === 'africa') || (nameM.origin && nameM.origin.key === 'africa'));
     if (tn && nn && !same && c.blend !== 'blend') m.append(h('div', { class:'notice', style:'border-left-color:var(--gold)' }, h('b', { text:'Name and origin differ: ' }), 'The coffee name mentions ' + nn + ', but the origin says ' + tn + '. We used the origin field. ',
       h('button', { type:'button', class:'btn link', text:'Edit details', onclick:() => go('start') }))); }
-  if (c.scanned) m.append(h('div', { class:'notice', style:'border-left-color:var(--leaf)' }, 'Filled in from your bag photo: ' + c.scanned + '. Check these against the bag. ',
+  if (c.scanned) m.append(h('div', { class:'notice', style:'border-left-color:var(--leaf)' }, (c.scannedFrom ? 'Filled in from the listing on ' + c.scannedFrom + ': ' : 'Filled in from your bag photo: ') + c.scanned + '. Check these against the bag. ',
     h('button', { type:'button', class:'btn link', text:'Edit', onclick:() => go('start') })));
   if (p.guessed.length) m.append(h('div', { class:'notice', style:'border-left-color:var(--gold)' }, h('b', { text:'Guessed from the origin' + (p.origin ? ' (' + p.origin + ')' : '') + ': ' }), p.guessed.map(x => x.text).join(' '), ' Add the real details to replace the guess. ',
     h('button', { type:'button', class:'btn link', text:'Add details', onclick:() => go('start') })));
@@ -5234,6 +5478,25 @@ function screenBrew(m){
   } else {
     [group('best', 'Best match', 'Highest fit for this coffee'), group('good', 'Good match', ''), group('works', 'Works', 'A fair choice, with some trade-offs'), group('poor', 'Not ideal for this coffee', 'Common practice steers away from these, but you can still choose them')].forEach(g => { if (g) m.append(g); });
   }
+}
+/* ---------- screen: how to use NeuroBrew ---------- */
+let guideFrom = '';
+function goGuide(){ if (app.screen !== 'guide') guideFrom = app.screen === 'timer' ? 'recipe' : app.screen; go('guide'); }
+function screenGuide(m){
+  m.append(h('h1', { text:'How to use NeuroBrew' }), h('p', { class:'lede', text:'The six steps, what each screen does, and how your history helps. Tap a section to open it.' }));
+  const cards = GUIDE_SECTIONS.map((s, i) => {
+    const d = h('details', { class:'card gcard guidesec', id:'guide-' + s.id },
+      h('summary', null, h('span', { class:'gt', text:s.title }), h('span', { class:'gs', text:s.lead })),
+      h('div', { class:'gbody' }, s.paras.map(t => h('p', { class:'serif', style:'margin:8px 0 0;font-size:16.5px', text:t })),
+        s.tips && s.tips.length ? h('ul', { class:'prep', style:'margin:10px 0 0' }, s.tips.map(t => h('li', { text:t }))) : null));
+    d.open = i === 0;
+    return d;
+  });
+  const setAll = on => cards.forEach(d => { d.open = on; });
+  m.append(h('div', { class:'actions', style:'margin:0 0 10px' }, h('button', { type:'button', class:'btn small', id:'guideOpenAll', text:'Open all', onclick:() => setAll(true) }), h('button', { type:'button', class:'btn small', id:'guideCloseAll', text:'Close all', onclick:() => setAll(false) })));
+  cards.forEach(c => m.append(c));
+  const back = typeof PARENT.guide === 'function' ? PARENT.guide() : PARENT.guide;
+  m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
 }
 /* ---------- screen: recipe ---------- */
 function recipeWith(agit){
@@ -6640,10 +6903,152 @@ document.addEventListener('focusin', e => {   /* a safety net: if anything puts 
   if (overlay.classList.contains('open') && !overlay.contains(e.target)){ const t = $('sheetTitle'); if (t) t.focus(); }
 });
 
+/* Your browser asks the roaster's shop for its public product list and reads it here. There is no NeuroBrew server in between, and nothing about your cuppings is sent.
+   The request carries no cookies and no referrer, and sets no headers, so the browser does not need the shop's permission to ask first. */
+const SHOP_TIMEOUT_MS = 12000, SHOP_PAGES = 4, SHOP_PAGE_SIZE = 250;
+const shopHostOf = o => String(o || '').replace(/^https?:\/\//, '');
+function shopLookupRow(){
+  const note = h('p', { class:'fine', id:'shopNote', role:'status', style:'margin:6px 0 0' });
+  return h('div', { class:'shoprow', style:'margin-top:10px' },
+    h('button', { type:'button', class:'btn', id:'shopLookupBtn', text:'Look up this coffee', onclick:() => {
+      if (!app.coffee.name.trim()){ note.textContent = 'Type the coffee name first, then look it up.'; return; }
+      note.textContent = ''; openShopLookup();
+    } }),
+    h('p', { class:'fine', style:'margin:6px 0 0', text:"Reads the roaster's own shop listing and offers to fill in origin, process, elevation and more. You check every line first." }), note);
+}
+function openShopLookup(){
+  const c = app.coffee, known = (app.prefs.roasterSites || {})[shopKey(c.roaster)] || '';
+  sheet = { step:'shop', phase:known ? 'working' : 'ask', name:c.name.trim(), roaster:c.roaster.trim(), site:known, input:'', err:'', ctl:null };
+  openSheet(); if (known) runShopLookup(known);
+}
+/* One request for JSON. Errors carry a code the sheet explains; an abort is passed on as it is. */
+async function shopFetchJson(url, signal){
+  let r;
+  try { r = await fetch(url, { signal, credentials:'omit', referrerPolicy:'no-referrer' }); }
+  catch(e){ if (e && e.name === 'AbortError') throw e; throw { code:(typeof navigator !== 'undefined' && navigator.onLine === false) ? 'offline' : 'blocked' }; }
+  if (!r.ok) throw { code:r.status === 404 ? 'notshop' : 'http', status:r.status };
+  let txt;
+  try { txt = await r.text(); } catch(e){ if (e && e.name === 'AbortError') throw e; throw { code:'blocked' }; }
+  if (txt.length > 15000000) throw { code:'toolarge' };
+  try { return JSON.parse(txt); } catch(e){ throw { code:'notshop' }; }
+}
+async function runShopLookup(raw){
+  const sh = sheet, origin = shopOrigin(raw), handle = shopHandle(raw);
+  if (!origin){ sh.phase = 'ask'; sh.input = String(raw || ''); sh.err = "That doesn't look like a website address. Try something like example-roasters.com."; renderSheet(); return; }
+  const ctl = new AbortController(); sh.ctl = ctl; sh.phase = 'working'; sh.site = origin; sh.err = ''; sh.input = String(raw || ''); renderSheet();
+  let timer = null, timedOut = false;
+  const arm = () => { clearTimeout(timer); timer = setTimeout(() => { timedOut = true; ctl.abort(); }, SHOP_TIMEOUT_MS); };
+  try {
+    let found = [], seen = 0;
+    if (handle){
+      arm(); const j = await shopFetchJson(shopProductJsonUrl(origin, handle), ctl.signal); clearTimeout(timer);
+      if (!j || !j.product || typeof j.product !== 'object') throw { code:'notshop' };
+      found = [{ product:j.product, full:true, score:1 }]; seen = 1;
+    } else {
+      let all = [];
+      for (let page = 1; page <= SHOP_PAGES; page++){
+        arm(); const j = await shopFetchJson(shopCatalogUrl(origin, page), ctl.signal); clearTimeout(timer);
+        if (!j || !Array.isArray(j.products)) throw { code:'notshop' };
+        all = all.concat(j.products); found = shopMatch(all, sh.name);
+        if (j.products.length < SHOP_PAGE_SIZE || found.some(x => x.full)) break;
+      }
+      seen = all.length;
+    }
+    if (ctl.signal.aborted || sheet !== sh) return;
+    sh.seen = seen;
+    if (!found.length){ sh.phase = 'none'; renderSheet(); return; }
+    rememberShop(sh);
+    if (found.length === 1 && found[0].full){ showShopReview(sh, found[0].product); return; }
+    sh.found = found; sh.phase = 'pick'; renderSheet();
+  } catch(e){
+    clearTimeout(timer);
+    if (ctl.signal.aborted && !timedOut) return;   /* the person cancelled */
+    if (sheet !== sh) return;
+    sh.phase = 'error'; sh.err = timedOut ? 'timeout' : ((e && e.code) || 'blocked'); sh.status = e && e.status; renderSheet();
+  }
+}
+/* Remember which shop sells this roaster's coffee, in this browser only, so the next lookup for the same roaster needs no typing. */
+function rememberShop(sh){
+  if (!sh.roaster || !sh.site) return;
+  const sites = app.prefs.roasterSites = app.prefs.roasterSites || {}, key = shopKey(sh.roaster).slice(0, 60); if (!key) return;
+  delete sites[key]; sites[key] = sh.site;
+  Object.keys(sites).slice(0, Math.max(0, Object.keys(sites).length - 60)).forEach(k => delete sites[k]);
+  scheduleDraft();
+}
+function showShopReview(sh, product){
+  const d = shopDraft(product, sh.site), src = { host:shopHostOf(sh.site), title:d.title, url:d.url };
+  if (!d.res.any){ sheet = Object.assign(sh, { phase:'empty', src }); renderSheet(); return; }
+  sheet = { step:'scan', phase:'review', mode:'shop', res:d.res, src, files:[], ctl:null, err:'' }; renderSheet();
+}
+function shopErrorCopy(code, status){
+  const inside = (typeof inClaude === 'function' && inClaude()) ? ' Inside Claude this view may block outside websites; the public NeuroBrew page can read them.' : '';
+  const map = {
+    blocked:['Could not read that website', "Your browser couldn't read it. The shop may not allow other sites to read its listings, it may not be a Shopify shop, or this view may block outside websites." + inside + ' You can type the details in by hand.'],
+    offline:['You look to be offline', 'Connect to the internet and try again.'],
+    notshop:["That doesn't look like a Shopify shop", "NeuroBrew reads shops built on Shopify. That website answered, but not in that form. Check the address, or paste the link to the coffee's own page."],
+    http:['The shop said no', 'The website answered with an error' + (status ? ' (code ' + status + ')' : '') + '. Try again later, or paste the link to the coffee\'s own page.'],
+    timeout:['That took too long', 'The website did not answer in ' + (SHOP_TIMEOUT_MS / 1000) + ' seconds. Try again, or check the address.'],
+    toolarge:['That shop list is too large', "Paste the link to the coffee's own page instead."]
+  };
+  return map[code] || ['Something went wrong', 'The lookup did not work. You can type the details in by hand.'];
+}
+function renderShopSheet(title){
+  const sh = sheet, host = shopHostOf(sh.site), close = h('button', { type:'button', class:'btn', text:'Close', onclick:closeSheet });
+  const again = (label, primary) => h('button', { type:'button', class:'btn' + (primary ? ' primary' : ''), text:label, onclick:() => { sh.phase = 'ask'; sh.err = ''; sh.found = null; renderSheet(); } });
+  if (sh.phase === 'ask'){
+    title.textContent = 'Look up ' + (sh.name || 'this coffee');
+    const inp = h('input', { type:'text', class:'plain', id:'shopSite', 'aria-label':"Roaster's website, or a link to the coffee's page", placeholder:'example-roasters.com', inputmode:'url', autocapitalize:'none', autocomplete:'off', spellcheck:'false', value:sh.input || sh.site || '' });
+    const err = h('p', { class:'err', role:'alert', style:'margin:6px 0 0' }, sh.err || '');
+    const go2 = () => runShopLookup(inp.value);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); go2(); } });
+    sheetEl.append(h('p', { class:'fine', style:'margin-top:0', text:"Your browser reads the roaster's own online shop, straight from their website. Nothing goes through NeuroBrew, and nothing about your cuppings is sent. It only works with shops built on Shopify." }),
+      h('label', { for:'shopSite', style:'display:block;margin:10px 0 4px;font-weight:600', text:(sh.roaster ? sh.roaster + "'s" : "The roaster's") + ' website, or a link to the coffee\'s page' }), inp,
+      h('p', { class:'fine', style:'margin:6px 0 0', text:"A link to the coffee's own page is the most exact. NeuroBrew remembers the website for this roaster in this browser, so you only type it once." }), err,
+      h('div', { class:'row', style:'margin-top:12px' }, h('button', { type:'button', class:'btn', text:'Cancel', onclick:closeSheet }), h('button', { type:'button', class:'btn primary', id:'shopGo', text:'Look it up', onclick:go2 })));
+    return;
+  }
+  if (sh.phase === 'working'){
+    title.textContent = 'Looking on ' + host + '...';
+    sheetEl.append(h('p', { text:"Your browser is reading the shop's public listing. This takes a few seconds." }), h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:'Cancel', onclick:closeSheet })));
+    return;
+  }
+  if (sh.phase === 'pick'){
+    title.textContent = 'Which one is it?';
+    sheetEl.append(h('p', { class:'fine', style:'margin-top:0', text:'These listings on ' + host + ' match "' + sh.name + '". Pick yours.' }),
+      h('div', { style:'display:flex;flex-direction:column;gap:8px' }, sh.found.map(f => h('button', { type:'button', class:'btn block waybtn shoppick', onclick:() => showShopReview(sh, f.product) },
+        h('span', { class:'wb-t', text:String(f.product.title).slice(0, 120) }), h('span', { class:'wb-s', text:f.full ? 'Has every word of the name' : 'A close match, not every word' })))),
+      h('div', { class:'row', style:'margin-top:12px' }, again('None of these: try another website'), close));
+    return;
+  }
+  if (sh.phase === 'none'){
+    title.textContent = "Couldn't find it";
+    sheetEl.append(h('p', { text:'NeuroBrew looked through ' + sh.seen + ' product' + (sh.seen === 1 ? '' : 's') + ' on ' + host + ' and none match "' + sh.name + '". It may be sold out, listed under another name, or this may not be the roaster\'s own website.' }),
+      h('p', { class:'fine', text:"If you can open the coffee's page, copy its link and paste it instead of the website. That skips the searching." }), h('div', { class:'row' }, close, again('Try another website or link', true)));
+    return;
+  }
+  if (sh.phase === 'empty'){
+    title.textContent = 'Nothing to fill in';
+    sheetEl.append(h('p', { text:'Found "' + sh.src.title + '" on ' + sh.src.host + ', but its listing does not say the origin, process, elevation, roast or tasting notes in a way NeuroBrew can read.' }),
+      sh.src.url ? h('p', null, h('a', { href:sh.src.url, target:'_blank', rel:'noopener noreferrer', text:'Open the listing' })) : null,
+      h('p', { class:'fine', text:'You can copy the text from the listing and use Paste label text, or type the details in by hand.' }), h('div', { class:'row' }, close, again('Try another website or link', true)));
+    return;
+  }
+  const cp = shopErrorCopy(sh.err, sh.status);
+  title.textContent = cp[0];
+  sheetEl.append(h('p', { text:cp[1] }), h('div', { class:'row' }, close, again(sh.err === 'timeout' || sh.err === 'offline' || sh.err === 'http' ? 'Try again' : 'Try another website or link', true)), h('p', { class:'fine', text:'Reason code: ' + sh.err }));
+}
+/* the bottom of the menu: which release this is and when it was made */
+function menuFoot(){
+  const rel = releaseLatest();
+  return h('div', { class:'menufoot' }, h('p', { class:'rel', id:'releaseLine' }, h('b', { text:'Release ' + rel.release }), ' · ' + releaseWhen(rel).text),
+    h('button', { type:'button', class:'btn link', id:'whatsNewBtn', text:'What changed in this release', onclick:() => { sheet = { step:'releases', back:'menu' }; renderSheet(); } }));
+}
 function renderSheetBody(){
   sheetEl.textContent = '';
+  overlay.classList.toggle('menupanel', sheet.step === 'menu');   /* on a wide screen the menu opens under the Menu button, not from the bottom */
   const title = h('h3', { id:'sheetTitle' }); sheetEl.append(title);
   const closeRow = label => h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:label || 'Cancel', onclick:closeSheet }));
+  if (sheet.step === 'shop'){ renderShopSheet(title); return; }   /* Look up this coffee (61-shop-lookup.js) */
   if (sheet.step === 'menu'){
     title.textContent = 'Menu';
     const mi = (t, sub, fn) => h('button', { type:'button', class:'menuitem', onclick:fn }, h('span', { class:'mi-t', text:t }), sub ? h('span', { class:'mi-s', text:sub }) : null);
@@ -6655,10 +7060,12 @@ function renderSheetBody(){
     rows.append(lab('Learn'));
     rows.append(mi('Understanding coffee', 'Your tendencies, how to shop, and what bag details mean', () => { closeSheet(); goLearn(); }));
     rows.append(mi('Glossary', 'What every term means', () => { sheet = { step:'glossary', q:'', group:'All' }; renderSheet(); }));
-    rows.append(mi('How NeuroBrew works', 'A short tour of the six steps', () => { sheet = { step:'help' }; renderSheet(); }));
+    rows.append(lab('Help'));
+    rows.append(mi('How to use NeuroBrew', 'A guide to each step and feature', () => { closeSheet(); goGuide(); }));
     rows.append(mi('Experience level', LEVELS.find(l => l.v === level()).label + ': ' + LEVELS.find(l => l.v === level()).text, () => { sheet = { step:'level' }; renderSheet(); }));
     rows.append(lab('About'));
-    rows.append(mi('About and sources', 'Where the guidance comes from, and its limits', () => { sheet = { step:'about' }; renderSheet(); }));
+    rows.append(mi('About NeuroBrew', 'What it is, where the guidance comes from, and its limits', () => { sheet = { step:'about' }; renderSheet(); }));
+    rows.append(mi('Release notes', 'What changed, and when', () => { sheet = { step:'releases', back:'menu' }; renderSheet(); }));
     rows.append(lab('Your data'));
     rows.append(mi('Back up my history as text', 'A code you can paste into Notes or an email', () => {
       if (!history || !history.ex || !history.ex.count){ sheet = { step:'noBackup' }; renderSheet(); return; }
@@ -6668,7 +7075,16 @@ function renderSheetBody(){
     if (storageFailed) rows.append(h('p', { class:'fine warnline', role:'status', style:'margin:0 0 6px', text:'This browser could not keep a copy of your work (its storage may be full or blocked). Your downloaded files are not affected. Save your history file now to be safe.' }));
     rows.append(twoTap('Clear everything on this device', histAdded > 0 ? 'Tap again. ' + histAdded + ' unsaved will be lost' : 'Tap again to clear everything', () => { closeSheet(); clearEverything(); }, 'danger'));
     sheetEl.append(rows, h('p', { class:'fine', style:'margin:8px 0 0', text:'Clearing everything removes your saved history copy, in-progress work, and choices from this browser. Files you downloaded are not touched.' }),
-      h('div', { class:'row', style:'margin-top:12px' }, h('button', { type:'button', class:'btn primary', text:'Close', onclick:closeSheet })));
+      h('div', { class:'row', style:'margin-top:12px' }, h('button', { type:'button', class:'btn primary', text:'Close', onclick:closeSheet })),
+      menuFoot());
+    return;
+  }
+  if (sheet.step === 'releases'){
+    title.textContent = 'Release notes';
+    sheetEl.append(h('p', { class:'fine', style:'margin-top:0', text:'Each release is one tested build. Newest first. Times are shown in your own time zone. Earlier builds were not recorded here.' }));
+    RELEASES.forEach(r => sheetEl.append(h('div', { class:'howto relnote' }, h('div', { class:'howto-t', text:'Release ' + r.release + ': ' + r.title }), h('p', { class:'fine', style:'margin:0 0 4px', text:releaseWhen(r).text }),
+      h('ul', { class:'prep', style:'margin:4px 0 0' }, r.notes.map(t => h('li', { text:t }))))));
+    sheetEl.append(h('div', { class:'row', style:'margin-top:14px' }, h('button', { type:'button', class:'btn', text:'Back to the menu', onclick:openMenu }), h('button', { type:'button', class:'btn primary', text:'Close', onclick:closeSheet })));
     return;
   }
   if (sheet.step === 'glossary'){
@@ -6755,11 +7171,14 @@ function renderSheetBody(){
   }
   if (sheet.step === 'about'){
     title.textContent = 'About NeuroBrew';
-    const ul = items => h('ul', { class:'prep', style:'margin-top:4px' }, items.map(t => h('li', { text:t })));
-    sheetEl.append(h('p', { class:'serif', style:'margin:0 0 6px;font-size:17px', text:'NeuroBrew was created by Matt Shaffer. It helps you brew a better cup, and understand why it tastes the way it does.' }),
+    const ul = items => h('ul', { class:'prep', style:'margin-top:4px' }, items.map(t => h('li', { text:t }))), rel = releaseLatest();
+    sheetEl.append(h('p', { class:'serif', style:'margin:0 0 6px;font-size:17px', text:ABOUT_INTRO[0] }),
+      ...ABOUT_INTRO.slice(1).map(t => h('p', { class:'serif', style:'margin:6px 0 0;font-size:16.5px', text:t })),
+      h('div', { class:'cardlabel', text:'What it is not' }), ul(ABOUT_NOT),
       h('div', { class:'cardlabel', text:'Where the guidance comes from' }), ul(ABOUT_SOURCES),
       h('div', { class:'cardlabel', text:'Please keep in mind' }), ul(ABOUT_LIMITS),
-      h('p', { class:'fine', text:'Updated October 2026.' }),
+      h('p', { class:'fine', text:ABOUT_CREDIT }),
+      h('p', { class:'fine', id:'aboutRelease', text:'Release ' + rel.release + ', ' + releaseWhen(rel).text + '.' }),
       h('div', { class:'row', style:'margin-top:12px' }, h('button', { type:'button', class:'btn', text:'Back to the menu', onclick:openMenu }), h('button', { type:'button', class:'btn primary', text:'Close', onclick:closeSheet })));
     return;
   }
@@ -6849,15 +7268,6 @@ function renderSheetBody(){
     sheetEl.append(h('div', { class:'row', style:'margin-top:12px' }, h('button', { type:'button', class:'btn', text:'Back to the menu', onclick:openMenu }), h('button', { type:'button', class:'btn primary', text:'Close', onclick:closeSheet })));
     return;
   }
-  if (sheet.step === 'help'){
-    title.textContent = 'How NeuroBrew works';
-    sheetEl.append(h('p', { class:'fine', style:'margin-top:0', text:'NeuroBrew helps you brew a better cup and understand why it tastes the way it does.' }));
-    HOWTO.forEach(x => sheetEl.append(h('div', { class:'howto' }, h('div', { class:'howto-t', text:x[0] }), h('p', { class:'serif', text:x[1] }))));
-    sheetEl.append(h('div', { class:'howto' }, h('div', { class:'howto-t', text:'About the scores' }), h('p', { class:'serif', text:SCORE_GUIDE }), h('p', { class:'serif', text:'A single-cup total is a home score for comparing your own cups, not an official grade. Recipes are starting points, and the guides describe general tendencies.' })),
-      h('div', { class:'row', style:'margin-top:14px' }, h('button', { type:'button', class:'btn', text:'Open the glossary', onclick:openGlossary }), h('button', { type:'button', class:'btn', text:'Back to the menu', onclick:openMenu })),
-      h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn primary', text:'Close', onclick:closeSheet })));
-    return;
-  }
   if (sheet.step === 'scanText'){
     title.textContent = 'Paste the label text';
     const ta = h('textarea', { placeholder:'Paste or type what the bag says', 'aria-label':'Label text', style:'min-height:150px;width:100%;font-size:16px;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--bg)' });
@@ -6920,8 +7330,10 @@ function renderSheetBody(){
           h('button', { type:'button', class:'btn primary', text:'Choose another photo', onclick:() => { closeSheet(); if (scanInputEl) scanInputEl.click(); } })));
       return;
     }
-    title.textContent = 'Here is what Claude read';
-    sheetEl.append(h('p', { class:'fine', style:'margin-top:0', text:'Check each line against the bag. Untick anything wrong, or fix it. Nothing fills in until you tap the button.' }));
+    const shop = sh.mode === 'shop';
+    title.textContent = shop ? 'Found on ' + sh.src.host : 'Here is what Claude read';
+    sheetEl.append(h('p', { class:'fine', style:'margin-top:0', text:shop ? 'Check each line against the bag or the listing. Untick anything wrong, or fix it. Nothing fills in until you tap the button.' : 'Check each line against the bag. Untick anything wrong, or fix it. Nothing fills in until you tap the button.' }));
+    if (shop) sheetEl.append(h('p', { style:'margin:0 0 8px' }, h('b', { text:sh.src.title }), sh.src.url ? ' ' : '', sh.src.url ? h('a', { href:sh.src.url, target:'_blank', rel:'noopener noreferrer', text:'Open the listing' }) : null));
     const rows = res.items.map(it => {
       let ctl, get;
       if (it.key === 'process' || it.key === 'roast' || it.key === 'density' || it.key === 'decaf'){
@@ -6931,19 +7343,21 @@ function renderSheetBody(){
       } else if (it.key === 'roast_date'){ ctl = h('input', { type:'date', class:'plain', 'aria-label':it.label, value:it.value }); get = () => ctl.value; }
       else if (it.key === 'bag_notes'){ ctl = h('textarea', { class:'plain', 'aria-label':it.label, style:'min-height:60px' }); ctl.value = it.value; get = () => ctl.value.trim(); }
       else { ctl = h('input', { type:'text', class:'plain', 'aria-label':it.label, value:it.value }); get = () => ctl.value.trim(); }
-      const cb = h('input', { type:'checkbox', 'aria-label':'Use ' + it.label }); cb.checked = !!it.value;
-      const printed = (it.key === 'process' || it.key === 'roast' || it.key === 'density') ? h('div', { class:'fine', style:'margin-top:4px', text:'Printed: "' + it.raw + '"' + (it.unmatched ? (it.hint ? '. ' + it.hint + ' Pick the one that fits, or leave it unticked.' : '. Could not match it, so pick one or leave it unticked.') : (it.hint ? '. ' + it.hint : '')) }) : null;
-      sheetEl.append(h('div', { class:'rvrow' }, cb, h('div', null, h('div', { style:'font-size:13px;color:var(--muted);margin-bottom:3px', text:it.label }), ctl, printed)));
+      const cur = shop && it.key !== 'name' && it.key !== 'roaster' ? String(app.coffee[it.key] || '').trim() : '', differs = !!cur && !!it.value && cur !== it.value;   /* a shop listing never overwrites what you already entered unless you tick it */
+      const cb = h('input', { type:'checkbox', 'aria-label':'Use ' + it.label }); cb.checked = !!it.value && !differs;
+      const yours = differs ? h('div', { class:'fine', style:'margin-top:4px', text:'Your form has: ' + (it.key === 'process' ? labelOf(PROCESSES, cur) : it.key === 'roast' ? labelOf(ROASTS, cur) : it.key === 'density' ? labelOf(DENSITIES, cur) : cur) + '. Tick to replace it.' }) : null;
+      const printed = (it.key === 'process' || it.key === 'roast' || it.key === 'density') ? h('div', { class:'fine', style:'margin-top:4px', text:(shop ? 'Found: "' : 'Printed: "') + it.raw + '"' + (it.unmatched ? (it.hint ? '. ' + it.hint + ' Pick the one that fits, or leave it unticked.' : '. Could not match it, so pick one or leave it unticked.') : (it.hint ? '. ' + it.hint : '')) }) : null;
+      sheetEl.append(h('div', { class:'rvrow' }, cb, h('div', null, h('div', { style:'font-size:13px;color:var(--muted);margin-bottom:3px', text:it.label }), ctl, printed, yours)));
       return { key:it.key, label:it.label, raw:it.raw, cb, get };
     });
-    if (res.unclear.length) sheetEl.append(h('p', { class:'fine', text:'Could not read: ' + res.unclear.join(', ') + '.' }));
+    if (res.unclear.length) sheetEl.append(h('p', { class:'fine', text:(shop ? 'Not stated in the listing: ' : 'Could not read: ') + res.unclear.join(', ') + '.' }));
     if (res.note) sheetEl.append(h('p', { class:'fine', text:'Note: ' + res.note }));
-    sheetEl.append(h('p', { class:'fine', text:sh.mode === 'chat' ? 'Read from the reply you pasted.' : 'Sent to Claude only to read the label, under your Claude account\'s usual terms and settings. NeuroBrew does not store it.' }),
+    sheetEl.append(h('p', { class:'fine', text:shop ? "Read by your browser from the roaster's own website. Nothing went through NeuroBrew, and nothing about your cuppings was sent. It is the roaster's wording, so check it against the bag." : sh.mode === 'chat' ? 'Read from the reply you pasted.' : 'Sent to Claude only to read the label, under your Claude account\'s usual terms and settings. NeuroBrew does not store it.' }),
       h('div', { class:'row', style:'margin-top:10px' }, h('button', { type:'button', class:'btn', text:'Cancel', onclick:closeSheet }),
         h('button', { type:'button', class:'btn primary', text:'Fill in my form', onclick:() => {
           const applied = [];
           rows.forEach(r => { const v = r.get(); if (r.cb.checked && v){ app.coffee[r.key] = v; if (r.key === 'density' && r.raw) app.coffee.elevText = r.raw; applied.push(r.label.toLowerCase()); } });
-          app.coffee.scanned = applied.join(', ');
+          app.coffee.scanned = applied.join(', '); app.coffee.scannedFrom = applied.length && shop ? sh.src.host : '';
           closeSheet(); render();
         } })));
     return;
@@ -7648,7 +8062,6 @@ function logoSvg(cls, viewBox, label){
 function brandHero(){
   const box = h('div', { class:'logobox' });
   box.innerHTML = logoSvg('logo', '0 0 1408 768', 'NeuroBrew. Brew it. Cup it. Perfect it.');
-  box.append(h('button', { type:'button', class:'btn small startmenu', 'aria-label':'Menu', text:'Menu', onclick:openMenu }));
   return h('div', { class:'brand brandwrap' }, box);
 }
 function signinNotice(){
@@ -7868,9 +8281,9 @@ function screenDetail(m){
     h('button', { type:'button', class:'btn danger block', text:'Delete this cupping', onclick:() => openDelete(new Set([o._i]), true) })));
 }
 
-const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, recipe:screenRecipe, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn };
+const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, recipe:screenRecipe, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, guide:screenGuide };
 
-$('homeBtn').innerHTML = '<span class="ml">Menu</span>' + logoSvg('miniicon', '120 15 530 745', '');
+$('homeBtn').innerHTML = '<svg class="burger" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span class="ml">Menu</span>';
 $('homeBtn').addEventListener('click', openMenu);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushDraft(); else if (document.visibilityState === 'visible') holdScreen(); });
 window.addEventListener('pagehide', flushDraft);
