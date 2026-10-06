@@ -577,6 +577,8 @@ details.help summary{ color:var(--accent); }
 /* links inside a sheet (the listing found by Look up this coffee) and the choices it offers */
 .sheet a{ color:var(--leaf); font-weight:600; text-underline-offset:2px; }
 .sheet .shoppick{ text-align:left; }
+.setuphead{ margin:18px 0 6px; font-size:16px; }
+.setuppair{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 @media (max-width:380px){ .presets{ flex-wrap:wrap; } .presets .choice{ flex:1 1 44%; padding:9px 6px; } }
 #techCard .choice:not([aria-pressed="true"]) small{ display:none; }
 .stepcard .cardlabel{ margin:12px 0 6px; }
@@ -693,7 +695,8 @@ const COLUMNS = [
   'note_fragrance_aroma','note_flavor','note_aftertaste','note_acidity','note_body','note_balance','note_overall',
   'defect_notes','general_notes','blend','details_guessed','water_alkalinity_mgl','water_hardness_mgl',
   'my_rating_stars',
-  'dial_symptom','dial_change','dial_from_id','dial_locked'
+  'dial_symptom','dial_change','dial_from_id','dial_locked',
+  'setup_json'
 ];
 const TEXT_COLUMNS = new Set([
   'roaster','coffee_name','origin','process','roast_level','elevation_class','varietal','bag_notes',
@@ -701,6 +704,8 @@ const TEXT_COLUMNS = new Set([
   'note_fragrance_aroma','note_flavor','note_aftertaste','note_acidity','note_body','note_balance','note_overall',
   'defect_notes','general_notes'
 ]);
+/* The person's setup (units, level, gear) rides in this one column, on the newest cupping only. A file or a build that does not know it just keeps the column and ignores it. */
+const SETUP_COLUMN = 'setup_json';
 const REQUIRED_COLUMNS = ['schema_version','id','coffee_name','total_score'];
 /* "Your rating": how much the person liked a coffee, in half-star steps from 0.5 to 5. It is kept apart from the cupping score, and anything that is not exactly a half-star step (text, a formula, a sign, an exponent, a number out of range) counts as not rated. */
 function validStars(v){
@@ -755,9 +760,17 @@ function mergeCSV(existing, newRow){
   const header = existing.header.slice();
   COLUMNS.forEach(c => { if (!header.includes(c)) header.push(c); });
   const lines = [header];
-  existing.rows.forEach(r => { const rr = r.slice(); while (rr.length < header.length) rr.push(''); lines.push(rr); });
+  const si = header.indexOf(SETUP_COLUMN), fresh = !!(newRow[SETUP_COLUMN] || '');   /* the setup lives on the newest cupping only, so a new one takes it over from the older ones */
+  existing.rows.forEach(r => { const rr = r.slice(); while (rr.length < header.length) rr.push(''); if (fresh) rr[si] = ''; lines.push(rr); });
   lines.push(header.map(c => newRow[c] !== undefined ? newRow[c] : ''));
   return toCSV(lines);
+}
+/* The same, for a file that only changes (a delete, a correction, a copy of the file): put the setup on the last cupping and clear it from the rest. No setup text, or no cuppings, changes nothing. */
+function stampSetupColumn(header, rows, json){
+  json = String(json || ''); if (!json || !rows.length) return { header, rows };
+  const hd = header.slice(); if (!hd.includes(SETUP_COLUMN)) hd.push(SETUP_COLUMN);
+  const si = hd.indexOf(SETUP_COLUMN);
+  return { header:hd, rows:rows.map((r, i) => { const rr = r.slice(); while (rr.length < hd.length) rr.push(''); rr[si] = i === rows.length - 1 ? json : ''; return rr; }) };
 }
 function newFileCSV(newRow){
   return toCSV([COLUMNS, COLUMNS.map(c => newRow[c] !== undefined ? newRow[c] : '')]);
@@ -2966,6 +2979,7 @@ const ABOUT_LIMITS = [
   'Le Nez du Café is a trademark of Éditions Jean Lenoir. NeuroBrew is not affiliated with or endorsed by them, the SCA, World Coffee Research, or any brand named here.',
   'Where NeuroBrew uses its own rule of thumb, it says so. These include the one point a total must move before a try counts as better or worse, a bag a week older that can change the taste, three coffees that must agree before a starting point is offered, and five coffees before your tendencies are shown. They are sensible limits, not published standards.',
   "Looking a coffee up reads the roaster's own shop listing, in the roaster's words. It works only with shops built on Shopify. NeuroBrew fills in only what the listing states, you check every line first, and it remembers each roaster's shop address in this browser. Your browser asks the roaster's website directly, so that website sees the visit, as it would if you opened the page yourself. Nothing about your cuppings is sent.",
+  'Saving over a file you choose works only in Chrome and Edge, and your browser asks your permission again after it has been closed. Other browsers download a copy. Your setup is stored in one extra column of the cupping file, which older copies of NeuroBrew ignore.',
   'Your data stays in your browser until you save a file.'
 ];
 
@@ -3659,7 +3673,7 @@ const GUIDE_SECTIONS = [
   { id:'cup', title:'5. Cup: taste and score it', lead:'Smell, sip hot, sip as it cools.',
     paras:['Score each card with the + and − buttons, from 6 (Good) up to 9.75, the top of the SCA scale. Press and hold to move faster. Tap a card\'s name to open it and describe what you notice. The words you pick for acidity and body set how strong each feels, and some words can suggest a score. You can change either at any time. Tap All cards to see everything at once.',
       'Choose Single cup for one brewed cup, which gives a home score out of 100 for comparing your own cups, or Five cups (SCA) for the official method. These two scores are never compared with each other. You can add a star rating of your own, and, if you have a refractometer, your TDS to see the extraction.',
-      'When you save, you choose whether you already have a cupping file. Saving downloads a file called cuppings.csv with your whole history. If you are cupping several coffees in one sitting, keep each one in this browser and save one file at the end.'] },
+      'When you save, you choose whether you already have a cupping file. Saving downloads a file called cuppings.csv with your whole history. If you are cupping several coffees in one sitting, keep each one in this browser and save one file at the end. After a save, the page is cleared and you are back at the start, ready for the next coffee. To dial in the coffee you just saved, tap Dial in the next brew on the Saved sheet, or open it later from Your cuppings.'] },
   { id:'dial', title:'6. Dial in: make the next cup better', lead:'Your scores point to one change.',
     paras:['After a cup, Dial it in looks at your scores and the words you picked and suggests one change: grind, ratio, water temperature or pour style. Say what you tasted if it chose differently from you. Then brew again with that one change.',
       'It keeps every try of a coffee on a method in order. Each try shows what changed and whether the total went up or down. A change counts as helped or hurt only when the total moves by at least a point, which is NeuroBrew\'s own rule of thumb, because one cup scored by one person is noisy. Brew the same recipe twice and it measures your own variation, and uses that instead if it is bigger.',
@@ -3669,12 +3683,14 @@ const GUIDE_SECTIONS = [
   { id:'history', title:'Your cuppings, files and backups', lead:'Everything stays with you.',
     paras:['Everything stays in your browser until you save a file. Your history is the cuppings.csv file you download: upload it when you come back and each new cupping is added to it. Replace your old file with the newest copy, because it holds everything.',
       'Your cuppings list lets you search, sort, open a cupping, fix a mistake in a coffee\'s name or details (the scores never change), brew or cup that coffee again, dial it in, and delete cuppings you do not want.',
+      'In Chrome and Edge you can save into a file of your own choosing. Save as opens your computer\'s Save box, where you can change the name or pick the file to replace. NeuroBrew remembers that file in this browser, so the next cupping offers to be added straight into it, and your browser asks your permission again after it has been closed. Forget my save file in the menu makes it stop remembering; the file itself is never touched. Other browsers download a fresh copy each time.',
       'If your view cannot save files, use Back up my history as text in the menu. It makes a code you can paste into Notes or an email and paste back to restore. Clear everything on this device removes the copy in this browser, but not files you downloaded.'] },
   { id:'learn', title:'Understanding coffee: your tendencies', lead:'What you like, and how to shop for it.',
     paras:['After you have cupped five different coffees, NeuroBrew can show which details your higher-scored coffees share (roast, process, elevation, origin, varietal), how sure that is, and what to look for on a bag. Cups of the same coffee are averaged first, so brewing one coffee five times does not count as five coffees.',
       'This describes what you scored, not what is true of the coffee. Taste is personal, and a handful of coffees is a small sample. The same screen explains what every detail on a bag means, and compares two things side by side.'] },
   { id:'helpers', title:'Levels, underlined words and the glossary', lead:'Ways to get more or less explanation.',
     paras:['New to brewing keeps things short, Comfortable explains the reasons, and Expert shows every number. Change it any time from the start screen or the menu.',
+      'My setup in the menu keeps your units, level, timer sound, cup card view and gear (your grinder, water and filter) in one place. New brews start with your gear filled in. The setup is saved inside your cupping file each time you save, so uploading the file on another device brings it back.',
       'Words with a dotted underline are tappable and give a short definition. The Glossary in the menu lists every term and can be searched.'] },
   { id:'trust', title:'What to trust', lead:'Starting points, not rules.',
     paras:['Recipes are starting points. The roast adjustments to temperature and grind come from brewer experience, not lab results, and the app says so wherever they appear. A single-cup total is a home score for comparing your own cups, not an official grade.',
@@ -3708,6 +3724,83 @@ function originGuess(c){
     out.process = { value:f.proc, text:lab + ' process, guessed from the origin: ' + o.name + ' coffee is ' + f.how + ' ' + (f.alt ? f.proc + ' or ' + f.alt + ' processed.' : f.proc + '.'), short:'process ' + lab.toLowerCase() + ' (from the origin)' };
   }
   return out.density || out.process ? out : null;
+}
+/* The setup is the person's own choices that should follow them from one device to another: units, experience level, timer sound and coaching, the cup card view, the gear they brew with,
+   the grinder results they have kept and the roaster websites NeuroBrew remembers. It is written into the saved file (see SETUP_COLUMN) and read back from it. A file is data from outside,
+   so every value is checked against the lists the app itself uses, and anything unknown is dropped, never trusted. `ctx` carries the two lists that live in the screens:
+   { waterTypes:[values], grinderTypes:[values] }. */
+const SETUP_MAX_CHARS = 20000;
+function setupDefaults(){
+  return { level:'', waterUnit:'g', coffeeUnit:'g', sound:'off', coach:'guide', cupView:'', gear:{ grinderKey:'', grinderName:'', grinderType:'', waterType:'', waterAlk:'', waterGH:'', filter:'' }, calib:{}, roasterSites:{} };
+}
+function setupClean(raw, ctx){
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  ctx = ctx || {}; const d = setupDefaults(), pick = (v, list, dflt) => list.includes(v) ? v : dflt, txt = (v, n) => typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, n) : '';
+  const out = {
+    level:pick(raw.level, LEVELS.map(l => l.v), d.level), waterUnit:pick(raw.waterUnit, WATER_UNITS.map(u => u.v), d.waterUnit), coffeeUnit:pick(raw.coffeeUnit, COFFEE_UNITS.map(u => u.v), d.coffeeUnit),
+    sound:pick(raw.sound, ['off', 'chime', 'voice'], d.sound), coach:pick(raw.coach, ['guide', 'steps'], d.coach), cupView:pick(raw.cupView, ['compact', 'full'], d.cupView), gear:d.gear, calib:calibClean(raw.calib), roasterSites:{}
+  };
+  const g = raw.gear && typeof raw.gear === 'object' && !Array.isArray(raw.gear) ? raw.gear : {}, key = typeof g.grinderKey === 'string' ? g.grinderKey : '';
+  const keyOk = GRINDERS.some(x => x.key === key) || key === 'other' || key === 'unsure';
+  const known = GRINDERS.find(x => x.key === key);
+  out.gear = {
+    grinderKey:keyOk ? key : '', grinderName:known ? known.name : (key === 'unsure' ? 'Not sure' : (key === 'other' ? txt(g.grinderName, 80) : '')),
+    grinderType:keyOk ? pick(g.grinderType, ctx.grinderTypes || [], '') : '', waterType:pick(g.waterType, ctx.waterTypes || [], ''),
+    waterAlk:/^\d{1,4}(\.\d{1,2})?$/.test(txt(g.waterAlk, 8)) ? txt(g.waterAlk, 8) : '', waterGH:/^\d{1,4}(\.\d{1,2})?$/.test(txt(g.waterGH, 8)) ? txt(g.waterGH, 8) : '', filter:txt(g.filter, 80)
+  };
+  if (raw.roasterSites && typeof raw.roasterSites === 'object' && !Array.isArray(raw.roasterSites)){
+    Object.keys(raw.roasterSites).slice(0, 60).forEach(k => { const o = shopOrigin(raw.roasterSites[k]), kk = shopKey(k); if (o && kk) out.roasterSites[kk.slice(0, 60)] = o; });
+  }
+  return out;
+}
+/* the setup as the app keeps it in its preferences (prefs.gear holds the gear defaults) */
+function setupFromPrefs(prefs, ctx){ prefs = prefs || {}; return setupClean({ level:prefs.level, waterUnit:prefs.waterUnit, coffeeUnit:prefs.coffeeUnit, sound:prefs.sound, coach:prefs.coach, cupView:prefs.cupView, gear:prefs.gear, calib:prefs.calib, roasterSites:prefs.roasterSites }, ctx); }
+/* one fixed order of keys, so two equal setups give the same text */
+function setupJson(s){
+  if (!s) return '';
+  const g = s.gear || {}, sites = {}; Object.keys(s.roasterSites || {}).sort().forEach(k => { sites[k] = s.roasterSites[k]; });
+  return JSON.stringify({ v:1, level:s.level, waterUnit:s.waterUnit, coffeeUnit:s.coffeeUnit, sound:s.sound, coach:s.coach, cupView:s.cupView,
+    gear:{ grinderKey:g.grinderKey, grinderName:g.grinderName, grinderType:g.grinderType, waterType:g.waterType, waterAlk:g.waterAlk, waterGH:g.waterGH, filter:g.filter }, calib:s.calib || {}, roasterSites:sites });
+}
+function setupSame(a, b){ return !!a && !!b && setupJson(a) === setupJson(b); }
+function setupIsDefault(s){ return !s || setupSame(s, setupDefaults()); }
+/* The choices a person makes on the My setup page, without the two things the app keeps by itself (grinder results and remembered roaster websites). Those are merged, never asked about. */
+function setupChoicesJson(s){ if (!s) return ''; const o = JSON.parse(setupJson(s)); delete o.calib; delete o.roasterSites; return JSON.stringify(o); }
+function setupSameChoices(a, b){ return !!a && !!b && setupChoicesJson(a) === setupChoicesJson(b); }
+function setupChoicesDefault(s){ return !s || setupChoicesJson(s) === setupChoicesJson(setupDefaults()); }
+/* what the file knows that this browser does not: grinder results and roaster websites it lacks. The browser's own entries always win. Returns { calib, roasterSites }. */
+function setupMergeExtras(mine, theirs){
+  const calib = JSON.parse(JSON.stringify((mine && mine.calib) || {})), sites = Object.assign({}, (mine && mine.roasterSites) || {});
+  const tc = (theirs && theirs.calib) || {}; Object.keys(tc).forEach(g => { calib[g] = calib[g] || {}; Object.keys(tc[g]).forEach(c => { if (!calib[g][c]) calib[g][c] = tc[g][c]; }); });
+  const ts = (theirs && theirs.roasterSites) || {}; Object.keys(ts).forEach(k => { if (!sites[k] && Object.keys(sites).length < 60) sites[k] = ts[k]; });
+  return { calib:calibClean(calib), roasterSites:sites };
+}
+/* the setup stored in a file: the newest cupping that carries one wins; text that is too long, not JSON or not an object gives nothing */
+function setupRead(header, rows, ctx){
+  const si = (header || []).indexOf(SETUP_COLUMN); if (si < 0) return null;
+  for (let i = (rows || []).length - 1; i >= 0; i--){
+    const t = String((rows[i] || [])[si] || '').trim(); if (!t) continue;
+    if (t.length > SETUP_MAX_CHARS) continue;
+    let o; try { o = JSON.parse(t); } catch(e){ continue; }
+    const c = setupClean(o, ctx); if (c) return c;
+  }
+  return null;
+}
+/* plain lines for the screen: what this setup would change */
+function setupSummary(s){
+  if (!s) return [];
+  const lv = LEVELS.find(l => l.v === s.level), wu = WATER_UNITS.find(u => u.v === s.waterUnit), cu = COFFEE_UNITS.find(u => u.v === s.coffeeUnit), g = s.gear || {}, out = [];
+  out.push('Experience level: ' + (lv ? lv.label : 'not chosen yet'));
+  out.push('Units: water in ' + (wu ? wu.label : 'g / mL') + ', coffee in ' + (cu ? cu.label : 'g'));
+  out.push('Timer: ' + ({ off:'sound off', chime:'beep', voice:'voice' }[s.sound] || 'sound off') + ', ' + (s.coach === 'steps' ? 'key steps only' : 'guided'));
+  if (s.cupView) out.push('Cup cards: ' + (s.cupView === 'full' ? 'full' : 'compact'));
+  if (g.grinderName) out.push('Grinder: ' + g.grinderName);
+  if (g.waterType) out.push('Water: ' + g.waterType);
+  if (g.filter) out.push('Filter: ' + g.filter);
+  const n = Object.keys(s.calib || {}).length, w = Object.keys(s.roasterSites || {}).length;
+  if (n) out.push('Grinder results kept for ' + n + (n === 1 ? ' grinder' : ' grinders'));
+  if (w) out.push(w + (w === 1 ? ' roaster website' : ' roaster websites') + ' remembered');
+  return out;
 }
 /* Days off roast: [ready, best through, fading after]. Typical windows from roaster and barista guides, which differ from each other. */
 const FRESH_WINDOWS = {
@@ -4253,6 +4346,27 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 30,
+  "at": "2026-10-06T20:51:34Z",
+  "date": "2026-10-06",
+  "title": "My setup, and save over your own file",
+  "notes": [
+   "New My setup page in the menu: your units, experience level, timer sound, cup card view and gear (grinder, water, filter) in one place. New brews start with your gear filled in.",
+   "Your setup is saved inside your cupping file, so uploading the file on another device brings it back. If a file's setup differs from this browser's, you choose which to use.",
+   "In Chrome and Edge you can save into a file you choose: Save as lets you name it, NeuroBrew remembers it, and the next cupping goes straight into it. A file that changed since you opened it is never written over. Other browsers still download a copy."
+  ]
+ },
+ {
+  "release": 29,
+  "at": "2026-10-06T20:17:07Z",
+  "date": "2026-10-06",
+  "title": "Saving a cupping starts you fresh",
+  "notes": [
+   "When you save a cupping, the whole page now clears and you are back at the start, ready for the next coffee. Nothing is lost: the cupping is in your file or your history.",
+   "The Saved sheet still offers Dial in the next brew for the coffee you just saved, and a link to Your cuppings. Cup this coffee again and Back to this coffee are gone; open Your cuppings to reach them."
+  ]
+ },
+ {
   "release": 28,
   "at": "2026-10-06T19:14:11Z",
   "date": "2026-10-06",
@@ -4641,7 +4755,7 @@ function newCoffee(){
   return { id:newId(), name:'', roaster:'', origin:'', varietal:'', roast:'', process:'', decaf:'', density:'', elevText:'', roast_date:'', bag_notes:'', scanned:'', scannedFrom:'', roastUnsure:'', blend:'', varietalUnsure:'' };
 }
 function newApp(){
-  return { screen:'start', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', sound:'off', coach:'guide', level:'', calib:{}, roasterSites:{} }, adjust:{ grind:0, ratio:0, agit:'' }, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
+  return { screen:'start', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', sound:'off', coach:'guide', level:'', calib:{}, roasterSites:{}, gear:setupDefaults().gear }, adjust:{ grind:0, ratio:0, agit:'' }, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
 }
 function newCup(){
   const scores = {}; ATTRS.forEach(a => scores[a.key] = null);
@@ -4684,6 +4798,7 @@ function loadDraft(){
       if (['guide', 'steps'].includes(src.prefs.coach)) a.prefs.coach = src.prefs.coach;
       if (['new', 'comfortable', 'expert'].includes(src.prefs.level)) a.prefs.level = src.prefs.level;
       a.prefs.calib = calibClean(src.prefs.calib);
+      a.prefs.gear = setupClean({ gear:src.prefs.gear }, setupCtx()).gear;   /* the gear defaults of My setup, checked like a file's */
       if (src.prefs.roasterSites && typeof src.prefs.roasterSites === 'object' && !Array.isArray(src.prefs.roasterSites)){   /* the shop address remembered for each roaster */
         Object.keys(src.prefs.roasterSites).slice(0, 60).forEach(k => { const o = shopOrigin(src.prefs.roasterSites[k]), key = shopKey(k); if (o && key) a.prefs.roasterSites[key.slice(0, 60)] = o; });
       }
@@ -4804,7 +4919,7 @@ function render(){
 }
 function resetAll(){
   const prefs = app.prefs;
-  app = newApp(); app.prefs = prefs; state = newCup(); render();
+  app = newApp(); app.prefs = prefs; applyGearDefaults(); state = newCup(); render();
 }
 
 /* ---------- shared UI builders ---------- */
@@ -5011,7 +5126,7 @@ function twoTap(label, armedLabel, fn, cls){
   return b;
 }
 function clearEverything(){
-  forgetHistory(); histUI = { q:'', sort:'new' };
+  forgetHistory(); forgetPicked(); histUI = { q:'', sort:'new' };
   try { localStorage.removeItem(DRAFT_KEY); } catch(e){}
   app = newApp(); state = newCup(); dialSym = ''; render();
 }
@@ -6787,6 +6902,7 @@ function paintResults(box){
 function buildRow(){
   const s = state, c = calc(), co = app.coffee, b = app.cupBrew, r = {};
   COLUMNS.forEach(k => r[k] = '');
+  r.setup_json = setupJson(setupFromPrefs(app.prefs, setupCtx()));   /* My setup rides with the newest cupping (see the setup column) */
   const days = daysSinceRoast(co.roast_date, new Date());
   r.schema_version = '2'; r.id = s.id; r.coffee_id = co.id; r.saved_at = new Date().toISOString();
   r.cupping_date = s.cupping_date; r.mode = s.mode === 'five' ? 'five_cup' : 'single_cup';
@@ -6836,6 +6952,8 @@ function onSaveClick(){
 function useExisting(ex){
   sheet.error = ''; sheet.existing = ex;
   if (ex.ids.has(state.id)){ sheet.csv = ''; sheet.info = 'This cupping is already in that file. Nothing to add.'; sheet.step = 'confirm'; renderSheet(); return; }
+  const ts = takeFileSetup(ex);   /* a browser still on the defaults takes the file's setup; one that was changed keeps its own, and saves it into the file */
+  sheet.setupNote = ts.how === 'applied' ? 'Your setup came back from this file.' : ts.how === 'ask' ? "Your setup in this browser replaces the one stored in this file." : '';
   sheet.csv = mergeCSV(ex, buildRow());
   sheet.info = 'Found ' + ex.count + ' saved cupping' + (ex.count === 1 ? '' : 's') + '. This one will be added as number ' + (ex.count + 1) + '.';
   sheet.step = 'confirm'; renderSheet();
@@ -7101,6 +7219,8 @@ function renderSheetBody(){
   const title = h('h3', { id:'sheetTitle' }); sheetEl.append(title);
   const closeRow = label => h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:label || 'Cancel', onclick:closeSheet }));
   if (sheet.step === 'shop'){ renderShopSheet(title); return; }   /* Look up this coffee (61-shop-lookup.js) */
+  if (sheet.step === 'setup'){ renderSetupSheet(title); return; }   /* My setup (63-sheet-setup.js) */
+  if (sheet.step === 'setupFound'){ renderSetupFoundSheet(title); return; }
   if (sheet.step === 'menu'){
     title.textContent = 'Menu';
     const mi = (t, sub, fn) => h('button', { type:'button', class:'menuitem', onclick:fn }, h('span', { class:'mi-t', text:t }), sub ? h('span', { class:'mi-s', text:sub }) : null);
@@ -7109,6 +7229,7 @@ function renderSheetBody(){
     rows.append(lab('Your brew'));
     if (app.screen !== 'start') rows.append(mi('Home', 'Back to the first screen', () => { closeSheet(); go('start'); }));
     rows.append(mi('Start a fresh coffee', 'Clears the form, brew, and scores. Keeps your history.', () => { closeSheet(); resetAll(); }));
+    rows.append(mi('My setup', 'Units, level, timer and your gear. Saved in your file.', () => { sheet = { step:'setup' }; renderSheet(); }));
     rows.append(lab('Learn'));
     rows.append(mi('Understanding coffee', 'Your tendencies, how to shop, and what bag details mean', () => { closeSheet(); goLearn(); }));
     rows.append(mi('Glossary', 'What every term means', () => { sheet = { step:'glossary', q:'', group:'All' }; renderSheet(); }));
@@ -7125,6 +7246,7 @@ function renderSheetBody(){
     }));
     rows.append(mi('Restore from a backup code', 'Paste a code you saved earlier', () => { sheet = { step:'histUpload', existing:null, csv:'', error:'', info:'', openBackup:true }; renderSheet(); }));
     if (storageFailed) rows.append(h('p', { class:'fine warnline', role:'status', style:'margin:0 0 6px', text:'This browser could not keep a copy of your work (its storage may be full or blocked). Your downloaded files are not affected. Save your history file now to be safe.' }));
+    if (pickedFile) rows.append(twoTap('Forget my save file (' + pickedFile.name + ')', 'Tap again. The file itself is not touched', () => { forgetPicked().then(() => { if (sheet.step === 'menu') renderSheet(); }); }));
     rows.append(twoTap('Clear everything on this device', histAdded > 0 ? 'Tap again. ' + histAdded + ' unsaved will be lost' : 'Tap again to clear everything', () => { closeSheet(); clearEverything(); }, 'danger'));
     sheetEl.append(rows, h('p', { class:'fine', style:'margin:8px 0 0', text:'Clearing everything removes your saved history copy, in-progress work, and choices from this browser. Files you downloaded are not touched.' }),
       h('div', { class:'row', style:'margin-top:12px' }, h('button', { type:'button', class:'btn primary', text:'Close', onclick:closeSheet })),
@@ -7437,7 +7559,11 @@ function renderSheetBody(){
     function load(text){
       const ex = readExisting(text);
       if (ex.error){ sheet.error = ex.error; renderSheet(); return; }
-      setHistory(ex, text); closeSheet(); go('history');
+      setHistory(ex, text);
+      const ts = takeFileSetup(ex);
+      if (ts.how === 'ask'){ sheet = { step:'setupFound', setup:ts.setup, then:'history' }; renderSheet(); return; }
+      if (ts.how === 'applied') setupCameBack = setupSummary(ts.setup);
+      closeSheet(); go('history');
     }
     file.addEventListener('change', async () => {
       const f = file.files && file.files[0]; if (!f) return;
@@ -7457,6 +7583,7 @@ function renderSheetBody(){
   if (sheet.step === 'ask'){
     title.textContent = 'Do you have a cupping file already?';
     sheetEl.append(h('p', { text:'If you do, upload it and this cupping is added to your history. If not, a new file is created.' }),
+      canPickFiles() ? h('div', { style:'margin:0 0 10px' }, pickAskRows(), sheet.error ? h('p', { class:'err', role:'alert', id:'pickAskErr', style:'margin:6px 0 0', text:sheet.error }) : null) : null,
       h('div', { class:'row' },
         h('button', { type:'button', class:'btn', text:'No, create a new file', onclick:() => { sheet.csv = newFileCSV(buildRow()); sheet.info = 'New file with 1 cupping.'; sheet.step = 'confirm'; renderSheet(); } }),
         h('button', { type:'button', class:'btn primary', text:'Yes, upload it', onclick:() => { sheet.step = 'upload'; renderSheet(); } })), closeRow());
@@ -7508,15 +7635,17 @@ function renderSheetBody(){
   if (sheet.step === 'exportDone'){
     title.textContent = 'Saved';
     if (!sheet.cleared){ histDirty = 0; persistDirty(); histEdited = 0; editUndo = null; persistEdited(); histAdded = 0; persistAdded(); sheet.cleared = true; }
-    sheetEl.append(h('p', { class:'ok', text:sheet.viaBackup ? 'Your updated history is wherever you pasted it.' : 'Your updated file was handed to your device.' }),
-      h('p', { text:sheet.viaBackup ? 'Replace your old backup with this one. Your additions, corrections and deletions are in it.' : 'Replace your old ' + FILENAME + ' with this one. Your additions, corrections and deletions are in it.' }),
+    sheetEl.append(h('p', { class:'ok', text:sheet.viaFile ? 'Saved to ' + sheet.viaFile + '.' : sheet.viaBackup ? 'Your updated history is wherever you pasted it.' : 'Your updated file was handed to your device.' }),
+      h('p', { text:sheet.viaFile ? 'That file now holds your history as it is here, with your additions, corrections and deletions. There is nothing to replace.' : sheet.viaBackup ? 'Replace your old backup with this one. Your additions, corrections and deletions are in it.' : 'Replace your old ' + FILENAME + ' with this one. Your additions, corrections and deletions are in it.' }),
       h('div', { class:'row', style:'margin-top:14px' }, h('button', { type:'button', class:'btn primary', text:'Close', onclick:() => { closeSheet(); if (histRefresh) histRefresh(); } })));
     return;
   }
   if (sheet.step === 'confirm'){
     title.textContent = sheet.csv ? 'Ready to save' : 'Already saved';
-    sheetEl.append(h('p', { text:sheet.info }));
-    if (sheet.csv){
+    sheetEl.append(h('p', { text:sheet.info }), sheet.setupNote ? h('p', { class:'fine', id:'setupNote', text:sheet.setupNote }) : null);
+    if (sheet.csv && canPickFiles()){
+      sheetEl.append(...pickConfirmRows(), sheet.mode === 'export' ? null : keepOption());
+    } else if (sheet.csv){
       sheetEl.append(h('p', { class:'fine', text:sheet.mode === 'export' ? 'This downloads your whole history as one file, with everything you added, corrected or deleted here. Your browser may name it ' + FILENAME.replace('.csv', ' (1).csv') + '. Replace your old ' + FILENAME + ' with it, so the newest copy is the only one. Otherwise anything you deleted comes back whenever you upload the old file.' : 'Each save downloads a fresh copy of ' + FILENAME + '. Your browser may name it ' + FILENAME.replace('.csv', ' (1).csv') + '. Replace your old file with this newest one, since it holds your full history.' }),
         h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:sheet.mode === 'export' ? 'Cancel' : 'Back', onclick:() => { if (sheet.mode === 'export'){ closeSheet(); return; } sheet.step = 'ask'; renderSheet(); } }), h('button', { type:'button', class:'btn primary', text:'Save file', onclick:doDownload })),
         sheet.mode === 'export' ? null : keepOption());
@@ -7610,27 +7739,109 @@ function renderSheetBody(){
   }
   if (sheet.step === 'done' && sheet.kept){
     title.textContent = 'Kept in this browser';
-    if (!sheet.cleared){ app.lastTotal = calc().total; app.lastKind = calc().kind; state = newCup(); sheet.cleared = true; flushDraft(); }
+    clearAfterSave(false);
     sheetEl.append(h('p', { class:'ok', text:'This cupping is kept in this browser, in your history.' }),
       h('p', { text:unsavedLine() + ', not in a saved file yet. When you have finished cupping, open Your cuppings and tap Save a copy of my file, then replace your old file with it.' }),
-      h('p', { class:'fine', text:'A browser can clear a site\'s saved data (Safari does after about a week without a visit), so do not leave it for long. Your scores are cleared from this page.' }),
+      h('p', { class:'fine', text:'A browser can clear a site\'s saved data (Safari does after about a week without a visit), so do not leave it for long. The page is cleared and ready for a new coffee.' }),
       h('button', { type:'button', class:'btn', style:'margin-top:6px', text:'Save a copy of my file now', onclick:() => { closeSheet(); openExport(); } }),
       afterSaveActions());
     return;
   }
   if (sheet.step === 'done'){
     title.textContent = 'Saved';
-    if (!sheet.cleared){ app.lastTotal = calc().total; app.lastKind = calc().kind; adoptSaved(); state = newCup(); sheet.cleared = true; flushDraft(); }
-    sheetEl.append(h('p', { class:'ok', text:sheet.viaBackup ? 'Your history is wherever you pasted it.' : 'Your file was handed to your device.' }),
-      h('p', { text:sheet.viaBackup ? 'Replace your old backup with this newest one, so your history stays in one place. To restore it, choose Upload your history, then Paste a backup code.' : 'Replace your old ' + FILENAME + ' with this newest download so your history stays in one place.' }),
-      h('p', { class:'fine', text:'Your scores are saved in that file and cleared from this page.' }));
-    const rows = h('div', { style:'display:flex;flex-direction:column;gap:10px;margin-top:14px' });
-    if (app.cupBrew) rows.append(h('button', { type:'button', class:'btn primary', text:'Dial in the next brew', onclick:() => { closeSheet(); goDial(); } }));
-    rows.append(h('button', { type:'button', class:'btn' + (app.cupBrew ? '' : ' primary'), text:'Start fresh with a new coffee', onclick:() => { closeSheet(); resetAll(); } }));
-    rows.append(h('button', { type:'button', class:'btn', text:'Cup this coffee again', onclick:() => { closeSheet(); prepCupEntry(); render(); } }));
-    rows.append(h('button', { type:'button', class:'btn link', text:'Back to this coffee', onclick:() => { closeSheet(); go('coffee'); } }));
-    sheetEl.append(rows);
+    clearAfterSave(true);
+    sheetEl.append(h('p', { class:'ok', text:sheet.viaFile ? 'Saved to ' + sheet.viaFile + '.' : sheet.viaBackup ? 'Your history is wherever you pasted it.' : 'Your file was handed to your device.' }),
+      h('p', { text:sheet.viaFile ? 'That file now holds your whole history, with this cupping in it. There is nothing to replace.' : sheet.viaBackup ? 'Replace your old backup with this newest one, so your history stays in one place. To restore it, choose Upload your history, then Paste a backup code.' : 'Replace your old ' + FILENAME + ' with this newest download so your history stays in one place.' }),
+      h('p', { class:'fine', text:'Your scores are saved in that file. The page is cleared and ready for a new coffee.' }),
+      afterSaveActions());
   }
+}
+/* The setup lives in the preferences (app.prefs). It is written into the saved file with every cupping (buildRow) and read back from a file the person loads (takeFileSetup). */
+const setupCtx = () => ({ waterTypes:WATER_TYPES.map(x => x.v), grinderTypes:GRINDER_TYPES.map(x => x.v) });
+/* the gear named in the setup fills any gear field of the brew that is still empty, so a fresh coffee starts with the person's grinder, water and filter */
+function applyGearDefaults(){
+  const g = (app.prefs && app.prefs.gear) || {}, b = app.brew;
+  if (g.grinderKey && !b.grinderKey){ b.grinderKey = g.grinderKey; b.grinderName = g.grinderName || ''; b.grinderType = g.grinderType || ''; b.grindEdited = false; b.grindMethod = ''; b.grind_setting = ''; }
+  if (g.waterType && !b.waterType) b.waterType = g.waterType;
+  if (g.waterType && b.waterType === g.waterType){ if (!b.waterAlk) b.waterAlk = g.waterAlk || ''; if (!b.waterGH) b.waterGH = g.waterGH || ''; }
+  if (g.filter && !b.filter) b.filter = g.filter;
+}
+/* put the choices of a checked setup into the preferences (the caller redraws the page). Grinder results and roaster websites are merged separately, never replaced. */
+function applySetup(s){
+  if (!s) return;
+  const p = app.prefs;
+  p.level = s.level; p.waterUnit = s.waterUnit; p.coffeeUnit = s.coffeeUnit; p.sound = s.sound; p.coach = s.coach; p.cupView = s.cupView;
+  p.gear = Object.assign({}, s.gear);
+  applyGearDefaults(); scheduleDraft();
+}
+/* A file was loaded. Grinder results and roaster websites it knows that this browser lacks are added quietly. If its choices differ from this browser's: a browser still on the defaults takes it at once ('applied'); one the person has changed is asked ('ask'); otherwise 'none'. */
+function takeFileSetup(ex){
+  let fs = null; try { fs = setupRead(ex.header, ex.rows, setupCtx()); } catch(e){}
+  if (!fs) return { how:'none' };
+  let mine = setupFromPrefs(app.prefs, setupCtx());
+  const extras = setupMergeExtras(mine, fs); if (JSON.stringify(extras) !== JSON.stringify({ calib:mine.calib, roasterSites:mine.roasterSites })){ app.prefs.calib = extras.calib; app.prefs.roasterSites = extras.roasterSites; scheduleDraft(); mine = setupFromPrefs(app.prefs, setupCtx()); }
+  if (setupChoicesDefault(fs) || setupSameChoices(fs, mine)) return { how:'none' };
+  if (setupChoicesDefault(mine)){ applySetup(fs); return { how:'applied', setup:fs }; }
+  return { how:'ask', setup:fs };
+}
+/* after a file's setup was taken on loading it: what came back, shown once at the top of Your cuppings */
+let setupCameBack = null;
+function setupCameBackBox(){
+  if (!setupCameBack) return null;
+  const lines = setupCameBack, box = h('div', { class:'notice', id:'setupBack', style:'border-left-color:var(--leaf);margin:0 0 10px' });
+  box.append(h('div', null, h('b', { text:'Your setup came back from this file. ' }), lines.join('. ') + '.'),
+    h('div', { style:'display:flex;gap:8px;margin-top:8px' }, h('button', { type:'button', class:'btn small', style:'margin:0', id:'setupBackChange', text:'Change it', onclick:() => { setupCameBack = null; sheet = { step:'setup' }; openSheet(); } }),
+      h('button', { type:'button', class:'btn small', style:'margin:0', id:'setupBackOk', text:'OK', onclick:() => { setupCameBack = null; box.remove(); } })));
+  return box;
+}
+const setupSeg = (label, opts, get, set) => h('div', { class:'seg', role:'group', 'aria-label':label },
+  opts.map(o => h('button', { type:'button', text:o.text, 'aria-pressed':String(get() === o.value), onclick:() => { set(o.value); scheduleDraft(); renderSheet(); } })));
+function renderSetupSheet(title){
+  const p = app.prefs, g = p.gear = p.gear || setupDefaults().gear, sec = (t, sub) => [h('h4', { class:'setuphead', text:t }), sub ? h('p', { class:'fine', style:'margin:0 0 6px', text:sub }) : null];
+  title.textContent = 'My setup';
+  const redraw = () => { try { render(); } catch(e){} };
+  const field = (label, ctl) => h('div', { class:'field full' }, h('label', null, label), ctl);
+  const sel = (label, opts, get, set) => { const s = h('select', { class:'plain', 'aria-label':label }, opts.map(o => h('option', { value:o.v, text:o.label }))); s.value = get(); s.addEventListener('change', () => { set(s.value); scheduleDraft(); renderSheet(); }); return s; };
+  const txt = (label, get, set, o) => { const i = h('input', { type:'text', class:'plain', 'aria-label':label, autocomplete:'off', placeholder:(o && o.placeholder) || '', inputmode:(o && o.inputmode) || 'text', value:get() }); let last = i.value; i.addEventListener('input', () => { if (o && o.pattern && !o.pattern.test(i.value)){ i.value = last; return; } last = i.value; set(i.value); scheduleDraft(); }); return i; };
+  const grinderOpts = [{ v:'', label:'Choose your grinder' }].concat(GRINDERS.slice().sort((a, b) => a.short.localeCompare(b.short)).map(x => ({ v:x.key, label:x.short })), [{ v:GEAR_OTHER, label:'Not listed: I will type its name' }, { v:GEAR_UNSURE, label:'Not sure' }]);
+  sheetEl.append(h('p', { class:'fine', style:'margin-top:0', text:'Your choices in one place. They are saved inside your cupping file each time you save, so a restored file or a new device brings them back.' }),
+    ...sec('Experience level'),
+    h('div', { class:'levelopts' }, LEVELS.map(l => h('button', { type:'button', class:'levelopt', 'aria-pressed':String(level() === l.v), onclick:() => { p.level = l.v; scheduleDraft(); renderSheet(); redraw(); } }, h('b', { text:l.label }), h('span', { text:l.text })))),
+    ...sec('Units'),
+    field('Water', sel('Water unit', WATER_UNITS, () => p.waterUnit, v => { p.waterUnit = v; redraw(); })),
+    field('Coffee', sel('Coffee unit', COFFEE_UNITS, () => p.coffeeUnit, v => { p.coffeeUnit = v; redraw(); })),
+    ...sec('Guided brew timer'),
+    setupSeg('Sound', [{ text:'Sound off', value:'off' }, { text:'Beep', value:'chime' }, { text:'Voice', value:'voice' }], () => p.sound, v => { p.sound = v; }),
+    setupSeg('Guidance', [{ text:'Guide me', value:'guide' }, { text:'Key steps only', value:'steps' }], () => p.coach, v => { p.coach = v; }),
+    ...sec('Cup cards'),
+    setupSeg('Cup cards', [{ text:'Compact', value:'compact' }, { text:'Full', value:'full' }], () => p.cupView || 'compact', v => { p.cupView = v; }),
+    ...sec('My gear', 'Fills in each new brew for you. You can still change it for one brew.'),
+    field('Grinder', sel('Grinder', grinderOpts, () => g.grinderKey || '', v => {
+      const gr = grinderFor(v); g.grinderKey = v; g.grinderName = gr ? gr.name : v === GEAR_UNSURE ? 'Not sure' : (v === GEAR_OTHER ? g.grinderName : '');
+      g.grinderType = gr ? 'burr' : v === GEAR_UNSURE ? 'unknown' : (v === GEAR_OTHER ? g.grinderType : '');
+      if (g.grinderKey && !app.brew.grinderKey) applyGearDefaults(); redraw();
+    })));
+  if (g.grinderKey === GEAR_OTHER) sheetEl.append(field("Your grinder's name", txt("Your grinder's name", () => g.grinderName || '', v => { g.grinderName = v.slice(0, 80); }, { placeholder:'e.g. Krups blade grinder' })),
+    field('Grinder type', sel('Grinder type', [{ v:'', label:'Not chosen' }].concat(GRINDER_TYPES), () => g.grinderType || '', v => { g.grinderType = v; })));
+  sheetEl.append(field('Water', sel('Water type', [{ v:'', label:'Not chosen' }].concat(WATER_TYPES), () => g.waterType || '', v => { g.waterType = v; if (v && !app.brew.waterType) applyGearDefaults(); redraw(); })));
+  if (g.waterType) sheetEl.append(h('div', { class:'setuppair' }, field('Alkalinity (mg/L)', txt('Water alkalinity', () => g.waterAlk || '', v => { g.waterAlk = /^\d{0,4}(\.\d{0,2})?$/.test(v) ? v : g.waterAlk; applyGearDefaults(); }, { inputmode:'decimal', placeholder:'optional', pattern:/^\d{0,4}(\.\d{0,2})?$/ })),
+    field('Hardness (mg/L)', txt('Water hardness', () => g.waterGH || '', v => { g.waterGH = /^\d{0,4}(\.\d{0,2})?$/.test(v) ? v : g.waterGH; applyGearDefaults(); }, { inputmode:'decimal', placeholder:'optional', pattern:/^\d{0,4}(\.\d{0,2})?$/ }))));
+  sheetEl.append(field('Filter', txt('Filter', () => g.filter || '', v => { g.filter = v.slice(0, 80); applyGearDefaults(); }, { placeholder:'e.g. Hario bleached paper' })),
+    h('p', { class:'fine', id:'setupWhere', style:'margin:12px 0 0', text:(history && history.ex && history.ex.count) ? 'This goes into your file the next time you save a cupping or a copy of your file.' : 'This goes into your file with the first cupping you save.' }),
+    h('div', { class:'row', style:'margin-top:12px' }, h('button', { type:'button', class:'btn', text:'Back to the menu', onclick:openMenu }),
+      (history && history.ex && history.ex.count) ? h('button', { type:'button', class:'btn', id:'setupSaveNow', text:'Save a copy of my file now', onclick:() => { closeSheet(); openExport(); } }) : null,
+      h('button', { type:'button', class:'btn primary', text:'Done', onclick:() => { closeSheet(); redraw(); } })));
+}
+/* a loaded file has a setup that differs from this browser's */
+function renderSetupFoundSheet(title){
+  title.textContent = 'This file has its own setup';
+  const mine = setupFromPrefs(app.prefs, setupCtx()), done = () => { closeSheet(); if (sheet.then === 'history') go('history'); else render(); };
+  sheetEl.append(h('p', { style:'margin-top:0', text:'The file you loaded carries a setup that is not the same as the one in this browser. Which should be used?' }),
+    h('div', { class:'howto' }, h('div', { class:'howto-t', text:"The file's setup" }), h('ul', { class:'prep', style:'margin:4px 0 0' }, setupSummary(sheet.setup).map(t => h('li', { text:t })))),
+    h('div', { class:'howto' }, h('div', { class:'howto-t', text:'The setup in this browser' }), h('ul', { class:'prep', style:'margin:4px 0 0' }, setupSummary(mine).map(t => h('li', { text:t })))),
+    h('p', { class:'fine', text:'Whichever you keep goes into your file the next time you save.' }),
+    h('div', { class:'row', style:'margin-top:12px' }, h('button', { type:'button', class:'btn', id:'setupKeepMine', text:'Keep this browser\'s', onclick:done }),
+      h('button', { type:'button', class:'btn primary', id:'setupUseFile', text:"Use the file's", onclick:() => { applySetup(sheet.setup); done(); } })));
 }
 const inClaude = () => !!(window.claude && typeof window.claude.use === 'function');
 async function getDownloads(){
@@ -7713,13 +7924,22 @@ function keepOption(){
       else err.textContent = 'This browser would not keep it, so nothing was saved. Tap Save file instead.';
     } }), err);
 }
+/* After a save the whole page is cleared and the person is back at the start (see clearAfterSave). What is left to offer: dial in the next brew of the coffee just saved
+   (opened from its saved row, the same way Your cuppings opens it), or just carry on. */
 function afterSaveActions(){
-  const rows = h('div', { style:'display:flex;flex-direction:column;gap:10px;margin-top:14px' });
-  if (app.cupBrew) rows.append(h('button', { type:'button', class:'btn primary', text:'Dial in the next brew', onclick:() => { closeSheet(); goDial(); } }));
-  rows.append(h('button', { type:'button', class:'btn' + (app.cupBrew ? '' : ' primary'), text:'Start fresh with a new coffee', onclick:() => { closeSheet(); resetAll(); } }));
-  rows.append(h('button', { type:'button', class:'btn', text:'Cup this coffee again', onclick:() => { closeSheet(); prepCupEntry(); render(); } }));
-  rows.append(h('button', { type:'button', class:'btn link', text:'Back to this coffee', onclick:() => { closeSheet(); go('coffee'); } }));
+  const rows = h('div', { style:'display:flex;flex-direction:column;gap:10px;margin-top:14px' }), row = sheet.savedRow;
+  const canDial = !!(row && trailMethod(row));
+  if (canDial) rows.append(h('button', { type:'button', class:'btn primary', text:'Dial in the next brew', onclick:() => { closeSheet(); dialFromRow(row, 'start'); } }));
+  rows.append(h('button', { type:'button', class:'btn' + (canDial ? '' : ' primary'), text:'Start fresh with a new coffee', onclick:() => closeSheet() }));
+  rows.append(h('button', { type:'button', class:'btn link', text:'Open Your cuppings', onclick:() => { closeSheet(); go('history'); } }));
   return rows;
+}
+/* Once, when a cupping is saved: remember the row (for Dial in the next brew), put it in the browser's history, then clear everything but the person's settings and show the start screen. */
+function clearAfterSave(adopt){
+  if (sheet.cleared) return;
+  try { sheet.savedRow = buildRow(); } catch(e){ sheet.savedRow = null; }
+  if (adopt) adoptSaved();
+  resetAll(); sheet.cleared = true;
 }
 function afterSave(){ sheet.step = sheet.mode === 'export' ? 'exportDone' : 'done'; renderSheet(); }
 async function doDownload(){
@@ -7771,7 +7991,7 @@ function dialFromRow(o, from){
   const c = Object.assign(newCoffee(), trailCoffee(o)); c.id = o.coffee_id || c.id || newId();
   const att = history ? historyForCoffee(history.objs, c).map(x => parseInt(x.brew_attempt, 10) || 0) : [];
   const keepPrefs = app.prefs, key = trailMethod(o);
-  app = newApp(); app.prefs = keepPrefs; app.coffee = c; app.attempt = att.length ? Math.max.apply(null, att) : 0;
+  app = newApp(); app.prefs = keepPrefs; applyGearDefaults(); app.coffee = c; app.attempt = att.length ? Math.max.apply(null, att) : 0;
   state = newCup(); openDial(key, from);
 }
 /* Put the recipe screen where an earlier try was, then add the one change on top (adj). rs is trailRestore's result for that try, or null to carry on from the session as it is. */
@@ -8106,6 +8326,135 @@ function screenDial(m){
   }
   paint();
 }
+/* The browser's file picker (showOpenFilePicker and showSaveFilePicker) exists in Chrome and Edge 86 and later, not in Firefox or Safari, and only on a secure page that the person taps.
+   A chosen file is kept as a handle in this browser's own database (IndexedDB), so the next save can go straight to it. After the browser is closed it asks the person to allow access again;
+   that is requested from the tap that needs it. Nothing is written until the person confirms the save, and a file changed on disk since it was read is never written over. */
+const PICK_DB = 'brew-and-cup-files', PICK_STORE = 'handles', PICK_KEY = 'history-file';
+let pickedFile = null;   /* { handle, name } for the file saves go to, or null */
+const PICK_TYPES = [{ description:'Cupping file (CSV)', accept:{ 'text/csv':['.csv'] } }];
+const canPickFiles = () => !inClaude() && typeof window.showSaveFilePicker === 'function' && typeof window.showOpenFilePicker === 'function' && window.isSecureContext !== false;
+function fhRun(mode, fn){
+  return new Promise((res, rej) => {
+    let rq; try { rq = indexedDB.open(PICK_DB, 1); } catch(e){ rej(e); return; }
+    rq.onupgradeneeded = () => rq.result.createObjectStore(PICK_STORE);
+    rq.onerror = () => rej(rq.error);
+    rq.onsuccess = () => {
+      const db = rq.result;
+      try {
+        const tx = db.transaction(PICK_STORE, mode), r = fn(tx.objectStore(PICK_STORE));
+        tx.oncomplete = () => { db.close(); res(r ? r.result : undefined); };
+        tx.onerror = tx.onabort = () => { db.close(); rej(tx.error); };
+      } catch(e){ db.close(); rej(e); }
+    };
+  });
+}
+async function loadPickedFile(){
+  if (!canPickFiles()) return;
+  try { const h = await fhRun('readonly', st => st.get(PICK_KEY)); if (h && typeof h.getFile === 'function' && typeof h.name === 'string') pickedFile = { handle:h, name:h.name.slice(0, 120) }; } catch(e){}
+}
+async function rememberPicked(handle){
+  pickedFile = { handle, name:String(handle.name || 'your file').slice(0, 120) };
+  try { await fhRun('readwrite', st => st.put(handle, PICK_KEY)); } catch(e){}   /* not kept for next time if the browser will not store it; saving still works */
+}
+async function forgetPicked(){
+  pickedFile = null;
+  try { await fhRun('readwrite', st => st.delete(PICK_KEY)); } catch(e){}
+}
+/* permission to read and write the file; asking is allowed only from a tap */
+async function pickPermission(handle){
+  try {
+    if (typeof handle.queryPermission !== 'function') return true;
+    if (await handle.queryPermission({ mode:'readwrite' }) === 'granted') return true;
+    return (await handle.requestPermission({ mode:'readwrite' })) === 'granted';
+  } catch(e){ return false; }
+}
+function pickErrorCopy(e){
+  const n = e && e.name, c = e && e.code;
+  if (c === 'dropped') return 'That file has ' + e.n + (e.n === 1 ? ' cupping' : ' cuppings') + " that are not in your history here, and saving would remove " + (e.n === 1 ? 'it' : 'them') + '. Nothing was written. Go back, choose Use a different file, and open that file to add to its newest version.';
+  if (c === 'changed') return 'That file changed after it was opened, so nothing was written. Open it again and add this cupping to the newest version.';
+  if (c === 'denied' || n === 'NotAllowedError') return "The browser did not allow writing to that file, so nothing was saved. Tap again and allow it, or download a copy instead.";
+  if (n === 'NotFoundError') return "That file could not be found. It may have been moved or deleted. Choose it again.";
+  if (n === 'SecurityError') return "This page can't open the file picker here. Download a copy instead.";
+  if (c === 'notcsv') return (e && e.message) || "That doesn't look like a cupping file from this app.";
+  return "The file could not be saved. Nothing was changed. Download a copy instead.";
+}
+/* choose a file with the picker; resolves to a handle, or null if the person closed the picker */
+async function pickOpen(){
+  try { const hs = await window.showOpenFilePicker({ types:PICK_TYPES, multiple:false }); return hs && hs[0] ? hs[0] : null; }
+  catch(e){ if (e && e.name === 'AbortError') return null; throw e; }
+}
+/* read the chosen file and carry on into the save flow with this cupping added to it; `handle` is a fresh choice, or the remembered one */
+async function pickAddToFile(handle){
+  const sh = sheet; sh.error = '';
+  try {
+    if (!(await pickPermission(handle))) throw { code:'denied' };
+    const f = await handle.getFile(), text = await f.text(), ex = readExisting(text);
+    if (ex.error) throw { code:'notcsv', message:ex.error };
+    if (sheet !== sh) return;
+    await rememberPicked(handle);
+    sh.target = { handle, name:pickedFile.name, mod:f.lastModified };
+    useExisting(ex);
+  } catch(e){
+    if (sheet !== sh) return;
+    if (e && e.name === 'NotFoundError') await forgetPicked();
+    sh.error = pickErrorCopy(e); sh.step = 'ask'; renderSheet();
+  }
+}
+/* write the text into the file. With `mod` given, the file must be exactly as it was read, or nothing is written. */
+async function pickWrite(handle, text, mod, noDrop){
+  if (!(await pickPermission(handle))) throw { code:'denied' };
+  if (mod != null){ const f = await handle.getFile(); if (f.lastModified !== mod) throw { code:'changed' }; }
+  if (noDrop){   /* saving a history held in this browser over a file: refuse if the file has cuppings this history does not have */
+    const disk = readExisting(await (await handle.getFile()).text()), mine = readExisting(text);
+    if (!disk.error && !mine.error){ const gone = Array.from(disk.ids).filter(id => !mine.ids.has(id)).length; if (gone) throw { code:'dropped', n:gone }; }
+  }
+  const w = await handle.createWritable();
+  try { await w.write(text); await w.close(); } catch(e){ try { await w.abort(); } catch(e2){} throw e; }
+}
+/* Save into the remembered file (sheet.target, or the file saves go to), or ask where with the browser's Save As box, where the person can also change the name. */
+async function pickSave(asNew){
+  const sh = sheet; sh.pickErr = '';
+  try {
+    let handle, mod = null, noDrop = false;
+    if (!asNew && sh.target){ handle = sh.target.handle; mod = sh.target.mod; }
+    else if (!asNew && pickedFile){ handle = pickedFile.handle; noDrop = sh.mode !== 'export'; }   /* a save from Your cuppings may delete cuppings on purpose, so only an add is checked */
+    else {
+      try { handle = await window.showSaveFilePicker({ suggestedName:FILENAME, types:PICK_TYPES }); }
+      catch(e){ if (e && e.name === 'AbortError') return; throw e; }
+    }
+    await pickWrite(handle, sh.csv, mod, noDrop);
+    await rememberPicked(handle);
+    sh.viaFile = pickedFile.name; sh.viaBackup = false;
+    afterSave();
+  } catch(e){
+    if (sheet !== sh) return;
+    sh.pickErr = pickErrorCopy(e); renderSheet();
+  }
+}
+/* the part of the "Ready to save" sheet for browsers with the file picker */
+function pickConfirmRows(){
+  const t = sheet.target, exp = sheet.mode === 'export', dest = t ? t.name : (pickedFile ? pickedFile.name : ''), els = [];
+  els.push(h('p', { class:'fine', id:'pickInfo', text:dest
+    ? (exp ? 'This replaces what is in ' + dest + ' with your history as it is in this browser, including anything you added, corrected or deleted here.' : 'This saves your whole history, with this cupping added, into ' + dest + '. Your browser may ask you to allow it.')
+    : 'Your browser opens its Save box. There you can change the name, choose a folder, or pick an existing file to replace.' }));
+  if (sheet.pickErr) els.push(h('p', { class:'err', role:'alert', id:'pickErr', text:sheet.pickErr }));
+  els.push(h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:exp ? 'Cancel' : 'Back', onclick:() => { if (exp){ closeSheet(); return; } sheet.pickErr = ''; sheet.step = 'ask'; renderSheet(); } }),
+    h('button', { type:'button', class:'btn primary', id:'pickSaveBtn', text:dest ? 'Save to ' + dest : 'Save as...', onclick:() => pickSave(false) })));
+  const more = h('div', { style:'display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:6px' });
+  if (dest) more.append(h('button', { type:'button', class:'btn link', id:'pickAsNew', style:'margin:0', text:'Save under a new name...', onclick:() => pickSave(true) }));
+  more.append(h('button', { type:'button', class:'btn link', id:'pickDownload', style:'margin:0', text:'Download a copy instead', onclick:doDownload }));
+  els.push(more);
+  return els;
+}
+/* the two buttons added to "Do you have a cupping file already?" */
+function pickAskRows(){
+  const open = async () => { try { const h2 = await pickOpen(); if (h2) await pickAddToFile(h2); } catch(e){ sheet.error = pickErrorCopy(e); renderSheet(); } };
+  const rows = [];
+  if (pickedFile) rows.push(h('button', { type:'button', class:'btn primary block', id:'pickAdd', text:'Add to ' + pickedFile.name, onclick:() => pickAddToFile(pickedFile.handle) }),
+    h('button', { type:'button', class:'btn link', id:'pickOther', style:'margin:0 0 6px', text:'Use a different file...', onclick:open }));
+  else rows.push(h('button', { type:'button', class:'btn primary block', id:'pickOpen', text:'Open my file...', onclick:open }));
+  return rows;
+}
 function logoSvg(cls, viewBox, label){
   const a = label ? 'role="img" aria-label="' + escHtml(label) + '"' : 'aria-hidden="true"';
   return '<svg class="' + cls + ' logo-light" viewBox="' + viewBox + '" ' + a + ' focusable="false"><use href="#nb-light" width="1408" height="768"/></svg>' +
@@ -8139,7 +8488,7 @@ function historyCard(){
 function scoreTag(o){ return o.score_kind === 'sca_5cup' ? 'SCA' : o.score_kind === 'home_1cup' ? 'Home' : ''; }
 function openDelete(set, fromDetail){ sheet = { step:'delConfirm', idx:Array.from(set), fromDetail:!!fromDetail }; openSheet(); }
 function openExport(){
-  const rows = history.ex.rows, csv = toCSV([history.ex.header].concat(rows));
+  const st = stampSetupColumn(history.ex.header, history.ex.rows, setupJson(setupFromPrefs(app.prefs, setupCtx()))), rows = st.rows, csv = toCSV([st.header].concat(rows));
   sheet = { step:'confirm', mode:'export', csv, existing:null, error:'', info:'Updated file with ' + rows.length + ' cupping' + (rows.length === 1 ? '' : 's') + '.' };
   openSheet();
 }
@@ -8169,6 +8518,7 @@ function screenHistory(m){
         h('button', { type:'button', class:'btn small', style:'margin:8px 0 0', text:'Save updated file', onclick:openExport })));
     }
   }
+  const sBox = setupCameBackBox(); if (sBox) m.append(sBox);
   const eBox = editNoticeBox();
   histRefresh = () => { paintNotices(); eBox.paint(); }; paintNotices(); m.append(eBox, notices);
   if (undoBuf){ const left = 10050 - (Date.now() - undoBuf.t); if (left > 0) setTimeout(() => { if (histRefresh) histRefresh(); }, left); }
@@ -8251,7 +8601,7 @@ function useCoffeeFromRow(o){
   c.roast_date = /^\d{4}-\d{2}-\d{2}$/.test(o.roast_date || '') ? o.roast_date : '';
   const att = history.objs.filter(x => o.coffee_id && x.coffee_id === o.coffee_id).map(x => parseInt(x.brew_attempt, 10) || 0);
   const keepPrefs = app.prefs;
-  app = newApp(); app.prefs = keepPrefs; app.coffee = c; app.attempt = att.length ? Math.max.apply(null, att) : 0;
+  app = newApp(); app.prefs = keepPrefs; applyGearDefaults(); app.coffee = c; app.attempt = att.length ? Math.max.apply(null, att) : 0;
   state = newCup(); go('coffee');
 }
 function screenDetail(m){
@@ -8341,6 +8691,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 window.addEventListener('pagehide', flushDraft);
 loadHistory();
 loadDraft();
+loadPickedFile();
 render();
 navNote(false);
 startTerms();

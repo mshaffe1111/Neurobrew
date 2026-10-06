@@ -2,6 +2,21 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 30: My setup, and save over your own file
+
+2026-10-06 20:51:34 UTC
+
+- New My setup page in the menu: your units, experience level, timer sound, cup card view and gear (grinder, water, filter) in one place. New brews start with your gear filled in.
+- Your setup is saved inside your cupping file, so uploading the file on another device brings it back. If a file's setup differs from this browser's, you choose which to use.
+- In Chrome and Edge you can save into a file you choose: Save as lets you name it, NeuroBrew remembers it, and the next cupping goes straight into it. A file that changed since you opened it is never written over. Other browsers still download a copy.
+
+## Release 29: Saving a cupping starts you fresh
+
+2026-10-06 20:17:07 UTC
+
+- When you save a cupping, the whole page now clears and you are back at the start, ready for the next coffee. Nothing is lost: the cupping is in your file or your history.
+- The Saved sheet still offers Dial in the next brew for the coffee you just saved, and a link to Your cuppings. Cup this coffee again and Back to this coffee are gone; open Your cuppings to reach them.
+
 ## Release 28: Look-up reads real listings
 
 2026-10-06 19:14:11 UTC

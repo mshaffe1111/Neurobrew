@@ -12,10 +12,11 @@ Neurobrew helps people create perfect coffee brews.  It has a workflow that uses
 - Lets you cup and score the coffee, then tells you what to change.
 - **Dial it in:** keeps every try of a coffee, shows what changed and whether it helped, and starts the next brew from your best one. It also handles a new bag of a coffee you already know.
 - **Look up this coffee:** reads the roaster's own online shop listing (shops built on Shopify) and offers the origin, process, elevation, roast level and tasting notes it states. You check every line first.
+- **My setup:** your units, level, timer sound and gear in one place, saved inside your cupping file so a restored file brings them back.
 - Learns your tendencies from your own scores and tells you what to look for on a bag.
 
 ## Your data
-Everything runs in your browser. There is no account and no server. Your cuppings are kept in your browser and saved as a `cuppings.csv` file you own; upload that file next time to carry your history forward. They are never sent to a server.
+Everything runs in your browser. There is no account and no server. Your cuppings are kept in your browser and saved as a `cuppings.csv` file you own; upload that file next time to carry your history forward. In Chrome and Edge you can choose the file to save into and NeuroBrew remembers it, so each cupping goes straight into it; other browsers download a copy. They are never sent to a server.
 
 ## Notes
 - Photo scanning of a bag label works only inside Claude. On this site, use Look up this coffee, paste the label text, or ask Claude in a chat to read the bag and paste the answer.
