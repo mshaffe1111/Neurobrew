@@ -2,6 +2,25 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 34: One name for each step, and plainer words
+
+2026-10-07 16:52:04 UTC
+
+- The six steps now have one name each, everywhere: Coffee, Facts, Method, Brew, Taste and Perfect. The bar at the top, the page titles, the buttons and the user guide all use the same names.
+- The numbers for your brew are now called brew settings, and your saved cups are now tastings. The history file does not change, so your older files still open.
+- It is easier to see where you are and what to fill in. The step bar is thicker, with finished steps in green with a tick, and the names of the fields are plum.
+- For people new to brewing, the Perfect page gives the grind in words, such as "Medium-fine, like fine sand". Sentences in Facts, Brew, Taste, Perfect, the guide and About are shorter and simpler.
+- On the Taste page the STEP 1 to 7 labels are gone. A card you have scored shows a green Scored tab.
+
+## Release 33: Dial it in made clear, and two cup screen fixes
+
+2026-10-07 14:32:54 UTC
+
+- Dial it in now answers first. It asks "What stood out most in try N?", marks the choice we made as Our pick, and puts the suggestion and one button under it, so you no longer scroll past your whole history to find it. The button says what it does, like "Brew again with a finer grind". Your tries and how it all works sit in two closed rows at the bottom.
+- When Dial it in holds back a change that already scored lower, it now says which change, on which try and by how much, and the other button names the change it would try instead. If the other change scored lower too, it says the recipe may not be the problem.
+- Five cups: the Uniformity, Clean cup, Sweetness and Defects cards keep their instruction in every view, and show how many cups passed, like "3 of 5 cups passed". Before, the circles marked 1 to 5 looked like a rating.
+- Tapping a descriptor word on Fragrance, Flavor or Aftertaste no longer scores the card for you. The score stays yours to give, and one tap on Use my words' suggestion accepts what the words suggest.
+
 ## Release 32: A clearer cup screen, and unsaved cups protected
 
 2026-10-07 02:23:03 UTC
