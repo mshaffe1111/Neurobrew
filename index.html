@@ -654,11 +654,40 @@ h1{ letter-spacing:-0.028em; }
 .mcard .meta.techhint{ color:var(--accent); }
 ::selection{ background:color-mix(in srgb, var(--gold) 45%, transparent); }
 .gear .field{ margin:0 0 10px; }
-.gear select{ width:100%; min-height:48px; }
-.gearread{ margin:2px 0 12px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
-.gearread .gr-big{ font-size:22px; font-weight:700; line-height:1.25; margin:2px 0 4px; }
-.gearread .gr-big small{ font-size:14px; font-weight:500; color:var(--muted); }
 .gearhint{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:-4px 0 8px; }
+.gearstatus{ margin:0 0 12px; }
+.gearstatus:empty{ display:none; }
+.gearstatus .statusline{ margin:0; }
+/* summary rows on the Gear page are quieter than the numbers on Brew */
+.krow.grow .krow-top strong{ font-size:19px; }
+/* the grinder picker: a text box with a list under it */
+.gpick{ position:relative; }
+.gpick input{ width:100%; min-height:48px; }
+.gpick-list{ position:absolute; z-index:5; left:0; right:0; top:100%; margin-top:4px; max-height:min(320px,50vh); overflow-y:auto; background:var(--surface); border:1px solid var(--edge); border-radius:12px; box-shadow:0 8px 24px rgba(13,59,58,.18); padding:4px 0; }
+.gpick-list[hidden]{ display:none; }
+.gpick-group{ padding:8px 12px 2px; font-size:12px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+.gpick-opt{ display:block; width:100%; min-height:44px; text-align:left; border:0; background:transparent; padding:10px 12px; font:inherit; color:var(--ink); }
+.gpick-opt.on, .gpick-opt:hover{ background:var(--tint); }
+.gpick-opt[aria-selected="true"]{ font-weight:700; }
+.gpick-none{ padding:10px 12px; font-size:14px; color:var(--muted); }
+/* Adjust on the Brew page: a small button under a row, and the panel it opens in place */
+.adjrow{ display:flex; justify-content:flex-end; margin-top:6px; }
+.adjrow .btn{ min-height:40px; margin:0; }
+.adjpanel{ margin:0 0 12px; padding:12px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+.adjpanel[hidden]{ display:none; }
+.adjpanel > .cardhead{ margin:0 0 8px; }
+.adjpanel > .cardhead h3{ font-size:16px; }
+.adjpanel .card{ border:0; padding:0; box-shadow:none; background:transparent; margin:0; }
+.adjpanel .cardhead .btn[hidden]{ display:none; }
+#recipeOut .krow{ border-top:1px solid var(--line); padding:12px 0; }
+#recipeOut > div:first-child > .krow:first-child{ border-top:0; padding-top:2px; }
+/* the one-line gear summary on Brew */
+.gearline{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.gearline-text{ min-width:0; }
+.gearline .cardlabel{ margin:0; }
+.gearline-val{ font-size:15px; font-weight:600; margin-top:2px; overflow-wrap:anywhere; }
+.gearline .btn{ flex:none; min-height:44px; margin:0; padding:8px 12px; font-size:14px; }
+.adjpanel .presets .choice{ flex:1 1 auto; font-size:14px; padding:8px 10px; min-width:0; }
 .trail{ list-style:none; margin:0; padding:0; }
 .trl{ padding:10px 0 10px 12px; border-left:3px solid var(--line); margin:0 0 2px 4px; }
 .trl.best{ border-left-color:var(--leaf); }
@@ -2524,9 +2553,9 @@ const STRENGTH_WORDS = ['Faint', 'Light', 'Medium', 'Strong', 'Very strong'];
 /* The six step names, in one place. The bar, the header, the screen-reader labels and the guide chapter titles all read them from here, so they cannot disagree. Perfect (step 6) matches the tagline's "Perfect it". The screen ids (start, coffee, brew, recipe, cup, dial) are internal and keep their old names. */
 const STEP_NAME = { coffee:'Coffee', facts:'Facts', method:'Method', brew:'Brew', taste:'Taste', perfect:'Perfect' };
 const PROGRESS = [['start', STEP_NAME.coffee], ['coffee', STEP_NAME.facts], ['brew', STEP_NAME.method], ['recipe', STEP_NAME.brew], ['cup', STEP_NAME.taste], ['dial', STEP_NAME.perfect]];
-/* The Brew step has two parts and one dot: part 1 is the Brew page and Change settings, part 2 is What's in your cup (internal id: ready) and the timer. */
-function progressStep(screen){ const m = { start:0, coffee:1, brew:2, recipe:3, change:3, ready:3, timer:3, cup:4, dial:5 }; return screen in m ? m[screen] : -1; }
-function brewPart(screen){ return screen === 'recipe' || screen === 'change' ? 1 : screen === 'ready' || screen === 'timer' ? 2 : 0; }
+/* Two steps have two parts and one dot each. Method: part 1 is the list of methods, part 2 is Gear (internal id: gear). Brew: part 1 is the Brew page and Change settings, part 2 is What's in your cup (internal id: ready) and the timer. */
+function progressStep(screen){ const m = { start:0, coffee:1, brew:2, gear:2, recipe:3, change:3, ready:3, timer:3, cup:4, dial:5 }; return screen in m ? m[screen] : -1; }
+function brewPart(screen){ return screen === 'brew' || screen === 'recipe' || screen === 'change' ? 1 : screen === 'gear' || screen === 'ready' || screen === 'timer' ? 2 : 0; }
 
 /* ---------- Piece 3B: tap-to-explain terms and plain wording ---------- */
 const TERMS = [
@@ -3776,10 +3805,11 @@ const GUIDE_SECTIONS = [
       'At the bottom you choose Next: ' + STEP_NAME.method + ' to get brew settings for this coffee. Or choose Skip to ' + STEP_NAME.taste + ' to score a coffee you are tasting without brewing it here, such as an SCA cupping.'] },
   { id:'method', title:'3. Method: choose how you brew', lead:'Pick from the list.',
     paras:['Choose how you are brewing. Pour-over covers the V60, Kalita Wave and Chemex. The other choices are Hario Switch, Clever Dripper, siphon, AeroPress, French press, moka pot, Turkish coffee, Vietnamese phin, espresso, a drip machine and cold brew. Methods marked Good match suit your roast, process and bag notes.',
-      'If you have a Philips 5500 LatteGo, it has its own simple setup that suggests the drink settings for your beans.'] },
+      'The first time you pick a method for a coffee, the next page is Gear. It shows what you brew with: your grinder and, if you want, your water and filter. If you saved your gear in My setup, it is already filled in. Tap Change to use other gear for one brew, or Make this my usual to keep it. Gear comes first so we can suggest a grinder setting.',
+      'If you have a Philips 5500 LatteGo, it has its own simple setup that suggests the drink settings for your beans. It skips the Gear page.'] },
   { id:'recipe', title:'4. ' + STEP_NAME.brew + ': settings, a last look and the guided timer', lead:'Settings for this coffee, with the reasons.',
     paras:['The ' + STEP_NAME.brew + ' page opens on your settings for this coffee. You get the amount of coffee and water, the grind in plain words, the water temperature, the ratio and the bloom. Pick a cup size above the numbers. Each line has a reason behind it: tap Why? where you see it, or read the line under it. Amounts show in one unit, grams unless you chose another. Tap Other units to see the rest.',
-      'To change anything, tap Change settings. Start from your coffee or your water. Choose Lighter, Standard or Stronger, set the ratio or the water temperature yourself, or try pulse pours or iced coffee. The page says what you changed, and Reset all puts it all back. Under the numbers, choose your grinder to get a suggested setting. If there is no settings table for it yet, you can teach NeuroBrew from your own results. Add your water type, and the alkalinity if you know it, and it checks your water before blaming the grind.',
+      'To change anything, tap Change settings. Start from your coffee or your water. Choose Lighter, Standard or Stronger, set the ratio, or try pulse pours or iced coffee. To change the water temperature, tap Adjust on the Temperature row. To use your own grinder setting, tap Adjust on the Grind row. The page says what you changed, and Reset all puts it all back. Your grinder, water and filter are on the Gear page. Tap Change gear under the numbers to change them. If your grinder has no settings table yet, you can teach NeuroBrew from your own results. The water type and alkalinity you add on Gear let it check your water before blaming the grind.',
       'Tap Next: What\'s in your cup for one last look. It shows your final settings, what you changed (or why the settings are what they are), what to do before you start, and the steps. Tap Change to go back, or Brew it for a timer with scale targets. You can switch sound off, use a beep, or have a voice read each step. The voice can tell you where you should be along the way, so you do not have to watch the screen. When you have brewed it, tap I brewed it: taste it.'],
     tips:['If you already have earlier tries of this coffee, this screen offers them as a starting point. A new bag of a coffee you know can start from the best brew you kept.'] },
   { id:'cup', title:'5. ' + STEP_NAME.taste + ': smell, sip and score', lead:'Smell, sip hot, sip as it cools.',
@@ -4458,6 +4488,17 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 36,
+  "at": "2026-10-07T21:22:44Z",
+  "date": "2026-10-07",
+  "title": "Your gear gets its own page",
+  "notes": [
+   "After you pick a method, a new Your gear page asks what you brew with: grinder, water, filter paper and altitude. If you saved your gear in My setup, it is filled in, and one tap on Next: Brew moves on.",
+   "Brew keeps the numbers. The temperature and the grinder setting each have an Adjust button on their row, so you can change them without leaving the page. Change gear takes you back to your gear.",
+   "Change settings now holds the amount, strength, ratio, technique and pour style. Your water readings show on the Gear page only, and a change to your gear is for this brew unless you tap Make this my usual."
+  ]
+ },
+ {
   "release": 35,
   "at": "2026-10-07T18:38:45Z",
   "date": "2026-10-07",
@@ -4948,7 +4989,7 @@ function newCoffee(){
   return { id:newId(), name:'', roaster:'', origin:'', varietal:'', roast:'', process:'', decaf:'', density:'', elevText:'', roast_date:'', bag_notes:'', scanned:'', scannedFrom:'', roastUnsure:'', blend:'', varietalUnsure:'' };
 }
 function newApp(){
-  return { screen:'start', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', sound:'off', coach:'guide', level:'', calib:{}, roasterSites:{}, gear:setupDefaults().gear }, adjust:{ grind:0, ratio:0, agit:'' }, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
+  return { screen:'start', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', sound:'off', coach:'guide', level:'', calib:{}, roasterSites:{}, gear:setupDefaults().gear }, adjust:{ grind:0, ratio:0, agit:'' }, gearOk:false, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
 }
 function newCup(){
   const scores = {}; ATTRS.forEach(a => scores[a.key] = null);
@@ -4998,7 +5039,7 @@ function loadDraft(){
       }
     }
     if (src.adjust){ a.adjust = { grind:+src.adjust.grind || 0, ratio:+src.adjust.ratio || 0, agit:['gentle', 'active'].includes(src.adjust.agit) ? src.adjust.agit : '' }; }
-    a.attempt = +src.attempt || 0;
+    a.attempt = +src.attempt || 0; a.gearOk = src.gearOk === true;
     a.dialMethod = METHODS.some(x => x.key === src.dialMethod) ? src.dialMethod : '';
     { const dn = src.dialNote && typeof src.dialNote === 'object' ? dialNoteOf({ dial_symptom:src.dialNote.symptom, dial_change:Array.isArray(src.dialNote.change) ? src.dialNote.change.join(';') : '', dial_from_id:src.dialNote.fromId }) : null; a.dialNote = dn; }
     a.cupBrew = (src.cupBrew && typeof src.cupBrew === 'object') ? src.cupBrew : null;
@@ -5006,7 +5047,7 @@ function loadDraft(){
     a.lastTotal = typeof src.lastTotal === 'number' ? src.lastTotal : null;
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
-    const ok = ['start','coffee','brew','recipe','change','ready','timer','cup','dial','history','detail','learn','guide'];
+    const ok = ['start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','guide'];
     a.screen = ok.includes(src.screen) ? src.screen : 'start';
     /* a saved timer comes back only if it is recent: running for under 45 minutes in all, or paused within the last 30 minutes */
     { const ts = src.timerSave, now = Date.now();
@@ -5018,7 +5059,8 @@ function loadDraft(){
     if (a.screen === 'timer' && (!a.timerSave || isMachine(a.brew.method))){ a.screen = isMachine(a.brew.method) ? 'recipe' : 'ready'; a.timerSave = null; }   /* a timer that is not running goes back to the last look, where Brew it is */
     if (!a.coffee.name && a.screen !== 'history' && a.screen !== 'detail') a.screen = 'start';
     if (a.screen === 'change' || (a.screen === 'ready' && isMachine(a.brew.method))) a.screen = 'recipe';   /* a half-made change is not worth coming back to; the machine has no summary page */
-    if ((a.screen === 'recipe' || a.screen === 'ready' || a.screen === 'timer') && !a.brew.method){ a.screen = 'brew'; a.timerSave = null; }
+    if ((a.screen === 'recipe' || a.screen === 'ready' || a.screen === 'timer' || a.screen === 'gear') && !a.brew.method){ a.screen = 'brew'; a.timerSave = null; }
+    if (a.screen === 'gear' && isMachine(a.brew.method)) a.screen = 'recipe';   /* the machine has no gear page */
     if (a.screen !== 'timer') a.timerSave = null;
     if (a.screen === 'detail') a.screen = 'history';
     app = a;
@@ -5057,8 +5099,10 @@ function refreshAll(){ refreshers.forEach(f => f()); paintProgress(); }
 function changed(){ refreshAll(); updateBar(); scheduleDraft(); }
 
 /* ---------- navigation ---------- */
+/* gearFrom: where Back goes from Gear ('brew' = the method list, 'recipe' = the Brew page). recipeVia: 'gear' when the Brew page was reached from Gear, so Back returns there. Neither is saved: after a reload Back means the method list. */
+let gearFrom = 'brew', recipeVia = '';
 const PARENT = {
-  start:null, coffee:'start', brew:'coffee', recipe:'brew', change:'recipe', ready:'recipe', timer:'ready',
+  start:null, coffee:'start', brew:'coffee', gear:() => gearFrom === 'recipe' ? 'recipe' : 'brew', recipe:() => recipeVia === 'gear' ? 'gear' : 'brew', change:'recipe', ready:'recipe', timer:'ready',
   cup:() => app.cupBrew ? (isMachine(app.brew.method) ? 'recipe' : 'ready') : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', detail:'history',
   learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'start'),
   guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'start')
@@ -5073,7 +5117,7 @@ function navNote(push){
     else { navStack = [app.screen]; navIdx = 0; window.history.replaceState({ nb:1, i:0 }, ''); }
   } catch(e){}
 }
-function navBack(parent){ if (navIdx > 0 && navStack[navIdx - 1] === parent){ try { window.history.back(); return; } catch(e){} } go(parent); }
+function navBack(parent){ if (parent === 'gear' && app.screen === 'recipe') backIntoGear(); if (navIdx > 0 && navStack[navIdx - 1] === parent){ try { window.history.back(); return; } catch(e){} } go(parent); }
 window.addEventListener('popstate', e => {
   const st = e.state; if (!st || !st.nb) return;
   if (navBusy > 0){ navBusy--; navIdx = st.i; return; }                       /* the correction we asked for below */
@@ -5089,6 +5133,7 @@ window.addEventListener('popstate', e => {
   navIdx = st.i;
   if (!SCREENS[target]) return;
   if (target === 'timer') target = 'ready';                                   /* going forward never starts a brew */
+  if (target === 'gear' && app.screen === 'recipe') backIntoGear();
   stopTimer(); if (target !== 'history'){ selectMode = false; selected.clear(); }
   app.screen = target; render();
 });
@@ -5105,7 +5150,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', guide:'User guide', detail:'Tasting details' };
+  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', guide:'User guide', detail:'Tasting details' };
   $('topTitle').textContent = sc === 'start' ? '' : (titles[sc] || 'NeuroBrew');
   SCREENS[sc](m);
   refreshAll(); updateBar();
@@ -5114,7 +5159,7 @@ function render(){
 }
 function resetAll(){
   const prefs = app.prefs;
-  app = newApp(); app.prefs = prefs; applyGearDefaults(); state = newCup(); render();
+  app = newApp(); app.prefs = prefs; applyGearDefaults(); state = newCup(); recipeVia = ''; render();
 }
 
 /* ---------- shared UI builders ---------- */
@@ -5235,13 +5280,13 @@ function showStepMsg(t){
   clearTimeout(showStepMsg.tm); if (t) showStepMsg.tm = setTimeout(() => { e.hidden = true; }, 3200);
 }
 function gotoStep(i){
-  if (i === progressStep(app.screen)){ if (app.screen === 'ready') go('recipe'); return; }   /* the Brew dot on the second part goes back to the first */
+  if (i === progressStep(app.screen)){ if (app.screen === 'ready') go('recipe'); else if (app.screen === 'gear') go('brew'); return; }   /* a dot on its second part goes back to its first */
   const lock = stepLock(i); if (lock){ showStepMsg(lock); return; }
   showStepMsg('');
   if (i === 0) return go('start');
   if (i === 1) return go('coffee');
   if (i === 2) return go('brew');
-  if (i === 3) return go('recipe');
+  if (i === 3){ if (app.screen === 'gear') gearConfirm(); return go('recipe'); }
   if (i === 4){
     if ((app.screen === 'recipe' || app.screen === 'ready' || app.screen === 'timer') && app.brew.method) snapshotBrew();
     prepCupEntry(); return go('cup');
@@ -5796,7 +5841,9 @@ function screenLearn(m){
 function chooseMethod(key){
   const x = METHODS.find(y => y.key === key);
   app.brew.method = key; app.brew.water = x ? x.water : 0; app.brew.grind_setting = ''; app.brew.tempF = null; app.brew.tempComp = false; app.brew.ratio = null; app.brew.agitation = 'standard'; app.brew.technique = 'standard'; app.brew.pulseTaste = 'balanced'; app.brew.pulseStrength = ''; app.brew.ice = 0.4; app.brew.pourNotes = ''; app.brew.actualSecs = 0; app.brew.actualFromTimer = false;
-  if (isMachine(key)) app.brew.machine = cleanMachine(app.brew.machine);
+  recipeVia = '';
+  if (isMachine(key)){ app.brew.machine = cleanMachine(app.brew.machine); return go('recipe'); }
+  if (!app.gearOk) return openGear('brew', false);   /* the first method for this coffee: check what you brew with, once */
   go('recipe');
 }
 /* one full-width row: name and fit on the first line, then the reason for this coffee, then the good points beside the costs */
@@ -5860,6 +5907,175 @@ function screenGuide(m){
   cards.forEach(c => m.append(c));
   const back = typeof PARENT.guide === 'function' ? PARENT.guide() : PARENT.guide;
   m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
+}
+/* the short name shown for a grinder choice */
+function grinderLabel(key){
+  const g = grinderFor(key);
+  if (g) return g.short;
+  return key === GEAR_OTHER ? 'Not listed' : key === GEAR_UNSURE ? 'Not sure' : '';
+}
+/* every choice, in the order the list shows them: your usual grinder first, then the ones we suggest a setting for, the ones with no table yet, then the two "something else" choices */
+function grinderChoices(){
+  const sorted = kind => GRINDERS.filter(g => g.kind === kind).sort((a, b) => a.short.localeCompare(b.short)).map(g => ({ key:g.key, text:g.short + (g.kind === 'computed' && !['espresso', 'moka', 'filter', 'press'].every(k => g.cats[k]) ? ' (some methods)' : '') }));
+  const usual = (app.prefs.gear || {}).grinderKey, out = [];
+  if (usual && grinderLabel(usual)) out.push({ group:'Your usual grinder', key:usual, text:grinderLabel(usual) });
+  sorted('computed').forEach(x => out.push(Object.assign({ group:'We suggest a setting' }, x)));
+  sorted('calibrate').forEach(x => out.push(Object.assign({ group:'No settings table yet' }, x)));
+  out.push({ group:'Something else', key:GEAR_OTHER, text:'Not listed: I will type its name' }, { group:'Something else', key:GEAR_UNSURE, text:'Not sure' });
+  return out;
+}
+/* a text box with a list under it. Tapping it shows every grinder; typing narrows the list. onPick gets the chosen key. */
+function grinderPicker(onPick){
+  const id = 'gear_sel', listId = 'gear_list';
+  const input = h('input', { id, type:'text', class:'plain', autocomplete:'off', placeholder:'Type to search, or tap to see all', role:'combobox', 'aria-expanded':'false', 'aria-controls':listId, 'aria-autocomplete':'list' });
+  const list = h('div', { id:listId, class:'gpick-list', role:'listbox', 'aria-label':'Grinders', hidden:true });
+  let typed = false, active = -1, shown = [];
+  const close = () => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); active = -1; };
+  function draw(){
+    const q = typed ? input.value.trim().toLowerCase() : '';
+    shown = grinderChoices().filter(c => !q || c.text.toLowerCase().includes(q) || (grinderFor(c.key) || { name:'' }).name.toLowerCase().includes(q));
+    list.textContent = ''; active = shown.length && typed ? 0 : -1;
+    let last = '';
+    shown.forEach((c, i) => {
+      if (c.group !== last){ last = c.group; list.append(h('div', { class:'gpick-group', role:'presentation', text:c.group })); }
+      list.append(h('button', { type:'button', class:'gpick-opt', role:'option', id:'gopt_' + i, 'aria-selected':String(c.key === app.brew.grinderKey), tabindex:'-1', text:c.text,
+        onmousedown:e => e.preventDefault(), onclick:() => pick(c.key) }));
+    });
+    if (!shown.length) list.append(h('div', { class:'gpick-none', role:'presentation', text:'No match. Choose "Not listed" to type its name.' }));
+    mark();
+    list.hidden = false; input.setAttribute('aria-expanded', 'true');
+  }
+  function mark(){
+    list.querySelectorAll('.gpick-opt').forEach((b, i) => b.classList.toggle('on', i === active));
+    if (active >= 0) input.setAttribute('aria-activedescendant', 'gopt_' + active); else input.removeAttribute('aria-activedescendant');
+  }
+  function pick(key){ close(); typed = false; onPick(key); input.value = grinderLabel(app.brew.grinderKey); input.blur(); }
+  input.addEventListener('focus', () => { typed = false; input.select(); draw(); });
+  input.addEventListener('click', () => { if (list.hidden){ typed = false; draw(); } });
+  input.addEventListener('input', () => { typed = true; draw(); });
+  input.addEventListener('blur', () => { close(); typed = false; input.value = grinderLabel(app.brew.grinderKey); });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape'){ close(); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); if (list.hidden) draw(); if (!shown.length) return; active = e.key === 'ArrowDown' ? Math.min(shown.length - 1, active + 1) : Math.max(0, active - 1); mark(); const b = list.querySelectorAll('.gpick-opt')[active]; if (b && b.scrollIntoView) b.scrollIntoView({ block:'nearest' }); }
+    else if (e.key === 'Enter' && !list.hidden && active >= 0 && shown[active]){ e.preventDefault(); pick(shown[active].key); }
+  });
+  return { el:h('div', { class:'gpick' }, input, list), refresh:() => { if (document.activeElement !== input) input.value = grinderLabel(app.brew.grinderKey); } };
+}
+/* ---------- screen: gear ---------- */
+const GEAR_FIELDS = ['grinderKey', 'grinderName', 'grinderType', 'waterType', 'waterAlk', 'waterGH', 'filter'];
+let gearEdit = false;
+const gearHasAny = () => !!(app.brew.grinderKey || app.brew.waterType || app.brew.filter);
+const gearUsual = () => (app.prefs && app.prefs.gear) || {};
+const gearHasUsual = () => { const g = gearUsual(); return !!(g.grinderKey || g.waterType || g.filter); };
+const gearIsUsual = () => GEAR_FIELDS.every(k => String(app.brew[k] || '') === String(gearUsual()[k] || ''));
+/* what differs from the usual gear, in words: "grinder", "water", "filter" */
+function gearDiffers(){
+  const g = gearUsual(), b = app.brew, out = [];
+  if (String(b.grinderKey || '') !== String(g.grinderKey || '') || (b.grinderKey === GEAR_OTHER && b.grinderName !== (g.grinderName || ''))) out.push('grinder');
+  if (['waterType', 'waterAlk', 'waterGH'].some(k => String(b[k] || '') !== String(g[k] || ''))) out.push('water');
+  if (String(b.filter || '') !== String(g.filter || '')) out.push('filter');
+  return out;
+}
+/* the one-line gear summary used on the Brew page */
+function gearLine(){
+  const b = app.brew, w = WATER_TYPES.find(x => x.v === b.waterType);
+  const parts = [b.grinderKey ? (b.grinderKey === GEAR_OTHER ? (b.grinderName || 'Your grinder') : grinderLabel(b.grinderKey)) : '', w ? w.label : '', b.filter || ''].filter(Boolean);
+  return parts.length ? parts.join(' · ') : 'Nothing chosen yet';
+}
+/* open the Gear page. from is where Back goes ('brew' = the method list, 'recipe' = the Brew page); edit opens it on the fields. */
+function openGear(from, edit){ gearFrom = from; gearEdit = !!edit; go('gear'); }
+/* the person has seen their gear: Gear does not open again for this coffee, and Back from Brew returns here */
+function gearConfirm(){ app.gearOk = true; if (gearFrom === 'brew') recipeVia = 'gear'; scheduleDraft(); }
+/* Back from Brew into Gear: Gear is now the second part of the Method step again, so its Back goes to the method list (never round to Brew), and Brew's Back goes to Gear only after Next: Brew is tapped again */
+function backIntoGear(){ gearFrom = 'brew'; recipeVia = ''; gearEdit = false; }
+/* "Make this my usual" writes the same fields the My setup page writes, so the two can never disagree */
+function gearMakeUsual(){
+  const b = app.brew, p = app.prefs.gear = app.prefs.gear || setupDefaults().gear;
+  p.grinderKey = b.grinderKey || ''; p.grinderName = b.grinderName || ''; p.grinderType = b.grinderType || '';
+  p.waterType = b.waterType || ''; p.waterAlk = b.waterAlk || ''; p.waterGH = b.waterGH || ''; p.filter = b.filter || '';
+  scheduleDraft();
+}
+function gearBackToUsual(){
+  const g = gearUsual(), b = app.brew;
+  b.grinderKey = g.grinderKey || ''; b.grinderName = g.grinderName || ''; b.grinderType = g.grinderType || ''; b.grindEdited = false; b.grindMethod = ''; b.grind_setting = '';
+  b.waterType = g.waterType || ''; b.waterAlk = g.waterAlk || ''; b.waterGH = g.waterGH || ''; b.filter = g.filter || '';
+  scheduleDraft();
+}
+/* the line under the title: your usual gear, or how this brew differs from it */
+function gearStatus(repaint){
+  const box = h('div', { class:'gearstatus', id:'gearStatus' });
+  refreshers.push(() => {
+    box.textContent = '';
+    if (!gearHasUsual() || !gearHasAny()) return;
+    if (gearIsUsual()) box.append(h('span', { class:'pill static' }, h('span', { 'aria-hidden':'true', style:'color:var(--leaf);font-weight:800', text:'✓ ' }), 'Your usual gear'));
+    else box.append(h('div', { class:'statusline changed', id:'gearDiffers' }, h('span', { text:'Different from your usual gear: ' + gearDiffers().join(', ') }), h('button', { type:'button', class:'btn link', id:'gearUsualBtn', text:'Back to my usual', onclick:() => { gearBackToUsual(); repaint(); } })));
+  });
+  return box;
+}
+/* the fields, shown at the person's level. Nothing here changes a number: Brew shows the setting we suggest. */
+function gearFields(){
+  const lv = level(), b = app.brew;
+  const picker = grinderPicker(v => { setGrinder(v); refreshAll(); });
+  refreshers.push(picker.refresh);
+  const nameIn = textInput("Your grinder's name", () => b.grinderName, v => { b.grinderName = v; }, { placeholder:'e.g. Krups blade grinder' });
+  const typeBox = h('div', { style:'margin:0 0 10px' }, h('div', { class:'flabel', style:'font-size:14px;margin-bottom:2px', text:'Grinder type' }), metaLine('grinder_type'),
+    choiceGroup(GRINDER_TYPES, () => b.grinderType, v => { b.grinderType = v; }, { label:'Grinder type' }));
+  const forget = h('div', { class:'gearhint', id:'gearForget' });
+  refreshers.push(() => {
+    nameIn.style.display = b.grinderKey === GEAR_OTHER ? '' : 'none';
+    typeBox.style.display = (b.grinderKey === GEAR_OTHER || b.grinderKey === GEAR_UNSURE) ? '' : 'none';
+    forget.textContent = '';
+    const c = b.method && b.grinderKey ? getRecipe().clicks : null;
+    if (c && c.kind === 'computed' && c.calibrated) forget.append(h('span', { class:'fine', style:'margin:0', text:'Your results are moving the suggested setting for ' + c.category + '.' }),
+      twoTap('Forget my results for ' + c.category, 'Tap again to forget', () => { app.prefs.calib = calibForget(app.prefs.calib, b.grinderKey, b.method); b.grindEdited = false; b.grindMethod = ''; scheduleDraft(); refreshAll(); }, 'link'));
+    forget.style.display = forget.childNodes.length ? '' : 'none';
+  });
+  const grinder = h('div', { class:'field' }, h('label', { for:'gear_sel', text:'Grinder' }), picker.el, h('p', { class:'fine', style:'margin:4px 0 0', text:'Pick yours and we suggest a starting setting on the next page. Not listed, or not sure? Choose that.' }));
+  const waterTip = h('p', { class:'fine', style:'margin:8px 0 0' }), waterRead = h('div', { class:'waterread', role:'status' });
+  refreshers.push(() => { const w = WATER_TYPES.find(x => x.v === b.waterType); waterTip.textContent = w ? w.tip : 'The SCA suggests clean water with about 150 mg/L of dissolved minerals (75 to 250 is acceptable) and alkalinity near 40 mg/L. Tell us yours and we can use it in your results.'; });
+  refreshers.push(() => { const wp = waterProfile(b.waterType, b.waterAlk, b.waterGH); waterRead.textContent = ''; wp.lines.forEach(t => waterRead.append(h('p', { class:'fine', style:'margin:6px 0 0;' + (/above|very low|is below the SCA/.test(t) ? 'color:var(--ink)' : ''), text:t }))); });
+  const water = h('div', { style:'margin:14px 0 0' }, h('div', { class:'flabel', style:'font-weight:600;font-size:14px;margin-bottom:2px', text:'Water' }), metaLine('water'),
+    choiceGroup(WATER_TYPES, () => b.waterType, v => { b.waterType = v; }, { label:'Water type' }), waterTip);
+  const numbers = h('details', { class:'moreinfo', id:'waterNumbers', style:'margin-top:10px' }, h('summary', { text:'Water numbers, optional' }),
+    h('div', { class:'twocol', style:'margin-top:10px' }, textInput('Alkalinity (mg/L as CaCO₃)', () => b.waterAlk, v => { b.waterAlk = v; refreshAll(); }, { placeholder:'e.g. 40', meta:'water_alk', inputmode:'decimal' }), textInput('Hardness (mg/L as CaCO₃)', () => b.waterGH, v => { b.waterGH = v; refreshAll(); }, { placeholder:'e.g. 68', meta:'water_gh', inputmode:'decimal' })),
+    waterRead, h('p', { class:'fine', style:'margin:4px 0 0', text:'Find these on your water company\'s report or a test strip. The SCA target is about 40 mg/L for alkalinity, and 68 mg/L (acceptable 17 to 85) for calcium hardness. Reports usually list total hardness, which also counts magnesium and reads higher, so treat it as a rough guide.' }));
+  numbers.open = lv === 'expert' || !!(b.waterAlk || b.waterGH);
+  const filter = h('div', { style:'margin-top:14px' }, textInput('Filter paper', () => b.filter, v => { b.filter = v; }, { placeholder:'e.g. Cafec Abaca, Hario tabbed', meta:'filter' }));
+  const altField = textInput('Altitude where you brew (optional)', () => b.altitudeFt ? String(b.altitudeFt) : '', v => { b.altitudeFt = parseAltitude(v); }, { placeholder:'e.g. 5300 (feet), or 1600 m', meta:'altitude', inputmode:'decimal' });
+  const alt = h('div', { style:'margin-top:14px' }, altField, h('p', { class:'fine', style:'margin:-4px 0 0', text:'Water boils about 1.8°F lower for every 1,000 ft (300 m) you climb. If the setting is hotter than your water can get, we cap it just off the boil. This is for this brew only. We show feet.' }));
+  const kids = [grinder, nameIn, typeBox, forget];
+  if (lv === 'new') kids.push(h('details', { class:'moreinfo', id:'gearMore', style:'margin-top:10px' }, h('summary', { text:'More, optional' }), alt));
+  else kids.push(water, numbers, filter, alt);
+  return h('div', null, kids);
+}
+function gearRow(label, value, subs){ const k = krow(label, value, subs); k.classList.add('grow'); return k; }
+/* what you chose, one row each; a row left empty reads "Not chosen" */
+function gearRows(){
+  const b = app.brew, lv = level(), rows = h('div', { id:'gearRows' }), w = WATER_TYPES.find(x => x.v === b.waterType);
+  rows.append(gearRow('Grinder', b.grinderKey ? (b.grinderKey === GEAR_OTHER ? (b.grinderName || 'Not listed') : grinderLabel(b.grinderKey)) : 'Not chosen'));
+  if (lv !== 'new' || b.waterType || b.waterAlk || b.waterGH){ const wp = waterProfile(b.waterType, b.waterAlk, b.waterGH); rows.append(gearRow('Water', w ? w.label : 'Not chosen', wp.lines.map(t => t.replace(/\. .*$/, '.')))); }
+  if (lv !== 'new' || b.filter) rows.append(gearRow('Filter', b.filter || 'Not chosen'));
+  if (b.altitudeFt) rows.append(gearRow('Altitude', b.altitudeFt + ' ft', 'This brew only'));
+  return rows;
+}
+function screenGear(m){
+  const meth = METHODS.find(x => x.key === app.brew.method);
+  if (!meth || isMachine(app.brew.method)){ app.screen = 'recipe'; return SCREENS.recipe(m); }
+  const editing = gearEdit || !gearHasAny(), hadAny = gearHasAny();
+  m.append(h('h1', { text:'Your gear' }), h('p', { class:'lede', text:'What you brew with. We use it to suggest a grinder setting.' }));
+  const redraw = () => render();
+  const card = h('div', { class:'card gear', id:'gearCard' });
+  const saved = h('p', { class:'fine', id:'gearSaved', role:'status', style:'margin:8px 0 0' });
+  if (editing){
+    card.append(...kept(h('div', { class:'cardhead' }, h('h3', { text:'Your gear' }), hadAny ? h('button', { type:'button', class:'btn', id:'gearDone', text:'Done', onclick:() => { gearEdit = false; redraw(); } }) : null),
+      gearStatus(redraw), hadAny ? null : h('p', { class:'fine', style:'margin:0 0 10px', text:'Not sure? Choose Not sure. You can change this any time.' }), gearFields()));
+  } else {
+    card.append(h('div', { class:'cardhead' }, h('h3', { text:'Your gear' }), h('button', { type:'button', class:'btn', id:'gearChange', text:'Change', onclick:() => { gearEdit = true; redraw(); } })), gearStatus(redraw), gearRows());
+  }
+  const usualBtn = h('button', { type:'button', class:'btn block', id:'gearMakeUsual', text:'Make this my usual', onclick:() => { gearMakeUsual(); saved.textContent = 'Saved. Each new brew starts with this gear.'; refreshAll(); } });
+  refreshers.push(() => { usualBtn.hidden = !gearHasAny() || gearIsUsual(); });
+  m.append(card, usualBtn, saved, h('p', { class:'fine', style:'margin:8px 0 0', text:'A change here is for this brew only, unless you tap Make this my usual. Your usual gear is also in My setup, in the menu.' }));
+  m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary block', id:'gearNext', text:'Next: Brew', onclick:() => { gearConfirm(); go('recipe'); } }))));
 }
 /* ---------- the amounts ---------- */
 /* which amount you type on Change settings; the other follows from it and the ratio. Coffee first, like the Brew page. Kept while the page is open, not saved. */
@@ -6031,12 +6247,9 @@ function tempCard(onChange){
   const rangeLine = h('p', { class:'fine', style:'margin:6px 0 0', text:'Shaded: the sweet spot for this coffee, ' + rg[0] + '–' + rg[1] + '°F (' + Math.round(fToC(rg[0])) + '–' + Math.round(fToC(rg[1])) + '°C). The tick is our pick.' });
   const layerBox = h('details', { class:'layerbox' }, h('summary', { text:'How we chose ' + recF + '°F' }));
   const heatBox = h('details', { class:'layerbox' }, h('summary', { text:'Why the coffee runs cooler than your kettle' }), h('p', { class:'serif', style:'margin:8px 0 0;font-size:15.5px;line-height:1.4', text:HEAT_NOTE }));
-  const altField = textInput('Altitude where you brew (optional)', () => app.brew.altitudeFt ? String(app.brew.altitudeFt) : '', v => { app.brew.altitudeFt = parseAltitude(v); }, { placeholder:'e.g. 5300 (feet), or 1600 m', meta:'altitude', inputmode:'decimal' });
-  altField.querySelector('input').addEventListener('change', () => { onChange('altitude'); render(); });
-  const altNote = h('p', { class:'fine', style:'margin:-4px 0 0', text:'Water boils about 1.8°F lower for every 1,000 ft (300 m) you climb. If the setting is hotter than your water can get, we cap it just off the boil. We show feet.' });
   const card = h('div', { class:'card' }, h('h3', { text:'Water temperature' }),
     h('div', { style:'display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-top:4px' }, h('div', null, val, recLine, evBox), h('div', { class:'nudges', style:'margin:0' }, minus, plus)),
-    wrapSl, rangeLine, h('div', { class:'chips presets', style:'margin-top:10px' }, pbtns), layerBox, fxBox, heatBox, h('div', { style:'margin-top:12px' }, altField, altNote));
+    wrapSl, rangeLine, h('div', { class:'chips presets', style:'margin-top:10px' }, pbtns), layerBox, fxBox, heatBox);
   function refresh(){
     const r = getRecipe(), f = r.temp.f, e = r.tempFx;
     while (layerBox.children.length > 1) layerBox.removeChild(layerBox.lastChild);
@@ -6072,12 +6285,6 @@ function tempCard(onChange){
   return { el:card, refresh };
 }
 
-/* one line for a collapsed card's summary, kept up to date by the recipe screen */
-function tempSummary(r){
-  if (r.temp.kind !== 'hot') return '';
-  const base = r.temp.manual ? 'You set ' + r.temp.f + '°F (recommended ' + r.temp.recF + '°F)' : r.temp.f + '°F / ' + r.temp.c + '°C, picked for your coffee';
-  return base + (r.tempFx && r.tempFx.risk ? ' · see the warning inside' : '') + (app.brew.altitudeFt ? ' · altitude set' : '');
-}
 function adjustSummary(r, meth){
   const bits = [];
   if (techniquesFor(meth).length > 1) bits.push('Technique: ' + r.tech.label);
@@ -6091,21 +6298,6 @@ function timeFieldFor(m){
   if (m.type === 'espresso') return { label:'Shot time', hint:'(pump on to pump off)' };
   if (m.type === 'immersion') return { label:'Total brew time', hint:'(from adding water to finishing)' };
   return { label:'Total brew time', hint:'(start to finish)' };
-}
-function setupCard(meth){
-  const waterTip = h('p', { class:'fine', style:'margin:8px 0 0' }), waterRead = h('div', { class:'waterread', role:'status' });
-  const body = h('div', { class:'gbody' },
-    h('div', { class:'flabel', style:'font-weight:600;font-size:14px;margin-bottom:2px', text:'Water' }), metaLine('water'),
-    choiceGroup(WATER_TYPES, () => app.brew.waterType, v => { app.brew.waterType = v; }, { label:'Water type' }), waterTip,
-    h('div', { class:'twocol', style:'margin-top:10px' }, textInput('Alkalinity (mg/L as CaCO₃)', () => app.brew.waterAlk, v => { app.brew.waterAlk = v; refreshAll(); }, { placeholder:'e.g. 40', meta:'water_alk', inputmode:'decimal' }), textInput('Hardness (mg/L as CaCO₃)', () => app.brew.waterGH, v => { app.brew.waterGH = v; refreshAll(); }, { placeholder:'e.g. 68', meta:'water_gh', inputmode:'decimal' })),
-    waterRead, h('p', { class:'fine', style:'margin:4px 0 0', text:'Optional. Find these on your water company\'s report or a test strip. The SCA target is about 40 mg/L for alkalinity, and 68 mg/L (acceptable 17 to 85) for calcium hardness. Reports usually list total hardness, which also counts magnesium and reads higher, so treat it as a rough guide.' }),
-    h('div', { style:'margin-top:14px' }, textInput('Filter paper', () => app.brew.filter, v => { app.brew.filter = v; }, { placeholder:'e.g. Cafec Abaca, Hario tabbed', meta:'filter' })),
-    h('p', { class:'fine', style:'margin-top:-4px', text:'Your brew time and anything you did differently are not asked here. The guided timer records the time, and the Taste page asks about the rest after you have brewed.' }));
-  refreshers.push(() => { const wp = waterProfile(app.brew.waterType, app.brew.waterAlk, app.brew.waterGH); waterRead.textContent = ''; wp.lines.forEach(t => waterRead.append(h('p', { class:'fine', style:'margin:6px 0 0;' + (/above|very low|is below the SCA/.test(t) ? 'color:var(--ink)' : ''), text:t }))); });
-  refreshers.push(() => { const w = WATER_TYPES.find(x => x.v === app.brew.waterType); waterTip.textContent = w ? w.tip : 'The SCA suggests clean water with about 150 mg/L of dissolved minerals (75 to 250 is acceptable) and alkalinity near 40 mg/L. Tell us yours and we can use it in your results.'; });
-  const d = h('details', { class:'card gcard', id:'setupCard' }, h('summary', null, h('span', { class:'gt', text:'Your setup (optional)' }), h('span', { class:'gs', text:'Water and filter' })), body);
-  d.open = level() === 'expert';
-  return d;
 }
 function pourStyleCard(onChange){
   const btns = AGIT.map(a => h('button', { type:'button', 'aria-pressed':'false', text:a.label, onclick:() => { app.brew.agitation = a.v; onChange('agit'); } }));
@@ -6186,86 +6378,85 @@ function validGrinderKey(k, name){
 /* the name a saved draft ends up with is worked out from the grinder choice, never trusted from the draft: a name nobody can see is never saved */
 function gearNameFor(key, name){ const g = grinderFor(key); if (g) return g.name; if (key === GEAR_UNSURE) return 'Not sure'; if (key === GEAR_OTHER) return typeof name === 'string' ? name.slice(0, 80) : ''; return ''; }
 function gearKnownName(n){ return n === 'Not sure' || GRINDERS.some(g => g.name === n); }
-function gearCard(meth, paint){
-  const opt = (v, t) => h('option', { value:v, text:t });
-  const list = kind => GRINDERS.filter(g => g.kind === kind).sort((a, b) => a.short.localeCompare(b.short)).map(g => opt(g.key, g.short + (g.kind === 'computed' && !['espresso', 'moka', 'filter', 'press'].every(k => g.cats[k]) ? ' (some methods)' : '')));
-  const sel = h('select', { id:'gear_sel', class:'plain' }, opt('', 'Choose your grinder'),
-    h('optgroup', { label:'We suggest a setting' }, list('computed')), h('optgroup', { label:'No settings table yet' }, list('calibrate')),
-    h('optgroup', { label:'Something else' }, opt(GEAR_OTHER, 'Not listed: I will type its name'), opt(GEAR_UNSURE, 'Not sure')));
-  const nameIn = textInput("Your grinder's name", () => app.brew.grinderName, v => { app.brew.grinderName = v; }, { placeholder:'e.g. Krups blade grinder' });
-  const typeBox = h('div', { style:'margin:0 0 10px' }, h('div', { class:'flabel', style:'font-size:14px;margin-bottom:2px', text:'Grinder type' }), metaLine('grinder_type'),
-    choiceGroup(GRINDER_TYPES, () => app.brew.grinderType, v => { app.brew.grinderType = v; }, { label:'Grinder type' }));
-  const readout = h('div', { class:'gearread', role:'status' });
+/* choose a grinder for this brew: the setting is cleared, because it belonged to the old grinder */
+function setGrinder(v){
+  const b = app.brew, g = grinderFor(v);
+  b.grinderKey = v; b.grindEdited = false; b.grindMethod = ''; b.grind_setting = '';
+  if (g){ b.grinderName = g.name; b.grinderType = 'burr'; }
+  else if (v === GEAR_UNSURE){ b.grinderName = 'Not sure'; b.grinderType = 'unknown'; }
+  else { if (gearKnownName(b.grinderName)) b.grinderName = ''; b.grinderType = ''; }
+  scheduleDraft();
+}
+/* The "Setting to use" box under the Grind row on Brew. refresh() keeps the setting filled in with our suggestion until the person types their own, and tells Brew what the grinder offers. */
+function grindBox(paint, onDone){
   const hint = h('div', { class:'gearhint' });
   let auto = '';
   function updateHint(){
     hint.textContent = '';
     if (auto && app.brew.grindEdited && String(app.brew.grind_setting || '').trim() !== auto) hint.append(h('span', { class:'fine', style:'margin:0', text:'We suggested ' + auto + '.' }),
-      h('button', { type:'button', class:'btn link', text:'Use it', onclick:() => { app.brew.grind_setting = auto; app.brew.grindEdited = false; updateHint(); refreshAll(); scheduleDraft(); } }));
+      h('button', { type:'button', class:'btn link', id:'useSuggested', text:'Use it', onclick:() => { app.brew.grind_setting = auto; app.brew.grindEdited = false; scheduleDraft(); paint('grind'); } }));
     hint.style.display = hint.childNodes.length ? '' : 'none';
   }
-  const settingIn = textInput('Setting to use', () => app.brew.grind_setting, v => { app.brew.grind_setting = v; app.brew.grindEdited = v.trim() !== ''; app.brew.grindMethod = app.brew.grindEdited ? app.brew.method : ''; updateHint(); }, { placeholder:'e.g. click 24, setting 15', meta:'grinder_setting' });
-  sel.addEventListener('change', () => {
-    const v = sel.value, g = grinderFor(v);
-    app.brew.grinderKey = v; app.brew.grindEdited = false; app.brew.grindMethod = ''; app.brew.grind_setting = '';
-    if (g){ app.brew.grinderName = g.name; app.brew.grinderType = 'burr'; }
-    else if (v === GEAR_UNSURE){ app.brew.grinderName = 'Not sure'; app.brew.grinderType = 'unknown'; }
-    else { if (gearKnownName(app.brew.grinderName)) app.brew.grinderName = ''; app.brew.grinderType = ''; }
-    paint('grinder'); scheduleDraft();
-  });
+  const settingIn = textInput('Setting to use', () => app.brew.grind_setting, v => { app.brew.grind_setting = v; app.brew.grindEdited = v.trim() !== ''; app.brew.grindMethod = app.brew.grindEdited ? app.brew.method : ''; updateHint(); paint('grind'); }, { placeholder:'e.g. click 24, setting 15', meta:'grinder_setting' });
+  const done = h('button', { type:'button', class:'btn', id:'grindDone', text:'Done', onclick:onDone });
+  const el = h('div', { class:'adjpanel', id:'grindAdjust' }, h('div', { class:'cardhead' }, h('h3', { text:'Grinder setting' }), done), settingIn, hint), field = settingIn.querySelector('input');
   function refresh(){
-    if (app.brew.grindEdited && app.brew.grindMethod !== app.brew.method){ app.brew.grindEdited = false; app.brew.grindMethod = ''; app.brew.grind_setting = ''; }
-    const key = app.brew.grinderKey || '', c = getRecipe().clicks;
-    if (sel.value !== key) sel.value = key;
-    nameIn.style.display = key === GEAR_OTHER ? '' : 'none';
-    typeBox.style.display = (key === GEAR_OTHER || key === GEAR_UNSURE) ? '' : 'none';
-    settingIn.style.display = key ? '' : 'none';
+    const b = app.brew;
+    if (b.grindEdited && b.grindMethod !== b.method){ b.grindEdited = false; b.grindMethod = ''; b.grind_setting = ''; }
+    const c = getRecipe().clicks;
     auto = c && c.kind === 'computed' ? c.unit + ' ' + c.clicks : '';
-    if (auto && !app.brew.grindEdited) app.brew.grind_setting = auto;
-    readout.textContent = ''; readout.style.display = '';
-    if (c && c.kind === 'computed'){
-      const extra = c.dial != null ? ' · dial ' + c.dial.toFixed(1) : c.turns != null ? ' · about ' + c.turns.toFixed(1) + ' turns' : '';
-      [h('div', { class:'fine', style:'margin:0', text:c.calibrated ? 'Suggested setting, moved by your results' : 'Suggested setting for this brew' }), h('div', { class:'gr-big', text:c.unit.charAt(0).toUpperCase() + c.unit.slice(1) + ' ' + c.clicks }, h('small', { text:extra })),
-        h('p', { class:'fine', text:c.details.join(' ') }), c.caution ? h('p', { class:'fine', text:c.caution }) : null,
-        c.calibrated ? twoTap('Forget my results for ' + c.category, 'Tap again to forget', () => { app.prefs.calib = calibForget(app.prefs.calib, key, app.brew.method); app.brew.grindEdited = false; app.brew.grindMethod = ''; paint('grinder'); scheduleDraft(); }, 'link') : null].filter(Boolean).forEach(x => readout.append(x));
-    } else if (c) readout.append(h('p', { class:'fine', style:'margin:0', text:c.line }));
-    else if (key === GEAR_OTHER) readout.append(h('p', { class:'fine', style:'margin:0', text:'We do not have settings for this grinder yet. Note the setting that works, and change it one small step at a time.' }));
-    else if (key === GEAR_UNSURE) readout.append(h('p', { class:'fine', style:'margin:0', text:'That is fine. You can still note the setting you use below.' }));
-    else readout.style.display = 'none';
-    updateHint(); refreshAll();
+    if (auto && !b.grindEdited) b.grind_setting = auto;
+    if (document.activeElement !== field) field.value = b.grind_setting || '';   /* "Use it", a new cup size or Reset all can change the setting while the box is on screen */
+    updateHint();
+    return { key:b.grinderKey || '', c, auto, done };
   }
-  const el = h('div', { class:'card gear' }, h('h3', { text:'Your grinder' }),
-    h('p', { class:'fine', style:'margin:0 0 10px', text:'Pick yours and we suggest a starting setting. Not listed, or not sure? Choose that.' }),
-    h('div', { class:'field' }, h('label', { for:'gear_sel', text:'Grinder' }), sel), nameIn, typeBox, readout, settingIn, hint);
   return { el, refresh };
 }
 let recipeRepaint = null;
+/* which Adjust panels are open on the Brew page; they stay as they were through every repaint (grind: null means the grinder decides) */
+const adjOpen = { temp:false, grind:null };
 function screenRecipe(m){
   if (isMachine(app.brew.method)) return screenMachine(m);
   const meth = METHODS.find(x => x.key === app.brew.method), lv = level();
   if (!app.brew.water) app.brew.water = meth.water;
+  adjOpen.temp = false; adjOpen.grind = null;
   m.append(h('h1', { text:meth.label }), h('p', { class:'lede', text:meth.blurb }));
   { const th = termHint(); if (th) m.append(th); }
   { const rt = recipeTrailCard(meth) || recipePriorCard(meth); if (rt) m.append(rt); }
-  /* The card keeps its own parts (the cup-size buttons stay put, so a button you pressed keeps its focus) and a repaint redraws only the notices, the status line and the rows. */
-  const notes = h('div', { id:'recipeNotes' }), status = h('div', { class:'statusline', id:'recipeStatus' }), out = h('div', { id:'recipeOut' });
+  /* The card keeps its own parts (the cup-size buttons and the two Adjust panels stay put, so a button you pressed or a slider you are dragging keeps its focus). A repaint redraws only the notices, the status line and the rows around the panels. */
+  const notes = h('div', { id:'recipeNotes' }), status = h('div', { class:'statusline', id:'recipeStatus' });
+  const slot = { head:h('div'), temp:h('div'), grind:h('div'), tail:h('div') };
   recipeRepaint = src => paint(src);
-  const chips = sizeChips(meth, paint), gr = gearCard(meth, paint);
+  const chips = sizeChips(meth, paint), gb = grindBox(paint, () => { adjOpen.grind = false; paint('adj'); }), tc = tempCard(paint);
+  const tempPanel = tc ? h('div', { class:'adjpanel', id:'tempAdjust', hidden:true }, h('div', { class:'cardhead' }, h('h3', { text:'Water temperature' }), h('button', { type:'button', class:'btn', id:'tempDone', text:'Done', onclick:() => { adjOpen.temp = false; paint('adj'); } })), tc.el) : null;
+  if (tc) tc.el.querySelector('h3').hidden = true;
+  const out = h('div', { id:'recipeOut' }, slot.head, slot.temp, tempPanel, slot.grind, gb.el, slot.tail);
+  const adjustBtn = (id, open, label, toggle) => h('div', { class:'adjrow' }, h('button', { type:'button', class:'btn small', id, text:'Adjust', 'aria-expanded':String(open), 'aria-label':label, onclick:toggle }));
   function paint(src){
-    chips.refresh(src); gr.refresh();
+    chips.refresh(src); const gi = gb.refresh(); if (tc) tc.refresh();
     const r = getRecipe(), ch = changesOf(r);
     notes.textContent = ''; notes.append(noticesOf(r));
     status.textContent = ''; status.classList.toggle('changed', ch.length > 0);
     if (ch.length) status.append(h('span', { text:'Changed: ' + ch.map(c => c.short).join(' · ') }), h('button', { type:'button', class:'btn link', id:'resetAll', text:'Reset all', onclick:() => { resetChanges(); paint('reset'); } }));
     else status.append(h('span', { class:'pill static' }, h('span', { 'aria-hidden':'true', style:'color:var(--leaf);font-weight:800', text:'✓ ' }), 'Recommended for this coffee'));
-    out.textContent = ''; out.append(settingsRows(r), otherUnitsFold(r));
+    /* the rows, cut in four so the Temperature and Grind rows can sit above their panels */
+    const kids = Array.from(settingsRows(r, gi).children), nameOf = k => { const s = k.querySelector('.krow-top span'); return s ? s.textContent : ''; };
+    const ti = kids.findIndex(k => nameOf(k) === 'Temperature'), gx = kids.findIndex(k => nameOf(k) === 'Grind');
+    const computed = !!(gi.c && gi.c.kind === 'computed'), table = !!gi.key && !computed;
+    if (tc) kids[ti].append(adjustBtn('tempAdjBtn', adjOpen.temp, 'Adjust the water temperature', () => { adjOpen.temp = !adjOpen.temp; paint('adj'); }));
+    if (computed) kids[gx].append(adjustBtn('grindAdjBtn', adjOpen.grind === true, 'Adjust the grinder setting', () => { adjOpen.grind = !adjOpen.grind; paint('adj'); }));
+    else if (!gi.key) kids[gx].append(h('div', { class:'adjrow' }, h('button', { type:'button', class:'btn link', id:'chooseGrinder', text:'Choose your grinder', onclick:() => openGear('recipe', true) })));
+    if (tempPanel) tempPanel.hidden = !adjOpen.temp;
+    gb.el.hidden = !(table || (computed && adjOpen.grind === true)); gi.done.hidden = table;
+    [[slot.head, kids.slice(0, ti)], [slot.temp, [kids[ti]]], [slot.grind, [kids[gx]]], [slot.tail, kids.slice(gx + 1).concat(otherUnitsFold(r))]].forEach(x => { x[0].textContent = ''; x[0].append(...x[1]); });
     scheduleDraft();
   }
+  const gearBox = h('div', { class:'card gearline', id:'gearLineCard' }, h('div', { class:'gearline-text' }, h('div', { class:'cardlabel', text:'Your gear' }), h('div', { class:'gearline-val', id:'gearLine', text:gearLine() })),
+    h('button', { type:'button', class:'btn', id:'changeGear', text:'Change gear', 'aria-label':'Change gear', onclick:() => openGear('recipe', true) }));
   m.append(notes, h('div', { class:'card', id:'settingsCard' },
     h('div', { class:'cardhead' }, h('h3', { text:'Your brew settings' }), h('button', { type:'button', class:'btn', id:'changeBtn', text:'Change settings', onclick:() => go('change') })),
-    status, chips.el, out), gr.el);
+    status, chips.el, out), gearBox);
   if (lv === 'new') m.append(h('div', { class:'card' }, h('h3', { text:'How a brew works' }), h('p', { class:'serif', style:'margin:4px 0 0;font-size:16.5px', text:BREW_EXPLAINER })));
-  else m.append(setupCard(meth));
   /* The main action sits in the same fixed bottom bar the Facts screen uses, so it is always in reach however far the page is scrolled. */
   m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary block', id:'nextBtn', text:"Next: What's in your cup", onclick:() => go('ready') }))));
   paint('init');
@@ -6278,11 +6469,23 @@ function noticesOf(r){
   return frag;
 }
 /* the numbers: every amount in the one unit the person chose (the others are under "Other units") */
-function settingsRows(r){
+function settingsRows(r, gi){
   const wu = app.prefs.waterUnit, cu = app.prefs.coffeeUnit, type = r.method.type;
   const tempVal = r.temp.kind === 'hot' ? r.temp.f + '°F / ' + r.temp.c + '°C' : r.temp.kind === 'cold' ? 'Cold' : r.temp.kind === 'moka' ? 'Just off the boil' : 'Machine';
-  const tempSub = r.temp.kind === 'hot' ? (r.temp.manual ? 'You set this. Recommended: ' + r.temp.recF + '°F / ' + Math.round(fToC(r.temp.recF)) + '°C' : null) : r.temp.kind === 'cold' ? 'Room temperature or colder: about 68°F / 20°C' : r.temp.kind === 'moka' ? 'About 194–203°F / 90–95°C to start' : null;
-  const grindRow = krow('Grind', r.grind.name, [(level() === 'new' ? '' : 'about ' + r.grind.um + ' µm · ') + 'like ' + r.grind.like, r.clicks ? r.clicks.brief : null], r.grind.why.join(' '));
+  const capped = (r.temp.layers || []).some(l => l.k === 'Altitude');
+  const tempSub = r.temp.kind === 'hot' ? [r.temp.manual ? 'You set this. Recommended: ' + r.temp.recF + '°F / ' + Math.round(fToC(r.temp.recF)) + '°C' : null, capped ? 'Capped for your altitude' : null] : r.temp.kind === 'cold' ? 'Room temperature or colder: about 68°F / 20°C' : r.temp.kind === 'moka' ? 'About 194–203°F / 90–95°C to start' : null;
+  /* the grind row: the words and size, then what the grinder says. A grinder with a table shows its setting; one without says so, and the box below stays open. */
+  const key = gi ? gi.key : (app.brew.grinderKey || ''), c = r.clicks, gsub = [(level() === 'new' ? '' : 'about ' + r.grind.um + ' µm · ') + 'like ' + r.grind.like];
+  let gwhy = r.grind.why.join(' ');
+  if (c && c.kind === 'computed'){
+    gsub.push(c.brief); const mine = String(app.brew.grind_setting || '').trim();
+    if (app.brew.grindEdited && mine && mine !== c.unit + ' ' + c.clicks) gsub.push('Your setting: ' + mine);
+    if (c.calibrated) gsub.push('Moved by your results');
+    gwhy = [gwhy].concat(c.details || [], c.caution ? [c.caution] : []).join(' ');
+  } else if (key === GEAR_OTHER) gsub.push('We do not have settings for this grinder yet. Note the setting that works, and change it one small step at a time.');
+  else if (key === GEAR_UNSURE) gsub.push('You can still note the setting you use.');
+  else if (c){ gsub.push('We do not have settings for this grinder yet. Note the one that works.'); gwhy = gwhy + ' ' + c.line; }
+  const grindRow = krow('Grind', r.grind.name, gsub, gwhy);
   if (app.flashGrind){ grindRow.classList.add('flash'); app.flashGrind = false; }
   const cupG = r.yield != null ? aboutGrams(r.yield, type) : null;
   const rows = h('div', null,
@@ -6475,19 +6678,17 @@ function screenChange(m){
   m.append(h('h1', { text:'Change settings' }), h('p', { class:'lede', text:meth.label + '. Our recommendation is the starting point. Change what you like, and the Brew page follows.' }));
   const banner = h('div', { class:'statusline changed', id:'changeBanner' });
   function paint(src){
-    amt.refresh(src); if (tk) tk.refresh(); if (tc) tc.refresh(); if (ps) ps.refresh(); sums.forEach(f => f());
+    amt.refresh(src); if (tk) tk.refresh(); if (ps) ps.refresh(); sums.forEach(f => f());
     const ch = changesOf(getRecipe());
     banner.hidden = !ch.length; banner.textContent = '';
     if (ch.length) banner.append(h('span', { text:'Changed: ' + ch.map(c => c.short).join(' · ') }), h('button', { type:'button', class:'btn link', id:'resetAll', text:'Reset all', onclick:() => { resetChanges(); paint('ratio-reset'); } }));
     scheduleDraft();
   }
-  const amt = amountCard(meth, paint), tk = techniqueCard(meth, paint), tc = tempCard(paint), ps = (meth.type === 'flow' && lv !== 'new') ? pourStyleCard(paint) : null;
+  const amt = amountCard(meth, paint), tk = techniqueCard(meth, paint), ps = (meth.type === 'flow' && lv !== 'new') ? pourStyleCard(paint) : null;
   m.append(banner, amt.el);
-  /* a newcomer keeps the temperature and the techniques folded; everyone else sees them as cards */
-  if (lv === 'new'){
-    if (tc){ tc.el.querySelector('h3').hidden = true; m.append(foldCard('tempFold', 'Change the water temperature (optional)', () => 'We already picked one for your coffee', [tc], sums)); }
-    if (tk) m.append(foldCard('adjustCard', 'Try a different technique (optional)', () => 'Pulse pours or iced coffee', [tk], sums));
-  } else [tc, tk, ps].forEach(x => { if (x) m.append(x.el); });
+  /* a newcomer keeps the techniques folded; everyone else sees them as cards. The water temperature is on the Brew page, behind its Adjust button. */
+  if (lv === 'new'){ if (tk) m.append(foldCard('adjustCard', 'Try a different technique (optional)', () => 'Pulse pours or iced coffee', [tk], sums)); }
+  else [tk, ps].forEach(x => { if (x) m.append(x.el); });
   m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary block', id:'doneBtn', text:'Done', onclick:() => navBack('recipe') }))));
   paint('init');
 }
@@ -6621,7 +6822,7 @@ function readyRows(r){
   const wu = app.prefs.waterUnit, cu = app.prefs.coffeeUnit, type = r.method.type;
   const row = (label, value, sub, big) => h('div', { class:'rrow' + (big ? ' big' : '') }, h('span', { text:label }), h('div', null, h('strong', { text:value }), sub ? h('div', { class:'sub', text:sub }) : null));
   const tempVal = r.temp.kind === 'hot' ? r.temp.f + '°F / ' + r.temp.c + '°C' : r.temp.kind === 'cold' ? 'Cold' : r.temp.kind === 'moka' ? 'Just off the boil' : 'Machine';
-  const grindSub = r.clicks && r.clicks.brief ? r.clicks.brief : app.brew.grind_setting ? 'Your setting: ' + app.brew.grind_setting : null;
+  const mine = String(app.brew.grind_setting || '').trim(), grindSub = app.brew.grindEdited && mine ? 'Your setting: ' + mine : r.clicks && r.clicks.brief ? r.clicks.brief : mine ? 'Your setting: ' + mine : null;
   const cupG = r.yield != null ? aboutGrams(r.yield, type) : null;
   return h('div', { class:'card', id:'readyRows' }, h('h3', { text:'Your brew' }),
     row('Coffee', coffeeShown(r.dose, cu)),
@@ -6644,7 +6845,7 @@ function screenReady(m){
   } else m.append(h('div', { class:'card', id:'changedCard' }, h('h3', { text:'Recommended for this coffee' }),
     h('p', { class:'fine', style:'margin:4px 0 0' }, h('span', { 'aria-hidden':'true', style:'color:var(--leaf);font-weight:800', text:'✓ ' }), 'You changed nothing. These are our settings, and here is what shaped them.'), effectsCard(r, true)));
   m.append(h('div', { class:'card' }, h('h3', { text:'Before you start' }), h('ul', { class:'prep' }, r.prep.map(t => h('li', { text:t }))),
-    h('details', { class:'moreinfo' }, h('summary', { text:'Water tips' }), h('p', { class:'serif', style:'margin:6px 0 0;font-size:15.5px;line-height:1.4', text:level() === 'new' ? r.water_note_plain : r.water_note }), (() => { const wl = h('div', { class:'waterlines' }); refreshers.push(() => { wl.textContent = ''; waterProfile(app.brew.waterType, app.brew.waterAlk, app.brew.waterGH).lines.forEach(t => wl.append(h('p', { class:'serif', style:'margin:6px 0 0;font-size:15.5px;line-height:1.4', text:t }))); }); return wl; })())));
+    h('details', { class:'moreinfo' }, h('summary', { text:'Water tips' }), h('p', { class:'serif', style:'margin:6px 0 0;font-size:15.5px;line-height:1.4', text:level() === 'new' ? r.water_note_plain : r.water_note }))));
   (r.risks || [r.risk]).slice(0, 2).forEach((k, i) => m.append(h('div', { class:'watch' }, h('b', { text:(i ? 'Also watch for: ' : 'Watch for: ') }), k.title + '. ', h('span', { class:'serif', text:k.fix }))));
   const ol = h('ol', { class:'steps' });
   r.steps.forEach(s => ol.append(h('li', { class:'step' }, h('div', { class:'t', text:s.t == null ? '' : fmtTime(s.t) }),
@@ -8311,7 +8512,7 @@ function dialFromRow(o, from){
   state = newCup(); openDial(key, from);
 }
 /* Put the Brew screen where an earlier try was, then add the one change on top (adj). rs is trailRestore's result for that try, or null to carry on from the session as it is. */
-function applyAttempt(key, rs, adj, base, note){
+function applyAttempt(key, rs, adj, base, note, toGear){
   adj = adj || { grind:0, ratio:0, agit:'' };
   const x = METHODS.find(y => y.key === key), b = app.brew, cl = (v, n) => Math.max(-n, Math.min(n, v));
   if (rs){
@@ -8333,8 +8534,8 @@ function applyAttempt(key, rs, adj, base, note){
   if (adj.tech) b.technique = adj.tech;
   if (adj.tempF) b.tempF = Math.max(165, Math.min(212, Math.round(adj.tempF)));
   app.dialNote = note || null;
-  state = newCup(); dialSym = ''; dialBasePick = ''; app.lastSymptom = ''; app.lastReasons = []; app.dialMethod = '';
-  go('recipe');
+  state = newCup(); dialSym = ''; dialBasePick = ''; app.lastSymptom = ''; app.lastReasons = []; app.dialMethod = ''; recipeVia = '';
+  if (toGear) openGear('recipe', true); else go('recipe');
 }
 /* one try in the list: score, settings, what changed since the one before, and whether it helped */
 function trailRow(a, t){
@@ -8552,7 +8753,8 @@ function screenDialBasic(m){
         if (fx.adjust.agit) app.brew.agitation = fx.adjust.agit;
         if (fx.adjust.pulse){ if (fx.adjust.pulse.taste) app.brew.pulseTaste = fx.adjust.pulse.taste; if (fx.adjust.pulse.strength) app.brew.pulseStrength = fx.adjust.pulse.strength; }
         if (fx.adjust.tech) app.brew.technique = fx.adjust.tech;
-        state = newCup(); dialSym = ''; app.lastSymptom = ''; app.lastReasons = []; go('recipe');
+        state = newCup(); dialSym = ''; app.lastSymptom = ''; app.lastReasons = []; recipeVia = '';
+        if (fx.waterFirst) openGear('recipe', true); else go('recipe');
       } }),
       h('button', { type:'button', class:'btn block', text:'Start a new coffee', onclick:resetAll })));
   }
@@ -8653,12 +8855,12 @@ function screenDial(m){
           : h('p', { class:'fine', id:'lockWait', style:'margin:8px 0 0', text:'This cup is not saved yet. Save the tasting first, then keep it as your best brew from here.' })));
     }
     const label = fx.btnLabel || (dialSym === 'great' ? 'Brew again' : 'Brew again with ' + (chgName || 'this change'));
-    const go2 = (adj, chg) => { applyAttempt(t.methodKey, rs, adj, base, note(chg)); };
+    const go2 = (adj, chg, toGear) => { applyAttempt(t.methodKey, rs, adj, base, note(chg), toGear); };
     const tempAdj = adv.alt ? { grind:0, ratio:0, agit:'', tempF:(rec.temp.f || 0) + adv.alt.deltaF, tempDir:adv.alt.tempDir } : null;
     const btnList = [];
     if (blocked && adv.alt) btnList.push(h('button', { type:'button', class:'btn primary block', id:'altBtn', text:'Brew again with ' + dialChangeName(tempAdj, dialSym), onclick:() => go2(tempAdj, dialChangeTokens(tempAdj)) }));
     if (blocked) btnList.push(h('button', { type:'button', class:'btn block', id:'anywayBtn', text:'Try ' + (chgName || 'the first change') + ' anyway', onclick:() => go2(fx.adjust, dialChangeTokens(fx.adjust)) }));
-    else btnList.push(h('button', { type:'button', class:'btn primary block', id:'brewAgainBtn', text:label, onclick:() => go2(fx.adjust, dialChangeTokens(fx.adjust)) }));
+    else btnList.push(h('button', { type:'button', class:'btn primary block', id:'brewAgainBtn', text:label, onclick:() => go2(fx.adjust, dialChangeTokens(fx.adjust), !!fx.waterFirst) }));
     out.append(h('div', { class:'actions', style:'flex-direction:column' }, btnList,
       dialSym === 'great' ? null : h('button', { type:'button', class:'btn link', id:'repeatBtn', text:'Repeat the same brew', onclick:() => go2({ grind:0, ratio:0, agit:'' }, ['none']) }),
       dialSym === 'great' ? null : h('p', { class:'fine', style:'margin:0', text:'Two cups of the same brew show how much your own cups vary, so a later change can be judged fairly.' }),
@@ -9061,7 +9263,7 @@ function screenDetail(m){
     h('button', { type:'button', class:'btn danger block', text:'Delete this tasting', onclick:() => openDelete(new Set([o._i]), true) })));
 }
 
-const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, guide:screenGuide };
+const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, guide:screenGuide };
 
 $('homeBtn').innerHTML = '<svg class="burger" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span class="ml">Menu</span>';
 $('homeBtn').addEventListener('click', openMenu);

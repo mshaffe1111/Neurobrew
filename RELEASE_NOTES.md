@@ -2,6 +2,14 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 36: Your gear gets its own page
+
+2026-10-07 21:22:44 UTC
+
+- After you pick a method, a new Your gear page asks what you brew with: grinder, water, filter paper and altitude. If you saved your gear in My setup, it is filled in, and one tap on Next: Brew moves on.
+- Brew keeps the numbers. The temperature and the grinder setting each have an Adjust button on their row, so you can change them without leaving the page. Change gear takes you back to your gear.
+- Change settings now holds the amount, strength, ratio, technique and pour style. Your water readings show on the Gear page only, and a change to your gear is for this brew unless you tap Make this my usual.
+
 ## Release 35: Brew starts with your numbers, with a last look before the timer
 
 2026-10-07 18:38:45 UTC
