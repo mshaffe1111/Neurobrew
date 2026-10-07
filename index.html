@@ -21,7 +21,7 @@
   --bg:#FBFAF7; --surface:#FFFFFF; --ink:#0D3B3A; --muted:#4A6664; --line:#E2DDCF;
   --accent:#9A5309; --accent-ink:#FFFFFF; --leaf:#12705E; --leaf-ink:#FFFFFF;
   --primary:#F2A93B; --primary-ink:#0D3B3A; --mint:#1FA68A;
-  --track:#E7E2D3; --warn:#8A4B00; --focus:#1F6FEB; --tint:#F1EDE0; --gold:#F2A93B;
+  --track:#E7E2D3; --warn:#8A4B00; --focus:#1F6FEB; --tint:#F1EDE0; --gold:#F2A93B; --edge:#6B8C88;   /* --edge: the outline of a button, 3.5:1 on the page; --line stays for dividers */
   --r1:#C9A468; --r2:#A97B4B; --r3:#865730; --r4:#643C22; --r5:#3E2516;
   --ui:"Poppins", ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --txt:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -35,7 +35,7 @@
     --bg:#0D3B3A; --surface:#134745; --ink:#F4EEE3; --muted:#A9C9C1; --line:#27625D;
     --accent:#F2A93B; --accent-ink:#0D3B3A; --leaf:#7FE0C3; --leaf-ink:#0D3B3A;
     --primary:#F2A93B; --primary-ink:#0D3B3A; --mint:#7FE0C3;
-    --track:#1D5551; --warn:#F2C27A; --focus:#8CC4FF; --tint:#195049; --gold:#F2A93B;
+    --track:#1D5551; --warn:#F2C27A; --focus:#8CC4FF; --tint:#195049; --gold:#F2A93B; --edge:#5FA89C;
   }
 }
 :root[data-theme="dark"]{
@@ -43,7 +43,7 @@
   --bg:#0D3B3A; --surface:#134745; --ink:#F4EEE3; --muted:#A9C9C1; --line:#27625D;
   --accent:#F2A93B; --accent-ink:#0D3B3A; --leaf:#7FE0C3; --leaf-ink:#0D3B3A;
   --primary:#F2A93B; --primary-ink:#0D3B3A; --mint:#7FE0C3;
-  --track:#1D5551; --warn:#F2C27A; --focus:#8CC4FF; --tint:#195049; --gold:#F2A93B;
+  --track:#1D5551; --warn:#F2C27A; --focus:#8CC4FF; --tint:#195049; --gold:#F2A93B; --edge:#5FA89C;
 }
 html{ scroll-padding-top:calc(env(safe-area-inset-top, 0px) + 60px); background:var(--bg); }
 *,*::before,*::after{ box-sizing:inherit; }
@@ -65,7 +65,7 @@ body[data-screen="coffee"] .wrap, body[data-screen="recipe"] .wrap{ padding-bott
 .back[hidden]{ display:none; }
 .toptitle{ flex:1; text-align:center; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 body[data-screen="start"] .stick{ display:none; }
-.menubtn{ display:flex; align-items:center; gap:8px; min-height:44px; padding:0 14px 0 12px; border:1px solid var(--line); border-radius:12px; background:var(--surface); color:var(--ink); font-family:inherit; font-weight:600; font-size:15px; cursor:pointer; }
+.menubtn{ display:flex; align-items:center; gap:8px; min-height:44px; padding:0 14px 0 12px; border:2px solid var(--edge); border-radius:12px; background:var(--surface); color:var(--ink); font-family:inherit; font-weight:600; font-size:15px; cursor:pointer; }
 .menubtn:hover{ background:var(--tint); }
 .menubtn:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
 .menubtn .burger{ display:block; flex:none; }
@@ -124,7 +124,7 @@ h3{ font-weight:600; font-size:16px; margin:0 0 4px; }
 .choices.stack .choice{ width:100%; }
 
 /* buttons */
-.btn{ border-radius:12px; padding:13px 16px; font-weight:600; font-size:16px; min-height:50px; border:1px solid var(--line); background:var(--surface); }
+.btn{ border-radius:12px; padding:13px 16px; font-weight:600; font-size:16px; min-height:50px; border:1px solid var(--edge); background:var(--surface); }
 .btn.primary{ background:var(--primary); color:var(--primary-ink); border-color:var(--primary); font-weight:700; }
 .btn.primary:hover{ filter:brightness(.96); }
 .btn.leaf{ background:var(--leaf); color:var(--leaf-ink); border-color:var(--leaf); }
@@ -250,7 +250,7 @@ details.mgroup > summary .mgt{ font-weight:700; font-size:17px; }
 .readout{ text-align:right; flex:none; min-width:86px; }
 .val{ display:block; font-weight:800; font-size:26px; line-height:1.05; font-variant-numeric:tabular-nums; letter-spacing:-0.01em; }
 .qual{ display:block; font-size:12px; color:var(--muted); }
-.nudge{ width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:var(--bg); font-size:20px; line-height:1; padding:0; }
+.nudge{ width:38px; height:38px; border-radius:50%; border:1px solid var(--edge); background:var(--bg); font-size:20px; line-height:1; padding:0; }
 .nudges{ display:flex; gap:6px; justify-content:flex-end; margin-top:6px; }
 .slider{ -webkit-appearance:none; appearance:none; width:100%; height:44px; margin:0; background:transparent; --f:.5; touch-action:pan-y; display:block; }
 .slider::-webkit-slider-runnable-track{ height:10px; border-radius:5px;
@@ -290,8 +290,12 @@ details.more textarea{ width:100%; min-height:64px; margin-top:8px; padding:10px
 .cups{ display:flex; gap:8px; margin-top:10px; align-items:center; }
 .cup{ width:46px; height:46px; border-radius:50%; border:2px solid var(--leaf); background:transparent; font-weight:600; font-size:15px; color:var(--leaf); }
 .cup[aria-pressed="true"]{ background:var(--leaf); color:var(--leaf-ink); }
-.cups .pts{ margin-left:auto; font-weight:800; font-size:20px; font-variant-numeric:tabular-nums; }
-.cups .pts small{ font-weight:400; color:var(--muted); font-size:13px; }
+.cupsfoot{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px; }
+.nonepass{ min-height:44px; padding:0 16px; border-radius:22px; border:2px solid var(--leaf); background:transparent; color:var(--leaf); font-weight:600; font-size:15px; }
+.nonepass[aria-pressed="true"]{ background:var(--leaf); color:var(--leaf-ink); }
+.cupsfoot .pts{ font-weight:800; font-size:20px; font-variant-numeric:tabular-nums; }
+.cupsfoot .pts small{ font-weight:400; color:var(--muted); font-size:13px; }
+.cupsfoot .pts .notchecked{ font-weight:600; font-size:14px; color:var(--warn); }
 .stepper{ display:flex; align-items:center; gap:10px; }
 .stepper .n{ min-width:24px; text-align:center; font-weight:800; font-size:20px; font-variant-numeric:tabular-nums; }
 .defect-row{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:6px 0; }
@@ -414,6 +418,11 @@ h2 + .fieldmeta{ margin-top:-4px; }
 .stepcard{ counter-increment:step; }
 .stepno{ display:block; font-size:12px; font-weight:700; color:var(--accent); letter-spacing:.05em; text-transform:uppercase; margin-bottom:2px; }
 .stepno::before{ content:'Step ' counter(step); }
+.stepcard.done .stepno::after{ content:' \00B7\0020\2713\0020Scored'; color:var(--leaf); }   /* a card with its score in says so, in words and a tick */
+/* "Next: Flavor" in the score bar and the names in "Still to score": tap to go to that card */
+.nextlink, .msg .linkbtn{ border:0; background:transparent; padding:2px 0; min-height:24px; font:inherit; font-weight:600; color:var(--accent); text-decoration:underline; text-underline-offset:2px; }
+.nextlink{ font-size:13px; }
+.nextlink::after{ content:' \203A'; }
 .phase{ display:flex; gap:12px; align-items:flex-start; margin:28px 0 12px; }
 .phase-n{ flex:none; width:32px; height:32px; border-radius:50%; background:var(--ink); color:var(--bg); display:flex; align-items:center; justify-content:center; font-weight:800; margin-top:1px; }
 .phase h2{ margin:0 0 2px; }
@@ -764,6 +773,22 @@ function mergeCSV(existing, newRow){
   existing.rows.forEach(r => { const rr = r.slice(); while (rr.length < header.length) rr.push(''); if (fresh) rr[si] = ''; lines.push(rr); });
   lines.push(header.map(c => newRow[c] !== undefined ? newRow[c] : ''));
   return toCSV(lines);
+}
+/* Put cuppings kept in this browser (row objects, as rowsToObjects gives them) into a file that was read with readExisting. A cupping whose id the file already has is skipped, so nothing is ever doubled. Columns the file lacks are added at the end, and the setup column is left empty on the added rows so the file's own setup stays where it is. Returns the same shape as readExisting, plus `added`. */
+function addRowsToExisting(ex, objs){
+  const header = ex.header.slice();
+  COLUMNS.forEach(c => { if (!header.includes(c)) header.push(c); });
+  const list = (objs || []).filter(o => o && typeof o === 'object');
+  list.forEach(o => Object.keys(o).forEach(k => { if (k !== '_i' && !header.includes(k)) header.push(k); }));
+  const ids = new Set(ex.ids), rows = ex.rows.map(r => { const rr = r.slice(); while (rr.length < header.length) rr.push(''); return rr; });
+  let added = 0;
+  list.forEach(o => {
+    const id = String(o.id == null ? '' : o.id).trim();
+    if (id && ids.has(id)) return;
+    if (id) ids.add(id);
+    rows.push(header.map(c => c === SETUP_COLUMN || o[c] == null ? '' : String(o[c]))); added++;
+  });
+  return { header, rows, ids, count:rows.length, added };
 }
 /* The same, for a file that only changes (a delete, a correction, a copy of the file): put the setup on the last cupping and clear it from the rest. No setup text, or no cuppings, changes nothing. */
 function stampSetupColumn(header, rows, json){
@@ -3672,7 +3697,7 @@ const GUIDE_SECTIONS = [
     tips:['If you already have earlier tries of this coffee, this screen offers them, and offers a new bag of a coffee you know to start from the recipe you dialed in.'] },
   { id:'cup', title:'5. Cup: taste and score it', lead:'Smell, sip hot, sip as it cools.',
     paras:['Score each card with the + and − buttons, from 6 (Good) up to 9.75, the top of the SCA scale. Press and hold to move faster. Tap a card\'s name to open it and describe what you notice. The words you pick for acidity and body set how strong each feels, and some words can suggest a score. You can change either at any time. Tap All cards to see everything at once.',
-      'Choose Single cup for one brewed cup, which gives a home score out of 100 for comparing your own cups, or Five cups (SCA) for the official method. These two scores are never compared with each other. You can add a star rating of your own, and, if you have a refractometer, your TDS to see the extraction.',
+      'Choose Single cup for one brewed cup, which gives a home score out of 100 for comparing your own cups, or Five cups (SCA) for the official method. These two scores are never compared with each other. In Five cups, tap each cup that passes Uniformity, Clean cup and Sweetness, or tap None passed if none did. A check you have not answered says Not checked, and no total shows until all three are answered. You can add a star rating of your own, and, if you have a refractometer, your TDS to see the extraction.',
       'When you save, you choose whether you already have a cupping file. Saving downloads a file called cuppings.csv with your whole history. If you are cupping several coffees in one sitting, keep each one in this browser and save one file at the end. After a save, the page is cleared and you are back at the start, ready for the next coffee. To dial in the coffee you just saved, tap Dial in the next brew on the Saved sheet, or open it later from Your cuppings.'] },
   { id:'dial', title:'6. Dial in: make the next cup better', lead:'Your scores point to one change.',
     paras:['After a cup, Dial it in looks at your scores and the words you picked and suggests one change: grind, ratio, water temperature or pour style. Say what you tasted if it chose differently from you. Then brew again with that one change.',
@@ -4346,6 +4371,18 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 32,
+  "at": "2026-10-07T02:23:03Z",
+  "date": "2026-10-07",
+  "title": "A clearer cup screen, and unsaved cups protected",
+  "notes": [
+   "Five cups: Uniformity, Clean cup and Sweetness now start as Not checked. Tap the cups that passed, or tap None passed. No total shows until all three are answered, so skipping them no longer counts as zero.",
+   "The cup screen shows how far along you are. A scored card says Scored, the bar says how many are done and has a Next link that takes you to the next one, and Save lists anything still missing as links.",
+   "The General notes box has a visible label, and buttons and the Menu button have clearer outlines.",
+   "Loading a file, or saving into a different one, no longer quietly removes cups you kept only in this browser. NeuroBrew names them and offers to add them to the file first."
+  ]
+ },
+ {
   "release": 31,
   "at": "2026-10-06T22:53:09Z",
   "date": "2026-10-06",
@@ -4608,15 +4645,31 @@ let storageFailed = false;
 function persistDirty(){ try { if (histDirty > 0) localStorage.setItem(HIST_DIRTY_KEY, String(histDirty)); else localStorage.removeItem(HIST_DIRTY_KEY); } catch(e){ storageFailed = true; } }
 const HIST_ADDED_KEY = 'brew-and-cup-history-added-v1';
 let histAdded = 0;           // cuppings kept in this browser that are not in a downloaded file yet
-function persistAdded(){ try { if (histAdded > 0) localStorage.setItem(HIST_ADDED_KEY, String(histAdded)); else localStorage.removeItem(HIST_ADDED_KEY); } catch(e){ storageFailed = true; } }
+const HIST_ADDEDIDS_KEY = 'brew-and-cup-history-addedids-v1';
+let histAddedIds = [];       // which cuppings those are (their ids), so a different file can be checked for them before it replaces this history
+function persistAdded(){
+  if (histAdded <= 0) histAddedIds = [];
+  try {
+    if (histAdded > 0) localStorage.setItem(HIST_ADDED_KEY, String(histAdded)); else localStorage.removeItem(HIST_ADDED_KEY);
+    if (histAddedIds.length) localStorage.setItem(HIST_ADDEDIDS_KEY, JSON.stringify(histAddedIds)); else localStorage.removeItem(HIST_ADDEDIDS_KEY);
+  } catch(e){ storageFailed = true; }
+}
+/* The cuppings that are only in this browser, as row objects: by their saved ids, or, for a count saved by an earlier release that kept no ids, the newest ones. A cupping that was deleted here is not in the list. */
+function browserOnlyCups(){
+  if (!history || !history.objs || histAdded <= 0) return [];
+  return histAddedIds.length ? history.objs.filter(o => histAddedIds.includes(String(o.id || '').trim())) : history.objs.slice(-histAdded);
+}
+/* Those of them that a file about to be loaded does not have: what loading it would lose. `ex` is the file as readExisting gives it. */
+function browserOnlyMissingFrom(ex){ return browserOnlyCups().filter(o => !ex.ids.has(String(o.id || '').trim())); }
 function unsavedLine(){ return histAdded > 0 ? histAdded + (histAdded === 1 ? ' cupping is' : ' cuppings are') + ' only in this browser' : ''; }
 /* Keeps a new cupping in this browser's copy of the history without downloading a file. The counts of cuppings removed or corrected here carry over, and the new one is counted as not yet in a file. Returns false, having changed nothing, if the browser would not hold it. */
 function keepInBrowser(csv){
   const ex = readExisting(csv); if (ex.error) return false;
-  const d = histDirty, e = histEdited, a = histAdded;
+  const d = histDirty, e = histEdited, carried = browserOnlyCups().map(o => String(o.id || '').trim()).filter(id => id && ex.ids.has(id));   /* those still in the file this will be */
+  const last = ex.rows[ex.rows.length - 1], newId = last ? String(last[ex.header.indexOf('id')] || '').trim() : '';
   try { localStorage.setItem(HISTORY_KEY, csv); if (localStorage.getItem(HISTORY_KEY) !== csv) return false; } catch(err){ storageFailed = true; return false; }
   setHistory(ex, csv);
-  histDirty = d; histEdited = e; histAdded = a + 1; persistDirty(); persistEdited(); persistAdded();
+  histDirty = d; histEdited = e; histAdded = carried.length + 1; histAddedIds = newId && !carried.includes(newId) ? carried.concat(newId) : carried; persistDirty(); persistEdited(); persistAdded();
   return true;
 }
 function setHistory(ex, text){
@@ -4716,11 +4769,14 @@ function openEditCoffee(o){
   sheet = { step:'editcoffee', rowIdx:o._i, edit, orig:JSON.stringify(edit), scope:'all' };
   openSheet();
 }
+function readAddedIds(ex){
+  try { const a = JSON.parse(localStorage.getItem(HIST_ADDEDIDS_KEY) || '[]'); return Array.isArray(a) ? a.filter(x => typeof x === 'string' && ex.ids.has(x)).slice(0, 1000) : []; } catch(e){ return []; }
+}
 function loadHistory(){
   try {
     const t = localStorage.getItem(HISTORY_KEY); if (!t) return;
     const ex = readExisting(t);
-    if (!ex.error){ history = { ex, text:t, objs:rowsToObjects(ex) }; histDirty = parseInt(localStorage.getItem(HIST_DIRTY_KEY), 10) || 0; histEdited = parseInt(localStorage.getItem(HIST_EDIT_KEY), 10) || 0; histAdded = parseInt(localStorage.getItem(HIST_ADDED_KEY), 10) || 0; }
+    if (!ex.error){ history = { ex, text:t, objs:rowsToObjects(ex) }; histDirty = parseInt(localStorage.getItem(HIST_DIRTY_KEY), 10) || 0; histEdited = parseInt(localStorage.getItem(HIST_EDIT_KEY), 10) || 0; histAdded = parseInt(localStorage.getItem(HIST_ADDED_KEY), 10) || 0; histAddedIds = histAdded > 0 ? readAddedIds(ex) : []; }
   } catch(e){}
 }
 function forgetHistory(){
@@ -4775,6 +4831,7 @@ function newCup(){
     id:newId(), mode:'single', cupping_date:today(),
     scores, intensity:{ acidity:null, body:null }, vials:[], words:{ fragrance_aroma:[], flavor:[], aftertaste:[], acidity:[], body:[] }, kit:[], after_len:'', src:{}, cool:{ acidity:'', sweetness:'', bitterness:'' }, notes:{}, general_notes:'', stars:0,
     checks:{ uniformity:[0,0,0,0,0], clean_cup:[0,0,0,0,0], sweetness:[0,0,0,0,0] },
+    checkNone:{ uniformity:false, clean_cup:false, sweetness:false },   /* "None passed": a check with no ticked cup counts only when this says it was a deliberate answer */
     single:{ clean_cup:null, sweetness:null },
     taint_cups:0, fault_cups:0, single_defect:'none', defect_notes:''
   };
@@ -4845,7 +4902,7 @@ function loadDraft(){
       c.mode = s.mode === 'five' ? 'five' : 'single'; c.stars = validStars(s.stars);
       ATTRS.forEach(at => { const v = s.scores && s.scores[at.key]; c.scores[at.key] = (typeof v === 'number' && v >= 6 && v <= 10) ? v : null; });
       ['acidity','body'].forEach(k => { const v = s.intensity && s.intensity[k]; c.intensity[k] = (v >= 1 && v <= 5) ? v : null; });
-      CHECKS.forEach(ch => { const arr = s.checks && s.checks[ch.key]; if (Array.isArray(arr) && arr.length === 5) c.checks[ch.key] = arr.map(x => x ? 1 : 0); });
+      CHECKS.forEach(ch => { const arr = s.checks && s.checks[ch.key]; if (Array.isArray(arr) && arr.length === 5) c.checks[ch.key] = arr.map(x => x ? 1 : 0); c.checkNone[ch.key] = !!(s.checkNone && s.checkNone[ch.key] === true) && !c.checks[ch.key].some(x => x); });
       SINGLE_CHECKS.forEach(ch => { const v = s.single && s.single[ch.key]; c.single[ch.key] = (typeof v === 'number' && v >= 0 && v <= 10) ? v : null; });
       if (Array.isArray(s.vials)) c.vials = s.vials.filter(x => typeof x === 'string');
       if (s.cool && typeof s.cool === 'object'){ ['acidity', 'sweetness', 'bitterness'].forEach(k => { if (['faded', 'same', 'stronger'].includes(s.cool[k])) c.cool[k] = s.cool[k]; }); }
@@ -6616,7 +6673,7 @@ function scoreCard(a){
   const toggle = h('div', { class:'attr-toggle', role:'button', tabindex:'0', 'aria-controls':'cb_' + a.key, 'aria-label':a.name + ': show or hide the details' },
     stepTag(), h('div', { class:'attr-name', text:a.name }), sum, h('p', { class:'attr-hint', text:a.hint }));
   const body = h('div', { class:'cardbody', id:'cb_' + a.key }, helpBlock(a.key));
-  const card = h('div', { class:'card stepcard' + (cupOpen.has(a.key) ? ' open' : '') }, h('div', { class:'attr-head' }, toggle, s.readout), body);
+  const card = h('div', { class:'card stepcard' + (cupOpen.has(a.key) ? ' open' : ''), 'data-card':a.key }, h('div', { class:'attr-head' }, toggle, s.readout), body);
   const setOpen = on => { if (on) cupOpen.add(a.key); else cupOpen.delete(a.key); card.classList.toggle('open', on); toggle.setAttribute('aria-expanded', String(on)); };
   toggle.setAttribute('aria-expanded', String(card.classList.contains('open')));
   toggle.addEventListener('click', () => setOpen(!card.classList.contains('open')));
@@ -6624,19 +6681,32 @@ function scoreCard(a){
   if (kw) body.append(cardLabel('Describe it'), keywordRow(a.key), cardLabel('How strong?'), strengthRow(a.key, a.name));
   else if (a.words){ body.append(cardLabel('Describe it')); if (a.key === 'aftertaste') body.append(lengthRow()); body.append(wordsRow(a.key)); }
   body.append(tipLine(a.key), noteBox(a.key));
-  refreshers.push(() => { sum.textContent = cardSummary(a); });
+  refreshers.push(() => { sum.textContent = cardSummary(a); card.classList.toggle('done', state.scores[a.key] != null); });   /* a scored card says so */
   return card;
 }
+/* In Five cups a check counts as answered only when a cup is ticked or "None passed" is tapped. An untouched check is "Not checked", never zero. */
+const checkDone = k => state.checks[k].some(x => x) || state.checkNone[k] === true;
 function cupChecks(c){
   const btns = [0,1,2,3,4].map(i => h('button', { type:'button', class:'cup', text:String(i + 1), 'aria-pressed':'false', 'aria-label':c.name + ', cup ' + (i + 1),
-    onclick:() => { state.checks[c.key][i] = state.checks[c.key][i] ? 0 : 1; changed(); } }));
-  const pts = h('div', { class:'pts' });
-  refreshers.push(() => { btns.forEach((b, i) => b.setAttribute('aria-pressed', String(!!state.checks[c.key][i]))); pts.textContent = ''; pts.append(String(state.checks[c.key].reduce((a, b) => a + b, 0) * 2), h('small', { text:' / 10' })); });
-  return h('div', { class:'card only-five stepcard' }, stepTag(), h('div', { class:'attr-name', text:c.name }), h('p', { class:'attr-hint', text:c.hint }), helpBlock(c.key), h('div', { class:'cups' }, btns, pts));
+    onclick:() => { state.checks[c.key][i] = state.checks[c.key][i] ? 0 : 1; state.checkNone[c.key] = false; changed(); } }));
+  const none = h('button', { type:'button', class:'nonepass', text:'None passed', 'aria-pressed':'false', 'aria-label':'None passed, ' + c.name,
+    onclick:() => { const on = state.checkNone[c.key] !== true; state.checkNone[c.key] = on; if (on) state.checks[c.key] = [0,0,0,0,0]; changed(); } });
+  const pts = h('div', { class:'pts', role:'status' });
+  refreshers.push(() => {
+    btns.forEach((b, i) => b.setAttribute('aria-pressed', String(!!state.checks[c.key][i]))); none.setAttribute('aria-pressed', String(state.checkNone[c.key] === true));
+    pts.textContent = '';
+    if (checkDone(c.key)) pts.append(String(state.checks[c.key].reduce((a, b) => a + b, 0) * 2), h('small', { text:' / 10' }));
+    else pts.append(h('span', { class:'notchecked', text:'Not checked' }));
+  });
+  const card = h('div', { class:'card only-five stepcard', 'data-card':'chk:' + c.key }, stepTag(), h('div', { class:'attr-name', text:c.name }), h('p', { class:'attr-hint', text:c.hint }), helpBlock(c.key), h('div', { class:'cups' }, btns), h('div', { class:'cupsfoot' }, none, pts));
+  refreshers.push(() => card.classList.toggle('done', checkDone(c.key)));
+  return card;
 }
 function singleCheck(c){
   const s = slider({ min:0, max:10, step:1, mid:5, aria:c.name + ' score', get:() => state.single[c.key], set:v => { state.single[c.key] = v; }, fmt:v => String(v), label:v => v + ' out of 10', ticks:[{ v:0 },{ v:5 },{ v:10 }] });
-  return h('div', { class:'card only-single stepcard' }, h('div', { class:'attr-head' }, h('div', null, stepTag(), h('div', { class:'attr-name', text:c.name }), h('p', { class:'attr-hint', text:c.hint })), s.readout), helpBlock(c.key));
+  const card = h('div', { class:'card only-single stepcard', 'data-card':'chk:' + c.key }, h('div', { class:'attr-head' }, h('div', null, stepTag(), h('div', { class:'attr-name', text:c.name }), h('p', { class:'attr-hint', text:c.hint })), s.readout), helpBlock(c.key));
+  refreshers.push(() => card.classList.toggle('done', state.single[c.key] != null));
+  return card;
 }
 function stepper(label, sub, get, set){
   const n = h('span', { class:'n' });
@@ -6647,27 +6717,32 @@ function stepper(label, sub, get, set){
 }
 
 /* ---------- scoring math ---------- */
+/* the order the cards are on the page: what is missing is listed, and jumped to, in this order */
+const SCORE_ORDER = ['fragrance_aroma', 'flavor', 'aftertaste', 'acidity', 'body', 'balance', 'chk:uniformity', 'chk:clean_cup', 'chk:sweetness', 'overall'];
 function calc(){
-  const s = state; let sum = 0, n = 0; const unscored = [];
-  ATTRS.forEach(a => { const v = s.scores[a.key]; if (v != null){ sum += v; n++; } else unscored.push(a.name); });
-  const out = { scored:n, needed:7, sum, unscored, complete:false, total:null, ded:0, pts:{}, kind:s.mode === 'five' ? 'sca_5cup' : 'home_1cup' };
+  const s = state; let sum = 0, n = 0; const miss = {};
+  ATTRS.forEach(a => { const v = s.scores[a.key]; if (v != null){ sum += v; n++; } else miss[a.key] = a.name; });
+  const out = { scored:n, needed:7, sum, unscored:[], missing:[], complete:false, total:null, ded:0, pts:{}, kind:s.mode === 'five' ? 'sca_5cup' : 'home_1cup' };
   if (s.mode === 'five'){
-    const p = k => s.checks[k].reduce((a, b) => a + b, 0) * 2;
+    const p = k => s.checks[k].reduce((a, b) => a + b, 0) * 2, answered = CHECKS.filter(ch => checkDone(ch.key));
+    CHECKS.forEach(ch => { if (!checkDone(ch.key)) miss['chk:' + ch.key] = ch.name; });
     out.pts = { uniformity:p('uniformity'), clean_cup:p('clean_cup'), sweetness:p('sweetness') };
     out.ded = s.taint_cups * 2 + s.fault_cups * 4;
-    out.complete = n === 7;
+    out.needed = 10; out.scored = n + answered.length;
+    out.complete = n === 7 && answered.length === CHECKS.length;
     out.total = Math.max(0, sum + out.pts.uniformity + out.pts.clean_cup + out.pts.sweetness - out.ded);
   } else {
     const c = s.single.clean_cup, w = s.single.sweetness;
     out.needed = 9;
-    if (c == null) out.unscored.push('Clean cup');
-    if (w == null) out.unscored.push('Sweetness');
+    if (c == null) miss['chk:clean_cup'] = 'Clean cup';
+    if (w == null) miss['chk:sweetness'] = 'Sweetness';
     out.scored = n + (c != null ? 1 : 0) + (w != null ? 1 : 0);
     out.pts = { uniformity:null, clean_cup:c, sweetness:w };
     out.ded = s.single_defect === 'taint' ? 2 : s.single_defect === 'fault' ? 4 : 0;
     out.complete = n === 7 && c != null && w != null;
     out.total = Math.max(0, (sum + (c || 0) + (w || 0) - out.ded) / 90 * 100);
   }
+  SCORE_ORDER.forEach(id => { if (miss[id]){ out.missing.push({ id, name:miss[id] }); out.unscored.push(miss[id]); } });
   return out;
 }
 function updateBar(){
@@ -6679,8 +6754,18 @@ function updateBar(){
     $('num').textContent = fmtScore(c.total, c.kind); $('fill').style.width = Math.min(100, c.total) + '%';
     $('status').textContent = state.mode === 'five' ? (c.total >= 80 ? 'Specialty grade (80+)' : 'Below the 80-point specialty line') : 'Not an SCA grade';
   } else {
-    $('num').textContent = '—'; $('fill').style.width = '0'; $('status').textContent = c.scored + ' of ' + c.needed + ' scored';
+    const st = $('status'), nx = c.missing[0];
+    $('num').textContent = '—'; $('fill').style.width = '0'; st.textContent = c.scored + ' of ' + c.needed + ' scored';
+    if (nx) st.append(h('br'), h('button', { type:'button', class:'nextlink', text:'Next: ' + nx.name, onclick:() => jumpToCard(nx.id) }));   /* the bar names what is still missing and takes you there */
   }
+}
+/* scroll to a card that still needs a score, open it if the compact view has it folded, and put focus on its first control */
+function jumpToCard(id){
+  const el = [...document.querySelectorAll('#mount [data-card="' + id + '"]')].find(e => e.offsetParent !== null); if (!el) return;
+  const tg = el.querySelector('.attr-toggle'); if (tg && cupView() === 'compact' && !el.classList.contains('open')) tg.click();
+  const hdr = document.querySelector('.stick'), calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top:Math.max(0, el.getBoundingClientRect().top + window.scrollY - (hdr ? hdr.offsetHeight : 0) - 12), behavior:calm ? 'auto' : 'smooth' });   /* the card's top just under the sticky header */
+  const f = el.querySelector('.attr-toggle, .cup, .nudge:not(:disabled)'); if (f) f.focus({ preventScroll:true });   /* the card's header, its first cup, or its plus button */
 }
 
 /* ---------- screen: cup ---------- */
@@ -6840,11 +6925,12 @@ function screenCup(m){
     h('div', { class:'only-single', style:'margin-top:8px' },
       seg([{ text:'None', value:'none' }, { text:'Small off-taste (−2)', value:'taint' }, { text:'Big off-taste (−4)', value:'fault' }], () => state.single_defect, v => { state.single_defect = v; }, 'Defect in the cup')), dnWrap));
 
-  const gn = h('textarea', { placeholder:'General notes about this coffee or session', 'aria-label':'General notes' });
+  const gn = h('textarea', { placeholder:'About this coffee or this session' });
   gn.addEventListener('input', () => { state.general_notes = gn.value; scheduleDraft(); });
   refreshers.push(() => { if (document.activeElement !== gn) gn.value = state.general_notes || ''; });
   gn.style.cssText = 'font-size:16px;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);width:100%;min-height:76px';
-  m.append(h('h2', { text:'Anything else' }), h('div', { class:'card' }, gn));
+  gn.id = 'general_notes_box';
+  m.append(h('h2', { text:'Anything else' }), h('div', { class:'card' }, h('label', { for:'general_notes_box', class:'flabel', style:'display:block;margin-bottom:6px', text:'General notes (optional)' }), gn));
 
   const results = h('div', { class:'card results' }); results.append(h('h3', { text:'What your scores say' }));
   const rbody = h('div'); results.append(rbody);
@@ -6954,20 +7040,34 @@ function buildRow(){
 const sheetEl = $('sheet'), overlay = $('overlay');
 let sheet = { step:'ask', existing:null, csv:'', error:'', info:'' };
 function setMsg(t){ const e = $('msg'); if (e) e.textContent = t || ''; }
+/* "Still to score: Flavor, Sweetness." with each name a link that takes you to its card */
+function missingMsg(c){
+  const e = $('msg'); if (!e) return;
+  e.textContent = 'Still to score: ';
+  c.missing.forEach((m, i) => { if (i) e.append(', '); e.append(h('button', { type:'button', class:'linkbtn', text:m.name, onclick:() => jumpToCard(m.id) })); });
+  e.append('.');
+}
 function onSaveClick(){
   setMsg('');
   const c = calc();
-  if (!c.complete){ setMsg('Still to score: ' + c.unscored.join(', ') + '.'); return; }
+  if (!c.complete){ missingMsg(c); return; }
   const an = cupAnalysis(); app.lastSymptom = an.symptom || ''; app.lastReasons = an.reasons.slice(0, 4); scheduleDraft();
   sheet = { step:'ask', existing:null, csv:'', error:'', info:'' }; openSheet();
 }
-function useExisting(ex){
+/* A file was chosen to add this cupping to. If it is a different file from the loaded history and lacks cuppings kept only in this browser, saving into it would drop them from the browser, so the person is asked first (69-sheet-keep-first.js). `cups` are those cuppings once the person has said to bring them along. */
+function useExisting(ex, cups){
   sheet.error = ''; sheet.existing = ex;
   if (ex.ids.has(state.id)){ sheet.csv = ''; sheet.info = 'This cupping is already in that file. Nothing to add.'; sheet.step = 'confirm'; renderSheet(); return; }
+  if (cups === undefined && !(history && ex === history.ex)){
+    const gone = browserOnlyMissingFrom(ex);
+    if (gone.length){ sheet.keep = { mode:'save', ex, cups:gone }; sheet.step = 'keepFirst'; renderSheet(); return; }
+  }
+  const found = ex.count; let carried = 0;
+  if (cups && cups.length){ ex = addRowsToExisting(ex, cups); carried = ex.added; sheet.existing = ex; }
   const ts = takeFileSetup(ex);   /* a browser still on the defaults takes the file's setup; one that was changed keeps its own, and saves it into the file */
   sheet.setupNote = ts.how === 'applied' ? 'Your setup came back from this file.' : ts.how === 'ask' ? "Your setup in this browser replaces the one stored in this file." : '';
   sheet.csv = mergeCSV(ex, buildRow());
-  sheet.info = 'Found ' + ex.count + ' saved cupping' + (ex.count === 1 ? '' : 's') + '. This one will be added as number ' + (ex.count + 1) + '.';
+  sheet.info = 'Found ' + found + ' saved cupping' + (found === 1 ? '' : 's') + '.' + (carried ? ' The ' + carried + (carried === 1 ? ' cupping' : ' cuppings') + ' kept in this browser ' + (carried === 1 ? 'is' : 'are') + ' added to it too.' : '') + ' This one will be added as number ' + (ex.count + 1) + '.';
   sheet.step = 'confirm'; renderSheet();
 }
 function adoptSaved(){
@@ -7233,6 +7333,7 @@ function renderSheetBody(){
   if (sheet.step === 'shop'){ renderShopSheet(title); return; }   /* Look up this coffee (61-shop-lookup.js) */
   if (sheet.step === 'setup'){ renderSetupSheet(title); return; }   /* My setup (63-sheet-setup.js) */
   if (sheet.step === 'setupFound'){ renderSetupFoundSheet(title); return; }
+  if (sheet.step === 'keepFirst'){ renderKeepFirstSheet(title); return; }   /* cuppings kept only in this browser, before a file replaces them (69-sheet-keep-first.js) */
   if (sheet.step === 'menu'){
     title.textContent = 'Menu';
     const mi = (t, sub, fn) => h('button', { type:'button', class:'menuitem', onclick:fn }, h('span', { class:'mi-t', text:t }), sub ? h('span', { class:'mi-s', text:sub }) : null);
@@ -7571,11 +7672,9 @@ function renderSheetBody(){
     function load(text){
       const ex = readExisting(text);
       if (ex.error){ sheet.error = ex.error; renderSheet(); return; }
-      setHistory(ex, text);
-      const ts = takeFileSetup(ex);
-      if (ts.how === 'ask'){ sheet = { step:'setupFound', setup:ts.setup, then:'history' }; renderSheet(); return; }
-      if (ts.how === 'applied') setupCameBack = setupSummary(ts.setup);
-      closeSheet(); go('history');
+      const gone = browserOnlyMissingFrom(ex);   /* loading replaces this browser's history, so cuppings only kept here are asked about first */
+      if (gone.length){ sheet = { step:'keepFirst', keep:{ mode:'load', ex, text, cups:gone } }; renderSheet(); return; }
+      loadFileIntoHistory(ex, text);
     }
     file.addEventListener('change', async () => {
       const f = file.files && file.files[0]; if (!f) return;
@@ -7667,8 +7766,7 @@ function renderSheetBody(){
         h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:'Close', onclick:closeSheet }),
           h('button', { type:'button', class:'btn primary', text:'Add as a new entry', onclick:() => {
             state.id = newId(); scheduleDraft();
-            const ex = sheet.existing; sheet.csv = mergeCSV(ex, buildRow());
-            sheet.info = 'Found ' + ex.count + ' saved cupping' + (ex.count === 1 ? '' : 's') + '. This one will be added as number ' + (ex.count + 1) + '.'; renderSheet();
+            useExisting(sheet.existing);
           } })));
     }
     return;
@@ -8480,6 +8578,43 @@ function brandHero(){
 function signinNotice(){
   if (!inClaude()) return null;   // on any other site, the normal browser download works without an account
   return h('p', { class:'fine signin', style:'margin:0 0 12px', text:'Signed in to Claude? Then Save can put your cupping file on your device. If not, you can copy or share it.' });
+}
+/* A file chosen from Your cuppings becomes the loaded history. `cups` (optional) are cuppings kept only in this browser that go into it; they stay counted as not yet in a saved file, because the file on the person's device does not have them. */
+function loadFileIntoHistory(ex, text, cups){
+  const add = cups && cups.length ? addRowsToExisting(ex, cups) : null;
+  if (add && add.added){
+    const merged = toCSV([add.header].concat(add.rows)), mex = readExisting(merged);
+    if (mex.error){ sheet.error = 'Those cuppings could not be added to the file, so nothing was changed.'; renderSheet(); return; }
+    const ids = cups.map(o => String(o.id || '').trim()).filter(id => id && !ex.ids.has(id));
+    setHistory(mex, merged); histAdded = add.added; histAddedIds = ids; persistAdded();
+    ex = mex;
+  } else setHistory(ex, text);
+  const ts = takeFileSetup(ex);
+  if (ts.how === 'ask'){ sheet = { step:'setupFound', setup:ts.setup, then:'history' }; renderSheet(); return; }
+  if (ts.how === 'applied') setupCameBack = setupSummary(ts.setup);
+  closeSheet(); go('history');
+}
+/* the unsaved cuppings by name, date and score, like the list in Delete */
+function keepFirstList(cups){
+  const list = h('div', { class:'keeplist', style:'margin:8px 0' });
+  cups.slice(0, 8).forEach(o => list.append(h('div', { style:'display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:15px' },
+    h('span', { text:(unneutralize(o.coffee_name || '') || 'Untitled coffee') + (o.cupping_date ? ' · ' + o.cupping_date : '') }), h('b', { text:isNaN(parseFloat(o.total_score)) ? '—' : fmt2(parseFloat(o.total_score)) }))));
+  if (cups.length > 8) list.append(h('div', { class:'fine', text:'and ' + (cups.length - 8) + ' more' }));
+  return list;
+}
+function renderKeepFirstSheet(title){
+  const k = sheet.keep, n = k.cups.length, one = n === 1, save = k.mode === 'save', stack = h('div', { style:'display:flex;flex-direction:column;gap:10px;margin-top:14px' });
+  title.textContent = one ? 'Keep your unsaved cupping?' : 'Keep your unsaved cuppings?';
+  sheetEl.append(h('p', { style:'margin-top:0', text:(one ? '1 cupping you kept in this browser is' : n + ' cuppings you kept in this browser are') + ' not in the file you chose, and ' + (save ? 'saving into it' : 'loading it') + ' would remove ' + (one ? 'it' : 'them') + ' from this browser.' }),
+    keepFirstList(k.cups),
+    h('p', { class:'fine', text:'Add ' + (one ? 'it' : 'them') + ' to that file and ' + (one ? 'it comes' : 'they come') + ' along. ' + (save ? 'They are saved into the file with this cupping.' : (one ? 'It stays' : 'They stay') + ' marked as not saved until you save a copy of your file.') }),
+    h('p', { class:'err', role:'alert', text:sheet.error || '' }), stack);
+  stack.append(h('button', { type:'button', class:'btn primary', id:'keepFirstAdd', text:save ? 'Add ' + (one ? 'it' : 'them') + ' to the file too' : 'Add ' + (one ? 'it' : 'them') + ' to the file',
+      onclick:() => { if (save) useExisting(k.ex, k.cups); else loadFileIntoHistory(k.ex, k.text, k.cups); } }),
+    h('button', { type:'button', class:'btn', id:'keepFirstLeave', text:save ? 'Leave ' + (one ? 'it' : 'them') + ' out' : 'Load the file without ' + (one ? 'it' : 'them'),
+      onclick:() => { if (save) useExisting(k.ex, []); else loadFileIntoHistory(k.ex, k.text); } }),
+    h('button', { type:'button', class:'btn link', id:'keepFirstBack', text:save ? 'Back' : 'Cancel',
+      onclick:() => { if (!save){ closeSheet(); return; } delete sheet.target; sheet.keep = null; sheet.step = 'ask'; renderSheet(); } }));
 }
 function historyCard(){
   const card = h('div', { class:'card' });

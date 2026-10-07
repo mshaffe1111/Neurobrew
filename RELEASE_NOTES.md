@@ -2,6 +2,15 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 32: A clearer cup screen, and unsaved cups protected
+
+2026-10-07 02:23:03 UTC
+
+- Five cups: Uniformity, Clean cup and Sweetness now start as Not checked. Tap the cups that passed, or tap None passed. No total shows until all three are answered, so skipping them no longer counts as zero.
+- The cup screen shows how far along you are. A scored card says Scored, the bar says how many are done and has a Next link that takes you to the next one, and Save lists anything still missing as links.
+- The General notes box has a visible label, and buttons and the Menu button have clearer outlines.
+- Loading a file, or saving into a different one, no longer quietly removes cups you kept only in this browser. NeuroBrew names them and offers to add them to the file first.
+
 ## Release 31: A stray word removed from the save sheets
 
 2026-10-06 22:53:09 UTC
