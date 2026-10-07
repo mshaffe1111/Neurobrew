@@ -53,8 +53,8 @@ body{ margin:0; background:var(--bg); color:var(--ink); font:400 16px/1.45 var(-
 button,input,select,textarea{ font:inherit; color:inherit; }
 button{ cursor:pointer; }
 .wrap{ max-width:600px; margin:0 auto; padding:0 16px 48px; }
-body[data-screen="coffee"] .wrap, body[data-screen="recipe"] .wrap{ padding-bottom:110px; }
-:root:has(body[data-screen="coffee"]), :root:has(body[data-screen="recipe"]){ scroll-padding-bottom:96px; }   /* a focused field is never left under the fixed bar */
+body[data-screen="coffee"] .wrap, body[data-screen="recipe"] .wrap, body[data-screen="change"] .wrap, body[data-screen="ready"] .wrap{ padding-bottom:110px; }
+:root:has(body[data-screen="coffee"]), :root:has(body[data-screen="recipe"]), :root:has(body[data-screen="change"]), :root:has(body[data-screen="ready"]){ scroll-padding-bottom:96px; }   /* a focused field is never left under the fixed bar */
 :focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
 
 /* sticky header */
@@ -142,6 +142,7 @@ h3{ font-weight:600; font-size:16px; margin:0 0 4px; }
 }
 .dock-inner{ max-width:600px; margin:0 auto; display:flex; gap:10px; }
 .dock-inner .btn{ flex:1; }
+.dock-inner.two .btn.primary{ flex:2; }   /* Change beside Brew it: the main action gets twice the room */
 
 /* coffee page */
 .chipline{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px; }
@@ -235,6 +236,25 @@ details.mgroup > summary .mgt{ font-weight:700; font-size:17px; }
 .fxlist{ margin:6px 0 0; padding-left:18px; font-family:var(--txt); font-size:15.5px; line-height:1.4; }
 .fxlist li{ margin:6px 0; }
 .fxcard details.moreinfo{ margin-top:8px; }
+
+/* the Brew page: the settings card's head, its Recommended or Changed line, the cup-size buttons; and the compact rows of What's in your cup */
+.cardhead{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; margin:0 0 10px; }
+.cardhead h3{ margin:0; }
+.cardhead .btn{ min-height:44px; padding:8px 14px; font-size:15px; }
+.statusline{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0 0 12px; font-size:14px; }
+.statusline.changed{ background:var(--tint); border-radius:12px; padding:6px 8px 6px 12px; }
+.statusline.changed .btn.link{ flex:none; }
+.statusline[hidden]{ display:none; }
+.sizebox{ margin:0 0 12px; padding:0 0 14px; border-bottom:1px solid var(--line); }
+.chips.sizes{ display:grid; grid-template-columns:repeat(auto-fit, minmax(54px, 1fr)); gap:6px; }
+.chips.sizes .choice{ min-width:0; padding:10px 2px; text-align:center; font-weight:700; white-space:nowrap; }
+.rrow{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:9px 0; border-top:1px solid var(--line); }
+.rrow > span{ font-weight:600; }
+.rrow > div{ text-align:right; }
+.rrow strong{ font-size:19px; font-weight:800; font-variant-numeric:tabular-nums; }
+.rrow.big strong{ font-size:22px; }
+.rrow .sub{ font-size:14px; margin-top:1px; }
+#readyRows h3{ margin-bottom:2px; }
 /* timer */
 .bigtime{ font-size:72px; font-weight:800; text-align:center; font-variant-numeric:tabular-nums; letter-spacing:-0.03em; line-height:1; margin:18px 0 6px; }
 .now{ text-align:center; margin:0 0 14px; }
@@ -365,6 +385,10 @@ details.more textarea{ width:100%; min-height:64px; margin-top:8px; padding:10px
 .pstep.pdone .pn{ background:var(--leaf); color:var(--leaf-ink); }
 .pstep.pnow .pn{ background:var(--primary); color:var(--primary-ink); box-shadow:0 0 0 3px var(--surface), 0 0 0 5px var(--primary); }
 .pstep .pl{ max-width:100%; line-height:1.1; white-space:nowrap; }
+/* the Brew step has two parts: its segment is cut in half, one half lit on the Brew page and Change settings, both on What's in your cup and the timer */
+.pstep.pnow.part::before{ right:calc(50% + 2px); }
+.pstep.pnow.part::after{ content:""; position:absolute; top:-1px; height:8px; left:calc(50% + 2px); right:0; border-radius:99px; background:var(--track); }
+.pstep.pnow.part2::after{ background:var(--primary); }
 .pstep.pnow{ color:var(--ink); cursor:default; }
 .pstep.pnow .pl{ font-weight:700; }
 .pstep.plocked{ opacity:.45; cursor:not-allowed; }
@@ -1507,6 +1531,19 @@ function waterToG(v, u){ return u === 'floz' ? v * ML_PER_FLOZ : u === 'cup' ? v
 function coffeeToG(v, u){ return u === 'oz' ? v * G_PER_OZ : u === 'tbsp' ? v * G_PER_TBSP : v; }
 function fmtWater(g, u){ return u === 'g' ? String(Math.round(g)) : u === 'floz' ? fmtNum(g / ML_PER_FLOZ, 1) : u === 'cup' ? fmtNum(g / ML_PER_CUP, 2) : fmtNum(g / 1000, 2); }
 function fmtCoffee(g, u){ return u === 'oz' ? fmtNum(g / G_PER_OZ, 2) : u === 'tbsp' ? fmtNum(g / G_PER_TBSP, 1) : fmtNum(g, 1); }
+/* One unit at a time (UX audit F9): an amount in the unit the person chose, and the other units for the "Other units" fold. Water in grams and millilitres is the same number, so "g / mL" shows once as grams. */
+function waterShown(g, u){
+  if (u === 'floz') return fmtNum(g / ML_PER_FLOZ, 1) + ' fl oz';
+  if (u === 'cup'){ const c = fmtNum(g / ML_PER_CUP, 1); return c + (c === '1' ? ' cup' : ' cups'); }
+  if (u === 'l') return fmtNum(g / 1000, g < 100 ? 3 : 2) + ' L';
+  return Math.round(g) + ' g';
+}
+function coffeeShown(g, u){ return u === 'oz' ? fmtNum(g / G_PER_OZ, 2) + ' oz' : u === 'tbsp' ? tbspText(g) : fmtNum(g, 1) + ' g'; }
+function waterOthers(g, u, type){
+  const all = { g:Math.round(g) + ' g', floz:waterShown(g, 'floz'), cup:waterShown(g, 'cup'), l:waterShown(g, 'l') };
+  return ((type === 'espresso' || type === 'moka') ? ['g', 'floz'] : ['g', 'floz', 'cup', 'l']).filter(k => k !== u).map(k => k === 'g' ? all.g + ' (' + Math.round(g) + ' mL)' : all[k]);
+}
+function coffeeOthers(g, u){ return ['g', 'oz', 'tbsp'].filter(k => k !== u).map(k => coffeeShown(g, k)); }
 function chipLabel(g, u){
   const top = u === 'g' ? Math.round(g) + ' g' : u === 'floz' ? fmtNum(g / ML_PER_FLOZ, 1) + ' fl oz' : u === 'cup' ? fmtNum(g / ML_PER_CUP, 1) + ' cups' : fmtNum(g / 1000, 2) + ' L';
   const bottom = u === 'g' ? fmtNum(g / ML_PER_FLOZ, 1) + ' fl oz' : Math.round(g) + ' g';
@@ -2487,7 +2524,9 @@ const STRENGTH_WORDS = ['Faint', 'Light', 'Medium', 'Strong', 'Very strong'];
 /* The six step names, in one place. The bar, the header, the screen-reader labels and the guide chapter titles all read them from here, so they cannot disagree. Perfect (step 6) matches the tagline's "Perfect it". The screen ids (start, coffee, brew, recipe, cup, dial) are internal and keep their old names. */
 const STEP_NAME = { coffee:'Coffee', facts:'Facts', method:'Method', brew:'Brew', taste:'Taste', perfect:'Perfect' };
 const PROGRESS = [['start', STEP_NAME.coffee], ['coffee', STEP_NAME.facts], ['brew', STEP_NAME.method], ['recipe', STEP_NAME.brew], ['cup', STEP_NAME.taste], ['dial', STEP_NAME.perfect]];
-function progressStep(screen){ const m = { start:0, coffee:1, brew:2, recipe:3, timer:3, cup:4, dial:5 }; return screen in m ? m[screen] : -1; }
+/* The Brew step has two parts and one dot: part 1 is the Brew page and Change settings, part 2 is What's in your cup (internal id: ready) and the timer. */
+function progressStep(screen){ const m = { start:0, coffee:1, brew:2, recipe:3, change:3, ready:3, timer:3, cup:4, dial:5 }; return screen in m ? m[screen] : -1; }
+function brewPart(screen){ return screen === 'recipe' || screen === 'change' ? 1 : screen === 'ready' || screen === 'timer' ? 2 : 0; }
 
 /* ---------- Piece 3B: tap-to-explain terms and plain wording ---------- */
 const TERMS = [
@@ -3738,10 +3777,10 @@ const GUIDE_SECTIONS = [
   { id:'method', title:'3. Method: choose how you brew', lead:'Pick from the list.',
     paras:['Choose how you are brewing. Pour-over covers the V60, Kalita Wave and Chemex. The other choices are Hario Switch, Clever Dripper, siphon, AeroPress, French press, moka pot, Turkish coffee, Vietnamese phin, espresso, a drip machine and cold brew. Methods marked Good match suit your roast, process and bag notes.',
       'If you have a Philips 5500 LatteGo, it has its own simple setup that suggests the drink settings for your beans.'] },
-  { id:'recipe', title:'4. ' + STEP_NAME.brew + ': settings and the guided timer', lead:'Settings for this coffee, with the reasons.',
-    paras:['Pick a size and how strong you like it (Lighter, Standard or Stronger). You get the amount of coffee and water, the grind in microns and in plain words, the water temperature, the ratio and the steps. Each line has a reason behind it: tap Why? where you see it, or read the line under it.',
-      'Open Adjust your brew to try pulse pours or iced coffee, to change the pour style, or to set the water temperature yourself. Choose your grinder to get a suggested setting. If there is no settings table for it yet, you can teach NeuroBrew from your own results. Add your water type, and the alkalinity if you know it, and it checks your water before blaming the grind.',
-      'Tap Start guided brew for a timer with scale targets. You can switch sound off, use a beep, or have a voice read each step. The voice can tell you where you should be along the way, so you do not have to watch the screen. When you have brewed it, tap I brewed it: taste it.'],
+  { id:'recipe', title:'4. ' + STEP_NAME.brew + ': settings, a last look and the guided timer', lead:'Settings for this coffee, with the reasons.',
+    paras:['The ' + STEP_NAME.brew + ' page opens on your settings for this coffee. You get the amount of coffee and water, the grind in plain words, the water temperature, the ratio and the bloom. Pick a cup size above the numbers. Each line has a reason behind it: tap Why? where you see it, or read the line under it. Amounts show in one unit, grams unless you chose another. Tap Other units to see the rest.',
+      'To change anything, tap Change settings. Start from your coffee or your water. Choose Lighter, Standard or Stronger, set the ratio or the water temperature yourself, or try pulse pours or iced coffee. The page says what you changed, and Reset all puts it all back. Under the numbers, choose your grinder to get a suggested setting. If there is no settings table for it yet, you can teach NeuroBrew from your own results. Add your water type, and the alkalinity if you know it, and it checks your water before blaming the grind.',
+      'Tap Next: What\'s in your cup for one last look. It shows your final settings, what you changed (or why the settings are what they are), what to do before you start, and the steps. Tap Change to go back, or Brew it for a timer with scale targets. You can switch sound off, use a beep, or have a voice read each step. The voice can tell you where you should be along the way, so you do not have to watch the screen. When you have brewed it, tap I brewed it: taste it.'],
     tips:['If you already have earlier tries of this coffee, this screen offers them as a starting point. A new bag of a coffee you know can start from the best brew you kept.'] },
   { id:'cup', title:'5. ' + STEP_NAME.taste + ': smell, sip and score', lead:'Smell, sip hot, sip as it cools.',
     paras:['Score each card with the + and − buttons, from 6 (Good) up to 9.75, the top of the SCA scale. Press and hold to move faster. Tap a card\'s name to open it and describe what you notice. The words you pick for acidity and body set how strong each feels, and some words can suggest a score. You can change either at any time. Tap All cards to see everything at once.',
@@ -4419,6 +4458,19 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 35,
+  "at": "2026-10-07T18:38:45Z",
+  "date": "2026-10-07",
+  "title": "Brew starts with your numbers, with a last look before the timer",
+  "notes": [
+   "The Brew page opens on your numbers: coffee, water, ratio, temperature, grind and time. The cup size is one tap away, and your grinder sits right under the numbers.",
+   "Change settings holds everything you can change: how much (start from coffee or water), how strong, the ratio, the water temperature, the technique and the pour style. The Brew page shows what you changed in one line, with Reset all.",
+   "A new page, What's in your cup, gives one last look before you brew: your final numbers, what you changed (or why the settings are what they are), what to do before you start, and the steps. Change goes back to the Brew page, and the timer starts from here.",
+   "Each amount is shown once, in the unit you chose. The other units are under Other units.",
+   "On the step bar, Brew is one step in two parts: the numbers, then the last look and the timer."
+  ]
+ },
+ {
   "release": 34,
   "at": "2026-10-07T16:52:04Z",
   "date": "2026-10-07",
@@ -4954,7 +5006,7 @@ function loadDraft(){
     a.lastTotal = typeof src.lastTotal === 'number' ? src.lastTotal : null;
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
-    const ok = ['start','coffee','brew','recipe','timer','cup','dial','history','detail','learn','guide'];
+    const ok = ['start','coffee','brew','recipe','change','ready','timer','cup','dial','history','detail','learn','guide'];
     a.screen = ok.includes(src.screen) ? src.screen : 'start';
     /* a saved timer comes back only if it is recent: running for under 45 minutes in all, or paused within the last 30 minutes */
     { const ts = src.timerSave, now = Date.now();
@@ -4963,9 +5015,10 @@ function loadDraft(){
         const total = run ? ts.base + (now - ts.startMs) / 1000 : ts.base;
         if (run ? total <= 45 * 60 : (now - ts.at <= 30 * 60000 && ts.base > 0)) a.timerSave = { running:run, startMs:run ? ts.startMs : 0, base:+ts.base, at:ts.at };
       } }
-    if (a.screen === 'timer' && (!a.timerSave || isMachine(a.brew.method))){ a.screen = 'recipe'; a.timerSave = null; }
+    if (a.screen === 'timer' && (!a.timerSave || isMachine(a.brew.method))){ a.screen = isMachine(a.brew.method) ? 'recipe' : 'ready'; a.timerSave = null; }   /* a timer that is not running goes back to the last look, where Brew it is */
     if (!a.coffee.name && a.screen !== 'history' && a.screen !== 'detail') a.screen = 'start';
-    if ((a.screen === 'recipe' || a.screen === 'timer') && !a.brew.method){ a.screen = 'brew'; a.timerSave = null; }
+    if (a.screen === 'change' || (a.screen === 'ready' && isMachine(a.brew.method))) a.screen = 'recipe';   /* a half-made change is not worth coming back to; the machine has no summary page */
+    if ((a.screen === 'recipe' || a.screen === 'ready' || a.screen === 'timer') && !a.brew.method){ a.screen = 'brew'; a.timerSave = null; }
     if (a.screen !== 'timer') a.timerSave = null;
     if (a.screen === 'detail') a.screen = 'history';
     app = a;
@@ -5005,8 +5058,8 @@ function changed(){ refreshAll(); updateBar(); scheduleDraft(); }
 
 /* ---------- navigation ---------- */
 const PARENT = {
-  start:null, coffee:'start', brew:'coffee', recipe:'brew', timer:'recipe',
-  cup:() => app.cupBrew ? 'recipe' : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', detail:'history',
+  start:null, coffee:'start', brew:'coffee', recipe:'brew', change:'recipe', ready:'recipe', timer:'ready',
+  cup:() => app.cupBrew ? (isMachine(app.brew.method) ? 'recipe' : 'ready') : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', detail:'history',
   learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'start'),
   guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'start')
 };
@@ -5035,7 +5088,7 @@ window.addEventListener('popstate', e => {
   }
   navIdx = st.i;
   if (!SCREENS[target]) return;
-  if (target === 'timer') target = 'recipe';                                  /* going forward never starts a brew */
+  if (target === 'timer') target = 'ready';                                   /* going forward never starts a brew */
   stopTimer(); if (target !== 'history'){ selectMode = false; selected.clear(); }
   app.screen = target; render();
 });
@@ -5052,7 +5105,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, recipe:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', guide:'User guide', detail:'Tasting details' };
+  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', guide:'User guide', detail:'Tasting details' };
   $('topTitle').textContent = sc === 'start' ? '' : (titles[sc] || 'NeuroBrew');
   SCREENS[sc](m);
   refreshAll(); updateBar();
@@ -5154,15 +5207,16 @@ function paintProgress(){
   const sc = app.screen, stp = progressStep(sc), PG = $('progress');
   PG.hidden = stp < 0;
   if (stp < 0){ PG.textContent = ''; PROGRESS_FOR = null; return; }
-  PG.setAttribute('aria-label', 'Step ' + (stp + 1) + ' of ' + PROGRESS.length + ': ' + PROGRESS[stp][1]);
+  const part = brewPart(sc);
+  PG.setAttribute('aria-label', 'Step ' + (stp + 1) + ' of ' + PROGRESS.length + ': ' + PROGRESS[stp][1] + (part ? ', part ' + part + ' of 2' : ''));
   if (PROGRESS_FOR !== stp || PG.children.length !== PROGRESS.length){
     PG.textContent = ''; PROGRESS_FOR = stp;
     PROGRESS.forEach((x, i) => PG.append(h('button', { type:'button', onclick:() => gotoStep(i) }, h('span', { class:'pn' }), h('span', { class:'pl', text:x[1] }))));
   }
   PROGRESS.forEach((x, i) => {
     const st = PG.children[i], lock = i === stp ? '' : stepLock(i);
-    st.className = 'pstep ' + (i < stp ? 'pdone' : i === stp ? 'pnow' : 'ptodo') + (lock ? ' plocked' : '');
-    st.setAttribute('aria-label', 'Step ' + (i + 1) + ': ' + x[1] + (i === stp ? ' (you are here)' : lock ? ' (locked: ' + lock + ')' : ''));
+    st.className = 'pstep ' + (i < stp ? 'pdone' : i === stp ? 'pnow' : 'ptodo') + (i === stp && part ? ' part' + (part === 2 ? ' part2' : '') : '') + (lock ? ' plocked' : '');
+    st.setAttribute('aria-label', 'Step ' + (i + 1) + ': ' + x[1] + (i === stp ? ' (you are here' + (part ? ', part ' + part + ' of 2' : '') + ')' : lock ? ' (locked: ' + lock + ')' : ''));
     st.querySelector('.pn').textContent = i < stp ? '✓' : String(i + 1);
     if (i === stp) st.setAttribute('aria-current', 'step'); else st.removeAttribute('aria-current');
     if (lock) st.setAttribute('aria-disabled', 'true'); else st.removeAttribute('aria-disabled');
@@ -5181,7 +5235,7 @@ function showStepMsg(t){
   clearTimeout(showStepMsg.tm); if (t) showStepMsg.tm = setTimeout(() => { e.hidden = true; }, 3200);
 }
 function gotoStep(i){
-  if (i === progressStep(app.screen)) return;
+  if (i === progressStep(app.screen)){ if (app.screen === 'ready') go('recipe'); return; }   /* the Brew dot on the second part goes back to the first */
   const lock = stepLock(i); if (lock){ showStepMsg(lock); return; }
   showStepMsg('');
   if (i === 0) return go('start');
@@ -5189,7 +5243,7 @@ function gotoStep(i){
   if (i === 2) return go('brew');
   if (i === 3) return go('recipe');
   if (i === 4){
-    if ((app.screen === 'recipe' || app.screen === 'timer') && app.brew.method) snapshotBrew();
+    if ((app.screen === 'recipe' || app.screen === 'ready' || app.screen === 'timer') && app.brew.method) snapshotBrew();
     prepCupEntry(); return go('cup');
   }
   if (app.screen === 'cup'){ const an = cupAnalysis(), c = calc(); app.lastSymptom = an.symptom || ''; app.lastReasons = an.reasons.slice(0, 4); app.lastTotal = c.complete ? c.total : null; scheduleDraft(); }
@@ -5621,7 +5675,7 @@ function prepCupEntry(){
 
 /* ---------- screen: learn ---------- */
 let learnFrom = '';
-function goLearn(){ if (app.screen !== 'learn') learnFrom = app.screen === 'timer' ? 'recipe' : app.screen; go('learn'); }
+function goLearn(){ if (app.screen !== 'learn') learnFrom = app.screen === 'timer' ? 'ready' : app.screen; go('learn'); }
 const learnFmt = x => x.toFixed(1);
 const learnCap = x => x.charAt(0).toUpperCase() + x.slice(1);
 function tendencyRow(gr){
@@ -5790,7 +5844,7 @@ function screenBrew(m){
 }
 /* ---------- screen: how to use NeuroBrew ---------- */
 let guideFrom = '';
-function goGuide(){ if (app.screen !== 'guide') guideFrom = app.screen === 'timer' ? 'recipe' : app.screen; go('guide'); }
+function goGuide(){ if (app.screen !== 'guide') guideFrom = app.screen === 'timer' ? 'ready' : app.screen; go('guide'); }
 function screenGuide(m){
   m.append(h('h1', { text:'How to use NeuroBrew' }), h('p', { class:'lede', text:'The six steps, what each screen does, and how your history helps. Tap a section to open it.' }));
   const cards = GUIDE_SECTIONS.map((s, i) => {
@@ -5807,43 +5861,25 @@ function screenGuide(m){
   const back = typeof PARENT.guide === 'function' ? PARENT.guide() : PARENT.guide;
   m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
 }
-/* ---------- screen: recipe ---------- */
-function recipeWith(agit){
-  return buildRecipe(app.coffee, app.brew.method, { water:app.brew.water, tempF:app.brew.tempF, tempComp:app.brew.tempComp, altitudeFt:app.brew.altitudeFt, grinderKey:app.brew.grinderKey, calib:app.prefs.calib, ratio:app.brew.ratio, agit, tech:app.brew.technique, pulseTaste:app.brew.pulseTaste, pulseStrength:app.brew.pulseStrength, ice:app.brew.ice }, app.adjust, new Date());
-}
-function getRecipe(){ return recipeWith(app.brew.agitation); }
-function waterLine(g, type){ const u = waterUnits(g); if (type === 'espresso' || type === 'moka') return u.ml + ' mL · ' + u.floz + ' fl oz'; return u.ml + ' mL · ' + u.floz + ' fl oz · ' + u.cups + (u.cups === 1 ? ' cup' : ' cups') + ' · ' + fmtNum(g / 1000, g < 100 ? 3 : 2) + ' L'; }
-function coffeeLine(g){ return fmtNum(g / G_PER_OZ, 2) + ' oz · ' + tbspText(g); }
-function krow(label, value, sub, why){
-  const subs = [].concat(sub || []).filter(Boolean);
-  return h('div', { class:'krow' },
-    h('div', { class:'krow-top' }, h('span', { text:label }), h('strong', { text:value })),
-    subs.map(t => h('div', { class:'sub', text:t })),
-    !why ? null : level() === 'new' ? h('p', { class:'why', text:why }) : h('details', { class:'whyrow' }, h('summary', { text:'Why?' }), h('p', { class:'why', text:why })));
-}
-
-/* How well supported a number is: three plain tiers under the value, and what it rests on under "Why?". Added after the rows are drawn, so the row code stays as it was. */
-const EVIDENCE_ROWS = { 'Ratio':'ratio', 'Temperature':'temp', 'Grind':'grind', 'Bloom':'bloom', 'Brew time':'time', 'Steep':'time', 'Total time':'time', 'In your cup':'yield', 'Ice':'ice' };
-function evidenceLine(ev){ return h('div', { class:'ev ev-' + ev.tier.toLowerCase() }, h('span', { class:'dt', 'aria-hidden':'true', text:ev.dots }), ' ' + ev.label); }
-function decorateEvidence(root, r){
-  root.querySelectorAll('.krow').forEach(k => {
-    const key = EVIDENCE_ROWS[k.querySelector('.krow-top span').textContent], ev = key ? evidenceFor(r, key) : null; if (!ev) return;
-    k.querySelector('.krow-top').after(evidenceLine(ev));
-    const basis = h('p', { class:'basis', text:'What this rests on: ' + ev.basis }), box = k.querySelector('details.whyrow'), plain = k.querySelector(':scope > p.why');
-    if (box) box.append(basis); else if (plain) plain.after(basis);
-    else if (level() === 'new') k.append(basis); else k.append(h('details', { class:'whyrow' }, h('summary', { text:'Why?' }), basis));
+/* ---------- the amounts ---------- */
+/* which amount you type on Change settings; the other follows from it and the ratio. Coffee first, like the Brew page. Kept while the page is open, not saved. */
+let amountFrom = 'coffee';
+/* the cup size, in the one unit the person chose; the other units are one tap away on the Brew page */
+function sizeChips(meth, onChange){
+  const btns = meth.presets.map(g => {
+    const b = h('button', { type:'button', class:'choice', 'aria-pressed':'false' });
+    b.addEventListener('click', () => { app.brew.water = g; onChange('chip'); });
+    return { g, btn:b };
   });
+  const el = h('div', { class:'sizebox' }, h('div', { class:'cardlabel', style:'margin:0 0 6px' }, h('span', { text:'Cup size' })),
+    h('div', { class:'chips sizes', role:'group', 'aria-label':'Cup size' }, btns.map(c => c.btn)));
+  function refresh(){
+    const r = getRecipe(), wu = app.prefs.waterUnit;
+    btns.forEach(c => { c.btn.textContent = waterShown(c.g, wu); c.btn.setAttribute('aria-pressed', String(c.g === r.water)); });
+  }
+  return { el, refresh };
 }
-function waterWord(m){ return m.type === 'espresso' ? 'Yield' : m.type === 'moka' ? 'Water in the base' : 'Water'; }
 function amountCard(meth, onChange){
-  const chipBtns = meth.presets.map(g => {
-    const lab = chipLabel(g, app.prefs.waterUnit);
-    const btn = h('button', { type:'button', class:'choice', 'aria-pressed':'false' });
-    btn.addEventListener('click', () => { app.brew.water = g; onChange('chip'); });
-    return { g, btn };
-  });
-  const chips = h('div', { class:'chips', style:'margin-top:10px' });
-  chipBtns.forEach(c => chips.append(c.btn));
   const waterIn = h('input', { type:'number', inputmode:'decimal', step:'any', min:'0', class:'plain', 'aria-label':'Water amount' });
   const waterSel = h('select', { class:'plain unitsel', 'aria-label':'Water unit' }, WATER_UNITS.map(u => h('option', { value:u.v, text:u.label })));
   const coffeeIn = h('input', { type:'number', inputmode:'decimal', step:'any', min:'0', class:'plain', 'aria-label':'Coffee amount' });
@@ -5879,19 +5915,24 @@ function amountCard(meth, onChange){
     h('div', { class:'seg', role:'group', 'aria-label':'Strength' }, sBtns),
     h('p', { class:'fine', style:'margin:6px 0 0', text:'Strength is how concentrated the cup is. It is different from extraction.' }));
   const waterLabel = h('label', { text:waterWord(meth) });
-  /* newcomers see the size buttons and the strength choice; the exact amounts and unit menus are one tap away */
-  const exactFields = [h('div', { class:'field', style:'margin-top:12px' }, waterLabel, h('div', { class:'unitrow' }, waterIn, waterSel)),
-    h('div', { class:'field' }, h('label', { text:'Coffee' }), h('div', { class:'unitrow' }, coffeeIn, coffeeSel))];
-  const exactBox = level() === 'new' ? h('details', { class:'moreinfo', id:'exactBox' }, h('summary', { text:'Type an exact amount' }), exactFields) : h('div', null, exactFields);
-  if (level() === 'new') exactBox.open = !meth.presets.includes(app.brew.water);
-  const card = h('div', { class:'card' }, h('h3', { text:'How much?' }),
-    h('p', { class:'fine', style:'margin:0', text:level() === 'new' ? 'Pick a size. Everything else updates to match.' : 'Pick a size or type any amount in the unit you prefer. Everything else updates to match.' }), chips,
-    meth.type === 'moka' ? null : strengthBox,
-    exactBox,
-    h('div', { class:'field', style:'margin-bottom:0' }, h('label', { text:'Ratio' }),
+  const coffeeField = h('div', { class:'field' }, h('label', { text:'Coffee' }), h('div', { class:'unitrow' }, coffeeIn, coffeeSel));
+  const waterField = h('div', { class:'field' }, waterLabel, h('div', { class:'unitrow' }, waterIn, waterSel));
+  /* the amount you start from is typed; the other is a line of text that follows it */
+  const slot = h('div', { style:'margin-top:12px' }), follow = h('p', { class:'fine', style:'margin:-4px 0 0' });
+  const fromBtns = [['coffee', 'Coffee'], ['water', waterWord(meth)]].map(x => h('button', { type:'button', 'aria-pressed':'false', text:x[1], onclick:() => { amountFrom = x[0]; seat(); onChange('from'); } }));
+  function seat(){
+    slot.textContent = ''; slot.append(amountFrom === 'coffee' ? coffeeField : waterField);
+    fromBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(['coffee', 'water'][i] === amountFrom)));
+  }
+  const card = h('div', { class:'card', id:'amountCard' }, h('h3', { text:'How much?' }),
+    h('div', { class:'cardlabel', style:'margin:4px 0 6px' }, h('span', { text:'Start from' }), h('span', { class:'cl-sub', text:'the other follows' })),
+    h('div', { class:'seg', role:'group', 'aria-label':'Start from' }, fromBtns), slot, follow,
+    meth.type === 'moka' ? null : h('div', { style:'margin-top:14px' }, strengthBox),
+    h('div', { class:'field', style:'margin:14px 0 0' }, h('label', { text:'Ratio' }),
       h('div', { class:'unitrow', style:'align-items:center' }, h('span', { style:'font-weight:800;font-size:18px', text:'1 :' }), ratioIn, resetRatio),
       ratioNote),
     h('p', { class:'fine', text:'The ratio stays the same when you change the batch size.' }));
+  seat();
   function refresh(src){
     const r = getRecipe(), wu = app.prefs.waterUnit, cu = app.prefs.coffeeUnit;
     waterSel.value = wu; coffeeSel.value = cu;
@@ -5899,18 +5940,73 @@ function amountCard(meth, onChange){
     if (document.activeElement !== waterIn || src === 'unit') waterIn.value = fmtWater(r.water, wu);
     if (document.activeElement !== coffeeIn || src === 'unit') coffeeIn.value = fmtCoffee(r.dose, cu);
     if (document.activeElement !== ratioIn || src === 'ratio-reset') ratioIn.value = String(r.ratio);
+    follow.textContent = (amountFrom === 'coffee' ? waterLabel.textContent + ': ' + waterShown(r.water, wu) + ' follows from your coffee' : 'Coffee: ' + coffeeShown(r.dose, cu) + ' follows from your water') + ' and the ratio.';
     ratioNote.textContent = r.ratioManual ? 'Recommended for this coffee: 1:' + r.ratioRec : 'Recommended for this coffee';
     resetRatio.hidden = !r.ratioManual;
     sBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(STR[i][1] === 0 ? !r.ratioManual : r.ratioManual && Math.abs(r.ratio - (r.ratioRec + STR[i][1] * sStep)) < 0.001)));
-    chipBtns.forEach(c => {
-      const lab = chipLabel(c.g, wu);
-      c.btn.textContent = ''; c.btn.append(h('span', null, lab.top, h('small', { text:lab.bottom })));
-      c.btn.setAttribute('aria-pressed', String(c.g === r.water));
-    });
   }
   return { el:card, refresh };
 }
+/* ---------- screen: recipe ---------- */
+function recipeWith(agit){
+  return buildRecipe(app.coffee, app.brew.method, { water:app.brew.water, tempF:app.brew.tempF, tempComp:app.brew.tempComp, altitudeFt:app.brew.altitudeFt, grinderKey:app.brew.grinderKey, calib:app.prefs.calib, ratio:app.brew.ratio, agit, tech:app.brew.technique, pulseTaste:app.brew.pulseTaste, pulseStrength:app.brew.pulseStrength, ice:app.brew.ice }, app.adjust, new Date());
+}
+function getRecipe(){ return recipeWith(app.brew.agitation); }
+/* What the person changed from our recommendation, one entry each: the Brew page's "Changed:" line, the Change settings banner and What's in your cup all read this. A different cup size is not a change. */
+function changesOf(r){
+  const out = [], ad = app.adjust, ag = AGIT.find(a => a.v === (r.agit || 'standard')) || AGIT[1];
+  if (r.ratioManual) out.push({ label:'Ratio', short:'ratio ' + fmtRatio(r.ratio), value:fmtRatio(r.ratio), rec:fmtRatio(r.ratioRec) });
+  if (r.temp.kind === 'hot' && r.temp.manual) out.push({ label:'Temperature', short:'temperature ' + r.temp.f + '°F', value:r.temp.f + '°F / ' + r.temp.c + '°C', rec:r.temp.recF + '°F / ' + Math.round(fToC(r.temp.recF)) + '°C' });
+  if (app.brew.tempComp) out.push({ label:'Grind', short:'grind matched to temperature', value:'matched to the water temperature', rec:'' });
+  if (r.tech.key !== 'standard') out.push({ label:'Technique', short:'technique ' + r.tech.label.toLowerCase(), value:r.tech.label, rec:'Standard' });
+  if (!ad.agit && r.method.type === 'flow' && ag.v !== 'standard') out.push({ label:'Pour style', short:'pour style ' + ag.label.toLowerCase(), value:ag.label, rec:'Standard' });
+  if (ad.grind || ad.ratio || ad.agit) out.push({ label:'From ' + STEP_NAME.perfect, short:'from ' + STEP_NAME.perfect + ': ' + adjustText(ad), value:adjustText(ad), rec:'' });
+  return out;
+}
+/* "Reset all": every change goes back to our recommendation. The cup size, the grinder and the altitude stay, because they are yours, not changes. */
+function resetChanges(){
+  app.brew.ratio = null; app.brew.tempF = null; app.brew.tempComp = false; app.brew.technique = 'standard'; app.brew.agitation = 'standard';
+  app.adjust = { grind:0, ratio:0, agit:'' };
+}
+/* a closed card with a one-line summary; the open state survives a repaint */
+const foldOpen = {};
+function foldCard(id, title, getSub, parts, sums){
+  const sub = h('span', { class:'gs' }), d = h('details', { class:'card gcard', id }, h('summary', null, h('span', { class:'gt', text:title }), sub), h('div', { class:'gbody' }, parts.map(x => x.el)));
+  d.open = foldOpen[id] === true; d.addEventListener('toggle', () => { foldOpen[id] = d.open; }); sums.push(() => { sub.textContent = getSub(); }); return d;
+}
+/* the amounts in the other units, one tap away (UX audit F9: units are shown once) */
+function otherUnitsFold(r){
+  const wu = app.prefs.waterUnit, cu = app.prefs.coffeeUnit, type = r.method.type, lines = [];
+  const add = (k, v) => { if (v) lines.push(h('p', { class:'fine', style:'margin:6px 0 0' }, h('b', { text:k + ': ' }), v)); };
+  if (r.iceShare) add('Hot water', waterOthers(r.hot, wu, type).join(' · '));
+  add(r.iceShare ? 'Finished drink' : waterWord(r.method), waterOthers(r.water, wu, type).join(' · '));
+  add('Coffee', coffeeOthers(r.dose, cu).join(' · '));
+  if (r.yield != null) add('In your cup', 'about ' + waterOthers(aboutGrams(r.yield, type), wu, type).join(' · '));
+  if (!r.iceShare && type !== 'espresso' && type !== 'moka'){ add('Per 8 fl oz cup', r.dosePerCup + ' g (' + tbspText(r.dosePerCup) + ')'); add('Ratio in ounces', '1 oz coffee per ' + r.flozPerOz + ' fl oz water'); }
+  const d = h('details', { class:'moreinfo', id:'unitsFold' }, h('summary', { text:'Other units' }), lines);
+  d.open = foldOpen.unitsFold === true; d.addEventListener('toggle', () => { foldOpen.unitsFold = d.open; }); return d;
+}
+function krow(label, value, sub, why){
+  const subs = [].concat(sub || []).filter(Boolean);
+  return h('div', { class:'krow' },
+    h('div', { class:'krow-top' }, h('span', { text:label }), h('strong', { text:value })),
+    subs.map(t => h('div', { class:'sub', text:t })),
+    !why ? null : level() === 'new' ? h('p', { class:'why', text:why }) : h('details', { class:'whyrow' }, h('summary', { text:'Why?' }), h('p', { class:'why', text:why })));
+}
 
+/* How well supported a number is: three plain tiers under the value, and what it rests on under "Why?". Added after the rows are drawn, so the row code stays as it was. */
+const EVIDENCE_ROWS = { 'Ratio':'ratio', 'Temperature':'temp', 'Grind':'grind', 'Bloom':'bloom', 'Brew time':'time', 'Steep':'time', 'Total time':'time', 'In your cup':'yield', 'Ice':'ice' };
+function evidenceLine(ev){ return h('div', { class:'ev ev-' + ev.tier.toLowerCase() }, h('span', { class:'dt', 'aria-hidden':'true', text:ev.dots }), ' ' + ev.label); }
+function decorateEvidence(root, r){
+  root.querySelectorAll('.krow').forEach(k => {
+    const key = EVIDENCE_ROWS[k.querySelector('.krow-top span').textContent], ev = key ? evidenceFor(r, key) : null; if (!ev) return;
+    k.querySelector('.krow-top').after(evidenceLine(ev));
+    const basis = h('p', { class:'basis', text:'What this rests on: ' + ev.basis }), box = k.querySelector('details.whyrow'), plain = k.querySelector(':scope > p.why');
+    if (box) box.append(basis); else if (plain) plain.after(basis);
+    else if (level() === 'new') k.append(basis); else k.append(h('details', { class:'whyrow' }, h('summary', { text:'Why?' }), basis));
+  });
+}
+function waterWord(m){ return m.type === 'espresso' ? 'Yield' : m.type === 'moka' ? 'Water in the base' : 'Water'; }
 function tempCard(onChange){
   const r0 = getRecipe();
   if (r0.temp.kind !== 'hot') return null;
@@ -5969,7 +6065,7 @@ function tempCard(onChange){
       const cp = r.compPreview, stepTxt = cp ? (cp.steps === 1 ? 'one step ' : cp.steps + ' steps ') + cp.dir : '';
       fx.append(...kept(h('p', { class:'serif', style:'margin:12px 0 8px;font-size:16px', text:e.comp }),
         h('button', { type:'button', class:'choice', 'aria-pressed':String(!!app.brew.tempComp), text:'Adjust grind to match', onclick:() => { app.brew.tempComp = !app.brew.tempComp; app.flashGrind = !!app.brew.tempComp; onChange('comp'); } }),
-        cp ? h('p', { class:'tempcomp', style:'margin:8px 0 0;font-size:15px;font-weight:600;color:var(--leaf)', text:cp.applied ? '✓ Applied. Your grind changed from ' + cp.off + ' µm to ' + cp.on + ' µm (' + stepTxt + '). See the Grind row in your brew settings below. Tap the button again to undo.' : 'Not applied yet. Tapping it changes your grind from ' + cp.off + ' µm to ' + cp.on + ' µm (' + stepTxt + ').' }) : null));
+        cp ? h('p', { class:'tempcomp', style:'margin:8px 0 0;font-size:15px;font-weight:600;color:var(--leaf)', text:cp.applied ? '✓ Applied. Your grind changed from ' + cp.off + ' µm to ' + cp.on + ' µm (' + stepTxt + '). See the Grind row on the Brew page. Tap the button again to undo.' : 'Not applied yet. Tapping it changes your grind from ' + cp.off + ' µm to ' + cp.on + ' µm (' + stepTxt + ').' }) : null));
     }
     fx.append(h('p', { class:'fine', text:e.note }));
   }
@@ -6036,7 +6132,7 @@ function techniqueCard(meth, onChange){
   const btns = list.map(k => h('button', { type:'button', class:'choice', 'aria-pressed':'false', onclick:() => { app.brew.technique = k; onChange('tech'); } }, h('span', null, techLabel(meth, k), h('small', { text:techShort(meth, k) }))));
   const detail = h('div', { class:'techdetail', style:'margin-top:12px;border-top:1px solid var(--line);padding-top:12px' });
   const card = h('div', { class:'card', id:'techCard' }, h('h3', { text:'Technique' }),
-    h('p', { class:'fine', style:'margin:0 0 10px', text:'Standard uses the settings below. Or try an experiment.' }),
+    h('p', { class:'fine', style:'margin:0 0 10px', text:'Standard uses our recommended settings. Or try an experiment.' }),
     h('div', { class:'choices stack', role:'group', 'aria-label':'Technique' }, btns), detail);
   const dial = (label, opts, cur, set, help) => {
     const bs = opts.map(o => h('button', { type:'button', text:o[1], 'aria-pressed':String(o[0] === cur), onclick:() => { set(o[0]); onChange('tech'); } }));
@@ -6071,11 +6167,11 @@ function techniqueCard(meth, onChange){
   return { el:card, refresh };
 }
 /* what each thing on the coffee page did to this recipe. The engine measures it by rebuilding the recipe with each field left out, so this card cannot claim an effect that is not in the numbers. */
-function effectsCard(r){
+function effectsCard(r, bare){
   const fx = pageEffects(app.coffee, r.method.key, { water:app.brew.water, altitudeFt:app.brew.altitudeFt, agit:app.brew.agitation, tech:app.brew.technique, pulseTaste:app.brew.pulseTaste, pulseStrength:app.brew.pulseStrength, ice:app.brew.ice }, new Date());
   const live = fx.rows.filter(x => x.kind !== 'none'), none = fx.rows.filter(x => x.kind === 'none');
   const li = x => h('li', null, h('b', { text:x.label + ': ' + x.value + '. ' }), x.text);
-  return h('div', { class:'card fxcard', id:'fxCard' }, h('h3', { text:'What your coffee page changed' }),
+  return h('div', { class:bare ? 'fxcard' : 'card fxcard', id:'fxCard' }, bare ? null : h('h3', { text:'What your coffee page changed' }),
     live.length ? h('ul', { class:'fxlist' }, live.map(li)) : h('p', { class:'fine', style:'margin:4px 0 0', text:'Nothing you entered has moved these settings yet. The details below say why.' }),
     none.length ? h('details', { class:'moreinfo' }, h('summary', { text:'Changed nothing, by design (' + none.length + ')' }), h('ul', { class:'fxlist' }, none.map(li))) : null);
 }
@@ -6144,95 +6240,67 @@ function gearCard(meth, paint){
   return { el, refresh };
 }
 let recipeRepaint = null;
-/* which folded cards the person has opened, so a repaint (typing an altitude, say) does not close the card they are in */
-const foldOpen = {};
 function screenRecipe(m){
   if (isMachine(app.brew.method)) return screenMachine(m);
   const meth = METHODS.find(x => x.key === app.brew.method), lv = level();
   if (!app.brew.water) app.brew.water = meth.water;
   m.append(h('h1', { text:meth.label }), h('p', { class:'lede', text:meth.blurb }));
   { const th = termHint(); if (th) m.append(th); }
-  if (lv === 'new') m.append(h('div', { class:'card' }, h('h3', { text:'How a brew works' }), h('p', { class:'serif', style:'margin:4px 0 0;font-size:16.5px', text:BREW_EXPLAINER })));
   { const rt = recipeTrailCard(meth) || recipePriorCard(meth); if (rt) m.append(rt); }
-  const out = h('div', { id:'recipeOut' });
-  const sums = [];
+  /* The card keeps its own parts (the cup-size buttons stay put, so a button you pressed keeps its focus) and a repaint redraws only the notices, the status line and the rows. */
+  const notes = h('div', { id:'recipeNotes' }), status = h('div', { class:'statusline', id:'recipeStatus' }), out = h('div', { id:'recipeOut' });
   recipeRepaint = src => paint(src);
+  const chips = sizeChips(meth, paint), gr = gearCard(meth, paint);
   function paint(src){
-    amt.refresh(src); gr.refresh(); if (tk) tk.refresh(); if (tc) tc.refresh(); if (ps) ps.refresh(); sums.forEach(f => f());
-    out.textContent = ''; out.append(recipeCards(getRecipe()));
+    chips.refresh(src); gr.refresh();
+    const r = getRecipe(), ch = changesOf(r);
+    notes.textContent = ''; notes.append(noticesOf(r));
+    status.textContent = ''; status.classList.toggle('changed', ch.length > 0);
+    if (ch.length) status.append(h('span', { text:'Changed: ' + ch.map(c => c.short).join(' · ') }), h('button', { type:'button', class:'btn link', id:'resetAll', text:'Reset all', onclick:() => { resetChanges(); paint('reset'); } }));
+    else status.append(h('span', { class:'pill static' }, h('span', { 'aria-hidden':'true', style:'color:var(--leaf);font-weight:800', text:'✓ ' }), 'Recommended for this coffee'));
+    out.textContent = ''; out.append(settingsRows(r), otherUnitsFold(r));
     scheduleDraft();
   }
-  const amt = amountCard(meth, paint);
-  const tk = techniqueCard(meth, paint);
-  const tc = tempCard(paint);
-  const ps = (meth.type === 'flow' && lv !== 'new') ? pourStyleCard(paint) : null;
-  const gr = gearCard(meth, paint);
-  m.append(amt.el, gr.el);
-  /* every adjustment sits in a closed card with a one-line summary, so the recipe is not pushed off the screen; an expert sees them open */
-  const fold = (id, title, getSub, parts) => {
-    const sub = h('span', { class:'gs' }), d = h('details', { class:'card gcard', id }, h('summary', null, h('span', { class:'gt', text:title }), sub), h('div', { class:'gbody' }, parts.map(x => x.el)));
-    d.open = foldOpen[id] === true; d.addEventListener('toggle', () => { foldOpen[id] = d.open; }); sums.push(() => { sub.textContent = getSub(); }); return d;
-  };
-  if (tk && lv === 'new') m.append(fold('adjustCard', 'Try a different technique (optional)', () => 'Pulse pours or iced coffee', [tk]));
-  else if (tk || ps){
-    const parts = [tk, ps].filter(Boolean);
-    m.append(fold('adjustCard', 'Adjust your brew (optional)', () => adjustSummary(getRecipe(), meth), parts));
-  }
-  if (tc){
-    tc.el.querySelector('h3').hidden = true;
-    m.append(lv === 'new' ? fold('tempFold', 'Change the water temperature (optional)', () => 'We already picked one for your coffee', [tc])
-      : fold('tempFold', 'Water temperature', () => tempSummary(getRecipe()), [tc]));
-  }
-  if (app.adjust.grind || app.adjust.ratio || app.adjust.agit){
-    m.append(h('div', { class:'adj' }, h('span', { class:'pill static', text:'Applied from ' + STEP_NAME.perfect + ': ' + adjustText(app.adjust) }),
-      h('button', { type:'button', class:'btn link', text:'Reset', onclick:() => { if (app.adjust.agit) app.brew.agitation = 'standard'; app.adjust = { grind:0, ratio:0, agit:'' }; render(); } })));
-  }
-  m.append(out);
-  if (lv !== 'new') m.append(setupCard(meth));
-  const rec0 = getRecipe();
-  /* The main action sits in the same fixed bottom bar the Facts screen uses, so it is always in reach however far the long recipe is scrolled. */
-  const cupBtn = primary => h('button', { type:'button', class:'btn ' + (primary ? 'primary ' : '') + 'block', text:'I brewed it: taste it', onclick:() => { snapshotBrew(); prepCupEntry(); go('cup'); } });
-  if (rec0.timed) m.append(h('div', { class:'actions', style:'flex-direction:column' }, cupBtn(false)),
-    h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary block', text:'Start guided brew', onclick:() => { go('timer'); } }))));
-  else m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, cupBtn(true))));
+  m.append(notes, h('div', { class:'card', id:'settingsCard' },
+    h('div', { class:'cardhead' }, h('h3', { text:'Your brew settings' }), h('button', { type:'button', class:'btn', id:'changeBtn', text:'Change settings', onclick:() => go('change') })),
+    status, chips.el, out), gr.el);
+  if (lv === 'new') m.append(h('div', { class:'card' }, h('h3', { text:'How a brew works' }), h('p', { class:'serif', style:'margin:4px 0 0;font-size:16.5px', text:BREW_EXPLAINER })));
+  else m.append(setupCard(meth));
+  /* The main action sits in the same fixed bottom bar the Facts screen uses, so it is always in reach however far the page is scrolled. */
+  m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary block', id:'nextBtn', text:"Next: What's in your cup", onclick:() => go('ready') }))));
   paint('init');
 }
-function recipeCards(r){
+/* a warning about the beans, and a note when we guessed from the origin: above the settings, so it is seen first */
+function noticesOf(r){
   const frag = document.createDocumentFragment();
+  if (r.guesses && r.guesses.length) frag.append(h('div', { class:'notice', style:'margin:0 0 12px;border-left-color:var(--gold)' }, h('b', { text:'Guessed from the origin: ' }), r.guesses.join(' '), ' ', h('button', { type:'button', class:'btn link', text:'Add details', onclick:() => go('start') })));
+  if (r.freshness && r.freshness.tone === 'warn') frag.append(h('div', { class:'notice', style:'margin:0 0 12px' }, h('b', { text:r.freshness.label + '. ' }), r.freshness.tip, h('div', { class:'fine', style:'margin:4px 0 0', text:r.freshness.note })));
+  return frag;
+}
+/* the numbers: every amount in the one unit the person chose (the others are under "Other units") */
+function settingsRows(r){
+  const wu = app.prefs.waterUnit, cu = app.prefs.coffeeUnit, type = r.method.type;
   const tempVal = r.temp.kind === 'hot' ? r.temp.f + '°F / ' + r.temp.c + '°C' : r.temp.kind === 'cold' ? 'Cold' : r.temp.kind === 'moka' ? 'Just off the boil' : 'Machine';
   const tempSub = r.temp.kind === 'hot' ? (r.temp.manual ? 'You set this. Recommended: ' + r.temp.recF + '°F / ' + Math.round(fToC(r.temp.recF)) + '°C' : null) : r.temp.kind === 'cold' ? 'Room temperature or colder: about 68°F / 20°C' : r.temp.kind === 'moka' ? 'About 194–203°F / 90–95°C to start' : null;
   const grindRow = krow('Grind', r.grind.name, [(level() === 'new' ? '' : 'about ' + r.grind.um + ' µm · ') + 'like ' + r.grind.like, r.clicks ? r.clicks.brief : null], r.grind.why.join(' '));
   if (app.flashGrind){ grindRow.classList.add('flash'); app.flashGrind = false; }
-  const rows = h('div', { class:'card' }, h('h3', { text:'Your brew settings' }),
-    krow('Coffee', r.dose + ' g', coffeeLine(r.dose)),
-    r.iceShare ? [krow('Hot water', r.hot + ' g', waterLine(r.hot, r.method.type)), krow('Ice', r.ice + ' g', 'Finished drink: ' + r.water + ' g')] : krow(waterWord(r.method), r.water + ' g', waterLine(r.water, r.method.type)),
-    r.yield != null ? krow('In your cup', 'about ' + aboutGrams(r.yield, r.method.type) + ' g', r.iceShare ? ['After the ice melts. ' + waterLine(aboutGrams(r.yield, r.method.type), r.method.type)] : waterLine(aboutGrams(r.yield, r.method.type), r.method.type), 'The grounds soak up about 2 g of water for every gram of coffee. So the cup holds a little less than the water you pour. Guides put the figure between about 1.5 and 2.4 g.') : null,
-    krow('Ratio', fmtRatio(r.ratio), r.method.type === 'espresso' ? [r.dose + ' g of coffee in, ' + r.water + ' g of espresso out'] : r.method.type === 'moka' ? [r.ratio + ' parts water to 1 part coffee', 'The basket and the water line fix this ratio'] : r.iceShare ? [r.gPerL + ' g per liter (finished drink)', 'Hot brew alone: ' + fmtRatio(r.hotRatio) + '. Strong on purpose, because the ice melts into it.'] : [r.gPerL + ' g per liter · ' + r.dosePerCup + ' g (' + tbspText(r.dosePerCup) + ') per 8 fl oz cup', 'In ounces: 1 oz coffee per ' + r.flozPerOz + ' fl oz water'], r.ratioWhy),
+  const cupG = r.yield != null ? aboutGrams(r.yield, type) : null;
+  const rows = h('div', null,
+    krow('Coffee', coffeeShown(r.dose, cu)),
+    r.iceShare ? [krow('Hot water', waterShown(r.hot, wu)), krow('Ice', waterShown(r.ice, wu), 'Finished drink: ' + waterShown(r.water, wu))] : krow(waterWord(r.method), waterShown(r.water, wu)),
+    r.yield != null ? krow('In your cup', 'about ' + waterShown(cupG, wu), r.iceShare ? ['After the ice melts.'] : null, 'The grounds soak up about 2 g of water for every gram of coffee. So the cup holds a little less than the water you pour. Guides put the figure between about 1.5 and 2.4 g.') : null,
+    krow('Ratio', fmtRatio(r.ratio), type === 'espresso' ? [r.dose + ' g of coffee in, ' + r.water + ' g of espresso out'] : type === 'moka' ? [r.ratio + ' parts water to 1 part coffee', 'The basket and the water line fix this ratio'] : r.iceShare ? [r.gPerL + ' g per liter (finished drink)', 'Hot brew alone: ' + fmtRatio(r.hotRatio) + '. Strong on purpose, because the ice melts into it.'] : [r.gPerL + ' g per liter'], r.ratioWhy),
     krow('Temperature', tempVal, tempSub, r.temp.reason),
     grindRow,
-    r.bloom ? krow('Bloom', r.bloom.secs + ' sec', r.bloomG + ' g of water', r.bloom.why) : null,
-    (r.method.type === 'machine' || r.method.type === 'moka') ? krow('Brew time', r.method.type === 'moka' ? '2:30–4:00' : '5–8 min', null, r.timeWhy) : r.method.type === 'cold' ? krow('Steep', 'About ' + Math.max(8, Math.round(r.method.steep / 3600)) + ' hours', null, r.timeWhy) : r.totalSecs ? krow('Total time', fmtTime(r.totalSecs), null, r.timeWhy) : null);
+    r.bloom ? krow('Bloom', r.bloom.secs + ' sec', waterShown(r.bloomG, wu) + ' of water', r.bloom.why) : null,
+    (type === 'machine' || type === 'moka') ? krow('Brew time', type === 'moka' ? '2:30–4:00' : '5–8 min', null, r.timeWhy) : type === 'cold' ? krow('Steep', 'About ' + Math.max(8, Math.round(r.method.steep / 3600)) + ' hours', null, r.timeWhy) : r.totalSecs ? krow('Total time', fmtTime(r.totalSecs), null, r.timeWhy) : null);
   decorateEvidence(rows, r);
   if (r.ratioSuggest){
     const sg = r.ratioSuggest, rrow = Array.from(rows.querySelectorAll('.krow')).find(k => k.querySelector('.krow-top span').textContent === 'Ratio');
     if (rrow) rrow.append(h('div', { class:'ratiosug' }, h('p', { class:'fine', style:'margin:8px 0 6px', text:sg.why + ' Try ' + fmtRatio(sg.ratio) + '? If it tastes heavy or muddy, go back.' }),
       h('button', { type:'button', class:'btn small', style:'margin:0', text:'Use ' + fmtRatio(sg.ratio), onclick:() => { app.brew.ratio = sg.ratio; if (recipeRepaint) recipeRepaint('ratio-reset'); } })));
   }
-  if (r.guesses && r.guesses.length) frag.append(h('div', { class:'notice', style:'margin:0 0 12px;border-left-color:var(--gold)' }, h('b', { text:'Guessed from the origin: ' }), r.guesses.join(' '), ' ', h('button', { type:'button', class:'btn link', text:'Add details', onclick:() => go('start') })));
-  if (r.freshness && r.freshness.tone === 'warn') frag.append(h('div', { class:'notice', style:'margin:0 0 12px' }, h('b', { text:r.freshness.label + '. ' }), r.freshness.tip, h('div', { class:'fine', style:'margin:4px 0 0', text:r.freshness.note })));
-  frag.append(rows);
-  frag.append(effectsCard(r));
-  frag.append(h('div', { class:'card' }, h('h3', { text:'Before you start' }), h('ul', { class:'prep' }, r.prep.map(t => h('li', { text:t }))),
-    h('details', { class:'moreinfo' }, h('summary', { text:'Water tips' }), h('p', { class:'serif', style:'margin:6px 0 0;font-size:15.5px;line-height:1.4', text:level() === 'new' ? r.water_note_plain : r.water_note }), (() => { const wl = h('div', { class:'waterlines' }); refreshers.push(() => { wl.textContent = ''; waterProfile(app.brew.waterType, app.brew.waterAlk, app.brew.waterGH).lines.forEach(t => wl.append(h('p', { class:'serif', style:'margin:6px 0 0;font-size:15.5px;line-height:1.4', text:t }))); }); return wl; })())));
-  const ol = h('ol', { class:'steps' });
-  r.steps.forEach(s => {
-    ol.append(h('li', { class:'step' },
-      h('div', { class:'t', text:s.t == null ? '' : fmtTime(s.t) }),
-      h('div', null, h('div', null, h('b', { text:s.title })), h('div', { class:'d', text:s.detail }), s.scale ? h('span', { class:'tag', text:'Scale: ' + s.scale + ' g' }) : null)));
-  });
-  frag.append(h('div', { class:'card' }, h('h3', { text:'Step by step' }), ol));
-  (r.risks || [r.risk]).slice(0, 2).forEach((k, i) => frag.append(h('div', { class:'watch' }, h('b', { text:(i ? 'Also watch for: ' : 'Watch for: ') }), k.title + '. ', h('span', { class:'serif', text:k.fix }))));
-  return frag;
+  return rows;
 }
 function snapshotBrew(){
   if (isMachine(app.brew.method)) return snapshotMachine();
@@ -6399,6 +6467,30 @@ function cue(step){
   if (voiceState.ok === false){ chime(); return; }
   speak(stepSpeech(step), ok => { if (!ok) chime(); });
 }
+/* ---------- screen: change settings ---------- */
+function screenChange(m){
+  const meth = METHODS.find(x => x.key === app.brew.method);
+  if (!meth || isMachine(app.brew.method)){ app.screen = 'recipe'; return SCREENS.recipe(m); }
+  const lv = level(), sums = [];
+  m.append(h('h1', { text:'Change settings' }), h('p', { class:'lede', text:meth.label + '. Our recommendation is the starting point. Change what you like, and the Brew page follows.' }));
+  const banner = h('div', { class:'statusline changed', id:'changeBanner' });
+  function paint(src){
+    amt.refresh(src); if (tk) tk.refresh(); if (tc) tc.refresh(); if (ps) ps.refresh(); sums.forEach(f => f());
+    const ch = changesOf(getRecipe());
+    banner.hidden = !ch.length; banner.textContent = '';
+    if (ch.length) banner.append(h('span', { text:'Changed: ' + ch.map(c => c.short).join(' · ') }), h('button', { type:'button', class:'btn link', id:'resetAll', text:'Reset all', onclick:() => { resetChanges(); paint('ratio-reset'); } }));
+    scheduleDraft();
+  }
+  const amt = amountCard(meth, paint), tk = techniqueCard(meth, paint), tc = tempCard(paint), ps = (meth.type === 'flow' && lv !== 'new') ? pourStyleCard(paint) : null;
+  m.append(banner, amt.el);
+  /* a newcomer keeps the temperature and the techniques folded; everyone else sees them as cards */
+  if (lv === 'new'){
+    if (tc){ tc.el.querySelector('h3').hidden = true; m.append(foldCard('tempFold', 'Change the water temperature (optional)', () => 'We already picked one for your coffee', [tc], sums)); }
+    if (tk) m.append(foldCard('adjustCard', 'Try a different technique (optional)', () => 'Pulse pours or iced coffee', [tk], sums));
+  } else [tc, tk, ps].forEach(x => { if (x) m.append(x.el); });
+  m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary block', id:'doneBtn', text:'Done', onclick:() => navBack('recipe') }))));
+  paint('init');
+}
 let timer = { running:false, startMs:0, base:0, iv:null, lastIdx:-1, lock:null };
 /* The browser releases a screen wake lock whenever the page is hidden, so it is asked for again whenever the timer runs and no live lock exists */
 async function holdScreen(){
@@ -6524,6 +6616,47 @@ function screenTimer(m){
   tick();
 }
 
+/* ---------- screen: what's in your cup ---------- */
+function readyRows(r){
+  const wu = app.prefs.waterUnit, cu = app.prefs.coffeeUnit, type = r.method.type;
+  const row = (label, value, sub, big) => h('div', { class:'rrow' + (big ? ' big' : '') }, h('span', { text:label }), h('div', null, h('strong', { text:value }), sub ? h('div', { class:'sub', text:sub }) : null));
+  const tempVal = r.temp.kind === 'hot' ? r.temp.f + '°F / ' + r.temp.c + '°C' : r.temp.kind === 'cold' ? 'Cold' : r.temp.kind === 'moka' ? 'Just off the boil' : 'Machine';
+  const grindSub = r.clicks && r.clicks.brief ? r.clicks.brief : app.brew.grind_setting ? 'Your setting: ' + app.brew.grind_setting : null;
+  const cupG = r.yield != null ? aboutGrams(r.yield, type) : null;
+  return h('div', { class:'card', id:'readyRows' }, h('h3', { text:'Your brew' }),
+    row('Coffee', coffeeShown(r.dose, cu)),
+    r.iceShare ? [row('Hot water', waterShown(r.hot, wu)), row('Ice', waterShown(r.ice, wu))] : row(waterWord(r.method), waterShown(r.water, wu)),
+    row('Temperature', tempVal),
+    row('Grind', r.grind.name, grindSub),
+    r.bloom ? row('Bloom', r.bloom.secs + ' sec', waterShown(r.bloomG, wu) + ' of water') : null,
+    (type === 'machine' || type === 'moka') ? row('Brew time', type === 'moka' ? '2:30–4:00' : '5–8 min') : type === 'cold' ? row('Steep', 'About ' + Math.max(8, Math.round(r.method.steep / 3600)) + ' hours') : r.totalSecs ? row('Total time', fmtTime(r.totalSecs)) : null,
+    r.yield != null ? row('In your cup', 'about ' + waterShown(cupG, wu), r.iceShare ? 'After the ice melts' : null, true) : null);
+}
+function screenReady(m){
+  const meth = METHODS.find(x => x.key === app.brew.method);
+  if (!meth || isMachine(app.brew.method)){ app.screen = 'recipe'; return SCREENS.recipe(m); }
+  const r = getRecipe(), ch = changesOf(r), sums = [];
+  m.append(h('h1', { text:"What's in your cup" }), h('p', { class:'lede', text:meth.label + '. One last look before you brew.' }), readyRows(r));
+  if (ch.length){
+    m.append(h('div', { class:'card', id:'changedCard' }, h('h3', { text:'What you changed' }),
+      h('ul', { class:'fxlist' }, ch.map(c => h('li', null, h('b', { text:c.label + ': ' }), c.rec ? c.value + ' (we recommend ' + c.rec + ')' : c.value)))),
+      foldCard('whyFold', 'Why the other settings are what they are', () => 'What your coffee page changed', [{ el:effectsCard(r, true) }], sums));
+  } else m.append(h('div', { class:'card', id:'changedCard' }, h('h3', { text:'Recommended for this coffee' }),
+    h('p', { class:'fine', style:'margin:4px 0 0' }, h('span', { 'aria-hidden':'true', style:'color:var(--leaf);font-weight:800', text:'✓ ' }), 'You changed nothing. These are our settings, and here is what shaped them.'), effectsCard(r, true)));
+  m.append(h('div', { class:'card' }, h('h3', { text:'Before you start' }), h('ul', { class:'prep' }, r.prep.map(t => h('li', { text:t }))),
+    h('details', { class:'moreinfo' }, h('summary', { text:'Water tips' }), h('p', { class:'serif', style:'margin:6px 0 0;font-size:15.5px;line-height:1.4', text:level() === 'new' ? r.water_note_plain : r.water_note }), (() => { const wl = h('div', { class:'waterlines' }); refreshers.push(() => { wl.textContent = ''; waterProfile(app.brew.waterType, app.brew.waterAlk, app.brew.waterGH).lines.forEach(t => wl.append(h('p', { class:'serif', style:'margin:6px 0 0;font-size:15.5px;line-height:1.4', text:t }))); }); return wl; })())));
+  (r.risks || [r.risk]).slice(0, 2).forEach((k, i) => m.append(h('div', { class:'watch' }, h('b', { text:(i ? 'Also watch for: ' : 'Watch for: ') }), k.title + '. ', h('span', { class:'serif', text:k.fix }))));
+  const ol = h('ol', { class:'steps' });
+  r.steps.forEach(s => ol.append(h('li', { class:'step' }, h('div', { class:'t', text:s.t == null ? '' : fmtTime(s.t) }),
+    h('div', null, h('div', null, h('b', { text:s.title })), h('div', { class:'d', text:s.detail }), s.scale ? h('span', { class:'tag', text:'Scale: ' + s.scale + ' g' }) : null))));
+  m.append(foldCard('stepsFold', 'Step by step', () => r.steps.length + ' steps' + (r.totalSecs ? ' · ' + fmtTime(r.totalSecs) : ''), [{ el:ol }], sums));
+  sums.forEach(f => f());
+  const brewed = primary => h('button', { type:'button', class:'btn ' + (primary ? 'primary ' : '') + 'block', id:'brewedBtn', text:'I brewed it: taste it', onclick:() => { snapshotBrew(); prepCupEntry(); go('cup'); } });
+  const change = h('button', { type:'button', class:'btn', id:'readyChange', text:'Change', onclick:() => navBack('recipe') });
+  if (r.timed) m.append(h('div', { class:'actions', style:'flex-direction:column' }, brewed(false)),
+    h('div', { class:'dock' }, h('div', { class:'dock-inner two' }, change, h('button', { type:'button', class:'btn primary', id:'brewItBtn', text:'Brew it', onclick:() => go('timer') }))));
+  else m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner two' }, change, brewed(true))));
+}
 /* ---------- cupping UI builders ---------- */
 function scaleRow(ticks, min, max, bands){
   const t = h('div', { class:'ticks' });
@@ -8928,7 +9061,7 @@ function screenDetail(m){
     h('button', { type:'button', class:'btn danger block', text:'Delete this tasting', onclick:() => openDelete(new Set([o._i]), true) })));
 }
 
-const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, recipe:screenRecipe, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, guide:screenGuide };
+const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, guide:screenGuide };
 
 $('homeBtn').innerHTML = '<svg class="burger" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span class="ml">Menu</span>';
 $('homeBtn').addEventListener('click', openMenu);

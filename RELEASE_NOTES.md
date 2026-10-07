@@ -2,6 +2,16 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 35: Brew starts with your numbers, with a last look before the timer
+
+2026-10-07 18:38:45 UTC
+
+- The Brew page opens on your numbers: coffee, water, ratio, temperature, grind and time. The cup size is one tap away, and your grinder sits right under the numbers.
+- Change settings holds everything you can change: how much (start from coffee or water), how strong, the ratio, the water temperature, the technique and the pour style. The Brew page shows what you changed in one line, with Reset all.
+- A new page, What's in your cup, gives one last look before you brew: your final numbers, what you changed (or why the settings are what they are), what to do before you start, and the steps. Change goes back to the Brew page, and the timer starts from here.
+- Each amount is shown once, in the unit you chose. The other units are under Other units.
+- On the step bar, Brew is one step in two parts: the numbers, then the last look and the timer.
+
 ## Release 34: One name for each step, and plainer words
 
 2026-10-07 16:52:04 UTC
