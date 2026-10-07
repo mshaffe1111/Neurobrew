@@ -2,6 +2,13 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 31: A stray word removed from the save sheets
+
+2026-10-06 22:53:09 UTC
+
+- Fixed: the word "null" showed on its own line in the save sheets (Do you have a cupping file already?, Ready to save, and Save a copy of my file) and at the top of My setup. It is gone.
+- Nothing else changed. Your files and saved cuppings are not affected.
+
 ## Release 30: My setup, and save over your own file
 
 2026-10-06 20:51:34 UTC

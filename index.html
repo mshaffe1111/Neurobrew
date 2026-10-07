@@ -4346,6 +4346,16 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 31,
+  "at": "2026-10-06T22:53:09Z",
+  "date": "2026-10-06",
+  "title": "A stray word removed from the save sheets",
+  "notes": [
+   "Fixed: the word \"null\" showed on its own line in the save sheets (Do you have a cupping file already?, Ready to save, and Save a copy of my file) and at the top of My setup. It is gone.",
+   "Nothing else changed. Your files and saved cuppings are not affected."
+  ]
+ },
+ {
   "release": 30,
   "at": "2026-10-06T20:51:34Z",
   "date": "2026-10-06",
@@ -4737,6 +4747,8 @@ function h(tag, props){
   }
   return e;
 }
+/* The browser's own append() writes the word "null" for a null argument. Wrap any argument list that can hold an optional piece in kept(), as in el.append(...kept(a, cond ? b : null)). h() already skips nulls. */
+const kept = (...a) => a.filter(x => x != null && x !== false);
 function today(){
   const d = new Date(), p = n => String(n).padStart(2,'0');
   return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
@@ -5825,9 +5837,9 @@ function tempCard(onChange){
     if (e.fruit) fx.append(h('p', { class:'serif', style:'margin:12px 0 0;font-size:16px', text:e.fruit }));
     if (e.comp){
       const cp = r.compPreview, stepTxt = cp ? (cp.steps === 1 ? 'one step ' : cp.steps + ' steps ') + cp.dir : '';
-      fx.append(h('p', { class:'serif', style:'margin:12px 0 8px;font-size:16px', text:e.comp }),
+      fx.append(...kept(h('p', { class:'serif', style:'margin:12px 0 8px;font-size:16px', text:e.comp }),
         h('button', { type:'button', class:'choice', 'aria-pressed':String(!!app.brew.tempComp), text:'Adjust grind to match', onclick:() => { app.brew.tempComp = !app.brew.tempComp; app.flashGrind = !!app.brew.tempComp; onChange('comp'); } }),
-        cp ? h('p', { class:'tempcomp', style:'margin:8px 0 0;font-size:15px;font-weight:600;color:var(--leaf)', text:cp.applied ? '✓ Applied. Your grind changed from ' + cp.off + ' µm to ' + cp.on + ' µm (' + stepTxt + '). See the Grind row in your recipe below. Tap the button again to undo.' : 'Not applied yet. Tapping it changes your grind from ' + cp.off + ' µm to ' + cp.on + ' µm (' + stepTxt + ').' }) : null);
+        cp ? h('p', { class:'tempcomp', style:'margin:8px 0 0;font-size:15px;font-weight:600;color:var(--leaf)', text:cp.applied ? '✓ Applied. Your grind changed from ' + cp.off + ' µm to ' + cp.on + ' µm (' + stepTxt + '). See the Grind row in your recipe below. Tap the button again to undo.' : 'Not applied yet. Tapping it changes your grind from ' + cp.off + ' µm to ' + cp.on + ' µm (' + stepTxt + ').' }) : null));
     }
     fx.append(h('p', { class:'fine', text:e.note }));
   }
@@ -7198,9 +7210,9 @@ function renderShopSheet(title){
   }
   if (sh.phase === 'empty'){
     title.textContent = 'Nothing to fill in';
-    sheetEl.append(h('p', { text:'Found "' + sh.src.title + '" on ' + sh.src.host + ', but its listing does not say the origin, process, elevation, roast or tasting notes in a way NeuroBrew can read.' }),
+    sheetEl.append(...kept(h('p', { text:'Found "' + sh.src.title + '" on ' + sh.src.host + ', but its listing does not say the origin, process, elevation, roast or tasting notes in a way NeuroBrew can read.' }),
       sh.src.url ? h('p', null, h('a', { href:sh.src.url, target:'_blank', rel:'noopener noreferrer', text:'Open the listing' })) : null,
-      h('p', { class:'fine', text:'You can copy the text from the listing and use Paste label text, or type the details in by hand.' }), h('div', { class:'row' }, close, again('Try another website or link', true)));
+      h('p', { class:'fine', text:'You can copy the text from the listing and use Paste label text, or type the details in by hand.' }), h('div', { class:'row' }, close, again('Try another website or link', true))));
     return;
   }
   const cp = shopErrorCopy(sh.err, sh.status);
@@ -7582,11 +7594,11 @@ function renderSheetBody(){
   }
   if (sheet.step === 'ask'){
     title.textContent = 'Do you have a cupping file already?';
-    sheetEl.append(h('p', { text:'If you do, upload it and this cupping is added to your history. If not, a new file is created.' }),
+    sheetEl.append(...kept(h('p', { text:'If you do, upload it and this cupping is added to your history. If not, a new file is created.' }),
       canPickFiles() ? h('div', { style:'margin:0 0 10px' }, pickAskRows(), sheet.error ? h('p', { class:'err', role:'alert', id:'pickAskErr', style:'margin:6px 0 0', text:sheet.error }) : null) : null,
       h('div', { class:'row' },
         h('button', { type:'button', class:'btn', text:'No, create a new file', onclick:() => { sheet.csv = newFileCSV(buildRow()); sheet.info = 'New file with 1 cupping.'; sheet.step = 'confirm'; renderSheet(); } }),
-        h('button', { type:'button', class:'btn primary', text:'Yes, upload it', onclick:() => { sheet.step = 'upload'; renderSheet(); } })), closeRow());
+        h('button', { type:'button', class:'btn primary', text:'Yes, upload it', onclick:() => { sheet.step = 'upload'; renderSheet(); } })), closeRow()));
     return;
   }
   if (sheet.step === 'upload'){
@@ -7642,13 +7654,13 @@ function renderSheetBody(){
   }
   if (sheet.step === 'confirm'){
     title.textContent = sheet.csv ? 'Ready to save' : 'Already saved';
-    sheetEl.append(h('p', { text:sheet.info }), sheet.setupNote ? h('p', { class:'fine', id:'setupNote', text:sheet.setupNote }) : null);
+    sheetEl.append(...kept(h('p', { text:sheet.info }), sheet.setupNote ? h('p', { class:'fine', id:'setupNote', text:sheet.setupNote }) : null));
     if (sheet.csv && canPickFiles()){
-      sheetEl.append(...pickConfirmRows(), sheet.mode === 'export' ? null : keepOption());
+      sheetEl.append(...kept(...pickConfirmRows(), sheet.mode === 'export' ? null : keepOption()));
     } else if (sheet.csv){
-      sheetEl.append(h('p', { class:'fine', text:sheet.mode === 'export' ? 'This downloads your whole history as one file, with everything you added, corrected or deleted here. Your browser may name it ' + FILENAME.replace('.csv', ' (1).csv') + '. Replace your old ' + FILENAME + ' with it, so the newest copy is the only one. Otherwise anything you deleted comes back whenever you upload the old file.' : 'Each save downloads a fresh copy of ' + FILENAME + '. Your browser may name it ' + FILENAME.replace('.csv', ' (1).csv') + '. Replace your old file with this newest one, since it holds your full history.' }),
+      sheetEl.append(...kept(h('p', { class:'fine', text:sheet.mode === 'export' ? 'This downloads your whole history as one file, with everything you added, corrected or deleted here. Your browser may name it ' + FILENAME.replace('.csv', ' (1).csv') + '. Replace your old ' + FILENAME + ' with it, so the newest copy is the only one. Otherwise anything you deleted comes back whenever you upload the old file.' : 'Each save downloads a fresh copy of ' + FILENAME + '. Your browser may name it ' + FILENAME.replace('.csv', ' (1).csv') + '. Replace your old file with this newest one, since it holds your full history.' }),
         h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:sheet.mode === 'export' ? 'Cancel' : 'Back', onclick:() => { if (sheet.mode === 'export'){ closeSheet(); return; } sheet.step = 'ask'; renderSheet(); } }), h('button', { type:'button', class:'btn primary', text:'Save file', onclick:doDownload })),
-        sheet.mode === 'export' ? null : keepOption());
+        sheet.mode === 'export' ? null : keepOption()));
       checkDownloadPermission();
     } else {
       sheetEl.append(h('p', { class:'fine', text:'If you changed scores after saving, add it again as a new entry. The earlier entry stays in your history untouched.' }),
@@ -7797,7 +7809,7 @@ function setupCameBackBox(){
 const setupSeg = (label, opts, get, set) => h('div', { class:'seg', role:'group', 'aria-label':label },
   opts.map(o => h('button', { type:'button', text:o.text, 'aria-pressed':String(get() === o.value), onclick:() => { set(o.value); scheduleDraft(); renderSheet(); } })));
 function renderSetupSheet(title){
-  const p = app.prefs, g = p.gear = p.gear || setupDefaults().gear, sec = (t, sub) => [h('h4', { class:'setuphead', text:t }), sub ? h('p', { class:'fine', style:'margin:0 0 6px', text:sub }) : null];
+  const p = app.prefs, g = p.gear = p.gear || setupDefaults().gear, sec = (t, sub) => kept(h('h4', { class:'setuphead', text:t }), sub ? h('p', { class:'fine', style:'margin:0 0 6px', text:sub }) : null);
   title.textContent = 'My setup';
   const redraw = () => { try { render(); } catch(e){} };
   const field = (label, ctl) => h('div', { class:'field full' }, h('label', null, label), ctl);
@@ -8145,11 +8157,11 @@ function calibCard(b){
       return;
     }
     const saved = !res.added;
-    box.append(h('h3', { text:'Teach us your setting' }),
+    box.append(...kept(h('h3', { text:'Teach us your setting' }),
       h('p', { class:'serif', style:'margin:4px 0 0;font-size:16.5px', text:'You brewed this on ' + unit + ' ' + res.used + ' on your ' + g.short + '. From the maker\'s ' + res.category + ' range we would have said ' + unit + ' ' + res.base + '.' }),
       saved ? h('p', { class:'fine', style:'margin:8px 0 0', role:'status', text:'Saved. Next time we start your ' + res.category + ' brews on this grinder from your result. You can undo it from the grinder card on the recipe screen.' })
         : h('button', { type:'button', class:'btn block', style:'margin-top:10px', text:Unit + ' ' + res.used + ' was right. Start from it next time', onclick:() => { const r2 = calibAdd(app.prefs.calib, g.key, b.key, b.grind_um, b.grind_setting); if (r2){ app.prefs.calib = r2.calib; flushDraft(); } draw(); } }),
-      saved ? null : h('p', { class:'fine', style:'margin:6px 0 0', text:'Saved on this device. Skip it if you are not sure this setting was the right one.' }));
+      saved ? null : h('p', { class:'fine', style:'margin:6px 0 0', text:'Saved on this device. Skip it if you are not sure this setting was the right one.' })));
   }
   draw(); return box;
 }
