@@ -2,6 +2,24 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 46: Ask before saving: do the other way too?
+
+2026-10-08 21:26:36 UTC
+
+- When you save from Quick, NeuroBrew now asks once whether you want to cup this one too. Yes opens Cupping with your quick answers kept. No goes on to save.
+- When you save from Cupping, it asks whether you want to rate how much you liked it too, in the same way.
+- It does not ask again after a No, when you have already done both ways, or when My setup is on Quick only. The old "Want to cup this one too?" button after saving is gone.
+
+## Release 45: Cupping, one section at a time
+
+2026-10-08 20:33:04 UTC
+
+- Cupping now follows the SCA affective form for one cup, one section at a time: fragrance, aroma, flavor, aftertaste, acidity, sweetness, mouthfeel, overall. Each section asks one plain question and takes a number from 1 to 9.
+- Fragrance and aroma are scored once. Then let the cup cool and retaste flavor through overall: tap Same or a new number. You can skip the retaste, and the app tells you the score may be off if you do.
+- A new Cupping help setting (New, Comfortable, Expert) sets how much each section explains. Quick asks "Do I like it?" and Cupping asks "Is it good?"
+- After the score, one optional tap says what to fix on the next brew, and Perfect starts from it. The score is saved in the same file as before, and older cuppings still open.
+- Your tendencies now say "not enough yet" until a pattern really stands out from the ordinary ups and downs of your scores. Quick-tab aroma kit picks are now saved.
+
 ## Release 44: Tools: Cup yield
 
 2026-10-08 16:35:18 UTC

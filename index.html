@@ -476,6 +476,62 @@ details.help summary{ color:var(--accent); }
 .starread{ font:600 15px/1.3 var(--ui); color:var(--ink) }
 .starclear{ margin:0 }
 .hrow .mr{ margin-top:3px; font:600 14px/1.3 var(--ui); color:var(--accent) }
+.cva-help{ display:flex; flex-direction:column; gap:6px; margin:10px 0 12px; }
+.cva-help .seg{ margin:0; }
+.cva-lines{ margin:0 0 12px; font-size:14px; color:var(--muted); }
+.cva-prog{ display:flex; flex-direction:column; gap:6px; margin:0 0 12px; }
+.cva-bar{ display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:4px; }
+.cva-bar i{ height:8px; border-radius:4px; background:var(--track); }
+.cva-bar i.on{ background:var(--leaf); }
+.cva-bar i.skip{ background:var(--warn); }
+.cva-prog p{ margin:0; font-size:14px; color:var(--muted); }
+.cva-rail{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+.cva-row{ border:1.5px solid var(--line); border-radius:14px; background:var(--surface); overflow:hidden; scroll-margin-top:150px; }
+.cva-row.cur, .cva-row.open{ border-color:var(--primary); }
+.cva-row.lock{ background:transparent; border-style:dashed; }
+.cva-head{ display:grid; grid-template-columns:28px minmax(0,1fr) auto; gap:10px; align-items:center; width:100%; text-align:left; background:none; border:0; padding:12px 14px; min-height:56px; color:var(--ink); font:inherit; }
+div.cva-head{ cursor:default; }
+.cva-row.lock .cva-head{ color:var(--muted); }
+.cva-ico{ display:grid; place-items:center; width:28px; height:28px; border-radius:50%; background:var(--track); color:var(--ink); }
+.cva-row.done .cva-ico{ background:var(--leaf); color:var(--leaf-ink); }
+.cva-row.cur .cva-ico{ background:var(--primary); color:var(--primary-ink); font-weight:600; font-size:13px; }
+.cva-ico svg{ width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+.cva-nm{ font-weight:600; display:flex; flex-direction:column; min-width:0; }
+.cva-nm small{ font-weight:400; font-size:13px; color:var(--muted); }
+.cva-val{ font-weight:600; font-variant-numeric:tabular-nums; font-size:18px; }
+.cva-val.none{ font-size:13px; color:var(--warn); font-weight:500; }
+.cva-val.good{ font-size:13px; color:var(--leaf); font-weight:500; }
+.cva-body{ padding:0 14px 14px; display:flex; flex-direction:column; gap:12px; }
+.cva-q{ margin:0; font-weight:600; font-size:15px; }
+.cva-hint, .cva-note{ margin:0; font-size:14px; color:var(--muted); }
+.cva-lbl{ font-size:13px; font-weight:600; color:var(--label); letter-spacing:.02em; }
+.cva-scale{ display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); gap:4px; }
+.cva-scale button{ min-height:48px; border-radius:10px; border:1.5px solid var(--edge); background:var(--surface); color:var(--ink); font-weight:500; font-variant-numeric:tabular-nums; padding:0; }
+.cva-scale button[aria-checked="true"]{ background:var(--ink); color:var(--bg); border-color:var(--ink); font-weight:600; }
+@media (max-width:359px){ .cva-scale{ grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; } .cva-ends{ margin-top:-2px; } }
+.cva-ends{ display:flex; justify-content:space-between; gap:8px; font-size:12px; color:var(--muted); margin-top:-6px; }
+.cva-word{ margin:0; font-size:14px; min-height:21px; font-weight:500; }
+.cva-body textarea{ width:100%; min-height:56px; border-radius:10px; border:1.5px solid var(--edge); background:var(--surface); color:var(--ink); padding:8px 10px; font:inherit; font-size:16px; resize:vertical; }
+.cva-actions{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.cva-actions .btn{ margin:0; }
+.cva-actions .btn[disabled]{ background:var(--track); color:var(--muted); cursor:not-allowed; }
+.cva-mini{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; }
+.cva-mini li{ display:flex; justify-content:space-between; gap:12px; padding:6px 8px; border-radius:8px; font-size:14px; font-variant-numeric:tabular-nums; }
+.cva-mini li.now{ background:var(--tint); font-weight:600; }
+.cva-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+.cva-chips button{ min-height:44px; border-radius:10px; border:1.5px solid var(--edge); background:var(--surface); color:var(--ink); padding:0 14px; font-size:14px; }
+.cva-chips button[aria-pressed="true"]{ background:var(--tint); border-color:var(--ink); font-weight:600; }
+.cva-chips.bad button[aria-pressed="true"]{ background:var(--alert-bg); border-color:var(--alert); }
+.cva-warn{ margin:0; font-size:14px; background:var(--alert-bg); color:var(--ink); border-radius:10px; padding:8px 12px; }
+.cva-sum{ width:100%; border-collapse:collapse; font-size:15px; }
+.cva-sum td{ padding:5px 0; border-bottom:1px solid var(--line); }
+.cva-sum td:last-child{ text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+.cva-total{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+.cva-total b{ font-size:40px; line-height:1; font-variant-numeric:tabular-nums; }
+.cva-body .btn.link, .cva-warn .btn.link{ background:none; border:0; padding:6px 0; min-height:40px; text-decoration:underline; box-shadow:none; }
+.cva-warn .btn.link{ display:inline; min-height:0; padding:0; font-weight:600; color:inherit; }
+.cva-fix{ border:1.5px dashed var(--edge); border-radius:12px; padding:10px 12px; display:flex; flex-direction:column; gap:8px; }
+@media (prefers-reduced-motion:no-preference){ .cva-body{ animation:cvaIn .18s ease-out; } @keyframes cvaIn{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } } }
 /* bag guide, wheel, scan */
 .gcard{ padding:12px 14px; }
 .gcard summary{ list-style:none; cursor:pointer; display:flex; flex-direction:column; gap:2px; position:relative; padding-right:28px; min-height:44px; justify-content:center; }
@@ -882,13 +938,14 @@ const COLUMNS = [
   'my_rating_stars',
   'dial_symptom','dial_change','dial_from_id','dial_locked',
   'make_again','q_smell','q_taste','q_aftertaste','q_acidity','q_sweetness','q_body','flavors_liked','flavors_not_liked',
+  'fragrance','aroma','note_aroma','note_sweetness','first_flavor','first_aftertaste','first_acidity','first_sweetness','first_body','first_overall','cva_retasted','defect_type','fix_symptom',
   'setup_json'
 ];
 const TEXT_COLUMNS = new Set([
   'roaster','coffee_name','origin','process','roast_level','elevation_class','varietal','bag_notes',
   'brew_method','brew_grind_setting','brew_adjustment','brew_filter','brew_grinder_name','brew_pour_notes','brew_technique_detail','details_guessed','aroma_vials','words_fragrance_aroma','words_flavor','words_aftertaste','words_acidity','words_body','aroma_kit',
   'note_fragrance_aroma','note_flavor','note_aftertaste','note_acidity','note_body','note_balance','note_overall',
-  'defect_notes','general_notes','flavors_liked','flavors_not_liked'
+  'defect_notes','general_notes','flavors_liked','flavors_not_liked','note_aroma','note_sweetness','defect_type'
 ]);
 /* The person's setup (units, level, gear) rides in this one column, on the newest cupping only. A file or a build that does not know it just keeps the column and ignores it. */
 const SETUP_COLUMN = 'setup_json';
@@ -1048,9 +1105,98 @@ function quickAnswers(o){
 }
 function hasQuick(o){ o = o || {}; if (String(o.score_kind || '') === 'quick') return true; const q = quickAnswers(o); return !!q.makeAgain || Object.keys(q.areas).length > 0 || q.liked.length > 0 || q.notLiked.length > 0; }
 /* a cupping has a score out of 100; a quick cup has none */
-function hasCupping(o){ o = o || {}; const k = String(o.score_kind || ''); if (k === 'sca_5cup' || k === 'home_1cup') return true; const n = parseFloat(o.total_score); return k !== 'quick' && !isNaN(n) && n > 0; }
+function hasCupping(o){ o = o || {}; const k = String(o.score_kind || ''); if (k === 'sca_5cup' || k === 'home_1cup' || k === 'cva_affective') return true; const n = parseFloat(o.total_score); return k !== 'quick' && !isNaN(n) && n > 0; }
 /* 'quick', 'cupping' or 'both' */
 function cupWay(o){ const q = hasQuick(o), c = hasCupping(o); return q && c ? 'both' : c ? 'cupping' : q ? 'quick' : 'cupping'; }
+const CVA_KIND = 'cva_affective';
+/* The sections in the order of the form. `col` is the saved column that holds the (final) score and `noteCol` its note. Where a column was already in the file it is used again,
+   so an older row keeps meaning what it meant (the row's score_kind says which scale). `firstCol` holds the first impression when the cup was retasted as it cooled. */
+const CVA_SECTIONS = [
+  { key:'fragrance', name:'Fragrance', col:'fragrance', noteCol:'note_fragrance_aroma', firstCol:'', retaste:false, skippable:true },
+  { key:'aroma', name:'Aroma', col:'aroma', noteCol:'note_aroma', firstCol:'', retaste:false, skippable:true },
+  { key:'flavor', name:'Flavor', col:'flavor', noteCol:'note_flavor', firstCol:'first_flavor', retaste:true, skippable:false },
+  { key:'aftertaste', name:'Aftertaste', col:'aftertaste', noteCol:'note_aftertaste', firstCol:'first_aftertaste', retaste:true, skippable:false },
+  { key:'acidity', name:'Acidity', col:'acidity', noteCol:'note_acidity', firstCol:'first_acidity', retaste:true, skippable:false },
+  { key:'sweetness', name:'Sweetness', col:'sweetness', noteCol:'note_sweetness', firstCol:'first_sweetness', retaste:true, skippable:false },
+  { key:'mouthfeel', name:'Mouthfeel', col:'body', noteCol:'note_body', firstCol:'first_body', retaste:true, skippable:false },
+  { key:'overall', name:'Overall', col:'overall', noteCol:'note_overall', firstCol:'first_overall', retaste:true, skippable:false }
+];
+const CVA_RETASTE_FROM = 2;   /* fragrance and aroma are judged before the cup cools and are scored once; flavor to overall are retasted */
+const CVA_WORDS = ['Extremely low', 'Very low', 'Moderately low', 'Slightly low', 'Neither high nor low', 'Slightly high', 'Moderately high', 'Very high', 'Extremely high'];
+const CVA_DEFECT_TYPES = ['potato', 'moldy', 'phenolic'];
+const CVA_COLUMNS = CVA_SECTIONS.map(s => s.col).concat(CVA_SECTIONS.map(s => s.noteCol), CVA_SECTIONS.filter(s => s.firstCol).map(s => s.firstCol),
+  ['cva_retasted', 'taint_cups', 'fault_cups', 'defect_deduction', 'defect_type', 'fix_symptom', 'total_score', 'score_kind']);
+/* One score from a draft or a file: a whole number from 1 to 9, or null. Anything else (text, a formula, 0, 10, 7.5) counts as not scored. */
+function cvaScore(v){
+  const x = typeof v === 'number' ? v : (typeof v === 'string' && /^\s*[1-9]\s*$/.test(v) ? parseInt(v, 10) : NaN);
+  return Number.isInteger(x) && x >= 1 && x <= 9 ? x : null;
+}
+/* A cupping not yet begun. cur is how far the person has got (0 to 7 a section, 8 the retaste, 9 defects, 10 review) and open is the row showing. */
+function cvaFresh(){
+  return { score:{}, fin:{}, skip:{}, notes:{}, cur:0, open:0, cool:{ started:false, skipped:false, done:false, i:CVA_RETASTE_FROM }, defect:false, dtype:'', sym:'' };
+}
+/* A draft is data from outside too: keep only what is valid and make the position agree with it, so nothing can be open that was not earned. */
+function cvaClean(x){
+  const c = cvaFresh(); if (!x || typeof x !== 'object') return c;
+  CVA_SECTIONS.forEach(s => {
+    const v = cvaScore(x.score && x.score[s.key]); if (v) c.score[s.key] = v;
+    const f = cvaScore(x.fin && x.fin[s.key]); if (f && s.retaste && v) c.fin[s.key] = f;
+    if (s.skippable && !v && x.skip && x.skip[s.key] === true) c.skip[s.key] = true;
+    if (x.notes && typeof x.notes[s.key] === 'string') c.notes[s.key] = x.notes[s.key].slice(0, 500);
+  });
+  const cool = x.cool && typeof x.cool === 'object' ? x.cool : {};
+  const allFin = CVA_SECTIONS.every(s => !s.retaste || (c.fin[s.key] && c.score[s.key]));
+  c.cool.skipped = cool.skipped === true; c.cool.done = c.cool.skipped || (cool.done === true && allFin);
+  c.cool.started = !c.cool.skipped && (cool.started === true || c.cool.done);
+  c.cool.i = Number.isInteger(cool.i) && cool.i >= CVA_RETASTE_FROM && cool.i < CVA_SECTIONS.length ? cool.i : CVA_RETASTE_FROM;
+  c.defect = x.defect === true; c.dtype = CVA_DEFECT_TYPES.includes(x.dtype) && c.defect ? x.dtype : '';
+  let miss = 0; while (miss < CVA_SECTIONS.length && (c.score[CVA_SECTIONS[miss].key] || c.skip[CVA_SECTIONS[miss].key])) miss++;
+  let cur = Number.isInteger(x.cur) ? Math.max(0, Math.min(10, x.cur)) : 0;
+  if (miss < CVA_SECTIONS.length) cur = Math.min(cur, miss);
+  else if (!c.cool.done) cur = Math.min(cur, 8);
+  else if (c.defect && !c.dtype) cur = Math.min(cur, 9);
+  c.cur = cur; c.open = Number.isInteger(x.open) && x.open >= 0 && x.open <= cur ? x.open : cur;
+  c.sym = typeof x.sym === 'string' ? x.sym.slice(0, 20) : '';
+  return c;
+}
+/* The score that counts for each section: the final one where the cup was retasted, otherwise the first. null where a section was skipped or not scored. */
+function cvaFinals(c){
+  return CVA_SECTIONS.map(s => {
+    if (c.skip && c.skip[s.key]) return null;
+    const first = cvaScore(c.score && c.score[s.key]); if (first == null) return null;
+    const fin = cvaScore(c.fin && c.fin[s.key]);
+    return c.cool && c.cool.done && !c.cool.skipped && s.retaste && fin != null ? fin : first;
+  });
+}
+/* A defect counts only when the cup is marked and the type is named, as the standard says. */
+function cvaDefective(c){ return !!c && c.defect === true && CVA_DEFECT_TYPES.includes(c.dtype); }
+/* S = 0.65625 × (the eight scores added up) + 52.75 − 4 for a defective cup, to the nearest 0.25: 100 when every section is 9 and 79 when every section is 5.
+   One cup cannot show uniformity, so no non-uniform deduction is made. null until all eight sections have a score. */
+function cvaTotal(c){
+  const f = cvaFinals(c); if (f.some(v => v == null)) return null;
+  return Math.round((0.65625 * f.reduce((a, b) => a + b, 0) + 52.75 - (cvaDefective(c) ? 4 : 0)) * 4) / 4;
+}
+/* the columns of a saved row for this cupping */
+function cvaRowPart(c){
+  const r = {}, f = cvaFinals(c), re = !!(c.cool && c.cool.done && !c.cool.skipped), t = cvaTotal(c), bad = cvaDefective(c);
+  CVA_SECTIONS.forEach((s, i) => {
+    if (f[i] != null) r[s.col] = String(f[i]);
+    if (re && s.retaste && f[i] != null && cvaScore(c.score[s.key]) != null) r[s.firstCol] = String(cvaScore(c.score[s.key]));
+    const n = c.notes && typeof c.notes[s.key] === 'string' ? c.notes[s.key].trim() : ''; if (n) r[s.noteCol] = n;
+  });
+  r.cva_retasted = re ? 'yes' : 'no';
+  r.taint_cups = '0'; r.fault_cups = bad ? '1' : '0'; r.defect_deduction = bad ? '4' : '0'; r.defect_type = bad ? c.dtype : '';
+  r.fix_symptom = /^[a-z]{2,20}$/.test(c.sym || '') ? c.sym : '';   /* the one tap after the score: what to fix on the next brew */
+  r.total_score = t == null ? '' : t.toFixed(2); r.score_kind = CVA_KIND;
+  return r;
+}
+/* what a saved row says about its cupping, for the detail page */
+function cvaRead(o){
+  o = o || {};
+  const sections = CVA_SECTIONS.map(s => ({ key:s.key, name:s.name, final:cvaScore(o[s.col]), first:s.firstCol ? cvaScore(o[s.firstCol]) : null, note:String(o[s.noteCol] || '') }));
+  const t = parseFloat(o.total_score), type = String(o.defect_type || '').trim().toLowerCase();
+  return { sections, retasted:String(o.cva_retasted || '').trim().toLowerCase() === 'yes', defect:CVA_DEFECT_TYPES.includes(type) ? type : '', total:isNaN(t) ? null : t };
+}
 /*PURE_END*/
 /*ENGINE_START*/
 const ROASTS = [
@@ -2436,6 +2582,54 @@ function noteCheck(expected, picked){
   if (exp.length && pk.length >= 2) verdict = matched.length === 0 ? 'missed' : matched.length < exp.length ? 'partial' : 'matched';
   return { expected:exp, matched, missed, verdict };
 }
+/* For each section: `when` is the short line under its name, `q` the question in plain words, `ex` the fuller help (New level), `cm` the short help (Comfortable level), and
+   `skip` the label of the link that lets a section be left out when there was nothing to judge. The scale is the same for every section, as in the standard: an impression of quality. */
+const CVA_GUIDE = {
+  fragrance:{ when:'Dry grounds · scored once', q:'How good does the dry coffee smell?',
+    ex:'Smell the ground coffee before any water touches it. A flat or off smell scores low. A clear, expressive smell you like scores high. It does not change as the cup cools, so this is scored once.',
+    cm:'Smell of the dry grounds. Scored once.', skip:'No grounds to smell' },
+  aroma:{ when:'Brew, then crust broken · scored once', q:'How good does the brew smell?',
+    ex:'Smell right after pouring, then again when you break the crust with a spoon. Give one score for both moments.',
+    cm:'Smell of the brew at two moments: just after pouring, and at the break. One score.', skip:'Could not smell it' },
+  flavor:{ when:'In the mouth', q:'How good is the flavor?',
+    ex:'Taste, and the smell that rises from your mouth to your nose, count together as one impression. Dull or unpleasant scores low. Distinctive and appealing scores high.',
+    cm:'Taste plus the smell from the back of the mouth, judged as one impression.' },
+  aftertaste:{ when:'After you swallow or spit', q:'How good is what stays behind?',
+    ex:'What lingers in your mouth and throat once the coffee is gone. A clean, pleasant finish can score high. One that turns harsh or empty scores low.',
+    cm:'Taste and smell left in the mouth and throat after the coffee is gone.' },
+  acidity:{ when:'The sour taste of the brew', q:'How good is the acidity?',
+    ex:'The sour taste, how much and what kind. Bright and lively can score high. Sharp or harsh sourness you dislike scores low. None at all can also score low. Score how good it is, not how strong it is.',
+    cm:'Sour taste, its intensity and its character.' },
+  sweetness:{ when:'Taste or smell of sweet', q:'How good is the sweetness?',
+    ex:'Sweetness you taste or smell. None scores low. Clear, pleasant sweetness scores high.',
+    cm:'Sweetness you taste or smell in the brew.' },
+  mouthfeel:{ when:'Texture, not temperature', q:'How good is the feel in the mouth?',
+    ex:'Thin or thick can both score high. What counts is whether the feel suits this coffee and is pleasant. A watery, empty feel scores low. So does a heavy or drying feel you dislike. Leave temperature out of it.',
+    cm:'Thickness, texture and dryness in the mouth. Leave temperature out.' },
+  overall:{ when:'The whole cup', q:'How good is the whole cup?',
+    ex:'Your general impression, including balance and anything the other sections did not cover. Your personal appreciation counts here. If the notes are not your thing, Overall can come out lower than the sections above.',
+    cm:'General impression, including balance and personal appreciation.' }
+};
+const CVA_LINES = {
+  quick:'Do I like it? Your enjoyment, in your own taste.',
+  cup:'Is it good? Your judgment of quality, the way a cupper scores. A coffee can be good and still not be your favorite.',
+  basis:'Score how well the coffee delivers each part, even if those notes are not your thing. 5 means neither high nor low.',
+  note:'Why? (optional)',
+  first:'This is your first impression. You score it again as the cup cools.',
+  coolHead:'Let it cool, then retaste',
+  coolWhen:'Flavor to overall, one at a time',
+  coolText:'Coffee changes as it cools, so the form asks for a second look. Wait until the cup has cooled, then go back through flavor to overall, one at a time. Fragrance and aroma stay as you scored them.',
+  skipCool:'Skip retasting and continue',
+  skipWarn:'You can skip this. Coffee changes as it cools, though, so your first impressions may not match the cup as a whole, and the score may be off.',
+  skippedNote:'You skipped this. Your first scores are used. Coffee changes as it cools, so they may not match the cup as a whole.',
+  skippedReview:'You skipped the retaste. Coffee changes as it cools, so this score may not reflect the whole cup.',
+  coolOpen:'The retaste is not finished. The score uses your first impressions until it is.',
+  noTotal:'A section was not scored, so there is no SCA total. The section scores are still saved.',
+  oneCup:'One cup cannot show uniformity, so only defects are asked.',
+  defectNeeds:'Choose the defect. A cup only counts as defective when its type is named.',
+  fixAsk:'Anything to fix on the next brew?',
+  fixHint:'Optional. One tap starts the Perfect page from what you tasted. "Not to my taste" means nothing is wrong with the brew.'
+};
 function analyzeCupping(i){
   const sc = i.scores || {}, it = i.intensity || {};
   const num = k => typeof sc[k] === 'number' ? sc[k] : null;
@@ -2488,6 +2682,11 @@ function analyzeCupping(i){
   }
   let confidence = best >= 4 ? 'likely' : best >= 2 ? 'possible' : '';
   if (best < 2){ symptom = null; reasons = []; if (ov != null && ov >= 8){ symptom = 'great'; confidence = 'likely'; reasons = ['Your overall score is high and nothing in your scores points to a problem.']; } }
+  /* the one thing the person tapped on the new cupping form decides the fix; the measurements above still add their own evidence as reasons */
+  if (typeof i.symptom === 'string' && SYMPTOMS.some(x => x.v === i.symptom)){
+    const tapped = SYMPTOMS.find(x => x.v === i.symptom), keep = why[i.symptom] ? why[i.symptom].slice(0, 2) : [];
+    symptom = i.symptom; confidence = ''; reasons = ['You said: ' + tapped.label + '.'].concat(keep);
+  }
   const notes = [];
   if (typeof i.ey === 'number' && i.ey > 24) notes.push('Your measured extraction (' + i.ey + '%) is above the usual 18–22% range. That alone does not make the cup bitter, because bitterness also follows how strong the coffee is. Let your taste decide.');
   if (used(NEG_WORDS.stale).length) notes.push('Words like papery, cardboard, or stale can mean the coffee is old or was stored badly. Check the roast date.');
@@ -3187,9 +3386,12 @@ function judgeBrew(type, tds, ey){
    Every saved cupping has a total score and the coffee's details. Brewing the same coffee five times must not count as five coffees,
    so the cups of one coffee are averaged first. A detail (for example "Natural") counts as a tendency only when at least
    TEND_MIN_GROUP different coffees share it, at least two other coffees with that detail set exist to compare against, and the group
-   average differs from the others by at least TEND_MIN_GAP points. Below that the screen says there is not enough yet.
+   average differs from the others by at least TEND_MIN_GAP points AND by more than ordinary scatter would give. Scatter is the spread of all
+   the person's coffee scores (never less than TEND_MIN_SD points) scaled by the group sizes, and the gap must be TEND_Z times that. Without the
+   second test, random scores produced a "tendency" in most histories of 10 to 20 coffees, because with many details to compare some always differ.
+   Below the bar the screen says there is not enough yet.
    This describes what you scored, not what is true of the coffee: taste is personal and a handful of coffees is a small sample. */
-const TEND_MIN_COFFEES = 5, TEND_MIN_GROUP = 3, TEND_MIN_GAP = 2;
+const TEND_MIN_COFFEES = 5, TEND_MIN_GROUP = 3, TEND_MIN_GAP = 2, TEND_Z = 3, TEND_MIN_SD = 1.5;
 const TEND_FEATURES = [
   { key:'roast', label:'Roast level', noun:v => v + ' roast' }, { key:'process', label:'Process', noun:v => v + ' process' },
   { key:'density', label:'Elevation', noun:v => v.toLowerCase() + ' elevation' }, { key:'origin', label:'Origin', noun:v => v },
@@ -3230,6 +3432,7 @@ function tendencies(objs){
   objs = kinds[kind] || [];
   const cs = tendencyCoffees(objs, kind), n = cs.length, out = { kind, skipped:total - n, coffees:n, cups:cs.reduce((a, c) => a + c.cups, 0), enough:n >= TEND_MIN_COFFEES, need:Math.max(0, TEND_MIN_COFFEES - n), leans:[], seen:[], taste:[], average:n ? cs.reduce((a, c) => a + c.score, 0) / n : null };
   if (!out.enough) return out;
+  out.sd = Math.max(TEND_MIN_SD, Math.sqrt(cs.reduce((a, c) => a + (c.score - out.average) * (c.score - out.average), 0) / (n - 1)));
   TEND_FEATURES.forEach(F => {
     const have = cs.filter(c => c[F.key]); if (have.length < TEND_MIN_GROUP + 2) return;
     const vals = Array.from(new Set(have.map(c => c[F.key])));
@@ -3237,10 +3440,11 @@ function tendencies(objs){
       const g = have.filter(c => c[F.key] === v), rest = have.filter(c => c[F.key] !== v);
       if (g.length < TEND_MIN_GROUP || rest.length < 2) return;
       const mean = g.reduce((a, c) => a + c.score, 0) / g.length, rmean = rest.reduce((a, c) => a + c.score, 0) / rest.length, diff = mean - rmean;
-      const row = { feature:F.key, value:v, label:tendLabel(F.key, v), noun:F.noun(tendLabel(F.key, v)), n:g.length, mean, rest:rmean, restN:rest.length, diff, dir:diff > 0 ? 'up' : 'down', strength:Math.abs(diff) >= 4 ? 'clear' : 'slight', names:g.map(c => c.name).filter(Boolean).slice(0, 4), keys:g.map(c => c.key).sort(), same:[] };
+      const se = out.sd * Math.sqrt(1 / g.length + 1 / rest.length), real = Math.abs(diff) >= Math.max(TEND_MIN_GAP, TEND_Z * se);
+      const row = { feature:F.key, value:v, label:tendLabel(F.key, v), noun:F.noun(tendLabel(F.key, v)), n:g.length, mean, rest:rmean, restN:rest.length, diff, real, dir:diff > 0 ? 'up' : 'down', strength:Math.abs(diff) >= 4 ? 'clear' : 'slight', names:g.map(c => c.name).filter(Boolean).slice(0, 4), keys:g.map(c => c.key).sort(), same:[] };
       TEND_FEATURES.filter(G => G.key !== F.key).forEach(G => { const sv = Array.from(new Set(g.map(c => c[G.key]))); if (sv.length === 1 && sv[0] && g.length >= 3) row.same.push({ feature:G.key, value:sv[0], label:tendLabel(G.key, sv[0]) }); });
       out.seen.push(row);
-      if (Math.abs(diff) >= TEND_MIN_GAP) out.leans.push(row);
+      if (real) out.leans.push(row);
     });
   });
   out.leans.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
@@ -3274,7 +3478,7 @@ function shopGuide(t){
     (gr.dir === 'up' ? g.look : g.careful).push(row);
   });
   t.taste.forEach(x => { g.look.push({ feature:'taste', text:(x.dir === 'more' ? 'Look for more ' : 'Look for less ') + x.attr + '.', why:'Your best-scored cups rated ' + x.attr + ' at ' + x.top.toFixed(1) + ' of 5 on average, against ' + x.low.toFixed(1) + ' for your lowest-scored.' }); });
-  if (!g.look.length && !g.careful.length) g.note = 'No detail stands out yet: your scores are similar across the roasts, processes and origins you have tried. Try something different from your usual and see.';
+  if (!g.look.length && !g.careful.length) g.note = 'Not enough yet to say what you like: no roast, process or origin you have tried scores clearly apart from the rest. Try something different from your usual and see.';
   return g;
 }
 /* a coffee you are thinking of buying: does each detail match what you have scored well? cand = { roast, process, density, origin, varietal } */
@@ -3288,9 +3492,9 @@ function fitToTendencies(t, cand){
     const v = have[F.key]; if (!v) return;
     const seen = t.seen.find(l => l.feature === F.key && l.value === v), label = tendLabel(F.key, v);
     if (!seen) res.rows.push({ feature:F.key, label, verdict:'unknown', text:'You have not scored enough ' + F.noun(label) + ' coffees to say.' });
-    else if (seen.diff >= TEND_MIN_GAP){ res.rows.push({ feature:F.key, label, verdict:'good', text:'You score ' + F.noun(label) + ' coffees higher: ' + seen.mean.toFixed(1) + ' against ' + seen.rest.toFixed(1) + '.' }); res.score += 1; }
-    else if (seen.diff <= -TEND_MIN_GAP){ res.rows.push({ feature:F.key, label, verdict:'caution', text:'You score ' + F.noun(label) + ' coffees lower: ' + seen.mean.toFixed(1) + ' against ' + seen.rest.toFixed(1) + '.' }); res.score -= 1; }
-    else res.rows.push({ feature:F.key, label, verdict:'neutral', text:'Your ' + F.noun(label) + ' coffees score about the same as the rest (' + seen.mean.toFixed(1) + ' against ' + seen.rest.toFixed(1) + ').' });
+    else if (seen.real && seen.diff > 0){ res.rows.push({ feature:F.key, label, verdict:'good', text:'You score ' + F.noun(label) + ' coffees higher: ' + seen.mean.toFixed(1) + ' against ' + seen.rest.toFixed(1) + '.' }); res.score += 1; }
+    else if (seen.real && seen.diff < 0){ res.rows.push({ feature:F.key, label, verdict:'caution', text:'You score ' + F.noun(label) + ' coffees lower: ' + seen.mean.toFixed(1) + ' against ' + seen.rest.toFixed(1) + '.' }); res.score -= 1; }
+    else res.rows.push({ feature:F.key, label, verdict:'neutral', text:'Your ' + F.noun(label) + ' coffees do not score clearly differently from the rest (' + seen.mean.toFixed(1) + ' against ' + seen.rest.toFixed(1) + '), so nothing can be said yet.' });
   });
   const good = res.rows.filter(r => r.verdict === 'good').length, bad = res.rows.filter(r => r.verdict === 'caution').length;
   res.verdict = !res.rows.length ? 'Add the roast, process or origin to see how it fits.' : (good && !bad) ? 'Fits what you have scored well.' : (bad && !good) ? 'Differs from what you have scored well.' : (good && bad) ? 'Mixed: some details match what you like and some do not.' : 'Nothing here is strongly tied to your scores yet.';
@@ -3321,13 +3525,13 @@ const ABOUT_INTRO = [
   'Over time your saved tastings show what you tend to like. You can spot it on a bag the next time you buy.'
 ];
 const ABOUT_NOT = [
-  'It is not a grader. A single-cup total is a home score for comparing your own cups, not an official grade.',
+  'It is not a grader. The cupping score follows the SCA affective form, but you score one cup yourself. Use it to compare your own cups. It is not an official grade.',
   'It is not an account or a service. There is no sign-in and no server for your tastings: your data stays in your browser until you save a file.',
   'It does not know your taste better than you do. Brew settings and advice are starting points, and your own cup has the last word.'
 ];
 const ABOUT_CREDIT = 'NeuroBrew was created by Matt Shaffer.';
 const ABOUT_SOURCES = [
-  'The SCA cupping form (2004) and its 2024 Coffee Value Assessment, for how coffee is scored and described.',
+  'The SCA Affective Assessment (SCA-104, September 2024), for the cupping form, the 1 to 9 scale and the score formula. The 2004 SCA cupping form, for scores saved in older files.',
   'The World Coffee Research Sensory Lexicon, for the words used to describe flavor.',
   'The classic brewing control chart (18–22% extraction, 1.15–1.35% TDS) and a 2013 SCA study on extraction preference.',
   "Tetsu Kasuya's 4:6 method, the 2016 World Brewers Cup winner.",
@@ -3340,7 +3544,7 @@ const ABOUT_LIMITS = [
   'Brew settings are starting points. The roast changes to temperature and grind come from brewer experience, not lab results. The app says so wherever they appear. Process, decaf and elevation do not change your brew settings on their own. They only offer optional tips.',
   "The flavor wheels are NeuroBrew's own. They are not the official SCA / World Coffee Research wheel.",
   'Le Nez du Café is a trademark of Éditions Jean Lenoir. NeuroBrew is not affiliated with or endorsed by them, the SCA, World Coffee Research, or any brand named here.',
-  'Where NeuroBrew uses its own rule of thumb, it says so. A total must move by one point before a try counts as better or worse. A bag a week older can change the taste. Three coffees must agree before a starting point is offered. Five coffees are needed before your tendencies are shown. These are sensible limits, not published standards.',
+  'Where NeuroBrew uses its own rule of thumb, it says so. A total must move by one point before a try counts as better or worse. A bag a week older can change the taste. Three coffees must agree before a starting point is offered. Five coffees are needed before your tendencies are shown. A pattern must also stand out from the ordinary ups and downs of your scores. These are sensible limits, not published standards.',
   "Looking a coffee up reads the roaster's own shop listing, in the roaster's words. It works only with shops built on Shopify. NeuroBrew fills in only what the listing states, and you check every line first. It remembers each roaster's shop address in this browser. Your browser asks the roaster's website directly, so that website sees the visit, just as if you opened the page yourself. Nothing about your tastings is sent.",
   'Saving over a file you choose works only in Chrome and Edge. Your browser asks your permission again after it has been closed. Other browsers download a copy. Your setup is stored in one extra column of the history file. Older copies of NeuroBrew ignore it.',
   'Your data stays in your browser until you save a file.'
@@ -3560,7 +3764,7 @@ const HEAT_NOTE = 'This number is the water in your kettle. The coffee itself ru
 /* ---------- the dial-in trail ----------
    Every saved cup already holds the recipe it was brewed with and the scores it got. Cups of one coffee on one method, in the order they were saved, are the trail.
    Between two neighbouring cups we list what changed in the recipe (grind, ratio, water temperature, pour style, technique) and compare the two totals.
-   Only totals of the same kind are compared: a one-cup home score and a five-cup SCA score are not the same scale.
+   Only totals of the same kind are compared: a home score, a five-cup SCA score and an SCA affective score are not the same scale.
    A verdict needs the change to be bigger than TRAIL_MIN_TOTAL points. That figure is NeuroBrew's own rule of thumb, not a standard: one cup scored by one person is noisy.
    If you brewed the same recipe twice in a row, the gap between those two cups is a measure of your own noise, and a verdict then has to beat that gap as well.
    When more than one thing changed between two cups, the verdict says so, because it cannot tell which change did it. */
@@ -3613,8 +3817,8 @@ function dialChangeName(adj, sym){
   if (names.length) return names.slice(0, 2).join(' and ');
   return { muddy:'gentler pouring', uneven:'an even extraction', bitter:'less heat', strong:'a little water added' }[sym] || '';
 }
-/* a score gap as plain digits: 4, 4.5, or 0.25 for a five-cup score */
-const trailDiffText = (d, kind) => String(+Math.abs(d).toFixed(kind === 'sca_5cup' ? 2 : 1));
+/* a score gap as plain digits: 4, 4.5, or 0.25 for a five-cup or an affective score */
+const trailDiffText = (d, kind) => String(+Math.abs(d).toFixed(kind === 'sca_5cup' || kind === 'cva_affective' ? 2 : 1));
 /* one saved cup, reduced to what the trail needs */
 function trailAttempt(o){
   const scores = {}; Object.keys(ATTR_NAMES).forEach(k => { const v = trailNum(o[k]); if (v != null) scores[k] = v; });
@@ -3639,7 +3843,7 @@ function trailChanges(a, b){
 function trailVerdict(a, b, threshold){
   const th = threshold == null ? TRAIL_MIN_TOTAL : threshold;
   if (a.total == null || b.total == null) return { v:'unscored', diff:null, text:'One of these cups was not scored, so there is nothing to compare.' };
-  if (a.kind !== b.kind) return { v:'incomparable', diff:null, text:'These two cups used different score types (a one-cup home score and a five-cup SCA score), so they are not compared.' };
+  if (a.kind !== b.kind) return { v:'incomparable', diff:null, text:'These two cups used different score types (for example the SCA affective form and an older home score), so they are not compared.' };
   const diff = Math.round((b.total - a.total) * 100) / 100, ad = Math.abs(diff);
   if (ad < th) return { v:'same', diff, text:'No clear change (' + (diff > 0 ? '+' : diff < 0 ? '−' : '') + ad.toFixed(2) + ' points, under the ' + th.toFixed(2).replace(/\.?0+$/, '') + ' needed).' };
   return { v:diff > 0 ? 'helped' : 'hurt', diff, text:'Scored ' + ad.toFixed(2) + (diff > 0 ? ' points higher.' : ' points lower.') };
@@ -3647,13 +3851,14 @@ function trailVerdict(a, b, threshold){
 /* the diagnosis for one saved cup, from its own scores: the same rules the cup screen uses right after tasting */
 function trailAnalysis(o, now){
   const c = trailCoffee(o), ex = expectFor(c, now), mk = trailMethod(o), meth = METHODS.find(x => x.key === mk);
-  const sc = {}; Object.keys(ATTR_NAMES).forEach(k => { const v = trailNum(o[k]); sc[k] = v; });
-  const wd = k => splitList(unneutralize(o['words_' + k] || '')), words = { fragrance_aroma:wd('fragrance_aroma'), flavor:wd('flavor'), aftertaste:wd('aftertaste'), acidity:wd('acidity'), body:wd('body') };
+  const cva = String(o.score_kind || '') === CVA_KIND;   /* an affective-form cup has its own 1 to 9 scores, which the old rules cannot read: it speaks through the one thing the person tapped and the brew itself */
+  const sc = {}; Object.keys(ATTR_NAMES).forEach(k => { sc[k] = cva ? null : trailNum(o[k]); });
+  const wd = k => splitList(unneutralize(o['words_' + k] || '')), words = cva ? {} : { fragrance_aroma:wd('fragrance_aroma'), flavor:wd('flavor'), aftertaste:wd('aftertaste'), acidity:wd('acidity'), body:wd('body') };
   const bagWords = String(c.bag_notes || '').toLowerCase().split(/[,;\/&]|\band\b/).map(x => x.trim()).filter(x => x.length >= 3 && x.length <= 24);
-  const ai = trailNum(o.acidity_intensity), bi = trailNum(o.body_intensity), ey = trailNum(o.brew_ey_pct), tds = trailNum(o.brew_tds_pct);
+  const ai = cva ? null : trailNum(o.acidity_intensity), bi = cva ? null : trailNum(o.body_intensity), ey = trailNum(o.brew_ey_pct), tds = trailNum(o.brew_tds_pct);
   const act = trailNum(o.brew_actual_time_s), plan = trailNum(o.brew_time_s);
   const tm = (act && plan && ['flow', 'hybrid', 'espresso'].includes(meth ? meth.type : '')) ? act / plan : null;
-  const a = analyzeCupping({ scores:sc, intensity:{ acidity:ai, body:bi }, words, sweet:trailNum(o.sweetness), expectedBars:ex.bars, stepUm:meth ? Math.round((meth.um[1] - meth.um[0]) / 5 / 10) * 10 : 60,
+  const a = analyzeCupping({ scores:sc, intensity:{ acidity:ai, body:bi }, words, sweet:cva ? null : trailNum(o.sweetness), symptom:cva && SYMPTOMS.some(x => x.v === String(o.fix_symptom || '').trim()) ? String(o.fix_symptom).trim() : '', expectedBars:ex.bars, stepUm:meth ? Math.round((meth.um[1] - meth.um[0]) / 5 / 10) * 10 : 60,
     roast:ex.profile.roast, methodType:meth ? meth.type : '', agit:o.brew_agitation || '', days:trailNum(o.days_since_roast), timeRatio:tm, timeNote:tm ? 'longer or shorter than planned' : '',
     ey, strength:(meth && ey != null && tds != null) ? judgeBrew(meth.type, tds, ey).strength : null, grinder:o.brew_grinder_type || '', water:o.brew_water_type || '', alk:o.water_alkalinity_mgl || '', gh:o.water_hardness_mgl || '',
     deviated:!!String(unneutralize(o.brew_pour_notes || '')).trim(), expectedNotes:bagWords.length ? bagWords : ex.look.map(x => x.toLowerCase()), expectedSource:bagWords.length ? 'bag' : 'typical' });
@@ -3695,7 +3900,7 @@ function dialTrail(objs, coffee, methodKey, now, extra){
     a.agedDays = (!a.crossBag && p.days != null && a.days != null && a.days - p.days >= TRAIL_AGED_DAYS) ? a.days - p.days : 0;
     a.carried = a.crossBag && !a.changes.length;     /* the same recipe on a new bag */
     a.moved = [];
-    Object.keys(ATTR_NAMES).forEach(key => { if (p.scores[key] != null && a.scores[key] != null){ const d = Math.round((a.scores[key] - p.scores[key]) * 100) / 100; if (Math.abs(d) >= TRAIL_MIN_AREA) a.moved.push({ key, name:ATTR_NAMES[key], d }); } });
+    Object.keys(ATTR_NAMES).forEach(key => { if (p.kind === a.kind && p.scores[key] != null && a.scores[key] != null){ const d = Math.round((a.scores[key] - p.scores[key]) * 100) / 100; if (Math.abs(d) >= TRAIL_MIN_AREA) a.moved.push({ key, name:ATTR_NAMES[key], d }); } });
     a.moved.sort((x, y) => Math.abs(y.d) - Math.abs(x.d));
     /* a change that was made on a new bag is mixed up with the bag, so it does not count towards what was tried */
     if (!a.crossBag && a.changes.length === 1 && (a.verdict.v === 'helped' || a.verdict.v === 'hurt' || a.verdict.v === 'same')){
@@ -4086,10 +4291,10 @@ const GUIDE_SECTIONS = [
     tips:['If you already have earlier tries of this coffee, this screen offers them as a starting point. A new bag of a coffee you know can start from the best brew you kept.'] },
   { id:'cup', title:'5. ' + STEP_NAME.taste + ': smell, sip and score', lead:'Smell, sip hot, sip as it cools.',
     paras:['There are two ways to taste, and ' + STEP_NAME.taste + ' opens on Quick. Give the coffee stars, which are your own. Say whether you would make it again. Pick the flavors from the bag that you liked, and the ones you did not. Nothing else changes your stars. Tap Add detail to rate the smell, taste, aftertaste, acidity, sweetness and body, each as Good, Okay or Not good.',
-      'Tap Cupping at the top to score step by step, like a professional cupper. Score each card with the + and − buttons, from 6 (Good) up to 9.75. Press and hold to move faster. Tap a card\'s name to open it and describe what you notice. Tap All cards to open every card at once. The words you pick for acidity and body set how strong each feels, and some words can suggest a score. The total is a home score out of 100 for comparing your own cups. You can switch between Quick and Cupping at any time. In My setup you can choose Quick only, Quick first, or Cupping first. If you have a refractometer, you can add your TDS to see the extraction.',
-      'When you save, you choose whether you already have a history file. Saving downloads a file called cuppings.csv with your whole history. If you are tasting several coffees in one sitting, keep each one in this browser and save one file at the end. After a save, the page is cleared and you are back at the start, ready for the next coffee. To work on the coffee you just saved, tap ' + STEP_NAME.perfect + ' the next brew on the Saved sheet, or open it later from Your tastings.'] },
+      'Tap Cupping at the top to score step by step, the way a cupper does, on the SCA affective form. Each section asks one question and takes a number from 1 to 9. That number is your impression of quality, how well the coffee delivers that part, and it is not how much you like it. The next section opens when you score the one before it. After Overall you retaste as the cup cools, then say whether it has a defect, and you get a total out of 100. You can skip the retaste, but coffee changes as it cools, so the score may be off. Cupping help sets how much each section explains. You can switch between Quick and Cupping at any time. In My setup you can choose Quick only, Quick first, or Cupping first. If you have a refractometer, you can add your TDS to see the extraction.',
+      'When you save, NeuroBrew first asks once whether you want to do the other way too. Tap No to save as it is. With Quick only, it does not ask. Then you choose whether you already have a history file. Saving downloads a file called cuppings.csv with your whole history. If you are tasting several coffees in one sitting, keep each one in this browser and save one file at the end. After a save, the page is cleared and you are back at the start, ready for the next coffee. To work on the coffee you just saved, tap ' + STEP_NAME.perfect + ' the next brew on the Saved sheet, or open it later from Your tastings.'] },
   { id:'dial', title:'6. ' + STEP_NAME.perfect + ': make the next brew better', lead:'Your scores point to one change.',
-    paras:['After you taste, ' + STEP_NAME.perfect + ' looks at your scores and the words you picked and suggests one change: grind, ratio, water temperature or pour style. Say what you tasted if it chose differently from you. Then brew again with that one change. It works from cupping scores. A quick tasting gets a list of tries instead, so you can see what changed.',
+    paras:['After you taste, ' + STEP_NAME.perfect + ' starts from what you said needs fixing (one tap after your cupping score). It also uses your TDS and brew time if you added them. It suggests one change: grind, ratio, water temperature or pour style. Say what you tasted if you disagree. Then brew again with that one change. It works from cupping scores. A quick tasting gets a list of tries instead, so you can see what changed.',
       'It keeps every try of a coffee on a method in order. Each try shows what changed and whether the total went up or down. A change counts as helped or hurt only when the total moves by at least a point. That is NeuroBrew\'s own rule of thumb, because one cup scored by one person is noisy. Repeat the same brew and it measures your own variation, and uses that instead if it is bigger.',
       'The next brew starts from your best try, not just your last. If a change scored lower, it is not suggested again; it offers a different one. If the problem looks like the coffee itself (stale or off words, an old bag), it says so. If several changes in a row did not help, it says the settings may not be the problem.',
       'When a cup tastes great, keep it as your best brew for that coffee and method. New brews start from it until you remove it. A new bag of the same coffee (a different roast date) starts from your best brew, or your best on the last bag. The first cup on the new bag is marked, because the bag is mixed in.',
@@ -4107,7 +4312,7 @@ const GUIDE_SECTIONS = [
       'My setup in the menu keeps your units, level, timer sound, taste card view and gear (your grinder, water and filter) in one place. New brews start with your gear filled in. The setup is saved inside your history file each time you save, so uploading the file on another device brings it back.',
       'Words with a dotted underline are tappable and give a short definition. The Glossary in the menu lists every term and can be searched.'] },
   { id:'trust', title:'What to trust', lead:'Starting points, not rules.',
-    paras:['Brew settings are starting points. The roast changes to temperature and grind come from brewer experience, not lab results. The app says so wherever they appear. A single-cup total is a home score for comparing your own cups, not an official grade.',
+    paras:['Brew settings are starting points. The roast changes to temperature and grind come from brewer experience, not lab results. The app says so wherever they appear. The cupping score follows the SCA affective form, but you score one cup yourself. Use it to compare your own cups. It is not an official grade.',
       'Where NeuroBrew uses its own rule of thumb, it says so. A try must change the total by one point to count as better or worse. A bag about a week older can change the taste. Three coffees must agree before it offers a starting point. About NeuroBrew in the menu lists the sources and the limits.'] }
 ];
 /* ---------- origin guesses, blend, and freshness by method ---------- */
@@ -4209,7 +4414,6 @@ function setupSummary(s){
   out.push('Experience level: ' + (lv ? lv.label : 'not chosen yet'));
   out.push('Units: water in ' + (wu ? wu.label : 'g / mL') + ', coffee in ' + (cu ? cu.label : 'g'));
   out.push('Timer: ' + ({ off:'sound off', chime:'beep', voice:'voice' }[s.sound] || 'sound off') + ', ' + (s.coach === 'steps' ? 'key steps only' : 'guided'));
-  if (s.cupView) out.push('Taste cards: ' + (s.cupView === 'full' ? 'full' : 'compact'));
   if (s.taste) out.push('Tasting: ' + (s.taste === 'quickonly' ? 'quick only' : 'cupping first'));
   if (g.grinderName) out.push('Grinder: ' + g.grinderName);
   if (g.waterType) out.push('Water: ' + g.waterType);
@@ -4910,6 +5114,30 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 46,
+  "at": "2026-10-08T21:26:36Z",
+  "date": "2026-10-08",
+  "title": "Ask before saving: do the other way too?",
+  "notes": [
+   "When you save from Quick, NeuroBrew now asks once whether you want to cup this one too. Yes opens Cupping with your quick answers kept. No goes on to save.",
+   "When you save from Cupping, it asks whether you want to rate how much you liked it too, in the same way.",
+   "It does not ask again after a No, when you have already done both ways, or when My setup is on Quick only. The old \"Want to cup this one too?\" button after saving is gone."
+  ]
+ },
+ {
+  "release": 45,
+  "at": "2026-10-08T20:33:04Z",
+  "date": "2026-10-08",
+  "title": "Cupping, one section at a time",
+  "notes": [
+   "Cupping now follows the SCA affective form for one cup, one section at a time: fragrance, aroma, flavor, aftertaste, acidity, sweetness, mouthfeel, overall. Each section asks one plain question and takes a number from 1 to 9.",
+   "Fragrance and aroma are scored once. Then let the cup cool and retaste flavor through overall: tap Same or a new number. You can skip the retaste, and the app tells you the score may be off if you do.",
+   "A new Cupping help setting (New, Comfortable, Expert) sets how much each section explains. Quick asks \"Do I like it?\" and Cupping asks \"Is it good?\"",
+   "After the score, one optional tap says what to fix on the next brew, and Perfect starts from it. The score is saved in the same file as before, and older cuppings still open.",
+   "Your tendencies now say \"not enough yet\" until a pattern really stands out from the ordinary ups and downs of your scores. Quick-tab aroma kit picks are now saved."
+  ]
+ },
+ {
   "release": 44,
   "at": "2026-10-08T16:35:18Z",
   "date": "2026-10-08",
@@ -5287,10 +5515,6 @@ const ATTRS = [
   { key:'balance', name:'Balance', hint:'How well flavor, aftertaste, acidity, and body fit together.' },
   { key:'overall', name:'Overall', hint:'Your holistic impression of the coffee.' }
 ];
-const SINGLE_CHECKS = [
-  { key:'clean_cup', name:'Clean cup', hint:'Any off-tastes? A clean cup has none, from first sip to finish.' },
-  { key:'sweetness', name:'Sweetness', hint:'A pleasant sweetness in the cup.' }
-];
 const WATER_TYPES = [
   { v:'tap', label:'Tap', tip:'Tap water varies a lot. Very hard or high-alkalinity water can dull acidity and leave scale in your kettle.' },
   { v:'filtered', label:'Filtered', tip:'A carbon filter removes chlorine and odors, but the minerals stay about the same as your tap.' },
@@ -5519,7 +5743,7 @@ function newId(){
   return 'c-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,10);
 }
 const fmt2 = n => (Math.round(n * 100) / 100).toFixed(2);
-const fmtScore = (v, kind) => (kind === 'sca_5cup' || kind == null) ? fmt2(v) : (Math.round(v * 10) / 10).toFixed(1);
+const fmtScore = (v, kind) => (kind === 'sca_5cup' || kind === 'cva_affective' || kind == null) ? fmt2(v) : (Math.round(v * 10) / 10).toFixed(1);
 const qualityLabel = v => v >= 9 ? 'Outstanding' : v >= 8 ? 'Excellent' : v >= 7 ? 'Very good' : 'Good';
 const $ = id => document.getElementById(id);
 
@@ -5531,12 +5755,10 @@ function newApp(){
   return { screen:'start', cupFor:'', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', taste:'', sound:'off', coach:'guide', level:'', calib:{}, yieldCal:{}, roasterSites:{}, gear:setupDefaults().gear }, adjust:{ grind:0, ratio:0, agit:'' }, gearOk:false, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
 }
 function newCup(){
-  const scores = {}; ATTRS.forEach(a => scores[a.key] = null);
   return {
-    id:newId(), way:'quick', cupping_date:today(),
-    scores, intensity:{ acidity:null, body:null }, vials:[], words:{ fragrance_aroma:[], flavor:[], aftertaste:[], acidity:[], body:[] }, kit:[], after_len:'', src:{}, cool:{ acidity:'', sweetness:'', bitterness:'' }, notes:{}, general_notes:'', stars:0,
-    single:{ clean_cup:null, sweetness:null },
-    single_defect:'none', defect_notes:'',
+    id:newId(), way:'quick', cupping_date:today(), otherNo:false,   /* said No to "do the other way too?" */
+    cva:cvaFresh(),   /* the cupping (SCA affective form): the scores, the retaste, defects and how far the person has got */
+    vials:[], words:{ fragrance_aroma:[], flavor:[], aftertaste:[], acidity:[], body:[] }, kit:[], general_notes:'', stars:0,
     quick:{ make:'', areas:{}, liked:[], notLiked:[] }   /* a quick taste: would you make it again, the six areas, and the bag's flavors liked and not liked */
   };
 }
@@ -5567,6 +5789,7 @@ function loadDraft(){
       if (typeof src.prefs.seenCupHelp === 'boolean') a.prefs.seenCupHelp = src.prefs.seenCupHelp;
       if (typeof src.prefs.seenTermHint === 'boolean') a.prefs.seenTermHint = src.prefs.seenTermHint;
       if (src.prefs.cupView === 'compact' || src.prefs.cupView === 'full') a.prefs.cupView = src.prefs.cupView;
+      if (['new', 'comfortable', 'expert'].includes(src.prefs.cupHelp)) a.prefs.cupHelp = src.prefs.cupHelp;   /* how much the cupping explains, its own choice */
       if (src.prefs.taste === 'quickonly' || src.prefs.taste === 'cuppingfirst') a.prefs.taste = src.prefs.taste;
       if (['off', 'chime', 'voice'].includes(src.prefs.sound)) a.prefs.sound = src.prefs.sound;
       if (['guide', 'steps'].includes(src.prefs.coach)) a.prefs.coach = src.prefs.coach;
@@ -5607,25 +5830,18 @@ function loadDraft(){
     app = a;
     if (d.cup){
       const c = newCup(), s = d.cup;
-      ['id','cupping_date','general_notes','defect_notes'].forEach(k => { if (typeof s[k] === 'string') c[k] = s[k]; });
+      ['id','cupping_date','general_notes'].forEach(k => { if (typeof s[k] === 'string') c[k] = s[k]; });
       c.way = s.way === 'cup' ? 'cup' : 'quick'; c.stars = validStars(s.stars);
       if (s.quick && typeof s.quick === 'object'){
         c.quick.make = quickMakeAgain(s.quick.make);
         QUICK_AREAS.forEach(a => { const g = s.quick.areas && quickGrade(s.quick.areas[a.key]); if (g) c.quick.areas[a.key] = g; });
         const fl = cleanFlavorLists(s.quick.liked, s.quick.notLiked); c.quick.liked = fl.liked; c.quick.notLiked = fl.notLiked;
       }
-      ATTRS.forEach(at => { const v = s.scores && s.scores[at.key]; c.scores[at.key] = (typeof v === 'number' && v >= 6 && v <= 10) ? v : null; });
-      ['acidity','body'].forEach(k => { const v = s.intensity && s.intensity[k]; c.intensity[k] = (v >= 1 && v <= 5) ? v : null; });
-      SINGLE_CHECKS.forEach(ch => { const v = s.single && s.single[ch.key]; c.single[ch.key] = (typeof v === 'number' && v >= 0 && v <= 10) ? v : null; });
       if (Array.isArray(s.vials)) c.vials = s.vials.filter(x => typeof x === 'string');
-      if (s.cool && typeof s.cool === 'object'){ ['acidity', 'sweetness', 'bitterness'].forEach(k => { if (['faded', 'same', 'stronger'].includes(s.cool[k])) c.cool[k] = s.cool[k]; }); }
       if (s.words && typeof s.words === 'object'){ ['fragrance_aroma', 'flavor', 'aftertaste', 'acidity', 'body'].forEach(k => { if (Array.isArray(s.words[k])) c.words[k] = s.words[k].filter(x => typeof x === 'string').slice(0, 30); }); }
-      if (s.src && typeof s.src === 'object'){ ['acidity_score', 'acidity_int', 'body_score', 'body_int', 'fragrance_aroma_score', 'flavor_score', 'aftertaste_score', 'balance_score', 'overall_score'].forEach(k => { if (s.src[k] === 'auto' || s.src[k] === 'manual') c.src[k] = s.src[k]; }); }
       if (Array.isArray(s.kit)) c.kit = s.kit.filter(n => Number.isInteger(n) && n >= 1 && n <= 36).slice(0, 36);
-      if (['short', 'medium', 'long'].includes(s.after_len)) c.after_len = s.after_len;
-      if (s.notes && typeof s.notes === 'object') c.notes = s.notes;
-      c.single_defect = ['none','taint','fault'].includes(s.single_defect) ? s.single_defect : 'none';
-      if (!s.way && ATTRS.some(at => c.scores[at.key] != null)) c.way = 'cup';   /* a draft from before Quick taste, already part-way through scoring */
+      c.cva = cvaClean(s.cva); if (!SYMPTOMS.some(x => x.v === c.cva.sym)) c.cva.sym = '';
+      if (!s.way && CVA_SECTIONS.some(x => c.cva.score[x.key] != null)) c.way = 'cup';   /* a draft from before Quick taste, already part-way through scoring */
       state = c;
     }
   } catch(e){}
@@ -5812,7 +6028,7 @@ function paintProgress(){
     if (lock) st.setAttribute('aria-disabled', 'true'); else st.removeAttribute('aria-disabled');
   });
 }
-function hasScores(){ return ATTRS.some(a => state.scores[a.key] != null); }
+function hasScores(){ return cvaTouched(); }
 function stepLock(i){
   if (i === 0) return '';
   { const miss = coffeeMissing(app.coffee); if (miss.length) return miss.length === 1 && miss[0][0] === 'name' ? 'Add the coffee name first.' : 'Answer the Coffee questions first: ' + miss.map(x => x[1]).join(', ') + '.'; }
@@ -5836,7 +6052,7 @@ function gotoStep(i){
     if ((app.screen === 'recipe' || app.screen === 'ready' || app.screen === 'timer') && app.brew.method) snapshotBrew();
     prepCupEntry(); return go('cup');
   }
-  if (app.screen === 'cup'){ const an = cupAnalysis(), c = calc(); app.lastSymptom = an.symptom || ''; app.lastReasons = an.reasons.slice(0, 4); app.lastTotal = c.complete ? c.total : null; scheduleDraft(); }
+  if (app.screen === 'cup' && state.way !== 'quick') cvaHandOff();
   return goDial();
 }
 function termHint(){
@@ -6266,7 +6482,7 @@ function scoreChart(rows){
   });
   svg += '<text x="' + pl + '" y="' + (H - 6) + '" text-anchor="start">' + escHtml(use[0].d) + '</text><text x="' + (W - pr) + '" y="' + (H - 6) + '" text-anchor="end">' + escHtml(use[use.length - 1].d) + '</text></svg>';
   const el = h('div', { class:'chart' }); el.innerHTML = svg;
-  el.append(h('div', { class:'fine', style:'margin:2px 0 0', text:(kind === 'sca_5cup' ? 'SCA score' : 'Home score') + ' over your tastings of this coffee, oldest to newest.' }));
+  el.append(h('div', { class:'fine', style:'margin:2px 0 0', text:(kind === 'sca_5cup' ? 'SCA score' : kind === 'cva_affective' ? 'SCA affective score' : 'Home score') + ' over your tastings of this coffee, oldest to newest.' }));
   return el;
 }
 function historyCoffeeCard(c){
@@ -6371,13 +6587,13 @@ function tendencySection(t){
       !history && !n ? h('p', { class:'fine', style:'margin:8px 0 0', text:'Tendencies come from your saved history. Open your history file from the first screen, or save a tasting, and they will appear here.' }) : null));
     return sec;
   }
-  const kindName = t.kind === 'sca_5cup' ? 'SCA-style' : 'home';
+  const kindName = t.kind === 'sca_5cup' ? 'SCA-style' : t.kind === 'cva_affective' ? 'SCA affective' : 'home';
   sec.append(h('p', { class:'lede', style:'font-size:16.5px', text:'From ' + t.coffees + ' coffees (' + t.cups + ' cups) scored with the ' + kindName + ' score, averaging ' + learnFmt(t.average) + '. A tendency is a detail your higher- or lower-scored coffees share.' + (t.skipped ? ' ' + t.skipped + ' coffees scored the other way are left out, because the two scores are not on the same scale.' : '') }));
   if (t.groups.length) t.groups.forEach(gr => sec.append(h('div', { class:'card tcard' }, tendencyRow(gr))));
-  else sec.append(h('div', { class:'card' }, h('p', { class:'serif', style:'margin:0', text:'Nothing stands out yet. Your scores are similar across the roasts, processes and origins you have tried (no detail differs by 2 points or more).' })));
+  else sec.append(h('div', { class:'card' }, h('p', { class:'serif', style:'margin:0', text:'Not enough yet to say. No roast, process or origin you have tried scores clearly apart from the rest: the differences are within the ordinary ups and downs of your scores. This will change as you taste more coffees.' })));
   if (t.taste.length) sec.append(h('div', { class:'card' }, h('h3', { text:'What you rate' }), t.taste.map(x => h('p', { class:'serif', style:'margin:6px 0 0', text:'Your higher-scored cups rated ' + x.attr + ' ' + (x.dir === 'more' ? 'higher' : 'lower') + ' (' + learnFmt(x.top) + ' of 5, against ' + learnFmt(x.low) + ' for your lower-scored cups).' }))));
-  const flat = t.seen.filter(l => Math.abs(l.diff) < TEND_MIN_GAP);
-  if (flat.length) sec.append(h('details', { class:'card gcard' }, h('summary', null, h('span', { class:'gt', text:'No clear difference' }), h('span', { class:'gs', text:flat.length + ' details score about the same as the rest' })),
+  const flat = t.seen.filter(l => !l.real);
+  if (flat.length) sec.append(h('details', { class:'card gcard' }, h('summary', null, h('span', { class:'gt', text:'Too close to call' }), h('span', { class:'gs', text:flat.length + ' details do not score clearly apart from the rest' })),
     h('div', { class:'gbody' }, flat.map(l => h('p', { class:'serif gp', text:l.noun.charAt(0).toUpperCase() + l.noun.slice(1) + ': ' + learnFmt(l.mean) + ' (' + l.n + ' coffees) against ' + learnFmt(l.rest) + '.' })))));
   sec.append(h('p', { class:'fine', text:'These describe what you scored, not what is true of the coffee. Taste is personal, a few coffees is a small sample, and details overlap (a natural is often also a fruity Ethiopian). Treat a tendency as a reason to try something, not a rule.' }));
   return sec;
@@ -7713,63 +7929,12 @@ function scaleRow(ticks, min, max, bands){
   if (bands){ const b = h('div', { class:'bands' }); bands.forEach(k => { const el = h('span', { class:'band', text:k.t }); el.style.setProperty('--p', String(k.p)); b.append(el); }); row.append(b); }
   return row;
 }
-function slider(o){
-  /* A score control with + and - only (the name is kept for the two callers). Press and hold repeats. */
-  const val = h('span', { class:'val' }), qual = h('span', { class:'qual' });
-  const live = h('span', { class:'sr-only', role:'status', 'aria-live':'polite', 'aria-atomic':'true' });
-  let liveT = null, liveLast = null, liveFirst = true;
-  function announce(text){   /* one calm announcement after you stop pressing, not one per step */
-    if (liveFirst){ liveFirst = false; liveLast = text; return; }
-    if (text === liveLast) return; liveLast = text; clearTimeout(liveT); liveT = setTimeout(() => { live.textContent = text; }, 650);
-  }
-  const minus = h('button', { type:'button', class:'nudge big', 'aria-label':'Lower ' + o.aria, text:'−' });
-  const plus = h('button', { type:'button', class:'nudge big', 'aria-label':'Raise ' + o.aria, text:'+' });
-  function refresh(){
-    const v = o.get(), untouched = v == null;
-    val.textContent = untouched ? '—' : o.fmt(v);
-    qual.textContent = untouched ? 'Tap + to score' : o.label(v);
-    announce(untouched ? '' : o.aria.replace(/ score$/, '') + ' ' + o.fmt(v) + ', ' + o.label(v));
-  }
-  function nudge(d){
-    const cur = o.get() == null ? o.mid : o.get();
-    o.set(Math.min(o.max, Math.max(o.min, Math.round((cur + d * o.step) / o.step) * o.step))); changed();
-  }
-  function hold(btn, d){
-    let t = null, iv = null, fired = false, n = 0;
-    const stop = () => { clearTimeout(t); clearInterval(iv); t = iv = null; n = 0; setTimeout(() => { fired = false; }, 0); };
-    btn.addEventListener('pointerdown', e => {
-      if (e.button) return;
-      fired = true; nudge(d);
-      t = setTimeout(() => { iv = setInterval(() => { n++; nudge(d); if (n === 8){ clearInterval(iv); iv = setInterval(() => nudge(d), 55); } }, 95); }, 450);
-    });
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => btn.addEventListener(ev, stop));
-    btn.addEventListener('click', () => { if (fired){ fired = false; return; } nudge(d); });   /* keyboard and assistive tech arrive here */
-    btn.addEventListener('contextmenu', e => e.preventDefault());
-  }
-  hold(minus, -1); hold(plus, 1);
-  refreshers.push(refresh);
-  return { row:null, readout:h('div', { class:'readout' }, val, qual, h('div', { class:'nudges' }, minus, plus), live) };
-}
 function seg(options, get, set, label){
   const wrap = h('div', { class:'seg', role:'group', 'aria-label':label });
   const btns = options.map(o => h('button', { type:'button', text:o.text, 'aria-pressed':'false', onclick:() => { set(o.value); changed(); } }));
   refreshers.push(() => btns.forEach((b, i) => b.setAttribute('aria-pressed', String(get() === options[i].value))));
   btns.forEach(b => wrap.append(b));
   return wrap;
-}
-function noteBox(key){
-  const ta = h('textarea', { placeholder:'What did you notice?', 'aria-label':'Note' });
-  ta.addEventListener('input', () => { state.notes[key] = ta.value; changed(); });
-  const sum = h('summary', { text:'Note' });
-  refreshers.push(() => { if (document.activeElement !== ta) ta.value = state.notes[key] || ''; sum.textContent = state.notes[key] ? 'Note (added)' : 'Note'; });
-  return h('details', { class:'more' }, sum, ta);
-}
-const stepTag = () => h('span', { class:'stepno', 'aria-hidden':'true' });
-function helpBlock(key){
-  const g = CUP_GUIDE[key]; if (!g) return null;
-  const bold = t => h('b', { style:'font-family:var(--ui);font-weight:600', text:t + ' ' });
-  return h('details', { class:'more help' }, h('summary', { text:'What am I scoring?' }),
-    h('p', { class:'serif gp' }, bold('What it is:'), g.what), h('p', { class:'serif gp' }, bold('How to score it:'), g.how), h('p', { class:'serif gp' }, bold('Why it matters:'), g.why));
 }
 function suggestWords(key){
   let list = [];
@@ -7780,12 +7945,6 @@ function suggestWords(key){
   }
   return Array.from(new Set(list)).slice(0, 8);
 }
-function lengthRow(){
-  const opts = [['short', 'Short'], ['medium', 'Medium'], ['long', 'Long']];
-  const btns = opts.map(o => h('button', { type:'button', 'aria-pressed':'false', text:o[1], onclick:() => { state.after_len = state.after_len === o[0] ? '' : o[0]; applyKeywords('aftertaste'); changed(); } }));
-  refreshers.push(() => btns.forEach((b, i) => b.setAttribute('aria-pressed', String(state.after_len === opts[i][0]))));
-  return h('div', null, h('p', { class:'fine', style:'margin:0 0 6px', text:'How long does the flavor stay after you swallow?' }), h('div', { class:'seg', role:'group', 'aria-label':'Aftertaste length' }, btns));
-}
 function wordsRow(key){
   const picked = h('div', { class:'chips' }), sug = h('div', { class:'chips', style:'margin-top:8px' });
   const wrap = h('div', { class:'words' }, picked, sug,
@@ -7793,81 +7952,14 @@ function wordsRow(key){
   const base = suggestWords(key);
   refreshers.push(() => {
     const list = state.words[key]; picked.textContent = ''; sug.textContent = '';
-    list.forEach(w => picked.append(h('button', { type:'button', class:'chip', 'aria-pressed':'true', 'aria-label':'Remove ' + w, text:w + '  ×', onclick:() => { state.words[key] = state.words[key].filter(x => x !== w); applyKeywords(key); changed(); } })));
-    if (key === 'fragrance_aroma') state.kit.forEach(n => picked.append(h('button', { type:'button', class:'chip', 'aria-pressed':'true', 'aria-label':'Remove kit vial ' + n, text:'Kit ' + n + ' ' + KIT_NAMES[n] + '  ×', onclick:() => { state.kit = state.kit.filter(x => x !== n); applyKeywords(key); changed(); } })));
+    list.forEach(w => picked.append(h('button', { type:'button', class:'chip', 'aria-pressed':'true', 'aria-label':'Remove ' + w, text:w + '  ×', onclick:() => { state.words[key] = state.words[key].filter(x => x !== w); changed(); } })));
+    if (key === 'fragrance_aroma') state.kit.forEach(n => picked.append(h('button', { type:'button', class:'chip', 'aria-pressed':'true', 'aria-label':'Remove kit vial ' + n, text:'Kit ' + n + ' ' + KIT_NAMES[n] + '  ×', onclick:() => { state.kit = state.kit.filter(x => x !== n); changed(); } })));
     const rest = base.filter(w => !list.includes(w));
-    if (rest.length){ sug.append(h('span', { class:'fine', style:'align-self:center;margin:0 4px 0 0', text:key === 'aftertaste' ? 'Try:' : 'From your bag:' })); rest.forEach(w => sug.append(h('button', { type:'button', class:'chip', 'aria-pressed':'false', text:'+ ' + w, onclick:() => { state.words[key].push(w); applyKeywords(key); changed(); } }))); }
+    if (rest.length){ sug.append(h('span', { class:'fine', style:'align-self:center;margin:0 4px 0 0', text:key === 'aftertaste' ? 'Try:' : 'From your bag:' })); rest.forEach(w => sug.append(h('button', { type:'button', class:'chip', 'aria-pressed':'false', text:'+ ' + w, onclick:() => { state.words[key].push(w); changed(); } }))); }
   });
   return wrap;
 }
 const cardLabel = (t, sub) => h('div', { class:'cardlabel' }, h('span', { text:t }), sub ? h('span', { class:'cl-sub', text:sub }) : null);
-const KEYWORDS = {
-  acidity:{ table:ACID_WORDS, hint:'Tap the words that fit, from the least to the most acidity.' },
-  body:{ table:BODY_WORDS, hint:'Tap the words that fit, from the lightest to the heaviest feel.' }
-};
-function suggestionFor(key){
-  if (KEYWORDS[key]) return suggestFromWords(KEYWORDS[key].table, state.words[key]);
-  if (key === 'fragrance_aroma') return suggestNotes('aroma', state.words[key].map(noteTone).concat(state.kit.map(kitTone)));
-  if (key === 'flavor') return suggestNotes('flavor', state.words[key].map(noteTone));
-  if (key === 'aftertaste') return suggestAftertaste(state.words[key], state.after_len);
-  if (key === 'balance') return suggestBalance(state.scores);
-  if (key === 'overall') return suggestOverall(state.scores);
-  return null;
-}
-/* Words can set how strong something is (a suggestion the person can change), but they never set a score: the card is scored only when the person scores it,
-   or taps "Use my words' suggestion". A score already there is never removed because the words changed. */
-function applyKeywords(key){
-  if (key === 'balance' || key === 'overall') return;      // these only suggest when you tap the button
-  const sug = suggestionFor(key), iK = key + '_int';
-  if (!sug){
-    if (state.src[iK] === 'auto'){ state.intensity[key] = null; delete state.src[iK]; }
-    return;
-  }
-  if (sug.level != null && state.src[iK] !== 'manual'){ state.intensity[key] = sug.level; state.src[iK] = 'auto'; }
-}
-function keywordRow(key){
-  const kw = KEYWORDS[key], btns = kw.table.map(x => h('button', { type:'button', class:'chip', 'aria-pressed':'false', text:x.w, onclick:() => {
-    const list = state.words[key], i = list.indexOf(x.w); if (i >= 0) list.splice(i, 1); else list.push(x.w);
-    applyKeywords(key); changed();
-  } }));
-  refreshers.push(() => btns.forEach((b, i) => b.setAttribute('aria-pressed', String(state.words[key].includes(kw.table[i].w)))));
-  return h('div', null, h('p', { class:'fine', style:'margin:0 0 8px', text:kw.hint }), h('div', { class:'chips' }, btns));
-}
-function strengthRow(key, name){
-  const wrap = h('div', { class:'intensity' }, h('div', { class:'lab' }, h('span', { class:'cl-word', text:'1 is faint, 5 is very strong' }), h('span', { class:'cl-auto' })));
-  const auto = wrap.querySelector('.cl-auto'), word = wrap.querySelector('.cl-word');
-  const btns = [1, 2, 3, 4, 5].map(n => h('button', { type:'button', text:String(n), 'aria-pressed':'false', onclick:() => {
-    state.intensity[key] = state.intensity[key] === n ? null : n;
-    if (state.intensity[key] == null) delete state.src[key + '_int']; else state.src[key + '_int'] = 'manual';
-    changed();
-  } }));
-  refreshers.push(() => { btns.forEach((b, i) => b.setAttribute('aria-pressed', String(state.intensity[key] === i + 1))); auto.textContent = state.src[key + '_int'] === 'auto' ? 'suggested from your words' : ''; const v = state.intensity[key]; word.textContent = v ? v + ' = ' + STRENGTH_WORDS[v - 1].toLowerCase() : '1 is faint, 5 is very strong'; });
-  wrap.append(h('div', { class:'seg', role:'group', 'aria-label':name + ' strength' }, btns));
-  return wrap;
-}
-function tipLine(key){
-  const box = h('div', { class:'tipbox' }), status = h('div', { class:'tipstatus' }), text = h('p', { class:'tiptext' });
-  box.append(status, text);
-  const fromScores = key === 'balance' || key === 'overall';
-  refreshers.push(() => {
-    const sc = state.scores[key], sug = suggestionFor(key);
-    status.textContent = '';
-    if (sug){
-      const src = state.src[key + '_score'], hasScore = sug.score != null;
-      if (sug.mixed && sc == null) status.textContent = "These words disagree, so we left the score for you.";
-      else if (!hasScore && !sug.mixed && KEYWORDS[key]) status.textContent = 'Your words set how strong this feels. How much you enjoy it is your call: score it against what this coffee should taste like.';
-      else if (hasScore && !sug.mixed && src === 'auto' && sc != null && Math.abs(sc - sug.score) < 0.001) status.textContent = fromScores ? 'Suggested from your other scores. Use + and − to fine-tune it.' : 'Set from your words. Use + and − to fine-tune it.';
-      else if (hasScore && !sug.mixed && (sc == null || Math.abs(sc - sug.score) > 0.001)){
-        const label = fromScores ? (sc == null ? 'Suggest from my scores (' : 'Use the suggestion from my scores (') : "Use my words' suggestion (";
-        if (sc == null && !fromScores) status.append(h('span', { class:'fine', style:'display:block;margin-bottom:4px', text:'Your words suggest a score. The score is yours to give.' }));
-        status.append(h('button', { type:'button', class:'btn link', text:label + fmt2(sug.score) + ')', onclick:() => { state.scores[key] = sug.score; state.src[key + '_score'] = 'auto'; changed(); } }));
-      }
-    }
-    const t = (sug && sug.tip) ? sug.tip : scoreTip(key, sc);
-    text.textContent = t; box.hidden = !t && !status.textContent && !status.childNodes.length;
-  });
-  return box;
-}
 const STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2.6l2.9 6.2 6.7.8-4.9 4.6 1.3 6.7L12 17.8l-6 3.1 1.3-6.7-4.9-4.6 6.7-.8z"/></svg>';
 /* get() returns the stars (0 for none); set(v) is told the new value. Ten invisible buttons sit over the five stars, one per half, and read out as "3.5 of 5 stars" (a radio group, with the arrow keys stepping by a half). */
 function starRating(get, set, o){
@@ -7904,131 +7996,110 @@ function starRating(get, set, o){
   wrap.append(row, h('div', { class:'starfoot' }, read, clear)); paint(); refreshers.push(paint);
   return wrap;
 }
-let cupOpen = new Set(['fragrance_aroma']);
-const cupView = () => app.prefs.cupView === 'full' ? 'full' : 'compact';
-function cardSummary(a){
-  const w = (state.words && state.words[a.key]) || [], parts = [];
-  if (w.length) parts.push(w.slice(0, 4).join(', ') + (w.length > 4 ? '…' : ''));
-  if (a.key === 'aftertaste' && state.after_len) parts.push(state.after_len);
-  const it = state.intensity && state.intensity[a.key]; if (it) parts.push('strength ' + it);
-  if (state.notes && state.notes[a.key]) parts.push('note added');
-  return parts.length ? parts.join(' · ') : (KEYWORDS[a.key] || a.words) ? 'Tap to describe it' : 'Tap for tips and a note';
+/* The rows are: 0 to 7 the sections in the order of the SCA form, 8 the retaste as the cup cools, 9 defects, 10 the review. A row opens only once the one before it is done; a finished row
+   stays in the list with its score and can be opened again to change it. state.cva (see pure/12-cva.js) holds where the person has got to. */
+let cvaBox = null, cvaProg = null, cvaFocus = '', cvaFinishBox = null;
+const CVA_CHECK_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>', CVA_LOCK_SVG = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2"/></svg>';
+/* how much each section explains: its own choice if the person made one on the Cupping tab, otherwise the level of the whole app */
+const cvaHelp = () => ['new', 'comfortable', 'expert'].includes(app.prefs.cupHelp) ? app.prefs.cupHelp : level();
+function cvaPair(i){
+  const c = state.cva, k = CVA_SECTIONS[i].key, first = c.score[k];
+  if (c.skip[k]) return 'not scored';
+  if (first == null) return '';
+  const f = cvaFinals(c)[i]; return f != null && f !== first ? first + '→' + f : String(first);
 }
-function scoreCard(a){
-  const kw = KEYWORDS[a.key];
-  const s = slider({ min:6, max:10, step:.25, mid:8, aria:a.name + ' score', get:() => state.scores[a.key], set:v => { state.scores[a.key] = v; state.src[a.key + '_score'] = 'manual'; }, fmt:fmt2, label:qualityLabel,
-    ticks:[{ v:6 },{ v:7 },{ v:8 },{ v:9 },{ v:10 }],
-    bands:[{ p:.125, t:'Good' },{ p:.375, t:'Very good' },{ p:.625, t:'Excellent' },{ p:.875, t:'Outstanding' }] });
-  const sum = h('span', { class:'attr-sum' });
-  const toggle = h('div', { class:'attr-toggle', role:'button', tabindex:'0', 'aria-controls':'cb_' + a.key, 'aria-label':a.name + ': show or hide the details' },
-    stepTag(), h('div', { class:'attr-name', text:a.name }), sum, h('p', { class:'attr-hint', text:a.hint }));
-  const body = h('div', { class:'cardbody', id:'cb_' + a.key }, helpBlock(a.key));
-  const card = h('div', { class:'card stepcard' + (cupOpen.has(a.key) ? ' open' : ''), 'data-card':a.key }, h('div', { class:'attr-head' }, toggle, s.readout), body);
-  const setOpen = on => { if (on) cupOpen.add(a.key); else cupOpen.delete(a.key); card.classList.toggle('open', on); toggle.setAttribute('aria-expanded', String(on)); };
-  toggle.setAttribute('aria-expanded', String(card.classList.contains('open')));
-  toggle.addEventListener('click', () => setOpen(!card.classList.contains('open')));
-  toggle.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); setOpen(!card.classList.contains('open')); } });
-  if (kw) body.append(cardLabel('Describe it'), keywordRow(a.key), cardLabel('How strong?'), strengthRow(a.key, a.name));
-  else if (a.words){ body.append(cardLabel('Describe it')); if (a.key === 'aftertaste') body.append(lengthRow()); body.append(wordsRow(a.key)); }
-  body.append(tipLine(a.key), noteBox(a.key));
-  refreshers.push(() => { sum.textContent = cardSummary(a); card.classList.toggle('done', state.scores[a.key] != null); });   /* a scored card says so */
-  return card;
+const cvaScored = () => CVA_SECTIONS.filter(s => state.cva.score[s.key] != null && !state.cva.skip[s.key]).length;
+const cvaTouched = () => CVA_SECTIONS.some(s => state.cva.score[s.key] != null || state.cva.skip[s.key]);
+function cvaChanged(focus){ cvaFocus = focus || ''; cvaPaint(); updateBar(); paintProgress(); scheduleDraft(); }
+function cvaScrollOpen(){
+  const el = cvaBox && cvaBox.querySelector('.cva-row.open'); if (!el || !el.scrollIntoView) return;
+  el.scrollIntoView({ block:'start', behavior:window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 }
-function singleCheck(c){
-  const s = slider({ min:0, max:10, step:1, mid:5, aria:c.name + ' score', get:() => state.single[c.key], set:v => { state.single[c.key] = v; }, fmt:v => String(v), label:v => v + ' out of 10', ticks:[{ v:0 },{ v:5 },{ v:10 }] });
-  const card = h('div', { class:'card stepcard', 'data-card':'chk:' + c.key }, h('div', { class:'attr-head' }, h('div', null, stepTag(), h('div', { class:'attr-name', text:c.name }), h('p', { class:'attr-hint', text:c.hint })), s.readout), helpBlock(c.key));
-  refreshers.push(() => card.classList.toggle('done', state.single[c.key] != null));
-  return card;
+function cvaAdvance(){ const c = state.cva; c.cur++; c.open = c.cur; cvaChanged(); cvaScrollOpen(); }
+function cvaPaint(){
+  if (!cvaBox || !cvaBox.isConnected) return;
+  const c = state.cva, sc = cvaScored(); cvaBox.textContent = ''; cvaProg.textContent = '';
+  cvaProg.append(h('div', { class:'cva-bar', 'aria-hidden':'true' }, CVA_SECTIONS.map(s => h('i', { class:c.skip[s.key] ? 'skip' : c.score[s.key] != null ? 'on' : '' }))),
+    h('p', { text:sc + ' of 8 sections scored' + (c.cur >= 8 ? (c.cool.skipped ? ' · not retasted' : c.cool.done ? ' · retasted' : ' · retaste next') : '') }));
+  for (let i = 0; i <= 10; i++) cvaBox.append(cvaRowEl(i));
+  if (cvaFinishBox) cvaFinishBox.hidden = c.cur < 10;
+  if (cvaFocus){ const el = document.getElementById(cvaFocus); if (el) el.focus({ preventScroll:true }); cvaFocus = ''; }
 }
-/* ---------- scoring math ---------- */
-/* the order the cards are on the page: what is missing is listed, and jumped to, in this order */
-const SCORE_ORDER = ['fragrance_aroma', 'flavor', 'aftertaste', 'acidity', 'body', 'balance', 'chk:clean_cup', 'chk:sweetness', 'overall'];
-function calc(){
-  const s = state; let sum = 0, n = 0; const miss = {};
-  ATTRS.forEach(a => { const v = s.scores[a.key]; if (v != null){ sum += v; n++; } else miss[a.key] = a.name; });
-  const c = s.single.clean_cup, w = s.single.sweetness;
-  if (c == null) miss['chk:clean_cup'] = 'Clean cup';
-  if (w == null) miss['chk:sweetness'] = 'Sweetness';
-  const ded = s.single_defect === 'taint' ? 2 : s.single_defect === 'fault' ? 4 : 0;
-  const out = { scored:n + (c != null ? 1 : 0) + (w != null ? 1 : 0), needed:9, sum, unscored:[], missing:[], kind:'home_1cup', pts:{ uniformity:null, clean_cup:c, sweetness:w }, ded,
-    complete:n === 7 && c != null && w != null, total:Math.max(0, (sum + (c || 0) + (w || 0) - ded) / 90 * 100) };
-  SCORE_ORDER.forEach(id => { if (miss[id]){ out.missing.push({ id, name:miss[id] }); out.unscored.push(miss[id]); } });
-  return out;
-}
-function updateBar(){
-  if (app.screen !== 'cup') return;
-  const c = calc();
-  $('of').textContent = '/ 100 home score'; $('scorebar').classList.add('home');
-  if (c.complete){
-    $('num').textContent = fmtScore(c.total, c.kind); $('fill').style.width = Math.min(100, c.total) + '%';
-    $('status').textContent = 'Not an SCA grade';
-  } else {
-    const st = $('status'), nx = c.missing[0];
-    $('num').textContent = '—'; $('fill').style.width = '0'; st.textContent = c.scored + ' of ' + c.needed + ' scored';
-    if (nx) st.append(h('br'), h('button', { type:'button', class:'nextlink', text:'Next: ' + nx.name, onclick:() => jumpToCard(nx.id) }));   /* the bar names what is still missing and takes you there */
+/* the 1 to 9 scale. The words are the standard's: an impression of quality, the same for every section. */
+function cvaScale(i, which, label){
+  const c = state.cva, k = CVA_SECTIONS[i].key, store = which === 'fin' ? c.fin : c.score, cur = store[k];
+  const btns = []; for (let v = 1; v <= 9; v++){
+    const id = 'cva-' + which + '-' + i + '-' + v;
+    btns.push(h('button', { type:'button', role:'radio', id, 'aria-checked':String(cur === v), text:String(v), onclick:() => { store[k] = v; if (which === 'score') delete c.skip[k]; cvaChanged(id); } }));
   }
+  return [h('div', { class:'cva-scale', role:'radiogroup', 'aria-label':label + ', 1 to 9' }, btns),
+    h('div', { class:'cva-ends', 'aria-hidden':'true' }, h('span', { text:'1 extremely low' }), h('span', { text:'9 extremely high' })),
+    h('p', { class:'cva-word', role:'status', 'aria-live':'polite', text:cur ? cur + ' · ' + CVA_WORDS[cur - 1] : 'Tap a number' })];
 }
-/* scroll to a card that still needs a score, open it if the compact view has it folded, and put focus on its first control */
-function jumpToCard(id){
-  const el = [...document.querySelectorAll('#mount [data-card="' + id + '"]')].find(e => e.offsetParent !== null); if (!el) return;
-  const tg = el.querySelector('.attr-toggle'); if (tg && cupView() === 'compact' && !el.classList.contains('open')) tg.click();
-  const hdr = document.querySelector('.stick'), calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  window.scrollTo({ top:Math.max(0, el.getBoundingClientRect().top + window.scrollY - (hdr ? hdr.offsetHeight : 0) - 12), behavior:calm ? 'auto' : 'smooth' });   /* the card's top just under the sticky header */
-  const f = el.querySelector('.attr-toggle, .cup, .nudge:not(:disabled)'); if (f) f.focus({ preventScroll:true });   /* the card's header, its first cup, or its plus button */
+function cvaSectionBody(i){
+  const c = state.cva, s = CVA_SECTIONS[i], g = CVA_GUIDE[s.key], k = s.key, editing = i < c.cur, lv = cvaHelp(), ok = !!c.score[k];
+  const note = h('textarea', { id:'cva-note-' + k, 'aria-label':s.name + ' note', placeholder:'Short note to justify the score', value:c.notes[k] || '', oninput:e => { c.notes[k] = e.target.value; scheduleDraft(); } });
+  const next = i < 7 ? 'Next: ' + CVA_SECTIONS[i + 1].name : 'Next: ' + CVA_LINES.coolHead;
+  return h('div', { class:'cva-body' }, h('p', { class:'cva-q', text:g.q }),
+    lv === 'new' ? h('p', { class:'cva-hint', text:g.ex }) : lv === 'comfortable' ? h('p', { class:'cva-hint', text:g.cm }) : null,
+    i === 0 && lv !== 'expert' ? h('p', { class:'cva-hint', text:CVA_LINES.basis }) : null,
+    s.retaste && !c.cool.done ? h('p', { class:'cva-note', text:CVA_LINES.first }) : null,
+    h('span', { class:'cva-lbl', text:'Impression of quality: ' + s.name.toLowerCase() }), cvaScale(i, 'score', 'Impression of quality for ' + s.name),
+    h('div', null, h('label', { class:'cva-lbl', for:'cva-note-' + k, text:CVA_LINES.note }), note),
+    h('div', { class:'cva-actions' },
+      h('button', { type:'button', class:'btn primary', id:'cva-go-' + i, disabled:!ok, text:editing ? 'Save change' : next, onclick:() => { if (editing){ c.open = c.cur; cvaChanged(); cvaScrollOpen(); } else cvaAdvance(); } }),
+      s.skippable && !editing ? h('button', { type:'button', class:'btn link', text:g.skip, onclick:() => { c.skip[k] = true; delete c.score[k]; cvaAdvance(); } }) : null),
+    ok ? null : h('p', { class:'cva-note', text:'Pick a score to open the next section.' }));
 }
-
-/* ---------- screen: cup ---------- */
-function cupAnalysis(){
-  const ex = expectFor(app.coffee, new Date());
-  const meth = app.cupBrew && app.cupBrew.key ? METHODS.find(x => x.key === app.cupBrew.key) : null;
-  const bagWords = String(app.coffee.bag_notes || '').toLowerCase().split(/[,;\/&]|\band\b/).map(x => x.trim()).filter(x => x.length >= 3 && x.length <= 24);
-  const kitWords = state.kit.map(n => n === 36 ? 'rubbery' : n === 35 ? 'medicinal' : n === 2 ? 'potato' : '').filter(Boolean);
-  return analyzeCupping({ scores:state.scores, intensity:state.intensity, words:Object.assign({}, state.words, { fragrance_aroma:state.words.fragrance_aroma.concat(kitWords) }),
-    sweet:state.single.sweetness, expectedBars:ex.bars, stepUm:meth ? Math.round((meth.um[1] - meth.um[0]) / 5 / 10) * 10 : 60, plainGrind:level() === 'new',
-    roast:ex.profile.roast, methodType:meth ? meth.type : '', agit:app.cupBrew ? app.cupBrew.agit : '', days:ex.profile.days,
-    timeRatio:(app.cupBrew && app.cupBrew.actual_s && app.cupBrew.time_s) ? app.cupBrew.actual_s / app.cupBrew.time_s : null,
-    timeNote:(app.cupBrew && app.cupBrew.actual_s && app.cupBrew.time_s) ? fmtTime(app.cupBrew.actual_s) + ' vs a ' + fmtTime(app.cupBrew.time_s) + ' target' : '',
-    ey:measured().ey, strength:measured().j.strength, grinder:app.cupBrew ? app.cupBrew.grinder_type : '', water:app.cupBrew ? app.cupBrew.water_type : '', alk:app.cupBrew ? app.cupBrew.water_alk : '', gh:app.cupBrew ? app.cupBrew.water_gh : '', deviated:!!(app.cupBrew && String(app.cupBrew.pour_notes || '').trim()),
-    expectedNotes:bagWords.length ? bagWords : ex.look.map(x => x.toLowerCase()), expectedSource:bagWords.length ? 'bag' : 'typical' });
-}
-function coolCard(){
-  const rows = [['acidity', 'Acidity'], ['sweetness', 'Sweetness'], ['bitterness', 'Bitterness']];
-  const d = h('details', { class:'card gcard' }, h('summary', null, h('span', { class:'gt', text:'How it changed as it cooled (optional)' }), h('span', { class:'gs', text:'Taste again once it is cool and note what changed' })));
-  const body = h('div', { class:'gbody' }, h('p', { class:'fine', style:'margin:0 0 4px', text:'Sweetness and off-flavors often show more as coffee cools. This is for your own record.' }));
-  rows.forEach(r => body.append(h('div', { style:'margin-top:10px' }, h('div', { style:'font-size:14px;margin-bottom:4px', text:r[1] }),
-    seg([{ text:'Faded', value:'faded' }, { text:'About the same', value:'same' }, { text:'Stronger', value:'stronger' }], () => state.cool[r[0]], v => { state.cool[r[0]] = state.cool[r[0]] === v ? '' : v; }, r[1] + ' as it cooled'))));
-  d.append(body); d.open = Object.keys(state.cool || {}).some(k => state.cool[k]);
-  return d;
-}
-function phaseHead(n){
-  const ph = CUP_PHASES[n - 1];
-  return h('div', { class:'phase' }, h('div', { class:'phase-n', text:String(n) }), h('div', null, h('h2', { text:ph.title }), h('p', { class:'fine', style:'margin:0', text:ph.when })));
-}
-function cupIntro(first){
-  if (level() === 'new'){
-    const body = h('div', null, h('p', { class:'serif gp', text:'Smell your coffee, then sip it while it is hot, and again as it cools. Score what you notice, one card at a time. Tap "What am I scoring?" on any card for help.' }),
-      h('p', { class:'serif gp', text:SCORE_GUIDE_SHORT }));
-    return gcard('How to taste (read this first)', 'The short version', [body], first);
+/* the retaste: flavor to overall, each one answered with "Same" or a new number before the next opens */
+function cvaCoolBody(){
+  const c = state.cva, cl = c.cool, doneHere = () => { if (c.cur === 8) cvaAdvance(); else { c.open = c.cur; cvaChanged(); cvaScrollOpen(); } };
+  if (!cl.started){
+    return h('div', { class:'cva-body' }, h('p', { class:'cva-hint', text:CVA_LINES.coolText }),
+      cvaHelp() === 'expert' ? null : h('p', { class:'cva-hint', text:'A rough guide: ' + CUP_PHASES[2].when.charAt(0).toLowerCase() + CUP_PHASES[2].when.slice(1) + '.' }),
+      h('div', { class:'cva-actions' },
+        h('button', { type:'button', class:'btn primary', id:'cva-cool-start', text:cl.skipped ? 'Retaste now' : 'It has cooled: retaste', onclick:() => { c.cool = { started:true, skipped:false, done:false, i:CVA_RETASTE_FROM }; c.fin = {}; cvaChanged(); } }),
+        cl.skipped ? null : h('button', { type:'button', class:'btn link', id:'cva-cool-skip', text:CVA_LINES.skipCool, onclick:() => { c.cool = { started:false, skipped:true, done:true, i:CVA_RETASTE_FROM }; c.fin = {}; doneHere(); } })),
+      cl.skipped ? h('p', { class:'cva-note', text:CVA_LINES.skippedNote }) : h('p', { class:'cva-note', text:CVA_LINES.skipWarn }));
   }
-  const bold = t => h('b', { style:'font-family:var(--ui);font-weight:600', text:t + ' ' });
-  const more = h('details', { class:'moreinfo' }, h('summary', { text:'More about scoring' }),
-    h('p', { class:'serif gp' }, bold('Why score?'), WHY_SCORE),
-    h('p', { class:'serif gp' }, bold('What the numbers mean:'), SCORE_GUIDE),
-    h('p', { class:'serif gp' }, SCORE_GUIDE_HOME),
-    h('div', null,
-      h('p', { class:'serif gp' }, bold('For a brewed cup:'), 'Smell the dry grounds if you can, brew as usual, then smell the cup. Sip it hot, then warm, then cool, and score as you go.')));
-  const body = h('div', null,
-    h('p', { class:'serif gp' }, 'Score what you notice, one card at a time. Tap "What am I scoring?" on any card if you are unsure. The order the pros use:'),
-    h('ol', { class:'prep', style:'margin-top:0' }, CUP_PHASES.map(ph => h('li', null, h('b', { style:'font-family:var(--ui);font-weight:600', text:ph.title + ': ' }), ph.when + '.'))),
-    more);
-  const d = gcard('How to taste (read this first)', 'The order, the temperatures, and why you score', [body], first);
-  return d;
+  const list = h('ul', { class:'cva-mini' }, CVA_SECTIONS.slice(CVA_RETASTE_FROM).map((s, n) => h('li', { class:CVA_RETASTE_FROM + n === cl.i && !cl.done ? 'now' : '' },
+    h('span', { text:s.name }), h('span', { text:c.score[s.key] + (c.fin[s.key] != null ? ' → ' + c.fin[s.key] : ' → ?') }))));
+  if (cl.done) return h('div', { class:'cva-body' }, list, h('div', { class:'cva-actions' }, h('button', { type:'button', class:'btn', id:'cva-cool-again', text:'Retaste again', onclick:() => { c.cool = { started:true, skipped:false, done:false, i:CVA_RETASTE_FROM }; c.fin = {}; cvaChanged(); } })));
+  const j = cl.i, k = CVA_SECTIONS[j].key, first = c.score[k], has = c.fin[k] != null;
+  const last = j >= CVA_SECTIONS.length - 1;
+  return h('div', { class:'cva-body' }, list, h('p', { class:'cva-q', text:CVA_SECTIONS[j].name + ' now: has it changed?' }),
+    h('p', { class:'cva-hint', text:'You first scored it ' + first + '. Tap Same, or a new number.' }),
+    h('div', { class:'cva-chips' }, h('button', { type:'button', id:'cva-cool-same', 'aria-pressed':String(has && c.fin[k] === first), text:'Same (' + first + ')', onclick:() => { c.fin[k] = first; cvaChanged('cva-cool-next'); } })),
+    cvaScale(j, 'fin', 'New impression of quality for ' + CVA_SECTIONS[j].name),
+    h('div', { class:'cva-actions' }, h('button', { type:'button', class:'btn primary', id:'cva-cool-next', disabled:!has, text:last ? 'Next: Defects' : 'Next: ' + CVA_SECTIONS[j + 1].name,
+      onclick:() => { if (!last){ cl.i++; cvaChanged(); } else { cl.done = true; doneHere(); } } })),
+    has ? null : h('p', { class:'cva-note', text:'Tap Same or a number to continue.' }));
 }
-function measured(){
-  const b = app.cupBrew, mt = b && b.key ? METHODS.find(x => x.key === b.key) : null;
-  if (!b || !mt) return { ey:null, j:{ strength:null, extraction:null, lines:[] } };
-  const ey = extractionYield(+b.tds, +b.out_g, +b.dose);
-  return { ey, j:ey == null ? { strength:null, extraction:null, lines:[] } : judgeBrew(mt.type, +b.tds, ey) };
+function cvaDefectBody(){
+  const c = state.cva, ok = !c.defect || !!c.dtype, editing = c.cur > 9;
+  return h('div', { class:'cva-body' }, h('p', { class:'cva-hint', text:CVA_LINES.oneCup }), h('span', { class:'cva-lbl', text:'Does this cup have a defect?' }),
+    h('div', { class:'cva-chips bad' },
+      h('button', { type:'button', id:'cva-def-no', 'aria-pressed':String(!c.defect), text:'No defect', onclick:() => { c.defect = false; c.dtype = ''; cvaChanged('cva-def-no'); } }),
+      h('button', { type:'button', id:'cva-def-yes', 'aria-pressed':String(c.defect), text:'Yes', onclick:() => { c.defect = true; cvaChanged('cva-def-yes'); } })),
+    c.defect ? [h('span', { class:'cva-lbl', text:'Which defect?' }), h('div', { class:'cva-chips bad' }, CVA_DEFECT_TYPES.map(t => h('button', { type:'button', id:'cva-def-' + t, 'aria-pressed':String(c.dtype === t), text:t.charAt(0).toUpperCase() + t.slice(1),
+      onclick:() => { c.dtype = c.dtype === t ? '' : t; cvaChanged('cva-def-' + t); } }))), c.dtype ? null : h('p', { class:'cva-warn', text:CVA_LINES.defectNeeds })] : null,
+    h('div', { class:'cva-actions' }, h('button', { type:'button', class:'btn primary', id:'cva-go-check', disabled:!ok, text:editing ? 'Save change' : 'Next: Review and total', onclick:() => { if (editing){ c.open = c.cur; cvaChanged(); cvaScrollOpen(); } else cvaAdvance(); } })));
+}
+function cvaRowInfo(i){
+  const c = state.cva, done = i < c.cur;
+  if (i < 8){ const k = CVA_SECTIONS[i].key; return { name:CVA_SECTIONS[i].name, when:CVA_GUIDE[k].when, val:done ? cvaPair(i) : '', cls:c.skip[k] ? 'none' : '' }; }
+  if (i === 8) return { name:CVA_LINES.coolHead, when:CVA_LINES.coolWhen, val:!done ? '' : !c.cool.done ? 'retasting' : c.cool.skipped ? 'not retasted' : 'retasted', cls:c.cool.skipped || !c.cool.done ? 'none' : 'good' };
+  if (i === 9) return { name:'Defects', when:'Potato, moldy or phenolic', val:done ? (cvaDefective(c) ? c.dtype : 'none') : '', cls:'' };
+  return { name:'Review and total', when:'Check everything, then save', val:'', cls:'' };
+}
+function cvaRowEl(i){
+  const c = state.cva, locked = i > c.cur, done = i < c.cur, open = !locked && c.open === i, info = cvaRowInfo(i);
+  const ico = h('span', { class:'cva-ico' }); if (done) ico.innerHTML = CVA_CHECK_SVG; else if (locked) ico.innerHTML = CVA_LOCK_SVG; else ico.textContent = String(i + 1);
+  const inner = [ico, h('span', { class:'cva-nm' }, info.name, h('small', { text:info.when })), info.val ? h('span', { class:'cva-val ' + info.cls, text:info.val.replace(' → ', '→') }) : h('span')];
+  const head = done ? h('button', { type:'button', class:'cva-head', 'aria-expanded':String(open), 'aria-label':info.name + ', change it', onclick:() => { c.open = open ? c.cur : i; cvaChanged(); if (!open) cvaScrollOpen(); } }, inner)
+    : h('div', { class:'cva-head', 'aria-disabled':locked ? 'true' : null }, inner);
+  const body = !open ? null : i < 8 ? cvaSectionBody(i) : i === 8 ? cvaCoolBody() : i === 9 ? cvaDefectBody() : cvaReviewBody();
+  return h('section', { class:'cva-row ' + (done ? 'done' : locked ? 'lock' : 'cur') + (open ? ' open' : ''), 'aria-label':info.name + (locked ? ' (locked)' : '') }, head, body);
 }
 function ecChartSvg(kind, tds, ey){
   const W = 300, H = 170, L = 34, R = 8, T = 8, B = 26, x0 = 14, x1 = 26, y0 = kind === 'espresso' ? 4 : 0.9, y1 = kind === 'espresso' ? 16 : 1.7;
@@ -8072,9 +8143,6 @@ function measureBlock(b){
 }
 function screenCup(m){
   const c = app.coffee, b = app.cupBrew;
-  const first = !app.prefs.seenCupHelp; if (state.way !== 'quick'){ app.prefs.seenCupHelp = true; scheduleDraft(); }
-  cupOpen = new Set(['fragrance_aroma']);
-  m.setAttribute('data-cupview', state.way === 'quick' ? 'compact' : cupView());
   m.append(h('h1', { text:c.name }), h('p', { class:'lede', text:[c.roaster, labelOf(ROASTS, c.roast) && labelOf(ROASTS, c.roast) + ' roast'].filter(Boolean).join(' · ') || 'Score what is in your cup.' }));
   { const th = termHint(); if (th) m.append(th); }
   { const sw = tasteSwitch(); if (sw) m.append(sw); }
@@ -8093,99 +8161,10 @@ function screenCup(m){
             h('p', { class:'fine', style:'margin:-4px 0 0', text:'Skip this if you followed the brew settings. It is saved with your tasting, so your results make sense.' })); dt.open = !!b.pour_notes; return dt; })(),
         level() !== 'new' ? measureBlock(b) : null)));
   }
+  m.setAttribute('data-cupview', 'compact');   /* the Quick tab's detail cards fold by this (styles/68-menu-glossary-help.css); the setting that used to choose full is retired */
   if (state.way === 'quick'){ screenQuick(m); return; }
-  m.append(cupIntro(first));
-  m.append(h('div', { class:'h2row', style:'margin-top:14px;align-items:center' }, h('p', { class:'fine', style:'margin:0', text:'Score each card with + and −, from 6 (Good) up to 9.75, the top of the SCA scale (10 is a theoretical top). Tap a card\'s name to describe what you notice.' }), h('button', { type:'button', class:'btn small', style:'margin:0;flex:none', text:'Taste wheel', onclick:() => openWheel('flavor') })));
-  m.append(h('div', { class:'viewrow' }, h('span', { class:'fine', style:'margin:0', text:'Cards' }), seg([{ text:'Compact', value:'compact' }, { text:'All cards', value:'full' }], cupView, v => { app.prefs.cupView = v; m.setAttribute('data-cupview', v); }, 'Card view')));
-
-  const A = k => ATTRS.find(a => a.key === k), C1 = k => SINGLE_CHECKS.find(x => x.key === k);
-  m.append(phaseHead(1), scoreCard(A('fragrance_aroma')));
-  m.append(phaseHead(2)); ['flavor', 'aftertaste', 'acidity', 'body', 'balance'].forEach(k => m.append(scoreCard(A(k))));
-  m.append(phaseHead(3), singleCheck(C1('clean_cup')), singleCheck(C1('sweetness')));
-  if (level() !== 'new') m.append(coolCard());
-  m.append(phaseHead(4), scoreCard(A('overall')));
-
-  const dn = h('textarea', { placeholder:'Describe any defect', 'aria-label':'Defect notes' });
-  dn.addEventListener('input', () => { state.defect_notes = dn.value; scheduleDraft(); });
-  refreshers.push(() => { if (document.activeElement !== dn) dn.value = state.defect_notes || ''; });
-  dn.style.cssText = 'width:100%;min-height:56px;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);font-size:16px';
-  const dnWrap = h('div', { class:'dnwrap', hidden:true }, dn);
-  refreshers.push(() => { dnWrap.hidden = !(state.single_defect !== 'none' || !!state.defect_notes); });
-  m.append(h('div', { class:'card stepcard' }, stepTag(), h('div', { class:'attr-name', text:'Defects' }), h('p', { class:'attr-hint', text:'Record any off-flavors that should not be there. Leave it at none if the cup was clean.' }), helpBlock('defects'),
-    h('div', { style:'margin-top:8px' },
-      seg([{ text:'None', value:'none' }, { text:'Small off-taste (−2)', value:'taint' }, { text:'Big off-taste (−4)', value:'fault' }], () => state.single_defect, v => { state.single_defect = v; }, 'Defect in the cup')), dnWrap));
-
-  const gn = h('textarea', { placeholder:'About this coffee or this session' });
-  gn.addEventListener('input', () => { state.general_notes = gn.value; scheduleDraft(); });
-  refreshers.push(() => { if (document.activeElement !== gn) gn.value = state.general_notes || ''; });
-  gn.style.cssText = 'font-size:16px;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);width:100%;min-height:76px';
-  gn.id = 'general_notes_box';
-  m.append(h('h2', { text:'Anything else' }), h('div', { class:'card' }, h('label', { for:'general_notes_box', class:'flabel', style:'display:block;margin-bottom:6px', text:'General notes (optional)' }), gn));
-
-  const results = h('div', { class:'card results' }); results.append(h('h3', { text:'What your scores say' }));
-  const rbody = h('div'); results.append(rbody);
-  refreshers.push(() => { rbody.textContent = ''; paintResults(rbody); });
-  m.append(h('h2', { text:'Your results' }), results);
-
-  m.append(h('h2', { text:'How would you rate this coffee?' }), h('div', { class:'card' },
-    h('p', { class:'fine', style:'margin:0 0 4px', text:'This is how much you liked it, which is a different question from the scores above. It is optional.' }),
-    starRating(() => state.stars, v => { state.stars = v; scheduleDraft(); }, { label:'Your rating of this coffee' })));
-
-  const msg = h('p', { class:'msg', id:'msg', role:'status' });
-  let armed = false, tmr = null;
-  const clearBtn = h('button', { type:'button', class:'btn danger', text:'Clear scores' });
-  clearBtn.addEventListener('click', () => {
-    if (!armed){ armed = true; clearBtn.textContent = 'Tap again to clear'; tmr = setTimeout(() => { armed = false; clearBtn.textContent = 'Clear scores'; }, 4000); return; }
-    clearTimeout(tmr); state = newCup(); prepCupEntry(); render();
-  });
-  m.append(h('div', { class:'actions' }, clearBtn, h('button', { type:'button', class:'btn primary', text:'Save tasting', onclick:onSaveClick })), msg,
-    h('p', { class:'fine', text:'Your in-progress form is kept in this browser until you save or clear it. Your saved history lives in the CSV file you download.' }));
+  screenCva(m);
 }
-function paintResults(box){
-  const c = calc(), gpn = t => h('p', { class:'serif gp', text:t }), bold = t => h('b', { style:'font-family:var(--ui);font-weight:600', text:t + ' ' });
-  if (!c.complete){ box.append(gpn('Finish scoring every card to see your results and a suggestion for your next brew.')); return; }
-  const an = cupAnalysis();
-  box.append(h('p', { class:'serif gp' }, bold('Your total:'), fmtScore(c.total, c.kind) + ' (home score).'));
-  if (an.strongest.length) box.append(h('p', { class:'serif gp' }, bold('Strongest:'), an.strongest.map(r => r.name + ' ' + fmt2(r.val)).join(', ') + '.' + (an.weakest.length ? ' ' : ''), an.weakest.length ? [bold('Weakest:'), an.weakest.map(r => r.name + ' ' + fmt2(r.val)).join(', ') + '.'] : null));
-  if (an.expected.length){
-    box.append(h('h3', { style:'margin-top:12px', text:'Expected vs. what you found' }));
-    an.expected.forEach(e => box.append(gpn(e.label + ': we expected ' + e.expText.toLowerCase() + ', and you found ' + e.found + ' out of 5, which is ' + e.text + '.')));
-  }
-  if (an.symptom){
-    const label = SYMPTOMS.find(x => x.v === an.symptom).label.toLowerCase();
-    box.append(h('h3', { style:'margin-top:12px', text:an.symptom === 'great' ? 'Looks like a keeper' : 'What it looks like' }));
-    if (an.symptom !== 'great') box.append(gpn('Your scores point to a cup that is ' + label + ' (' + an.confidence + ').'));
-    an.reasons.forEach(r => box.append(gpn(r)));
-    box.append(h('h3', { style:'margin-top:12px', text:'Try this next' }), gpn(an.fix.primary));
-    if (an.fix.why) box.append(h('p', { class:'serif gp' }, bold('Why:'), an.fix.why));
-    if (an.fix.secondary) box.append(h('p', { class:'serif muted gp', text:an.fix.secondary }));
-    box.append(h('p', { class:'fine', text:'This is a best guess from your scores. After you save, the Perfect page starts from it, and you can change it.' }));
-  } else {
-    box.append(gpn('No clear pattern in these scores. Change one thing at a time on your next brew (grind, then temperature, then ratio) and taste it again to see what helps.'));
-  }
-  const nc = an.noteCheck;
-  if (nc && nc.verdict){
-    box.append(h('h3', { style:'margin-top:12px', text:nc.source === 'bag' ? 'Did you taste what the bag promised?' : 'Did you find the notes to expect?' }));
-    box.append(gpn((nc.source === 'bag' ? 'The bag lists ' : 'Coffees like this often show ') + nc.expected.join(', ') + '. You noticed ' + (nc.matched.length ? nc.matched.join(', ') : 'none of them') + '.' + (nc.verdict === 'matched' ? ' That is a match.' : '')));
-    if (an.noteAdvice) box.append(gpn(an.noteAdvice));
-  }
-  an.notes.concat(an.gearNotes).forEach(n => box.append(h('div', { class:'notice', style:'margin-top:10px', text:n })));
-  if (history){
-    const allPast = historyForCoffee(history.objs, app.coffee), diffs = [];
-    ATTRS.forEach(a => {
-      const vals = allPast.map(o => parseFloat(o[a.key])).filter(v => !isNaN(v)), cur = state.scores[a.key];
-      if (vals.length && cur != null){ const d = cur - vals.reduce((x, y) => x + y, 0) / vals.length; if (Math.abs(d) >= 0.5) diffs.push(a.name + ' ' + (d > 0 ? '+' : '−') + Math.abs(d).toFixed(2)); }
-    });
-    if (diffs.length) box.append(h('h3', { style:'margin-top:12px', text:'Compared with your past tastings' }), gpn('Against your own average for this coffee: ' + diffs.join(', ') + '.'));
-    const prev = allPast.filter(o => o.score_kind === c.kind && !isNaN(parseFloat(o.total_score)));
-    if (prev.length){
-      const best = prev.reduce((a, o) => parseFloat(o.total_score) > parseFloat(a.total_score) ? o : a, prev[0]), diff = c.total - parseFloat(best.total_score);
-      box.append(h('h3', { style:'margin-top:12px', text:'Compared with your history' }),
-        gpn('Your best previous score for this coffee is ' + fmt2(parseFloat(best.total_score)) + (best.brew_method ? ' (' + unneutralize(best.brew_method) + ')' : '') + '. This cup is ' + (Math.abs(diff) < 0.005 ? 'the same.' : fmt2(Math.abs(diff)) + (diff > 0 ? ' higher.' : ' lower.'))));
-    }
-  }
-}
-
 /* ---------- save flow ---------- */
 /* the coffee, the brew and the ids: the same for a quick cup and a cupping */
 function baseRow(){
@@ -8208,37 +8187,35 @@ function baseRow(){
   }
   return r;
 }
-/* One row holds a quick part, a cupping part, or both. A cupping is written once all of its cards are scored; a quick cup is written when it has any quick answer or stars. */
+/* One row holds a quick part, a cupping part, or both. A cupping is written once all of its sections are scored or left out; a quick cup is written when it has any quick answer or stars. */
 function buildRow(){
-  const s = state, c = calc(), r = baseRow(), cupped = c.complete;
+  const s = state, r = baseRow(), cv = s.cva, cupped = cv.cur >= 10;
   r.my_rating_stars = s.stars ? String(validStars(s.stars)) : '';
-  if (cupped){
-    ATTRS.forEach(a => { r[a.key] = fmt2(s.scores[a.key]); r['note_' + a.key] = s.notes[a.key] || ''; });
-    r.acidity_intensity = s.intensity.acidity == null ? '' : String(s.intensity.acidity);
-    r.body_intensity = s.intensity.body == null ? '' : String(s.intensity.body);
-    r.clean_cup = String(s.single.clean_cup); r.sweetness = String(s.single.sweetness);
-    r.taint_cups = s.single_defect === 'taint' ? '1' : '0'; r.fault_cups = s.single_defect === 'fault' ? '1' : '0';
-    r.defect_deduction = String(c.ded); r.total_score = fmt2(c.total); r.score_kind = c.kind; r.defect_notes = s.defect_notes;
-    r.aroma_vials = s.vials.join('; '); r.aftertaste_length = s.after_len || ''; r.aroma_kit = (s.kit || []).map(n => n + ' ' + KIT_NAMES[n]).join('; ');
-    ['acidity', 'sweetness', 'bitterness'].forEach(k => { r['cool_' + k] = s.cool[k] || ''; });
-  } else r.score_kind = 'quick';
+  if (cupped) Object.assign(r, cvaRowPart(cv)); else r.score_kind = 'quick';
   r.mode = cupped ? 'single_cup' : 'quick';
   r.general_notes = s.general_notes;
   ['fragrance_aroma', 'flavor', 'aftertaste', 'acidity', 'body'].forEach(k => { r['words_' + k] = (s.words[k] || []).join('; '); });
+  r.aroma_vials = s.vials.join('; '); r.aroma_kit = (s.kit || []).map(n => n + ' ' + KIT_NAMES[n]).join('; ');   /* the kit is ticked on the Quick cards, so a quick cup keeps it too */
   Object.assign(r, quickRowPart());
   COLUMNS.forEach(k => { if (TEXT_COLUMNS.has(k)) r[k] = neutralize(r[k]); });
   return r;
+}
+function measured(){
+  const b = app.cupBrew, mt = b && b.key ? METHODS.find(x => x.key === b.key) : null;
+  if (!b || !mt) return { ey:null, j:{ strength:null, extraction:null, lines:[] } };
+  const ey = extractionYield(+b.tds, +b.out_g, +b.dose);
+  return { ey, j:ey == null ? { strength:null, extraction:null, lines:[] } : judgeBrew(mt.type, +b.tds, ey) };
 }
 /* How the Taste step opens comes from My setup: Quick only, Quick first (the default) or Cupping first. */
 const tasteChoice = () => app.prefs.taste === 'quickonly' || app.prefs.taste === 'cuppingfirst' ? app.prefs.taste : 'quickfirst';
 const cupAllowed = () => tasteChoice() !== 'quickonly';
 /* Stars are shared by both ways, so they do not count as a quick answer on their own. */
 const quickTouched = () => !!(state.quick.make || Object.keys(state.quick.areas).length || state.quick.liked.length || state.quick.notLiked.length);
-const cupTouched = () => ATTRS.some(a => state.scores[a.key] != null) || state.single.clean_cup != null || state.single.sweetness != null;
+const cupTouched = () => cvaTouched();
 /* The switch is big and always shows both choices, each with one line, so nobody misses that there is another way to taste. */
 function tasteSwitch(){
   if (!cupAllowed()) return null;
-  const opts = [{ v:'quick', t:'Quick', s:'How did you like it?' }, { v:'cup', t:'Cupping', s:'Score it step by step, like a professional cupper.' }];
+  const opts = [{ v:'quick', t:'Quick', s:CVA_LINES.quick }, { v:'cup', t:'Cupping', s:CVA_LINES.cup }];
   const btns = opts.map(o => h('button', { type:'button', class:'way', 'aria-pressed':String(state.way === o.v), onclick:() => { if (state.way === o.v) return; state.way = o.v; scheduleDraft(); render(); } }, h('b', { text:o.t }), h('span', { text:o.s })));
   return h('div', { class:'waybox' }, h('p', { class:'fine', style:'margin:0 0 6px', text:'There are two ways to taste this coffee. You can switch at any time.' }), h('div', { class:'waybar', role:'group', 'aria-label':'How do you want to taste?' }, btns));
 }
@@ -8348,7 +8325,7 @@ function quickRowPart(){
   return r;
 }
 /* The columns that belong to the cupping part of a row. Adding cupping scores fills these and leaves the rest of the row (the coffee, the brew and the quick answers) as it was. */
-const CUPPING_COLUMNS = ATTRS.map(a => a.key).concat(ATTRS.map(a => 'note_' + a.key), ['acidity_intensity', 'body_intensity', 'clean_cup', 'sweetness', 'taint_cups', 'fault_cups', 'defect_deduction', 'total_score', 'score_kind', 'defect_notes', 'aroma_vials', 'aftertaste_length', 'aroma_kit', 'cool_acidity', 'cool_sweetness', 'cool_bitterness']);
+const CUPPING_COLUMNS = CVA_COLUMNS;
 const cuppedIds = new Set();   // tastings that got their cupping scores here, so one is counted once
 /* a saved tasting can take cupping scores when cupping is on, it has none yet, and its row is in the loaded history */
 const canAddCupping = o => !!(o && history && cupAllowed() && !hasCupping(o) && history.objs.some(x => x.id === o.id));
@@ -8377,30 +8354,129 @@ function startCupFor(o){
   ['fragrance_aroma', 'flavor', 'aftertaste', 'acidity', 'body'].forEach(k => { state.words[k] = splitList(unneutralize(o['words_' + k] || '')).slice(0, 30); });
   recipeVia = ''; go('cup');
 }
+/* What the cup says about the next brew: the one thing the person tapped (if anything), plus what a measurement or the brew time says. No sliders and no word lists feed it. */
+function cvaAnalysis(){
+  const ex = expectFor(app.coffee, new Date()), b = app.cupBrew, meth = b && b.key ? METHODS.find(x => x.key === b.key) : null, m = measured();
+  return analyzeCupping({ scores:{}, intensity:{}, words:{}, symptom:state.cva.sym, expectedBars:[], stepUm:meth ? Math.round((meth.um[1] - meth.um[0]) / 5 / 10) * 10 : 60, plainGrind:level() === 'new',
+    roast:ex.profile.roast, methodType:meth ? meth.type : '', agit:b ? b.agit : '', days:ex.profile.days,
+    timeRatio:(b && b.actual_s && b.time_s) ? b.actual_s / b.time_s : null, timeNote:(b && b.actual_s && b.time_s) ? fmtTime(b.actual_s) + ' vs a ' + fmtTime(b.time_s) + ' target' : '',
+    ey:m.ey, strength:m.j.strength, grinder:b ? b.grinder_type : '', water:b ? b.water_type : '', alk:b ? b.water_alk : '', gh:b ? b.water_gh : '', deviated:!!(b && String(b.pour_notes || '').trim()), expectedNotes:[], expectedSource:'typical' });
+}
+/* what the Perfect page starts from when the person moves on */
+function cvaHandOff(){
+  const an = cvaAnalysis(); app.lastSymptom = an.symptom || ''; app.lastReasons = an.reasons.slice(0, 4); app.lastKind = CVA_KIND; app.lastTotal = cvaTotal(state.cva); scheduleDraft();
+}
+/* the best earlier score of this coffee on the same scale */
+function cvaBest(){
+  if (!history) return null;
+  const prev = historyForCoffee(history.objs, app.coffee).filter(o => o.score_kind === CVA_KIND && !isNaN(parseFloat(o.total_score)));
+  return prev.length ? prev.reduce((a, o) => parseFloat(o.total_score) > parseFloat(a.total_score) ? o : a, prev[0]) : null;
+}
+function cvaFixBlock(){
+  const c = state.cva, an = cvaAnalysis(), gpn = t => h('p', { class:'cva-hint', text:t });
+  const chips = h('div', { class:'cva-chips', role:'group', 'aria-label':CVA_LINES.fixAsk }, SYMPTOMS.map(s => h('button', { type:'button', id:'cva-sym-' + s.v, 'aria-pressed':String(c.sym === s.v), text:s.label,
+    onclick:() => { c.sym = c.sym === s.v ? '' : s.v; cvaChanged('cva-sym-' + s.v); } })));
+  const kids = [h('span', { class:'cva-lbl', text:CVA_LINES.fixAsk }), gpn(CVA_LINES.fixHint), chips];
+  if (an.symptom){
+    kids.push(h('p', { class:'cva-q', text:an.symptom === 'great' ? 'Looks like a keeper' : 'Try this next' }));
+    an.reasons.forEach(r => kids.push(gpn(r)));
+    if (an.fix){ kids.push(h('p', { class:'cva-q', style:'font-weight:500', text:an.fix.primary })); if (an.fix.why) kids.push(gpn(an.fix.why)); if (an.fix.secondary) kids.push(gpn(an.fix.secondary)); }
+    an.notes.concat(an.gearNotes).forEach(n => kids.push(h('div', { class:'notice', text:n })));
+  }
+  return h('div', { class:'cva-fix' }, kids);
+}
+function cvaReviewBody(){
+  const c = state.cva, t = cvaTotal(c), bad = cvaDefective(c), best = cvaBest(), kids = [];
+  if (c.cool.skipped) kids.push(h('p', { class:'cva-warn' }, CVA_LINES.skippedReview + ' ', h('button', { type:'button', class:'btn link', id:'cva-back-retaste', text:'Go back and retaste', onclick:() => { c.open = 8; cvaChanged('cva-cool-start'); cvaScrollOpen(); } })));
+  else if (!c.cool.done) kids.push(h('p', { class:'cva-warn', text:CVA_LINES.coolOpen }));
+  kids.push(h('table', { class:'cva-sum' }, h('tbody', null, CVA_SECTIONS.map((s, i) => h('tr', null, h('td', { text:s.name }), h('td', { text:cvaPair(i).replace('→', ' → ') || 'not scored' }))),
+    bad ? h('tr', null, h('td', { text:'Defective cup (' + c.dtype + '), −4' }), h('td', { text:'−4' })) : null)));
+  if (t == null) kids.push(h('p', { class:'cva-warn', text:CVA_LINES.noTotal }));
+  else kids.push(h('div', { class:'cva-total' }, h('span', { class:'cva-lbl', text:'Cupping score' }), h('b', { text:fmt2(t) })),
+    h('p', { class:'cva-note', text:(c.cool.done && !c.cool.skipped ? 'Uses your final impression where you retasted. ' : '') + '0.65625 × the eight scores + 52.75' + (bad ? ' − 4' : '') + ', to the nearest 0.25. All 9s give 100 and all 5s give 79. Compared with the SCA form this is one cup, so uniformity is not judged.' }));
+  if (best && t != null){ const d = t - parseFloat(best.total_score); kids.push(h('p', { class:'cva-note', text:'Your best earlier score for this coffee is ' + fmt2(parseFloat(best.total_score)) + (best.brew_method ? ' (' + unneutralize(best.brew_method) + ')' : '') + '. This cup is ' + (Math.abs(d) < 0.005 ? 'the same.' : fmt2(Math.abs(d)) + (d > 0 ? ' higher.' : ' lower.')) })); }
+  kids.push(cvaFixBlock());
+  return h('div', { class:'cva-body' }, kids);
+}
+function cvaHelpBar(){
+  const opts = [['new', 'New'], ['comfortable', 'Comfortable'], ['expert', 'Expert']];
+  const bar = h('div', { class:'seg', role:'group', 'aria-label':'How much the cupping explains' });
+  const paint = () => [...bar.children].forEach((b, i) => b.setAttribute('aria-pressed', String(cvaHelp() === opts[i][0])));
+  opts.forEach(o => bar.append(h('button', { type:'button', text:o[1], 'aria-pressed':'false', onclick:() => { app.prefs.cupHelp = o[0]; paint(); cvaChanged(); } })));
+  paint();
+  return h('div', { class:'cva-help' }, h('span', { class:'cva-lbl', text:'Cupping help (how much each section explains)' }), bar);
+}
+/* below the rail, shown once the flow is finished: your own rating, notes and the save buttons */
+function cvaFinish(){
+  const gn = h('textarea', { id:'general_notes_box', placeholder:'About this coffee or this session', value:state.general_notes || '', oninput:e => { state.general_notes = e.target.value; scheduleDraft(); } });
+  gn.style.cssText = 'font-size:16px;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);width:100%;min-height:76px';
+  const msg = h('p', { class:'msg', id:'msg', role:'status' });
+  let armed = false, tmr = null;
+  const clearBtn = h('button', { type:'button', class:'btn danger', text:'Clear scores' });
+  clearBtn.addEventListener('click', () => {
+    if (!armed){ armed = true; clearBtn.textContent = 'Tap again to clear'; tmr = setTimeout(() => { armed = false; clearBtn.textContent = 'Clear scores'; }, 4000); return; }
+    clearTimeout(tmr); state = newCup(); prepCupEntry(); render();
+  });
+  const box = h('div', null, h('h2', { text:'How would you rate this coffee?' }), h('div', { class:'card' },
+    h('p', { class:'fine', style:'margin:0 0 4px', text:'This is how much you liked it, which is a different question from the cupping score above. It is optional.' }),
+    starRating(() => state.stars, v => { state.stars = v; scheduleDraft(); }, { label:'Your rating of this coffee' })),
+  h('h2', { text:'Anything else' }), h('div', { class:'card' }, h('label', { for:'general_notes_box', class:'flabel', style:'display:block;margin-bottom:6px', text:'General notes (optional)' }), gn),
+  h('div', { class:'actions' }, clearBtn, h('button', { type:'button', class:'btn primary', id:'cva-save', text:'Save tasting', onclick:onSaveClick })), msg,
+  h('p', { class:'fine', text:'Your in-progress form is kept in this browser until you save or clear it. Your saved history lives in the CSV file you download.' }));
+  box.hidden = state.cva.cur < 10; cvaFinishBox = box;
+  return box;
+}
+/* the bar under the title: the score once all eight sections have one */
+function updateBar(){
+  if (app.screen !== 'cup') return;
+  const t = cvaTotal(state.cva), n = cvaScored();
+  $('of').textContent = '/ 100'; $('scorebar').classList.add('home');
+  $('num').textContent = t == null ? '—' : fmtScore(t, CVA_KIND); $('fill').style.width = t == null ? '0' : Math.min(100, t) + '%';
+  $('status').textContent = t == null ? n + ' of 8 scored' : 'SCA affective form, one cup';
+}
+function screenCva(m){
+  m.append(h('h2', { text:'Cupping' }), h('p', { class:'cva-lines', text:CVA_LINES.cup }), cvaHelpBar());
+  cvaProg = h('div', { class:'cva-prog' }); cvaBox = h('div', { class:'cva-rail' });
+  m.append(cvaProg, cvaBox, cvaFinish());
+  refreshers.push(() => { if (state.cva.open === 10) cvaPaint(); });   /* a TDS or brew time typed above changes what the review says about the next brew */
+  cvaPaint();
+}
+/* rows for the Scores card, read from the saved columns (pure/12-cva.js cvaRead), so a row with something missing simply leaves that line out */
+function cvaDetailRows(o){
+  const r = cvaRead(o), rows = [];
+  r.sections.forEach(s => {
+    if (s.final == null) return;
+    const first = s.first != null && s.first !== s.final ? s.first + ' → ' : '';
+    rows.push([s.name, first + s.final + ' · ' + CVA_WORDS[s.final - 1].toLowerCase()]);
+  });
+  if (rows.length) rows.push(['Retasted as it cooled', r.retasted ? 'Yes, the final scores count' : 'No, the first impressions count']);
+  if (r.defect) rows.push(['Defective cup', r.defect + ', −4 points']);
+  rows.push(['Cupping score', r.total == null ? 'not complete' : fmt2(r.total)]);
+  return rows;
+}
+function cvaDetailNotes(o){
+  const out = [];
+  CVA_SECTIONS.forEach(s => { const t = unneutralize(o[s.noteCol] || ''); if (t) out.push([s.name, t]); });
+  return out;
+}
 const sheetEl = $('sheet'), overlay = $('overlay');
 let sheet = { step:'ask', existing:null, csv:'', error:'', info:'' };
 function setMsg(t){ const e = $('msg'); if (e) e.textContent = t || ''; }
-/* "Still to score: Flavor, Sweetness." with each name a link that takes you to its card */
-function missingMsg(c){
-  const e = $('msg'); if (!e) return;
-  e.textContent = 'Still to score: ';
-  c.missing.forEach((m, i) => { if (i) e.append(', '); e.append(h('button', { type:'button', class:'linkbtn', text:m.name, onclick:() => jumpToCard(m.id) })); });
-  e.append('.');
-}
 function onSaveClick(){
   setMsg('');
-  const c = calc();
   if (state.way === 'quick'){
     const why = quickMissing(); if (why){ setMsg(why); return; }
     app.lastSymptom = ''; app.lastReasons = []; scheduleDraft();
+    if (otherWayAsk()){ sheet = { step:'otherWay', ask:otherWayAsk() }; openSheet(); return; }
     sheet = { step:'ask', existing:null, csv:'', error:'', info:'' }; openSheet(); return;
   }
-  if (!c.complete){ missingMsg(c); return; }
+  if (state.cva.cur < 10){ setMsg('Finish the cupping first: open the next row above.'); return; }
   if (app.cupFor){   /* cupping scores for a tasting that is already saved: they go into its row, not into a new one */
     const res = commitCupping(app.cupFor, buildRow()); app.cupFor = '';
     if (res.changed){ resetAll(); go('history'); return; }
   }
-  const an = cupAnalysis(); app.lastSymptom = an.symptom || ''; app.lastReasons = an.reasons.slice(0, 4); scheduleDraft();
+  if (otherWayAsk()){ sheet = { step:'otherWay', ask:otherWayAsk() }; openSheet(); return; }
+  cvaHandOff();
   sheet = { step:'ask', existing:null, csv:'', error:'', info:'' }; openSheet();
 }
 /* A file was chosen to add this cupping to. If it is a different file from the loaded history and lacks cuppings kept only in this browser, saving into it would drop them from the browser, so the person is asked first (69-sheet-keep-first.js). `cups` are those cuppings once the person has said to bring them along. */
@@ -8546,6 +8622,7 @@ function renderSheetBody(){
   const closeRow = label => h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:label || 'Cancel', onclick:closeSheet }));
   if (sheet.step === 'setup'){ renderSetupSheet(title); return; }   /* My setup (63-sheet-setup.js) */
   if (sheet.step === 'setupFound'){ renderSetupFoundSheet(title); return; }
+  if (sheet.step === 'otherWay'){ renderOtherWaySheet(title); return; }   /* Cup this one too? / Rate it too?, before saving (69-sheet-other-way.js) */
   if (sheet.step === 'keepFirst'){ renderKeepFirstSheet(title); return; }   /* cuppings kept only in this browser, before a file replaces them (69-sheet-keep-first.js) */
   if (sheet.step === 'menu'){
     title.textContent = 'Menu';
@@ -8703,12 +8780,6 @@ function renderSheetBody(){
       tabBtns = tabs.map(t => h('button', { type:'button', 'aria-pressed':'false', onclick:() => { sheet.tab = t[0]; sheet.cat = -1; sheet.grp = -1; sheet.q = ''; search.value = ''; upd(); } }));
       sheetEl.append(h('div', { class:'seg', role:'group', 'aria-label':'Smell words or aroma kit' }, tabBtns));
     }
-    let lenBtns = null;
-    if (key === 'aftertaste'){
-      const opts = [['short', 'Short'], ['medium', 'Medium'], ['long', 'Long']];
-      lenBtns = opts.map(o => h('button', { type:'button', 'aria-pressed':'false', text:o[1], onclick:() => { state.after_len = state.after_len === o[0] ? '' : o[0]; applyKeywords('aftertaste'); changed(); upd(); } }));
-      sheetEl.append(h('div', { class:'lenrow' }, h('span', { class:'lenlabel', text:'How long does the flavor stay?' }), h('div', { class:'seg', role:'group', 'aria-label':'Aftertaste length' }, lenBtns)));
-    }
     const search = h('input', { type:'search', class:'plain', placeholder:'Search for a word', 'aria-label':'Search words', style:'margin-top:10px' });
     const famRow = h('div', { class:'chips', style:'margin-top:10px' });
     const picked = h('div', { class:'pickedbox' }), wrap = h('div', { class:'wheelwrap' }), panel = h('div', { class:'wpanel' });
@@ -8720,12 +8791,11 @@ function renderSheetBody(){
     const isKit = () => key === 'fragrance_aroma' && sheet.tab === 'kit';
     const data = () => isKit() ? KIT_WHEEL : cfg.data;
     const list = () => isKit() ? state.kit : state.words[key];
-    const toggle = id => { const L = list(), i = L.indexOf(id); if (i >= 0) L.splice(i, 1); else L.push(id); applyKeywords(key); changed(); upd(); };
+    const toggle = id => { const L = list(), i = L.indexOf(id); if (i >= 0) L.splice(i, 1); else L.push(id); changed(); upd(); };
     const itemId = it => isKit() ? it.n : it, itemText = it => isKit() ? it.n + ' · ' + it.name : it;
     function upd(){
       const D = data(), L = list();
       if (tabBtns) tabBtns.forEach((b, i) => { const isK = i === 1; b.setAttribute('aria-pressed', String(isK === isKit())); b.textContent = (isK ? 'Aroma kit' : 'Smell words') + ((isK ? state.kit.length : state.words[key].length) ? ' (' + (isK ? state.kit.length : state.words[key].length) + ' picked)' : ''); });
-      if (lenBtns) lenBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(state.after_len === ['short', 'medium', 'long'][i])));
       customRow.style.display = isKit() ? 'none' : 'flex';
       foot.textContent = isKit() ? KIT_CREDIT : "This is NeuroBrew's own guide. It is not the official SCA / World Coffee Research Coffee Taster's Flavor Wheel, which is their copyrighted work. The official wheel is sold at sca.coffee, and the free WCR Sensory Lexicon is at worldcoffeeresearch.org/resources/sensory-lexicon.";
       picked.textContent = '';
@@ -8761,7 +8831,7 @@ function renderSheetBody(){
     search.addEventListener('input', () => { sheet.q = search.value; upd(); });
     wrap.addEventListener('click', e => hit(e.target));
     wrap.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); hit(e.target); } });
-    const addOwn = () => { const w = custom.value.trim().toLowerCase().slice(0, 30); if (!w) return; if (!state.words[key].includes(w)){ state.words[key].push(w); applyKeywords(key); changed(); } custom.value = ''; upd(); };
+    const addOwn = () => { const w = custom.value.trim().toLowerCase().slice(0, 30); if (!w) return; if (!state.words[key].includes(w)){ state.words[key].push(w); changed(); } custom.value = ''; upd(); };
     addBtn.addEventListener('click', addOwn); custom.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); addOwn(); } });
     upd();
     return;
@@ -9155,8 +9225,6 @@ function renderSetupSheet(title){
     ...sec('Guided brew timer'),
     setupSeg('Sound', [{ text:'Sound off', value:'off' }, { text:'Beep', value:'chime' }, { text:'Voice', value:'voice' }], () => p.sound, v => { p.sound = v; }),
     setupSeg('Guidance', [{ text:'Guide me', value:'guide' }, { text:'Key steps only', value:'steps' }], () => p.coach, v => { p.coach = v; }),
-    ...sec('Taste cards'),
-    setupSeg('Taste cards', [{ text:'Compact', value:'compact' }, { text:'Full', value:'full' }], () => p.cupView || 'compact', v => { p.cupView = v; }),
     ...sec('Tasting', 'How the Taste step opens.'),
     setupSeg('Tasting', TASTE_CHOICES.map(t => ({ text:t.label, value:t.v })), () => p.taste || '', v => { p.taste = v; }),
     h('p', { class:'fine', style:'margin:4px 0 0', text:({ quickonly:'Cupping is hidden. Cups you already scored still show.', '':'Quick opens first. Cupping is one tap away.', cuppingfirst:'Cupping opens first. Quick is one tap away.' })[p.taste || ''] }),
@@ -9273,11 +9341,9 @@ function keepOption(){
    (opened from its saved row, the same way Your cuppings opens it), or just carry on. */
 function afterSaveActions(){
   const rows = h('div', { style:'display:flex;flex-direction:column;gap:10px;margin-top:14px' }), row = sheet.savedRow;
-  const found = row && history ? history.objs.find(x => x.id === row.id) : null;
   const canDial = !!(row && hasCupping(row) && trailMethod(row));   /* a quick cup has no scores for Perfect to work from */
-  if (found && canAddCupping(found)) rows.append(h('button', { type:'button', class:'btn primary', id:'cupTooBtn', text:'Want to cup this one too?', onclick:() => { closeSheet(); startCupFor(found); } }));
   if (canDial) rows.append(h('button', { type:'button', class:'btn primary', text:'Perfect the next brew', onclick:() => { closeSheet(); dialFromRow(row, 'start'); } }));
-  rows.append(h('button', { type:'button', class:'btn' + (canDial || (found && canAddCupping(found)) ? '' : ' primary'), text:'Start fresh with a new coffee', onclick:() => closeSheet() }));
+  rows.append(h('button', { type:'button', class:'btn' + (canDial ? '' : ' primary'), text:'Start fresh with a new coffee', onclick:() => closeSheet() }));
   rows.append(h('button', { type:'button', class:'btn link', text:'Open Your tastings', onclick:() => { closeSheet(); go('history'); } }));
   return rows;
 }
@@ -9312,7 +9378,7 @@ let dialBasePick = '';    /* 'best' or 'last': which earlier try the next brew s
 let dialTrailOpen = false;   /* whether the "Your tries" row is open, kept across a redraw (keeping a best brew redraws the page) */
 /* the cup that was just scored but not saved yet, written as a saved row, so the trail already counts it */
 function dialUnsavedRow(){
-  try { if (app.cupBrew && !app.cupBrew.machine && calc().complete) return buildRow(); } catch(e){}
+  try { if (app.cupBrew && !app.cupBrew.machine && state.cva.cur >= 10 && cvaTotal(state.cva) != null) return buildRow(); } catch(e){}
   return null;
 }
 /* the trail for the method being perfected: the one you chose when you opened it, else the one you just brewed */
@@ -9322,7 +9388,7 @@ function dialTrailNow(){
   const ex = dialUnsavedRow();
   return dialTrail(history ? history.objs : [], app.coffee, key, new Date(), ex ? [ex] : []);
 }
-const dialSigned = (d, kind) => (d > 0 ? '+' : d < 0 ? '−' : '±') + (kind === 'sca_5cup' ? Math.abs(d).toFixed(2) : Math.abs(d).toFixed(1));
+const dialSigned = (d, kind) => (d > 0 ? '+' : d < 0 ? '−' : '±') + ((kind === 'sca_5cup' || kind === 'cva_affective') ? Math.abs(d).toFixed(2) : Math.abs(d).toFixed(1));
 /* the settings of one try in one line. At the New level the grind is in words, as the Brew screen says it; the other levels keep the size in µm. */
 function dialRecipeBits(a, methodKey){
   const meth = METHODS.find(x => x.key === methodKey), look = a.um != null ? grindLook(meth, a.um) : null;
@@ -9556,7 +9622,7 @@ function dialStartLine(t, newBag, pickBase, repaint){
     box.append(h('div', { class:'dialstart-top' }, h('p', { text:line }),
       canChange ? h('button', { type:'button', class:'btn link', id:'changeStartBtn', 'aria-expanded':String(open), text:open ? 'Hide' : 'Change', onclick:() => { open = !open; draw(); } }) : null));
     if (canChange && open){
-      const th = t.threshold.toFixed(2).replace(/\.?0+$/, ''), gap = Math.abs(t.best.total - t.last.total).toFixed(t.kind === 'sca_5cup' ? 2 : 1);
+      const th = t.threshold.toFixed(2).replace(/\.?0+$/, ''), gap = Math.abs(t.best.total - t.last.total).toFixed(t.kind === 'sca_5cup' || t.kind === 'cva_affective' ? 2 : 1);
       const g2 = h('div', { class:'choices stack', role:'group', 'aria-label':'Start the next brew from' });
       [['best', t.best, 'best'], ['last', t.last, 'latest']].forEach(([v, a, nm]) => g2.append(h('button', { type:'button', class:'choice', 'aria-pressed':String(dialBasePick === v), onclick:() => { dialBasePick = v; open = false; draw(); repaint(); } },
         h('b', { text:'Try ' + a.n + ' (' + nm + ', ' + fmtScore(a.total, a.kind) + ')' }), h('span', { class:'fine', style:'display:block;margin-top:2px', text:dialRecipeBits(a, t.methodKey) }))));
@@ -9938,6 +10004,25 @@ function renderKeepFirstSheet(title){
     h('button', { type:'button', class:'btn link', id:'keepFirstBack', text:save ? 'Back' : 'Cancel',
       onclick:() => { if (!save){ closeSheet(); return; } delete sheet.target; sheet.keep = null; sheet.step = 'ask'; renderSheet(); } }));
 }
+/* Which way, if any, to offer before saving. Quick is saved with no cupping: ask about cupping, unless cupping is switched off (My setup > Tasting > Quick only). Cupping is saved with no quick answer
+   (no stars and no "make it again"): ask about Quick. Nothing is asked after a No, or when cupping scores are being added to a tasting that is already saved. */
+function otherWayAsk(){
+  if (app.cupFor || state.otherNo) return '';
+  if (state.way === 'quick') return cupAllowed() && state.cva.cur < 10 ? 'cup' : '';
+  return quickMissing() ? 'quick' : '';
+}
+function renderOtherWaySheet(title){
+  const cup = sheet.ask === 'cup', stack = h('div', { style:'display:flex;flex-direction:column;gap:10px;margin-top:14px' });
+  title.textContent = cup ? 'Cup this one too?' : 'Rate how much you liked it too?';
+  sheetEl.append(h('p', { style:'margin-top:0', text:cup
+      ? 'Quick says whether you liked it. Cupping scores how good it is, one section at a time, the way a cupper does. It takes a few minutes and is saved in the same row.'
+      : 'Cupping scores how good it is. Quick says whether you liked it: stars and whether you would make it again. It takes a few taps and is saved in the same row.' }),
+    h('p', { class:'fine', text:'Tap No to save it as it is.' }), stack);
+  stack.append(h('button', { type:'button', class:'btn primary', id:'otherYes', text:cup ? 'Yes, cup it' : 'Yes, rate it',
+      onclick:() => { closeSheet(); state.way = cup ? 'cup' : 'quick'; scheduleDraft(); render(); } }),
+    h('button', { type:'button', class:'btn', id:'otherNo', text:'No, save it as it is',
+      onclick:() => { state.otherNo = true; sheet = { step:'ask', existing:null, csv:'', error:'', info:'' }; renderSheet(); } }));
+}
 function historyCard(){
   const card = h('div', { class:'card' });
   if (history){
@@ -10097,7 +10182,7 @@ function screenDetail(m){
   m.append(h('button', { type:'button', class:'btn small', id:'editCoffeeBtn', style:'margin:0 0 12px', text:'Edit coffee details', onclick:() => openEditCoffee(o) }));
   const way = cupWay(o);
   m.append(way === 'quick' ? h('div', { class:'dscore' }, h('b', { text:'Quick' }), h('span', { text:'a quick tasting, with no cupping scores' })) : h('div', { class:'dscore' }, h('b', { text:isNaN(total) ? '—' : fmt2(total) }),
-    h('span', { text:kind === 'sca_5cup' ? '/ 100 · SCA five-cup score' : kind === 'home_1cup' ? '/ 100 · home score, not an SCA grade' : '/ 100' })));
+    h('span', { text:kind === 'sca_5cup' ? '/ 100 · SCA five-cup score' : kind === CVA_KIND ? '/ 100 · SCA affective form, one cup' : kind === 'home_1cup' ? '/ 100 · home score, not an SCA grade' : '/ 100' })));
   if (o.cupping_date) m.append(h('p', { class:'fine', style:'margin:-6px 0 14px', text:'Tasted on ' + o.cupping_date }));
   m.append(h('div', { class:'card', style:'margin:0 0 14px' }, h('h3', { text:'Your rating' }),
     h('p', { class:'fine', style:'margin:2px 0 0', text:'How much you liked this coffee. It is separate from your scores, and you can change it any time.' }),
@@ -10135,16 +10220,16 @@ function screenDetail(m){
     if (brewKv) m.append(h('div', { class:'card' }, h('h3', { text:'How it was made' }), brewKv));
   }
 
-  const sc = [];
-  ATTRS.forEach(a => {
+  const cva = kind === CVA_KIND, sc = cva ? cvaDetailRows(o) : [];
+  if (!cva) ATTRS.forEach(a => {
     const v = parseFloat(o[a.key]); if (isNaN(v)) return;
     const inten = a.intensity && o[a.key + '_intensity'] ? ' · intensity ' + o[a.key + '_intensity'] + '/5' : '';
     sc.push([a.name, fmt2(v) + ' · ' + qualityLabel(v) + inten]);
   });
-  ['uniformity', 'clean_cup', 'sweetness'].forEach(k => { if (o[k] !== '' && o[k] != null) sc.push([k === 'clean_cup' ? 'Clean cup' : k.charAt(0).toUpperCase() + k.slice(1), o[k] + ' / 10']); });
+  if (!cva) ['uniformity', 'clean_cup', 'sweetness'].forEach(k => { if (o[k] !== '' && o[k] != null) sc.push([k === 'clean_cup' ? 'Clean cup' : k.charAt(0).toUpperCase() + k.slice(1), o[k] + ' / 10']); });
   const ded = parseFloat(o.defect_deduction);
-  if (ded > 0) sc.push(['Defects', '−' + ded + ' points (taint cups ' + (o.taint_cups || 0) + ', fault cups ' + (o.fault_cups || 0) + ')']);
-  sc.push(['Total', isNaN(total) ? '' : fmt2(total)]);
+  if (!cva && ded > 0) sc.push(['Defects', '−' + ded + ' points (taint cups ' + (o.taint_cups || 0) + ', fault cups ' + (o.fault_cups || 0) + ')']);
+  if (!cva) sc.push(['Total', isNaN(total) ? '' : fmt2(total)]);
   const scKv = kvList(sc);
   if (scKv) m.append(h('div', { class:'card' }, h('h3', { text:'Scores' }), scKv));
 
@@ -10155,9 +10240,9 @@ function screenDetail(m){
   const vials = splitList(unneutralize(o.aroma_vials || ''));
   if (vials.length) m.append(h('div', { class:'card' }, h('h3', { text:'Aroma notes' }), h('div', { class:'chips', style:'margin-top:8px' }, vials.map(t => h('span', { class:'pill static', text:t })))));
 
-  const notes = [];
-  ATTRS.forEach(a => { const t = g('note_' + a.key); if (t) notes.push([a.name, t]); });
-  if (g('defect_notes')) notes.push(['Defects', g('defect_notes')]);
+  const notes = cva ? cvaDetailNotes(o) : [];
+  if (!cva) ATTRS.forEach(a => { const t = g('note_' + a.key); if (t) notes.push([a.name, t]); });
+  if (!cva && g('defect_notes')) notes.push(['Defects', g('defect_notes')]);
   if (g('general_notes')) notes.push(['General', g('general_notes')]);
   if (notes.length) m.append(h('div', { class:'card' }, h('h3', { text:'Your notes' }), notes.map(n => h('p', { class:'serif', style:'margin:8px 0 0;font-size:16.5px' }, h('b', { text:n[0] + ': ' }), n[1]))));
 
