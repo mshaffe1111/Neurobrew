@@ -1,0 +1,14 @@
+NeuroBrew bag-photo reader: third-party files in this folder
+
+All of these run in the visitor's own browser. Nothing is sent anywhere.
+
+tesseract-core-simd-lstm.js, tesseract-core-simd-lstm.wasm
+  Tesseract OCR compiled to WebAssembly (tesseract.js-core, version 7.0.0, from https://github.com/naptha/tesseract.js-core).
+  Licence: Apache License 2.0 (LICENSE-tesseract-core.txt). It contains Tesseract (Apache 2.0) and Leptonica (BSD-2-Clause),
+  libpng, libjpeg, libtiff, libwebp, giflib and zlib (each under its own permissive licence, see the project's third_party folder).
+
+eng.traineddata.gz
+  English language model "tessdata_fast" (https://github.com/tesseract-ocr/tessdata_fast), gzip-compressed. Licence: Apache License 2.0.
+
+reader-worker.js
+  Written for NeuroBrew. It loads the files above and reads text from images.

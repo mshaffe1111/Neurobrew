@@ -21,7 +21,7 @@
   --bg:#FBFAF7; --surface:#FFFFFF; --ink:#0D3B3A; --muted:#4A6664; --line:#E2DDCF;
   --accent:#9A5309; --accent-ink:#FFFFFF; --leaf:#12705E; --leaf-ink:#FFFFFF;
   --primary:#F2A93B; --primary-ink:#0D3B3A; --mint:#1FA68A;
-  --label:#6B2D7E; --track:#E7E2D3; --warn:#8A4B00; --focus:#1F6FEB; --tint:#F1EDE0; --gold:#F2A93B; --edge:#6B8C88;   /* --label: the colour of every field name, plum on purpose: no other thing on the page uses it, so the fields to fill in stand out (UX audit item 42). To change it, change this one value in each theme. --edge: the outline of a button, 3.5:1 on the page; --line stays for dividers */
+  --label:#6B2D7E; --track:#E7E2D3; --warn:#8A4B00; --alert:#B3261E; --alert-bg:#FDECEA; --focus:#1F6FEB; --tint:#F1EDE0; --gold:#F2A93B; --edge:#6B8C88;   /* --label: the colour of every field name, plum on purpose: no other thing on the page uses it, so the fields to fill in stand out (UX audit item 42). To change it, change this one value in each theme. --edge: the outline of a button, 3.5:1 on the page; --line stays for dividers */
   --r1:#C9A468; --r2:#A97B4B; --r3:#865730; --r4:#643C22; --r5:#3E2516;
   --ui:"Poppins", ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --txt:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -35,7 +35,7 @@
     --bg:#0D3B3A; --surface:#134745; --ink:#F4EEE3; --muted:#A9C9C1; --line:#27625D;
     --accent:#F2A93B; --accent-ink:#0D3B3A; --leaf:#7FE0C3; --leaf-ink:#0D3B3A;
     --primary:#F2A93B; --primary-ink:#0D3B3A; --mint:#7FE0C3;
-    --label:#E6B8F2; --track:#1D5551; --warn:#F2C27A; --focus:#8CC4FF; --tint:#195049; --gold:#F2A93B; --edge:#5FA89C;
+    --label:#E6B8F2; --track:#1D5551; --warn:#F2C27A; --alert:#FFB4AB; --alert-bg:#4A1F1C; --focus:#8CC4FF; --tint:#195049; --gold:#F2A93B; --edge:#5FA89C;
   }
 }
 :root[data-theme="dark"]{
@@ -43,7 +43,7 @@
   --bg:#0D3B3A; --surface:#134745; --ink:#F4EEE3; --muted:#A9C9C1; --line:#27625D;
   --accent:#F2A93B; --accent-ink:#0D3B3A; --leaf:#7FE0C3; --leaf-ink:#0D3B3A;
   --primary:#F2A93B; --primary-ink:#0D3B3A; --mint:#7FE0C3;
-  --label:#E6B8F2; --track:#1D5551; --warn:#F2C27A; --focus:#8CC4FF; --tint:#195049; --gold:#F2A93B; --edge:#5FA89C;
+  --label:#E6B8F2; --track:#1D5551; --warn:#F2C27A; --alert:#FFB4AB; --alert-bg:#4A1F1C; --focus:#8CC4FF; --tint:#195049; --gold:#F2A93B; --edge:#5FA89C;
 }
 html{ scroll-padding-top:calc(env(safe-area-inset-top, 0px) + 60px); background:var(--bg); }
 *,*::before,*::after{ box-sizing:inherit; }
@@ -609,7 +609,6 @@ details.help summary{ color:var(--accent); }
 .menufoot .btn.link{ margin:2px 0 0; min-height:40px; }
 /* links inside a sheet (the listing found by Look up this coffee) and the choices it offers */
 .sheet a{ color:var(--leaf); font-weight:600; text-underline-offset:2px; }
-.sheet .shoppick{ text-align:left; }
 .setuphead{ margin:18px 0 6px; font-size:16px; }
 .setuppair{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 @media (max-width:380px){ .presets{ flex-wrap:wrap; } .presets .choice{ flex:1 1 44%; padding:9px 6px; } }
@@ -743,6 +742,16 @@ details.dialsec[open]{ padding-bottom:14px; }
 .qdetail{ margin-top:8px; }
 .qdetail[hidden]{ display:none; }
 @media (max-width:380px){ .waybar{ grid-template-columns:1fr; } }
+.scanwarn{ border:2px solid var(--alert); background:var(--alert-bg); color:var(--ink); border-radius:10px; padding:10px 12px; margin:10px 0; display:grid; grid-template-columns:28px 1fr; gap:10px; align-items:start; }
+.scanwarn .scanicon{ width:26px; height:26px; border-radius:50%; background:var(--alert); color:var(--bg); font-weight:800; font-size:17px; display:flex; align-items:center; justify-content:center; }
+.scanwarn b{ color:var(--alert); font-size:16px; }
+.scanwarn p{ margin:4px 0 0; font-size:15px; }
+.scanwarn.good{ border-color:var(--leaf); background:var(--surface); }
+.scanwarn.good .scanicon{ background:var(--leaf); color:var(--leaf-ink); }
+.scanwarn.good b{ color:var(--leaf); }
+.scanbar{ height:8px; border-radius:6px; background:var(--track); overflow:hidden; margin:10px 0 6px; }
+.scanbar > i{ display:block; height:100%; background:var(--primary); width:8%; transition:width .4s; }
+@media (prefers-reduced-motion: reduce){ .scanbar > i{ transition:none; } }
 </style>
 </head>
 <body data-screen="start">
@@ -2048,17 +2057,196 @@ function parseScanReply(text){
   if (a < 0 || b <= a) return null;
   try { const o = JSON.parse(t.slice(a, b + 1)); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : null; } catch(e){ return null; }
 }
-/* ---------- what a roaster's shop listing can tell us ----------
-   A Shopify shop publishes its products as JSON (title, tags, a description in HTML). A listing is free text written by the roaster, so nothing here is assumed to be there:
-   a field is filled only when the listing states it, preferably on its own line ("Process: Washed"), and the person checks every line before anything reaches the form.
-   The listing's HTML is turned into plain text and only ever shown as text. A value that could mean two things is left empty and listed as not found. */
-const SHOP_LABELS = {
-  origin:['origin', 'country', 'country of origin', 'origin/region', 'origin / region', 'country/region', 'country / region', 'region/country'], region:['region', 'growing region', 'location'],
-  process:['process', 'processing', 'process method', 'processing method'], varietal:['variety', 'varieties', 'varietal', 'varietals', 'cultivar', 'cultivars'],
-  roast:['roast', 'roast level', 'roast profile'], elevation:['elevation', 'altitude', 'growing altitude'],
-  notes:['tasting notes', 'taste notes', 'cupping notes', 'flavor notes', 'flavour notes', 'notes', 'flavor', 'flavour', 'flavors', 'flavours', 'taste', 'in the cup', 'cup']
-};
-const SHOP_STOP = new Set(['coffee', 'coffees', 'whole', 'bean', 'beans', 'ground', 'bag', 'roast', 'roasted', 'roasters', 'roaster', 'the', 'and', 'of', 'a', 'an', 'oz', 'lb', 'lbs', 'g', 'kg']);
+/* ---------- the photo, before reading ---------- */
+/* The longest side we read at. Bigger photos are shrunk (phone photos are 3000 to 4000 pixels, which is slower and no easier to read); smaller ones are left alone. */
+const LABEL_MAX_SIDE = 2400;
+function labelSize(w, h){
+  w = Math.round(+w); h = Math.round(+h);
+  if (!(w > 0 && h > 0)) return { w:0, h:0, scale:1 };
+  const big = Math.max(w, h), scale = big > LABEL_MAX_SIDE ? LABEL_MAX_SIDE / big : 1;
+  return { w:Math.max(1, Math.round(w * scale)), h:Math.max(1, Math.round(h * scale)), scale };
+}
+/* One channel of the picture (gray = bytes, w * h) redrawn as dark ink on white paper, which is what the reader likes best. Each pixel is compared with the average around it (about 40 pixels each way):
+   with light = false, print that is darker than its surroundings becomes ink; with light = true, print that is lighter than its surroundings (white letters on a coloured label) becomes ink.
+   Even areas, glare and slow shadows come out white. Returns a new array of the same size. */
+function labelInk(gray, w, h, light){
+  const out = new Uint8ClampedArray(w * h); if (!(w > 0 && h > 0) || gray.length < w * h) return out;
+  const g = 3, f = 8, sw = Math.ceil(w / f), sh = Math.ceil(h / f);
+  const sum = new Float32Array(sw * sh), cnt = new Float32Array(sw * sh);
+  for (let y = 0; y < h; y++){ const row = (y / f | 0) * sw; for (let x = 0; x < w; x++){ const i = row + (x / f | 0); sum[i] += gray[y * w + x]; cnt[i]++; } }
+  const avg = new Float32Array(sw * sh); for (let i = 0; i < avg.length; i++) avg[i] = sum[i] / (cnt[i] || 1);
+  const R = 5, ii = new Float64Array((sw + 1) * (sh + 1));   /* box blur through a running-total table */
+  for (let y = 0; y < sh; y++){ let run = 0; for (let x = 0; x < sw; x++){ run += avg[y * sw + x]; ii[(y + 1) * (sw + 1) + x + 1] = ii[y * (sw + 1) + x + 1] + run; } }
+  const bg = new Float32Array(sw * sh);
+  for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++){
+    const x0 = Math.max(0, x - R), x1 = Math.min(sw, x + R + 1), y0 = Math.max(0, y - R), y1 = Math.min(sh, y + R + 1);
+    bg[y * sw + x] = (ii[y1 * (sw + 1) + x1] - ii[y0 * (sw + 1) + x1] - ii[y1 * (sw + 1) + x0] + ii[y0 * (sw + 1) + x0]) / ((x1 - x0) * (y1 - y0));
+  }
+  for (let y = 0; y < h; y++){
+    const fy = Math.min(sh - 1, Math.max(0, (y + 0.5) / f - 0.5)), y0 = Math.floor(fy), y1 = Math.min(sh - 1, y0 + 1), ty = fy - y0;
+    for (let x = 0; x < w; x++){
+      const fx = Math.min(sw - 1, Math.max(0, (x + 0.5) / f - 0.5)), x0 = Math.floor(fx), x1 = Math.min(sw - 1, x0 + 1), tx = fx - x0;
+      const b = (bg[y0 * sw + x0] * (1 - tx) + bg[y0 * sw + x1] * tx) * (1 - ty) + (bg[y1 * sw + x0] * (1 - tx) + bg[y1 * sw + x1] * tx) * ty;
+      const d = light ? gray[y * w + x] - b : b - gray[y * w + x];
+      out[y * w + x] = 255 - g * (d - 5);   /* a little difference is just texture, so it stays white */
+    }
+  }
+  return out;
+}
+/* ---------- the rule: never guess ----------
+   Photo text is noisy: letters get swapped, whole lines are lost, and light print on a colour may not come through at all. So every field has its own narrow pattern, and when a pattern does not match cleanly the field stays blank.
+   Several readings of the same photo are given in (each is a block of text); a field is filled when the readings agree. If they disagree, the field stays blank and is flagged. The result has the same shape as the bag scan's, so the same review sheet shows it. */
+const LABEL_EXTRA_VARIETIES = ['catigua', 'catimor', 'sarchimor', 'villa sarchi', 'mundo novo', 'maracaturra', 'obata', 'parainema', 'marsellesa', 'batian', 'ruiru 11', 'tekisic', 'laurina', 'mokka', 'kent', 'icatu', 'tabi', 'lempira', 'h1', 'catucai', 'caturra', 'castillo', 'bourbon', 'typica', 'gesha', 'geisha', 'pacamara', 'sl28', 'sl34', 'heirloom', 'landrace'];
+const LABEL_EXPECTED = [['roaster', 'Roaster'], ['name', 'Coffee name'], ['origin', 'Origin'], ['varietal', 'Varietal'], ['process', 'Process'], ['roast', 'Roast level'], ['elevation', 'Elevation'], ['roast_date', 'Roast date'], ['notes', 'Tasting notes']];
+const LABEL_GENERIC = /^(?:fresh|small|batch|craft|specialty|premium|our|local|your|the|single|origin|artisan|organic|house|whole|bean|ground|a|and|best|great|good|freshly|roasted|handcrafted|quality|gourmet)$/i;
+function labelLinesOf(text){
+  return String(text || '').slice(0, 20000).split(/\r?\n/).map(l => l.replace(/[•·●∙○▪]/g, '•').replace(/[‘’`´]/g, "'").replace(/\s+/g, ' ').trim()).filter(l => /[A-Za-z0-9]/.test(l));
+}
+/* a line with stray marks and one- or two-letter scraps (noise from the photo) cut off both ends */
+function labelCore(line){
+  const t = String(line || '').replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9.]+$/g, '').split(' ');
+  while (t.length > 1 && /^[A-Za-z]{1,2}$/.test(t[0]) && !/^(?:el|la|de|do|st)$/i.test(t[0])) t.shift();
+  while (t.length > 1 && /^[A-Za-z]{1,2}$/.test(t[t.length - 1])) t.pop();
+  return t.join(' ').replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9.]+$/g, '');
+}
+const labelWords = s => String(s || '').trim().split(/\s+/).filter(Boolean);
+const labelTitle = s => String(s || '').toLowerCase().replace(/(^|[\s-])([a-zà-ÿ])/g, (m, a, b) => a + b.toUpperCase());
+/* a known variety named in the text (the app's own variety guides plus a few more that show up on bags) */
+function labelVarietyIn(s){
+  const t = ' ' + norm(s).replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+  return LABEL_EXTRA_VARIETIES.some(v => t.includes(' ' + v + ' ')) || !!varietyFor(s);
+}
+let labelFlavors = null;
+function labelFlavorSet(){
+  if (!labelFlavors){ labelFlavors = new Set(); FLAVOR_WHEEL.forEach(c => c.groups.forEach(g => g[1].forEach(w => labelFlavors.add(norm(w))))); ['honeycrisp', 'maple', 'toast', 'toffee', 'cane sugar', 'brown sugar', 'dates', 'date', 'rose', 'jasmine', 'cardamom', 'nutmeg', 'kiwi', 'asian pear', 'lemon zest', 'white raspberry'].forEach(w => labelFlavors.add(w)); }
+  return labelFlavors;
+}
+/* the separate flavor words in a run of text ("Blackberry, peach, cherry"; "Vanilla • Rose"; "kiwi, and asian pear"); null when anything in it does not look like a flavor word */
+function labelItems(text, strict){
+  const parts = String(text || '').split(/[^A-Za-z '-]+|\sand\s/i).map(p => p.replace(/^\s*and\s+/i, '').replace(/\s+/g, ' ').trim()).filter(p => p.length);
+  if (!parts.length) return null;
+  for (const p of parts){
+    const w = labelWords(p); if (w.length > 3 || p.replace(/[^A-Za-z]/g, '').length < 3 || w.some(x => x.replace(/[^A-Za-z]/g, '').length < 2 && w.length > 1)) return null;
+    if (strict && !w.some(x => labelFlavorSet().has(norm(x))) && !labelFlavorSet().has(norm(p))) return null;
+  }
+  return parts.map(p => p.toLowerCase());
+}
+const LABEL_NOTES_KEY = /(?:tasting notes|taste notes|flavou?r notes|cupping notes|we taste|tastes? like|tastes? of|notes of|in the cup|(?:re)?minds us of|flavou?rs)\s*:?\s*(.*)$/i;
+function labelNotesFrom(lines){
+  const out = [], push = it => { if (it && it.length) out.push(it.join(', ')); };
+  lines.forEach((ln, i) => {
+    const m = LABEL_NOTES_KEY.exec(ln); if (!m) return;
+    let it = m[1].replace(/[^A-Za-z]/g, '').length >= 3 ? labelItems(m[1]) : [];
+    if (!it) return;
+    for (let j = i + 1; j < Math.min(lines.length, i + 3); j++){   /* the words may carry on to the next line or two */
+      const more = /\d/.test(lines[j]) ? null : labelItems(lines[j], true); if (!more) break; it = it.concat(more);
+    }
+    push(it);
+  });
+  /* flavor words with no label in front: lines where every item is a known flavor word, two or more together */
+  let run = [];
+  const flush = () => { const all = run.flat(); if (all.length >= 2) push(all); run = []; };
+  lines.forEach(ln => { const it = /\d/.test(ln) ? null : labelItems(ln, true); if (it && (it.length >= 2 || run.length)) run.push(it); else flush(); });
+  flush();
+  return out;
+}
+const LABEL_MONTHS = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
+function labelDateFrom(lines, today){
+  const out = [], t = today instanceof Date ? today : new Date(), ok = (y, mo, d) => { if (y < 2018 || mo < 1 || mo > 12 || d < 1 || d > 31) return ''; const dt = new Date(Date.UTC(y, mo - 1, d)); if (dt.getUTCMonth() !== mo - 1 || dt > new Date(t.getTime() + 864e5 * 2)) return ''; return y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0'); };
+  lines.forEach((ln, i) => {
+    if (!/roast(?:ed)?(?:\s+on|\s+date)?\s*:?/i.test(ln) || /roasted\s+(?:in|by|and)\b/i.test(ln)) return;
+    const near = [ln, lines[i + 1] || '', lines[i + 2] || ''].join(' ');
+    let m = /\b(20\d\d)-(\d{1,2})-(\d{1,2})\b/.exec(near); if (m){ const v = ok(+m[1], +m[2], +m[3]); if (v) out.push(v); return; }
+    m = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(20\d\d)\b/i.exec(near); if (m){ const v = ok(+m[3], LABEL_MONTHS[m[1].toLowerCase()], +m[2]); if (v) out.push(v); return; }
+    m = /\b(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?,?\s+(20\d\d)\b/i.exec(near); if (m){ const v = ok(+m[3], LABEL_MONTHS[m[2].toLowerCase()], +m[1]); if (v) out.push(v); return; }
+    m = /\b(\d{1,2})[\/.](\d{1,2})[\/.](20\d\d|\d\d)\b/.exec(near);   /* 03/04/26 could be March or April, so only a day above 12 settles it */
+    if (m){ const a = +m[1], b = +m[2], y = m[3].length === 2 ? 2000 + +m[3] : +m[3], v = a > 12 && b <= 12 ? ok(y, b, a) : b > 12 && a <= 12 ? ok(y, a, b) : ''; if (v) out.push(v); }
+  });
+  return out;
+}
+const LABEL_PROC = /\b(w?washed|naturals?|honey|anaerobic|carbonic(?: maceration)?|wet[- ]?hulled|giling basah|pulped natural|infused|semi[- ]?washed)\b/i;
+const LABEL_ROAST = '(?:light[- ]?medium|medium[- ]?light|medium[- ]?dark|dark[- ]?medium|light|medium|dark|full city|city\\+?|french|italian)';
+const LABEL_ROAST_PHRASE = new RegExp('\\b' + LABEL_ROAST + '\\s+roast\\b', 'i'), LABEL_ROAST_VALUE = new RegExp('^roast(?: level| profile)?\\s*[:.]+\\s*(' + LABEL_ROAST + ')$', 'i'), LABEL_ROAST_LABEL = /^roast(?: level| profile)?\s*[:.]*$/i, LABEL_ROAST_ONLY = new RegExp('^' + LABEL_ROAST + '$', 'i');
+const LABEL_ELEV = /(\d[\d,]{2,5})\s*(?:(?:-|–|—|to)\s*(\d[\d,]{2,5})\s*)?(masl|m\.a\.s\.l\.?|msnm|meters?|metres?|ft|feet|fasl|m)\b/i;
+const LABEL_SKIP = /varietal|variety|roasted in|roast|process|altitude|elevation|notes|taste|weight|net wt|region|score|points/i;
+const labelVarietyLine = l => /^(?:varietals?|variety|varieties|cultivar)\b/i.test(l) || (labelWords(l).length <= 3 && labelVarietyIn(l));
+const labelSegs = line => line.split(/\s+[-–—]\s+|\s*[|•*»,]\s*/).map(labelCore).filter(s => s.replace(/[^A-Za-z]/g, '').length >= 3);
+/* Reads the text of one or several passes over a photo. texts: array of strings. opts: { today:Date, knownRoasters:string[] }.
+   Returns what mapScan returns, plus missing (the fields not found) and conflicts (fields where the readings disagreed, left blank). */
+function readLabel(texts, opts){
+  opts = opts || {};
+  const passes = (Array.isArray(texts) ? texts : [texts]).map(labelLinesOf).filter(p => p.length), got = {}, hints = {};
+  const add = (k, v) => { (got[k] = got[k] || []).push(v); };
+  const known = (Array.isArray(opts.knownRoasters) ? opts.knownRoasters : []).map(r => String(r || '').trim()).filter(r => r.length >= 3);
+  passes.forEach(lines => {
+    lines.forEach((ln, i) => {
+      const core = labelCore(ln), nx = lines[i + 1] ? labelCore(lines[i + 1]) : '', segs = labelSegs(ln), many = segs.length >= 2;
+      /* roaster */
+      let m = /^(.{2,26}?)\s+(?:coffee\s+)?roasters?$/i.exec(core);
+      if (m && /^[A-Za-z][A-Za-z '&.-]+$/.test(m[1]) && !labelWords(m[1]).some(w => LABEL_GENERIC.test(w) || /^coffee$/i.test(w)) && labelWords(m[1]).length <= 3) add('roaster', labelTitle(m[1]));
+      m = /\broasted\s+(?:and packed\s+)?by:?\s+([A-Za-z][A-Za-z '&.-]{1,30})/i.exec(ln); if (m && labelWords(m[1]).length <= 4) add('roaster', m[1].trim());
+      known.forEach(r => { if ((' ' + norm(core).replace(/[^a-z0-9]+/g, ' ') + ' ').includes(' ' + norm(r).replace(/[^a-z0-9]+/g, ' ').trim() + ' ')) add('roaster', r); });
+      /* coffee name: a farm, estate or station line */
+      if (!LABEL_SKIP.test(ln) && labelWords(core).length >= 2 && labelWords(core).length <= 5 && /^[A-Za-z][A-Za-z '&.-]+$/.test(core) && /\b(finca|hacienda|fazenda|estate|estancia|cooperativa|cooperative|co-?op|washing station|wet mill|farm)\b/i.test(core)){ add('name', labelTitle(core)); hints.name = 'A farm or estate line from the bag. Change it if you call this coffee something else.'; }
+      /* origin: a whole piece of a line that is a country or one of its regions */
+      if (!LABEL_SKIP.test(ln) && !labelVarietyLine(core) && labelWords(ln).length <= 9) segs.forEach(sg => {
+        if (labelWords(sg).length > 4) return;
+        const r = originMatch(sg, { fuzzy:false }), nm = r.origin ? r.origin.name : (r.country ? r.country.name : '');
+        if (nm){ const exact = norm(sg).replace(/[^a-z ]/g, '').trim() === norm(nm).replace(/[^a-z ]/g, '').trim(); const reg = (ORIGIN_REGIONS[nm] || []).find(x => norm(x) === norm(sg)); add('origin', { country:nm, region:reg || '', exact }); }
+      });
+      /* process */
+      const pw = LABEL_PROC.exec(core);
+      const procRaw = () => { const w = LABEL_PROC.exec(core); return w ? w[1].replace(/^w(?=washed)/i, '') : ''; };
+      if (pw && !/honeycrisp|honeydew/i.test(core)){
+        const wl = labelWords(core), last = /\b(w?washed|naturals?|honey|anaerobic|wet[- ]?hulled|infused)$/i.test(core);
+        if (wl.length === 1 || (/^process(?:ing)?\b/i.test(core) && last)) add('process', procRaw());
+        else if (last && wl.length <= 4 && wl.slice(0, -1).some(w => /pro|ess/i.test(w)) && wl.slice(0, -1).every(w => w.length <= 8 || /process/i.test(w))) add('process', procRaw());
+        else if (many){ const sg = segs.find(x => LABEL_PROC.test(x) && /\b(?:w?washed|naturals?|honey|anaerobic|wet[- ]?hulled|infused)$/i.test(x) && labelWords(x).length <= 4); if (sg){ add('process', LABEL_PROC.exec(sg)[1]); if (labelWords(sg).length > 1) hints.process = 'It came from a longer phrase ("' + sg + '"), not a Process line.'; } }
+      } else if (/^process(?:ing)?(?: method)?\s*[:.]*$/i.test(core) && LABEL_PROC.test(nx) && labelWords(nx).length <= 2) add('process', LABEL_PROC.exec(nx)[1]);
+      m = /^process(?:ing)?(?: method)?\s*[:.]+\s*(.+)$/i.exec(core); if (m && LABEL_PROC.test(m[1]) && labelWords(m[1]).length <= 3) add('process', LABEL_PROC.exec(m[1])[1]);
+      /* roast level */
+      m = LABEL_ROAST_PHRASE.exec(ln); if (m) add('roast', m[0]);
+      m = LABEL_ROAST_VALUE.exec(core); if (m) add('roast', m[1]);
+      if (LABEL_ROAST_LABEL.test(core) && LABEL_ROAST_ONLY.test(nx)) add('roast', nx);
+      if (LABEL_ROAST_ONLY.test(core) && !/^(?:city\+?|french|italian|full city)$/i.test(core)) add('roast', core);
+      /* elevation: a number (or range) with a unit */
+      m = LABEL_ELEV.exec(ln.replace(/(\d)\s*\.\s*(\d{3})\b/g, '$1$2'));
+      if (m && (m[3].toLowerCase() !== 'm' || /alt|elev/i.test(ln + ' ' + (lines[i - 1] || '')))){
+        const lo = +m[1].replace(/,/g, ''), hi = m[2] ? +m[2].replace(/,/g, '') : 0;
+        if ((!hi || (hi > lo && hi - lo <= 1000)) && mapElevation(m[0]).cls) add('elevation', { raw:m[0].trim(), key:(hi ? lo + '-' + hi : lo) + (/ft|feet|fasl/i.test(m[3]) ? 'ft' : 'm') });
+      }
+      /* varietal */
+      m = /^(?:varietals?|varieties|variety|cultivar)s?\s*[:.\-]*\s*(.*)$/i.exec(core);
+      const vv = m ? (m[1].trim() || nx) : '';
+      if (vv && labelWords(vv).length <= 4 && !/\d/.test(vv) && labelVarietyIn(vv)) add('varietal', labelTitle(vv.replace(/[^A-Za-z '-]/g, '').trim()));
+      else if (many && !m) segs.forEach(sg => { if (labelWords(sg).length <= 3 && labelVarietyIn(sg) && !/\d/.test(sg)) add('varietal', labelTitle(sg)); });
+      else if (!m && labelWords(core).length <= 3 && !/\d/.test(core) && labelVarietyIn(core)) add('varietal', labelTitle(core));
+      if (/\bdecaf(?:feinated)?\b|swiss water/i.test(ln)) add('decaf', true);
+    });
+    labelNotesFrom(lines).forEach(n => add('notes', n));
+    labelDateFrom(lines, opts.today).forEach(d => add('roast_date', d));
+  });
+  const flagged = [], uniq = (k, key) => { const seen = new Map(); (got[k] || []).forEach(v => { const kk = key(v); if (!seen.has(kk)) seen.set(kk, v); }); return Array.from(seen.values()); };
+  const one = (k, key, merge) => { const u = uniq(k, key); if (u.length === 1) return u[0]; if (u.length > 1 && merge){ const r = merge(u); if (r) return r; } if (u.length > 1) flagged.push(k); return null; };
+  const norml = s => norm(String(s)).replace(/[^a-z0-9]+/g, ' ').trim();
+  const roaster = one('roaster', norml, u => (known.find(r => u.some(x => norml(x) === norml(r))) || null)), nameV = one('name', norml);
+  const oc = uniq('origin', o => o.country); let origin = '';
+  if (oc.length === 1){ const regs = uniq('origin', o => o.region || '-').filter(o => o.region); if (regs.length <= 1){ origin = composeOrigin([oc[0].country], regs[0] ? regs[0].region : ''); } else origin = oc[0].country; if (!(got.origin || []).some(o => o.exact)) hints.origin = 'Worked out from a place name on the bag, so check it.'; } else if (oc.length > 1) flagged.push('origin');
+  const proc = one('process', x => readProcess(x, origin).value || norml(x)), roast = one('roast', x => mapRoast(x) || norml(x));
+  const vr = one('varietal', norml, u => u.slice().sort((a, b) => b.length - a.length).find(l => u.every(x => norml(l).includes(norml(x)))) || null);
+  const el = one('elevation', x => x.key), dt = one('roast_date', x => x);
+  const notes = (got.notes || []).slice().sort((a, b) => b.split(',').length - a.split(',').length || b.length - a.length)[0] || null;
+  const d = { coffee_name:nameV, roaster, origin:origin || null, varietal:vr, process:proc, roast_level:roast, roast_date:dt, elevation:el ? el.raw : null, tasting_notes:notes, decaf:(got.decaf || []).length ? true : null, unclear:[], notes:'' };
+  const res = mapScan(d), have = { roaster:!!res.items.find(i => i.key === 'roaster'), name:!!res.items.find(i => i.key === 'name'), origin:!!origin, varietal:!!vr, process:!!(proc && readProcess(proc, origin).value), roast:!!(roast && mapRoast(roast)), elevation:!!(el && mapElevation(el.raw).cls), roast_date:!!dt, notes:!!notes };
+  const KEYMAP = { name:'name', roaster:'roaster', origin:'origin', varietal:'varietal', process:'process', roast:'roast', elevation:'density', roast_date:'roast_date', notes:'bag_notes' };
+  res.items.forEach(it => { const k = Object.keys(KEYMAP).find(x => KEYMAP[x] === it.key); if (hints[k]) it.hint = ((it.hint || '') + ' ' + hints[k]).trim(); if (it.key === 'density' || it.key === 'roast_date') it.hint = ((it.hint || '') + ' Photos can misread digits, so check the numbers against the bag.').trim(); if (it.key === 'bag_notes') it.hint = 'Check the spelling against the bag.'; });
+  res.conflicts = LABEL_EXPECTED.filter(f => flagged.includes(f[0])).map(f => f[1]);
+  res.missing = LABEL_EXPECTED.filter(f => !have[f[0]] && !flagged.includes(f[0])).map(f => f[1]);
+  res.unclear = res.missing.concat(res.conflicts);
+  res.any = res.items.some(i => i.value);
+  return res;
+}
+/* The "Look up this coffee" button is gone (the bag photo reader replaced it), but a roaster's saved address still travels with your setup and your save file, so these two checks stay. */
 const shopKey = s => norm(s).replace(/[^a-z0-9]+/g, ' ').trim();   /* a roaster's name, flattened so "Caffè Vita" and "caffe vita" are the same key */
 /* The shop's address from whatever was typed or pasted: https only, a real dotted host name, nothing after it. Returns '' when it is not one. */
 function shopOrigin(input){
@@ -2069,134 +2257,6 @@ function shopOrigin(input){
   if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(host)) return '';
   if (/^[0-9.]+$/.test(host) || /\.(local|localhost|internal|lan|home|corp|test|invalid)$/.test(host)) return '';
   return 'https://' + host;
-}
-/* The product's handle when a product page link was pasted (https://shop.com/products/the-handle, with or without a collection before it). */
-function shopHandle(input){
-  const m = /\/products\/([a-z0-9][a-z0-9_%-]*)/i.exec(String(input || '').split(/[?#]/)[0]); if (!m) return '';
-  try { return decodeURIComponent(m[1]).toLowerCase().slice(0, 200); } catch(e){ return m[1].toLowerCase().slice(0, 200); }
-}
-const shopCatalogUrl = (origin, page) => origin + '/products.json?limit=250&page=' + (page > 0 ? Math.floor(page) : 1);
-const shopProductJsonUrl = (origin, handle) => origin + '/products/' + encodeURIComponent(handle) + '.json';
-const shopPageUrl = (origin, handle) => origin + '/products/' + encodeURIComponent(handle);
-const SHOP_ENT = { amp:'&', lt:'<', gt:'>', quot:'"', apos:"'", nbsp:' ', rsquo:"'", lsquo:"'", rdquo:'"', ldquo:'"', ndash:'-', mdash:'-', deg:'°', eacute:'é', egrave:'è' };
-/* The listing's HTML as plain text: line breaks kept, tags dropped, a few entities read. The result is only ever used as text. */
-function shopText(html){
-  let s = String(html == null ? '' : html).slice(0, 20000);
-  s = s.replace(/<(script|style)[\s\S]*?<\/\1\s*>/gi, ' ').replace(/<\s*(?:br|\/p|\/div|\/li|\/tr|\/h[1-6]|\/ul|\/ol|\/table)\b[^>]*>/gi, '\n').replace(/<\/t[dh]\s*>/gi, ' | ').replace(/<[^>]*>/g, ' ');
-  s = s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (all, e) => {
-    if (e[0] === '#'){ const n = e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10); return n > 31 && n < 65536 ? String.fromCharCode(n) : ' '; }
-    return Object.prototype.hasOwnProperty.call(SHOP_ENT, e.toLowerCase()) ? SHOP_ENT[e.toLowerCase()] : ' ';
-  });
-  return s.replace(/[ \t ]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n').trim();
-}
-const shopTokens = s => norm(s).replace(/[^a-z0-9]+/g, ' ').split(' ').filter(w => w.length > 1 && !SHOP_STOP.has(w));
-/* one letter added, dropped or changed in a word of six or more letters ("Chelbesa" and "Chelbessa"): roasters and bags spell Ethiopian and other names in more than one way */
-function shopNear(a, b){
-  if (a.length < 6 || b.length < 6 || Math.abs(a.length - b.length) > 1) return false;
-  let i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++;
-  if (a.length === b.length) return a.slice(i + 1) === b.slice(i + 1);
-  const sh = a.length < b.length ? a : b, lg = a.length < b.length ? b : a; return sh.slice(i) === lg.slice(i + 1);
-}
-const shopSame = (a, b) => a === b || (a.length >= 5 && b.length >= 5 && (a.startsWith(b) || b.startsWith(a))) || shopNear(a, b);   /* "ethiopia" and "ethiopian" are the same word here, and so are two spellings one letter apart */
-/* Products whose title contains every word of the name (best first), else, for names of three or more words, those with at least 60% of them. */
-function shopMatch(products, name){
-  const q = shopTokens(name); if (!q.length || !Array.isArray(products)) return [];
-  const all = [];
-  products.forEach(p => {
-    if (!p || typeof p.title !== 'string' || typeof p.handle !== 'string' || !p.handle) return;
-    const t = shopTokens(p.title), hit = q.filter(w => t.some(x => shopSame(w, x))).length; if (!hit) return;
-    const extra = t.filter(x => !q.some(w => shopSame(w, x))).length;
-    all.push({ product:p, full:hit === q.length, cover:hit / q.length, score:hit / (q.length + extra) });
-  });
-  const full = all.filter(o => o.full), pool = full.length ? full : all.filter(o => o.cover >= 0.6);
-  return pool.sort((a, b) => b.score - a.score).slice(0, 5);
-}
-/* "Label: value" pairs, one per line (or per bullet). Separators: a colon, a bar (from table cells), or a spaced dash. */
-function shopPairs(text){
-  const out = [];
-  String(text || '').split('\n').forEach(line => line.split(/\s+[•·]\s+/).forEach(seg => {
-    const m = /^\s*[•*·-]?\s*([A-Za-z][A-Za-z ./&]{1,28}?)\s*(?::|\||\s[–—-]\s)\s*(.+)$/.exec(seg); if (!m) return;
-    const value = m[2].split(/\s\|\s/)[0].trim().replace(/[\s.;,|]+$/, '').slice(0, 200); if (value.length >= 2) out.push({ label:m[1].trim().toLowerCase(), value });
-  }));
-  return out;
-}
-const shopFirst = (pairs, labels) => { const p = pairs.find(x => labels.includes(x.label)); return p ? p.value : ''; };
-/* Of several phrases, the first one for the single meaning they all agree on; '' when there are none or they disagree (a listing that says both "washed" and "natural" is not telling us which). */
-function shopOnly(phrases, toKey){
-  const by = {}; phrases.forEach(x => { const k = toKey(x); if (k) (by[k] = by[k] || []).push(x); });
-  const keys = Object.keys(by); return keys.length === 1 ? by[keys[0]][0] : '';
-}
-const SHOP_PROC_WORD = '(?:washed|natural|honey|anaerobic|carbonic maceration|wet[- ]hulled|pulped natural|extended fermentation|experimental)';
-const SHOP_PROC_RE = new RegExp('\\b(' + SHOP_PROC_WORD + ')\\s+(?:process|processed|processing|method)\\b|\\bprocess(?:ed|ing)?\\s*(?:is|:|-)?\\s*(' + SHOP_PROC_WORD + ')\\b', 'gi');
-const SHOP_PROC_TAG = new RegExp('^' + SHOP_PROC_WORD + '$', 'i');
-const SHOP_ROAST_WORD = '(?:light|medium[- ]light|light[- ]medium|medium[- ]dark|dark[- ]medium|medium|dark)';
-const SHOP_ROAST_RE = new RegExp('\\b' + SHOP_ROAST_WORD + '\\s+roast\\b', 'gi');
-const SHOP_ROAST_TAG = new RegExp('^' + SHOP_ROAST_WORD + '(?:\\s+roast)?$', 'i');
-const SHOP_ELEV_RE = /\d[\d,.]*(?:\s*(?:-|–|to)\s*\d[\d,.]*)?\s*(?:masl|m\.a\.s\.l\.?|meters|metres|ft|feet)\b/i;
-/* A process word that ends the title ("Ethiopia Danche Natural", "Worka Chelbessa Washed [Limited]"): roasters often put it there. */
-function shopTitleProcess(title){
-  const t = String(title || '').trim(), re = new RegExp('(?:^|[\\s(\\[-])(' + SHOP_PROC_WORD + ')\\s*[)\\]]?\\s*$', 'i');
-  const m = re.exec(t) || re.exec(t.replace(/\s*[\[(][^\])]*[\])]\s*$/, ''));   /* also when a bracketed note follows it: "Worka Chelbessa Washed [Limited]" */
-  return m ? [m[1]] : [];
-}
-/* Origin written as prose. The country is the one the title names, else the only one the description names (the app's own country list and place names); the region is a place called "the X district / region / zone". */
-function shopCountries(text){
-  const t = ' ' + norm(text).replace(/[^a-z0-9]+/g, ' ') + ' ';
-  return ORIGINS.filter(o => (o.aliases || []).some(a => t.includes(' ' + norm(a) + ' ')));
-}
-function shopOriginGuess(title, body){
-  const inTitle = shopCountries(title), inBody = shopCountries(body);
-  const c = inTitle.length === 1 ? inTitle[0] : (!inTitle.length && inBody.length === 1 ? inBody[0] : null); if (!c) return '';
-  const m = /\b(?:from|in|near|around)\s+the\s+([A-Z][a-z]{2,}(?:\s[A-Z][a-z]{2,})?)\s+(?:district|region|zone|province|department|area|woreda)\b/.exec(String(body || ''));
-  return c.name + (m && norm(m[1]) !== norm(c.name) ? ', ' + m[1] : '');
-}
-/* Variety names written as prose: capitalised names beside the word "varieties" ("Wolisho and Dega, two varieties", "varieties such as Bourbon and Caturra"), leaving out country and place words. */
-const SHOP_VAR_SKIP = new Set(['the', 'these', 'those', 'both', 'many', 'several', 'some', 'our', 'this', 'that', 'and', 'of', 'in', 'with', 'all', 'most', 'other', 'each', 'every', 'two', 'three', 'four', 'its', 'their', 'coffee', 'coffees', 'we', 'it', 'as', 'such', 'including', 'like', 'a', 'an']);
-function shopVarieties(text){
-  const out = [], KEY = /\b(varieties|variety|varietals?|cultivars?)\b/i, place = w => shopCountries(w).length > 0;
-  const take = chunk => (String(chunk).match(/[A-Z][A-Za-z'’-]{2,}/g) || []).forEach(w => { if (!SHOP_VAR_SKIP.has(w.toLowerCase()) && !place(w) && !out.includes(w)) out.push(w); });
-  String(text || '').replace(/([.!?])\s+/g, '$1\n').split(/\n+/).forEach(sent => {
-    const k = KEY.exec(sent); if (!k) return;
-    const after = /^\s*(?:such as|including|include|like|are|is|:|-)\s+([^.;]{0,70})/i.exec(sent.slice(k.index + k[0].length));
-    if (after) take(after[1]);
-    else { const from = Math.max(0, k.index - 60); let b = sent.slice(from, k.index);
-      if (from === 0 && !/^\s*[A-Z][A-Za-z'’-]+\s*(?:,|&|and\b)\s*[A-Z]/.test(b)) b = b.replace(/^\s*[A-Za-z'’-]+/, '');   /* the first word of a sentence is capitalised anyway ("Grown from ...") */
-      take(b); }
-  });
-  return out.slice(0, 6).join(', ');
-}
-/* What one product listing states. Returns { data, how, unclear }: data is shaped like a scan result (so the same review step reads it), how says where each value came from
-   ('line' = its own "Label: value" line, 'text' = a phrase in the title, tags or description), unclear lists what the listing did not state. */
-function shopFacts(p){
-  p = p && typeof p === 'object' ? p : {};
-  const title = String(p.title || ''), body = shopText(p.body_html), tags = (Array.isArray(p.tags) ? p.tags : String(p.tags || '').split(',')).map(t => String(t).trim().slice(0, 80)).filter(Boolean);
-  const tagPairs = tags.filter(t => /^[A-Za-z ]{2,24}:\s*\S/.test(t)).map(t => ({ label:t.split(':')[0].trim().toLowerCase(), value:t.slice(t.indexOf(':') + 1).trim() }));
-  const pairs = shopPairs(body).concat(tagPairs), L = SHOP_LABELS, how = {}, data = {}, loose = [title].concat(tags, body.slice(0, 3000)).join('\n');
-  const country = shopFirst(pairs, L.origin), region = shopFirst(pairs, L.region);
-  if (country || region){ data.origin = country && region && !norm(country).includes(norm(region)) ? country + ', ' + region : (country || region); how.origin = 'line'; }
-  const proc = shopFirst(pairs, L.process);
-  if (proc){ data.process = proc; how.process = 'line'; }
-  else { const t = shopOnly(Array.from(loose.matchAll(SHOP_PROC_RE)).map(m => m[1] || m[2]).concat(tags.filter(x => SHOP_PROC_TAG.test(x)), shopTitleProcess(title)), x => readProcess(x, data.origin).value); if (t){ data.process = t; how.process = 'text'; } }
-  const vr = shopFirst(pairs, L.varietal); if (vr){ data.varietal = vr; how.varietal = 'line'; }
-  const roast = shopFirst(pairs, L.roast);
-  if (roast && mapRoast(roast)){ data.roast_level = roast; how.roast = 'line'; }
-  else { const t = shopOnly(Array.from(loose.matchAll(SHOP_ROAST_RE)).map(m => m[0]).concat(tags.filter(x => SHOP_ROAST_TAG.test(x))), mapRoast); if (t){ data.roast_level = t; how.roast = 'text'; } }
-  if (!data.origin){ const g = shopOriginGuess(title, body); if (g){ data.origin = g; how.origin = 'text'; } }
-  if (!data.varietal){ const v = shopVarieties(body); if (v){ data.varietal = v; how.varietal = 'text'; } }
-  const el = shopFirst(pairs, L.elevation);
-  if (el && mapElevation(el).cls){ data.elevation = el; how.elevation = 'line'; }
-  else { const m = SHOP_ELEV_RE.exec(loose); if (m && mapElevation(m[0]).cls){ data.elevation = m[0]; how.elevation = 'text'; } }
-  const notes = shopFirst(pairs, L.notes); if (notes){ data.tasting_notes = notes; how.notes = 'line'; }
-  if (/\bdecaf(?:feinated)?\b/i.test(title + ' ' + tags.join(' '))) data.decaf = true;
-  const FIELDS = [['origin', 'origin', 'origin'], ['process', 'process', 'process'], ['varietal', 'varietal', 'varietal'], ['roast', 'roast_level', 'roast level'], ['elevation', 'elevation', 'elevation'], ['notes', 'tasting_notes', 'tasting notes']];
-  return { data, how, unclear:FIELDS.filter(f => !data[f[1]]).map(f => f[2]) };
-}
-/* One product as a review sheet's worth of fields: the same items the bag scan produces (so the same review step shows them), a note on any value that was not on its own line, and a link back to the listing. */
-function shopDraft(p, origin){
-  const f = shopFacts(p), res = mapScan(f.data), HOW = { process:'process', roast:'roast', density:'elevation', bag_notes:'notes' };
-  res.items.forEach(it => { if (f.how[HOW[it.key] || it.key] === 'text') it.hint = ((it.hint || '') + ' It was a phrase in the listing, not its own line, so check it.').trim(); });
-  res.unclear = f.unclear.slice();
-  return { res, title:String(p && p.title || '').slice(0, 200), url:p && p.handle && origin ? shopPageUrl(origin, p.handle) : '' };
 }
 /* ---------- cupping instructions, results analysis ---------- */
 const CUP_PHASES = [
@@ -3873,8 +3933,7 @@ const GUIDE_SECTIONS = [
   { id:'coffee', title:'1. Coffee: tell it what you are brewing', lead:'Start with the bag.',
     paras:['Type the coffee name, then add what the bag says: roaster, origin, process, roast level, elevation, roast date and tasting notes. Each field says what it changes: your brew settings, your guide, your advice, or only your saved record. Origin and varietal are pickers, so there is no spelling to worry about. Not on the list? Choose Other and type it.',
       'If you are unsure about something, choose Not sure and NeuroBrew tells you what it assumed. If you leave out the process or the elevation, it makes a labelled guess from the origin, except for a blend.',
-      'Inside Claude you can scan a photo of the bag, or paste the label text, and check every line before anything fills in. Anywhere else, you can ask Claude in a chat to read the bag and paste its answer here, or just type it.',
-      "Under the coffee name and roaster, Look up this coffee reads the roaster's own online shop listing. It offers the origin, process, varietal, elevation, roast level and tasting notes that the listing states. It works with shops built on Shopify. Type the roaster's website once (or paste a link to the coffee's page), and NeuroBrew remembers it for that roaster. You check every line first, and it never replaces something you already entered unless you tick it.",
+      'Tap Scan a bag photo to fill in the form from the label. NeuroBrew reads the photo on your phone, so nothing is sent anywhere and nothing is charged. It fills in only what it can clearly read and leaves the rest blank, never guessing. A red notice lists what was not found. You check every line before anything fills in. You can also paste the label text, ask Claude in a chat to read the bag, or just type it.',
       'Add the roast date if you have it. It tells NeuroBrew whether the coffee is still resting. It also helps NeuroBrew recognise a new bag of a coffee you have brewed before.'] },
   { id:'facts', title:'2. Facts: what to expect from this bag', lead:'A plain-language guide to your coffee.',
     paras:['This screen explains your bag in plain words. It says what to expect in the cup (acidity, body, sweetness) and what to look for as you taste. If you entered a roast date, it says whether the coffee is ready for filter and for espresso.',
@@ -4566,6 +4625,20 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 38,
+  "at": "2026-10-08T01:15:11Z",
+  "date": "2026-10-08",
+  "title": "Read a bag photo on your phone",
+  "notes": [
+   "Scan a bag photo now reads the label on your own phone. The photo is not sent anywhere or saved, you do not need a Claude account, and nothing is charged. The first scan loads the reader (about 5 MB), and your browser keeps it for next time.",
+   "It fills in only what the bag clearly says and leaves everything else blank. It never guesses a roaster, a name, an elevation or a date. A red notice lists every field that was not found, and says when two photos disagreed. You check every line before anything fills in, and a line you already typed is kept unless you tick it.",
+   "It reads white print on a coloured label as well as dark print, and it throws out numbers that look misread, such as an elevation range that runs backward. Numbers it does fill in come with a reminder to check them.",
+   "You can scan up to three photos at once, for example the front and the back of the bag, and cancel at any time.",
+   "Paste label text now works the same way, on your phone, with no Claude connection. Use a Claude chat is still there.",
+   "Look up this coffee is gone. It was blocked by many shops, and the bag photo does the same job. A saved copy of the page opened from a file cannot read photos, because it needs the website."
+  ]
+ },
  {
   "release": 37,
   "at": "2026-10-07T23:55:41Z",
@@ -5481,48 +5554,97 @@ function explain(get){
   return el;
 }
 let scanInputEl = null;
-let scanCaps = null;   // { sample:boolean, images:boolean } once checked
-async function probeScan(){
-  if (scanCaps) return scanCaps;
-  let caps = { sample:false, images:false };
-  try {
-    if (inClaude()){
-      const sample = await window.claude.use('sample');
-      if (sample && typeof sample.json === 'function'){
-        caps.sample = true;
-        const lim = await Promise.resolve(typeof sample.limits === 'function' ? sample.limits() : null).catch(() => null);
-        caps.images = !!(lim && lim.images);
-      }
-    }
-  } catch(e){}
-  scanCaps = caps; return caps;
+/* The photo reader runs in a background worker next to the page, so it needs a worker, WebAssembly, and a page that comes from the web (a saved copy opened from a file cannot start a worker). */
+function readerSupported(){
+  try { return typeof Worker === 'function' && typeof WebAssembly === 'object' && /^https?:$/.test(location.protocol); } catch(e){ return false; }
+}
+/* Roaster names this person already has in their history, so a bag from one of them can be recognised. */
+function knownRoasters(){
+  const out = [], seen = new Set();
+  const add = r => { const s = String(r || '').trim(), k = norm(s); if (s.length >= 3 && s.length <= 60 && !seen.has(k) && out.length < 80){ seen.add(k); out.push(s); } };
+  try { ((history && history.objs) || []).forEach(o => add(o.roaster)); } catch(e){}
+  add(app.coffee && app.coffee.roaster);
+  return out;
 }
 function scanCard(){
   const input = h('input', { type:'file', accept:'image/*', multiple:true, hidden:true, 'aria-label':'Bag photo' });
   scanInputEl = input;
-  input.addEventListener('change', () => { const files = Array.from(input.files || []); input.value = ''; if (files.length) startScan(files); });
-  const scanBtn = h('button', { type:'button', class:'btn block', text:'Scan a bag photo', onclick:() => input.click() });
-  const note = h('p', { class:'fine', style:'margin:8px 0 0' });
+  input.addEventListener('change', () => { const files = Array.from(input.files || []); input.value = ''; if (files.length) startScan(files.slice(0, 3)); });
+  const can = readerSupported();
+  const scanBtn = h('button', { type:'button', class:'btn block', text:'Scan a bag photo', onclick:() => input.click(), hidden:!can });
+  const note = h('p', { class:'fine', style:'margin:8px 0 0', text:can
+    ? 'NeuroBrew reads the label right on your phone. The photo never leaves your phone, and nothing is charged. The first scan loads the reader (about 5 MB), and your browser keeps it for next time.'
+    : "Reading a photo works on the NeuroBrew website. It can't run from a saved copy or in this browser. You can still paste the label text." });
   const textBtn = h('button', { type:'button', class:'btn link', text:'Paste label text', onclick:() => { sheet = { step:'scanText', text:'', err:'' }; openSheet(); } });
   const chatBtn = h('button', { type:'button', class:'btn link', text:'Use a Claude chat', onclick:() => { sheet = { step:'scanChat', err:'' }; openSheet(); } });
-  const opts = h('div', { style:'display:flex;gap:6px;flex-wrap:wrap;margin-top:6px' });
-  const card = h('div', { class:'card' }, h('h3', { text:'Fill it in from the bag' }),
-    h('p', { class:'serif', style:'margin:4px 0 12px;font-size:16.5px', text:'Let Claude read the label for you. You check every line before anything fills in.' }));
-  function paint(caps){
-    scanBtn.hidden = !caps.sample || !caps.images; opts.textContent = '';
-    if (caps.sample && caps.images) note.textContent = 'Uses your own Claude usage and asks your permission the first time. NeuroBrew does not store the photo. It is sent to Claude to read the label, under your Claude account\'s usual terms and settings.';
-    else if (caps.sample) note.textContent = "Photo scanning isn't available in this view (try the Claude app or a desktop browser). You can still paste the label text, or use a Claude chat.";
-    else if (inClaude()) note.textContent = 'Photo scanning needs a signed-in view. You can still use a Claude chat to read the bag, or type the details below.';
-    else note.textContent = 'Take a photo of the bag, ask Claude in a chat to read it, and paste the answer here.';
-    if (caps.sample) opts.append(textBtn);
-    opts.append(chatBtn);
+  return h('div', { class:'card' }, h('h3', { text:'Fill it in from the bag' }),
+    h('p', { class:'serif', style:'margin:4px 0 12px;font-size:16.5px', text:'Take a photo of the bag, and NeuroBrew fills in what it can read. You check every line before anything fills in.' }),
+    scanBtn, note, h('div', { style:'display:flex;gap:6px;flex-wrap:wrap;margin-top:6px' }, textBtn, chatBtn), input);
+}
+/* The reader files sit next to the page (an "ocr" folder). Nothing here talks to any other address, so the photo never leaves the device. */
+const READER_BASE = 'ocr/';
+async function decodePhoto(file){
+  if (typeof createImageBitmap === 'function'){
+    try { return await createImageBitmap(file, { imageOrientation:'from-image' }); } catch(e){}
+    try { return await createImageBitmap(file); } catch(e){}
   }
-  card.append(scanBtn, note, opts, input);
-  paint({ sample:inClaude(), images:inClaude() });
-  scanBtn.hidden = true;
-  note.textContent = inClaude() ? 'Checking what this view can do...' : note.textContent;
-  probeScan().then(caps => { if (card.isConnected) paint(caps); });
-  return card;
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => { URL.revokeObjectURL(url); res(im); };
+    im.onerror = () => { URL.revokeObjectURL(url); rej({ code:'image' }); };
+    im.src = url;
+  });
+}
+const canvasPng = (cv) => new Promise((res, rej) => cv.toBlob(b => b ? b.arrayBuffer().then(res, rej) : rej({ code:'image' }), 'image/png'));
+/* One photo, two ways to look at it, each redrawn as dark ink on white: 'D' keeps print that is darker than its surroundings (the brightness), 'W' keeps print that is lighter, such as white letters on a coloured label (the green channel). */
+async function preparePhoto(file){
+  const src = await decodePhoto(file), sw = src.naturalWidth || src.width, sh = src.naturalHeight || src.height, sz = labelSize(sw, sh);
+  if (!sz.w) throw { code:'image' };
+  const cv = document.createElement('canvas'); cv.width = sz.w; cv.height = sz.h;
+  const ctx = cv.getContext('2d', { willReadFrequently:true }); ctx.drawImage(src, 0, 0, sz.w, sz.h);
+  if (typeof src.close === 'function') src.close();
+  const px = ctx.getImageData(0, 0, sz.w, sz.h).data, n = sz.w * sz.h, lum = new Uint8ClampedArray(n), grn = new Uint8ClampedArray(n);
+  for (let i = 0, j = 0; i < n; i++, j += 4){ lum[i] = 0.299 * px[j] + 0.587 * px[j + 1] + 0.114 * px[j + 2]; grn[i] = px[j + 1]; }
+  const out = [];
+  for (const [id, chan, light] of [['D', lum, false], ['W', grn, true]]){
+    const g = labelInk(chan, sz.w, sz.h, light), img = ctx.createImageData(sz.w, sz.h);
+    for (let i = 0, j = 0; i < n; i++, j += 4){ img.data[j] = img.data[j + 1] = img.data[j + 2] = g[i]; img.data[j + 3] = 255; }
+    ctx.putImageData(img, 0, 0);
+    out.push({ id, png:await canvasPng(cv) });
+  }
+  cv.width = cv.height = 1;
+  return out;
+}
+/* Starts reading. hooks.onStatus(kind, i, n) is told 'loading' (the reader is starting), 'prep' and 'read' (photo i of n). Returns { done, cancel }:
+   done resolves to { texts } (every pass of every photo, as plain text) or rejects with { code } ('files' = the reader files are missing, 'unsupported', 'engine', 'image', 'cancelled'). */
+function startReader(files, hooks){
+  hooks = hooks || {};
+  let w = null, wake = null, failed = null; const inbox = [];
+  const fail = e => { if (!failed) failed = e; if (wake){ const f = wake; wake = null; f(); } };
+  const cancel = () => { fail({ code:'cancelled' }); if (w){ try { w.terminate(); } catch(e){} w = null; } };
+  const next = () => new Promise(res => { if (inbox.length || failed) res(); else wake = res; }).then(() => { if (inbox.length) return inbox.shift(); throw failed; });
+  const done = (async () => {
+    try { w = new Worker(READER_BASE + 'reader-worker.js'); } catch(e){ throw { code:'files', detail:String(e && e.message || e) }; }
+    w.onmessage = e => { inbox.push(e.data || {}); if (wake){ const f = wake; wake = null; f(); } };
+    w.onerror = e => fail({ code:'files', detail:String(e && e.message || 'worker did not start') });
+    if (hooks.onStatus) hooks.onStatus('loading', 0, files.length);
+    w.postMessage({ type:'init' });
+    const prepared = [];
+    /* the reader starts while the first photo is being prepared */
+    const prep = (async () => { for (let i = 0; i < files.length; i++){ if (hooks.onStatus) hooks.onStatus('prep', i, files.length); prepared.push(await preparePhoto(files[i])); } })();
+    prep.catch(fail);
+    for (;;){ const m = await next(); if (m.type === 'ready') break; if (m.type === 'error') throw m; }
+    const texts = [];
+    for (let i = 0; i < files.length; i++){
+      while (prepared.length <= i){ await Promise.race([prep, new Promise(r => setTimeout(r, 50))]); if (failed) throw failed; }
+      if (hooks.onStatus) hooks.onStatus('read', i, files.length);
+      w.postMessage({ type:'read', jobs:prepared[i].map(p => ({ id:p.id, png:p.png, modes:['3', '11'] })) }, prepared[i].map(p => p.png));
+      for (;;){ const m = await next(); if (m.type === 'result'){ if (m.text && m.text.trim()) texts.push(m.text); } else if (m.type === 'done') break; else if (m.type === 'error') throw m; }
+      prepared[i] = null;
+    }
+    return { texts };
+  })().finally(() => { if (w){ try { w.terminate(); } catch(e){} w = null; } });
+  return { done, cancel };
 }
 function originPicker(get, set, isBlend){
   const st = { other:false }, opts = originOptions();
@@ -5630,14 +5752,14 @@ function screenStart(m){
     varPick.el];
   const originBlock = [blendSel, blendNote, pick.el];
   if (lv === 'new'){
-    m.append(h('div', { class:'card' }, nameIn, shopLookupRow()), ...roastSec, h('div', { class:'card' }, processSel, processNote));
+    m.append(h('div', { class:'card' }, nameIn), ...roastSec, h('div', { class:'card' }, processSel, processNote));
     const more = h('details', { class:'card gcard moredetails' },
       h('summary', null, h('span', { class:'gt', text:'Add more details (optional)' }), h('span', { class:'gs', text:'Roaster, origin, decaf, elevation, roast date, tasting notes, varietal' })),
       h('div', { class:'gbody' }, h('div', { class:'card' }, roasterIn, ...originBlock), h('div', { class:'card' }, decaf, decafNote, elevSel, elevTyped, elevNote, ...bagFields)));
     more.open = !!(c.roaster || c.origin || c.decaf || c.density || c.elevText || c.roast_date || c.bag_notes || c.varietal || c.varietalUnsure || c.blend);
     m.append(more);
   } else {
-    m.append(h('div', { class:'card' }, nameIn, roasterIn, shopLookupRow(), ...originBlock), ...roastSec,
+    m.append(h('div', { class:'card' }, nameIn, roasterIn, ...originBlock), ...roastSec,
       sectionHead('More from the bag'), h('div', { class:'card' }, processSel, processNote, decaf, decafNote, elevSel, elevTyped, elevNote, ...bagFields));
   }
   nameIn.querySelector('input').addEventListener('input', e => { if (e.target.value.trim()){ e.target.removeAttribute('aria-invalid'); e.target.removeAttribute('aria-describedby'); err.textContent = ''; } });
@@ -7687,48 +7809,47 @@ function wheelIconBg(data){
   return 'conic-gradient(' + stops.join(',') + ')';
 }
 function openWheel(key){ sheet = { step:'wheel', key:WHEELS[key] ? key : 'flavor', cat:-1, grp:-1, q:'', tab:'words' }; openSheet(); }
-function startScan(files){ sheet = { step:'scan', phase:'working', mode:'photo', files, ctl:null, res:null, err:'' }; openSheet(); runScan(); }
-function startScanText(text){ sheet = { step:'scan', phase:'working', mode:'text', text, ctl:null, res:null, err:'' }; openSheet(); runScan(); }
+function startScan(files){ sheet = { step:'scan', phase:'working', mode:'photo', files, ctl:null, res:null, err:'', stage:'loading', at:0, of:files.length }; openSheet(); runScan(); }
+function startScanText(text){ sheet = { step:'scan', phase:'working', mode:'text', text, ctl:null, res:null, err:'', stage:'read', at:0, of:1 }; openSheet(); runScan(); }
+/* What the working screen says, and how far along the bar is. The photo is shrunk and cleaned up, then read twice over (dark print, then light print). */
+function scanProgress(sh){
+  const n = sh.of || 1, i = Math.min(sh.at || 0, n - 1), many = n > 1 ? ' (photo ' + (i + 1) + ' of ' + n + ')' : '';
+  if (sh.stage === 'loading') return { text:'Getting the reader ready' + (n > 1 ? '' : '') + '. The first time this loads about 5 MB.', pct:10 };
+  if (sh.stage === 'prep') return { text:'Getting the photo ready' + many + '...', pct:15 + 60 * i / n };
+  return { text:'Reading the label' + many + '...', pct:30 + 65 * (i + 0.5) / n };
+}
+function paintScanProgress(){
+  const sh = sheet, t = document.getElementById('scanStatus'), bar = document.getElementById('scanBar'); if (!sh || !t || !bar) return;
+  const p = scanProgress(sh); t.textContent = p.text; bar.style.width = Math.round(p.pct) + '%';
+}
 async function runScan(){
-  const sh = sheet; const ctl = new AbortController(); sh.ctl = ctl; sh.phase = 'working'; sh.err = ''; renderSheet();
+  const sh = sheet; sh.phase = 'working'; sh.err = ''; sh.stage = sh.mode === 'text' ? 'read' : 'loading'; sh.at = 0; renderSheet();
   try {
-    if (!inClaude()) throw { code:'signedout' };
-    const sample = await window.claude.use('sample');
-    if (!sample || typeof sample.json !== 'function') throw { code:'signedout' };
-    let data;
-    if (sh.mode === 'text'){
-      data = await sample.json(TEXT_SCAN_PROMPT + '\n\nLabel text:\n' + sh.text.slice(0, 6000), { modelTier:'quick', signal:ctl.signal });
-    } else {
-      const lim = await Promise.resolve(typeof sample.limits === 'function' ? sample.limits() : null).catch(() => null);
-      if (!lim || !lim.images) throw { code:'images_unavailable' };
-      const files = sh.files.slice(0, Math.max(1, lim.images.maxCount || 1));
-      data = await sample.json(SCAN_PROMPT, { images:files, modelTier:'default', signal:ctl.signal });
+    let texts;
+    if (sh.mode === 'text') texts = [String(sh.text || '').slice(0, 6000)];
+    else {
+      if (!readerSupported()) throw { code:'unsupported' };
+      const rd = startReader(sh.files, { onStatus:(kind, i, n) => { if (sheet !== sh) return; sh.stage = kind; sh.at = i; sh.of = n; paintScanProgress(); } });
+      sh.ctl = { abort:rd.cancel };
+      texts = (await rd.done).texts;
     }
     if (sheet !== sh) return;
-    sh.res = mapScan(data); sh.phase = 'review'; renderSheet();
+    if (!texts.some(t => /[A-Za-z]{3}/.test(t))) throw { code:'notext' };
+    sh.res = readLabel(texts, { today:new Date(), knownRoasters:knownRoasters() }); sh.phase = 'review'; renderSheet();
   } catch(e){
     if (sheet !== sh) return;
-    const code = (e && e.code) || 'unknown';
+    const code = (e && e.code) || 'engine';
     if (code === 'cancelled'){ closeSheet(); return; }
-    sh.phase = 'error'; sh.err = code; renderSheet();
+    sh.phase = 'error'; sh.err = code; sh.detail = String((e && e.detail) || '').slice(0, 120); renderSheet();
   }
 }
 function scanErrorCopy(code){
   const map = {
-    signedout:['Scanning needs a signed-in view', 'Claude only lets signed-in viewers use it from a page. Sign in to Claude (or open the link in the Claude app) and try again. You can also type the details in by hand.', false],
-    not_granted:['Scanning is turned off', 'Photo scanning needs your permission to use your Claude account, and it was declined. You can type the details in by hand.', false],
-    sampling_disabled:['Scanning is not available', "Claude isn't available for this account or organization, so photo scanning is off. You can type the details in by hand.", false],
-    capability_disabled:['Scanning is not available', "Photo scanning can't run in this view. You can type the details in by hand.", false],
-    capability_removed:['Scanning is not available', "Photo scanning can't run in this view. You can type the details in by hand.", false],
-    not_declared:['Scanning is not available', "Photo scanning isn't switched on for this page.", false],
-    images_unavailable:["This view can't send photos", "Photo scanning isn't available in this view. Try the Claude app or a desktop browser, or choose Paste label text or Use a Claude chat. You can also type the details in by hand.", false],
-    image_rejected:["That photo couldn't be used", 'Try a different JPEG, PNG, or WebP photo under 20 MB.', false],
-    rate_limited:['Usage limit reached', 'Claude is rate-limiting this account right now. Try again in a while, or type the details in by hand.', false],
-    session_expired:['Please sign in again', 'Your Claude session expired. Sign in again, then retry.', true],
-    refused:["Claude couldn't read that image", 'Try a different photo of the bag label.', false],
-    invalid_json:["Couldn't read the label clearly", 'Try a closer, brighter photo of the front of the bag, with the text sharp and filling the frame.', true],
-    empty_completion:["Couldn't read the label clearly", 'Try a closer, brighter photo of the front of the bag.', true],
-    upstream_error:['Something went wrong', 'Claude did not answer. Try again.', true]
+    unsupported:["This browser can't read photos", "Reading a photo needs the NeuroBrew website in a recent browser (Chrome, Safari 16.4 or newer, Edge or Firefox). A saved copy of the page can't do it. You can paste the label text instead, or type the details in by hand.", false],
+    files:["The reader didn't load", "The files that read the photo could not be loaded. Check your connection and try again. Nothing was sent anywhere. You can paste the label text instead, or type the details in by hand.", true],
+    engine:['The reader stopped', 'Something went wrong while reading the photo. Try again, or try a smaller photo. You can also paste the label text or type the details in by hand.', true],
+    image:["That photo couldn't be opened", 'Try a different photo from your camera or your photo library.', false],
+    notext:["Couldn't find any words", 'The reader found no label text in that photo. Try a closer shot in good light, with the label flat and sharp and filling the picture. Light print on a dark bag needs even light with no glare.', false]
   };
   return map[code] || ['Something went wrong', 'The photo could not be read. Try again, or type the details in by hand.', true];
 }
@@ -7792,140 +7913,6 @@ document.addEventListener('focusin', e => {   /* a safety net: if anything puts 
   if (overlay.classList.contains('open') && !overlay.contains(e.target)){ const t = $('sheetTitle'); if (t) t.focus(); }
 });
 
-/* Your browser asks the roaster's shop for its public product list and reads it here. There is no NeuroBrew server in between, and nothing about your cuppings is sent.
-   The request carries no cookies and no referrer, and sets no headers, so the browser does not need the shop's permission to ask first. */
-const SHOP_TIMEOUT_MS = 12000, SHOP_PAGES = 4, SHOP_PAGE_SIZE = 250;
-const shopHostOf = o => String(o || '').replace(/^https?:\/\//, '');
-function shopLookupRow(){
-  const note = h('p', { class:'fine', id:'shopNote', role:'status', style:'margin:6px 0 0' });
-  return h('div', { class:'shoprow', style:'margin-top:10px' },
-    h('button', { type:'button', class:'btn', id:'shopLookupBtn', text:'Look up this coffee', onclick:() => {
-      if (!app.coffee.name.trim()){ note.textContent = 'Type the coffee name first, then look it up.'; return; }
-      note.textContent = ''; openShopLookup();
-    } }),
-    h('p', { class:'fine', style:'margin:6px 0 0', text:"Reads the roaster's own shop listing and offers to fill in origin, process, elevation and more. You check every line first." }), note);
-}
-function openShopLookup(){
-  const c = app.coffee, known = (app.prefs.roasterSites || {})[shopKey(c.roaster)] || '';
-  sheet = { step:'shop', phase:known ? 'working' : 'ask', name:c.name.trim(), roaster:c.roaster.trim(), site:known, input:'', err:'', ctl:null };
-  openSheet(); if (known) runShopLookup(known);
-}
-/* One request for JSON. Errors carry a code the sheet explains; an abort is passed on as it is. */
-async function shopFetchJson(url, signal){
-  let r;
-  try { r = await fetch(url, { signal, credentials:'omit', referrerPolicy:'no-referrer' }); }
-  catch(e){ if (e && e.name === 'AbortError') throw e; throw { code:(typeof navigator !== 'undefined' && navigator.onLine === false) ? 'offline' : 'blocked' }; }
-  if (!r.ok) throw { code:r.status === 404 ? 'notshop' : 'http', status:r.status };
-  let txt;
-  try { txt = await r.text(); } catch(e){ if (e && e.name === 'AbortError') throw e; throw { code:'blocked' }; }
-  if (txt.length > 15000000) throw { code:'toolarge' };
-  try { return JSON.parse(txt); } catch(e){ throw { code:'notshop' }; }
-}
-async function runShopLookup(raw){
-  const sh = sheet, origin = shopOrigin(raw), handle = shopHandle(raw);
-  if (!origin){ sh.phase = 'ask'; sh.input = String(raw || ''); sh.err = "That doesn't look like a website address. Try something like example-roasters.com."; renderSheet(); return; }
-  const ctl = new AbortController(); sh.ctl = ctl; sh.phase = 'working'; sh.site = origin; sh.err = ''; sh.input = String(raw || ''); renderSheet();
-  let timer = null, timedOut = false;
-  const arm = () => { clearTimeout(timer); timer = setTimeout(() => { timedOut = true; ctl.abort(); }, SHOP_TIMEOUT_MS); };
-  try {
-    let found = [], seen = 0;
-    if (handle){
-      arm(); const j = await shopFetchJson(shopProductJsonUrl(origin, handle), ctl.signal); clearTimeout(timer);
-      if (!j || !j.product || typeof j.product !== 'object') throw { code:'notshop' };
-      found = [{ product:j.product, full:true, score:1 }]; seen = 1;
-    } else {
-      let all = [];
-      for (let page = 1; page <= SHOP_PAGES; page++){
-        arm(); const j = await shopFetchJson(shopCatalogUrl(origin, page), ctl.signal); clearTimeout(timer);
-        if (!j || !Array.isArray(j.products)) throw { code:'notshop' };
-        all = all.concat(j.products); found = shopMatch(all, sh.name);
-        if (j.products.length < SHOP_PAGE_SIZE || found.some(x => x.full)) break;
-      }
-      seen = all.length;
-    }
-    if (ctl.signal.aborted || sheet !== sh) return;
-    sh.seen = seen;
-    if (!found.length){ sh.phase = 'none'; renderSheet(); return; }
-    rememberShop(sh);
-    if (found.length === 1 && found[0].full){ showShopReview(sh, found[0].product); return; }
-    sh.found = found; sh.phase = 'pick'; renderSheet();
-  } catch(e){
-    clearTimeout(timer);
-    if (ctl.signal.aborted && !timedOut) return;   /* the person cancelled */
-    if (sheet !== sh) return;
-    sh.phase = 'error'; sh.err = timedOut ? 'timeout' : ((e && e.code) || 'blocked'); sh.status = e && e.status; renderSheet();
-  }
-}
-/* Remember which shop sells this roaster's coffee, in this browser only, so the next lookup for the same roaster needs no typing. */
-function rememberShop(sh){
-  if (!sh.roaster || !sh.site) return;
-  const sites = app.prefs.roasterSites = app.prefs.roasterSites || {}, key = shopKey(sh.roaster).slice(0, 60); if (!key) return;
-  delete sites[key]; sites[key] = sh.site;
-  Object.keys(sites).slice(0, Math.max(0, Object.keys(sites).length - 60)).forEach(k => delete sites[k]);
-  scheduleDraft();
-}
-function showShopReview(sh, product){
-  const d = shopDraft(product, sh.site), src = { host:shopHostOf(sh.site), title:d.title, url:d.url };
-  if (!d.res.any){ sheet = Object.assign(sh, { phase:'empty', src }); renderSheet(); return; }
-  sheet = { step:'scan', phase:'review', mode:'shop', res:d.res, src, files:[], ctl:null, err:'' }; renderSheet();
-}
-function shopErrorCopy(code, status){
-  const inside = (typeof inClaude === 'function' && inClaude()) ? ' Inside Claude this view may block outside websites; the public NeuroBrew page can read them.' : '';
-  const map = {
-    blocked:['Could not read that website', "Your browser couldn't read it. The shop may not allow other sites to read its listings, it may not be a Shopify shop, or this view may block outside websites." + inside + ' You can type the details in by hand.'],
-    offline:['You look to be offline', 'Connect to the internet and try again.'],
-    notshop:["That doesn't look like a Shopify shop", "NeuroBrew reads shops built on Shopify. That website answered, but not in that form. Check the address, or paste the link to the coffee's own page."],
-    http:['The shop said no', 'The website answered with an error' + (status ? ' (code ' + status + ')' : '') + '. Try again later, or paste the link to the coffee\'s own page.'],
-    timeout:['That took too long', 'The website did not answer in ' + (SHOP_TIMEOUT_MS / 1000) + ' seconds. Try again, or check the address.'],
-    toolarge:['That shop list is too large', "Paste the link to the coffee's own page instead."]
-  };
-  return map[code] || ['Something went wrong', 'The lookup did not work. You can type the details in by hand.'];
-}
-function renderShopSheet(title){
-  const sh = sheet, host = shopHostOf(sh.site), close = h('button', { type:'button', class:'btn', text:'Close', onclick:closeSheet });
-  const again = (label, primary) => h('button', { type:'button', class:'btn' + (primary ? ' primary' : ''), text:label, onclick:() => { sh.phase = 'ask'; sh.err = ''; sh.found = null; renderSheet(); } });
-  if (sh.phase === 'ask'){
-    title.textContent = 'Look up ' + (sh.name || 'this coffee');
-    const inp = h('input', { type:'text', class:'plain', id:'shopSite', 'aria-label':"Roaster's website, or a link to the coffee's page", placeholder:'example-roasters.com', inputmode:'url', autocapitalize:'none', autocomplete:'off', spellcheck:'false', value:sh.input || sh.site || '' });
-    const err = h('p', { class:'err', role:'alert', style:'margin:6px 0 0' }, sh.err || '');
-    const go2 = () => runShopLookup(inp.value);
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); go2(); } });
-    sheetEl.append(h('p', { class:'fine', style:'margin-top:0', text:"Your browser reads the roaster's own online shop, straight from their website. Nothing goes through NeuroBrew, and nothing about your tastings is sent. It only works with shops built on Shopify." }),
-      h('label', { for:'shopSite', style:'display:block;margin:10px 0 4px;font-weight:600;color:var(--label)', text:(sh.roaster ? sh.roaster + "'s" : "The roaster's") + ' website, or a link to the coffee\'s page' }), inp,
-      h('p', { class:'fine', style:'margin:6px 0 0', text:"A link to the coffee's own page is the most exact. NeuroBrew remembers the website for this roaster in this browser, so you only type it once." }), err,
-      h('div', { class:'row', style:'margin-top:12px' }, h('button', { type:'button', class:'btn', text:'Cancel', onclick:closeSheet }), h('button', { type:'button', class:'btn primary', id:'shopGo', text:'Look it up', onclick:go2 })));
-    return;
-  }
-  if (sh.phase === 'working'){
-    title.textContent = 'Looking on ' + host + '...';
-    sheetEl.append(h('p', { text:"Your browser is reading the shop's public listing. This takes a few seconds." }), h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:'Cancel', onclick:closeSheet })));
-    return;
-  }
-  if (sh.phase === 'pick'){
-    title.textContent = 'Which one is it?';
-    sheetEl.append(h('p', { class:'fine', style:'margin-top:0', text:'These listings on ' + host + ' match "' + sh.name + '". Pick yours.' }),
-      h('div', { style:'display:flex;flex-direction:column;gap:8px' }, sh.found.map(f => h('button', { type:'button', class:'btn block waybtn shoppick', onclick:() => showShopReview(sh, f.product) },
-        h('span', { class:'wb-t', text:String(f.product.title).slice(0, 120) }), h('span', { class:'wb-s', text:f.full ? 'Has every word of the name' : 'A close match, not every word' })))),
-      h('div', { class:'row', style:'margin-top:12px' }, again('None of these: try another website'), close));
-    return;
-  }
-  if (sh.phase === 'none'){
-    title.textContent = "Couldn't find it";
-    sheetEl.append(h('p', { text:'NeuroBrew looked through ' + sh.seen + ' product' + (sh.seen === 1 ? '' : 's') + ' on ' + host + ' and none match "' + sh.name + '". It may be sold out, listed under another name, or this may not be the roaster\'s own website.' }),
-      h('p', { class:'fine', text:"If you can open the coffee's page, copy its link and paste it instead of the website. That skips the searching." }), h('div', { class:'row' }, close, again('Try another website or link', true)));
-    return;
-  }
-  if (sh.phase === 'empty'){
-    title.textContent = 'Nothing to fill in';
-    sheetEl.append(...kept(h('p', { text:'Found "' + sh.src.title + '" on ' + sh.src.host + ', but its listing does not say the origin, process, elevation, roast or tasting notes in a way NeuroBrew can read.' }),
-      sh.src.url ? h('p', null, h('a', { href:sh.src.url, target:'_blank', rel:'noopener noreferrer', text:'Open the listing' })) : null,
-      h('p', { class:'fine', text:'You can copy the text from the listing and use Paste label text, or type the details in by hand.' }), h('div', { class:'row' }, close, again('Try another website or link', true))));
-    return;
-  }
-  const cp = shopErrorCopy(sh.err, sh.status);
-  title.textContent = cp[0];
-  sheetEl.append(h('p', { text:cp[1] }), h('div', { class:'row' }, close, again(sh.err === 'timeout' || sh.err === 'offline' || sh.err === 'http' ? 'Try again' : 'Try another website or link', true)), h('p', { class:'fine', text:'Reason code: ' + sh.err }));
-}
 /* the bottom of the menu: which release this is and when it was made */
 function menuFoot(){
   const rel = releaseLatest();
@@ -7937,7 +7924,6 @@ function renderSheetBody(){
   overlay.classList.toggle('menupanel', sheet.step === 'menu');   /* on a wide screen the menu opens under the Menu button, not from the bottom */
   const title = h('h3', { id:'sheetTitle' }); sheetEl.append(title);
   const closeRow = label => h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:label || 'Cancel', onclick:closeSheet }));
-  if (sheet.step === 'shop'){ renderShopSheet(title); return; }   /* Look up this coffee (61-shop-lookup.js) */
   if (sheet.step === 'setup'){ renderSetupSheet(title); return; }   /* My setup (63-sheet-setup.js) */
   if (sheet.step === 'setupFound'){ renderSetupFoundSheet(title); return; }
   if (sheet.step === 'keepFirst'){ renderKeepFirstSheet(title); return; }   /* cuppings kept only in this browser, before a file replaces them (69-sheet-keep-first.js) */
@@ -8170,7 +8156,7 @@ function renderSheetBody(){
     ta.addEventListener('input', () => { sheet.text = ta.value; go2.disabled = !ta.value.trim(); });
     go2.addEventListener('click', () => startScanText(ta.value.trim()));
     sheetEl.append(h('p', { class:'fine', style:'margin-top:0', text:'On most phones you can copy text out of a photo: press and hold the words in the photo (Google Lens or iPhone Live Text), then paste here. Or just type what the bag says.' }), ta,
-      h('p', { class:'fine', text:'Claude reads this text on your own Claude account, then you check every line before anything fills in.' }),
+      h('p', { class:'fine', text:'NeuroBrew reads this text on your phone. Nothing is sent anywhere, and you check every line before anything fills in.' }),
       h('div', { class:'row', style:'margin-top:10px' }, h('button', { type:'button', class:'btn', text:'Cancel', onclick:closeSheet }), go2));
     return;
   }
@@ -8203,9 +8189,11 @@ function renderSheetBody(){
   if (sheet.step === 'scan'){
     const sh = sheet;
     if (sh.phase === 'working'){
+      const p = scanProgress(sh);
       title.textContent = sh.mode === 'text' ? 'Reading the label text...' : 'Reading your bag...';
-      sheetEl.append(h('p', { text:'This can take up to a minute. The first time, Claude asks your permission to use your account for this.' }),
-        h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:'Cancel', onclick:closeSheet })));
+      sheetEl.append(h('p', { id:'scanStatus', role:'status', 'aria-live':'polite', style:'margin-top:0', text:p.text }), h('div', { class:'scanbar', 'aria-hidden':'true' }, h('i', { id:'scanBar', style:'width:' + Math.round(p.pct) + '%' })),
+        h('p', { class:'fine', text:sh.mode === 'text' ? 'This happens on your phone. Nothing is sent anywhere.' : 'This happens on your phone, so it can take a little while on an older one. The photo is not sent anywhere or saved.' }),
+        h('div', { class:'row', style:'margin-top:10px' }, h('button', { type:'button', class:'btn', text:'Cancel', onclick:closeSheet })));
       return;
     }
     if (sh.phase === 'error'){
@@ -8213,21 +8201,26 @@ function renderSheetBody(){
       title.textContent = cp[0];
       sheetEl.append(h('p', { text:cp[1] }), h('div', { class:'row' },
         h('button', { type:'button', class:'btn', text:'Close', onclick:closeSheet }),
-        cp[2] ? h('button', { type:'button', class:'btn primary', text:'Try again', onclick:runScan }) : null), h('p', { class:'fine', text:'Reason code: ' + sh.err }));
+        cp[2] ? h('button', { type:'button', class:'btn primary', text:'Try again', onclick:runScan }) : null), h('p', { class:'fine', text:'Reason code: ' + sh.err + (sh.detail ? ' (' + sh.detail + ')' : '') }));
       return;
     }
     const res = sh.res;
     if (!res.any){
       title.textContent = "Couldn't read the label";
-      sheetEl.append(h('p', { text:'Nothing useful came back from that photo. Try a closer, brighter shot of the front label, and add the back if the roast date or elevation is there.' }),
+      sheetEl.append(h('div', { class:'scanwarn', role:'status' }, h('span', { class:'scanicon', 'aria-hidden':'true', text:'!' }), h('div', null, h('b', { text:'Nothing could be filled in' }),
+          h('p', { text:sh.mode === 'photo' ? 'The reader found words, but none that it could tell for sure. Try a closer, brighter shot of the front label, and add the back if the roast date or elevation is there.' : 'None of that text could be told for sure. Try the label text again, with one detail per line, such as "Process: Washed".' }))),
         h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:'Close', onclick:closeSheet }),
-          h('button', { type:'button', class:'btn primary', text:'Choose another photo', onclick:() => { closeSheet(); if (scanInputEl) scanInputEl.click(); } })));
+          sh.mode === 'photo' ? h('button', { type:'button', class:'btn primary', text:'Choose another photo', onclick:() => { closeSheet(); if (scanInputEl) scanInputEl.click(); } }) : null));
       return;
     }
-    const shop = sh.mode === 'shop';
-    title.textContent = shop ? 'Found on ' + sh.src.host : 'Here is what Claude read';
-    sheetEl.append(h('p', { class:'fine', style:'margin-top:0', text:shop ? 'Check each line against the bag or the listing. Untick anything wrong, or fix it. Nothing fills in until you tap the button.' : 'Check each line against the bag. Untick anything wrong, or fix it. Nothing fills in until you tap the button.' }));
-    if (shop) sheetEl.append(h('p', { style:'margin:0 0 8px' }, h('b', { text:sh.src.title }), sh.src.url ? ' ' : '', sh.src.url ? h('a', { href:sh.src.url, target:'_blank', rel:'noopener noreferrer', text:'Open the listing' }) : null));
+    const local = sh.mode !== 'chat', gaps = res.missing || [], twos = res.conflicts || [];
+    title.textContent = local ? 'Here is what was read' : 'Here is what Claude read';
+    sheetEl.append(h('p', { class:'fine', style:'margin-top:0', text:'Check each line against the bag. Untick anything wrong, or fix it. Nothing fills in until you tap the button.' }));
+    if (local && !gaps.length && !twos.length) sheetEl.append(h('div', { class:'scanwarn good', role:'status' }, h('span', { class:'scanicon', 'aria-hidden':'true', text:'✓' }), h('div', null, h('b', { text:'All fields were found' }), h('p', { text:'Still check each line against the bag.' }))));
+    else if (local) sheetEl.append(h('div', { class:'scanwarn', role:'status' }, h('span', { class:'scanicon', 'aria-hidden':'true', text:'!' }), h('div', null, h('b', { text:'Not everything was found' }),
+      gaps.length ? h('p', { text:'Left blank, because the bag did not clearly say: ' + gaps.join(', ') + '.' }) : null,
+      twos.length ? h('p', { text:'Left blank, because the photos gave two different answers: ' + twos.join(', ') + '.' }) : null,
+      h('p', { text:'Nothing was guessed. Fill these in by hand, or scan the back of the bag too.' }))));
     const rows = res.items.map(it => {
       let ctl, get;
       if (it.key === 'process' || it.key === 'roast' || it.key === 'density' || it.key === 'decaf'){
@@ -8237,21 +8230,21 @@ function renderSheetBody(){
       } else if (it.key === 'roast_date'){ ctl = h('input', { type:'date', class:'plain', 'aria-label':it.label, value:it.value }); get = () => ctl.value; }
       else if (it.key === 'bag_notes'){ ctl = h('textarea', { class:'plain', 'aria-label':it.label, style:'min-height:60px' }); ctl.value = it.value; get = () => ctl.value.trim(); }
       else { ctl = h('input', { type:'text', class:'plain', 'aria-label':it.label, value:it.value }); get = () => ctl.value.trim(); }
-      const cur = shop && it.key !== 'name' && it.key !== 'roaster' ? String(app.coffee[it.key] || '').trim() : '', differs = !!cur && !!it.value && cur !== it.value;   /* a shop listing never overwrites what you already entered unless you tick it */
+      const cur = String(app.coffee[it.key] || '').trim(), differs = !!cur && !!it.value && cur !== it.value;   /* a read never overwrites what you already entered unless you tick it */
       const cb = h('input', { type:'checkbox', 'aria-label':'Use ' + it.label }); cb.checked = !!it.value && !differs;
       const yours = differs ? h('div', { class:'fine', style:'margin-top:4px', text:'Your form has: ' + (it.key === 'process' ? labelOf(PROCESSES, cur) : it.key === 'roast' ? labelOf(ROASTS, cur) : it.key === 'density' ? labelOf(DENSITIES, cur) : cur) + '. Tick to replace it.' }) : null;
-      const printed = (it.key === 'process' || it.key === 'roast' || it.key === 'density') ? h('div', { class:'fine', style:'margin-top:4px', text:(shop ? 'Found: "' : 'Printed: "') + it.raw + '"' + (it.unmatched ? (it.hint ? '. ' + it.hint + ' Pick the one that fits, or leave it unticked.' : '. Could not match it, so pick one or leave it unticked.') : (it.hint ? '. ' + it.hint : '')) }) : null;
+      const printed = (it.key === 'process' || it.key === 'roast' || it.key === 'density') ? h('div', { class:'fine', style:'margin-top:4px', text:'Printed: "' + it.raw + '"' + (it.unmatched ? (it.hint ? '. ' + it.hint + ' Pick the one that fits, or leave it unticked.' : '. Could not match it, so pick one or leave it unticked.') : (it.hint ? '. ' + it.hint : '')) }) : (it.hint ? h('div', { class:'fine', style:'margin-top:4px', text:it.hint }) : null);
       sheetEl.append(h('div', { class:'rvrow' }, cb, h('div', null, h('div', { style:'font-size:13px;color:var(--muted);margin-bottom:3px', text:it.label }), ctl, printed, yours)));
       return { key:it.key, label:it.label, raw:it.raw, cb, get };
     });
-    if (res.unclear.length) sheetEl.append(h('p', { class:'fine', text:(shop ? 'Not stated in the listing: ' : 'Could not read: ') + res.unclear.join(', ') + '.' }));
+    if (!local && res.unclear.length) sheetEl.append(h('p', { class:'fine', text:'Could not read: ' + res.unclear.join(', ') + '.' }));
     if (res.note) sheetEl.append(h('p', { class:'fine', text:'Note: ' + res.note }));
-    sheetEl.append(h('p', { class:'fine', text:shop ? "Read by your browser from the roaster's own website. Nothing went through NeuroBrew, and nothing about your tastings was sent. It is the roaster's wording, so check it against the bag." : sh.mode === 'chat' ? 'Read from the reply you pasted.' : 'Sent to Claude only to read the label, under your Claude account\'s usual terms and settings. NeuroBrew does not store it.' }),
+    sheetEl.append(h('p', { class:'fine', text:sh.mode === 'chat' ? 'Read from the reply you pasted.' : sh.mode === 'text' ? 'Read on your phone from the text you pasted. Nothing was sent anywhere.' : 'Read on your phone. The photo was not sent anywhere or saved.' }),
       h('div', { class:'row', style:'margin-top:10px' }, h('button', { type:'button', class:'btn', text:'Cancel', onclick:closeSheet }),
         h('button', { type:'button', class:'btn primary', text:'Fill in my form', onclick:() => {
           const applied = [];
           rows.forEach(r => { const v = r.get(); if (r.cb.checked && v){ app.coffee[r.key] = v; if (r.key === 'density' && r.raw) app.coffee.elevText = r.raw; applied.push(r.label.toLowerCase()); } });
-          app.coffee.scanned = applied.join(', '); app.coffee.scannedFrom = applied.length && shop ? sh.src.host : '';
+          app.coffee.scanned = applied.join(', '); app.coffee.scannedFrom = '';
           closeSheet(); render();
         } })));
     return;

@@ -2,6 +2,17 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 38: Read a bag photo on your phone
+
+2026-10-08 01:15:11 UTC
+
+- Scan a bag photo now reads the label on your own phone. The photo is not sent anywhere or saved, you do not need a Claude account, and nothing is charged. The first scan loads the reader (about 5 MB), and your browser keeps it for next time.
+- It fills in only what the bag clearly says and leaves everything else blank. It never guesses a roaster, a name, an elevation or a date. A red notice lists every field that was not found, and says when two photos disagreed. You check every line before anything fills in, and a line you already typed is kept unless you tick it.
+- It reads white print on a coloured label as well as dark print, and it throws out numbers that look misread, such as an elevation range that runs backward. Numbers it does fill in come with a reminder to check them.
+- You can scan up to three photos at once, for example the front and the back of the bag, and cancel at any time.
+- Paste label text now works the same way, on your phone, with no Claude connection. Use a Claude chat is still there.
+- Look up this coffee is gone. It was blocked by many shops, and the bag photo does the same job. A saved copy of the page opened from a file cannot read photos, because it needs the website.
+
 ## Release 37: Quick taste
 
 2026-10-07 23:55:41 UTC
