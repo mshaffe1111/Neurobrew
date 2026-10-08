@@ -2066,6 +2066,15 @@ function labelSize(w, h){
   const big = Math.max(w, h), scale = big > LABEL_MAX_SIDE ? LABEL_MAX_SIDE / big : 1;
   return { w:Math.max(1, Math.round(w * scale)), h:Math.max(1, Math.round(h * scale)), scale };
 }
+/* Small print on a busy bag is easier to read when each quarter of the picture is read on its own and enlarged: four overlapping pieces (2 across, 2 down, each reaching a little past the middle), read at LABEL_TILE_SCALE times their size. */
+const LABEL_TILE_SCALE = 1.5;
+function labelTiles(w, h){
+  w = Math.round(+w); h = Math.round(+h);
+  if (!(w >= 200 && h >= 200)) return [];
+  const o = 0.15, tw = Math.round(w / (2 - o)), th = Math.round(h / (2 - o)), out = [];
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 2; c++){ const x = c ? w - tw : 0, y = r ? h - th : 0; out.push({ x, y, w:tw, h:th }); }
+  return out;
+}
 /* One channel of the picture (gray = bytes, w * h) redrawn as dark ink on white paper, which is what the reader likes best. Each pixel is compared with the average around it (about 40 pixels each way):
    with light = false, print that is darker than its surroundings becomes ink; with light = true, print that is lighter than its surroundings (white letters on a coloured label) becomes ink.
    Even areas, glare and slow shadows come out white. Returns a new array of the same size. */
@@ -2096,7 +2105,7 @@ function labelInk(gray, w, h, light){
 /* ---------- the rule: never guess ----------
    Photo text is noisy: letters get swapped, whole lines are lost, and light print on a colour may not come through at all. So every field has its own narrow pattern, and when a pattern does not match cleanly the field stays blank.
    Several readings of the same photo are given in (each is a block of text); a field is filled when the readings agree. If they disagree, the field stays blank and is flagged. The result has the same shape as the bag scan's, so the same review sheet shows it. */
-const LABEL_EXTRA_VARIETIES = ['catigua', 'catimor', 'sarchimor', 'villa sarchi', 'mundo novo', 'maracaturra', 'obata', 'parainema', 'marsellesa', 'batian', 'ruiru 11', 'tekisic', 'laurina', 'mokka', 'kent', 'icatu', 'tabi', 'lempira', 'h1', 'catucai', 'caturra', 'castillo', 'bourbon', 'typica', 'gesha', 'geisha', 'pacamara', 'sl28', 'sl34', 'heirloom', 'landrace'];
+const LABEL_EXTRA_VARIETIES = ['catigua', 'catimor', 'sarchimor', 'villa sarchi', 'mundo novo', 'maracaturra', 'obata', 'parainema', 'marsellesa', 'batian', 'ruiru 11', 'tekisic', 'laurina', 'mokka', 'kent', 'icatu', 'tabi', 'lempira', 'h1', 'catucai', 'caturra', 'castillo', 'bourbon', 'typica', 'gesha', 'geisha', 'pacamara', 'sl28', 'sl34', 'heirloom', 'landrace', 'sl14', 'wush wush', 'welicho', 'sidra', 'pink bourbon', 'yellow bourbon', 'red bourbon', 'orange bourbon', 'bourbon rojo'];
 const LABEL_EXPECTED = [['roaster', 'Roaster'], ['name', 'Coffee name'], ['origin', 'Origin'], ['varietal', 'Varietal'], ['process', 'Process'], ['roast', 'Roast level'], ['elevation', 'Elevation'], ['roast_date', 'Roast date'], ['notes', 'Tasting notes']];
 const LABEL_GENERIC = /^(?:fresh|small|batch|craft|specialty|premium|our|local|your|the|single|origin|artisan|organic|house|whole|bean|ground|a|and|best|great|good|freshly|roasted|handcrafted|quality|gourmet)$/i;
 function labelLinesOf(text){
@@ -2118,17 +2127,19 @@ function labelVarietyIn(s){
 }
 let labelFlavors = null;
 function labelFlavorSet(){
-  if (!labelFlavors){ labelFlavors = new Set(); FLAVOR_WHEEL.forEach(c => c.groups.forEach(g => g[1].forEach(w => labelFlavors.add(norm(w))))); ['honeycrisp', 'maple', 'toast', 'toffee', 'cane sugar', 'brown sugar', 'dates', 'date', 'rose', 'jasmine', 'cardamom', 'nutmeg', 'kiwi', 'asian pear', 'lemon zest', 'white raspberry'].forEach(w => labelFlavors.add(w)); }
+  if (!labelFlavors){ labelFlavors = new Set(); FLAVOR_WHEEL.forEach(c => c.groups.forEach(g => g[1].forEach(w => labelFlavors.add(norm(w))))); ['honeycrisp', 'maple', 'toast', 'toffee', 'cane sugar', 'brown sugar', 'dates', 'date', 'rose', 'jasmine', 'cardamom', 'nutmeg', 'kiwi', 'asian pear', 'lemon zest', 'white raspberry', 'chocolate', 'cocoa', 'cacao', 'nib', 'nibs', 'tea', 'black tea', 'wine', 'tamarind', 'sangria', 'malted', 'praline', 'molasses', 'cola', 'rum', 'guava', 'papaya', 'lychee', 'mango', 'cantaloupe', 'melon', 'hibiscus', 'lavender', 'bergamot', 'earl grey', 'pecan', 'walnut', 'cashew', 'marzipan', 'nougat', 'fudge', 'brownie', 'cookie', 'graham', 'stone fruit', 'dried fruit', 'syrup', 'cream', 'blueberry', 'blackberry', 'raspberry', 'plum', 'apricot', 'orange', 'lemon', 'lime', 'grapefruit', 'cherry', 'peach', 'honey'].forEach(w => labelFlavors.add(w)); }
   return labelFlavors;
 }
 /* the separate flavor words in a run of text ("Blackberry, peach, cherry"; "Vanilla • Rose"; "kiwi, and asian pear"); null when anything in it does not look like a flavor word */
 function labelItems(text, strict){
-  const parts = String(text || '').split(/[^A-Za-z '-]+|\sand\s/i).map(p => p.replace(/^\s*and\s+/i, '').replace(/\s+/g, ' ').trim()).filter(p => p.length);
+  const parts = String(text || '').split(/\s[-–—]+\s|[^A-Za-z '-]+|\sand\s/i).map(p => p.replace(/^\s*and\s+/i, '').replace(/\s+/g, ' ').trim()).filter(p => p.length);
   if (!parts.length) return null;
+  let odd = 0;
   for (const p of parts){
     const w = labelWords(p); if (w.length > 3 || p.replace(/[^A-Za-z]/g, '').length < 3 || w.some(x => x.replace(/[^A-Za-z]/g, '').length < 2 && w.length > 1)) return null;
-    if (strict && !w.some(x => labelFlavorSet().has(norm(x))) && !labelFlavorSet().has(norm(p))) return null;
+    if (strict && !w.some(x => labelFlavorSet().has(norm(x))) && !labelFlavorSet().has(norm(p))) odd++;
   }
+  if (strict && odd > (parts.length >= 3 ? 1 : 0)) return null;   /* in a list of three or more, one word we do not know (tamarind, sangria) is let through */
   return parts.map(p => p.toLowerCase());
 }
 const LABEL_NOTES_KEY = /(?:tasting notes|taste notes|flavou?r notes|cupping notes|we taste|tastes? like|tastes? of|notes of|in the cup|(?:re)?minds us of|flavou?rs)\s*:?\s*(.*)$/i;
@@ -2169,6 +2180,16 @@ const LABEL_ROAST = '(?:light[- ]?medium|medium[- ]?light|medium[- ]?dark|dark[-
 const LABEL_ROAST_PHRASE = new RegExp('\\b' + LABEL_ROAST + '\\s+roast\\b', 'i'), LABEL_ROAST_VALUE = new RegExp('^roast(?: level| profile)?\\s*[:.]+\\s*(' + LABEL_ROAST + ')$', 'i'), LABEL_ROAST_LABEL = /^roast(?: level| profile)?\s*[:.]*$/i, LABEL_ROAST_ONLY = new RegExp('^' + LABEL_ROAST + '$', 'i');
 const LABEL_ELEV = /(\d[\d,]{2,5})\s*(?:(?:-|–|—|to)\s*(\d[\d,]{2,5})\s*)?(masl|m\.a\.s\.l\.?|msnm|meters?|metres?|ft|feet|fasl|m)\b/i;
 const LABEL_SKIP = /varietal|variety|roasted in|roast|process|altitude|elevation|notes|taste|weight|net wt|region|score|points/i;
+/* "Korgua Estate Papua New Guinea" becomes "Korgua Estate": a country at the end of the line is not part of the name */
+function labelCountryCut(t){
+  const w = labelWords(t);
+  for (let k = Math.min(3, w.length - 1); k >= 1; k--){
+    const tail = w.slice(w.length - k).join(' '), r = originMatch(tail, { fuzzy:false }), nm = r.origin ? r.origin.name : (r.country ? r.country.name : '');
+    if (nm && norm(tail).replace(/[^a-z ]/g, '').trim() === norm(nm).replace(/[^a-z ]/g, '').trim()) return w.slice(0, w.length - k).join(' ');
+  }
+  return t;
+}
+const labelNoDigit = t => !/\d/.test(t) || /^sl-?\d+$/i.test(String(t).trim()), labelVar = t => /^sl-?\d+$/i.test(String(t).trim()) ? String(t).trim().toUpperCase() : labelTitle(String(t).replace(/^(?:[A-Za-z]{1,3}[:;.,]\s*)+/, ''));
 const labelVarietyLine = l => /^(?:varietals?|variety|varieties|cultivar)\b/i.test(l) || (labelWords(l).length <= 3 && labelVarietyIn(l));
 const labelSegs = line => line.split(/\s+[-–—]\s+|\s*[|•*»,]\s*/).map(labelCore).filter(s => s.replace(/[^A-Za-z]/g, '').length >= 3);
 /* Reads the text of one or several passes over a photo. texts: array of strings. opts: { today:Date, knownRoasters:string[] }.
@@ -2183,11 +2204,17 @@ function readLabel(texts, opts){
       const core = labelCore(ln), nx = lines[i + 1] ? labelCore(lines[i + 1]) : '', segs = labelSegs(ln), many = segs.length >= 2;
       /* roaster */
       let m = /^(.{2,26}?)\s+(?:coffee\s+)?roasters?$/i.exec(core);
-      if (m && /^[A-Za-z][A-Za-z '&.-]+$/.test(m[1]) && !labelWords(m[1]).some(w => LABEL_GENERIC.test(w) || /^coffee$/i.test(w)) && labelWords(m[1]).length <= 3) add('roaster', labelTitle(m[1]));
+      if (m && /^[A-Za-z][A-Za-z '&.-]+$/.test(m[1]) && !labelWords(m[1]).some(w => LABEL_GENERIC.test(w) || /^coffee$/i.test(w)) && labelWords(m[1]).length <= 3) add('roaster', labelTitle(m[1]).replace(/[.,]+$/, ''));
+      m = /^(.{2,26}?)\s+(?:coffee\s+(?:co\.?|company)|roasters?\s+coffee)$/i.exec(core);
+      if (!m && /^(?:coffee\s+(?:co\.?|company)|(?:coffee\s+)?roasters?(?:\s+coffee)?)$/i.test(core) && i > 0){ const pv = labelCore(lines[i - 1]); m = /^(.{2,26})$/.exec(pv); if (m && (/\d/.test(pv) || (o => o.origin || o.country)(originMatch(pv, { fuzzy:false })))) m = null; else if (m) m = [m[0], m[1]]; }
+      if (m && /^[A-Za-z][A-Za-z '&.-]+$/.test(m[1]) && !labelWords(m[1]).some(w => LABEL_GENERIC.test(w) || /^coffee$/i.test(w)) && labelWords(m[1]).length <= 3 && labelWords(m[1]).every(w => w.length >= 3 || /^(?:&|co)$/i.test(w))) add('roaster', labelTitle(m[1]).replace(/[.,]+$/, ''));
       m = /\broasted\s+(?:and packed\s+)?by:?\s+([A-Za-z][A-Za-z '&.-]{1,30})/i.exec(ln); if (m && labelWords(m[1]).length <= 4) add('roaster', m[1].trim());
       known.forEach(r => { if ((' ' + norm(core).replace(/[^a-z0-9]+/g, ' ') + ' ').includes(' ' + norm(r).replace(/[^a-z0-9]+/g, ' ').trim() + ' ')) add('roaster', r); });
-      /* coffee name: a farm, estate or station line */
-      if (!LABEL_SKIP.test(ln) && labelWords(core).length >= 2 && labelWords(core).length <= 5 && /^[A-Za-z][A-Za-z '&.-]+$/.test(core) && /\b(finca|hacienda|fazenda|estate|estancia|cooperativa|cooperative|co-?op|washing station|wet mill|farm)\b/i.test(core)){ add('name', labelTitle(core)); hints.name = 'A farm or estate line from the bag. Change it if you call this coffee something else.'; }
+      /* coffee name: a farm, estate or station line (a country after it on the same line is cut off) */
+      (many ? segs : [core]).forEach(sg => {
+        let c = labelCountryCut(sg); const sfx = /^(.*?\b(?:estate|farm|cooperative|co-?op|washing station|wet mill))\b/i.exec(c); if (sfx && !/^(?:finca|hacienda|fazenda|estancia)\b/i.test(c)) c = sfx[1];   /* "X Estate" ends at the word Estate; whatever follows is stray text */
+        if (!LABEL_SKIP.test(ln) && labelWords(c).length >= 2 && labelWords(c).length <= 5 && /^[A-Za-z][A-Za-z '&.-]+$/.test(c) && /\b(finca|hacienda|fazenda|estate|estancia|cooperativa|cooperative|co-?op|washing station|wet mill|farm)\b/i.test(c)){ add('name', labelTitle(c)); hints.name = 'A farm or estate line from the bag. Change it if you call this coffee something else.'; }
+      });
       /* origin: a whole piece of a line that is a country or one of its regions */
       if (!LABEL_SKIP.test(ln) && !labelVarietyLine(core) && labelWords(ln).length <= 9) segs.forEach(sg => {
         if (labelWords(sg).length > 4) return;
@@ -2205,22 +2232,25 @@ function readLabel(texts, opts){
       } else if (/^process(?:ing)?(?: method)?\s*[:.]*$/i.test(core) && LABEL_PROC.test(nx) && labelWords(nx).length <= 2) add('process', LABEL_PROC.exec(nx)[1]);
       m = /^process(?:ing)?(?: method)?\s*[:.]+\s*(.+)$/i.exec(core); if (m && LABEL_PROC.test(m[1]) && labelWords(m[1]).length <= 3) add('process', LABEL_PROC.exec(m[1])[1]);
       /* roast level */
-      m = LABEL_ROAST_PHRASE.exec(ln); if (m) add('roast', m[0]);
+      m = LABEL_ROAST_PHRASE.exec(ln) || /\b(?:u|i|1|l)ght\s*roast\b/i.exec(ln); if (m) add('roast', /ght/i.test(m[0]) && !/light/i.test(m[0]) ? 'light roast' : m[0]);
       m = LABEL_ROAST_VALUE.exec(core); if (m) add('roast', m[1]);
       if (LABEL_ROAST_LABEL.test(core) && LABEL_ROAST_ONLY.test(nx)) add('roast', nx);
-      if (LABEL_ROAST_ONLY.test(core) && !/^(?:city\+?|french|italian|full city)$/i.test(core)) add('roast', core);
+      /* a lone roast word only counts when no "... roast" phrase is on the bag, and a line that lists light, medium and dark is a scale, not an answer */
+      if (LABEL_ROAST_ONLY.test(core) && !/^(?:city\+?|french|italian|full city)$/i.test(core) && !(/\blight\b/i.test(ln) && /\bdark\b/i.test(ln))) add('roastlone', core);
       /* elevation: a number (or range) with a unit */
       m = LABEL_ELEV.exec(ln.replace(/(\d)\s*\.\s*(\d{3})\b/g, '$1$2'));
       if (m && (m[3].toLowerCase() !== 'm' || /alt|elev/i.test(ln + ' ' + (lines[i - 1] || '')))){
         const lo = +m[1].replace(/,/g, ''), hi = m[2] ? +m[2].replace(/,/g, '') : 0;
         if ((!hi || (hi > lo && hi - lo <= 1000)) && mapElevation(m[0]).cls) add('elevation', { raw:m[0].trim(), key:(hi ? lo + '-' + hi : lo) + (/ft|feet|fasl/i.test(m[3]) ? 'ft' : 'm') });
       }
+      ln.split(/\s*[|•*»]\s*/).map(x => x.trim()).forEach(sg => { const r = /^(\d[\d,]{2,4})\s*(?:-|–|—|to)\s*(\d[\d,]{2,4})\s*m$/i.exec(sg); if (r){ const lo = +r[1].replace(/,/g, ''), hi = +r[2].replace(/,/g, ''); if (lo >= 300 && hi <= 3000 && hi > lo && hi - lo <= 1000 && mapElevation(sg).cls) add('elevation', { raw:sg, key:lo + '-' + hi + 'm' }); } });   /* a piece of a line that is only "800-1100M" */
       /* varietal */
+      let pieces = null;
       m = /^(?:varietals?|varieties|variety|cultivar)s?\s*[:.\-]*\s*(.*)$/i.exec(core);
       const vv = m ? (m[1].trim() || nx) : '';
       if (vv && labelWords(vv).length <= 4 && !/\d/.test(vv) && labelVarietyIn(vv)) add('varietal', labelTitle(vv.replace(/[^A-Za-z '-]/g, '').trim()));
-      else if (many && !m) segs.forEach(sg => { if (labelWords(sg).length <= 3 && labelVarietyIn(sg) && !/\d/.test(sg)) add('varietal', labelTitle(sg)); });
-      else if (!m && labelWords(core).length <= 3 && !/\d/.test(core) && labelVarietyIn(core)) add('varietal', labelTitle(core));
+      else if (!m && (pieces = ln.split(/\s+[-–—]\s+|\s*[|•*»,]\s*/).map(labelCore)).length >= 2){ const vs = pieces.filter(sg => labelWords(sg).length <= 3 && labelVarietyIn(sg) && labelNoDigit(sg)); if (vs.length) add('varietal', vs.map(labelVar).join(', ')); }
+      else if (!m && labelWords(core).length <= 3 && labelNoDigit(core) && labelVarietyIn(core)) add('varietal', labelVar(core));
       if (/\bdecaf(?:feinated)?\b|swiss water/i.test(ln)) add('decaf', true);
     });
     labelNotesFrom(lines).forEach(n => add('notes', n));
@@ -2229,10 +2259,11 @@ function readLabel(texts, opts){
   const flagged = [], uniq = (k, key) => { const seen = new Map(); (got[k] || []).forEach(v => { const kk = key(v); if (!seen.has(kk)) seen.set(kk, v); }); return Array.from(seen.values()); };
   const one = (k, key, merge) => { const u = uniq(k, key); if (u.length === 1) return u[0]; if (u.length > 1 && merge){ const r = merge(u); if (r) return r; } if (u.length > 1) flagged.push(k); return null; };
   const norml = s => norm(String(s)).replace(/[^a-z0-9]+/g, ' ').trim();
-  const roaster = one('roaster', norml, u => (known.find(r => u.some(x => norml(x) === norml(r))) || null)), nameV = one('name', norml);
+  const lead = k => { const c = new Map(); (got[k] || []).forEach(v => c.set(norml(v), (c.get(norml(v)) || 0) + 1)); const t = Array.from(c.entries()).sort((a, b) => b[1] - a[1]); return t.length && t[0][1] >= 2 && (t.length === 1 || t[0][1] >= 2 * t[1][1]) ? (got[k] || []).find(v => norml(v) === t[0][0]) : null; };   /* a name seen in at least two passes and twice as often as any other beats a one-off misreading */
+  const roaster = one('roaster', norml, u => (known.find(r => u.some(x => norml(x) === norml(r))) || null)), nameV = one('name', norml, u => u.slice().sort((x, y) => y.length - x.length).find(l => u.every(x => norml(l).includes(norml(x)))) || lead('name') || null);
   const oc = uniq('origin', o => o.country); let origin = '';
   if (oc.length === 1){ const regs = uniq('origin', o => o.region || '-').filter(o => o.region); if (regs.length <= 1){ origin = composeOrigin([oc[0].country], regs[0] ? regs[0].region : ''); } else origin = oc[0].country; if (!(got.origin || []).some(o => o.exact)) hints.origin = 'Worked out from a place name on the bag, so check it.'; } else if (oc.length > 1) flagged.push('origin');
-  const proc = one('process', x => readProcess(x, origin).value || norml(x)), roast = one('roast', x => mapRoast(x) || norml(x));
+  const proc = one('process', x => readProcess(x, origin).value || norml(x)), roast = (got.roast || []).length ? one('roast', x => mapRoast(x) || norml(x)) : (got.roast = got.roastlone, one('roast', x => mapRoast(x) || norml(x)));
   const vr = one('varietal', norml, u => u.slice().sort((a, b) => b.length - a.length).find(l => u.every(x => norml(l).includes(norml(x)))) || null);
   const el = one('elevation', x => x.key), dt = one('roast_date', x => x);
   const notes = (got.notes || []).slice().sort((a, b) => b.split(',').length - a.split(',').length || b.length - a.length)[0] || null;
@@ -4626,6 +4657,19 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 39,
+  "at": "2026-10-08T02:06:39Z",
+  "date": "2026-10-08",
+  "title": "The bag reader reads more of your photos",
+  "notes": [
+   "Scan a bag photo now also reads each quarter of the photo, enlarged, so small print on a busy bag is picked up more often.",
+   "Flavor lists with dashes, stars or bars between them are read, and so are 'light roast' when the L is misread, 'Coffee Co.' roaster names, SL14, SL28 varieties and a bare '800-1100M' elevation.",
+   "A Light, Medium, Dark scale on a bag is no longer taken as the roast level, and a farm name stops at the word Estate.",
+   "When two different roasters or names are seen on one photo, the field stays blank and is flagged in red, not chosen.",
+   "The scan card tells you how to copy the text from the photo with your phone and use Paste label text when a photo is not read well."
+  ]
+ },
+ {
   "release": 38,
   "at": "2026-10-08T01:15:11Z",
   "date": "2026-10-08",
@@ -5573,7 +5617,7 @@ function scanCard(){
   const can = readerSupported();
   const scanBtn = h('button', { type:'button', class:'btn block', text:'Scan a bag photo', onclick:() => input.click(), hidden:!can });
   const note = h('p', { class:'fine', style:'margin:8px 0 0', text:can
-    ? 'NeuroBrew reads the label right on your phone. The photo never leaves your phone, and nothing is charged. The first scan loads the reader (about 5 MB), and your browser keeps it for next time.'
+    ? 'NeuroBrew reads the label right on your phone. The photo never leaves your phone, and nothing is charged. The first scan loads the reader (about 5 MB), and your browser keeps it for next time. Small or fancy lettering can be missed. If so, press and hold the words in the photo to copy them (most phones can do this), then tap Paste label text.'
     : "Reading a photo works on the NeuroBrew website. It can't run from a saved copy or in this browser. You can still paste the label text." });
   const textBtn = h('button', { type:'button', class:'btn link', text:'Paste label text', onclick:() => { sheet = { step:'scanText', text:'', err:'' }; openSheet(); } });
   const chatBtn = h('button', { type:'button', class:'btn link', text:'Use a Claude chat', onclick:() => { sheet = { step:'scanChat', err:'' }; openSheet(); } });
@@ -5596,7 +5640,7 @@ async function decodePhoto(file){
   });
 }
 const canvasPng = (cv) => new Promise((res, rej) => cv.toBlob(b => b ? b.arrayBuffer().then(res, rej) : rej({ code:'image' }), 'image/png'));
-/* One photo, two ways to look at it, each redrawn as dark ink on white: 'D' keeps print that is darker than its surroundings (the brightness), 'W' keeps print that is lighter, such as white letters on a coloured label (the green channel). */
+/* One photo, two ways to look at it, each redrawn as dark ink on white and read whole and in four enlarged quarters: 'D' keeps print that is darker than its surroundings (the brightness), 'W' keeps print that is lighter, such as white letters on a coloured label (the green channel). */
 async function preparePhoto(file){
   const src = await decodePhoto(file), sw = src.naturalWidth || src.width, sh = src.naturalHeight || src.height, sz = labelSize(sw, sh);
   if (!sz.w) throw { code:'image' };
@@ -5610,7 +5654,13 @@ async function preparePhoto(file){
     const g = labelInk(chan, sz.w, sz.h, light), img = ctx.createImageData(sz.w, sz.h);
     for (let i = 0, j = 0; i < n; i++, j += 4){ img.data[j] = img.data[j + 1] = img.data[j + 2] = g[i]; img.data[j + 3] = 255; }
     ctx.putImageData(img, 0, 0);
-    out.push({ id, png:await canvasPng(cv) });
+    out.push({ id, png:await canvasPng(cv), modes:['3', '11'] });
+    /* then each quarter, enlarged (one reading each is enough) */
+    for (const [k, t] of labelTiles(sz.w, sz.h).entries()){
+      const tc = document.createElement('canvas'); tc.width = Math.round(t.w * LABEL_TILE_SCALE); tc.height = Math.round(t.h * LABEL_TILE_SCALE);
+      const tx = tc.getContext('2d'); tx.imageSmoothingQuality = 'high'; tx.drawImage(cv, t.x, t.y, t.w, t.h, 0, 0, tc.width, tc.height);
+      out.push({ id:id + 't' + k, png:await canvasPng(tc), modes:['11'] }); tc.width = tc.height = 1;
+    }
   }
   cv.width = cv.height = 1;
   return out;
@@ -5638,7 +5688,7 @@ function startReader(files, hooks){
     for (let i = 0; i < files.length; i++){
       while (prepared.length <= i){ await Promise.race([prep, new Promise(r => setTimeout(r, 50))]); if (failed) throw failed; }
       if (hooks.onStatus) hooks.onStatus('read', i, files.length);
-      w.postMessage({ type:'read', jobs:prepared[i].map(p => ({ id:p.id, png:p.png, modes:['3', '11'] })) }, prepared[i].map(p => p.png));
+      w.postMessage({ type:'read', jobs:prepared[i].map(p => ({ id:p.id, png:p.png, modes:p.modes })) }, prepared[i].map(p => p.png));
       for (;;){ const m = await next(); if (m.type === 'result'){ if (m.text && m.text.trim()) texts.push(m.text); } else if (m.type === 'done') break; else if (m.type === 'error') throw m; }
       prepared[i] = null;
     }

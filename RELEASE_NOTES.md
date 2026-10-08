@@ -2,6 +2,16 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 39: The bag reader reads more of your photos
+
+2026-10-08 02:06:39 UTC
+
+- Scan a bag photo now also reads each quarter of the photo, enlarged, so small print on a busy bag is picked up more often.
+- Flavor lists with dashes, stars or bars between them are read, and so are 'light roast' when the L is misread, 'Coffee Co.' roaster names, SL14, SL28 varieties and a bare '800-1100M' elevation.
+- A Light, Medium, Dark scale on a bag is no longer taken as the roast level, and a farm name stops at the word Estate.
+- When two different roasters or names are seen on one photo, the field stays blank and is flagged in red, not chosen.
+- The scan card tells you how to copy the text from the photo with your phone and use Paste label text when a photo is not read well.
+
 ## Release 38: Read a bag photo on your phone
 
 2026-10-08 01:15:11 UTC
