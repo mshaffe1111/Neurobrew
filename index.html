@@ -544,8 +544,6 @@ details.help summary{ color:var(--accent); }
 .kv dt{ color:var(--muted); }
 .kv dd{ margin:0; font-weight:500; overflow-wrap:anywhere; }
 
-[data-mode="single"] .only-five{ display:none !important; }
-[data-mode="five"] .only-single{ display:none !important; }
 @media (prefers-reduced-motion: reduce){ .meter .fill{ transition:none; } }
 @media (max-width:380px){ .fields{ grid-template-columns:1fr; } .batch{ grid-template-columns:1fr; } }
 /* ---------- polish: one calm, consistent surface language ---------- */
@@ -731,6 +729,20 @@ details.dialsec > summary::-webkit-details-marker{ display:none; }
 details.dialsec > summary::after{ content:"+"; font-size:22px; font-weight:400; color:var(--muted); }
 details.dialsec[open] > summary::after{ content:"\2212"; }
 details.dialsec[open]{ padding-bottom:14px; }
+.waybox{ margin:12px 0 14px; }
+.waybar{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.way{ text-align:left; border:2px solid var(--line); border-radius:12px; background:var(--surface); padding:12px; min-height:84px; display:flex; flex-direction:column; gap:4px; }
+.way b{ font-size:17px; }
+.way span{ font-size:13.5px; color:var(--muted); line-height:1.35; }
+.way[aria-pressed="true"]{ border-color:var(--accent); background:var(--tint); }
+.way[aria-pressed="true"] b{ color:var(--accent); }
+.qask{ font-weight:600; font-size:16px; margin:0 0 6px; }
+.flavgroup{ margin:0 0 14px; }
+.flavask{ font-weight:600; font-size:15px; margin:0 0 2px; }
+.chip.locked, .chip:disabled{ color:var(--muted); border-style:dashed; background:transparent; cursor:not-allowed; text-decoration:line-through; }
+.qdetail{ margin-top:8px; }
+.qdetail[hidden]{ display:none; }
+@media (max-width:380px){ .waybar{ grid-template-columns:1fr; } }
 </style>
 </head>
 <body data-screen="start">
@@ -777,13 +789,14 @@ const COLUMNS = [
   'defect_notes','general_notes','blend','details_guessed','water_alkalinity_mgl','water_hardness_mgl',
   'my_rating_stars',
   'dial_symptom','dial_change','dial_from_id','dial_locked',
+  'make_again','q_smell','q_taste','q_aftertaste','q_acidity','q_sweetness','q_body','flavors_liked','flavors_not_liked',
   'setup_json'
 ];
 const TEXT_COLUMNS = new Set([
   'roaster','coffee_name','origin','process','roast_level','elevation_class','varietal','bag_notes',
   'brew_method','brew_grind_setting','brew_adjustment','brew_filter','brew_grinder_name','brew_pour_notes','brew_technique_detail','details_guessed','aroma_vials','words_fragrance_aroma','words_flavor','words_aftertaste','words_acidity','words_body','aroma_kit',
   'note_fragrance_aroma','note_flavor','note_aftertaste','note_acidity','note_body','note_balance','note_overall',
-  'defect_notes','general_notes'
+  'defect_notes','general_notes','flavors_liked','flavors_not_liked'
 ]);
 /* The person's setup (units, level, gear) rides in this one column, on the newest cupping only. A file or a build that does not know it just keeps the column and ignores it. */
 const SETUP_COLUMN = 'setup_json';
@@ -906,8 +919,47 @@ function valueByLabel(list, label){
   return x ? x.v : '';
 }
 function splitList(s){ return String(s || '').split(';').map(x => x.trim()).filter(Boolean); }
-/*PURE_END*/
 
+/* The six areas of a quick cup, in cupping order. `col` is the saved-file column; `words` names the word list (the Taste page's own lists) an area can add, or '' for none. */
+const QUICK_AREAS = [
+  { key:'smell', col:'q_smell', label:'Smell', ask:'How did it smell?', words:'fragrance_aroma' },
+  { key:'taste', col:'q_taste', label:'Taste', ask:'How did it taste?', words:'flavor' },
+  { key:'aftertaste', col:'q_aftertaste', label:'Aftertaste', ask:'How was the aftertaste?', words:'aftertaste' },
+  { key:'acidity', col:'q_acidity', label:'Acidity', ask:'How did you like the acidity?', words:'' },
+  { key:'sweetness', col:'q_sweetness', label:'Sweetness', ask:'How did you like the sweetness?', words:'' },
+  { key:'body', col:'q_body', label:'Body', ask:'How did you like the body?', words:'' }
+];
+const QUICK_GRADES = [{ v:'good', label:'Good' }, { v:'okay', label:'Okay' }, { v:'notgood', label:'Not good' }, { v:'unsure', label:"Couldn't tell" }];
+const MAKE_AGAIN = [{ v:'yes', label:'Yes' }, { v:'maybe', label:'Maybe' }, { v:'no', label:'No' }];
+/* A file is data from outside: anything that is not exactly one of the known answers counts as not answered. */
+function quickGrade(v){ v = String(v == null ? '' : v).trim().toLowerCase(); return QUICK_GRADES.some(g => g.v === v) ? v : ''; }
+function quickMakeAgain(v){ v = String(v == null ? '' : v).trim().toLowerCase(); return MAKE_AGAIN.some(g => g.v === v) ? v : ''; }
+/* The flavors printed on the bag, as separate words: the bag text is split at commas, semicolons, slashes, "&" and "and", the same way the cupping cards read it. Repeats are dropped, and at most 10 are kept. */
+function bagFlavors(text){
+  const seen = new Set(), out = [];
+  String(text || '').split(/[,;\/&]|\band\b/i).map(x => x.trim().replace(/\s+/g, ' ')).filter(x => x.length >= 3 && x.length <= 24).forEach(x => {
+    const k = x.toLowerCase(); if (!seen.has(k) && out.length < 10){ seen.add(k); out.push(k); }
+  });
+  return out;
+}
+/* Liked and not liked flavors, each a list of words. A flavor sits in one list only: if a file or a draft has it in both, it stays in "liked". */
+function cleanFlavorLists(liked, notLiked){
+  const clean = a => { const seen = new Set(), out = []; (Array.isArray(a) ? a : []).forEach(x => { const t = String(x == null ? '' : x).trim().toLowerCase().slice(0, 24); if (t.length >= 3 && !seen.has(t) && out.length < 12){ seen.add(t); out.push(t); } }); return out; };
+  const l = clean(liked), n = clean(notLiked).filter(x => !l.includes(x));
+  return { liked:l, notLiked:n };
+}
+/* what a saved row says about its quick answers */
+function quickAnswers(o){
+  o = o || {}; const areas = {}; QUICK_AREAS.forEach(a => { const g = quickGrade(o[a.col]); if (g) areas[a.key] = g; });
+  const fl = cleanFlavorLists(String(o.flavors_liked || '').split(';'), String(o.flavors_not_liked || '').split(';'));
+  return { makeAgain:quickMakeAgain(o.make_again), areas, liked:fl.liked, notLiked:fl.notLiked };
+}
+function hasQuick(o){ o = o || {}; if (String(o.score_kind || '') === 'quick') return true; const q = quickAnswers(o); return !!q.makeAgain || Object.keys(q.areas).length > 0 || q.liked.length > 0 || q.notLiked.length > 0; }
+/* a cupping has a score out of 100; a quick cup has none */
+function hasCupping(o){ o = o || {}; const k = String(o.score_kind || ''); if (k === 'sca_5cup' || k === 'home_1cup') return true; const n = parseFloat(o.total_score); return k !== 'quick' && !isNaN(n) && n > 0; }
+/* 'quick', 'cupping' or 'both' */
+function cupWay(o){ const q = hasQuick(o), c = hasCupping(o); return q && c ? 'both' : c ? 'cupping' : q ? 'quick' : 'cupping'; }
+/*PURE_END*/
 /*ENGINE_START*/
 const ROASTS = [
   { v:'light', label:'Light', sw:'--r1' }, { v:'medium-light', label:'Medium-light', sw:'--r2' },
@@ -1447,10 +1499,12 @@ function expectFor(coffee, now){
 const SYMPTOMS = [
   { v:'sour', label:'Sour or sharp' }, { v:'bitter', label:'Bitter or harsh' }, { v:'astringent', label:'Dry or puckery' },
   { v:'uneven', label:'Sour and bitter together' }, { v:'flat', label:'Flat or weak' }, { v:'muddy', label:'Muddy or silty' },
-  { v:'thin', label:'Thin or hollow' }, { v:'strong', label:'Too strong or heavy' }, { v:'great', label:'Tastes great' }
+  { v:'thin', label:'Thin or hollow' }, { v:'strong', label:'Too strong or heavy' }, { v:'great', label:'Tastes great' },
+  { v:'notforme', label:'Not to my taste: nothing wrong with the brew' }
 ];
 function fixFor(sym, rec, ctx){
   ctx = ctx || {};
+  if (sym === 'notforme') return { primary:'Nothing is wrong with the brew, so there is nothing to change.', secondary:'', why:'A different grind or water cannot fix a flavor you do not like. A different coffee can.', adjust:{ grind:0, ratio:0, agit:'' } };
   const step = rec && rec.grind ? rec.grind.stepUm : 60;
   const stepTxt = ctx.plainGrind ? '' : ' (about ' + step + ' µm)';   /* at the New level the size in µm is left out: the grind is described in words */
   const A = (grind, ratio, extra) => Object.assign({ grind:grind || 0, ratio:ratio || 0, agit:'' }, extra || {});
@@ -3422,7 +3476,7 @@ function trailAnalysis(o, now){
    objs are the saved rows. extra is an optional list of rows not saved yet (the cup you just scored), which count as the latest attempts. */
 function dialTrail(objs, coffee, methodKey, now, extra){
   const meth = METHODS.find(x => x.key === methodKey);
-  const rows = historyForCoffee(objs, coffee).filter(o => trailMethod(o) === methodKey);
+  const rows = historyForCoffee(objs, coffee).filter(o => trailMethod(o) === methodKey && cupWay(o) !== 'quick');   /* Dial it in works from cupping scores, so a quick cup is left out */
   const have = new Set(rows.map(o => o.id).filter(Boolean));
   (extra || []).forEach(o => { if (o && trailMethod(o) === methodKey && !(o.id && have.has(o.id))) rows.push(o); });
   const stamp = o => (o.saved_at || '') + '|' + (o.cupping_date || '');
@@ -3505,7 +3559,7 @@ function trailCarry(att, last, locked, coffee){
 function dialingList(objs, now){
   const groups = {}, order = [];
   (objs || []).forEach(o => {
-    const mk = trailMethod(o), key = trailKey(o); if (!mk || !key) return;
+    const mk = trailMethod(o), key = trailKey(o); if (!mk || !key || cupWay(o) === 'quick') return;
     const gk = key + '#' + mk; if (!groups[gk]){ groups[gk] = { key, methodKey:mk, rows:[] }; order.push(gk); }
     groups[gk].rows.push(o);
   });
@@ -3596,6 +3650,28 @@ function lockEdits(objs, o, on){
   });
   return out;
 }
+/* It is worked out from the brew numbers already saved on each row, so it needs no columns of its own. Nothing here judges a change or gives advice: it lists what was different, and says so when
+   more than one thing was. Each entry: { n, id, date, methodKey, method, stars, again, liked, notLiked, changes:[{lever,text}], first, many, a (the attempt, for rebuilding its recipe), row }. */
+function quickTries(objs, coffee){
+  if (!coffee) return [];
+  const rows = historyForCoffee(objs, coffee).filter(o => hasQuick(o) && unneutralize(o.brew_method || '').trim());
+  const stamp = o => (o.saved_at || '') + '|' + (o.cupping_date || '');
+  rows.sort((x, y) => stamp(x).localeCompare(stamp(y)) || (parseInt(x.brew_attempt, 10) || 0) - (parseInt(y.brew_attempt, 10) || 0));
+  const list = rows.map((o, k) => {
+    const a = trailAttempt(o), qa = quickAnswers(o);
+    return { n:k + 1, id:o.id || '', date:o.cupping_date || '', methodKey:a.method, method:unneutralize(o.brew_method || '').trim(), stars:validStars(o.my_rating_stars), again:qa.makeAgain, liked:qa.liked, notLiked:qa.notLiked,
+      changes:[], first:k === 0, many:false, a, row:o };
+  });
+  list.forEach((t, k) => {
+    if (!k) return;
+    const p = list[k - 1], ch = [];
+    if (p.method !== t.method) ch.push({ lever:'method', text:'method ' + p.method + ' to ' + t.method });
+    if (p.a.dose != null && t.a.dose != null && Math.abs(t.a.dose - p.a.dose) >= 0.5) ch.push({ lever:'dose', text:'coffee ' + p.a.dose + ' g to ' + t.a.dose + ' g' });
+    trailChanges(p.a, t.a).forEach(c => ch.push({ lever:c.lever, text:c.text }));
+    t.changes = ch; t.many = ch.length > 1;
+  });
+  return list;
+}
 /* ---------- edit a coffee's details in history. The cupping itself never changes. ---------- */
 const EDITABLE_COLUMNS = ['roaster', 'coffee_name', 'origin', 'blend', 'process', 'decaf', 'roast_level', 'elevation_class', 'elevation_m', 'roast_date', 'days_since_roast', 'varietal', 'bag_notes'];
 function cleanLine(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g, ' ').replace(/ {2,}/g, ' ').trim(); }
@@ -3681,11 +3757,11 @@ const priorMedian = xs => { const s = xs.slice().sort((p, q) => p - q), k = s.le
 function dialPriors(objs, coffee, methodKey, now, opts){
   opts = opts || {};
   const m = METHODS.find(x => x.key === methodKey); if (!m || !coffee) return null;
-  if (historyForCoffee(objs, coffee).some(o => trailMethod(o) === methodKey)) return null;
+  if (historyForCoffee(objs, coffee).some(o => trailMethod(o) === methodKey && cupWay(o) !== 'quick')) return null;
   const mine = trailKey({ coffee_name:coffee.name, roaster:coffee.roaster, coffee_id:coffee.id });
   const groups = {}, order = [];
   (objs || []).forEach(o => {
-    if (trailMethod(o) !== methodKey) return;
+    if (trailMethod(o) !== methodKey || cupWay(o) === 'quick') return;
     const k = trailKey(o); if (!k || k === mine) return;
     if (!groups[k]){ groups[k] = []; order.push(k); }
     groups[k].push(o);
@@ -3813,11 +3889,11 @@ const GUIDE_SECTIONS = [
       'Tap Next: What\'s in your cup for one last look. It shows your final settings, what you changed (or why the settings are what they are), what to do before you start, and the steps. Tap Change to go back, or Brew it for a timer with scale targets. You can switch sound off, use a beep, or have a voice read each step. The voice can tell you where you should be along the way, so you do not have to watch the screen. When you have brewed it, tap I brewed it: taste it.'],
     tips:['If you already have earlier tries of this coffee, this screen offers them as a starting point. A new bag of a coffee you know can start from the best brew you kept.'] },
   { id:'cup', title:'5. ' + STEP_NAME.taste + ': smell, sip and score', lead:'Smell, sip hot, sip as it cools.',
-    paras:['Score each card with the + and − buttons, from 6 (Good) up to 9.75, the top of the SCA scale. Press and hold to move faster. Tap a card\'s name to open it and describe what you notice. The words you pick for acidity and body set how strong each feels, and some words can suggest a score. You can change either at any time. Tap All cards to see everything at once.',
-      'Choose Single cup for one brewed cup. It gives a home score out of 100 for comparing your own cups. Or choose Five cups (SCA) for the official method. These two scores are never compared with each other. In Five cups, tap each cup that passes Uniformity, Clean cup and Sweetness, or tap None passed if none did. A check you have not answered says Not checked, and no total shows until all three are answered. You can add a star rating of your own, and, if you have a refractometer, your TDS to see the extraction.',
+    paras:['There are two ways to taste, and ' + STEP_NAME.taste + ' opens on Quick. Give the coffee stars, which are your own. Say whether you would make it again. Pick the flavors from the bag that you liked, and the ones you did not. Nothing else changes your stars. Tap Add detail to rate the smell, taste, aftertaste, acidity, sweetness and body, each as Good, Okay or Not good.',
+      'Tap Cupping at the top to score step by step, like a professional cupper. Score each card with the + and − buttons, from 6 (Good) up to 9.75. Press and hold to move faster. Tap a card\'s name to open it and describe what you notice. Tap All cards to open every card at once. The words you pick for acidity and body set how strong each feels, and some words can suggest a score. The total is a home score out of 100 for comparing your own cups. You can switch between Quick and Cupping at any time. In My setup you can choose Quick only, Quick first, or Cupping first. If you have a refractometer, you can add your TDS to see the extraction.',
       'When you save, you choose whether you already have a history file. Saving downloads a file called cuppings.csv with your whole history. If you are tasting several coffees in one sitting, keep each one in this browser and save one file at the end. After a save, the page is cleared and you are back at the start, ready for the next coffee. To work on the coffee you just saved, tap ' + STEP_NAME.perfect + ' the next brew on the Saved sheet, or open it later from Your tastings.'] },
   { id:'dial', title:'6. ' + STEP_NAME.perfect + ': make the next brew better', lead:'Your scores point to one change.',
-    paras:['After you taste, ' + STEP_NAME.perfect + ' looks at your scores and the words you picked and suggests one change: grind, ratio, water temperature or pour style. Say what you tasted if it chose differently from you. Then brew again with that one change.',
+    paras:['After you taste, ' + STEP_NAME.perfect + ' looks at your scores and the words you picked and suggests one change: grind, ratio, water temperature or pour style. Say what you tasted if it chose differently from you. Then brew again with that one change. It works from cupping scores. A quick tasting gets a list of tries instead, so you can see what changed.',
       'It keeps every try of a coffee on a method in order. Each try shows what changed and whether the total went up or down. A change counts as helped or hurt only when the total moves by at least a point. That is NeuroBrew\'s own rule of thumb, because one cup scored by one person is noisy. Repeat the same brew and it measures your own variation, and uses that instead if it is bigger.',
       'The next brew starts from your best try, not just your last. If a change scored lower, it is not suggested again; it offers a different one. If the problem looks like the coffee itself (stale or off words, an old bag), it says so. If several changes in a row did not help, it says the settings may not be the problem.',
       'When a cup tastes great, keep it as your best brew for that coffee and method. New brews start from it until you remove it. A new bag of the same coffee (a different roast date) starts from your best brew, or your best on the last bag. The first cup on the new bag is marked, because the bag is mixed in.',
@@ -3872,15 +3948,17 @@ function originGuess(c){
    so every value is checked against the lists the app itself uses, and anything unknown is dropped, never trusted. `ctx` carries the two lists that live in the screens:
    { waterTypes:[values], grinderTypes:[values] }. */
 const SETUP_MAX_CHARS = 20000;
+/* How the Taste step opens. '' is the default: Quick first, with cupping one tap away. */
+const TASTE_CHOICES = [{ v:'quickonly', label:'Quick only' }, { v:'', label:'Quick first' }, { v:'cuppingfirst', label:'Cupping first' }];
 function setupDefaults(){
-  return { level:'', waterUnit:'g', coffeeUnit:'g', sound:'off', coach:'guide', cupView:'', gear:{ grinderKey:'', grinderName:'', grinderType:'', waterType:'', waterAlk:'', waterGH:'', filter:'' }, calib:{}, roasterSites:{} };
+  return { level:'', waterUnit:'g', coffeeUnit:'g', sound:'off', coach:'guide', cupView:'', taste:'', gear:{ grinderKey:'', grinderName:'', grinderType:'', waterType:'', waterAlk:'', waterGH:'', filter:'' }, calib:{}, roasterSites:{} };
 }
 function setupClean(raw, ctx){
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   ctx = ctx || {}; const d = setupDefaults(), pick = (v, list, dflt) => list.includes(v) ? v : dflt, txt = (v, n) => typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, n) : '';
   const out = {
     level:pick(raw.level, LEVELS.map(l => l.v), d.level), waterUnit:pick(raw.waterUnit, WATER_UNITS.map(u => u.v), d.waterUnit), coffeeUnit:pick(raw.coffeeUnit, COFFEE_UNITS.map(u => u.v), d.coffeeUnit),
-    sound:pick(raw.sound, ['off', 'chime', 'voice'], d.sound), coach:pick(raw.coach, ['guide', 'steps'], d.coach), cupView:pick(raw.cupView, ['compact', 'full'], d.cupView), gear:d.gear, calib:calibClean(raw.calib), roasterSites:{}
+    sound:pick(raw.sound, ['off', 'chime', 'voice'], d.sound), coach:pick(raw.coach, ['guide', 'steps'], d.coach), cupView:pick(raw.cupView, ['compact', 'full'], d.cupView), taste:pick(raw.taste, ['quickonly', 'cuppingfirst'], d.taste), gear:d.gear, calib:calibClean(raw.calib), roasterSites:{}
   };
   const g = raw.gear && typeof raw.gear === 'object' && !Array.isArray(raw.gear) ? raw.gear : {}, key = typeof g.grinderKey === 'string' ? g.grinderKey : '';
   const keyOk = GRINDERS.some(x => x.key === key) || key === 'other' || key === 'unsure';
@@ -3896,12 +3974,12 @@ function setupClean(raw, ctx){
   return out;
 }
 /* the setup as the app keeps it in its preferences (prefs.gear holds the gear defaults) */
-function setupFromPrefs(prefs, ctx){ prefs = prefs || {}; return setupClean({ level:prefs.level, waterUnit:prefs.waterUnit, coffeeUnit:prefs.coffeeUnit, sound:prefs.sound, coach:prefs.coach, cupView:prefs.cupView, gear:prefs.gear, calib:prefs.calib, roasterSites:prefs.roasterSites }, ctx); }
+function setupFromPrefs(prefs, ctx){ prefs = prefs || {}; return setupClean({ level:prefs.level, waterUnit:prefs.waterUnit, coffeeUnit:prefs.coffeeUnit, sound:prefs.sound, coach:prefs.coach, cupView:prefs.cupView, taste:prefs.taste, gear:prefs.gear, calib:prefs.calib, roasterSites:prefs.roasterSites }, ctx); }
 /* one fixed order of keys, so two equal setups give the same text */
 function setupJson(s){
   if (!s) return '';
   const g = s.gear || {}, sites = {}; Object.keys(s.roasterSites || {}).sort().forEach(k => { sites[k] = s.roasterSites[k]; });
-  return JSON.stringify({ v:1, level:s.level, waterUnit:s.waterUnit, coffeeUnit:s.coffeeUnit, sound:s.sound, coach:s.coach, cupView:s.cupView,
+  return JSON.stringify({ v:1, level:s.level, waterUnit:s.waterUnit, coffeeUnit:s.coffeeUnit, sound:s.sound, coach:s.coach, cupView:s.cupView, taste:s.taste,
     gear:{ grinderKey:g.grinderKey, grinderName:g.grinderName, grinderType:g.grinderType, waterType:g.waterType, waterAlk:g.waterAlk, waterGH:g.waterGH, filter:g.filter }, calib:s.calib || {}, roasterSites:sites });
 }
 function setupSame(a, b){ return !!a && !!b && setupJson(a) === setupJson(b); }
@@ -3936,6 +4014,7 @@ function setupSummary(s){
   out.push('Units: water in ' + (wu ? wu.label : 'g / mL') + ', coffee in ' + (cu ? cu.label : 'g'));
   out.push('Timer: ' + ({ off:'sound off', chime:'beep', voice:'voice' }[s.sound] || 'sound off') + ', ' + (s.coach === 'steps' ? 'key steps only' : 'guided'));
   if (s.cupView) out.push('Taste cards: ' + (s.cupView === 'full' ? 'full' : 'compact'));
+  if (s.taste) out.push('Tasting: ' + (s.taste === 'quickonly' ? 'quick only' : 'cupping first'));
   if (g.grinderName) out.push('Grinder: ' + g.grinderName);
   if (g.waterType) out.push('Water: ' + g.waterType);
   if (g.filter) out.push('Filter: ' + g.filter);
@@ -4488,6 +4567,19 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 37,
+  "at": "2026-10-07T23:55:41Z",
+  "date": "2026-10-07",
+  "title": "Quick taste",
+  "notes": [
+   "Tasting a coffee now opens on Quick: give it stars, say whether you would make it again, and pick the flavors from the bag that you liked and the ones you did not. A flavor can only be in one list, so nothing is both liked and disliked.",
+   "Add detail lets you say Good, Okay or Not good about smell, taste, aftertaste, acidity, sweetness and body. None of it changes your cupping scores.",
+   "A big switch at the top changes to Cupping, the step-by-step scoring, at any time. After a quick save you can cup the same coffee too, and any saved tasting can have cupping scores added later.",
+   "My setup has a new Tasting choice: Quick only, Quick first or Cupping first. Five cups is gone for new tastings, but old five-cup files still open and are not changed.",
+   "Your quick tries of one coffee are listed across methods, with what changed between them. History can be filtered to All, Quick or Cupping, and Perfect has a new choice, Not to my taste."
+  ]
+ },
+ {
   "release": 36,
   "at": "2026-10-07T21:22:44Z",
   "date": "2026-10-07",
@@ -4769,11 +4861,6 @@ const ATTRS = [
   { key:'balance', name:'Balance', hint:'How well flavor, aftertaste, acidity, and body fit together.' },
   { key:'overall', name:'Overall', hint:'Your holistic impression of the coffee.' }
 ];
-const CHECKS = [
-  { key:'uniformity', name:'Uniformity', hint:'Do all five cups taste the same? Tick each cup that matches the others.' },
-  { key:'clean_cup', name:'Clean cup', hint:'Tick each cup with no off-flavors, first sip to finish.' },
-  { key:'sweetness', name:'Sweetness', hint:'Tick each cup where sweetness comes through.' }
-];
 const SINGLE_CHECKS = [
   { key:'clean_cup', name:'Clean cup', hint:'Any off-tastes? A clean cup has none, from first sip to finish.' },
   { key:'sweetness', name:'Sweetness', hint:'A pleasant sweetness in the cup.' }
@@ -4795,7 +4882,7 @@ const FILENAME = 'cuppings.csv';
 const DRAFT_KEY = 'brew-and-cup-draft-v1';
 const HISTORY_KEY = 'brew-and-cup-history-v1';
 let history = null;                       // { ex, text, objs } for the loaded cupping file
-let histUI = { q:'', sort:'new' };
+let histUI = { q:'', sort:'new', way:'all' };
 let detailIdx = -1;
 const HIST_DIRTY_KEY = 'brew-and-cup-history-removed-v1';
 let histDirty = 0;            // cuppings removed here since the file was last loaded or saved
@@ -4877,6 +4964,19 @@ function commitCoffeeEdit(idxs, edit){
   applyHistoryRows(res.rows);
   histEdited += res.changed; persistEdited();
   return { changed:res.changed };
+}
+/* "Not to my taste" on Perfect: the cup is marked as one you would not make again. Counted once per cup, as a correction. */
+const notForMeIds = new Set();
+function commitNotForMe(rowIdx){
+  if (!history || !history.ex.rows[rowIdx]) return { changed:0 };
+  const header = history.ex.header.slice(); if (!header.includes('make_again')) header.push('make_again');
+  const ci = header.indexOf('make_again'), idi = header.indexOf('id');
+  const rows = history.ex.rows.map(r => { const rr = r.slice(); while (rr.length < header.length) rr.push(''); return rr; });
+  if ((rows[rowIdx][ci] || '') === 'no') return { changed:0 };
+  rows[rowIdx][ci] = 'no'; history.ex.header = header; applyHistoryRows(rows);
+  const id = rows[rowIdx][idi] || String(rowIdx);
+  if (!notForMeIds.has(id)){ notForMeIds.add(id); histEdited += 1; persistEdited(); }
+  return { changed:1 };
 }
 const ratedIds = new Set();   // cups whose rating was changed here, so one cup is counted once however often it is changed
 function commitRating(rowIdx, stars){
@@ -4989,17 +5089,16 @@ function newCoffee(){
   return { id:newId(), name:'', roaster:'', origin:'', varietal:'', roast:'', process:'', decaf:'', density:'', elevText:'', roast_date:'', bag_notes:'', scanned:'', scannedFrom:'', roastUnsure:'', blend:'', varietalUnsure:'' };
 }
 function newApp(){
-  return { screen:'start', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', sound:'off', coach:'guide', level:'', calib:{}, roasterSites:{}, gear:setupDefaults().gear }, adjust:{ grind:0, ratio:0, agit:'' }, gearOk:false, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
+  return { screen:'start', cupFor:'', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', taste:'', sound:'off', coach:'guide', level:'', calib:{}, roasterSites:{}, gear:setupDefaults().gear }, adjust:{ grind:0, ratio:0, agit:'' }, gearOk:false, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
 }
 function newCup(){
   const scores = {}; ATTRS.forEach(a => scores[a.key] = null);
   return {
-    id:newId(), mode:'single', cupping_date:today(),
+    id:newId(), way:'quick', cupping_date:today(),
     scores, intensity:{ acidity:null, body:null }, vials:[], words:{ fragrance_aroma:[], flavor:[], aftertaste:[], acidity:[], body:[] }, kit:[], after_len:'', src:{}, cool:{ acidity:'', sweetness:'', bitterness:'' }, notes:{}, general_notes:'', stars:0,
-    checks:{ uniformity:[0,0,0,0,0], clean_cup:[0,0,0,0,0], sweetness:[0,0,0,0,0] },
-    checkNone:{ uniformity:false, clean_cup:false, sweetness:false },   /* "None passed": a check with no ticked cup counts only when this says it was a deliberate answer */
     single:{ clean_cup:null, sweetness:null },
-    taint_cups:0, fault_cups:0, single_defect:'none', defect_notes:''
+    single_defect:'none', defect_notes:'',
+    quick:{ make:'', areas:{}, liked:[], notLiked:[] }   /* a quick taste: would you make it again, the six areas, and the bag's flavors liked and not liked */
   };
 }
 let app = newApp();
@@ -5029,6 +5128,7 @@ function loadDraft(){
       if (typeof src.prefs.seenCupHelp === 'boolean') a.prefs.seenCupHelp = src.prefs.seenCupHelp;
       if (typeof src.prefs.seenTermHint === 'boolean') a.prefs.seenTermHint = src.prefs.seenTermHint;
       if (src.prefs.cupView === 'compact' || src.prefs.cupView === 'full') a.prefs.cupView = src.prefs.cupView;
+      if (src.prefs.taste === 'quickonly' || src.prefs.taste === 'cuppingfirst') a.prefs.taste = src.prefs.taste;
       if (['off', 'chime', 'voice'].includes(src.prefs.sound)) a.prefs.sound = src.prefs.sound;
       if (['guide', 'steps'].includes(src.prefs.coach)) a.prefs.coach = src.prefs.coach;
       if (['new', 'comfortable', 'expert'].includes(src.prefs.level)) a.prefs.level = src.prefs.level;
@@ -5044,6 +5144,7 @@ function loadDraft(){
     { const dn = src.dialNote && typeof src.dialNote === 'object' ? dialNoteOf({ dial_symptom:src.dialNote.symptom, dial_change:Array.isArray(src.dialNote.change) ? src.dialNote.change.join(';') : '', dial_from_id:src.dialNote.fromId }) : null; a.dialNote = dn; }
     a.cupBrew = (src.cupBrew && typeof src.cupBrew === 'object') ? src.cupBrew : null;
     if (src.proto && +src.proto.bowl > 0) a.proto = { bowl:+src.proto.bowl };
+    a.cupFor = typeof src.cupFor === 'string' ? src.cupFor.slice(0, 80) : '';
     a.lastTotal = typeof src.lastTotal === 'number' ? src.lastTotal : null;
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
@@ -5067,10 +5168,14 @@ function loadDraft(){
     if (d.cup){
       const c = newCup(), s = d.cup;
       ['id','cupping_date','general_notes','defect_notes'].forEach(k => { if (typeof s[k] === 'string') c[k] = s[k]; });
-      c.mode = s.mode === 'five' ? 'five' : 'single'; c.stars = validStars(s.stars);
+      c.way = s.way === 'cup' ? 'cup' : 'quick'; c.stars = validStars(s.stars);
+      if (s.quick && typeof s.quick === 'object'){
+        c.quick.make = quickMakeAgain(s.quick.make);
+        QUICK_AREAS.forEach(a => { const g = s.quick.areas && quickGrade(s.quick.areas[a.key]); if (g) c.quick.areas[a.key] = g; });
+        const fl = cleanFlavorLists(s.quick.liked, s.quick.notLiked); c.quick.liked = fl.liked; c.quick.notLiked = fl.notLiked;
+      }
       ATTRS.forEach(at => { const v = s.scores && s.scores[at.key]; c.scores[at.key] = (typeof v === 'number' && v >= 6 && v <= 10) ? v : null; });
       ['acidity','body'].forEach(k => { const v = s.intensity && s.intensity[k]; c.intensity[k] = (v >= 1 && v <= 5) ? v : null; });
-      CHECKS.forEach(ch => { const arr = s.checks && s.checks[ch.key]; if (Array.isArray(arr) && arr.length === 5) c.checks[ch.key] = arr.map(x => x ? 1 : 0); c.checkNone[ch.key] = !!(s.checkNone && s.checkNone[ch.key] === true) && !c.checks[ch.key].some(x => x); });
       SINGLE_CHECKS.forEach(ch => { const v = s.single && s.single[ch.key]; c.single[ch.key] = (typeof v === 'number' && v >= 0 && v <= 10) ? v : null; });
       if (Array.isArray(s.vials)) c.vials = s.vials.filter(x => typeof x === 'string');
       if (s.cool && typeof s.cool === 'object'){ ['acidity', 'sweetness', 'bitterness'].forEach(k => { if (['faded', 'same', 'stronger'].includes(s.cool[k])) c.cool[k] = s.cool[k]; }); }
@@ -5079,9 +5184,8 @@ function loadDraft(){
       if (Array.isArray(s.kit)) c.kit = s.kit.filter(n => Number.isInteger(n) && n >= 1 && n <= 36).slice(0, 36);
       if (['short', 'medium', 'long'].includes(s.after_len)) c.after_len = s.after_len;
       if (s.notes && typeof s.notes === 'object') c.notes = s.notes;
-      c.taint_cups = Math.min(5, Math.max(0, parseInt(s.taint_cups, 10) || 0));
-      c.fault_cups = Math.min(5, Math.max(0, parseInt(s.fault_cups, 10) || 0));
       c.single_defect = ['none','taint','fault'].includes(s.single_defect) ? s.single_defect : 'none';
+      if (!s.way && ATTRS.some(at => c.scores[at.key] != null)) c.way = 'cup';   /* a draft from before Quick taste, already part-way through scoring */
       state = c;
     }
   } catch(e){}
@@ -5145,7 +5249,7 @@ function render(){
   if (app.screen === 'detail' && !history.objs.some(x => x._i === detailIdx)) app.screen = 'history';
   const sc = app.screen;
   document.body.setAttribute('data-screen', sc);
-  $('scorebar').hidden = sc !== 'cup';
+  $('scorebar').hidden = sc !== 'cup' || state.way === 'quick';
   $('progressMsg').hidden = true; PROGRESS_FOR = null; paintProgress();
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
@@ -5367,7 +5471,7 @@ function twoTap(label, armedLabel, fn, cls){
   return b;
 }
 function clearEverything(){
-  forgetHistory(); forgetPicked(); histUI = { q:'', sort:'new' };
+  forgetHistory(); forgetPicked(); histUI = { q:'', sort:'new', way:'all' };
   try { localStorage.removeItem(DRAFT_KEY); } catch(e){}
   app = newApp(); state = newCup(); dialSym = ''; render();
 }
@@ -5651,7 +5755,7 @@ function historyCoffeeCard(c){
   const list = h('div');
   rows.slice(0, 5).forEach(o => {
     const bits = [o.cupping_date, unneutralize(o.brew_method || ''), o.brew_temp_f ? o.brew_temp_f + '°F' : '', o.brew_ratio ? '1:' + o.brew_ratio : ''].filter(Boolean).join(' · ');
-    list.append(h('div', { style:'display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:15px' }, h('span', { text:bits }), h('b', { text:isNaN(sc(o)) ? '—' : fmt2(sc(o)) + (o === best && rows.length > 1 ? ' (best)' : '') })));
+    list.append(h('div', { style:'display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:15px' }, h('span', { text:bits }), h('b', { text:isNaN(sc(o)) ? (validStars(o.my_rating_stars) ? '★ ' + validStars(o.my_rating_stars) : '—') : fmt2(sc(o)) + (o === best && rows.length > 1 ? ' (best)' : '') })));
   });
   return h('div', { class:'card' }, h('h3', { text:'Your past tastings of this coffee' }), h('p', { class:'fine', style:'margin:2px 0 6px', text:'Compare what you changed with how it scored.' }), scoreChart(rows), list);
 }
@@ -5714,8 +5818,8 @@ function screenCoffee(m){
     h('button', { type:'button', class:'btn', text:'Skip to ' + STEP_NAME.taste, onclick:() => { app.cupBrew = null; prepCupEntry(); go('cup'); } }))));
 }
 function prepCupEntry(){
-  const untouched = ATTRS.every(a => state.scores[a.key] == null);
-  if (untouched) state.mode = app.cupBrew ? 'single' : 'five';
+  if (!cupAllowed()) state.way = 'quick';
+  else if (!cupTouched() && !quickTouched() && !state.stars) state.way = tasteChoice() === 'cuppingfirst' ? 'cup' : 'quick';
 }
 
 /* ---------- screen: learn ---------- */
@@ -6423,6 +6527,7 @@ function screenRecipe(m){
   m.append(h('h1', { text:meth.label }), h('p', { class:'lede', text:meth.blurb }));
   { const th = termHint(); if (th) m.append(th); }
   { const rt = recipeTrailCard(meth) || recipePriorCard(meth); if (rt) m.append(rt); }
+  { const qt = quickTriesCard(app.coffee, { use:true }); if (qt) m.append(qt); }
   /* The card keeps its own parts (the cup-size buttons and the two Adjust panels stay put, so a button you pressed or a slider you are dragging keeps its focus). A repaint redraws only the notices, the status line and the rows around the panels. */
   const notes = h('div', { id:'recipeNotes' }), status = h('div', { class:'statusline', id:'recipeStatus' });
   const slot = { head:h('div'), temp:h('div'), grind:h('div'), tail:h('div') };
@@ -7087,77 +7192,34 @@ function scoreCard(a){
   refreshers.push(() => { sum.textContent = cardSummary(a); card.classList.toggle('done', state.scores[a.key] != null); });   /* a scored card says so */
   return card;
 }
-/* In Five cups a check counts as answered only when a cup is ticked or "None passed" is tapped. An untouched check is "Not checked", never zero. */
-const checkDone = k => state.checks[k].some(x => x) || state.checkNone[k] === true;
-function cupChecks(c){
-  const btns = [0,1,2,3,4].map(i => h('button', { type:'button', class:'cup', text:String(i + 1), 'aria-pressed':'false', 'aria-label':c.name + ', cup ' + (i + 1),
-    onclick:() => { state.checks[c.key][i] = state.checks[c.key][i] ? 0 : 1; state.checkNone[c.key] = false; changed(); } }));
-  const none = h('button', { type:'button', class:'nonepass', text:'None passed', 'aria-pressed':'false', 'aria-label':'None passed, ' + c.name,
-    onclick:() => { const on = state.checkNone[c.key] !== true; state.checkNone[c.key] = on; if (on) state.checks[c.key] = [0,0,0,0,0]; changed(); } });
-  const pts = h('div', { class:'pts', role:'status' });
-  refreshers.push(() => {
-    btns.forEach((b, i) => b.setAttribute('aria-pressed', String(!!state.checks[c.key][i]))); none.setAttribute('aria-pressed', String(state.checkNone[c.key] === true));
-    pts.textContent = '';
-    if (checkDone(c.key)){
-      const n = state.checks[c.key].reduce((a, b) => a + b, 0);   /* the numbers on the circles are cup numbers, so say how many cups passed and that each is worth 2 */
-      pts.append(h('span', { class:'ptsnum' }, String(n * 2), h('small', { text:' / 10' })), h('span', { class:'ptsn', text:n + ' of 5 cups passed' }));
-    } else pts.append(h('span', { class:'notchecked', text:'Not checked' }));
-  });
-  const card = h('div', { class:'card only-five stepcard', 'data-card':'chk:' + c.key }, stepTag(), h('div', { class:'attr-name', text:c.name }), h('p', { class:'attr-hint', text:c.hint }), helpBlock(c.key), h('div', { class:'cups' }, btns), h('div', { class:'cupsfoot' }, none, pts));
-  refreshers.push(() => card.classList.toggle('done', checkDone(c.key)));
-  return card;
-}
 function singleCheck(c){
   const s = slider({ min:0, max:10, step:1, mid:5, aria:c.name + ' score', get:() => state.single[c.key], set:v => { state.single[c.key] = v; }, fmt:v => String(v), label:v => v + ' out of 10', ticks:[{ v:0 },{ v:5 },{ v:10 }] });
-  const card = h('div', { class:'card only-single stepcard', 'data-card':'chk:' + c.key }, h('div', { class:'attr-head' }, h('div', null, stepTag(), h('div', { class:'attr-name', text:c.name }), h('p', { class:'attr-hint', text:c.hint })), s.readout), helpBlock(c.key));
+  const card = h('div', { class:'card stepcard', 'data-card':'chk:' + c.key }, h('div', { class:'attr-head' }, h('div', null, stepTag(), h('div', { class:'attr-name', text:c.name }), h('p', { class:'attr-hint', text:c.hint })), s.readout), helpBlock(c.key));
   refreshers.push(() => card.classList.toggle('done', state.single[c.key] != null));
   return card;
 }
-function stepper(label, sub, get, set){
-  const n = h('span', { class:'n' });
-  const minus = h('button', { type:'button', class:'nudge', text:'−', 'aria-label':'Fewer cups, ' + label, onclick:() => { set(Math.max(0, get() - 1)); changed(); } });
-  const plus = h('button', { type:'button', class:'nudge', text:'+', 'aria-label':'More cups, ' + label, onclick:() => { set(Math.min(5, get() + 1)); changed(); } });
-  refreshers.push(() => { n.textContent = String(get()); });
-  return h('div', { class:'defect-row' }, h('div', { class:'what' }, label, h('small', { text:sub })), h('div', { class:'stepper' }, minus, n, plus));
-}
-
 /* ---------- scoring math ---------- */
 /* the order the cards are on the page: what is missing is listed, and jumped to, in this order */
-const SCORE_ORDER = ['fragrance_aroma', 'flavor', 'aftertaste', 'acidity', 'body', 'balance', 'chk:uniformity', 'chk:clean_cup', 'chk:sweetness', 'overall'];
+const SCORE_ORDER = ['fragrance_aroma', 'flavor', 'aftertaste', 'acidity', 'body', 'balance', 'chk:clean_cup', 'chk:sweetness', 'overall'];
 function calc(){
   const s = state; let sum = 0, n = 0; const miss = {};
   ATTRS.forEach(a => { const v = s.scores[a.key]; if (v != null){ sum += v; n++; } else miss[a.key] = a.name; });
-  const out = { scored:n, needed:7, sum, unscored:[], missing:[], complete:false, total:null, ded:0, pts:{}, kind:s.mode === 'five' ? 'sca_5cup' : 'home_1cup' };
-  if (s.mode === 'five'){
-    const p = k => s.checks[k].reduce((a, b) => a + b, 0) * 2, answered = CHECKS.filter(ch => checkDone(ch.key));
-    CHECKS.forEach(ch => { if (!checkDone(ch.key)) miss['chk:' + ch.key] = ch.name; });
-    out.pts = { uniformity:p('uniformity'), clean_cup:p('clean_cup'), sweetness:p('sweetness') };
-    out.ded = s.taint_cups * 2 + s.fault_cups * 4;
-    out.needed = 10; out.scored = n + answered.length;
-    out.complete = n === 7 && answered.length === CHECKS.length;
-    out.total = Math.max(0, sum + out.pts.uniformity + out.pts.clean_cup + out.pts.sweetness - out.ded);
-  } else {
-    const c = s.single.clean_cup, w = s.single.sweetness;
-    out.needed = 9;
-    if (c == null) miss['chk:clean_cup'] = 'Clean cup';
-    if (w == null) miss['chk:sweetness'] = 'Sweetness';
-    out.scored = n + (c != null ? 1 : 0) + (w != null ? 1 : 0);
-    out.pts = { uniformity:null, clean_cup:c, sweetness:w };
-    out.ded = s.single_defect === 'taint' ? 2 : s.single_defect === 'fault' ? 4 : 0;
-    out.complete = n === 7 && c != null && w != null;
-    out.total = Math.max(0, (sum + (c || 0) + (w || 0) - out.ded) / 90 * 100);
-  }
+  const c = s.single.clean_cup, w = s.single.sweetness;
+  if (c == null) miss['chk:clean_cup'] = 'Clean cup';
+  if (w == null) miss['chk:sweetness'] = 'Sweetness';
+  const ded = s.single_defect === 'taint' ? 2 : s.single_defect === 'fault' ? 4 : 0;
+  const out = { scored:n + (c != null ? 1 : 0) + (w != null ? 1 : 0), needed:9, sum, unscored:[], missing:[], kind:'home_1cup', pts:{ uniformity:null, clean_cup:c, sweetness:w }, ded,
+    complete:n === 7 && c != null && w != null, total:Math.max(0, (sum + (c || 0) + (w || 0) - ded) / 90 * 100) };
   SCORE_ORDER.forEach(id => { if (miss[id]){ out.missing.push({ id, name:miss[id] }); out.unscored.push(miss[id]); } });
   return out;
 }
 function updateBar(){
   if (app.screen !== 'cup') return;
   const c = calc();
-  $('of').textContent = state.mode === 'five' ? '/ 100' : '/ 100 home score';
-  $('scorebar').classList.toggle('home', state.mode !== 'five');
+  $('of').textContent = '/ 100 home score'; $('scorebar').classList.add('home');
   if (c.complete){
     $('num').textContent = fmtScore(c.total, c.kind); $('fill').style.width = Math.min(100, c.total) + '%';
-    $('status').textContent = state.mode === 'five' ? (c.total >= 80 ? 'Specialty grade (80+)' : 'Below the 80-point specialty line') : 'Not an SCA grade';
+    $('status').textContent = 'Not an SCA grade';
   } else {
     const st = $('status'), nx = c.missing[0];
     $('num').textContent = '—'; $('fill').style.width = '0'; st.textContent = c.scored + ' of ' + c.needed + ' scored';
@@ -7175,12 +7237,12 @@ function jumpToCard(id){
 
 /* ---------- screen: cup ---------- */
 function cupAnalysis(){
-  const c = calc(), ex = expectFor(app.coffee, new Date());
+  const ex = expectFor(app.coffee, new Date());
   const meth = app.cupBrew && app.cupBrew.key ? METHODS.find(x => x.key === app.cupBrew.key) : null;
   const bagWords = String(app.coffee.bag_notes || '').toLowerCase().split(/[,;\/&]|\band\b/).map(x => x.trim()).filter(x => x.length >= 3 && x.length <= 24);
   const kitWords = state.kit.map(n => n === 36 ? 'rubbery' : n === 35 ? 'medicinal' : n === 2 ? 'potato' : '').filter(Boolean);
   return analyzeCupping({ scores:state.scores, intensity:state.intensity, words:Object.assign({}, state.words, { fragrance_aroma:state.words.fragrance_aroma.concat(kitWords) }),
-    sweet:state.mode === 'five' ? c.pts.sweetness : state.single.sweetness, expectedBars:ex.bars, stepUm:meth ? Math.round((meth.um[1] - meth.um[0]) / 5 / 10) * 10 : 60, plainGrind:level() === 'new',
+    sweet:state.single.sweetness, expectedBars:ex.bars, stepUm:meth ? Math.round((meth.um[1] - meth.um[0]) / 5 / 10) * 10 : 60, plainGrind:level() === 'new',
     roast:ex.profile.roast, methodType:meth ? meth.type : '', agit:app.cupBrew ? app.cupBrew.agit : '', days:ex.profile.days,
     timeRatio:(app.cupBrew && app.cupBrew.actual_s && app.cupBrew.time_s) ? app.cupBrew.actual_s / app.cupBrew.time_s : null,
     timeNote:(app.cupBrew && app.cupBrew.actual_s && app.cupBrew.time_s) ? fmtTime(app.cupBrew.actual_s) + ' vs a ' + fmtTime(app.cupBrew.time_s) + ' target' : '',
@@ -7206,25 +7268,12 @@ function cupIntro(first){
       h('p', { class:'serif gp', text:SCORE_GUIDE_SHORT }));
     return gcard('How to taste (read this first)', 'The short version', [body], first);
   }
-  const dose = () => rnd(app.proto.bowl * 8.25 / 150, 2);
-  const doseEl = h('b', { text:dose() + ' g' });
-  const bowl = h('input', { type:'number', inputmode:'decimal', class:'plain', style:'width:88px;display:inline-block;padding:6px 8px;margin:0 4px;text-align:center', min:'100', max:'400', value:app.proto.bowl, 'aria-label':'Cup size in mL' });
-  bowl.addEventListener('input', () => { const v = parseFloat(bowl.value); if (v >= 100 && v <= 400){ app.proto.bowl = v; doseEl.textContent = dose() + ' g'; scheduleDraft(); } });
   const bold = t => h('b', { style:'font-family:var(--ui);font-weight:600', text:t + ' ' });
   const more = h('details', { class:'moreinfo' }, h('summary', { text:'More about scoring' }),
     h('p', { class:'serif gp' }, bold('Why score?'), WHY_SCORE),
     h('p', { class:'serif gp' }, bold('What the numbers mean:'), SCORE_GUIDE),
-    h('p', { class:'serif gp only-five' }, SCORE_GUIDE_SCA),
-    h('p', { class:'serif gp only-single' }, SCORE_GUIDE_HOME),
-    h('div', { class:'only-five' },
-      h('p', { class:'serif gp' }, bold('Setting up an SCA cupping:')),
-      h('ul', { class:'prep', style:'margin-top:0' },
-        h('li', null, 'Use ', doseEl, ' of coffee for a ', bowl, ' mL cup (8.25 g per 150 mL). Make five identical cups of the same coffee.'),
-        h('li', { text:'Grind medium-coarse, no more than 15 minutes before you add water.' }),
-        h('li', { text:'Smell the dry grounds. Then pour 200°F / 93°C water straight onto them and do not stir.' }),
-        h('li', { text:'After 4 minutes, break the crust with 3 stirs while you smell it, then skim off the foam and floating grounds.' }),
-        h('li', { text:'Start tasting at about 160°F (71°C) and keep going as it cools.' }))),
-    h('div', { class:'only-single' },
+    h('p', { class:'serif gp' }, SCORE_GUIDE_HOME),
+    h('div', null,
       h('p', { class:'serif gp' }, bold('For a brewed cup:'), 'Smell the dry grounds if you can, brew as usual, then smell the cup. Sip it hot, then warm, then cool, and score as you go.')));
   const body = h('div', null,
     h('p', { class:'serif gp' }, 'Score what you notice, one card at a time. Tap "What am I scoring?" on any card if you are unsure. The order the pros use:'),
@@ -7281,11 +7330,12 @@ function measureBlock(b){
 }
 function screenCup(m){
   const c = app.coffee, b = app.cupBrew;
-  const first = !app.prefs.seenCupHelp; app.prefs.seenCupHelp = true; scheduleDraft();
+  const first = !app.prefs.seenCupHelp; if (state.way !== 'quick'){ app.prefs.seenCupHelp = true; scheduleDraft(); }
   cupOpen = new Set(['fragrance_aroma']);
-  m.setAttribute('data-mode', state.mode); m.setAttribute('data-cupview', cupView());
+  m.setAttribute('data-cupview', state.way === 'quick' ? 'compact' : cupView());
   m.append(h('h1', { text:c.name }), h('p', { class:'lede', text:[c.roaster, labelOf(ROASTS, c.roast) && labelOf(ROASTS, c.roast) + ' roast'].filter(Boolean).join(' · ') || 'Score what is in your cup.' }));
   { const th = termHint(); if (th) m.append(th); }
+  { const sw = tasteSwitch(); if (sw) m.append(sw); }
   if (b){
     const temp = !b.temp_f ? (b.key === 'moka' ? 'hot start' : 'n/a') : b.temp_f + '°F / ' + b.temp_c + '°C' + (b.temp_rec_f && b.temp_rec_f !== b.temp_f ? ' (you set it; recommended ' + b.temp_rec_f + '°F)' : '');
     m.append(h('div', { class:'card' }, h('h3', { text:'Your brew (try ' + b.attempt + ')' }),
@@ -7301,19 +7351,15 @@ function screenCup(m){
             h('p', { class:'fine', style:'margin:-4px 0 0', text:'Skip this if you followed the brew settings. It is saved with your tasting, so your results make sense.' })); dt.open = !!b.pour_notes; return dt; })(),
         level() !== 'new' ? measureBlock(b) : null)));
   }
-  if (level() === 'new'){ state.mode = 'single'; m.setAttribute('data-mode', 'single'); }
-  else m.append(h('h2', { text:'How are you tasting?' }),
-    seg([{ text:'Single cup', value:'single' }, { text:'Five cups (SCA)', value:'five' }], () => state.mode, v => { state.mode = v; m.setAttribute('data-mode', v); }, 'Tasting mode'),
-    h('p', { class:'fine only-single', text:'One brewed cup. Uniformity is skipped, and the total is scaled to 100 as a home score, not an SCA grade.' }),
-    h('p', { class:'fine only-five', text:'Five cups of the same coffee, the official SCA method. The total is out of 100.' }));
+  if (state.way === 'quick'){ screenQuick(m); return; }
   m.append(cupIntro(first));
   m.append(h('div', { class:'h2row', style:'margin-top:14px;align-items:center' }, h('p', { class:'fine', style:'margin:0', text:'Score each card with + and −, from 6 (Good) up to 9.75, the top of the SCA scale (10 is a theoretical top). Tap a card\'s name to describe what you notice.' }), h('button', { type:'button', class:'btn small', style:'margin:0;flex:none', text:'Taste wheel', onclick:() => openWheel('flavor') })));
   m.append(h('div', { class:'viewrow' }, h('span', { class:'fine', style:'margin:0', text:'Cards' }), seg([{ text:'Compact', value:'compact' }, { text:'All cards', value:'full' }], cupView, v => { app.prefs.cupView = v; m.setAttribute('data-cupview', v); }, 'Card view')));
 
-  const A = k => ATTRS.find(a => a.key === k), C5 = k => CHECKS.find(x => x.key === k), C1 = k => SINGLE_CHECKS.find(x => x.key === k);
+  const A = k => ATTRS.find(a => a.key === k), C1 = k => SINGLE_CHECKS.find(x => x.key === k);
   m.append(phaseHead(1), scoreCard(A('fragrance_aroma')));
   m.append(phaseHead(2)); ['flavor', 'aftertaste', 'acidity', 'body', 'balance'].forEach(k => m.append(scoreCard(A(k))));
-  m.append(phaseHead(3), cupChecks(C5('uniformity')), cupChecks(C5('clean_cup')), singleCheck(C1('clean_cup')), cupChecks(C5('sweetness')), singleCheck(C1('sweetness')));
+  m.append(phaseHead(3), singleCheck(C1('clean_cup')), singleCheck(C1('sweetness')));
   if (level() !== 'new') m.append(coolCard());
   m.append(phaseHead(4), scoreCard(A('overall')));
 
@@ -7322,12 +7368,9 @@ function screenCup(m){
   refreshers.push(() => { if (document.activeElement !== dn) dn.value = state.defect_notes || ''; });
   dn.style.cssText = 'width:100%;min-height:56px;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);font-size:16px';
   const dnWrap = h('div', { class:'dnwrap', hidden:true }, dn);
-  refreshers.push(() => { dnWrap.hidden = !((state.mode === 'five' ? (state.taint_cups + state.fault_cups) > 0 : state.single_defect !== 'none') || !!state.defect_notes); });
+  refreshers.push(() => { dnWrap.hidden = !(state.single_defect !== 'none' || !!state.defect_notes); });
   m.append(h('div', { class:'card stepcard' }, stepTag(), h('div', { class:'attr-name', text:'Defects' }), h('p', { class:'attr-hint', text:'Record any off-flavors that should not be there. Leave it at none if the cup was clean.' }), helpBlock('defects'),
-    h('div', { class:'only-five' },
-      stepper('Small off-taste (taint)', 'You can notice it, but it does not take over. 2 points off per cup.', () => state.taint_cups, v => { state.taint_cups = v; }),
-      stepper('Big off-taste (fault)', 'It takes over the cup. 4 points off per cup.', () => state.fault_cups, v => { state.fault_cups = v; })),
-    h('div', { class:'only-single', style:'margin-top:8px' },
+    h('div', { style:'margin-top:8px' },
       seg([{ text:'None', value:'none' }, { text:'Small off-taste (−2)', value:'taint' }, { text:'Big off-taste (−4)', value:'fault' }], () => state.single_defect, v => { state.single_defect = v; }, 'Defect in the cup')), dnWrap));
 
   const gn = h('textarea', { placeholder:'About this coffee or this session' });
@@ -7360,7 +7403,7 @@ function paintResults(box){
   const c = calc(), gpn = t => h('p', { class:'serif gp', text:t }), bold = t => h('b', { style:'font-family:var(--ui);font-weight:600', text:t + ' ' });
   if (!c.complete){ box.append(gpn('Finish scoring every card to see your results and a suggestion for your next brew.')); return; }
   const an = cupAnalysis();
-  box.append(h('p', { class:'serif gp' }, bold('Your total:'), fmtScore(c.total, c.kind) + (state.mode === 'five' ? ' out of 100' : ' (home score)') + '.'));
+  box.append(h('p', { class:'serif gp' }, bold('Your total:'), fmtScore(c.total, c.kind) + ' (home score).'));
   if (an.strongest.length) box.append(h('p', { class:'serif gp' }, bold('Strongest:'), an.strongest.map(r => r.name + ' ' + fmt2(r.val)).join(', ') + '.' + (an.weakest.length ? ' ' : ''), an.weakest.length ? [bold('Weakest:'), an.weakest.map(r => r.name + ' ' + fmt2(r.val)).join(', ') + '.'] : null));
   if (an.expected.length){
     box.append(h('h3', { style:'margin-top:12px', text:'Expected vs. what you found' }));
@@ -7402,13 +7445,14 @@ function paintResults(box){
 }
 
 /* ---------- save flow ---------- */
-function buildRow(){
-  const s = state, c = calc(), co = app.coffee, b = app.cupBrew, r = {};
+/* the coffee, the brew and the ids: the same for a quick cup and a cupping */
+function baseRow(){
+  const s = state, co = app.coffee, b = app.cupBrew, r = {};
   COLUMNS.forEach(k => r[k] = '');
   r.setup_json = setupJson(setupFromPrefs(app.prefs, setupCtx()));   /* My setup rides with the newest cupping (see the setup column) */
   const days = daysSinceRoast(co.roast_date, new Date());
   r.schema_version = '2'; r.id = s.id; r.coffee_id = co.id; r.saved_at = new Date().toISOString();
-  r.cupping_date = s.cupping_date; r.mode = s.mode === 'five' ? 'five_cup' : 'single_cup';
+  r.cupping_date = s.cupping_date;
   r.roaster = co.roaster; r.coffee_name = co.name; r.origin = co.origin; r.process = labelOf(PROCESSES, co.process); r.decaf = co.decaf === 'yes' ? 'yes' : ''; r.roast_level = labelOf(ROASTS, co.roast);
   r.elevation_class = labelOf(DENSITIES, co.density); r.elevation_m = mapElevation(co.elevText).m ? String(mapElevation(co.elevText).m) : ''; r.roast_date = co.roast_date; r.days_since_roast = days == null ? '' : String(days);
   r.varietal = co.varietal; r.bag_notes = co.bag_notes; r.blend = labelOf(BLEND_OPTS, co.blend) || '';
@@ -7419,28 +7463,177 @@ function buildRow(){
     r.brew_grind_target_um = String(b.grind_um); r.brew_grind_setting = b.grind_setting || ''; r.brew_time_s = b.time_s === '' ? '' : String(b.time_s); r.brew_agitation = b.agit || ''; r.brew_technique = TECH_CSV[b.tech] || 'standard'; r.brew_technique_detail = b.tech_detail || ''; r.brew_adjustment = b.adjustment || '';
     r.brew_actual_time_s = b.actual_s ? String(b.actual_s) : ''; r.details_guessed = b.guessed || ''; r.brew_out_g = b.out_g ? String(b.out_g) : ''; r.brew_tds_pct = b.tds ? String(b.tds) : ''; { const ey0 = extractionYield(b.tds, b.out_g, b.dose); r.brew_ey_pct = ey0 == null ? '' : String(ey0); } r.brew_water_type = b.water_type || ''; r.water_alkalinity_mgl = numOrNull(b.water_alk) == null ? '' : String(numOrNull(b.water_alk)); r.water_hardness_mgl = numOrNull(b.water_gh) == null ? '' : String(numOrNull(b.water_gh)); r.brew_filter = b.filter || ''; r.brew_grinder_type = b.grinder_type || ''; r.brew_grinder_name = b.grinder_name || ''; r.brew_pour_notes = b.pour_notes || '';
     { const dn = b.dial && typeof b.dial === 'object' ? dialNoteOf({ dial_symptom:b.dial.symptom, dial_change:Array.isArray(b.dial.change) ? b.dial.change.join(';') : '', dial_from_id:b.dial.fromId }) : null; if (dn){ r.dial_symptom = dn.symptom; r.dial_change = dn.change.join(';'); r.dial_from_id = dn.fromId; } }
-  } else {
-    r.brew_method = 'SCA cupping'; r.brew_water_g = String(app.proto.bowl); r.brew_dose_g = String(rnd(app.proto.bowl * 8.25 / 150, 2));
-    r.brew_ratio = '18.2'; r.brew_temp_f = '200'; r.brew_temp_c = '93'; r.brew_time_s = '240';
   }
-  ATTRS.forEach(a => { r[a.key] = fmt2(s.scores[a.key]); r['note_' + a.key] = s.notes[a.key] || ''; });
-  r.acidity_intensity = s.intensity.acidity == null ? '' : String(s.intensity.acidity);
-  r.body_intensity = s.intensity.body == null ? '' : String(s.intensity.body);
-  if (s.mode === 'five'){
-    r.uniformity = String(c.pts.uniformity); r.clean_cup = String(c.pts.clean_cup); r.sweetness = String(c.pts.sweetness);
-    r.taint_cups = String(s.taint_cups); r.fault_cups = String(s.fault_cups);
-  } else {
+  return r;
+}
+/* One row holds a quick part, a cupping part, or both. A cupping is written once all of its cards are scored; a quick cup is written when it has any quick answer or stars. */
+function buildRow(){
+  const s = state, c = calc(), r = baseRow(), cupped = c.complete;
+  r.my_rating_stars = s.stars ? String(validStars(s.stars)) : '';
+  if (cupped){
+    ATTRS.forEach(a => { r[a.key] = fmt2(s.scores[a.key]); r['note_' + a.key] = s.notes[a.key] || ''; });
+    r.acidity_intensity = s.intensity.acidity == null ? '' : String(s.intensity.acidity);
+    r.body_intensity = s.intensity.body == null ? '' : String(s.intensity.body);
     r.clean_cup = String(s.single.clean_cup); r.sweetness = String(s.single.sweetness);
     r.taint_cups = s.single_defect === 'taint' ? '1' : '0'; r.fault_cups = s.single_defect === 'fault' ? '1' : '0';
-  }
-  r.defect_deduction = String(c.ded); r.total_score = fmt2(c.total); r.score_kind = c.kind;
-  r.my_rating_stars = s.stars ? String(validStars(s.stars)) : '';
-  r.aroma_vials = s.vials.join('; '); r.defect_notes = s.defect_notes; r.general_notes = s.general_notes;
+    r.defect_deduction = String(c.ded); r.total_score = fmt2(c.total); r.score_kind = c.kind; r.defect_notes = s.defect_notes;
+    r.aroma_vials = s.vials.join('; '); r.aftertaste_length = s.after_len || ''; r.aroma_kit = (s.kit || []).map(n => n + ' ' + KIT_NAMES[n]).join('; ');
+    ['acidity', 'sweetness', 'bitterness'].forEach(k => { r['cool_' + k] = s.cool[k] || ''; });
+  } else r.score_kind = 'quick';
+  r.mode = cupped ? 'single_cup' : 'quick';
+  r.general_notes = s.general_notes;
   ['fragrance_aroma', 'flavor', 'aftertaste', 'acidity', 'body'].forEach(k => { r['words_' + k] = (s.words[k] || []).join('; '); });
-  r.aftertaste_length = s.after_len || ''; r.aroma_kit = (s.kit || []).map(n => n + ' ' + KIT_NAMES[n]).join('; ');
-  ['acidity', 'sweetness', 'bitterness'].forEach(k => { r['cool_' + k] = s.cool[k] || ''; });
+  Object.assign(r, quickRowPart());
   COLUMNS.forEach(k => { if (TEXT_COLUMNS.has(k)) r[k] = neutralize(r[k]); });
   return r;
+}
+/* How the Taste step opens comes from My setup: Quick only, Quick first (the default) or Cupping first. */
+const tasteChoice = () => app.prefs.taste === 'quickonly' || app.prefs.taste === 'cuppingfirst' ? app.prefs.taste : 'quickfirst';
+const cupAllowed = () => tasteChoice() !== 'quickonly';
+/* Stars are shared by both ways, so they do not count as a quick answer on their own. */
+const quickTouched = () => !!(state.quick.make || Object.keys(state.quick.areas).length || state.quick.liked.length || state.quick.notLiked.length);
+const cupTouched = () => ATTRS.some(a => state.scores[a.key] != null) || state.single.clean_cup != null || state.single.sweetness != null;
+/* The switch is big and always shows both choices, each with one line, so nobody misses that there is another way to taste. */
+function tasteSwitch(){
+  if (!cupAllowed()) return null;
+  const opts = [{ v:'quick', t:'Quick', s:'How did you like it?' }, { v:'cup', t:'Cupping', s:'Score it step by step, like a professional cupper.' }];
+  const btns = opts.map(o => h('button', { type:'button', class:'way', 'aria-pressed':String(state.way === o.v), onclick:() => { if (state.way === o.v) return; state.way = o.v; scheduleDraft(); render(); } }, h('b', { text:o.t }), h('span', { text:o.s })));
+  return h('div', { class:'waybox' }, h('p', { class:'fine', style:'margin:0 0 6px', text:'There are two ways to taste this coffee. You can switch at any time.' }), h('div', { class:'waybar', role:'group', 'aria-label':'How do you want to taste?' }, btns));
+}
+/* the words for the flavor questions: the bag's own, or the notes coffees like this often show; anything already chosen stays on the list */
+function quickFlavorWords(){
+  const bag = bagFlavors(app.coffee.bag_notes);
+  const base = bag.length ? bag : expectFor(app.coffee, new Date()).look.map(x => String(x).toLowerCase()).filter(x => x.length >= 3 && x.length <= 24).slice(0, 6);
+  return { words:Array.from(new Set(base.concat(state.quick.liked, state.quick.notLiked))), fromBag:bag.length > 0 };
+}
+/* One of the two flavor questions. A flavor picked in the other list is greyed out and cannot be tapped here, so nothing is ever both liked and not liked. */
+function flavorGroup(words, ask, hint, mine, other){
+  const btns = words.map(w => h('button', { type:'button', class:'chip', 'aria-pressed':'false', text:w, onclick:() => {
+    const list = state.quick[mine]; const i = list.indexOf(w);
+    if (i >= 0) list.splice(i, 1); else if (!state.quick[other].includes(w)) list.push(w);
+    changed();
+  } }));
+  refreshers.push(() => btns.forEach((b, i) => {
+    const on = state.quick[mine].includes(words[i]), locked = !on && state.quick[other].includes(words[i]);
+    b.setAttribute('aria-pressed', String(on)); b.disabled = locked; b.classList.toggle('locked', locked);
+    b.setAttribute('aria-label', words[i] + (on ? ', picked' : locked ? ', picked in the other list' : ''));
+  }));
+  return h('div', { class:'flavgroup' }, h('div', { class:'flavask', text:ask }), h('p', { class:'fine', style:'margin:0 0 8px', text:hint }), h('div', { class:'chips' }, btns));
+}
+/* One area (smell, taste and so on): Good, Okay or Not good, with "Couldn't tell" as its own small choice, and a word list for smell, taste and aftertaste. Opening one closes the others. */
+function areaCard(a, openKey, setOpen){
+  const set = v => { if (state.quick.areas[a.key] === v) delete state.quick.areas[a.key]; else state.quick.areas[a.key] = v; changed(); };
+  const grades = QUICK_GRADES.filter(g => g.v !== 'unsure');
+  const seg3 = h('div', { class:'seg', role:'group', 'aria-label':a.label }, grades.map(g => h('button', { type:'button', text:g.label, 'aria-pressed':'false', onclick:() => set(g.v) })));
+  const unsure = h('button', { type:'button', class:'btn link', style:'margin:6px 0 0', text:"Couldn't tell", 'aria-pressed':'false', onclick:() => set('unsure') });
+  const sum = h('span', { class:'attr-sum' });
+  const toggle = h('div', { class:'attr-toggle', role:'button', tabindex:'0', 'aria-controls':'qb_' + a.key },
+    h('div', { class:'attr-name', text:a.label }), sum, h('p', { class:'attr-hint', text:a.ask }));
+  const body = h('div', { class:'cardbody', id:'qb_' + a.key }, seg3, unsure);
+  if (a.words){ body.append(cardLabel('What did you notice? (optional)'), wordsRow(a.words)); }
+  const card = h('div', { class:'card stepcard qarea' + (openKey() === a.key ? ' open' : ''), 'data-card':'q:' + a.key }, h('div', { class:'attr-head' }, toggle), body);
+  const flip = () => setOpen(openKey() === a.key ? '' : a.key);
+  toggle.addEventListener('click', flip);
+  toggle.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); flip(); } });
+  refreshers.push(() => {
+    const g = state.quick.areas[a.key], on = openKey() === a.key, label = g ? QUICK_GRADES.find(x => x.v === g).label : '';
+    card.classList.toggle('open', on); toggle.setAttribute('aria-expanded', String(on)); card.classList.toggle('done', !!g);
+    sum.textContent = label || 'Tap to answer';
+    [...seg3.children].forEach((b, i) => b.setAttribute('aria-pressed', String(g === grades[i].v))); unsure.setAttribute('aria-pressed', String(g === 'unsure'));
+  });
+  return card;
+}
+/* what is still needed to save a quick cup: at least stars or "make again" */
+function quickMissing(){
+  if (state.stars || state.quick.make) return '';
+  return 'Give it stars, or say whether you would make it again.';
+}
+function screenQuick(m){
+  const q = state.quick, newLvl = level() === 'new';
+  m.append(h('h2', { text:'How did you like it?' }),
+    h('p', { class:'fine', style:'margin:0 0 8px', text:newLvl ? 'Tap what fits. Everything but the first two is optional.' : 'The first two are all you need. The rest is optional, and it never changes your cupping scores.' }));
+  m.append(h('div', { class:'card' }, h('div', { class:'qask', text:'How much did you like it?' }),
+    h('p', { class:'fine', style:'margin:0 0 4px', text:'These are your own stars. Nothing here changes them.' }),
+    starRating(() => state.stars, v => { state.stars = v; scheduleDraft(); }, { label:'Your rating of this coffee' })));
+  m.append(h('div', { class:'card' }, h('div', { class:'qask', text:'Would you make this again?' }),
+    seg(MAKE_AGAIN.map(x => ({ text:x.label, value:x.v })), () => q.make, v => { q.make = q.make === v ? '' : v; }, 'Would you make this again')));
+  const fw = quickFlavorWords();
+  if (fw.words.length){
+    m.append(h('div', { class:'card' }, h('div', { class:'qask', text:fw.fromBag ? 'The flavors on the bag' : 'Flavors coffees like this often have' }),
+      h('p', { class:'fine', style:'margin:0 0 10px', text:'Both questions are optional. Pick only what you noticed. You may not dislike any of them.' }),
+      flavorGroup(fw.words, 'Which of these did you like?', 'Tap the ones you liked.', 'liked', 'notLiked'),
+      flavorGroup(fw.words, "Which didn't you like?", "Skip this if you aren't sure.", 'notLiked', 'liked'),
+      h('p', { class:'fine', style:'margin:8px 0 0', text:'A flavor can be in one list only. Tap it again to take it back.' })));
+  }
+  let openKey = '';
+  const cards = [], setOpen = k => { openKey = k; refreshAll(); };
+  const count = h('span', { class:'fine', style:'margin:0' });
+  const detail = h('div', { class:'qdetail', hidden:true }), toggleBtn = h('button', { type:'button', class:'btn block', 'aria-expanded':'false', 'aria-controls':'qdetail' });
+  detail.id = 'qdetail';
+  const showDetail = () => { detail.hidden = !detail.hidden; if (detail.hidden) openKey = ''; refreshAll(); };
+  toggleBtn.addEventListener('click', showDetail);
+  QUICK_AREAS.forEach(a => cards.push(areaCard(a, () => openKey, setOpen)));
+  detail.append(...cards);
+  refreshers.push(() => {
+    const n = Object.keys(q.areas).length; count.textContent = n + ' of ' + QUICK_AREAS.length + ' answered';
+    toggleBtn.textContent = detail.hidden ? 'Add detail' + (n ? ' (' + n + ' of ' + QUICK_AREAS.length + ' answered)' : '') : 'Hide detail'; toggleBtn.setAttribute('aria-expanded', String(!detail.hidden));
+  });
+  if (Object.keys(q.areas).length) detail.hidden = false;
+  m.append(h('div', { class:'card' }, h('div', { class:'qask', text:'Add detail (optional)' }),
+    h('p', { class:'fine', style:'margin:0 0 8px', text:newLvl ? 'Smell it, taste it, and tell us how each part was. This helps you learn what you like.' : 'Rate the smell, taste, aftertaste, acidity, sweetness and body, one at a time. Each is Good, Okay or Not good.' }), count, toggleBtn), detail);
+  const gn = h('textarea', { placeholder:'About this coffee or this session', id:'general_notes_box' });
+  gn.addEventListener('input', () => { state.general_notes = gn.value; scheduleDraft(); });
+  refreshers.push(() => { if (document.activeElement !== gn) gn.value = state.general_notes || ''; });
+  gn.style.cssText = 'font-size:16px;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);width:100%;min-height:76px';
+  m.append(h('div', { class:'card' }, h('label', { for:'general_notes_box', class:'flabel', style:'display:block;margin-bottom:6px', text:'Notes (optional)' }), gn));
+  const msg = h('p', { class:'msg', id:'msg', role:'status' });
+  let armed = false, tmr = null;
+  const clearBtn = h('button', { type:'button', class:'btn danger', text:'Clear answers' });
+  clearBtn.addEventListener('click', () => {
+    if (!armed){ armed = true; clearBtn.textContent = 'Tap again to clear'; tmr = setTimeout(() => { armed = false; clearBtn.textContent = 'Clear answers'; }, 4000); return; }
+    clearTimeout(tmr); state = newCup(); prepCupEntry(); render();
+  });
+  m.append(h('div', { class:'actions' }, clearBtn, h('button', { type:'button', class:'btn primary', text:'Save tasting', onclick:onSaveClick })), msg,
+    h('p', { class:'fine', text:'Your in-progress form is kept in this browser until you save or clear it. Your saved history lives in the CSV file you download.' }));
+}
+/* the quick columns of a row: written whenever any quick answer was given, so a cupping can carry them too */
+function quickRowPart(){
+  const q = state.quick, r = {};
+  if (!quickTouched()) return r;
+  r.make_again = q.make || '';
+  QUICK_AREAS.forEach(a => { r[a.col] = q.areas[a.key] || ''; });
+  const fl = cleanFlavorLists(q.liked, q.notLiked); r.flavors_liked = fl.liked.join('; '); r.flavors_not_liked = fl.notLiked.join('; ');
+  return r;
+}
+/* The columns that belong to the cupping part of a row. Adding cupping scores fills these and leaves the rest of the row (the coffee, the brew and the quick answers) as it was. */
+const CUPPING_COLUMNS = ATTRS.map(a => a.key).concat(ATTRS.map(a => 'note_' + a.key), ['acidity_intensity', 'body_intensity', 'clean_cup', 'sweetness', 'taint_cups', 'fault_cups', 'defect_deduction', 'total_score', 'score_kind', 'defect_notes', 'aroma_vials', 'aftertaste_length', 'aroma_kit', 'cool_acidity', 'cool_sweetness', 'cool_bitterness']);
+const cuppedIds = new Set();   // tastings that got their cupping scores here, so one is counted once
+/* a saved tasting can take cupping scores when cupping is on, it has none yet, and its row is in the loaded history */
+const canAddCupping = o => !!(o && history && cupAllowed() && !hasCupping(o) && history.objs.some(x => x.id === o.id));
+/* Write the cupping part of a freshly built row into the saved row with the same id. The words are joined, stars are kept unless new ones were given, and notes are added to. */
+function commitCupping(id, built){
+  if (!history || !id) return { changed:0 };
+  const ex = history.ex, idIdx = ex.header.indexOf('id'), at = ex.rows.findIndex(r => String(r[idIdx] || '').trim() === String(id).trim());
+  if (at < 0 || !built || built.score_kind === 'quick') return { changed:0 };
+  const header = ex.header.slice(); COLUMNS.forEach(c => { if (!header.includes(c)) header.push(c); });
+  const rows = ex.rows.map(r => { const rr = r.slice(); while (rr.length < header.length) rr.push(''); return rr; });
+  const row = rows[at], put = (k, v) => { row[header.indexOf(k)] = v == null ? '' : String(v); }, get = k => String(row[header.indexOf(k)] || '');
+  CUPPING_COLUMNS.forEach(k => put(k, built[k]));
+  ['fragrance_aroma', 'flavor', 'aftertaste', 'acidity', 'body'].forEach(k => { put('words_' + k, Array.from(new Set(splitList(get('words_' + k)).concat(splitList(built['words_' + k])))).join('; ')); });
+  if (built.my_rating_stars) put('my_rating_stars', built.my_rating_stars);
+  { const old = get('general_notes').trim(), add = String(built.general_notes || '').trim(); put('general_notes', old && add && old !== add ? old + '\n' + add : (old || add)); }
+  put('mode', 'single_cup');
+  ex.header = header; applyHistoryRows(rows);
+  const tag = String(id) + '|cupped'; if (!cuppedIds.has(tag)){ cuppedIds.add(tag); histEdited += 1; persistEdited(); }
+  return { changed:1 };
+}
+/* Open the Taste step in Cupping for the coffee on a saved tasting. The coffee page is filled from that tasting; its brew stays as saved. */
+function startCupFor(o){
+  const keepPrefs = app.prefs, c = Object.assign(newCoffee(), trailCoffee(o)); c.id = o.coffee_id || c.id || newId();
+  app = newApp(); app.prefs = keepPrefs; applyGearDefaults(); app.coffee = c; app.cupBrew = null; app.cupFor = String(o.id || '');
+  state = newCup(); state.way = 'cup'; state.stars = validStars(o.my_rating_stars);
+  ['fragrance_aroma', 'flavor', 'aftertaste', 'acidity', 'body'].forEach(k => { state.words[k] = splitList(unneutralize(o['words_' + k] || '')).slice(0, 30); });
+  recipeVia = ''; go('cup');
 }
 const sheetEl = $('sheet'), overlay = $('overlay');
 let sheet = { step:'ask', existing:null, csv:'', error:'', info:'' };
@@ -7455,7 +7648,16 @@ function missingMsg(c){
 function onSaveClick(){
   setMsg('');
   const c = calc();
+  if (state.way === 'quick'){
+    const why = quickMissing(); if (why){ setMsg(why); return; }
+    app.lastSymptom = ''; app.lastReasons = []; scheduleDraft();
+    sheet = { step:'ask', existing:null, csv:'', error:'', info:'' }; openSheet(); return;
+  }
   if (!c.complete){ missingMsg(c); return; }
+  if (app.cupFor){   /* cupping scores for a tasting that is already saved: they go into its row, not into a new one */
+    const res = commitCupping(app.cupFor, buildRow()); app.cupFor = '';
+    if (res.changed){ resetAll(); go('history'); return; }
+  }
   const an = cupAnalysis(); app.lastSymptom = an.symptom || ''; app.lastReasons = an.reasons.slice(0, 4); scheduleDraft();
   sheet = { step:'ask', existing:null, csv:'', error:'', info:'' }; openSheet();
 }
@@ -8285,7 +8487,7 @@ function applyGearDefaults(){
 function applySetup(s){
   if (!s) return;
   const p = app.prefs;
-  p.level = s.level; p.waterUnit = s.waterUnit; p.coffeeUnit = s.coffeeUnit; p.sound = s.sound; p.coach = s.coach; p.cupView = s.cupView;
+  p.level = s.level; p.waterUnit = s.waterUnit; p.coffeeUnit = s.coffeeUnit; p.sound = s.sound; p.coach = s.coach; p.cupView = s.cupView; p.taste = s.taste;
   p.gear = Object.assign({}, s.gear);
   applyGearDefaults(); scheduleDraft();
 }
@@ -8330,6 +8532,9 @@ function renderSetupSheet(title){
     setupSeg('Guidance', [{ text:'Guide me', value:'guide' }, { text:'Key steps only', value:'steps' }], () => p.coach, v => { p.coach = v; }),
     ...sec('Taste cards'),
     setupSeg('Taste cards', [{ text:'Compact', value:'compact' }, { text:'Full', value:'full' }], () => p.cupView || 'compact', v => { p.cupView = v; }),
+    ...sec('Tasting', 'How the Taste step opens.'),
+    setupSeg('Tasting', TASTE_CHOICES.map(t => ({ text:t.label, value:t.v })), () => p.taste || '', v => { p.taste = v; }),
+    h('p', { class:'fine', style:'margin:4px 0 0', text:({ quickonly:'Cupping is hidden. Cups you already scored still show.', '':'Quick opens first. Cupping is one tap away.', cuppingfirst:'Cupping opens first. Quick is one tap away.' })[p.taste || ''] }),
     ...sec('My gear', 'Fills in each new brew for you. You can still change it for one brew.'),
     field('Grinder', sel('Grinder', grinderOpts, () => g.grinderKey || '', v => {
       const gr = grinderFor(v); g.grinderKey = v; g.grinderName = gr ? gr.name : v === GEAR_UNSURE ? 'Not sure' : (v === GEAR_OTHER ? g.grinderName : '');
@@ -8443,9 +8648,11 @@ function keepOption(){
    (opened from its saved row, the same way Your cuppings opens it), or just carry on. */
 function afterSaveActions(){
   const rows = h('div', { style:'display:flex;flex-direction:column;gap:10px;margin-top:14px' }), row = sheet.savedRow;
-  const canDial = !!(row && trailMethod(row));
+  const found = row && history ? history.objs.find(x => x.id === row.id) : null;
+  const canDial = !!(row && hasCupping(row) && trailMethod(row));   /* a quick cup has no scores for Perfect to work from */
+  if (found && canAddCupping(found)) rows.append(h('button', { type:'button', class:'btn primary', id:'cupTooBtn', text:'Want to cup this one too?', onclick:() => { closeSheet(); startCupFor(found); } }));
   if (canDial) rows.append(h('button', { type:'button', class:'btn primary', text:'Perfect the next brew', onclick:() => { closeSheet(); dialFromRow(row, 'start'); } }));
-  rows.append(h('button', { type:'button', class:'btn' + (canDial ? '' : ' primary'), text:'Start fresh with a new coffee', onclick:() => closeSheet() }));
+  rows.append(h('button', { type:'button', class:'btn' + (canDial || (found && canAddCupping(found)) ? '' : ' primary'), text:'Start fresh with a new coffee', onclick:() => closeSheet() }));
   rows.append(h('button', { type:'button', class:'btn link', text:'Open Your tastings', onclick:() => { closeSheet(); go('history'); } }));
   return rows;
 }
@@ -8643,6 +8850,31 @@ function recipePriorCard(meth){
   card.append(h('div', { class:'actions', style:'margin-top:10px' }, h('button', { type:'button', class:'btn small', id:'usePriorBtn', text:'Start from this', onclick:() => applyPrior(p) })));
   return card;
 }
+/* A plain list, oldest first. Each try: the method, your stars, whether you would make it again, and what was different from the try before. No verdicts and no advice.
+   opts.use puts a "use this try's recipe" button on each try (on the Brew page, where the recipe can be rebuilt); opts.mark is the saved row to point out. */
+function quickTriesCard(coffee, opts){
+  opts = opts || {};
+  if (!history || !coffee || !coffee.name) return null;
+  const tries = quickTries(history.objs, coffee); if (!tries.length) return null;
+  const card = h('div', { class:'card', id:'quickTries' }, h('h3', { text:'Your quick tries with this coffee' }),
+    h('p', { class:'fine', style:'margin:2px 0 8px', text:tries.length + (tries.length === 1 ? ' try' : ' tries') + ', oldest first. This shows what changed between them, so you can see what helped you like it.' }));
+  const ul = h('ul', { class:'trail' });
+  tries.forEach(t => {
+    const again = MAKE_AGAIN.find(x => x.v === t.again), li = h('li', { class:'trl' + (opts.mark && opts.mark === t.id ? ' best' : '') });
+    li.append(h('div', { class:'trl-top' }, h('b', { text:'Try ' + t.n + ' · ' + t.method }), h('span', { class:'trl-sc', text:[t.stars ? '★ ' + t.stars : '', again ? 'Make again: ' + again.label : ''].filter(Boolean).join(' · ') || 'No stars' })));
+    if (t.date) li.append(h('div', { class:'trl-mt', text:t.date }));
+    const fl = [t.liked.length ? 'Liked: ' + t.liked.join(', ') : '', t.notLiked.length ? "Didn't like: " + t.notLiked.join(', ') : ''].filter(Boolean).join(' · ');
+    if (fl) li.append(h('div', { class:'trl-mt', text:fl }));
+    li.append(h('div', { class:'trl-ch', text:t.first ? 'Where you started.' : t.changes.length ? 'Changed: ' + t.changes.map(c => c.text).join('; ') + '.' : 'Nothing changed in the brew.' }));
+    if (t.many) li.append(h('div', { class:'fine trl-many', style:'margin:2px 0 0', text:t.changes.length + ' things changed' }));
+    if (opts.use && t.methodKey) li.append(h('button', { type:'button', class:'btn link trl-use', style:'margin:4px 0 0', text:"Use this try's recipe", 'aria-label':"Use try " + t.n + "'s recipe", onclick:() => {
+      const rs = trailRestore(coffee, t.methodKey, t.a, new Date()); if (rs) applyAttempt(t.methodKey, rs, null, t.a, { symptom:'', change:['none'], fromId:t.id });
+    } }));
+    ul.append(li);
+  });
+  card.append(ul);
+  return card;
+}
 /* ---------- Perfect: the parts of the page ---------- */
 /* The question the page asks, with the nine things you may have tasted. ourPick is the one we chose from the scores ('' for none); between is a note to show above the choices.
    Returns { mark(sym) }, which shows which choice is pressed. */
@@ -8652,7 +8884,7 @@ function dialQuestion(m, heading, ourPick, onPick, between){
     h('span', { text:s.label }), s.v === ourPick ? h('span', { class:'pill static ourpick', text:'Our pick' }) : null));
   btns.forEach(x => grp.append(x));
   m.append(...kept(h('h2', { id:'dialQ', class:'dialq-h', text:heading }),
-    h('p', { class:'dialq-line', text:'Pick the one that bothers you most, or "Tastes great" if nothing does. We change one thing at a time, so one answer gives one suggestion.' }),
+    h('p', { class:'dialq-line', text:'Pick the one that bothers you most, or "Tastes great" if nothing does. If the brew is fine but the flavor is not for you, pick "Not to my taste". We change one thing at a time, so one answer gives one suggestion.' }),
     between || null, grp));
   return { mark:sym => btns.forEach((x, i) => x.setAttribute('aria-pressed', String(SYMPTOMS[i].v === sym))) };
 }
@@ -8725,6 +8957,18 @@ function calibCard(b){
   }
   draw(); return box;
 }
+/* "Not to my taste": the brew is fine, so there is no change to make. The cup can be marked as one you would not make again (when it is saved), and a new coffee starts fresh. */
+function notForMeCard(out, rowIdx){
+  const done = rowIdx != null && history && history.objs.some(x => x._i === rowIdx && x.make_again === 'no');
+  const card = h('div', { class:'card', id:'notForMeCard', style:'margin-top:16px' }, h('h3', { text:'Nothing to change' }),
+    h('p', { style:'margin:4px 0 0;font-size:18px;font-weight:600', text:'The brew is fine. This one is just not to your taste.' }),
+    h('p', { class:'serif', style:'margin:10px 0 0;font-size:16px' }, h('b', { style:'font-family:var(--ui);font-weight:600', text:'Why: ' }), 'A different grind or water cannot fix a flavor you do not like. A different coffee can.'));
+  if (rowIdx != null && history && history.objs.some(x => x._i === rowIdx)){
+    card.append(done ? h('p', { class:'fine', id:'notForMeDone', style:'margin:10px 0 0', role:'status', text:'Saved as a coffee you would not make again.' })
+      : h('button', { type:'button', class:'btn block', id:'notForMeBtn', style:'margin-top:10px', text:'Mark it as one I would not make again', onclick:() => { commitNotForMe(rowIdx); render(); } }));
+  }
+  out.append(card, h('div', { class:'actions', style:'flex-direction:column' }, h('button', { type:'button', class:'btn primary block', text:'Start a new coffee', onclick:resetAll })));
+}
 /* the plain version: one cup, one fix. Used for the Philips machine, and when there is no saved or scored cup to build a trail from. */
 function screenDialBasic(m){
   const b = app.cupBrew;
@@ -8739,6 +8983,7 @@ function screenDialBasic(m){
     q.mark(dialSym);
     out.textContent = '';
     if (!dialSym) return;
+    if (dialSym === 'notforme') return notForMeCard(out, null);
     if (b && b.machine) return paintMachine();
     const rec = b && b.key ? buildRecipe(app.coffee, b.key, { altitudeFt:app.brew.altitudeFt, grinderKey:app.brew.grinderKey, calib:app.prefs.calib, water:b.water, tech:b.tech, pulseTaste:b.tech_taste, pulseStrength:b.tech_strength, ice:b.tech_ice }, app.adjust, new Date()) : null;
     const fx = applyWaterFirst(fixFor(dialSym, rec, { roast:profileOf(app.coffee, new Date()).roast, methodType:rec ? rec.method.type : '', agit:b ? b.agit : '', tech:b ? b.tech : '', pulseTaste:b ? b.tech_taste : '', pulseStrength:b ? b.tech_strength : '', ice:b ? b.tech_ice : 0.4, plainGrind:level() === 'new' }), dialSym, waterProfile(b ? b.water_type : '', b ? b.water_alk : '', b ? b.water_gh : ''));
@@ -8812,6 +9057,7 @@ function screenDial(m){
     q.mark(dialSym);
     out.textContent = '';
     if (!dialSym) return;
+    if (dialSym === 'notforme') return notForMeCard(out, t.last && t.last.i != null ? t.last.i : null);
     const base = pickBase();
     const useSession = base === t.last && !!b && b.key === t.methodKey && !app.dialMethod;
     const rs = useSession ? null : trailRestore(app.coffee, t.methodKey, base, now);
@@ -9065,7 +9311,12 @@ function historyCard(){
   }
   return card;
 }
-function scoreTag(o){ return o.score_kind === 'sca_5cup' ? 'SCA' : o.score_kind === 'home_1cup' ? 'Home' : ''; }
+function scoreTag(o){ return cupWay(o) === 'quick' ? 'Quick' : 'Cupping'; }
+/* what a quick tasting says, in one line: make it again, and the flavors liked and not liked */
+function quickLine(o){
+  const qa = quickAnswers(o), again = MAKE_AGAIN.find(x => x.v === qa.makeAgain);
+  return [again ? 'Make again: ' + again.label : '', qa.liked.length ? 'Liked: ' + qa.liked.join(', ') : '', qa.notLiked.length ? "Didn't like: " + qa.notLiked.join(', ') : ''].filter(Boolean).join(' · ');
+}
 function openDelete(set, fromDetail){ sheet = { step:'delConfirm', idx:Array.from(set), fromDetail:!!fromDetail }; openSheet(); }
 function openExport(){
   const st = stampSetupColumn(history.ex.header, history.ex.rows, setupJson(setupFromPrefs(app.prefs, setupCtx()))), rows = st.rows, csv = toCSV([st.header].concat(rows));
@@ -9105,18 +9356,25 @@ function screenHistory(m){
 
   { const dc = dialingCard(8, 'history'); if (dc) m.append(dc); }
   const q = h('input', { type:'search', class:'plain', placeholder:'Search coffee or roaster', 'aria-label':'Search tastings', value:histUI.q });
-  const sorts = [{ v:'new', t:'Newest' }, { v:'score', t:'Top score' }, { v:'rating', t:'My rating' }, { v:'name', t:'A to Z' }];
+  const ways = [{ v:'all', t:'All' }, { v:'quick', t:'Quick' }, { v:'cupping', t:'Cupping' }];
+  const wg = h('div', { class:'seg', role:'group', 'aria-label':'Show which tastings', style:'margin:10px 0 0' });
+  const wbtn = ways.map(x => h('button', { type:'button', text:x.t, 'aria-pressed':'false', onclick:() => { histUI.way = x.v; paint(); } }));
+  wbtn.forEach(b => wg.append(b));
   const sg = h('div', { class:'seg', role:'group', 'aria-label':'Sort tastings', style:'margin:10px 0 14px' });
-  const sbtn = sorts.map(x => h('button', { type:'button', text:x.t, 'aria-pressed':'false', onclick:() => { histUI.sort = x.v; paint(); } }));
-  sbtn.forEach(b => sg.append(b));
+  const sortsFor = () => [{ v:'new', t:'Newest' }].concat(histUI.way !== 'quick' && all.some(hasCupping) ? [{ v:'score', t:'Top score' }] : [], [{ v:'rating', t:'My rating' }, { v:'name', t:'A to Z' }]);
+  let sorts = sortsFor(), sbtn = [];
+  const paintSorts = () => { sorts = sortsFor(); if (!sorts.some(x => x.v === histUI.sort)) histUI.sort = 'rating'; sg.textContent = ''; sbtn = sorts.map(x => h('button', { type:'button', text:x.t, 'aria-pressed':String(histUI.sort === x.v), onclick:() => { histUI.sort = x.v; paint(); } })); sbtn.forEach(b => sg.append(b)); };
   const bar = h('div', { class:'selbar', hidden:true });
   const list = h('div', { id:'histList' });
   const dock = h('div', { class:'dock', hidden:true });
-  if (all.length) m.append(q, sg);
+  const showWays = all.length && (cupAllowed() || all.some(o => cupWay(o) !== 'quick'));
+  if (!showWays) histUI.way = 'all';
+  if (all.length) m.append(q); if (showWays) m.append(wg); if (all.length) m.append(sg);
   m.append(bar, list, dock);
   function paint(){
-    sbtn.forEach((b, i) => b.setAttribute('aria-pressed', String(histUI.sort === sorts[i].v)));
-    const rows = sortHistory(filterHistory(all, histUI.q), histUI.sort);
+    wbtn.forEach((b, i) => b.setAttribute('aria-pressed', String(histUI.way === ways[i].v))); paintSorts();
+    const byWay = histUI.way === 'quick' ? all.filter(o => cupWay(o) !== 'cupping') : histUI.way === 'cupping' ? all.filter(o => cupWay(o) !== 'quick') : all;
+    const rows = sortHistory(filterHistory(byWay, histUI.q), histUI.sort);
     m.classList.toggle('selmode', selectMode); selBtn.hidden = selectMode;
     const n = selected.size;
     bar.hidden = !selectMode; dock.hidden = !selectMode;
@@ -9132,15 +9390,16 @@ function screenHistory(m){
     }
     list.textContent = '';
     if (!all.length){ list.append(h('p', { class:'serif muted', text:'This file has no tastings yet.' })); return; }
-    if (!rows.length){ list.append(h('p', { class:'serif muted', text:'No tastings match "' + histUI.q + '".' })); return; }
+    if (!rows.length){ list.append(h('p', { class:'serif muted', text:histUI.q ? 'No tastings match "' + histUI.q + '".' : histUI.way === 'quick' ? 'No quick tastings yet.' : 'No cupping tastings yet.' })); return; }
     rows.forEach(o => {
       const total = parseFloat(o.total_score);
       const meta = [unneutralize(o.roaster || ''), o.cupping_date || ''].filter(Boolean).join(' · ');
       const spec = o.score_kind === 'sca_5cup' && total >= 80;
       const stars = validStars(o.my_rating_stars);
+      const qline = hasQuick(o) ? quickLine(o) : '';
       const info = h('div', null, h('div', { class:'nm', text:unneutralize(o.coffee_name || '') || 'Untitled coffee' }), meta ? h('div', { class:'mt', text:meta }) : null,
-        stars ? h('div', { class:'mr', role:'img', 'aria-label':'Your rating: ' + stars + ' of 5 stars', text:'★ ' + stars }) : null);
-      const score = h('div', { class:'sc' + (spec ? ' spec' : '') }, h('b', { text:isNaN(total) ? '—' : fmt2(total) }), h('span', { text:scoreTag(o) }));
+        stars ? h('div', { class:'mr', role:'img', 'aria-label':'Your rating: ' + stars + ' of 5 stars', text:'★ ' + stars }) : null, qline ? h('div', { class:'mt', text:qline }) : null);
+      const score = h('div', { class:'sc' + (spec ? ' spec' : '') }, h('b', { text:cupWay(o) === 'quick' ? '' : isNaN(total) ? '—' : fmt2(total) }), h('span', { text:scoreTag(o) }));
       if (selectMode){
         const on = selected.has(o._i);
         const el = h('div', { class:'hrow sel', role:'checkbox', 'aria-checked':String(on), tabindex:'0' }, h('span', { class:'chkbox' + (on ? ' on' : '') }), info, score);
@@ -9193,12 +9452,20 @@ function screenDetail(m){
   const sub = [g('roaster'), g('origin')].filter(Boolean).join(' · ');
   if (sub) m.append(h('p', { class:'lede', style:'margin-bottom:10px', text:sub }));
   m.append(h('button', { type:'button', class:'btn small', id:'editCoffeeBtn', style:'margin:0 0 12px', text:'Edit coffee details', onclick:() => openEditCoffee(o) }));
-  m.append(h('div', { class:'dscore' }, h('b', { text:isNaN(total) ? '—' : fmt2(total) }),
+  const way = cupWay(o);
+  m.append(way === 'quick' ? h('div', { class:'dscore' }, h('b', { text:'Quick' }), h('span', { text:'a quick tasting, with no cupping scores' })) : h('div', { class:'dscore' }, h('b', { text:isNaN(total) ? '—' : fmt2(total) }),
     h('span', { text:kind === 'sca_5cup' ? '/ 100 · SCA five-cup score' : kind === 'home_1cup' ? '/ 100 · home score, not an SCA grade' : '/ 100' })));
   if (o.cupping_date) m.append(h('p', { class:'fine', style:'margin:-6px 0 14px', text:'Tasted on ' + o.cupping_date }));
   m.append(h('div', { class:'card', style:'margin:0 0 14px' }, h('h3', { text:'Your rating' }),
     h('p', { class:'fine', style:'margin:2px 0 0', text:'How much you liked this coffee. It is separate from your scores, and you can change it any time.' }),
     starRating(() => validStars((history.objs.find(x => x._i === detailIdx) || {}).my_rating_stars), v => { commitRating(o._i, v); nb.paint(); }, { label:'Your rating of this coffee' })));
+  if (hasQuick(o)){
+    const qa = quickAnswers(o), gl = v => (QUICK_GRADES.find(x => x.v === v) || {}).label || '';
+    const qkv = kvList([['Make it again?', (MAKE_AGAIN.find(x => x.v === qa.makeAgain) || {}).label || ''], ...QUICK_AREAS.map(a => [a.label, gl(qa.areas[a.key])]), ['Flavors you liked', qa.liked.join(', ')], ["Flavors you didn't like", qa.notLiked.join(', ')]]);
+    if (qkv) m.append(h('div', { class:'card', style:'margin:0 0 14px' }, h('h3', { text:'How you liked it' }), qkv));
+  }
+
+  { const qt = quickTriesCard(trailCoffee(o), { mark:o.id }); if (qt) m.append(qt); }
 
   const days = o.days_since_roast !== '' && o.days_since_roast != null ? o.days_since_roast : '';
   const coffeeKv = kvList([['Type', g('blend')], ['Roast', g('roast_level')], ['Process', g('process')], ['Decaf', o.decaf ? 'Yes' : ''], ['Elevation', g('elevation_class') ? g('elevation_class') + (o.elevation_m ? ' (about ' + Number(o.elevation_m).toLocaleString('en-US') + ' m)' : '') : ''],
@@ -9258,7 +9525,8 @@ function screenDetail(m){
 
   m.append(h('div', { class:'actions', style:'flex-direction:column' },
     h('button', { type:'button', class:'btn primary block', text:'Brew or taste this coffee again', onclick:() => useCoffeeFromRow(o) }),
-    trailMethod(o) ? h('button', { type:'button', class:'btn block', id:'dialThisBtn', text:'Perfect this coffee', onclick:() => dialFromRow(o, 'detail') }) : null,
+    canAddCupping(o) ? h('button', { type:'button', class:'btn block', id:'addCuppingBtn', text:'Add cupping scores', onclick:() => startCupFor(o) }) : null,
+    trailMethod(o) && way !== 'quick' ? h('button', { type:'button', class:'btn block', id:'dialThisBtn', text:'Perfect this coffee', onclick:() => dialFromRow(o, 'detail') }) : null,
     h('button', { type:'button', class:'btn block', text:'Back to the list', onclick:() => go('history') }),
     h('button', { type:'button', class:'btn danger block', text:'Delete this tasting', onclick:() => openDelete(new Set([o._i]), true) })));
 }

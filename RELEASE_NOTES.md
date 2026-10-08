@@ -2,6 +2,16 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 37: Quick taste
+
+2026-10-07 23:55:41 UTC
+
+- Tasting a coffee now opens on Quick: give it stars, say whether you would make it again, and pick the flavors from the bag that you liked and the ones you did not. A flavor can only be in one list, so nothing is both liked and disliked.
+- Add detail lets you say Good, Okay or Not good about smell, taste, aftertaste, acidity, sweetness and body. None of it changes your cupping scores.
+- A big switch at the top changes to Cupping, the step-by-step scoring, at any time. After a quick save you can cup the same coffee too, and any saved tasting can have cupping scores added later.
+- My setup has a new Tasting choice: Quick only, Quick first or Cupping first. Five cups is gone for new tastings, but old five-cup files still open and are not changed.
+- Your quick tries of one coffee are listed across methods, with what changed between them. History can be filtered to All, Quick or Cupping, and Perfect has a new choice, Not to my taste.
+
 ## Release 36: Your gear gets its own page
 
 2026-10-07 21:22:44 UTC
