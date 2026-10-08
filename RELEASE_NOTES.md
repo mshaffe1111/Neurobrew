@@ -2,6 +2,37 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 43: History file at the bottom
+
+2026-10-08 14:55:04 UTC
+
+- On the Coffee screen, loading a history file (Upload your history, Load another file, View history) now sits at the bottom, below Continue, so the coffee questions come first.
+- The Signed in to Claude message under the logo is gone.
+
+## Release 42: Coffees you are perfecting is folded
+
+2026-10-08 14:28:42 UTC
+
+- On the Coffee screen, the list of coffees you are perfecting is now one small folded card that says how many coffees are in it. Tap it to open the list and its Brew again buttons. Once opened, it stays open.
+
+## Release 41: Cleaner Coffee screen and a safer history
+
+2026-10-08 14:05:24 UTC
+
+- The two Clear buttons are gone from the Coffee screen. Start a fresh coffee and Clear everything are in the Menu.
+- Single origin or blend is now two buttons, and Country has a Type to search box.
+- The Menu now says when your history was last backed up, how many tastings are only in this browser, and whether the browser promised to keep your data.
+- New in the Menu: Save my history to a file now, in one step, and a tip for adding NeuroBrew to your Home Screen.
+
+## Release 40: Five answers up front, Brew again, Facts in four parts
+
+2026-10-08 03:50:43 UTC
+
+- The Coffee screen now asks for five things that can change your brew: name, roast, process, elevation and roast date. Tap Not sure for any the bag does not say. It works the same at every level.
+- Everything else (roaster, origin, varietal, decaf, tasting notes) is under More details, which stays open once you open it.
+- Brew again: each coffee you are perfecting has a button that opens its last brew, ready to start with the same method, gear and numbers.
+- Facts is now four parts: What this changes, About your coffee, Your history and Learn more. It says you can skip it.
+
 ## Release 39: The bag reader reads more of your photos
 
 2026-10-08 02:06:39 UTC
