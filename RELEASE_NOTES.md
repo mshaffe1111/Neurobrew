@@ -2,6 +2,16 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 44: Tools: Cup yield
+
+2026-10-08 16:35:18 UTC
+
+- The Menu has a new Tools row. It opens a list of tools, and Cup yield is the first.
+- Cup yield shows how much coffee ends up in your cup, or how much water and coffee to use for the cup you want. It covers every method except the Philips machine.
+- Pick a cup size in grams or ounces and the coffee and water follow it. The moka pot has a slider for how much of the water reaches the cup.
+- Each answer shows a range, and each method says how sure we are of its starting figure. Weigh one brew and the tool learns your own figure.
+- How this is worked out shows the sums with your numbers in them, so you can check them.
+
 ## Release 43: History file at the bottom
 
 2026-10-08 14:55:04 UTC

@@ -757,6 +757,84 @@ details.dialsec[open]{ padding-bottom:14px; }
 .reqwrap .needtext{margin:0 0 6px;padding:0 10px;font-weight:700;color:var(--alert);font-size:14px}
 .gcard .fine a, .gbody .fine a{ display:inline-block; min-height:24px; line-height:24px; padding:0 2px; }
 .pstep .pl{ font-size:max(12px, 1em); }
+:root{ --yc-band:#F2A93B55; --yc-held:#C9A468; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --yc-band:#F2A93B66; --yc-held:#A97B4B; } }
+:root[data-theme="dark"]{ --yc-band:#F2A93B66; --yc-held:#A97B4B; }
+.tlist{ display:grid; gap:10px; margin-top:14px; }
+.tlrow{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; width:100%; text-align:left; padding:14px 16px; background:var(--surface); border:1.5px solid var(--edge); border-radius:14px; color:var(--ink); min-height:64px; }
+.tlrow:hover{ background:var(--tint); }
+.tl-t{ font-weight:600; font-size:16.5px; }
+.tl-s{ font:400 14.5px/1.35 var(--txt); color:var(--muted); }
+.yc-f{ margin-top:16px; min-width:0; }
+.yc-f.wide{ margin-top:18px; }
+.yc-f > label, .yc-lab{ display:block; font-size:13px; font-weight:700; color:var(--label); margin-bottom:6px; letter-spacing:.01em; }
+.yc-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:360px){ .yc-row{ grid-template-columns:1fr; } }
+.yc-pick{ width:100%; min-height:50px; border:1.5px solid var(--edge); border-radius:12px; background:var(--surface); padding:10px 12px; font-size:17px; font-weight:600; color:var(--ink); }
+.yc-num{ display:flex; align-items:center; border:1.5px solid var(--edge); border-radius:12px; background:var(--surface); padding-right:12px; min-height:48px; }
+.yc-num input{ border:0; background:none; width:100%; min-width:0; padding:10px 12px; font-size:18px; font-weight:600; font-variant-numeric:tabular-nums; }
+.yc-num input:focus-visible{ outline-offset:-2px; border-radius:12px; }
+.yc-num u{ text-decoration:none; color:var(--muted); font-weight:500; font-size:14px; white-space:nowrap; }
+.yc-pre{ padding-left:12px; color:var(--muted); font-weight:600; white-space:nowrap; }
+.yc-pre + input{ padding-left:6px; }
+.yc-lrow{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+.yc-lrow .yc-lab{ margin:0; }
+.yc-mini{ display:inline-flex; border:1.5px solid var(--edge); border-radius:99px; overflow:hidden; background:var(--surface); }
+.yc-mini button{ border:0; background:none; padding:5px 14px; font-weight:600; font-size:13.5px; min-height:34px; }
+.yc-mini button[aria-pressed="true"]{ background:var(--leaf); color:var(--leaf-ink); }
+.yc-chips{ display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+.yc-chip{ display:inline-flex; align-items:center; gap:7px; border:1.5px solid var(--edge); background:var(--surface); border-radius:99px; padding:6px 12px 6px 10px; font-size:13.5px; font-weight:500; min-height:44px; }
+.yc-chip em{ font-style:normal; font-weight:400; opacity:.8; font-variant-numeric:tabular-nums; }
+.yc-chip[aria-pressed="true"]{ background:var(--ink); color:var(--bg); border-color:var(--ink); font-weight:600; }
+:root[data-theme="dark"] .yc-chip[aria-pressed="true"]{ background:var(--primary); color:var(--primary-ink); border-color:var(--primary); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .yc-chip[aria-pressed="true"]{ background:var(--primary); color:var(--primary-ink); border-color:var(--primary); } }
+.yc-ic{ display:inline-flex; }
+.yc-result{ margin-top:18px; background:var(--surface); border:1.5px solid var(--leaf); border-radius:18px; padding:16px; }
+.yc-rlab{ font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+.yc-big{ font-size:44px; line-height:1.05; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px; }
+.yc-big small{ font-size:20px; font-weight:600; color:var(--muted); }
+.yc-line{ font:500 15.5px/1.35 var(--txt); margin-top:3px; font-variant-numeric:tabular-nums; }
+.yc-line.mute{ font-weight:400; font-size:14.5px; color:var(--muted); }
+.yc-bar{ display:flex; height:30px; border-radius:10px; overflow:hidden; margin-top:14px; background:var(--track); border:1px solid var(--edge); }
+.yc-bar i{ display:block; height:100%; }
+.yc-bar .yc-c, .yc-legend .yc-c::before{ background:var(--mint); }
+.yc-bar .yc-h, .yc-legend .yc-h::before{ background:var(--yc-held); }
+.yc-legend{ display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:9px; font:400 13.5px/1.3 var(--txt); color:var(--muted); }
+.yc-legend span::before{ content:""; display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+.yc-warn{ background:var(--alert-bg); color:var(--alert); border-radius:10px; padding:9px 12px; font:500 14px/1.35 var(--txt); }
+.yc-flip{ margin-top:4px; text-decoration:underline; text-underline-offset:3px; min-height:44px; }
+.yc-tip{ font:400 14.5px/1.4 var(--txt); color:var(--muted); margin:0; }
+.yc-sval{ font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; margin:2px 0; }
+.yc-sl{ position:relative; height:34px; margin-top:4px; }
+.yc-bt{ position:absolute; left:0; right:0; top:13px; height:8px; border-radius:99px; background:var(--track); }
+.yc-bb{ position:absolute; top:13px; height:8px; border-radius:99px; background:var(--primary); }
+.yc-sl input{ position:absolute; inset:0; width:100%; margin:0; background:none; -webkit-appearance:none; appearance:none; }
+.yc-sl input::-webkit-slider-runnable-track{ background:none; height:34px; }
+.yc-sl input::-moz-range-track{ background:none; height:34px; }
+.yc-sl input::-webkit-slider-thumb{ -webkit-appearance:none; width:26px; height:26px; margin-top:4px; border-radius:50%; background:var(--ink); border:3px solid var(--bg); }
+.yc-sl input::-moz-range-thumb{ width:20px; height:20px; border-radius:50%; background:var(--ink); border:3px solid var(--bg); }
+:root[data-theme="dark"] .yc-sl input::-webkit-slider-thumb{ background:var(--primary); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .yc-sl input::-webkit-slider-thumb{ background:var(--primary); } }
+.yc-scale{ display:flex; justify-content:space-between; gap:8px; font:400 12.5px var(--txt); color:var(--muted); font-variant-numeric:tabular-nums; }
+.yc-scale span:nth-child(2){ text-align:center; }
+.yc-fold{ margin-top:14px; background:var(--surface); border:1px solid var(--line); border-radius:16px; }
+.yc-fold > summary{ list-style:none; padding:13px 14px; font-weight:600; font-size:15px; cursor:pointer; min-height:48px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.yc-fold > summary::-webkit-details-marker{ display:none; }
+.yc-fold > summary::after{ content:"+"; font-size:20px; color:var(--leaf); font-weight:600; }
+.yc-fold[open] > summary::after{ content:"\2212"; }
+.yc-fbody{ padding:0 14px 14px; }
+.yc-sub{ margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
+.yc-sub:first-child{ margin-top:0; padding-top:0; border-top:0; }
+.yc-sub h3{ font-size:14.5px; font-weight:600; margin:0 0 4px; }
+.yc-eg{ font:600 11.5px var(--ui); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-top:8px; }
+.yc-work{ font:400 14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:var(--tint); border-radius:10px; padding:8px 12px; margin:4px 0; overflow-x:auto; font-variant-numeric:tabular-nums; }
+.yc-tw{ overflow-x:auto; }
+.yc-table{ width:100%; border-collapse:collapse; font:400 13.5px/1.35 var(--txt); font-variant-numeric:tabular-nums; }
+.yc-table th, .yc-table td{ text-align:left; padding:7px 8px 7px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+.yc-table th{ font:700 11px var(--ui); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+.yc-table .nw{ white-space:nowrap; }
+.yc-table tr.cur td{ font-weight:700; }
+.yc-table tr.cur td:first-child::before{ content:"\25B8 "; color:var(--leaf); }
 </style>
 </head>
 <body data-screen="start">
@@ -4205,6 +4283,153 @@ function applyWaterFirst(fx, symptom, w){
     secondary:lead ? 'If it is still flat with better water, then: ' + lead : '', adjust:{ grind:0, ratio:0 }, btnLabel:'Brew again with new water', waterFirst:true };
 }
 
+/* ---------- cup yield ----------
+   The sum (exact, one conservation of mass):  cup = (water in − water the coffee keeps) ÷ (1 − TDS of the cup),  where TDS is the dissolved coffee as a fraction of the cup.
+   "Kept" is r × dry coffee, with r in grams of water per gram of coffee. Counting the dissolved coffee matters: leaving it out makes the cup read about 1.3 % light for a filter brew and up to 9 % light for espresso.
+   Run backwards:  water = cup × (1 − TDS) + r × coffee.  With a brew ratio (water per coffee, or cup per coffee for espresso) the coffee follows the cup:  coffee = cup × (1 − TDS) ÷ (ratio − r).
+   r is the water the grounds and filter keep, as you would weigh it (the cup you pour, not a lab's retained-liquid figure, which runs about 0.2 g/g higher).
+   Sources and what is and is not measured: audit/audit-notes.md and the research report behind Release 44. One careful measurement exists (Liang, Chan and Ristenpart, Sci Rep 2021: 2.48 ± 0.19 g of liquid per g, hot immersion through a V60 paper); spent-puck moisture gives espresso; the rest are conventions or placeholders, and each says so. */
+const YIELD_RUN_SD = 0.19;   /* the run-to-run spread of the 2021 measurement, used as the band around a figure you set or calibrated yourself */
+const YIELD_GROUPS = [['Pour-over', ['v60', 'kalita', 'chemex']], ['Immersion', ['press', 'clever', 'switch', 'aeropress', 'siphon']], ['Pressure and stovetop', ['espresso', 'moka', 'turkish', 'phin']], ['Batch', ['drip', 'cold']]];
+const YIELD_SURE = { measured:'Measured', rule:'Rule of thumb', guess:'Educated guess', home:'Home measurements' };
+const POUR_SRC = 'About 2 g per g is the working figure in pour-over writing. The one careful measurement (Liang, Chan and Ristenpart, 2021, hot water through a V60 paper) found 2.5 g of liquid per g, a little higher than a weigh-it-yourself figure.';
+const YIELD_TABLE = {
+  v60:{ kind:'filter', r:2.1, lo:1.8, hi:2.5, tds:1.35, sure:'rule', tip:'stop', src:POUR_SRC },
+  kalita:{ kind:'filter', r:2.1, lo:1.8, hi:2.5, tds:1.35, sure:'rule', tip:'stop', src:'Same figure as the V60. No Kalita-specific measurement exists that we could find.' },
+  chemex:{ kind:'filter', r:2.1, lo:1.8, hi:2.5, tds:1.35, sure:'rule', tip:'stop', src:'Same figure as the V60. The thicker Chemex paper may hold more water; nobody has weighed it.' },
+  press:{ kind:'filter', r:2.5, lo:2.0, hi:3.0, tds:1.3, sure:'guess', tip:'drain', src:'Immersion brews hold more than filter brews, which is supported. The size is a placeholder: no study has weighed a press. Pressing hard and letting it drain both change it.' },
+  clever:{ kind:'filter', r:2.3, lo:1.9, hi:2.6, tds:1.4, sure:'guess', tip:'drain', src:'A placeholder between pour-over and French press. Not measured.' },
+  switch:{ kind:'filter', r:2.3, lo:1.9, hi:2.6, tds:1.4, sure:'guess', tip:'drain', src:'A placeholder between pour-over and French press. Not measured.' },
+  aeropress:{ kind:'filter', r:1.7, lo:1.3, hi:2.2, tds:1.6, sure:'guess', tip:'press', src:'Pressing squeezes more out than gravity does, so this sits below pour-over. A placeholder: published weighed brews are scattered.' },
+  siphon:{ kind:'filter', r:1.5, lo:1.0, hi:2.0, tds:1.4, sure:'guess', tip:'', src:'A placeholder. The vacuum draw-down pulls the bed fairly dry, but nobody has measured it.' },
+  espresso:{ kind:'filter', outRatio:true, r:1.2, lo:1.0, hi:1.5, tds:9, sure:'measured', tip:'espresso', src:'Worked out from published moisture in spent espresso pucks (54 to 63 percent of the puck), which gives 1.0 to 1.4 g per g. Indirect, but based on real measurements.' },
+  moka:{ kind:'moka', f:0.75, flo:0.65, fhi:0.80, sure:'home', tip:'', src:'Based on weighed home examples, about 75 percent of the water you charge ends up in the cup. The rest stays in the base, the steam and the grounds. It depends on the fill line, the valve and the basket. Match it to your own pot.' },
+  turkish:{ kind:'boil', boil:8, sludge:6, sure:'guess', tip:'', src:'The grounds stay in the cup, so a retention figure does not apply. Boil-off and what you leave in the pot are the only losses. The two starting values are guesses; set your own.' },
+  phin:{ kind:'filter', r:2.1, lo:1.8, hi:2.5, tds:2.5, sure:'guess', tip:'', src:'Treated like a slow pour-over. A placeholder; not measured.' },
+  drip:{ kind:'filter', r:1.8, lo:1.2, hi:2.2, tds:1.3, sure:'guess', tip:'', src:'A placeholder. Basket shape and the hot-water sprayer change it, and little has been published.' },
+  cold:{ kind:'filter', r:2.0, lo:1.5, hi:2.5, tds:2.2, sure:'guess', tip:'concentrate', src:'Sources disagree: one maker quotes about 1.55 g per g, retailers quote 2.1 to 2.4. Enter the strength of your concentrate for a closer answer.' }
+};
+const YIELD_PRESETS = { espresso:[['Single', 18], ['Double', 36], ['Lungo', 60]], moka:[['Demitasse', 60], ['Small', 120], ['Cup', 240]], turkish:[['Demitasse', 60], ['Small', 120], ['Cup', 240]] };
+const yieldMethods = () => YIELD_GROUPS.reduce((a, g) => a.concat(g[1]), []);
+function yieldPresets(key){
+  if (YIELD_PRESETS[key]) return YIELD_PRESETS[key];
+  const a = [['Small', 120], ['Cup', 240], ['Mug', 350], ['Large', 480]];
+  if (key === 'drip' || key === 'cold') a.push(['Carafe', 1000]);
+  return a;
+}
+const yFin = x => typeof x === 'number' && isFinite(x);
+/* The water-kept figure for a method and its band. A figure you set or calibrated (own) gets the run-to-run band instead of the method's. */
+function yieldRetention(key, own){
+  const t = YIELD_TABLE[key]; if (!t || t.kind !== 'filter') return null;
+  if (yFin(own) && own > 0) return { r:own, lo:Math.max(0, own - YIELD_RUN_SD), hi:own + YIELD_RUN_SD, own:true };
+  return { r:t.r, lo:t.lo, hi:t.hi, own:false };
+}
+/* The share of the charged water that reaches a moka cup, with its band; the same rule for what you set. */
+function yieldMokaShare(own){
+  const t = YIELD_TABLE.moka;
+  if (yFin(own) && own > 0) return { f:own, lo:Math.max(0.3, own - 0.03), hi:Math.min(0.95, own + 0.03), own:true };
+  return { f:t.f, lo:t.flo, hi:t.fhi, own:false };
+}
+/* From water in to cup. p: { key, dose, water, own (retention or moka share you set), tds (percent, optional), boil (percent), sludge (g) }. */
+function yieldCup(p){
+  const t = YIELD_TABLE[p.key]; if (!t) return { ok:false };
+  const W = +p.water, D = +p.dose, o = { ok:false, key:p.key, kind:t.kind, W, D };
+  if (!(W > 0)) return o;
+  if (t.kind === 'moka'){
+    const m = yieldMokaShare(p.own); o.f = m.f; o.B = m.f * W; o.Blo = m.lo * W; o.Bhi = m.hi * W; o.own = m.own;
+    o.held = W - o.B; o.ok = o.B > 0; return o;
+  }
+  if (t.kind === 'boil'){
+    const b = (yFin(+p.boil) ? +p.boil : t.boil) / 100, s = yFin(+p.sludge) ? +p.sludge : t.sludge;
+    o.B = W * (1 - b) - s; o.Blo = o.Bhi = o.B; o.boil = b; o.sludge = s; o.held = W - o.B; o.ok = o.B > 0; return o;
+  }
+  if (!(D > 0)) return o;
+  const rr = yieldRetention(p.key, p.own), tds = yFin(+p.tds) && +p.tds > 0 ? +p.tds : t.tds, tf = tds / 100;
+  const f = x => (W - x * D) / (1 - tf);
+  Object.assign(o, { r:rr.r, rlo:rr.lo, rhi:rr.hi, own:rr.own, tds, t:tf, B:f(rr.r), Blo:f(rr.hi), Bhi:f(rr.lo), naive:W - rr.r * D });
+  o.held = W - o.B; o.ok = o.B > 0; return o;
+}
+/* From the cup you want to the water and the coffee. p: { key, cup, ratio, own, tds, boil, sludge }. ratio is water per gram of coffee (cup per gram of coffee for espresso). */
+function yieldWater(p){
+  const t = YIELD_TABLE[p.key]; if (!t) return { ok:false };
+  const B = +p.cup, rho = +p.ratio, o = { ok:false, key:p.key, kind:t.kind, B, ratio:rho };
+  if (!(B > 0) || !(rho > 0)) return o;
+  if (t.kind === 'moka'){
+    const m = yieldMokaShare(p.own); o.f = m.f; o.own = m.own;
+    o.W = B / m.f; o.Wlo = B / m.hi; o.Whi = B / m.lo; o.D = o.W / rho; o.Dlo = o.Wlo / rho; o.Dhi = o.Whi / rho;
+    o.held = o.W - B; o.ok = true; return o;
+  }
+  if (t.kind === 'boil'){
+    const b = (yFin(+p.boil) ? +p.boil : t.boil) / 100, s = yFin(+p.sludge) ? +p.sludge : t.sludge;
+    o.W = (B + s) / (1 - b); o.Wlo = o.Whi = o.W; o.D = o.Dlo = o.Dhi = o.W / rho; o.boil = b; o.sludge = s; o.held = o.W - B; o.ok = true; return o;
+  }
+  const rr = yieldRetention(p.key, p.own), tds = yFin(+p.tds) && +p.tds > 0 ? +p.tds : t.tds, tf = tds / 100;
+  Object.assign(o, { r:rr.r, rlo:rr.lo, rhi:rr.hi, own:rr.own, tds, t:tf });
+  if (t.outRatio){
+    o.D = o.Dlo = o.Dhi = B / rho;
+    const w = x => B * (1 - tf) + x * o.D;
+    o.W = w(rr.r); o.Wlo = w(rr.lo); o.Whi = w(rr.hi); o.naive = o.W - rr.r * o.D; o.ok = true;
+  } else {
+    if (!(rho > rr.r + 0.05)) return o;   /* a ratio this thin cannot give a cup: the coffee alone would keep all the water */
+    const d = x => B * (1 - tf) / (rho - x);
+    o.D = d(rr.r); o.W = rho * o.D; o.Dlo = d(rr.lo); o.Wlo = rho * o.Dlo;
+    if (rho > rr.hi + 0.01){ o.Dhi = d(rr.hi); o.Whi = rho * o.Dhi; } else { o.Dhi = o.Whi = NaN; }   /* the top of the band would need a thicker ratio, so there is no upper limit to show */
+    o.naive = o.W - rr.r * o.D; o.ok = true;
+  }
+  o.held = o.W - B; return o;
+}
+/* Your own figure from one weighed brew: the water you poured, the coffee, and the cup you ended with. */
+function yieldCalibrate(key, water, dose, cup, tds){
+  const t = YIELD_TABLE[key]; if (!t || t.kind !== 'filter' || !(water > 0) || !(dose > 0) || !(cup > 0)) return { ok:false };
+  const tf = (yFin(+tds) && +tds > 0 ? +tds : t.tds) / 100, r = (water - cup * (1 - tf)) / dose;
+  if (!(r >= 0.8 && r <= 3.2)) return { ok:false, bad:true, r };
+  return { ok:true, r:Math.round(r * 100) / 100, inBand:r >= t.lo && r <= t.hi, lo:t.lo, hi:t.hi };
+}
+function yieldCalibrateMoka(water, cup){
+  if (!(water > 0) || !(cup > 0) || cup > water) return { ok:false, bad:true };
+  const f = Math.round(cup / water * 1000) / 1000, t = YIELD_TABLE.moka;
+  return { ok:true, f, inBand:f >= t.flo && f <= t.fhi, lo:t.flo, hi:t.fhi };
+}
+/* What is kept in the saved choices: only known methods, and only numbers in a believable range. */
+function yieldClean(raw){
+  const out = {}; if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  Object.keys(raw).forEach(k => {
+    const t = YIELD_TABLE[k], v = +raw[k]; if (!t || !isFinite(v)) return;
+    if (t.kind === 'filter' && v >= 0.8 && v <= 3.2) out[k] = Math.round(v * 100) / 100;
+    else if (t.kind === 'moka' && v >= 0.3 && v <= 0.95) out[k] = Math.round(v * 1000) / 1000;
+  });
+  return out;
+}
+/* The sums with the person's own numbers in them, for the "How this is worked out" fold. Each entry: { head, line } or { note }. Returns [] when there is no result. */
+function yieldWorking(res, mode){
+  if (!res || !res.ok) return [];
+  const g = x => (Math.round(x * 10) / 10).toFixed(1), out = [];
+  if (res.kind === 'moka'){
+    if (mode === 'water') out.push({ head:'Cup from the share you set', line:'cup = share × water = ' + res.f.toFixed(2) + ' × ' + g(res.W) + ' = ' + g(res.B) + ' g' });
+    else { out.push({ head:'Water', line:'water = cup ÷ share = ' + g(res.B) + ' ÷ ' + res.f.toFixed(2) + ' = ' + g(res.W) + ' g' }); out.push({ head:'Coffee', line:'coffee = water ÷ ratio = ' + g(res.W) + ' ÷ ' + res.ratio + ' = ' + g(res.D) + ' g' }); }
+    out.push({ note:'A share of the water is a shortcut for this pot. No published figure exists to work it out from.' }); return out;
+  }
+  if (res.kind === 'boil'){
+    if (mode === 'water') out.push({ head:'Cup', line:'cup = water × (1 − boil-off) − left in the pot = ' + g(res.W) + ' × ' + (1 - res.boil).toFixed(2) + ' − ' + res.sludge + ' = ' + g(res.B) + ' g' });
+    else { out.push({ head:'Water', line:'water = (cup + left in the pot) ÷ (1 − boil-off) = (' + g(res.B) + ' + ' + res.sludge + ') ÷ ' + (1 - res.boil).toFixed(2) + ' = ' + g(res.W) + ' g' }); out.push({ head:'Coffee', line:'coffee = water ÷ ratio = ' + g(res.W) + ' ÷ ' + res.ratio + ' = ' + g(res.D) + ' g' }); }
+    return out;
+  }
+  const D = res.D, kept = res.r * D, tds = res.t.toFixed(4);
+  if (mode === 'water'){
+    out.push({ head:'Water the coffee keeps', line:'kept = r × coffee = ' + res.r.toFixed(2) + ' × ' + g(D) + ' = ' + g(kept) + ' g' });
+    out.push({ head:'Cup, counting the dissolved coffee', line:'cup = (water − kept) ÷ (1 − TDS) = (' + g(res.W) + ' − ' + g(kept) + ') ÷ (1 − ' + tds + ') = ' + g(res.B) + ' g' });
+  } else if (res.ratio && YIELD_TABLE[res.key].outRatio){
+    out.push({ head:'Coffee', line:'coffee = cup ÷ ratio = ' + g(res.B) + ' ÷ ' + res.ratio + ' = ' + g(D) + ' g' });
+    out.push({ head:'Water the coffee keeps', line:'kept = r × coffee = ' + res.r.toFixed(2) + ' × ' + g(D) + ' = ' + g(kept) + ' g' });
+    out.push({ head:'Water to pour', line:'water = cup × (1 − TDS) + kept = ' + g(res.B) + ' × (1 − ' + tds + ') + ' + g(kept) + ' = ' + g(res.W) + ' g' });
+  } else {
+    out.push({ head:'Coffee', line:'coffee = cup × (1 − TDS) ÷ (ratio − r) = ' + g(res.B) + ' × (1 − ' + tds + ') ÷ (' + res.ratio + ' − ' + res.r.toFixed(2) + ') = ' + g(D) + ' g' });
+    out.push({ head:'Water to pour', line:'water = ratio × coffee = ' + res.ratio + ' × ' + g(D) + ' = ' + g(res.W) + ' g' });
+  }
+  out.push({ head:'A check you can run at the bench', line:'wet bed + filter = water + coffee − cup = ' + g(res.W) + ' + ' + g(D) + ' − ' + g(res.B) + ' = ' + g(res.W + D - res.B) + ' g' });
+  out.push({ note:'Subtracting alone would give ' + g(res.naive) + ' g, which is ' + g(Math.abs(res.B - res.naive)) + ' g off, because dissolved coffee also leaves in the cup. Weigh your drained bed and filter to test the check line.' });
+  return out;
+}
 /* ---------- recognizing what people type for an origin ---------- */
 /* More regions, towns, and districts for the origins that have a full guide. Names that two countries share are left out on purpose. */
 const ORIGIN_EXTRA_ALIASES = {
@@ -4684,6 +4909,19 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 44,
+  "at": "2026-10-08T16:35:18Z",
+  "date": "2026-10-08",
+  "title": "Tools: Cup yield",
+  "notes": [
+   "The Menu has a new Tools row. It opens a list of tools, and Cup yield is the first.",
+   "Cup yield shows how much coffee ends up in your cup, or how much water and coffee to use for the cup you want. It covers every method except the Philips machine.",
+   "Pick a cup size in grams or ounces and the coffee and water follow it. The moka pot has a slider for how much of the water reaches the cup.",
+   "Each answer shows a range, and each method says how sure we are of its starting figure. Weigh one brew and the tool learns your own figure.",
+   "How this is worked out shows the sums with your numbers in them, so you can check them."
+  ]
+ },
  {
   "release": 43,
   "at": "2026-10-08T14:55:04Z",
@@ -5290,7 +5528,7 @@ function newCoffee(){
   return { id:newId(), name:'', roaster:'', origin:'', varietal:'', roast:'', process:'', decaf:'', density:'', elevText:'', roast_date:'', bag_notes:'', scanned:'', scannedFrom:'', roastUnsure:'', dateUnsure:'', answered:'', blend:'', varietalUnsure:'' };
 }
 function newApp(){
-  return { screen:'start', cupFor:'', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', taste:'', sound:'off', coach:'guide', level:'', calib:{}, roasterSites:{}, gear:setupDefaults().gear }, adjust:{ grind:0, ratio:0, agit:'' }, gearOk:false, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
+  return { screen:'start', cupFor:'', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', taste:'', sound:'off', coach:'guide', level:'', calib:{}, yieldCal:{}, roasterSites:{}, gear:setupDefaults().gear }, adjust:{ grind:0, ratio:0, agit:'' }, gearOk:false, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
 }
 function newCup(){
   const scores = {}; ATTRS.forEach(a => scores[a.key] = null);
@@ -5334,6 +5572,7 @@ function loadDraft(){
       if (['guide', 'steps'].includes(src.prefs.coach)) a.prefs.coach = src.prefs.coach;
       if (['new', 'comfortable', 'expert'].includes(src.prefs.level)) a.prefs.level = src.prefs.level;
       a.prefs.calib = calibClean(src.prefs.calib);
+      a.prefs.yieldCal = yieldClean(src.prefs.yieldCal);   /* your own cup-yield figures, kept in this browser */
       a.prefs.gear = setupClean({ gear:src.prefs.gear }, setupCtx()).gear;   /* the gear defaults of My setup, checked like a file's */
       if (src.prefs.roasterSites && typeof src.prefs.roasterSites === 'object' && !Array.isArray(src.prefs.roasterSites)){   /* the shop address remembered for each roaster */
         Object.keys(src.prefs.roasterSites).slice(0, 60).forEach(k => { const o = shopOrigin(src.prefs.roasterSites[k]), key = shopKey(k); if (o && key) a.prefs.roasterSites[key.slice(0, 60)] = o; });
@@ -5349,7 +5588,7 @@ function loadDraft(){
     a.lastTotal = typeof src.lastTotal === 'number' ? src.lastTotal : null;
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
-    const ok = ['start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','guide'];
+    const ok = ['start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','guide','tools','yield'];
     a.screen = ok.includes(src.screen) ? src.screen : 'start';
     /* a saved timer comes back only if it is recent: running for under 45 minutes in all, or paused within the last 30 minutes */
     { const ts = src.timerSave, now = Date.now();
@@ -5410,7 +5649,8 @@ const PARENT = {
   start:null, coffee:'start', brew:'coffee', gear:() => gearFrom === 'recipe' ? 'recipe' : 'brew', recipe:() => recipeVia === 'gear' ? 'gear' : 'brew', change:'recipe', ready:'recipe', timer:'ready',
   cup:() => app.cupBrew ? (isMachine(app.brew.method) ? 'recipe' : 'ready') : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', detail:'history',
   learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'start'),
-  guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'start')
+  guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'start'),
+  tools:() => (toolsFrom && toolsFrom !== 'tools' && toolsFrom !== 'yield' && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'start'), yield:'tools'
 };
 /* ---------- the phone's Back button ----------
    Every screen change adds one browser-history entry, so Back goes to the previous screen instead of leaving the app, and a Back press with a menu or dialog open closes it first.
@@ -5455,7 +5695,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', guide:'User guide', detail:'Tasting details' };
+  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', guide:'User guide', tools:'Tools', yield:'Cup yield', detail:'Tasting details' };
   $('topTitle').textContent = sc === 'start' ? '' : (titles[sc] || 'NeuroBrew');
   SCREENS[sc](m);
   refreshAll(); updateBar();
@@ -7248,6 +7488,223 @@ function screenReady(m){
     h('div', { class:'dock' }, h('div', { class:'dock-inner two' }, change, h('button', { type:'button', class:'btn primary', id:'brewItBtn', text:'Brew it', onclick:() => go('timer') }))));
   else m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner two' }, change, brewed(true))));
 }
+/* ---------- screen: tools ---------- */
+let toolsFrom = '';
+function goTools(){ if (app.screen !== 'tools' && app.screen !== 'yield') toolsFrom = app.screen === 'timer' ? 'ready' : app.screen; go('tools'); }
+/* One row per tool. Add a tool here and it shows up in the list; the Menu stays one row long. */
+const TOOLS = [
+  { id:'yield', name:'Cup yield', text:'How much ends up in your cup, and how much water to pour for the cup you want', open:() => goYield() }
+];
+function screenTools(m){
+  m.append(h('h1', { text:'Tools' }), h('p', { class:'lede', text:'Small helpers for the numbers behind a good cup.' }));
+  const list = h('div', { class:'tlist' });
+  TOOLS.forEach(t => list.append(h('button', { type:'button', class:'tlrow', id:'tool-' + t.id, onclick:t.open }, h('span', { class:'tl-t', text:t.name }), h('span', { class:'tl-s', text:t.text }))));
+  m.append(list);
+  const back = typeof PARENT.tools === 'function' ? PARENT.tools() : PARENT.tools;
+  m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
+}
+/* ---------- screen: cup yield ----------
+   The sums are in engine/67-cup-yield.js. Nothing here is saved except a calibration you choose to keep (app.prefs.yieldCal, kept in this browser with your other settings). */
+let yc = null, ycHost = null;
+function goYield(){ if (!yc || yc.seed !== (app.brew.method || '')) ycStart(); go('yield'); }
+/* Open on the method you last brewed, with that brew's coffee and water. */
+function ycStart(){
+  const b = app.brew, key = b.method && YIELD_TABLE[b.method] && !isMachine(b.method) ? b.method : 'v60';
+  yc = { seed:b.method || '', unit:(app.prefs.waterUnit === 'floz' || app.prefs.waterUnit === 'cup') ? 'oz' : 'g', open:{ list:false, fine:false, workd:false } };
+  ycSetMethod(key, b.method === key && b.water > 0 ? b : null, false);
+}
+/* A method's starting numbers come from the app's own recipe table, so the tool and the Brew screen agree on the ratio. brew is the person's current brew when it is this method. */
+function ycSetMethod(key, brew, keepMode){
+  const t = YIELD_TABLE[key], meth = METHODS.find(x => x.key === key), ratio = brew && brew.ratio >= 1.5 && brew.ratio <= 20 ? brew.ratio : meth.ratio, base = brew ? brew.water : meth.water, r1 = x => Math.round(x * 10) / 10;
+  Object.assign(yc, { key, tds:null, r:null, f:null, boil:t.boil, sludge:t.sludge, cw:null, cd:null, cb:null, ratio, dose:r1(base / ratio) });
+  if (t.outRatio){ yc.cup = base; yc.water = r1(base * (1 - t.tds / 100) + t.r * yc.dose); }   /* espresso: the app's water is the cup out, so the water through the puck is worked out from it */
+  else { yc.water = base; yc.cup = yieldPresets(key)[1][1]; }
+  if (!keepMode) yc.mode = t.outRatio ? 'cup' : 'water';
+}
+const ycCal = () => (app.prefs.yieldCal && app.prefs.yieldCal[yc.key]) || null;
+/* The figure the sums use: the slider if you moved it, else your saved calibration, else null (the method's own band). */
+function ycOwn(){
+  const t = YIELD_TABLE[yc.key], v = t.kind === 'moka' ? yc.f : yc.r, d = t.kind === 'moka' ? t.f : t.r;
+  if (v != null) return Math.abs(v - d) > 0.0005 ? v : null;   /* a slider left on the starting figure is not "your own" */
+  return ycCal();
+}
+function ycRun(){
+  const p = { key:yc.key, own:ycOwn(), tds:yc.tds, boil:yc.boil, sludge:yc.sludge };
+  return yc.mode === 'water' ? yieldCup(Object.assign(p, { dose:yc.dose, water:yc.water })) : yieldWater(Object.assign(p, { cup:yc.cup, ratio:yc.ratio }));
+}
+function ycWhy(){
+  const k = YIELD_TABLE[yc.key].kind, water = yc.mode === 'water';
+  if (water ? !(yc.water > 0) || (k === 'filter' && !(yc.dose > 0)) : !(yc.cup > 0) || !(yc.ratio > 0)) return water ? 'Enter your coffee and water to see the result.' : 'Enter the cup you want and your ratio.';
+  if (k === 'boil') return 'Boil-off and what stays in the pot take all the water. Add more water or lower them.';
+  return water ? 'The coffee would soak up all the water, so nothing reaches the cup. Pour more water or use less coffee.' : 'That ratio is too thin for a cup: the coffee alone would keep all the water. Use more water for each gram of coffee.';
+}
+/* Refresh the answer and the working while someone types, without redrawing the screen (a redraw would drop the cursor). */
+function ycLive(){
+  const res = ycRun(), r = $('ycResult'), w = $('ycWork');
+  if (r){ r.textContent = ''; r.append(...ycResultNodes(res, yc.mode, ycWhy())); }
+  if (w){ w.textContent = ''; w.append(...ycWorkNodes(res, yc.mode, yc.key)); }
+}
+function ycPaint(){
+  const key = yc.key, t = YIELD_TABLE[key], meth = METHODS.find(x => x.key === key), host = ycHost, water = yc.mode === 'water';
+  host.textContent = '';
+  host.append(h('h1', { text:'Cup yield' }), h('p', { class:'lede', text:'Coffee soaks up some of the water, so your cup weighs less than what you poured.' }));
+  /* method */
+  const sel = h('select', { id:'ycMethod', class:'yc-pick' });
+  YIELD_GROUPS.forEach(g => sel.append(h('optgroup', { label:g[0] }, g[1].map(k => h('option', { value:k, text:METHODS.find(x => x.key === k).label, selected:k === key })))));
+  sel.addEventListener('change', () => { ycSetMethod(sel.value, null, true); ycPaint(); });
+  host.append(h('div', { class:'yc-f wide' }, h('label', { for:'ycMethod', text:'Method' }), sel));
+  /* what you know */
+  if (water){
+    host.append(h('div', { class:'yc-row' },
+      ycNum('ycDose', 'Coffee', 'g', yc.dose, 0.5, v => { yc.dose = parseFloat(v) || 0; ycLive(); }),
+      ycNum('ycWater', key === 'moka' ? 'Water in base' : key === 'turkish' ? 'Cold water' : 'Water', 'g', yc.water, 1, v => { yc.water = parseFloat(v) || 0; ycLive(); })));
+  } else {
+    const oz = yc.unit === 'oz', mult = oz ? ML_PER_FLOZ : 1;
+    const inp = ycNum('ycCup', 'Cup I want', oz ? 'oz' : 'g', oz ? fmtNum(yc.cup / ML_PER_FLOZ, 1) : String(Math.round(yc.cup * 10) / 10), oz ? 0.5 : 1, v => { yc.cup = (parseFloat(v) || 0) * mult; ycLive(); markChips(); });
+    const unit = h('div', { class:'yc-mini', role:'group', 'aria-label':'Units' }, ['g', 'oz'].map(u => h('button', { type:'button', 'aria-pressed':String(yc.unit === u), text:u, onclick:() => { yc.unit = u; ycPaint(); } })));
+    const chips = h('div', { class:'yc-chips', id:'ycSizes' }), markChips = () => Array.from(chips.children).forEach(b => b.setAttribute('aria-pressed', String(Math.abs(yc.cup - parseFloat(b.dataset.g)) < 0.5)));
+    yieldPresets(key).forEach(p => chips.append(h('button', { type:'button', class:'yc-chip', 'data-g':String(p[1]), 'aria-pressed':String(Math.abs(yc.cup - p[1]) < 0.5), onclick:() => { yc.cup = p[1]; $('ycCup').value = oz ? fmtNum(p[1] / ML_PER_FLOZ, 1) : String(p[1]); ycLive(); markChips(); } }, ycIcon(p[1]), h('span', null, p[0] + ' ', h('em', { text:oz ? fmtNum(p[1] / ML_PER_FLOZ, p[1] / ML_PER_FLOZ < 10 ? 1 : 0) + ' oz' : p[1] + ' g' })))));
+    host.append(h('div', { class:'yc-f wide' }, h('div', { class:'yc-lrow' }, h('span', { class:'yc-lab', text:'Cup size' }), unit), inp, chips));
+    host.append(ycNum('ycRatio', t.outRatio ? 'Cup per 1 g of coffee' : 'Water per 1 g of coffee', '', Math.round(yc.ratio * 100) / 100, 0.1, v => { yc.ratio = parseFloat(v) || 0; ycLive(); }));
+    host.querySelector('#ycRatio').closest('.yc-num').prepend(h('span', { class:'yc-pre', text:'1 :' }));
+    host.append(h('p', { class:'fine', style:'margin:-4px 0 12px', text:'Your usual recipe. The coffee amount follows the cup size you pick.' }));
+  }
+  if (t.kind === 'moka') host.append(ycMokaBlock());
+  if (t.kind === 'boil') host.append(h('div', { class:'yc-row' }, ycNum('ycBoil', 'Boils off', '%', yc.boil, 1, v => { yc.boil = parseFloat(v) || 0; ycLive(); }), ycNum('ycSludge', 'Left in the pot', 'g', yc.sludge, 1, v => { yc.sludge = parseFloat(v) || 0; ycLive(); })));
+  /* the answer */
+  host.append(h('div', { class:'yc-result', id:'ycResult', 'aria-live':'polite' }));
+  host.append(h('button', { type:'button', class:'btn link yc-flip', id:'ycFlip', text:water ? 'Start from the cup I want instead' : 'Start from the water I pour instead', onclick:() => {
+    const r = ycRun();
+    if (r.ok){ if (water){ yc.cup = Math.round(r.B); yc.ratio = Math.round((t.outRatio ? r.B / r.D : r.W / r.D) * 10) / 10; } else { yc.water = Math.round(r.W); yc.dose = Math.round(r.D * 2) / 2; } }
+    yc.mode = water ? 'cup' : 'water'; ycPaint();
+  } }));
+  if (t.tip && YC_TIPS[t.tip]) host.append(h('p', { class:'yc-tip', text:YC_TIPS[t.tip] }));
+  /* the three folds */
+  const fold = (id, name, body) => { const d = h('details', { class:'yc-fold', id }, h('summary', { text:name }), h('div', { class:'yc-fbody' }, body)); d.open = !!yc.open[id.slice(4).toLowerCase()]; d.addEventListener('toggle', () => { yc.open[id.slice(4).toLowerCase()] = d.open; }); return d; };
+  host.append(fold('ycList', 'Starting figures for every method', ycListNode(key)));
+  host.append(fold('ycFine', 'Fine-tune', ycFineNodes()));
+  host.append(fold('ycWorkd', 'How this is worked out', h('div', { id:'ycWork' })));
+  ycLive();
+}
+/* The moka pot's one control: the share of the water that reaches the cup. */
+function ycMokaBlock(){
+  const share = () => ycOwn() || YIELD_TABLE.moka.f, val = h('div', { class:'yc-sval', id:'ycShare' }), cap = h('span');
+  const paint = () => { const m = yieldMokaShare(ycOwn()); val.textContent = Math.round(m.f * 100) + ' % of the water'; cap.textContent = m.own ? 'Shaded: your setting ± 3 points' : 'Most pots: 65 to 80 %'; return m; };
+  const m0 = yieldMokaShare(ycOwn()), sl = ycSlider('ycF', 'Share of the water that reaches the cup', 50, 90, 1, Math.round(share() * 100), m0.lo * 100, m0.hi * 100, v => { yc.f = v / 100; const m = paint(); sl.setBand(m.lo * 100, m.hi * 100); ycLive(); });
+  paint();
+  return h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:'How much reaches the cup' }), val, sl.node, h('div', { class:'yc-scale' }, h('span', { text:'50 %' }), cap, h('span', { text:'90 %' })));
+}
+/* Fine-tune: the water the coffee keeps, the strength of your cup, and matching the tool to your own kit. */
+function ycFineNodes(){
+  const t = YIELD_TABLE[yc.key], meth = METHODS.find(x => x.key === yc.key), out = [];
+  if (t.kind === 'filter'){
+    const val = h('div', { class:'yc-sval', id:'ycRVal' }), cap = h('span'), reset = h('button', { type:'button', class:'btn link', id:'ycReset', text:'Back to the usual ' + t.r.toFixed(2), onclick:() => { yc.r = null; if (app.prefs.yieldCal) delete app.prefs.yieldCal[yc.key]; scheduleDraft(); ycPaint(); } });
+    const paint = () => { const d = yieldRetention(yc.key, ycOwn()); val.textContent = d.r.toFixed(2) + ' g per g of coffee'; cap.textContent = d.own ? 'Shaded: your number ± ' + YIELD_RUN_SD : 'Shaded: the usual ' + d.lo.toFixed(1) + ' to ' + d.hi.toFixed(1); reset.hidden = !d.own; return d; };
+    const d0 = yieldRetention(yc.key, ycOwn()), sl = ycSlider('ycR', 'Water the coffee keeps, grams per gram of coffee', 0.8, 3.2, 0.05, d0.r, d0.lo, d0.hi, v => { yc.r = v; const d = paint(); sl.setBand(d.lo, d.hi); ycLive(); });
+    paint();
+    out.push(h('div', { class:'yc-sub' }, h('h3', { text:'Water the coffee keeps' }), val, sl.node, h('div', { class:'yc-scale' }, h('span', { text:'0.8' }), cap, h('span', { text:'3.2' })), reset));
+    out.push(h('div', { class:'yc-sub' }, h('h3', { text:'Strength of your cup' }), ycNum('ycTds', 'If you measured it', '% TDS', yc.tds == null ? '' : yc.tds, 0.05, v => { const x = parseFloat(v); yc.tds = x > 0 ? x : null; ycLive(); }, String(t.tds)), h('p', { class:'fine', style:'margin:0', text:'Left blank, the tool uses a typical ' + t.tds + ' % for this method.' })));
+  }
+  out.push(ycCalBlock());
+  return out;
+}
+/* "Match it to my kit": weigh the water in and the cup out once, and the tool works out your own figure. Starts from the numbers already on screen; the cup is yours to type. */
+function ycCalBlock(){
+  const t = YIELD_TABLE[yc.key], meth = METHODS.find(x => x.key === yc.key), box = h('div', { class:'yc-sub' }, h('h3', { text:'Match it to my kit' }));
+  if (t.kind === 'boil'){ box.append(h('p', { class:'fine', style:'margin:0', text:'Weigh your cold water and the cup you pour, then set the boil-off and what stays in the pot above until the answer matches.' })); return box; }
+  const moka = t.kind === 'moka', out = h('div', { id:'ycCalOut', 'aria-live':'polite' }), saved = ycCal();
+  if (saved) box.append(h('p', { class:'fine', style:'margin:0 0 8px', text:'Saved for your ' + meth.label + ': ' + (moka ? Math.round(saved * 100) + ' % of the water' : saved.toFixed(2) + ' g per g') + '. It is kept in this browser with your other settings.' }),
+    h('button', { type:'button', class:'btn link', id:'ycForget', text:'Go back to the usual figure', onclick:() => { delete app.prefs.yieldCal[yc.key]; yc.r = null; yc.f = null; scheduleDraft(); yc.open.fine = true; ycPaint(); } }));
+  if (yc.cw == null) yc.cw = yc.water > 0 ? yc.water : null;
+  if (yc.cd == null && !moka) yc.cd = yc.dose > 0 ? yc.dose : null;
+  const upd = () => {
+    out.textContent = '';
+    const c = moka ? yieldCalibrateMoka(yc.cw, yc.cb) : yieldCalibrate(yc.key, yc.cw, yc.cd, yc.cb, yc.tds);
+    if (!(yc.cw > 0) || !(yc.cb > 0) || (!moka && !(yc.cd > 0))) return;
+    if (!c.ok){ out.append(h('div', { class:'yc-warn', text:'That does not look right. Check the weights, and that you weighed the cup at your usual stop point.' })); return; }
+    const v = moka ? c.f : c.r;
+    out.append(h('div', { class:'yc-sval', text:moka ? Math.round(v * 100) + ' % reached the cup' : v.toFixed(2) + ' g per g, from your brew' }),
+      h('p', { class:'fine', style:'margin:0 0 8px', text:(c.inBand ? 'Inside' : 'Outside') + ' the usual range for this method (' + (moka ? '65 to 80 %' : c.lo.toFixed(1) + ' to ' + c.hi.toFixed(1)) + ').' + (c.inBand ? '' : ' That can be real for your kit.') + ' One brew is one data point. Two or three that agree are better.' }),
+      h('button', { type:'button', class:'btn primary', id:'ycUseCal', text:'Use ' + (moka ? Math.round(v * 100) + ' %' : v.toFixed(2)) + ' for my ' + meth.label, onclick:() => {
+        if (!app.prefs.yieldCal) app.prefs.yieldCal = {};
+        app.prefs.yieldCal[yc.key] = v; yc.r = null; yc.f = null; scheduleDraft(); yc.open.fine = true; ycPaint();
+      } }));
+  };
+  box.append(h('p', { class:'fine', style:'margin:0 0 8px', text:moka ? 'Weigh the water you put in the base and the coffee you got.' : 'Weigh the water you poured and the coffee you ended up with. Your coffee and water are filled in from above.' }),
+    h('div', { class:'yc-row' }, ycNum('ycCw', moka ? 'Water in base' : 'Water poured', 'g', yc.cw == null ? '' : yc.cw, 1, v => { yc.cw = parseFloat(v) || 0; upd(); }), moka ? null : ycNum('ycCd', 'Coffee', 'g', yc.cd == null ? '' : yc.cd, 0.5, v => { yc.cd = parseFloat(v) || 0; upd(); })),
+    ycNum('ycCb', moka ? 'Cup you got' : 'Cup you ended up with', 'g', yc.cb == null ? '' : yc.cb, 0.1, v => { yc.cb = parseFloat(v) || 0; upd(); }), out);
+  upd();
+  return box;
+}
+function screenYield(m){
+  if (!yc || !YIELD_TABLE[yc.key]) ycStart();
+  ycHost = h('div', { id:'ycHost' }); m.append(ycHost); ycPaint();
+}
+/* ---------- cup yield: parts ---------- */
+const ycG = x => !isFinite(x) ? '–' : (Math.abs(x) < 100 ? (Math.round(x * 10) / 10).toFixed(1) : String(Math.round(x)));
+const ycOz = g => fmtNum(g / ML_PER_FLOZ, 1);
+const YC_TIPS = { stop:'Stop the scale at the same point each time, for example when the drip slows to single drops.', drain:'Let it drain the same way each time.', press:'Press at the same speed each time.', espresso:'Weigh the cup when the shot ends. The water in is worked out from it.', concentrate:'For a concentrate, add its strength under Fine-tune for a closer answer.' };
+/* A labelled number box. set gets the text typed; the answer is refreshed by the caller. */
+function ycNum(id, label, unit, value, step, set, ph){
+  const inp = h('input', { id, type:'number', inputmode:'decimal', min:'0', step:String(step), value:value === '' || value == null ? '' : String(value), placeholder:ph || null });
+  inp.addEventListener('input', () => set(inp.value));
+  return h('div', { class:'yc-f' }, h('label', { for:id, text:label }), h('div', { class:'yc-num' }, inp, unit ? h('u', { text:unit }) : null));
+}
+/* A small cup that grows with the size, so the size chips read at a glance. */
+function ycIcon(g){
+  const w = Math.round(13 + Math.min(g, 500) / 500 * 13), s = h('span', { class:'yc-ic', 'aria-hidden':'true' });
+  s.innerHTML = '<svg width="' + w + '" height="' + w + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h13v7a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V6z"/><path d="M17 8h2a2.5 2.5 0 0 1 0 5h-2"/></svg>';
+  return s;
+}
+/* A slider with its usual band shaded behind the track. Returns { node, input, setBand(lo, hi) } so a drag can move the band without redrawing the screen. */
+function ycSlider(id, label, min, max, step, value, lo, hi, oninput){
+  const pc = x => ((x - min) / (max - min) * 100).toFixed(2), band = h('div', { class:'yc-bb' }), inp = h('input', { id, type:'range', min:String(min), max:String(max), step:String(step), value:String(value), 'aria-label':label });
+  const setBand = (a, b) => { band.style.left = pc(Math.max(min, a)) + '%'; band.style.width = (pc(Math.min(max, b)) - pc(Math.max(min, a))) + '%'; };
+  setBand(lo, hi);
+  inp.addEventListener('input', () => oninput(parseFloat(inp.value)));
+  return { node:h('div', { class:'yc-sl' }, h('div', { class:'yc-bt' }), band, inp), input:inp, setBand };
+}
+function ycHeld(kind){ return kind === 'moka' ? 'stays behind in the base, the steam and the grounds' : kind === 'boil' ? 'is lost to boil-off or stays in the pot' : 'stays in the coffee and the filter'; }
+/* The answer. res comes from yieldCup (water to cup) or yieldWater (cup to water). */
+function ycResultNodes(res, mode, why){
+  if (!res.ok) return [h('div', { class:'yc-warn', text:why })];
+  const water = mode === 'water', out = [], big = water ? res.B : res.W, lo = water ? res.Blo : res.Wlo, hi = water ? res.Bhi : res.Whi;
+  out.push(h('div', { class:'yc-rlab', text:water ? 'In your cup' : 'Pour about' }));
+  out.push(h('div', { class:'yc-big' }, ycG(big), h('small', { text:water ? ' g' : ' g of water' })));
+  if (water) out.push(h('div', { class:'yc-line', text:'About ' + ycOz(res.B) + ' fl oz. About ' + ycG(res.held) + ' g ' + ycHeld(res.kind) + '.' }));
+  else {
+    out.push(h('div', { class:'yc-line' }, h('b', { text:'Use about ' + ycG(res.D) + ' g of coffee' })));
+    out.push(h('div', { class:'yc-line mute', text:'That gives you about ' + ycG(res.B) + ' g (' + ycOz(res.B) + ' fl oz) in the cup.' }));
+  }
+  if (isFinite(lo) && isFinite(hi) && Math.abs(hi - lo) > 0.05)
+    out.push(h('div', { class:'yc-line mute', text:water ? 'Usually between ' + ycG(lo) + ' and ' + ycG(hi) + ' g.' : 'Usually ' + ycG(lo) + ' to ' + ycG(hi) + ' g of water' + (isFinite(res.Dlo) && isFinite(res.Dhi) && Math.abs(res.Dhi - res.Dlo) > 0.05 ? ', ' + ycG(res.Dlo) + ' to ' + ycG(res.Dhi) + ' g of coffee' : '') + '.' }));
+  const pct = x => Math.max(0, Math.min(100, x / res.W * 100)).toFixed(1);
+  out.push(h('div', { class:'yc-bar', role:'img', 'aria-label':'Of the water, ' + ycG(res.B) + ' g reaches the cup and ' + ycG(res.W - res.B) + ' g stays behind' }, h('i', { class:'yc-c', style:'width:' + pct(res.B) + '%' }), h('i', { class:'yc-h', style:'width:' + pct(res.W - res.B) + '%' })));
+  out.push(h('div', { class:'yc-legend' }, h('span', { class:'yc-c', text:'In the cup' }), h('span', { class:'yc-h', text:'Stays behind' })));
+  return out;
+}
+/* The fold with every method's starting figure, the usual range and how sure we are. The row for the chosen method is marked. */
+function ycListNode(current){
+  const t = h('table', { class:'yc-table' }, h('tr', null, ['Method', 'Starts at', 'Usual range', 'How sure'].map(x => h('th', { scope:'col', text:x }))));
+  YIELD_GROUPS.forEach(g => g[1].forEach(k => {
+    const y = YIELD_TABLE[k], name = METHODS.find(x => x.key === k).label;
+    const a = y.kind === 'moka' ? '75 % of the water' : y.kind === 'boil' ? 'none' : y.r.toFixed(1), b = y.kind === 'moka' ? '65–80 %' : y.kind === 'boil' ? 'your own' : y.lo.toFixed(1) + '–' + y.hi.toFixed(1);
+    t.append(h('tr', { class:k === current ? 'cur' : null, 'aria-current':k === current ? 'true' : null }, h('td', { text:name }), h('td', { text:a }), h('td', { class:'nw', text:b }), h('td', { text:YIELD_SURE[y.sure] })));
+  }));
+  return h('div', null, h('p', { class:'fine', style:'margin:0 0 8px', text:'Water the coffee keeps, in grams per gram of dry coffee, and how sure we are of each starting figure. Your own calibration replaces these.' }), h('div', { class:'yc-tw' }, t));
+}
+/* The fold for readers who want to check the sums. */
+function ycWorkNodes(res, mode, key){
+  const y = YIELD_TABLE[key], out = [];
+  out.push(h('div', { class:'yc-sub' }, h('h3', { text:'How sure are we' }), h('p', { class:'fine', style:'margin:0' }, h('b', { text:YIELD_SURE[y.sure] + '. ' }), y.src)));
+  const w = yieldWorking(res, mode);
+  if (w.length){
+    const box = h('div', { class:'yc-sub' }, h('h3', { text:'The sums, with your numbers' }));
+    w.forEach(x => box.append(x.note ? h('p', { class:'fine' }, x.note) : h('div', null, h('div', { class:'yc-eg', text:x.head }), h('div', { class:'yc-work', text:x.line }))));
+    out.push(box);
+  }
+  return out;
+}
 /* ---------- cupping UI builders ---------- */
 function scaleRow(ticks, min, max, bands){
   const t = h('div', { class:'ticks' });
@@ -8099,6 +8556,8 @@ function renderSheetBody(){
     if (app.screen !== 'start') rows.append(mi('Home', 'Back to the first screen', () => { closeSheet(); go('start'); }));
     rows.append(mi('Start a fresh coffee', 'Clears the form, brew, and scores. Keeps your history.', () => { closeSheet(); resetAll(); }));
     rows.append(mi('My setup', 'Units, level, timer and your gear. Saved in your file.', () => { sheet = { step:'setup' }; renderSheet(); }));
+    rows.append(lab('Tools'));
+    rows.append(mi('Tools', 'Cup yield, and more to come', () => { closeSheet(); goTools(); }));
     rows.append(lab('Learn'));
     rows.append(mi('Understanding coffee', 'Your tendencies, how to shop, and what bag details mean', () => { closeSheet(); goLearn(); }));
     rows.append(mi('Glossary', 'What every term means', () => { sheet = { step:'glossary', q:'', group:'All' }; renderSheet(); }));
@@ -9715,7 +10174,7 @@ function screenDetail(m){
     h('button', { type:'button', class:'btn danger block', text:'Delete this tasting', onclick:() => openDelete(new Set([o._i]), true) })));
 }
 
-const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, guide:screenGuide };
+const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, guide:screenGuide, tools:screenTools, yield:screenYield };
 
 $('homeBtn').innerHTML = '<svg class="burger" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span class="ml">Menu</span>';
 $('homeBtn').addEventListener('click', openMenu);
