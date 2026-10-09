@@ -963,6 +963,15 @@ details.folk > summary::-webkit-details-marker{ display:none; }
 .folk-kind{ display:inline-block; font-size:11.5px; font-weight:700; color:var(--muted); border:1px solid var(--edge); border-radius:6px; padding:0 6px; }
 .folk-more{ margin-top:8px; }
 .folk-more > summary{ cursor:pointer; font-weight:600; min-height:44px; display:flex; align-items:center; }
+/* Coffee prices */
+.pr-row{ padding:12px 0; border-top:1px solid var(--edge); }
+.pr-list .pr-row:first-child{ border-top:0; padding-top:2px; }
+.pr-name{ font-size:16.5px; line-height:1.3; overflow-wrap:anywhere; }
+.pr-acts{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.pr-acts .btn{ margin:0; }
+#prFile{ width:100%; min-width:0; }
+#prPaste{ width:100%; min-height:90px; box-sizing:border-box; }
+#prSort{ flex-wrap:wrap; }
 </style>
 </head>
 <body data-screen="start">
@@ -4717,7 +4726,8 @@ const GUIDE_SECTIONS = [
     paras:['New to brewing keeps things short, Comfortable explains the reasons, and Expert shows every number. Change it any time from the start screen or the menu.',
       'My setup in the menu keeps your units, level, timer sound, taste card view and gear (your grinder, water and filter) in one place. New brews start with your gear filled in. The setup is saved inside your history file each time you save, so uploading the file on another device brings it back.',
       'Words with a dotted underline are tappable and give a short definition. The Glossary in the menu lists every term and can be searched.',
-      'Tools in the menu holds small helpers. Cup yield shows how much ends up in your cup. The Ratio and strength planner gives the ratio for the strength you want, and how much water to add to a strong brew. The strengths and extractions it starts from are common targets, not rules. The Cost of coffee tool works out what a cup costs from the price and size of a bag, in grams, ounces or pounds. It shows the cost per cup, day, week and month, and can compare two bags. It counts the coffee only. Nothing is kept unless you press Save costs, which saves a separate file called neurobrew-costs.csv.'] },
+      'Tools in the menu holds small helpers. Cup yield shows how much ends up in your cup. The Ratio and strength planner gives the ratio for the strength you want, and how much water to add to a strong brew. The strengths and extractions it starts from are common targets, not rules. The Cost of coffee tool works out what a cup costs from the price and size of a bag, in grams, ounces or pounds. It shows the cost per cup, day, week and month, and can compare two bags. It counts the coffee only. Nothing is kept unless you press Add to my coffee prices.',
+      'Coffee prices in the menu is your own list of the bags you have bought. Add a bag there, or from the Cost of coffee tool. The list is kept in this browser. Save it as a file called neurobrew-prices.csv, and load it again later. It is a separate file from your tasting history, and it never changes your history. Loading a file only adds bags that are not in the list yet.'] },
   { id:'trust', title:'What to trust', lead:'Starting points, not rules.',
     paras:['Brew settings are starting points. The roast changes to temperature and grind come from brewer experience, not lab results. The app says so wherever they appear. The cupping score follows the SCA affective form, but you score one cup yourself. Use it to compare your own cups. It is not an official grade.',
       'Where NeuroBrew uses its own rule of thumb, it says so. A try must change the total by one point to count as better or worse. A bag about a week older can change the taste. Three coffees must agree before it offers a starting point. About NeuroBrew in the menu lists the sources and the limits.'] }
@@ -4929,7 +4939,7 @@ function applyWaterFirst(fx, symptom, w){
 /* ---------- cost of coffee ----------
    Plain arithmetic, nothing estimated.  cost per gram = price / (bag size in grams);  cost per cup = cost per gram x dose.
    A day is cups per day x cost per cup; a week is 7 days; a month is 365.25 / 12 days (30.44).  The bag lasts (bag grams / dose) cups.
-   Coffee only: water, filters, milk and power are not counted. Nothing here is saved; the Save costs button writes a separate CSV. */
+   Coffee only: water, filters, milk and power are not counted. Nothing here is saved; the bags a person wants to keep go into their coffee prices (engine/67-coffee-prices.js). */
 const COST_UNITS = [['g', 1], ['oz', 28.349523125], ['lb', 453.59237]];
 const COST_DAYS_PER_MONTH = 365.25 / 12;
 /* a bag size in grams, or 0 when the size or unit is not usable */
@@ -4956,15 +4966,96 @@ function costCompare(a, b){
   const lo = a.perCup <= b.perCup ? a : b, hi = lo === a ? b : a;
   return { ok:true, cheaper:same ? 'same' : (lo === a ? 'a' : 'b'), perCup:gap, perMonth:a.perMonth != null && b.perMonth != null ? Math.abs(a.perMonth - b.perMonth) : null, pct:hi.perCup > 0 ? (hi.perCup - lo.perCup) / hi.perCup * 100 : 0 };
 }
-/* the Save costs file. rows: [{ coffee, roaster, price, size, unit, dose, cups, sym }], date: 'YYYY-MM-DD'. Bags that do not add up are left out. Text cells are neutralised like the history file. */
-function costCsv(rows, date){
-  const lines = [['coffee', 'roaster', 'currency', 'bag price', 'bag size', 'size unit', 'dose (g)', 'cost per cup', 'cups per day', 'cost per month', 'date']];
-  rows.forEach(r => {
-    const c = costOne(r); if (!c.ok) return;
-    const n = (x, d) => x == null ? '' : String(Math.round(x * Math.pow(10, d)) / Math.pow(10, d));
-    lines.push([neutralize(r.coffee || ''), neutralize(r.roaster || ''), neutralize(r.sym || ''), n(parseFloat(r.price), 2), n(parseFloat(r.size), 2), r.unit, n(parseFloat(r.dose), 1), n(c.perCup, 2), c.perDay != null ? n(parseFloat(r.cups), 1) : '', n(c.perMonth, 2), date || '']);
+/* ---------- coffee prices ----------
+   One row is one bag bought: coffee, roaster, currency symbol, price, size and its unit, and the date. The file is separate from the tasting history and never touches it.
+   The columns are the same as the Release 49 "Save costs" file, so a file saved then still loads. The last four of those columns (dose, cost per cup, cups per day, cost per month)
+   describe how the person drinks, not the bag, so they are kept when a file has them and left empty when a bag is added here.
+   Plain arithmetic: price per gram = price / bag grams; per 100 g is that times 100. Nothing is estimated. A coffee is "the same coffee" when its name and roaster match, ignoring capitals and spaces. */
+const PRICE_COLUMNS = ['coffee', 'roaster', 'currency', 'bag price', 'bag size', 'size unit', 'dose (g)', 'cost per cup', 'cups per day', 'cost per month', 'date'];
+const PRICE_MAX_ROWS = 2000;
+const PRICE_MAX_TEXT = 2000000;   /* characters of a file read; a bigger file is refused */
+const priceNum = (v, dp) => { const x = parseFloat(v); return isFinite(x) ? Math.round(x * Math.pow(10, dp)) / Math.pow(10, dp) : null; };
+const priceText = (v, n) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, n);
+/* one bag from loose values, or null when it is not a usable bag. in: { coffee, roaster, sym, price, size, unit, dose, cups, date }.
+   A bag needs a coffee name, a price above 0 (up to 10,000), and a size that gives grams. A date that is not YYYY-MM-DD is dropped, the bag is kept. */
+function priceEntry(o){
+  o = o || {};
+  const coffee = priceText(o.coffee, 80), price = priceNum(o.price, 2), size = priceNum(o.size, 2), unit = String(o.unit || '').trim().toLowerCase();
+  if (!coffee || !(price > 0 && price <= 10000) || !(costGrams(size, unit) > 0)) return null;
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(o.date || '').trim()) ? String(o.date).trim() : '';
+  const dose = priceNum(o.dose, 1), cups = priceNum(o.cups, 1);
+  return { coffee, roaster:priceText(o.roaster, 80), sym:priceText(o.sym, 3) || '$', price, size, unit, date, dose:dose > 0 && dose <= 200 ? dose : null, cups:cups > 0 && cups <= 100 ? cups : null };
+}
+/* two bags are the same row when coffee, roaster, price, size, unit and date all match (capitals and spaces ignored in the names) */
+function priceKey(e){ return [e.coffee, e.roaster].map(s => String(s).toLowerCase()).concat([e.price, e.size, e.unit, e.date]).join('|'); }
+/* put a bag on a list. Returns { list (a new list), added }; a bag already on the list, or one that is not usable, changes nothing. The list is capped. */
+function priceAdd(list, o){
+  const e = priceEntry(o), cur = Array.isArray(list) ? list : [];
+  if (!e) return { list:cur, added:false, why:'unusable' };
+  if (cur.length >= PRICE_MAX_ROWS) return { list:cur, added:false, why:'full' };
+  const k = priceKey(e);
+  if (cur.some(x => priceKey(x) === k)) return { list:cur, added:false, why:'same' };
+  return { list:cur.concat([e]), added:true, why:'' };
+}
+/* read a prices file. Columns are found by name (capitals and spaces ignored), in any order, so a file edited in a spreadsheet still loads. Needs coffee, bag price, bag size and size unit.
+   Returns { error } or { list, skipped (rows that were not usable bags), repeats (rows already in the file above them) }. Text cells have the formula guard removed. */
+function priceRead(text){
+  text = String(text == null ? '' : text);
+  if (text.length > PRICE_MAX_TEXT) return { error:'That file is too big to be a prices file. Nothing was changed.' };
+  const p = parseCSV(text);
+  if (p.error) return { error:p.error };
+  const col = {}; p.header.forEach((h0, i) => { const k = String(h0).toLowerCase().replace(/\s+/g, ' ').trim(); if (!(k in col)) col[k] = i; });
+  const need = ['coffee', 'bag price', 'bag size', 'size unit'].filter(k => !(k in col));
+  if (need.length) return { error:"This doesn't look like a coffee prices file from this app (missing: " + need.join(', ') + '). Nothing was changed.' };
+  const get = (r, k) => (k in col && r[col[k]] != null) ? r[col[k]] : '';
+  let list = [], skipped = 0, repeats = 0;
+  p.rows.forEach(r => {
+    const r2 = priceAdd(list, { coffee:unneutralize(get(r, 'coffee')), roaster:unneutralize(get(r, 'roaster')), sym:get(r, 'currency'), price:get(r, 'bag price'), size:get(r, 'bag size'), unit:get(r, 'size unit'), dose:get(r, 'dose (g)'), cups:get(r, 'cups per day'), date:get(r, 'date') });
+    if (r2.added) list = r2.list; else if (r2.why === 'same') repeats++; else skipped++;
+  });
+  return { list, skipped, repeats };
+}
+/* the per-gram price of a bag, or null */
+function pricePerGram(e){ const g = e ? costGrams(e.size, e.unit) : 0; return g > 0 && e.price > 0 ? e.price / g : null; }
+function pricePer100g(e){ const x = pricePerGram(e); return x == null ? null : x * 100; }
+/* the file text for a list. The cup columns are filled only for a bag that has a dose; text cells get the formula guard like the history file. */
+function priceCsv(list){
+  const lines = [PRICE_COLUMNS];
+  (Array.isArray(list) ? list : []).forEach(e => {
+    const c = e.dose ? costOne({ price:e.price, size:e.size, unit:e.unit, dose:e.dose, cups:e.cups }) : { ok:false };
+    const n = (x, dp) => x == null ? '' : String(Math.round(x * Math.pow(10, dp)) / Math.pow(10, dp));
+    lines.push([neutralize(e.coffee), neutralize(e.roaster), neutralize(e.sym), n(e.price, 2), n(e.size, 2), e.unit, c.ok ? n(e.dose, 1) : '', c.ok ? n(c.perCup, 2) : '', c.ok && c.perDay != null ? n(e.cups, 1) : '', c.ok && c.perMonth != null ? n(c.perMonth, 2) : '', e.date || '']);
   });
   return toCSV(lines);
+}
+/* Each entry keeps its place in the list as `i`, so a row can be named for deleting. mode: 'new' (newest date first; undated last, then the later ones added), 'name' (A to Z), 'cheap' (lowest price per 100 g first; bags in different currencies are not compared, so they go by currency, then price). */
+function priceSort(list, mode){
+  const a = (list || []).map((e, i) => Object.assign({ i }, e));
+  const nm = e => (e.coffee + ' ' + e.roaster).toLowerCase();
+  if (mode === 'name') a.sort((x, y) => nm(x).localeCompare(nm(y)) || (y.date || '').localeCompare(x.date || '') || y.i - x.i);
+  else if (mode === 'cheap') a.sort((x, y) => x.sym.localeCompare(y.sym) || (pricePer100g(x) - pricePer100g(y)) || y.i - x.i);
+  else a.sort((x, y) => (y.date || '').localeCompare(x.date || '') || y.i - x.i);
+  return a;
+}
+function priceFilter(list, q){
+  q = String(q || '').trim().toLowerCase(); if (!q) return list;
+  return list.filter(e => (e.coffee + ' ' + e.roaster).toLowerCase().includes(q));
+}
+/* every bag of one coffee (same name and roaster), oldest first by date then by the order added */
+function priceHistoryOf(list, e){
+  const k = [e.coffee, e.roaster].map(s => String(s).toLowerCase()).join('|');
+  return (list || []).map((x, i) => Object.assign({ i }, x)).filter(x => [x.coffee, x.roaster].map(s => String(s).toLowerCase()).join('|') === k)
+    .sort((x, y) => (x.date || '').localeCompare(y.date || '') || x.i - y.i);
+}
+/* How the price of one coffee moved between its last two bags, per gram so a bigger or smaller bag is fair. Needs the same currency symbol.
+   Returns { ok:false } with fewer than two bags in one currency, else { ok, now, before (the two entries), pct (percent change of the price per 100 g, rounded to 0.1), dir: 'up' | 'down' | 'same' }. Under 1 percent counts as the same. */
+function priceChange(list, e){
+  const h0 = priceHistoryOf(list, e).filter(x => x.sym === e.sym);
+  if (h0.length < 2) return { ok:false };
+  const now = h0[h0.length - 1], before = h0[h0.length - 2], a = pricePerGram(before), b = pricePerGram(now);
+  if (!(a > 0) || !(b > 0)) return { ok:false };
+  const pct = Math.round((b - a) / a * 1000) / 10;
+  return { ok:true, now, before, pct, dir:Math.abs(pct) < 1 ? 'same' : (pct > 0 ? 'up' : 'down') };
 }
 /* ---------- cup yield ----------
    The sum (exact, one conservation of mass):  cup = (water in − water the coffee keeps) ÷ (1 − TDS of the cup),  where TDS is the dissolved coffee as a fraction of the cup.
@@ -5777,6 +5868,17 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 51,
+  "at": "2026-10-09T02:32:04Z",
+  "date": "2026-10-09",
+  "title": "Coffee prices",
+  "notes": [
+   "New Coffee prices area in the Menu: your own list of bags you have bought (coffee, roaster, price, size, date). Add a bag, search, sort by newest, A to Z or price per 100 g, and see how the price moved since the last bag of the same coffee.",
+   "The list is a file of its own, neurobrew-prices.csv, that you can save and load again. Loading only adds bags that are not there yet. Your tasting history file is not touched. A file saved by the old Save costs button still loads.",
+   "The Cost of coffee tool now has Add to my coffee prices in place of Save costs, and can fill a bag from the list."
+  ]
+ },
  {
   "release": 50,
   "at": "2026-10-09T01:31:44Z",
@@ -6647,7 +6749,7 @@ function loadDraft(){
     a.lastTotal = typeof src.lastTotal === 'number' ? src.lastTotal : null;
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
-    const ok = ['start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','tend','guide','tools','yield','ratio','cost','folk'];
+    const ok = ['start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','tend','guide','tools','yield','ratio','cost','prices','folk'];
     a.screen = ok.includes(src.screen) ? src.screen : 'start';
     /* a saved timer comes back only if it is recent: running for under 45 minutes in all, or paused within the last 30 minutes */
     { const ts = src.timerSave, now = Date.now();
@@ -6701,6 +6803,7 @@ const PARENT = {
   start:null, coffee:'start', brew:'coffee', gear:() => gearFrom === 'recipe' ? 'recipe' : 'brew', recipe:() => recipeVia === 'gear' ? 'gear' : 'brew', change:'recipe', ready:'recipe', timer:'ready',
   cup:() => app.cupBrew ? (isMachine(app.brew.method) ? 'recipe' : 'ready') : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', detail:'history',
   learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'start'),
+  prices:() => (pricesFrom && pricesFrom !== 'prices' && pricesFrom !== 'timer') ? pricesFrom : (app.coffee.name ? 'coffee' : 'start'),
   folk:() => (folkFrom && folkFrom !== 'folk' && folkFrom !== 'timer') ? folkFrom : (app.coffee.name ? 'coffee' : 'start'),
   tend:() => (tendFrom && tendFrom !== 'tend' && tendFrom !== 'timer') ? tendFrom : (app.coffee.name ? 'coffee' : 'start'),
   guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'start'),
@@ -6750,7 +6853,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Tools', yield:'Cup yield', ratio:'Ratio planner', cost:'Cost of coffee', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details' };
+  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Tools', yield:'Cup yield', ratio:'Ratio planner', cost:'Cost of coffee', prices:'Coffee prices', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details' };
   $('topTitle').textContent = sc === 'start' ? '' : (titles[sc] || 'NeuroBrew');
   SCREENS[sc](m);
   refreshAll(); updateBar();
@@ -6977,7 +7080,7 @@ function standaloneNote(){
   return h('p', { class:'fine', id:'homeScreenNote', style:'margin:8px 0 0', text:'Tip: add NeuroBrew to your Home Screen (in Safari use Share, then Add to Home Screen; in Chrome use the menu, then Add to Home screen). It opens like an app. Your history stays with this browser, so keep a saved file too.' });
 }
 function clearEverything(){
-  forgetHistory(); forgetPicked(); histUI = { q:'', sort:'new', way:'all' };
+  forgetHistory(); forgetPicked(); forgetPrices(); histUI = { q:'', sort:'new', way:'all' };
   try { localStorage.removeItem(DRAFT_KEY); localStorage.removeItem(LASTBACKUP_KEY); } catch(e){}
   lastBackup = 0; app = newApp(); state = newCup(); dialSym = ''; render();
 }
@@ -8781,7 +8884,7 @@ function screenTools(m){
   m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
 }
 /* ---------- screen: cost of coffee ----------
-   Nothing here is kept in your saved work or your history file. The Save costs button writes a separate small CSV (neurobrew-costs.csv). */
+   Nothing here is kept in your saved work or your history file. A bag is kept only when the person presses Add to my coffee prices, which puts it in the separate prices list (49-screen-prices.js). */
 let cs = null, csHost = null;
 function goCost(){ if (!cs) csStart(); go('cost'); }
 const csBag = (name, roaster) => ({ name:name || '', roaster:roaster || '', price:'', size:'', unit:'g' });
@@ -8827,21 +8930,31 @@ function csWorkText(){
 }
 function csBagCard(x, i){
   const id = i ? 'csB' : 'csA', unit = h('div', { class:'yc-mini', role:'group', 'aria-label':'Bag size unit' }, COST_UNITS.map(u => h('button', { type:'button', 'data-u':u[0], 'aria-pressed':String(x.unit === u[0]), text:u[0], onclick:e => { x.unit = u[0]; Array.from(e.currentTarget.parentNode.children).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.u === x.unit))); csLive(); } })));
-  const name = h('input', { id:id + 'Name', class:'yc-text', type:'text', maxlength:'80', value:x.name, placeholder:i ? 'Bag B' : 'Optional' }); name.addEventListener('input', () => { x.name = name.value; csLive(); });
+  const name = h('input', { id:id + 'Name', class:'yc-text', type:'text', maxlength:'80', value:x.name, placeholder:i ? 'Bag B' : 'e.g. Kenya AA' }); name.addEventListener('input', () => { x.name = name.value; csLive(); });
   return h('div', { class:'card', id }, h('h3', { text:cs.compare ? (i ? 'Bag B' : 'Bag A') : 'The bag' }),
+    csPick(x, id),
     h('div', { class:'yc-f wide' }, h('label', { for:id + 'Name', text:'Coffee' }), name),
     h('div', { class:'yc-row' }, ycNum(id + 'Price', 'Price of the bag', cs.sym, x.price, 0.01, v => { x.price = v; csLive(); }), ycNum(id + 'Size', 'Size of the bag', '', x.size, 1, v => { x.size = v; csLive(); }, x.unit === 'g' ? '340' : x.unit === 'oz' ? '12' : '1')),
     h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:'Size in' }), unit));
 }
-async function csSave(status){
-  const rows = (cs.compare ? [cs.a, cs.b] : [cs.a]).map(x => ({ coffee:x.name, roaster:x.roaster, sym:cs.sym, price:x.price, size:x.size, unit:x.unit, dose:cs.dose, cups:cs.cups }));
-  if (!rows.some(r => costOne(r).ok)){ status.textContent = 'Enter a price, a size and a dose first.'; return; }
-  const text = costCsv(rows, today()), name = 'neurobrew-costs.csv';
-  try {
-    if (inClaude()){ const dl = await getDownloads(); if (!dl) throw new Error('no downloads'); await dl.save({ filename:name, data:text }); }
-    else plainDownload(text, name);
-    status.textContent = 'Saved ' + name + '.';
-  } catch(e){ status.textContent = 'This view could not save the file. Open NeuroBrew in your browser and try again.'; }
+/* A choice of the coffees already in the prices list (the newest bag of each), to fill this bag from. Nothing is shown while the list is empty. */
+function csPick(x, id){
+  if (!pr.list.length) return null;
+  const seen = new Set(), list = priceSort(pr.list, 'new').filter(e => { const k = (e.coffee + '|' + e.roaster).toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+  const sel = h('select', { id:id + 'Pick', class:'yc-pick', 'aria-label':'Fill from my coffee prices' }, h('option', { value:'', text:'Fill from my coffee prices' }),
+    list.map(e => h('option', { value:String(e.i), text:e.coffee + (e.roaster ? ' · ' + e.roaster : '') + ' · ' + prMoney(e.sym, e.price) + ' for ' + e.size + ' ' + e.unit })));
+  sel.addEventListener('change', () => {
+    const e = pr.list[parseInt(sel.value, 10)]; if (!e) return;
+    cs.sym = e.sym; Object.assign(x, { name:e.coffee, roaster:e.roaster, price:String(e.price), size:String(e.size), unit:e.unit }); csPaint();
+  });
+  return h('div', { class:'yc-f wide' }, sel);
+}
+function csAdd(status){
+  const objs = (cs.compare ? [cs.a, cs.b] : [cs.a]).map(x => ({ coffee:x.name, roaster:x.roaster, sym:cs.sym, price:x.price, size:x.size, unit:x.unit, dose:cs.dose, cups:cs.cups, date:today() }));
+  const usable = objs.filter(o => priceEntry(o));
+  if (!usable.length){ status.textContent = prWhy(objs[0]); return; }
+  const n = prAddBags(usable), word = n.added === 1 ? 'bag' : 'bags';
+  status.textContent = (n.added ? 'Added ' + n.added + ' ' + word + ' to your coffee prices.' : n.full ? 'Your coffee prices list is full. Delete some bags first.' : 'That is already in your coffee prices.') + (usable.length < objs.length ? ' The other bag is missing something, so it was left out.' : '');
 }
 function csPaint(){
   const host = csHost; host.textContent = '';
@@ -8853,8 +8966,9 @@ function csPaint(){
   host.append(h('button', { type:'button', class:'btn', id:'csCompareBtn', 'aria-pressed':String(cs.compare), style:'margin:4px 0 12px', text:cs.compare ? 'Compare with one bag only' : 'Compare with a second bag', onclick:() => { cs.compare = !cs.compare; csPaint(); } }));
   const status = h('p', { class:'fine', id:'csStatus', role:'status', style:'margin:8px 0 0' });
   host.append(h('div', { class:'card', id:'csOut' }, h('h3', { text:'What it costs' }), h('div', { class:'yc-result', id:'csResult', 'aria-live':'polite' }),
-    h('button', { type:'button', class:'btn block', id:'csSave', style:'margin-top:12px', text:'Save costs (CSV)', onclick:() => csSave(status) }), status,
-    h('p', { class:'fine', style:'margin:10px 0 0', text:'This counts the coffee only, not water, filters, milk or power. Nothing here is kept unless you press Save costs, which makes a separate file and does not touch your history.' })));
+    h('button', { type:'button', class:'btn block', id:'csAdd', style:'margin-top:12px', text:'Add to my coffee prices', onclick:() => csAdd(status) }), status,
+    h('button', { type:'button', class:'btn link', id:'csPrices', style:'margin:6px 0 0', text:'Open my coffee prices', onclick:goPrices }),
+    h('p', { class:'fine', style:'margin:10px 0 0', text:'This counts the coffee only, not water, filters, milk or power. Nothing here is kept unless you press Add to my coffee prices. That goes in your own prices file and does not touch your history.' })));
   const fold = (id, key, name, body) => { const d = h('details', { class:'yc-fold', id }, h('summary', { text:name }), h('div', { class:'yc-fbody' }, body)); d.open = !!cs.open[key]; d.addEventListener('toggle', () => { cs.open[key] = d.open; }); return d; };
   const sym = h('input', { id:'csSym', class:'yc-text', type:'text', maxlength:'3', value:cs.sym, style:'width:6em' }); sym.addEventListener('change', () => { cs.sym = sym.value.trim().slice(0, 3) || '$'; csPaint(); });
   host.append(fold('csWorkd', 'work', 'How this is worked out', h('p', { class:'fine', id:'csWork', style:'margin:0' })));
@@ -8865,6 +8979,138 @@ function screenCost(m){
   if (!cs) csStart();
   csHost = h('div', { id:'csHost' }); m.append(csHost); csPaint();
 }
+/* ---------- screen: coffee prices ----------
+   The list is kept in this browser (one CSV text under PRICES_KEY) so it is there next time, and it can be saved to and loaded from a file. It is never part of the tasting history file.
+   Loading a file only adds: a bag already in the list is skipped, so nothing is lost or doubled. A change made here is not in any file until the person saves one. */
+const PRICES_KEY = 'brew-and-cup-prices-v1', PRICES_CHANGES_KEY = 'brew-and-cup-prices-changes-v1';
+let pr = { list:[], changes:0, failed:false, q:'', sort:'new', msg:'', undo:null, add:null, open:{ add:false, paste:false } }, pricesFrom = '', prHost = null;
+function persistPrices(){
+  try {
+    if (pr.list.length) localStorage.setItem(PRICES_KEY, priceCsv(pr.list)); else localStorage.removeItem(PRICES_KEY);
+    if (pr.changes > 0) localStorage.setItem(PRICES_CHANGES_KEY, String(pr.changes)); else localStorage.removeItem(PRICES_CHANGES_KEY);
+    pr.failed = false;
+  } catch(e){ pr.failed = true; }
+}
+function loadPrices(){
+  try {
+    const t = localStorage.getItem(PRICES_KEY), r = t ? priceRead(t) : null;
+    if (r && !r.error) pr.list = r.list;
+    pr.changes = Math.min(pr.list.length, Math.max(0, parseInt(localStorage.getItem(PRICES_CHANGES_KEY), 10) || 0));
+  } catch(e){}
+}
+function forgetPrices(){
+  pr.list = []; pr.changes = 0; pr.undo = null; pr.msg = ''; pr.q = '';
+  try { localStorage.removeItem(PRICES_KEY); localStorage.removeItem(PRICES_CHANGES_KEY); } catch(e){}
+}
+/* put bags (loose values, as priceEntry takes them) on the list. Returns { added, same, bad, full } counts; the list and the browser's copy are updated once. */
+function prAddBags(objs){
+  const n = { added:0, same:0, bad:0, full:0 };
+  objs.forEach(o => { const r = priceAdd(pr.list, o); if (r.added){ pr.list = r.list; n.added++; } else if (r.why === 'same') n.same++; else if (r.why === 'full') n.full++; else n.bad++; });
+  if (n.added){ pr.changes += n.added; pr.undo = null; persistPrices(); }
+  return n;
+}
+/* what is missing from a bag that cannot be added, in plain words */
+function prWhy(o){
+  if (!priceText(o.coffee, 80)) return "Type the coffee's name first, so you can find it later.";
+  if (!(priceNum(o.price, 2) > 0)) return 'Enter the price of the bag.';
+  return 'Enter the size of the bag.';
+}
+function prLoadText(text){
+  const r = priceRead(String(text));
+  if (r.error){ pr.msg = r.error; return; }
+  const before = pr.list.length, keys = new Set(r.list.map(priceKey));
+  prAddBags(r.list.map(e => Object.assign({}, e)));
+  const added = pr.list.length - before, here = r.list.length - added;
+  pr.changes = pr.list.filter(e => !keys.has(priceKey(e))).length; persistPrices();   /* what the file lacks, so "not in a file yet" is exact right after loading */
+  pr.msg = added ? 'Loaded ' + added + (added === 1 ? ' bag' : ' bags') + ' from the file' + (here ? ' (' + here + ' already here)' : '') + (r.skipped ? '. ' + r.skipped + (r.skipped === 1 ? ' row was' : ' rows were') + ' not a bag and was left out' : '') + '.'
+    : (r.list.length ? 'Nothing new in that file. Every bag in it was already here.' : 'That file has no bags in it.');
+}
+async function prSave(){
+  if (!pr.list.length){ pr.msg = 'Add a bag first, then save the file.'; prPaint(); return; }
+  const text = priceCsv(pr.list), name = 'neurobrew-prices.csv';
+  try {
+    if (inClaude()){ const dl = await getDownloads(); if (!dl) throw new Error('no downloads'); await dl.save({ filename:name, data:text }); }
+    else plainDownload(text, name);
+    pr.changes = 0; persistPrices(); pr.msg = 'Saved ' + name + ' with ' + pr.list.length + (pr.list.length === 1 ? ' bag.' : ' bags.') + ' Keep it somewhere you can find it.';
+  } catch(e){ pr.msg = 'This view could not save the file. Open NeuroBrew in your browser and try again.'; }
+  prPaint();
+}
+const prMoney = (sym, x) => sym + (Math.round(x * 100) / 100).toFixed(2);
+function prUse(e){
+  if (!cs) csStart();
+  Object.assign(cs, { sym:e.sym, compare:false }); if (e.dose){ cs.dose = e.dose; if (e.cups) cs.cups = String(e.cups); }
+  cs.a = { name:e.coffee, roaster:e.roaster, price:String(e.price), size:String(e.size), unit:e.unit };
+  go('cost');
+}
+function prRowNode(e){
+  const ch = priceChange(pr.list, e), line = [prMoney(e.sym, e.price) + ' for ' + e.size + ' ' + e.unit, prMoney(e.sym, pricePer100g(e)) + ' per 100 g'];
+  const move = ch.ok && ch.now.i === e.i ? (ch.dir === 'same' ? 'About the same per gram as the bag before' : Math.abs(ch.pct) + ' % ' + (ch.dir === 'up' ? 'more' : 'less') + ' per gram than the bag before') + (ch.before.date ? ' (' + ch.before.date + ')' : '') + '.' : '';
+  return h('div', { class:'pr-row', 'data-i':String(e.i) },
+    h('div', { class:'pr-name' }, h('b', { text:e.coffee }), e.roaster ? h('span', { text:' · ' + e.roaster }) : null),
+    h('div', { class:'yc-line', text:line.join(' · ') }),
+    h('div', { class:'yc-line mute', text:[e.date, move].filter(Boolean).join(' · ') || 'No date' }),
+    h('div', { class:'pr-acts' }, h('button', { type:'button', class:'btn small pr-use', text:'Use in Cost tool', onclick:() => prUse(e) }),
+      h('button', { type:'button', class:'btn small pr-del', text:'Delete', 'aria-label':'Delete ' + e.coffee, onclick:() => { pr.undo = { e:pr.list[e.i], at:e.i }; pr.list = pr.list.filter((x, k) => k !== e.i); pr.changes++; persistPrices(); pr.msg = ''; prPaint(); } })));
+}
+function prListNodes(){
+  if (!pr.list.length) return [h('p', { class:'fine', id:'prEmpty', style:'margin:0', text:'No bags yet. Add one below, or load a file you saved before. You can also add a bag from the Cost of coffee tool.' })];
+  const rows = priceFilter(priceSort(pr.list, pr.sort), pr.q);
+  return rows.length ? rows.map(prRowNode) : [h('p', { class:'fine', style:'margin:0', text:'No coffee or roaster matches "' + pr.q + '".' })];
+}
+function prFileCard(){
+  const n = pr.list.length, file = h('input', { type:'file', id:'prFile', accept:'.csv,text/csv,text/plain', 'aria-label':'Coffee prices file (CSV)' });
+  file.addEventListener('change', async () => {
+    const f = file.files && file.files[0]; if (!f) return;
+    try { prLoadText(f.text ? await f.text() : await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsText(f); })); }
+    catch(e){ pr.msg = "Couldn't read that file. Try pasting its contents instead."; }
+    prPaint();
+  });
+  const paste = h('textarea', { id:'prPaste', placeholder:'Paste the file contents here', 'aria-label':'Pasted prices file text' });
+  const pd = h('details', { class:'yc-fold', id:'prPasteD' }, h('summary', { text:'Load not working? Paste the file instead' }), h('div', { class:'yc-fbody' }, paste,
+    h('button', { type:'button', class:'btn', id:'prPasteBtn', style:'margin-top:8px', text:'Use pasted text', onclick:() => { if (paste.value.trim()) prLoadText(paste.value); else pr.msg = 'Paste the file contents first.'; prPaint(); } })));
+  pd.open = pr.open.paste; pd.addEventListener('toggle', () => { pr.open.paste = pd.open; });
+  const sub = n ? n + (n === 1 ? ' bag' : ' bags') + ' kept in this browser.' + (pr.changes ? ' ' + pr.changes + (pr.changes === 1 ? ' change is' : ' changes are') + ' not in a file yet.' : ' All saved to a file.') : 'Nothing kept yet.';
+  return h('div', { class:'card', id:'prFileCard' }, h('h3', { text:'Your file' }), h('p', { class:'fine', id:'prCount', style:'margin:4px 0 10px', text:sub }),
+    h('button', { type:'button', class:'btn primary block', id:'prSaveBtn', text:'Save my prices file', onclick:prSave }),
+    h('div', { class:'yc-f wide' }, h('label', { for:'prFile', text:'Load a prices file' }), file), pd,
+    h('p', { class:'fine', id:'prStatus', role:'status', style:'margin:10px 0 0', text:pr.msg }),
+    pr.failed ? h('p', { class:'fine warnline', role:'status', style:'margin:8px 0 0', text:'This browser could not keep your prices. Save the file before you leave.' }) : null,
+    h('p', { class:'fine', style:'margin:10px 0 0', text:'This is a file of its own. It is not your tasting history, and your history is never changed by it. Loading a file only adds bags that are not here yet.' }));
+}
+function prAddCard(){
+  const a = pr.add, unit = h('div', { class:'yc-mini', role:'group', 'aria-label':'Bag size unit' }, COST_UNITS.map(u => h('button', { type:'button', 'data-u':u[0], 'aria-pressed':String(a.unit === u[0]), text:u[0], onclick:e => { a.unit = u[0]; Array.from(e.currentTarget.parentNode.children).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.u === a.unit))); } })));
+  const txt = (id, label, key, ph, max) => { const i = h('input', { id, class:'yc-text', type:'text', maxlength:String(max), value:a[key], placeholder:ph }); i.addEventListener('input', () => { a[key] = i.value; }); return h('div', { class:'yc-f wide' }, h('label', { for:id, text:label }), i); };
+  const date = h('input', { id:'prDate', class:'yc-text', type:'date', value:a.date }); date.addEventListener('input', () => { a.date = date.value; });
+  const sym = h('input', { id:'prSym', class:'yc-text', type:'text', maxlength:'3', value:a.sym, style:'width:6em' }); sym.addEventListener('input', () => { a.sym = sym.value; });
+  const d = h('details', { class:'yc-fold', id:'prAddD' }, h('summary', { text:'Add a bag' }), h('div', { class:'yc-fbody' },
+    txt('prName', 'Coffee', 'coffee', 'e.g. Kenya AA', 80), txt('prRoaster', 'Roaster (optional)', 'roaster', '', 80),
+    h('div', { class:'yc-row' }, ycNum('prPrice', 'Price of the bag', '', a.price, 0.01, v => { a.price = v; }), ycNum('prSize', 'Size of the bag', '', a.size, 1, v => { a.size = v; }, '340')),
+    h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:'Size in' }), unit),
+    h('div', { class:'yc-row' }, h('div', { class:'yc-f' }, h('label', { for:'prDate', text:'Bought on' }), date), h('div', { class:'yc-f' }, h('label', { for:'prSym', text:'Currency symbol' }), sym)),
+    h('button', { type:'button', class:'btn primary block', id:'prAddBtn', style:'margin-top:14px', text:'Add to my coffee prices', onclick:() => {
+      const o = Object.assign({}, a, { sym:a.sym.trim() || '$' }), n = prAddBags([o]);
+      pr.msg = n.added ? 'Added ' + priceText(a.coffee, 80) + ' to your coffee prices.' : n.same ? 'That bag is already in your coffee prices.' : n.full ? 'Your list is full (' + PRICE_MAX_ROWS + ' bags). Delete some first.' : prWhy(a);
+      if (n.added){ pr.add = prNewBag(); pr.add.sym = o.sym; pr.add.unit = o.unit; pr.open.add = false; }
+      prPaint();
+    } })));
+  d.open = pr.open.add; d.addEventListener('toggle', () => { pr.open.add = d.open; });
+  return d;
+}
+const prNewBag = () => ({ coffee:'', roaster:'', price:'', size:'', unit:'g', date:today(), sym:'$' });
+function prPaint(){
+  const host = prHost; if (!host) return; host.textContent = '';
+  host.append(h('h1', { text:'Coffee prices' }), h('p', { class:'lede', text:'The bags you have bought, kept in a small file of their own.' }), prFileCard());
+  const head = h('div', { class:'yc-lrow' }, h('h3', { style:'margin:0', text:'Your bags' }),
+    pr.list.length > 1 ? h('div', { class:'yc-mini', role:'group', 'aria-label':'Sort bags', id:'prSort' }, [['new', 'Newest'], ['name', 'A to Z'], ['cheap', 'Per 100 g']].map(s => h('button', { type:'button', 'data-s':s[0], 'aria-pressed':String(pr.sort === s[0]), text:s[1], onclick:() => { pr.sort = s[0]; prPaint(); } }))) : null);
+  const q = pr.list.length > 4 ? h('input', { id:'prQ', class:'yc-text', type:'search', value:pr.q, placeholder:'Search coffee or roaster', 'aria-label':'Search your bags', style:'margin:10px 0' }) : null;
+  if (q) q.addEventListener('input', () => { pr.q = q.value; const l = $('prList'); l.textContent = ''; l.append(...prListNodes()); });
+  const undo = pr.undo ? h('div', { class:'notice', id:'prUndo', style:'margin:10px 0;display:flex;justify-content:space-between;align-items:center;gap:10px' }, h('span', { text:'Removed ' + pr.undo.e.coffee + '.' }),
+    h('button', { type:'button', class:'btn small', style:'margin:0', text:'Undo', onclick:() => { const l = pr.list.slice(); l.splice(Math.min(pr.undo.at, l.length), 0, pr.undo.e); pr.list = l; pr.changes = Math.max(0, pr.changes - 1); pr.undo = null; persistPrices(); prPaint(); } })) : null;
+  host.append(h('div', { class:'card', id:'prCard' }, head, undo, q, h('div', { id:'prList', class:'pr-list', style:'margin-top:10px' }, prListNodes())), prAddCard());
+  host.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:'Back', onclick:() => navBack(typeof PARENT.prices === 'function' ? PARENT.prices() : PARENT.prices) })));
+}
+function goPrices(){ if (app.screen !== 'prices') pricesFrom = app.screen === 'timer' ? 'ready' : app.screen; if (!pr.add){ pr.add = prNewBag(); if (app.coffee) { pr.add.coffee = app.coffee.name || ''; pr.add.roaster = app.coffee.roaster || ''; } } go('prices'); }
+function screenPrices(m){ prHost = h('div', { id:'prHost' }); m.append(prHost); if (!pr.add) pr.add = prNewBag(); prPaint(); }
 /* ---------- screen: ratio and strength planner ----------
    Nothing here is saved. The water your grounds keep comes from Cup yield (its band, or your own saved figure). */
 let rp = null, rpHost = null;
@@ -9869,6 +10115,7 @@ function renderSheetBody(){
     rows.append(mi('My setup', 'Units, level, timer and your gear. Saved in your file.', () => { sheet = { step:'setup' }; renderSheet(); }));
     rows.append(lab('Tools'));
     rows.append(mi('Tools', 'Cup yield, the Ratio and strength planner and the Cost of coffee', () => { closeSheet(); goTools(); }));
+    rows.append(mi('Coffee prices', 'Bags you have bought, kept in a file of their own', () => { closeSheet(); goPrices(); }));
     rows.append(lab('Learn'));
     rows.append(mi('Your tendencies', 'Pictures of what you rate and enjoy, so far', () => { closeSheet(); goTend(); }));
     rows.append(mi('Understanding coffee', 'Your tendencies, how to shop, and what bag details mean', () => { closeSheet(); goLearn(); }));
@@ -11640,13 +11887,14 @@ function screenDetail(m){
     h('button', { type:'button', class:'btn danger block', text:'Delete this tasting', onclick:() => openDelete(new Set([o._i]), true) })));
 }
 
-const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, tend:screenTend, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, folk:screenFolk, compare:screenCompare };
+const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, tend:screenTend, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, prices:screenPrices, folk:screenFolk, compare:screenCompare };
 
 $('homeBtn').innerHTML = '<svg class="burger" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span class="ml">Menu</span>';
 $('homeBtn').addEventListener('click', openMenu);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushDraft(); else if (document.visibilityState === 'visible') holdScreen(); });
 window.addEventListener('pagehide', flushDraft);
 loadHistory();
+loadPrices();
 loadDraft();
 loadPickedFile();
 render();

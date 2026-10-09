@@ -2,6 +2,14 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 51: Coffee prices
+
+2026-10-09 02:32:04 UTC
+
+- New Coffee prices area in the Menu: your own list of bags you have bought (coffee, roaster, price, size, date). Add a bag, search, sort by newest, A to Z or price per 100 g, and see how the price moved since the last bag of the same coffee.
+- The list is a file of its own, neurobrew-prices.csv, that you can save and load again. Loading only adds bags that are not there yet. Your tasting history file is not touched. A file saved by the old Save costs button still loads.
+- The Cost of coffee tool now has Add to my coffee prices in place of Save costs, and can fill a bag from the list.
+
 ## Release 50: Solid or folklore?
 
 2026-10-09 01:31:44 UTC
