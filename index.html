@@ -938,6 +938,31 @@ details.dialsec[open]{ padding-bottom:14px; }
 .cmpgap td{ text-align:center; color:var(--muted); font-size:13px; padding:6px 0; background:var(--tint); }
 .cmpside tbody th{ color:var(--muted); font-size:13px; }
 .cmpside .cmpchg td{ font-weight:600; }
+/* Cost of coffee: the plain text boxes (coffee name, currency symbol) */
+.yc-text{ width:100%; min-width:0; box-sizing:border-box; border:1.5px solid var(--edge); border-radius:12px; background:var(--surface); padding:10px 12px; font-size:16px; min-height:48px; color:inherit; }
+.cs-one + .cs-one{ margin-top:14px; padding-top:12px; border-top:1px solid var(--edge); }
+#csDiff{ margin-top:14px; }
+/* Solid or folklore */
+.folk-list{ margin-top:14px; }
+details.folk{ border:1.5px solid var(--edge); border-radius:14px; background:var(--surface); margin-top:10px; }
+details.folk > summary{ list-style:none; cursor:pointer; padding:12px 14px; display:flex; flex-direction:column; gap:5px; min-height:44px; }
+details.folk > summary::-webkit-details-marker{ display:none; }
+.folk-claim{ font-weight:700; font-size:16px; line-height:1.3; }
+.folk-verdict{ font-size:14.5px; line-height:1.4; color:var(--muted); }
+.folk-tier{ align-self:flex-start; display:inline-block; font-size:12px; font-weight:700; letter-spacing:.02em; padding:2px 10px; border-radius:99px; border:1.5px solid var(--edge); background:var(--bg); }
+.folk-tier[data-tier="solid"]{ background:var(--leaf); color:var(--leaf-ink); border-color:var(--leaf); }
+.folk-tier[data-tier="partly"]{ border-color:var(--leaf); }
+.folk-tier[data-tier="practice"]{ border-style:dashed; }
+.folk-tier[data-tier="not"]{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.folk-body{ padding:0 14px 12px; }
+.folk-h{ margin:12px 0 0; font-size:13px; color:var(--label); letter-spacing:.01em; }
+.folk-legend{ list-style:none; margin:6px 0 0; padding:0; font-size:14.5px; }
+.folk-legend li{ margin-top:8px; line-height:1.45; }
+.folk-srcs{ list-style:none; margin:4px 0 0; padding:0; font-size:14px; }
+.folk-src{ margin-top:8px; line-height:1.45; }
+.folk-kind{ display:inline-block; font-size:11.5px; font-weight:700; color:var(--muted); border:1px solid var(--edge); border-radius:6px; padding:0 6px; }
+.folk-more{ margin-top:8px; }
+.folk-more > summary{ cursor:pointer; font-weight:600; min-height:44px; display:flex; align-items:center; }
 </style>
 </head>
 <body data-screen="start">
@@ -4024,7 +4049,7 @@ function trailAttempt(o){
   return { i:o._i, id:o.id || '', at:o.saved_at || '', date:o.cupping_date || '', attempt:parseInt(o.brew_attempt, 10) || 0, method:trailMethod(o), kind:String(o.score_kind || ''), total:total != null && total > 0 ? total : null,
     um:trailNum(o.brew_grind_target_um), ratio:trailNum(o.brew_ratio), tempF:trailNum(o.brew_temp_f), dose:trailNum(o.brew_dose_g), water:trailNum(o.brew_water_g),
     agit:agitOf(o.brew_agitation), tech:techKeyOf(o.brew_technique), setting:unneutralize(o.brew_grind_setting || '').trim(), grinder:unneutralize(o.brew_grinder_name || '').trim(),
-    days:trailNum(o.days_since_roast), roast:/^\d{4}-\d{2}-\d{2}$/.test(o.roast_date || '') && !isNaN(Date.parse(o.roast_date)) ? o.roast_date : '', stars:trailNum(o.my_rating_stars), scores, dial:dialNoteOf(o), locked:String(o.dial_locked || '').trim().toLowerCase() === 'yes', row:o };
+    days:trailNum(o.days_since_roast), secs:trailNum(o.brew_actual_time_s), roast:/^\d{4}-\d{2}-\d{2}$/.test(o.roast_date || '') && !isNaN(Date.parse(o.roast_date)) ? o.roast_date : '', stars:trailNum(o.my_rating_stars), scores, dial:dialNoteOf(o), locked:String(o.dial_locked || '').trim().toLowerCase() === 'yes', row:o };
 }
 /* what is different between two neighbouring attempts. Each entry names one thing you changed. */
 function trailChanges(a, b){
@@ -4222,7 +4247,7 @@ function dialAdvice(t, sym, fx, rec){
   if (g && g.flags && (g.flags.stale || g.flags.defect)) out.notRecipe = { text:g.flags.defect ? 'You picked words like rubbery, medicinal or metallic. Those usually come from the coffee itself, not your brew settings, so check the bag before changing anything.' : 'You picked words like papery, cardboard or stale. Those can mean the coffee is old or was stored badly, so check the roast date before changing your brew settings.' };
   else if (last && last.days != null){
     const m = METHODS.find(x => x.key === t.methodKey), fw = m ? freshWindow(m, profileOf(trailCoffee(last.row), new Date()).roast) : null;
-    if (fw && last.days > fw.fade) out.notRecipe = { text:'That cup was brewed ' + last.days + ' days after roast, past the point (about ' + fw.fade + ' days for this method) where coffee tastes flat and papery. Fresher beans may help more than any settings change.' };
+    if (fw && last.days > fw.fade) out.notRecipe = { age:true, text:'That cup was brewed ' + last.days + ' days after roast, past the point (about ' + fw.fade + ' days for this method) where coffee tastes flat and papery. Fresher beans may help more than any settings change.' };
   }
   let n = 0, helped = 0; Object.keys(t.tried).forEach(k => { n += t.tried[k].helped + t.tried[k].hurt + t.tried[k].same; helped += t.tried[k].helped; });
   if (n >= 3 && helped === 0 && !t.locked) out.stuck = { n, text:'You have made ' + n + ' single changes and none of them helped. That is our own rule of thumb for when to stop: your brew settings may not be what is holding the cup back. Check the bag age, the grinder and the water, or keep your best try.' };
@@ -4670,6 +4695,8 @@ const GUIDE_SECTIONS = [
     paras:['After you taste, ' + STEP_NAME.perfect + ' starts from what you said needs fixing (one tap after your cupping score). It also uses your TDS and brew time if you added them. It suggests one change: grind, ratio, water temperature or pour style. Say what you tasted if you disagree. Then brew again with that one change. It works from cupping scores. A quick tasting gets a list of tries instead, so you can see what changed.',
       'It keeps every try of a coffee on a method in order. Each try shows what changed and whether the total went up or down. A change counts as helped or hurt only when the total moves by at least a point. That is NeuroBrew\'s own rule of thumb, because one cup scored by one person is noisy. Repeat the same brew and it measures your own variation, and uses that instead if it is bigger.',
       'The next brew starts from your best try, not just your last. If a change scored lower, it is not suggested again; it offers a different one. If the problem looks like the coffee itself (stale or off words, an old bag), it says so. If several changes in a row did not help, it says the settings may not be the problem.',
+      'For a sour, flat, thin or uneven cup, ' + STEP_NAME.perfect + ' first asks whether the bag or the brew is the problem. It uses the roast date and the usual resting and peak windows from roaster and barista guides. A very fresh bag or an old one can taste off whatever the settings. The windows are typical figures, not rules. With no roast date it says so and asks for one.',
+      'It also warns you when it cannot learn from a try. If your last try changed more than one thing, it says the result cannot show which one mattered. If two brews with the same settings took very different times, it says the pour was the difference.',
       'When a cup tastes great, keep it as your best brew for that coffee and method. New brews start from it until you remove it. A new bag of the same coffee (a different roast date) starts from your best brew, or your best on the last bag. The first cup on the new bag is marked, because the bag is mixed in.',
       'For a coffee you have never brewed on a method, NeuroBrew can offer a starting point based on where your other coffees ended up. It does this only when at least three of them agree. It is a suggestion; you choose whether to use it.',
       'When a coffee has two or more brews, its page and its tasting page offer Compare these cups. It lines up your cups of one method, best first, and shows only what changed between them. Different bags of the same coffee are kept together, and different methods are never mixed. Only your own star ratings order the cups. New sees the best cup against the lowest. Comfortable sees the best three and the lowest three, with a Show all button. Expert sees every cup and the numbers.',
@@ -4684,12 +4711,13 @@ const GUIDE_SECTIONS = [
     paras:['Your tendencies is also its own row in the menu, so you can open it any time. It draws pictures from your saved history. They show the flavors you liked and did not like, what you enjoy about a cup, and how you use the stars. They also show how you rate kinds of coffee and where your measured brews landed.',
       'Each bar counts coffees, and each dot is one coffee, so you can check every one. A picture appears when there is enough to draw. New shows one picture and folds the rest. Comfortable folds each card with a Why? note. Expert shows everything open, with ranges and a table you can save.',
       'After you have tasted five different coffees, NeuroBrew can show which details your higher-scored coffees share (roast, process, elevation, origin, varietal). It also shows how sure that is, and what to look for on a bag. Cups of the same coffee are averaged first, so brewing one coffee five times does not count as five coffees.',
-      'This describes what you scored, not what is true of the coffee. Taste is personal, and a handful of coffees is a small sample. The same screen explains what every detail on a bag means, and compares two things side by side.'] },
+      'This describes what you scored, not what is true of the coffee. Taste is personal, and a handful of coffees is a small sample. The same screen explains what every detail on a bag means, and compares two things side by side.',
+      'Solid or folklore? is in the menu under Learn. It takes common brewing advice and gives each claim one verdict: Solid, Partly supported, Practice only or Not supported. Tap a claim to see what the research found, what it does not show, what NeuroBrew does about it, and the sources. A verdict is about the claim as people phrase it. One study is never treated as proof, and a verdict can change when new research appears.'] },
   { id:'helpers', title:'Levels, underlined words and the glossary', lead:'Ways to get more or less explanation.',
     paras:['New to brewing keeps things short, Comfortable explains the reasons, and Expert shows every number. Change it any time from the start screen or the menu.',
       'My setup in the menu keeps your units, level, timer sound, taste card view and gear (your grinder, water and filter) in one place. New brews start with your gear filled in. The setup is saved inside your history file each time you save, so uploading the file on another device brings it back.',
       'Words with a dotted underline are tappable and give a short definition. The Glossary in the menu lists every term and can be searched.',
-      'Tools in the menu holds small helpers. Cup yield shows how much ends up in your cup. The Ratio and strength planner gives the ratio for the strength you want, and how much water to add to a strong brew. The strengths and extractions it starts from are common targets, not rules.'] },
+      'Tools in the menu holds small helpers. Cup yield shows how much ends up in your cup. The Ratio and strength planner gives the ratio for the strength you want, and how much water to add to a strong brew. The strengths and extractions it starts from are common targets, not rules. The Cost of coffee tool works out what a cup costs from the price and size of a bag, in grams, ounces or pounds. It shows the cost per cup, day, week and month, and can compare two bags. It counts the coffee only. Nothing is kept unless you press Save costs, which saves a separate file called neurobrew-costs.csv.'] },
   { id:'trust', title:'What to trust', lead:'Starting points, not rules.',
     paras:['Brew settings are starting points. The roast changes to temperature and grind come from brewer experience, not lab results. The app says so wherever they appear. The cupping score follows the SCA affective form, but you score one cup yourself. Use it to compare your own cups. It is not an official grade.',
       'Where NeuroBrew uses its own rule of thumb, it says so. A try must change the total by one point to count as better or worse. A bag about a week older can change the taste. Three coffees must agree before it offers a starting point. About NeuroBrew in the menu lists the sources and the limits.'] }
@@ -4833,6 +4861,38 @@ function freshnessFor(p, m){
   return { label:FRESH_LABEL[f.st], tip:'Roasted ' + ds + ' ago. For filter coffee, ' + f.short + '. For espresso, ' + e.short + '.', tone:(f.st === 'resting' || f.st === 'fading') ? 'warn' : 'good', state:f.st, filter:f, espresso:e, note:FRESH_NOTE };
 }
 
+/* ---------- bag or brew? ----------
+   A cup that tastes sour, flat, thin or uneven is not always the settings. A very fresh bag and an old bag both taste off, and a grind change may not fix either. Before the app suggests a
+   change it says where the bag is against the usual freshness window for this method and roast (the same windows the Coffee page uses, from roaster and barista guides), in plain words.
+   It does not claim the bag IS the cause. It says whether the bag is a likely suspect, and what to do about it. Nothing is guessed: with no roast date it asks for one.
+   The windows are typical figures from roaster and barista guides, which differ from one another; they are not lab results. */
+const BAG_SYMPTOMS = ['sour', 'flat', 'thin', 'uneven'];
+const BAG_SOURCE = FRESH_NOTE;
+function bagCheck(sym, p, m){
+  if (!BAG_SYMPTOMS.includes(sym)) return null;
+  const fr = p && p.days != null && p.days >= 0 ? freshnessFor(p, m) : null;
+  if (!fr) return { state:'unknown', verdict:'unknown', title:'How old is the bag?', text:'No roast date is saved. A very fresh bag and an old bag can both taste sour or flat, whatever the settings.', days:null, window:null, note:BAG_SOURCE };
+  const st = fr.state, w = fr.window || null;
+  if (st === 'sweet' || st === 'past') return { state:st, verdict:'brew', title:'The bag looks fine', text:fr.tip + ' The bag is probably not what is behind this, so the change below is worth trying.', days:p.days, window:w, note:BAG_SOURCE };
+  if (st === 'resting') return { state:st, verdict:'bag', title:'Check the bag first', text:fr.tip + ' A change of grind may not fix this. Waiting a few days is the first thing to try.', days:p.days, window:w, note:BAG_SOURCE };
+  return { state:st, verdict:'bag', title:'Check the bag first', text:fr.tip + ' A fresher bag may help more than any change of settings.', days:p.days, window:w, note:BAG_SOURCE };
+}
+/* One thing at a time. Looks at the last try on this method (t from dialTrail):
+   - more than one thing changed on that try, so its result cannot say which one mattered: hold all but one;
+   - the same settings were brewed again, but the measured times were far apart: the brewing, not the settings, moved. */
+const TRAIL_NUDGE_SECS = 30, TRAIL_NUDGE_SHARE = 0.2;
+function trailNudge(t){
+  const a = t && t.last; if (!a || !a.prev) return null;
+  if (a.multi){
+    const names = a.changes.map(c => c.plain || c.text);
+    return { kind:'multi', text:'Your last try changed more than one thing (' + names.join(' and ') + '), so its result cannot say which one mattered. Next time change just one and hold the rest.' };
+  }
+  if (a.repeat && a.secs != null && a.prev.secs != null){
+    const lo = Math.min(a.secs, a.prev.secs), hi = Math.max(a.secs, a.prev.secs), f = s => Math.floor(s / 60) + ':' + String(Math.round(s % 60)).padStart(2, '0');
+    if (hi - lo >= TRAIL_NUDGE_SECS && (hi - lo) / hi >= TRAIL_NUDGE_SHARE) return { kind:'time', text:'Your last two brews used the same settings but took ' + f(a.prev.secs) + ' and ' + f(a.secs) + '. That gap is in how it was poured, not in the settings. Try to pour and stop at the same points each time, and the cups will be easier to compare.' };
+  }
+  return null;
+}
 /* ---------- water chemistry: alkalinity and hardness ---------- */
 function numOrNull(v){ const m = String(v == null ? '' : v).replace(/,/g, '').match(/\d+(\.\d+)?/); if (!m) return null; const n = parseFloat(m[0]); return n >= 0 && n <= 1500 ? n : null; }
 function waterProfile(type, alk, gh){
@@ -4866,6 +4926,46 @@ function applyWaterFirst(fx, symptom, w){
     secondary:lead ? 'If it is still flat with better water, then: ' + lead : '', adjust:{ grind:0, ratio:0 }, btnLabel:'Brew again with new water', waterFirst:true };
 }
 
+/* ---------- cost of coffee ----------
+   Plain arithmetic, nothing estimated.  cost per gram = price / (bag size in grams);  cost per cup = cost per gram x dose.
+   A day is cups per day x cost per cup; a week is 7 days; a month is 365.25 / 12 days (30.44).  The bag lasts (bag grams / dose) cups.
+   Coffee only: water, filters, milk and power are not counted. Nothing here is saved; the Save costs button writes a separate CSV. */
+const COST_UNITS = [['g', 1], ['oz', 28.349523125], ['lb', 453.59237]];
+const COST_DAYS_PER_MONTH = 365.25 / 12;
+/* a bag size in grams, or 0 when the size or unit is not usable */
+function costGrams(size, unit){
+  const u = COST_UNITS.find(x => x[0] === unit), s = parseFloat(size);
+  return u && isFinite(s) && s > 0 && s <= 100000 ? s * u[1] : 0;
+}
+/* one bag. in: { price, size, unit, dose, cups }. out: { ok, why, grams, perGram, perCup, perDay, perWeek, perMonth, cupsInBag, daysInBag } */
+function costOne(o){
+  const price = parseFloat(o.price), dose = parseFloat(o.dose), cups = parseFloat(o.cups), grams = costGrams(o.size, o.unit);
+  if (!(price > 0 && price <= 10000)) return { ok:false, why:'price' };
+  if (!(grams > 0)) return { ok:false, why:'size' };
+  if (!(dose > 0 && dose <= 200)) return { ok:false, why:'dose' };
+  if (dose > grams) return { ok:false, why:'dose-over-bag' };
+  const perGram = price / grams, perCup = perGram * dose, cupsInBag = grams / dose;
+  const r = { ok:true, grams, perGram, perCup, cupsInBag, perDay:null, perWeek:null, perMonth:null, daysInBag:null };
+  if (cups > 0 && cups <= 100){ r.perDay = perCup * cups; r.perWeek = r.perDay * 7; r.perMonth = r.perDay * COST_DAYS_PER_MONTH; r.daysInBag = cupsInBag / cups; }
+  return r;
+}
+/* two bags at the same dose and cups per day. out: { ok, cheaper: 'a' | 'b' | 'same', perCup (a gap, always >= 0), perMonth (or null), pct (how much less the cheaper one costs, % of the dearer) } */
+function costCompare(a, b){
+  if (!a || !b || !a.ok || !b.ok) return { ok:false };
+  const gap = Math.abs(a.perCup - b.perCup), same = gap < 0.005;   /* under half a cent a cup counts as the same */
+  const lo = a.perCup <= b.perCup ? a : b, hi = lo === a ? b : a;
+  return { ok:true, cheaper:same ? 'same' : (lo === a ? 'a' : 'b'), perCup:gap, perMonth:a.perMonth != null && b.perMonth != null ? Math.abs(a.perMonth - b.perMonth) : null, pct:hi.perCup > 0 ? (hi.perCup - lo.perCup) / hi.perCup * 100 : 0 };
+}
+/* the Save costs file. rows: [{ coffee, roaster, price, size, unit, dose, cups, sym }], date: 'YYYY-MM-DD'. Bags that do not add up are left out. Text cells are neutralised like the history file. */
+function costCsv(rows, date){
+  const lines = [['coffee', 'roaster', 'currency', 'bag price', 'bag size', 'size unit', 'dose (g)', 'cost per cup', 'cups per day', 'cost per month', 'date']];
+  rows.forEach(r => {
+    const c = costOne(r); if (!c.ok) return;
+    const n = (x, d) => x == null ? '' : String(Math.round(x * Math.pow(10, d)) / Math.pow(10, d));
+    lines.push([neutralize(r.coffee || ''), neutralize(r.roaster || ''), neutralize(r.sym || ''), n(parseFloat(r.price), 2), n(parseFloat(r.size), 2), r.unit, n(parseFloat(r.dose), 1), n(c.perCup, 2), c.perDay != null ? n(parseFloat(r.cups), 1) : '', n(c.perMonth, 2), date || '']);
+  });
+  return toCSV(lines);
+}
 /* ---------- cup yield ----------
    The sum (exact, one conservation of mass):  cup = (water in − water the coffee keeps) ÷ (1 − TDS of the cup),  where TDS is the dissolved coffee as a fraction of the cup.
    "Kept" is r × dry coffee, with r in grams of water per gram of coffee. Counting the dissolved coffee matters: leaving it out makes the cup read about 1.3 % light for a filter brew and up to 9 % light for espresso.
@@ -5678,6 +5778,26 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 50,
+  "at": "2026-10-09T01:31:44Z",
+  "date": "2026-10-09",
+  "title": "Solid or folklore?",
+  "notes": [
+   "New page in the Menu, under Learn: Solid or folklore? It takes ten pieces of common brewing advice (water temperature, the 18 to 22 percent extraction zone, sour coffee, gas from fresh coffee, rest days, bloom, water minerals, grinder microns, iced coffee) and gives each one verdict, from Solid to Not supported.",
+   "Each claim shows what the research found, what it does not show, what NeuroBrew does about it, and its sources, with each source marked as a peer-reviewed paper, a trade article or a company's own test. The page says where it could not open a source itself."
+  ]
+ },
+ {
+  "release": 49,
+  "at": "2026-10-09T00:32:35Z",
+  "date": "2026-10-09",
+  "title": "Bag or brew, and Cost of coffee",
+  "notes": [
+   "On a sour, flat, thin or uneven cup, the Perfect step first checks the roast date: is the bag too fresh or too old for a change of settings to help? It also says when your last try changed more than one thing, or when the same settings gave very different times.",
+   "New Cost of coffee tool (Menu, then Tools): what a cup costs from the price and size of a bag in grams, ounces or pounds, per day, week and month, with a second bag to compare. Save costs makes a separate file, neurobrew-costs.csv, and changes nothing in your history."
+  ]
+ },
+ {
   "release": 48,
   "at": "2026-10-08T23:40:03Z",
   "date": "2026-10-08",
@@ -6091,6 +6211,132 @@ function varietiesFor(text){
   String(text || '').split(VARIETY_SPLIT).forEach(tk => { const v = varietyFor(tk.trim()); if (v && !seen.has(v.name)){ seen.add(v.name); out.push(v); } });
   return out;
 }
+/* ---------- solid or folklore ----------
+   Every entry says what people say, gives one verdict, and shows what was found, what it does not show, what NeuroBrew does about it, and the sources.
+   Rules the logic test enforces: each entry has a tier, a one-line verdict, at least one finding, at least one limit and at least one source, and every source says what kind it is.
+   A finding states only what the source itself reports. When a source was read only through someone else's summary, the finding says so ("as summarized by ...").
+   The verdict is about the claim as people phrase it, not about the whole subject. One study is never called proof. */
+const FOLK_TIERS = {
+  solid:{ label:'Solid', text:'Measured in controlled tests or published as a standard, and the finding holds as stated.' },
+  partly:{ label:'Partly supported', text:'Some evidence behind it, with limits worth knowing.' },
+  practice:{ label:'Practice only', text:'Common among brewers, but we found no controlled test of it.' },
+  not:{ label:'Not supported', text:'The research we found does not back it, or points the other way.' }
+};
+const FOLK_KINDS = { paper:'Peer-reviewed paper', poster:'Conference poster, not peer reviewed', article:'Trade or news article', blog:'A company\'s or brewer\'s own test, not peer reviewed' };
+const FOLK_A = [
+  { id:'temp-speed', claim:'Hotter water extracts faster.', tier:'solid',
+    verdict:'Yes. In immersion brews from 80 to 99°C, hotter water reached the same final strength and extraction sooner.',
+    found:['Liang, Chan and Ristenpart brewed coffee at 80 to 99°C and found the final strength and extraction barely changed. Hotter brews simply got there faster.',
+      'In the drip test described in the next claim, grind size and brew time were adjusted so that colder water reached the same extraction as 93°C water. In an interview about that work, a study author said the colder temperatures needed longer brew times.'],
+    limits:['The immersion test used one blended coffee in an open beaker, without stirring.', 'Speed is not taste. This says nothing about which cup tastes better.'],
+    app:'NeuroBrew treats temperature as a starting point inside the SCA\'s 195 to 205°F window. Its steps within that window are our own.',
+    sources:[{ kind:'paper', cite:'Liang J, Chan KC, Ristenpart WD (2021). An equilibrium desorption model for the strength and extraction yield of full immersion brewed coffee. Scientific Reports 11:6904.', link:'https://doi.org/10.1038/s41598-021-85787-1' },
+      { kind:'article', cite:'Specialty Coffee Association, "Just Published: Brewing Temperature and the Sensory Profile of Brewed Coffee" (a summary of Batali et al. 2020).', link:'https://sca.coffee/sca-news/read/just-published-brewing-temperature-and-the-sensory-profile-of-brewed-coffee' }] },
+  { id:'temp-taste', claim:'Hotter water makes better-tasting coffee.', tier:'not',
+    verdict:'With strength and extraction matched, a trained panel found little taste difference between 87 and 93°C.',
+    found:['Twelve trained panelists tasted drip coffee brewed at 87, 90 and 93°C, with strength and extraction held at the same targets. Strength and extraction changed the taste. Temperature, in the authors\' words, had "no appreciable impact".',
+      'In the consumer part of the same research, brew temperature predicted liking at most weakly. Ristenpart and colleagues summarize it: "TDS had the largest effect, extraction yield had a secondary effect, and the original brew temperature had at most a weak impact."'],
+    limits:['One coffee (a washed Honduran), one drip brewer and a narrow range, 87 to 93°C. The authors say further research is needed to confirm the result for other coffee types, and that only drip brewing was studied. In an interview about the study, Ristenpart said a more distinctive coffee might show more of a temperature effect.',
+      'Hotter water still changes how fast extraction happens, so you may need a different grind or time to reach the same strength and extraction.', 'The paper acknowledges the Specialty Coffee Association for funding and Breville Corporation for underwriting, and says the authors declare no competing interests.'],
+    app:'NeuroBrew suggests a temperature as a starting point and never as the cause of a taste. It asks you to change one thing at a time.',
+    sources:[{ kind:'paper', cite:'Batali ME, Ristenpart WD, Guinard J-X (2020). Brew temperature, at fixed brew strength and extraction, has little impact on the sensory profile of drip brew coffee. Scientific Reports 10:16450.', link:'https://doi.org/10.1038/s41598-020-73341-4' },
+      { kind:'paper', cite:'Ristenpart WD, Cotter AR, Guinard J-X (2022). Impact of beverage temperature on consumer preferences for black coffee. Scientific Reports 12:20621. (Its methods section summarizes the consumer study of Cotter et al. 2021.)', link:'https://doi.org/10.1038/s41598-022-23904-4' },
+      { kind:'article', cite:'Specialty Coffee Association, "Just Published: Brewing Temperature and the Sensory Profile of Brewed Coffee" (an interview about Batali et al. 2020).', link:'https://sca.coffee/sca-news/read/just-published-brewing-temperature-and-the-sensory-profile-of-brewed-coffee' }] },
+  { id:'zone', claim:'18 to 22 % extraction is the ideal, for everyone.', tier:'not',
+    verdict:'It is a convention from the 1950s, and consumers\' liking spread over a wide range of strengths and extractions.',
+    found:['The Coffee Brewing Control Chart was developed by Ernest Lockhart of the Coffee Brewing Institute in 1957, as described by Global Coffee Report. Liang, Chan and Ristenpart describe Lockhart as identifying a strength near 1.25 % and an extraction near 20 % as ideal. The 18 to 22 % box grew out of that work.',
+      'Cotter, Ristenpart and Guinard (2021) had 118 black-coffee drinkers taste 27 brews of one coffee. Their title says preferences were spread over a wide range of strengths and extraction yields. Strength mattered most and extraction less.',
+      'As summarized by SCA 25 Magazine, the consumers formed two groups: one preferring strength near 1.0 %, the other above 1.25 %.',
+      'A 2023 paper built a new chart that maps taste and liking to strength, extraction and brew ratio. In it, 57 % of consumers liked low strength with low to medium extraction, peaking near 18 % extraction, and 43 % liked low extraction with medium to high strength. The paper states that the classic ideal range does not apply to all consumers.'],
+    limits:['The consumers were Northern California black-coffee drinkers tasting one medium roast.', 'A convention can still be a useful reference. The zone is a reading against a convention, not a measure of quality.'],
+    app:'NeuroBrew calls it "the Lockhart zone (from the 1950s)", and treats 17.9 % and 18.1 % as the same cup.',
+    sources:[{ kind:'paper', cite:'Cotter AR, Batali ME, Ristenpart WD, Guinard J-X (2021). Consumer preferences for black coffee are spread over a wide range of brew strengths and extraction yields. Journal of Food Science 86(1):194-205.', link:'https://doi.org/10.1111/1750-3841.15561' },
+      { kind:'paper', cite:'Guinard J-X, Frost S, Batali M, Cotter A, Lim LX, Ristenpart WD (2023). A new Coffee Brewing Control Chart relating sensory properties and consumer liking to brew strength, extraction yield, and brew ratio. Journal of Food Science 88:2168-2177.', link:'https://doi.org/10.1111/1750-3841.16531' },
+      { kind:'article', cite:'Global Coffee Report, "The Coffee Brewing Control Chart 2.0".', link:'https://www.gcrmag.com/the-coffee-brewing-control-chart-2-0/' },
+      { kind:'paper', cite:'Liang J, Chan KC, Ristenpart WD (2021). An equilibrium desorption model for the strength and extraction yield of full immersion brewed coffee. Scientific Reports 11:6904. (Its introduction describes Lockhart\'s ideal.)', link:'https://doi.org/10.1038/s41598-021-85787-1' },
+      { kind:'article', cite:'Specialty Coffee Association, 25 Magazine issue 15, "How Hot is Hot Enough? Brew Temperature, Sensory Profile, and Consumer Acceptance of Brewed Coffee".', link:'https://sca.coffee/sca-news/25/issue-15/how-hot-is-hot-enough-brew-temperature-sensory-profile-and-consumer-acceptance-of-brewed-coffee' }] },
+  { id:'sour', claim:'Sour coffee is under-extracted, so grind finer.', tier:'partly',
+    verdict:'In drip tests sourness fell as extraction rose, but the cause is not settled.',
+    found:['A reanalysis of drip-coffee tests (a conference poster by Batali and colleagues) found sourness rose with strength and fell as extraction rose.',
+      'Titratable acidity, a measure of acid content, changed only slightly with extraction while sourness changed more. The authors say other factors contribute and need chemical analysis.',
+      'In a lab test of immersion brews all diluted to 2 % strength, hot brews tasted more sour and more bitter than cold brews, although hot brews had extracted more (about 22 % against about 19.6 %). The authors note the simple rule does not apply to full immersion brews over a wider range of temperatures.',
+      'Grind size gave a more complicated picture in two lab tests. In immersion at equilibrium, finer grinds gave slightly higher extraction, but only within about 4 points across a wide range of particle sizes. In a French press test, the finest grinder setting extracted the most, while a fine fraction sieved to a single narrow size range extracted worst, so how spread out the sizes are matters, not only how fine they are.'],
+    limits:['The details here come from a conference poster, which is not peer reviewed and covers drip brewing only. The same work was later published in ACS Food Science & Technology; we could not open that paper.', 'These are lab brews. None of them tested fixing a sour drip coffee with a finer grind, or the advice of changing one thing and tasting again, which is what NeuroBrew suggests.'],
+    app:'NeuroBrew words it as "often goes with" and suggests one change at a time, so you can see what helped.',
+    sources:[{ kind:'poster', cite:'Batali et al. (2021). Conference poster S8-P-03, ASIC 2021, on titratable acidity, pH and perceived sourness in drip brewed coffee.', link:'https://alphavisa.com/asic/2021/documents/eposters/S8-P-03_5067_BATALI.pdf' },
+      { kind:'paper', cite:'Batali ME, Lim LX, Liang J, Yeager SE, Thompson AN, Han J, Ristenpart WD, Guinard J-X (2022). Sensory analysis of full immersion coffee: cold brew is more floral, and less bitter, sour, and rubbery than hot brew. Foods 11:2440.', link:'https://doi.org/10.3390/foods11162440' },
+      { kind:'paper', cite:'Liang J, Chan KC, Ristenpart WD (2021). An equilibrium desorption model for the strength and extraction yield of full immersion brewed coffee. Scientific Reports 11:6904.', link:'https://doi.org/10.1038/s41598-021-85787-1' },
+      { kind:'paper', cite:'Angeloni G, Masella P, Spadi A, Guerrini L, Corti F, Bellumori M, Calamai L, Innocenti M, Parenti A (2023). Using ground coffee particle size and distribution to remodel beverage properties. European Food Research and Technology 249:1247-1256.', link:'https://doi.org/10.1007/s00217-023-04210-3' }] },
+  { id:'gas', claim:'Freshly roasted coffee gives off gas, mostly in the first weeks.', tier:'solid',
+    verdict:'Yes. Gas release has been measured: it is fastest early, rises with roast level, and grinding lets much of it out at once.',
+    found:['Smrke and colleagues tracked whole beans for more than 400 hours. A light roast was still releasing gas at about a month. Darker roasts released more in total: about 2.5 to 2.8 mg/g for light roasts, 4.7 to 6.6 for medium and 8.5 to 11.9 for dark.',
+      'In freshly roasted coffee, up to 75 % of the trapped gas came out during grinding and the first 90 seconds.',
+      'An SCA article, reading a figure from the SCA Coffee Freshness Handbook, says degassing is rapid for roughly the first 20 days.'],
+    limits:['They measured gas, not taste, and give no ideal rest time.', 'The tests ran at 35°C to speed up measurement.'],
+    app:'NeuroBrew\'s freshness check is a separate matter: see the next claim.',
+    sources:[{ kind:'paper', cite:'Smrke S, Wellinger M, Suzuki T, Balsiger F, Opitz SEW, Yeretzian C (2018). Time-resolved gravimetric method to assess degassing of roasted coffee. Journal of Agricultural and Food Chemistry 66:5293-5300.', link:'https://digitalcollection.zhaw.ch/handle/11475/12175' },
+      { kind:'article', cite:'Specialty Coffee Association, "Coffee Decoded: What is fresh coffee?".', link:'https://sca.coffee/sca-news/coffee-decoded-9-fresh-coffee' }] }
+];
+const FOLK_B = [
+  { id:'rest', claim:'There is a best number of days to rest coffee after roasting.', tier:'practice',
+    verdict:'Gas release is measured, but we found no study that ties days after roast to taste and names a best day.',
+    found:['The SCA article on fresh coffee calls about three weeks "fresh" for whole beans and about an hour for ground coffee. As we read it, that is drawn from the degassing data and is not a tasting test, and it names no single best day.',
+      'The degassing study found a light roast still releasing gas at about a month (see the claim about gas), so degassing does not end at one fixed day.'],
+    limits:['Our search for rest-time evidence turned up roaster and retailer pages, not controlled tasting studies. That does not prove none exist.', 'Roasters differ, so the bag\'s own advice should come first.'],
+    app:'The windows in NeuroBrew\'s freshness check come from roaster and barista guides. The app says they are typical figures and tells you to follow the bag if it gives its own advice.',
+    sources:[{ kind:'article', cite:'Specialty Coffee Association, "Coffee Decoded: What is fresh coffee?".', link:'https://sca.coffee/sca-news/coffee-decoded-9-fresh-coffee' },
+      { kind:'paper', cite:'Smrke S, Wellinger M, Suzuki T, Balsiger F, Opitz SEW, Yeretzian C (2018). Time-resolved gravimetric method to assess degassing of roasted coffee. Journal of Agricultural and Food Chemistry 66:5293-5300.', link:'https://digitalcollection.zhaw.ch/handle/11475/12175' }] },
+  { id:'bloom', claim:'Blooming improves your brew.', tier:'practice',
+    verdict:'The gas is real, but we found no controlled test showing that a bloom, or a longer one, makes the coffee taste better.',
+    found:['The bloom is where trapped carbon dioxide visibly escapes when hot water meets fresh coffee (see the claim about gas).',
+      'A V60 experiment run by a barista-training company varied only the bloom water, from 1:1 to 8:1 of the coffee weight. Strength (TDS) rose with bloom size, and the rate at which the water ran through fell steadily. Its authors wrote that it is "impossible to say whether the bloom itself is increasing extraction".',
+      'That page recommends 2 to 3 times the coffee weight in bloom water, and notes that Scott Rao suggests 3:1 and Matt Perger used more than 4:1. It gives no bloom times.'],
+    limits:['The experiment is a company\'s own test. It reports no statistics or number of brews, and it is not peer reviewed.', 'No peer-reviewed study of bloom time turned up in our search.'],
+    app:'NeuroBrew\'s bloom time is common practice (30 or 45 seconds). It waits longer for fresher coffee, and what counts as fresh is our own threshold.',
+    sources:[{ kind:'blog', cite:'Barista Hustle (a barista-training company), a V60 bloom-volume experiment (15 g of coffee, 250 g of water).', link:'https://www.baristahustle.com/?p=348621' }] },
+  { id:'water', claim:'The minerals in water matter, and there is an ideal water mix.', tier:'partly',
+    verdict:'The SCA publishes target ranges, but we found little controlled taste testing, and no single ideal.',
+    found:['Hendon, Colonna-Dashwood and Colonna-Dashwood (2014) estimated by computer how sodium, magnesium and calcium ions bind to coffee compounds. It suggests a mechanism. The abstract reports no taste tests.',
+      'An SCA magazine article by a coffee researcher argues that alkalinity matters more than pH for the acidity you taste. It says hardness had an insignificant effect on extraction between 20 and 250 ppm, citing unnamed measurements.',
+      'Part of that article concerns scale in equipment, which is a separate matter from taste.'],
+    limits:['We could not open the SCA water standard itself in this check, so NeuroBrew quotes its figures from the Science Audit, not from a source opened here.', 'The espresso ranges in the article are proposals, not an adopted standard.'],
+    app:'NeuroBrew points to water as a suspect to test, one change at a time, and quotes the SCA\'s alkalinity target of about 40 mg/L.',
+    sources:[{ kind:'paper', cite:'Hendon CH, Colonna-Dashwood L, Colonna-Dashwood M (2014). The role of dissolved cations in coffee extraction. Journal of Agricultural and Food Chemistry 62(21):4947-4950.', link:'https://doi.org/10.1021/jf501687c' },
+      { kind:'article', cite:'Wellinger M, Specialty Coffee Association, 25 Magazine issue 9, "Water and Coffee Acidity: How to Adapt Your Water for Different Extraction Methods".', link:'https://sca.coffee/sca-news/25/issue-9/english/water-and-coffee-acidity-how-to-adapt-your-water-for-different-extraction-methods-25-magazine-issue-9-pxjby' }] },
+  { id:'microns', claim:'A grinder setting means a particle size in microns.', tier:'partly',
+    verdict:'Micron charts are approximate: a grinder makes a spread of sizes at every setting, and the spread moves with the coffee.',
+    found:['Angeloni and colleagues ground coffee on an EK43 at three settings. In their introduction they state that a grinder produces two size fractions whatever the setting. Their micron figures are sieve openings, not measured particle diameters.',
+      'Royal Coffee sieved the output of several EK43 grinders. Well-aligned grinders from the same EK43 family agreed closely at one setting. On average, dark roast gave more than 10 % more fines than light roast across settings, and even the coarsest settings left 2.5 to 7 % fines.'],
+    limits:['The Royal Coffee measurements are a roaster\'s own and say so: they are not peer reviewed.', 'One grinder family, one coffee and, in the French press study, one brewing method. The Royal Coffee tests were sieve measurements, not brews.'],
+    app:'NeuroBrew places click numbers by grind size within your grinder maker\'s published range, and says to treat them as a starting point.',
+    sources:[{ kind:'paper', cite:'Angeloni G, Masella P, Spadi A, Guerrini L, Corti F, Bellumori M, Calamai L, Innocenti M, Parenti A (2023). Using ground coffee particle size and distribution to remodel beverage properties. European Food Research and Technology 249:1247-1256.', link:'https://doi.org/10.1007/s00217-023-04210-3' },
+      { kind:'blog', cite:'Royal Coffee, a roaster\'s measurements of EK43 grinder alignment, settings and roast degree.', link:'https://royalcoffee.com/grinder-alignment-an-evaluation-of-consistency-cupping-settings-and-the-impact-of-roast-degree/' }] },
+  { id:'ice', claim:'For iced coffee, brew hot over ice, with about 40 % of the water as ice.', tier:'practice',
+    verdict:'The dilution arithmetic is simple, but we found no taste study of hot coffee brewed over ice.',
+    found:['Ice is frozen water, so the share of ice sets the strength of the finished cup by simple arithmetic: brew stronger, and let the ice make up the rest.',
+      'One lab study compared cold and hot immersion brews diluted to the same 2 % strength. Cold brew was less bitter, less sour and more floral. Hot coffee poured over ice was not part of the test, and the authors say their explanation may not apply to coffee brewed directly over ice.'],
+    limits:['The arithmetic assumes the ice melts into the cup. Water the grounds keep, and ice left unmelted, change the totals.', 'The cold brew study was underwritten in part by a cold brew equipment supplier.', 'The 40 % share is a convention, and people like different strengths.'],
+    app:'The ice share in NeuroBrew\'s iced brews is common practice, and the exact share is our own.',
+    sources:[{ kind:'paper', cite:'Batali ME, Lim LX, Liang J, Yeager SE, Thompson AN, Han J, Ristenpart WD, Guinard J-X (2022). Sensory analysis of full immersion coffee: cold brew is more floral, and less bitter, sour, and rubbery than hot brew. Foods 11:2440.', link:'https://doi.org/10.3390/foods11162440' }] }
+];
+const FOLK_CLAIMS = FOLK_A.concat(FOLK_B);
+/* lists every way an entry is incomplete: no tier, no verdict, nothing found, no limit, no source, or a source with no kind or no link */
+function folkProblems(list){
+  const out = [], ids = {};
+  (list || FOLK_CLAIMS).forEach(c => {
+    const at = c && c.id ? c.id : '(no id)';
+    if (!c || !c.id) out.push(at + ': no id'); else if (ids[c.id]) out.push(at + ': duplicate id'); else ids[c.id] = 1;
+    if (!c.claim) out.push(at + ': no claim');
+    if (!FOLK_TIERS[c.tier]) out.push(at + ': unknown tier');
+    if (!c.verdict) out.push(at + ': no verdict');
+    if (!Array.isArray(c.found) || !c.found.length) out.push(at + ': nothing found');
+    if (!Array.isArray(c.limits) || !c.limits.length) out.push(at + ': no limits');
+    if (!c.app) out.push(at + ': no line on what the app does');
+    if (!Array.isArray(c.sources) || !c.sources.length) out.push(at + ': no sources');
+    else c.sources.forEach((s, i) => { if (!FOLK_KINDS[s.kind]) out.push(at + ': source ' + (i + 1) + ' has no kind'); if (!/^https:\/\//.test(s.link || '')) out.push(at + ': source ' + (i + 1) + ' has no https link'); if (!s.cite) out.push(at + ': source ' + (i + 1) + ' has no citation'); });
+  });
+  return out;
+}
 /*ENGINE_END*/
 (function(){
 'use strict';
@@ -6401,7 +6647,7 @@ function loadDraft(){
     a.lastTotal = typeof src.lastTotal === 'number' ? src.lastTotal : null;
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
-    const ok = ['start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','tend','guide','tools','yield','ratio'];
+    const ok = ['start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','tend','guide','tools','yield','ratio','cost','folk'];
     a.screen = ok.includes(src.screen) ? src.screen : 'start';
     /* a saved timer comes back only if it is recent: running for under 45 minutes in all, or paused within the last 30 minutes */
     { const ts = src.timerSave, now = Date.now();
@@ -6455,10 +6701,11 @@ const PARENT = {
   start:null, coffee:'start', brew:'coffee', gear:() => gearFrom === 'recipe' ? 'recipe' : 'brew', recipe:() => recipeVia === 'gear' ? 'gear' : 'brew', change:'recipe', ready:'recipe', timer:'ready',
   cup:() => app.cupBrew ? (isMachine(app.brew.method) ? 'recipe' : 'ready') : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', detail:'history',
   learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'start'),
+  folk:() => (folkFrom && folkFrom !== 'folk' && folkFrom !== 'timer') ? folkFrom : (app.coffee.name ? 'coffee' : 'start'),
   tend:() => (tendFrom && tendFrom !== 'tend' && tendFrom !== 'timer') ? tendFrom : (app.coffee.name ? 'coffee' : 'start'),
   guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'start'),
   compare:() => (cmpFrom && cmpFrom !== 'compare' && cmpFrom !== 'timer') ? cmpFrom : (app.coffee.name ? 'coffee' : 'start'),
-  tools:() => (toolsFrom && toolsFrom !== 'tools' && toolsFrom !== 'yield' && toolsFrom !== 'ratio' && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'start'), yield:'tools', ratio:'tools'
+  tools:() => (toolsFrom && toolsFrom !== 'tools' && toolsFrom !== 'yield' && toolsFrom !== 'ratio' && toolsFrom !== 'cost' && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'start'), yield:'tools', ratio:'tools', cost:'tools'
 };
 /* ---------- the phone's Back button ----------
    Every screen change adds one browser-history entry, so Back goes to the previous screen instead of leaving the app, and a Back press with a menu or dialog open closes it first.
@@ -6503,7 +6750,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Tools', yield:'Cup yield', ratio:'Ratio planner', compare:'Compare cups', detail:'Tasting details' };
+  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Tools', yield:'Cup yield', ratio:'Ratio planner', cost:'Cost of coffee', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details' };
   $('topTitle').textContent = sc === 'start' ? '' : (titles[sc] || 'NeuroBrew');
   SCREENS[sc](m);
   refreshAll(); updateBar();
@@ -7155,6 +7402,34 @@ function prepCupEntry(){
   else if (!cupTouched() && !quickTouched() && !state.stars) state.way = tasteChoice() === 'cuppingfirst' ? 'cup' : 'quick';
 }
 
+/* ---------- screen: solid or folklore ---------- */
+let folkFrom = '';
+function goFolk(){ if (app.screen !== 'folk') folkFrom = app.screen === 'timer' ? 'ready' : app.screen; go('folk'); }
+const folkList = items => h('ul', { class:'prep', style:'margin:4px 0 10px' }, items.map(t => h('li', { text:t })));
+function folkSourceNode(s){
+  return h('li', { class:'folk-src', 'data-kind':s.kind }, h('span', { class:'folk-kind', text:FOLK_KINDS[s.kind] }), ' ', s.cite, ' ', h('a', { href:s.link, target:'_blank', rel:'noopener noreferrer', text:'Open the source' }));
+}
+/* one claim: a closed row that shows the verdict, and opens to the findings, the limits, what NeuroBrew does and the sources. New keeps the limits and sources one tap further in. */
+function folkEntry(c, lvl){
+  const T = FOLK_TIERS[c.tier];
+  const sum = h('summary', null, h('span', { class:'folk-tier', 'data-tier':c.tier, text:T.label }), h('span', { class:'folk-claim', text:c.claim }), h('span', { class:'folk-verdict', text:c.verdict }));
+  const more = [h('h4', { class:'folk-h', text:'What it does not show' }), folkList(c.limits), h('h4', { class:'folk-h', text:'What NeuroBrew does' }), h('p', { class:'serif', style:'margin:4px 0 10px', text:c.app }),
+    h('h4', { class:'folk-h', text:'Sources' }), h('ul', { class:'folk-srcs' }, c.sources.map(folkSourceNode))];
+  const body = [h('h4', { class:'folk-h', text:'What the research found' }), folkList(c.found)];
+  if (lvl === 'new') body.push(h('details', { class:'folk-more' }, h('summary', { text:'Limits and sources' }), h('div', null, more)));
+  else body.push(...more);
+  return h('details', { class:'folk', id:'folk-' + c.id, 'data-tier':c.tier }, sum, h('div', { class:'folk-body' }, body));
+}
+function screenFolk(m){
+  const lvl = level();
+  m.append(h('h1', { text:'Solid or folklore?' }), h('p', { class:'lede', text:'What published research says about common brewing advice. Each claim gets one verdict, and the sources are there for you to check.' }));
+  m.append(h('div', { class:'card', id:'folkKey' }, h('h3', { text:'What the verdicts mean' }), h('ul', { class:'folk-legend' }, Object.keys(FOLK_TIERS).map(k => h('li', { 'data-tier':k }, h('span', { class:'folk-tier', 'data-tier':k, text:FOLK_TIERS[k].label }), ' ' + FOLK_TIERS[k].text)))));
+  const list = h('div', { class:'folk-list', id:'folkList' }, FOLK_CLAIMS.map(c => folkEntry(c, lvl)));
+  m.append(list);
+  m.append(h('p', { class:'fine', id:'folkNote', text:'This page reports what the sources say, and a verdict can change when new research appears. We read these sources in October 2026. Where a source was read only through someone else\'s summary, the finding says so. Sources marked as not peer reviewed are here because they were the only data we found, so weigh them accordingly. A verdict is about the claim as people phrase it, not about the whole subject.' }));
+  const back = typeof PARENT.folk === 'function' ? PARENT.folk() : PARENT.folk;
+  m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
+}
 /* ---------- screen: learn ---------- */
 let learnFrom = '';
 function goLearn(){ if (app.screen !== 'learn') learnFrom = app.screen === 'timer' ? 'ready' : app.screen; go('learn'); }
@@ -8490,11 +8765,12 @@ function screenReady(m){
 }
 /* ---------- screen: tools ---------- */
 let toolsFrom = '';
-function goTools(){ if (app.screen !== 'tools' && app.screen !== 'yield' && app.screen !== 'ratio') toolsFrom = app.screen === 'timer' ? 'ready' : app.screen; go('tools'); }
+function goTools(){ if (app.screen !== 'tools' && app.screen !== 'yield' && app.screen !== 'ratio' && app.screen !== 'cost') toolsFrom = app.screen === 'timer' ? 'ready' : app.screen; go('tools'); }
 /* One row per tool. Add a tool here and it shows up in the list; the Menu stays one row long. */
 const TOOLS = [
   { id:'yield', name:'Cup yield', text:'How much ends up in your cup, and how much water to pour for the cup you want', open:() => goYield() },
-  { id:'ratio', name:'Ratio and strength planner', text:'The ratio for the strength you want, and how much water to add to a strong brew', open:() => goRatio() }
+  { id:'ratio', name:'Ratio and strength planner', text:'The ratio for the strength you want, and how much water to add to a strong brew', open:() => goRatio() },
+  { id:'cost', name:'Cost of coffee', text:'What a cup costs from the price of a bag, and what you spend a month', open:() => goCost() }
 ];
 function screenTools(m){
   m.append(h('h1', { text:'Tools' }), h('p', { class:'lede', text:'Small helpers for the numbers behind a good cup.' }));
@@ -8503,6 +8779,91 @@ function screenTools(m){
   m.append(list);
   const back = typeof PARENT.tools === 'function' ? PARENT.tools() : PARENT.tools;
   m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
+}
+/* ---------- screen: cost of coffee ----------
+   Nothing here is kept in your saved work or your history file. The Save costs button writes a separate small CSV (neurobrew-costs.csv). */
+let cs = null, csHost = null;
+function goCost(){ if (!cs) csStart(); go('cost'); }
+const csBag = (name, roaster) => ({ name:name || '', roaster:roaster || '', price:'', size:'', unit:'g' });
+function csStart(){
+  const b = app.brew, dose = b.method && b.water > 0 && b.ratio >= 1.5 && b.ratio <= 20 ? Math.round(b.water / b.ratio * 2) / 2 : 20;
+  cs = { sym:'$', dose, cups:'2', compare:false, a:csBag(app.coffee.name, app.coffee.roaster), b:csBag('', ''), open:{ sym:false, work:false } };
+}
+const csLabel = (i) => { const x = i ? cs.b : cs.a; return x.name.trim() || (i ? 'Bag B' : (cs.compare ? 'Bag A' : 'Your coffee')); };
+const csMoney = x => cs.sym + (Math.round(x * 100) / 100).toFixed(2);
+const csNote = { price:'Enter the price of the bag.', size:'Enter the size of the bag.', dose:'Enter your dose in grams, between 1 and 200.', 'dose-over-bag':'Your dose is bigger than the bag.' };
+const csCalc = x => costOne({ price:x.price, size:x.size, unit:x.unit, dose:cs.dose, cups:cs.cups });
+function csOneNodes(x, c){
+  const out = [h('div', { class:'yc-rlab', text:csLabel(x === cs.b ? 1 : 0) + ' costs' }), h('div', { class:'yc-big', 'data-cup':'1' }, csMoney(c.perCup), h('small', { text:' a cup' }))];
+  if (c.perDay != null) out.push(h('div', { class:'yc-line' }, h('b', { text:csMoney(c.perDay) + ' a day, ' + csMoney(c.perWeek) + ' a week, ' + csMoney(c.perMonth) + ' a month' }), ' at ' + (+cs.cups) + ' cup' + (+cs.cups === 1 ? '' : 's') + ' a day.'));
+  out.push(h('div', { class:'yc-line mute', text:'The bag makes about ' + Math.floor(c.cupsInBag) + ' cups' + (c.daysInBag != null ? ' and lasts about ' + (Math.round(c.daysInBag * 10) / 10) + ' days.' : '.') }));
+  return out;
+}
+function csResultNodes(){
+  const bags = cs.compare ? [cs.a, cs.b] : [cs.a], calc = bags.map(csCalc), out = [];
+  if (!cs.compare){
+    return calc[0].ok ? csOneNodes(cs.a, calc[0]) : [h('p', { class:'fine', style:'margin:0', text:csNote[calc[0].why] || 'Check the numbers.' })];
+  }
+  calc.forEach((c, i) => {
+    out.push(h('div', { class:'cs-one', 'data-bag':i ? 'b' : 'a' }, c.ok ? csOneNodes(bags[i], c) : [h('div', { class:'yc-rlab', text:csLabel(i) }), h('p', { class:'fine', style:'margin:0', text:csNote[c.why] || 'Check the numbers.' })]));
+  });
+  const d = costCompare(calc[0], calc[1]);
+  if (d.ok){
+    const w = d.cheaper === 'a' ? 0 : 1;
+    out.push(h('div', { class:'yc-line', id:'csDiff', 'data-cheaper':d.cheaper }, h('b', { text:d.cheaper === 'same' ? 'The two bags cost about the same a cup.' : csLabel(w) + ' costs ' + csMoney(d.perCup) + ' less a cup, about ' + Math.round(d.pct) + ' % less' + (d.perMonth != null ? ', and ' + csMoney(d.perMonth) + ' less a month.' : '.') }),
+      h('div', { class:'fine', style:'margin-top:4px', text:'This counts cost only. It says nothing about which coffee tastes better.' })));
+  }
+  return out;
+}
+function csLive(){
+  const r = $('csResult'); if (r){ r.textContent = ''; r.append(...csResultNodes()); }
+  const w = $('csWork'); if (w) w.textContent = csWorkText();
+}
+function csWorkText(){
+  const c = csCalc(cs.a); if (!c.ok) return 'Enter a price, a size and a dose to see the working.';
+  const f = x => String(Math.round(x * 1000) / 1000);
+  return 'The bag is ' + f(c.grams) + ' g (' + cs.a.size + ' ' + cs.a.unit + (cs.a.unit === 'oz' ? ', at 28.35 g to the ounce' : cs.a.unit === 'lb' ? ', at 453.6 g to the pound' : '') + '). ' + cs.sym + cs.a.price + ' ÷ ' + f(c.grams) + ' g = ' + cs.sym + f(c.perGram) + ' a gram. A ' + cs.dose + ' g dose costs ' + cs.sym + f(c.perGram) + ' × ' + cs.dose + ' = ' + csMoney(c.perCup) + '.'
+    + (c.perDay != null ? ' A day is ' + cs.cups + ' cups × ' + csMoney(c.perCup) + ' = ' + csMoney(c.perDay) + '; a week is 7 days; a month is 30.44 days (a year divided by 12).' : '');
+}
+function csBagCard(x, i){
+  const id = i ? 'csB' : 'csA', unit = h('div', { class:'yc-mini', role:'group', 'aria-label':'Bag size unit' }, COST_UNITS.map(u => h('button', { type:'button', 'data-u':u[0], 'aria-pressed':String(x.unit === u[0]), text:u[0], onclick:e => { x.unit = u[0]; Array.from(e.currentTarget.parentNode.children).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.u === x.unit))); csLive(); } })));
+  const name = h('input', { id:id + 'Name', class:'yc-text', type:'text', maxlength:'80', value:x.name, placeholder:i ? 'Bag B' : 'Optional' }); name.addEventListener('input', () => { x.name = name.value; csLive(); });
+  return h('div', { class:'card', id }, h('h3', { text:cs.compare ? (i ? 'Bag B' : 'Bag A') : 'The bag' }),
+    h('div', { class:'yc-f wide' }, h('label', { for:id + 'Name', text:'Coffee' }), name),
+    h('div', { class:'yc-row' }, ycNum(id + 'Price', 'Price of the bag', cs.sym, x.price, 0.01, v => { x.price = v; csLive(); }), ycNum(id + 'Size', 'Size of the bag', '', x.size, 1, v => { x.size = v; csLive(); }, x.unit === 'g' ? '340' : x.unit === 'oz' ? '12' : '1')),
+    h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:'Size in' }), unit));
+}
+async function csSave(status){
+  const rows = (cs.compare ? [cs.a, cs.b] : [cs.a]).map(x => ({ coffee:x.name, roaster:x.roaster, sym:cs.sym, price:x.price, size:x.size, unit:x.unit, dose:cs.dose, cups:cs.cups }));
+  if (!rows.some(r => costOne(r).ok)){ status.textContent = 'Enter a price, a size and a dose first.'; return; }
+  const text = costCsv(rows, today()), name = 'neurobrew-costs.csv';
+  try {
+    if (inClaude()){ const dl = await getDownloads(); if (!dl) throw new Error('no downloads'); await dl.save({ filename:name, data:text }); }
+    else plainDownload(text, name);
+    status.textContent = 'Saved ' + name + '.';
+  } catch(e){ status.textContent = 'This view could not save the file. Open NeuroBrew in your browser and try again.'; }
+}
+function csPaint(){
+  const host = csHost; host.textContent = '';
+  host.append(h('h1', { text:'Cost of coffee' }), h('p', { class:'lede', text:'Work out what a cup costs from the price of a bag.' }));
+  host.append(csBagCard(cs.a, 0));
+  if (cs.compare) host.append(csBagCard(cs.b, 1));
+  host.append(h('div', { class:'card', id:'csUse' }, h('h3', { text:'How you brew' }),
+    h('div', { class:'yc-row' }, ycNum('csDose', 'Coffee per cup', 'g', cs.dose, 0.5, v => { cs.dose = parseFloat(v) || 0; csLive(); }), ycNum('csCups', 'Cups a day', '', cs.cups, 1, v => { cs.cups = v; csLive(); }, '2'))));
+  host.append(h('button', { type:'button', class:'btn', id:'csCompareBtn', 'aria-pressed':String(cs.compare), style:'margin:4px 0 12px', text:cs.compare ? 'Compare with one bag only' : 'Compare with a second bag', onclick:() => { cs.compare = !cs.compare; csPaint(); } }));
+  const status = h('p', { class:'fine', id:'csStatus', role:'status', style:'margin:8px 0 0' });
+  host.append(h('div', { class:'card', id:'csOut' }, h('h3', { text:'What it costs' }), h('div', { class:'yc-result', id:'csResult', 'aria-live':'polite' }),
+    h('button', { type:'button', class:'btn block', id:'csSave', style:'margin-top:12px', text:'Save costs (CSV)', onclick:() => csSave(status) }), status,
+    h('p', { class:'fine', style:'margin:10px 0 0', text:'This counts the coffee only, not water, filters, milk or power. Nothing here is kept unless you press Save costs, which makes a separate file and does not touch your history.' })));
+  const fold = (id, key, name, body) => { const d = h('details', { class:'yc-fold', id }, h('summary', { text:name }), h('div', { class:'yc-fbody' }, body)); d.open = !!cs.open[key]; d.addEventListener('toggle', () => { cs.open[key] = d.open; }); return d; };
+  const sym = h('input', { id:'csSym', class:'yc-text', type:'text', maxlength:'3', value:cs.sym, style:'width:6em' }); sym.addEventListener('change', () => { cs.sym = sym.value.trim().slice(0, 3) || '$'; csPaint(); });
+  host.append(fold('csWorkd', 'work', 'How this is worked out', h('p', { class:'fine', id:'csWork', style:'margin:0' })));
+  host.append(fold('csSymd', 'sym', 'Change the currency symbol', h('div', { class:'yc-f' }, h('label', { for:'csSym', text:'Symbol' }), sym)));
+  csLive();
+}
+function screenCost(m){
+  if (!cs) csStart();
+  csHost = h('div', { id:'csHost' }); m.append(csHost); csPaint();
 }
 /* ---------- screen: ratio and strength planner ----------
    Nothing here is saved. The water your grounds keep comes from Cup yield (its band, or your own saved figure). */
@@ -9507,10 +9868,11 @@ function renderSheetBody(){
     rows.append(mi('Start a fresh coffee', 'Clears the form, brew, and scores. Keeps your history.', () => { closeSheet(); resetAll(); }));
     rows.append(mi('My setup', 'Units, level, timer and your gear. Saved in your file.', () => { sheet = { step:'setup' }; renderSheet(); }));
     rows.append(lab('Tools'));
-    rows.append(mi('Tools', 'Cup yield and the Ratio and strength planner', () => { closeSheet(); goTools(); }));
+    rows.append(mi('Tools', 'Cup yield, the Ratio and strength planner and the Cost of coffee', () => { closeSheet(); goTools(); }));
     rows.append(lab('Learn'));
     rows.append(mi('Your tendencies', 'Pictures of what you rate and enjoy, so far', () => { closeSheet(); goTend(); }));
     rows.append(mi('Understanding coffee', 'Your tendencies, how to shop, and what bag details mean', () => { closeSheet(); goLearn(); }));
+    rows.append(mi('Solid or folklore?', 'What the research says about common brewing advice', () => { closeSheet(); goFolk(); }));
     rows.append(mi('Glossary', 'What every term means', () => { sheet = { step:'glossary', q:'', group:'All' }; renderSheet(); }));
     rows.append(lab('Help'));
     rows.append(mi('How to use NeuroBrew', 'A guide to each step and feature', () => { closeSheet(); goGuide(); }));
@@ -10463,6 +10825,24 @@ function quickTriesCard(coffee, opts){
   card.append(ul);
   return card;
 }
+/* method is the METHODS entry the advice is for (null when there is none). Returns null for symptoms the check does not apply to. */
+function bagCheckCard(sym, method){
+  const bc = bagCheck(sym, profileOf(app.coffee, new Date()), method); if (!bc) return null;
+  const card = h('div', { class:'card bagcheck ' + bc.verdict, id:'bagCheck', 'data-verdict':bc.verdict, 'data-state':bc.state, style:'margin-top:16px' },
+    h('h3', { text:bc.title }), h('p', { class:'serif', id:'bagText', style:'margin:4px 0 0;font-size:16px', text:bc.text }));
+  if (bc.verdict === 'unknown') card.append(h('button', { type:'button', class:'btn small', id:'bagAddDate', style:'margin-top:10px', text:'Add the roast date', onclick:() => go('start') }));
+  /* the two small notes sit in a closed row so the card stays short and the suggested change stays near the top */
+  const more = h('details', { class:'bagmore', id:'bagMore', style:'margin-top:8px' }, h('summary', { class:'fine', text:'About this check' }));
+  if (sym === 'sour') more.append(h('p', { class:'fine', id:'bagSour', style:'margin:8px 0 0', text:'Sour here means sharp, like lemon juice. If it was roasty or burnt, pick "Bitter or harsh" instead. If it left your mouth dry, like strong black tea, pick "Dry or puckery".' }));
+  more.append(h('p', { class:'fine', style:'margin:8px 0 0', text:bc.note }));
+  card.append(more);
+  return card;
+}
+/* one line above the choices, only when the last try changed more than one thing, or the same settings gave very different times */
+function trailNudgeNode(t){
+  const n = trailNudge(t); if (!n) return null;
+  return h('div', { class:'notice', id:'trailNudge', 'data-kind':n.kind, style:'border-left-color:var(--gold)' }, h('b', { text:'One thing at a time: ' }), n.text);
+}
 /* ---------- Perfect: the parts of the page ---------- */
 /* The question the page asks, with the nine things you may have tasted. ourPick is the one we chose from the scores ('' for none); between is a note to show above the choices.
    Returns { mark(sym) }, which shows which choice is pressed. */
@@ -10575,6 +10955,7 @@ function screenDialBasic(m){
     if (b && b.machine) return paintMachine();
     const rec = b && b.key ? buildRecipe(app.coffee, b.key, { altitudeFt:app.brew.altitudeFt, grinderKey:app.brew.grinderKey, calib:app.prefs.calib, water:b.water, tech:b.tech, pulseTaste:b.tech_taste, pulseStrength:b.tech_strength, ice:b.tech_ice }, app.adjust, new Date()) : null;
     const fx = applyWaterFirst(fixFor(dialSym, rec, { roast:profileOf(app.coffee, new Date()).roast, methodType:rec ? rec.method.type : '', agit:b ? b.agit : '', tech:b ? b.tech : '', pulseTaste:b ? b.tech_taste : '', pulseStrength:b ? b.tech_strength : '', ice:b ? b.tech_ice : 0.4, plainGrind:level() === 'new' }), dialSym, waterProfile(b ? b.water_type : '', b ? b.water_alk : '', b ? b.water_gh : ''));
+    { const bg = bagCheckCard(dialSym, rec ? rec.method : null); if (bg) out.append(bg); }
     out.append(h('div', { class:'card', style:'margin-top:16px' }, h('h3', { text:'Try this first' }), h('p', { style:'margin:4px 0 0;font-size:18px;font-weight:600', text:fx.primary }),
       fx.why ? h('p', { class:'serif', style:'margin:10px 0 0;font-size:16px' }, h('b', { style:'font-family:var(--ui);font-weight:600', text:'Why: ' }), fx.why) : null,
       fx.secondary ? h('p', { class:'serif muted', style:'margin:12px 0 0;font-size:15.5px', text:fx.secondary }) : null));
@@ -10639,6 +11020,7 @@ function screenDial(m){
   }
   /* which earlier try the next brew starts from: one line, with the choice behind "Change" */
   const pickBase = () => newBag ? newBag.base : (t.startBest && dialBasePick === 'last') ? t.last : t.base;
+  { const nj = trailNudgeNode(t); if (nj) m.append(nj); }
   m.append(dialStartLine(t, newBag, pickBase, () => paint()));
   const out = h('div', { id:'dialOut' }); m.append(out);
   function paint(){
@@ -10660,7 +11042,9 @@ function screenDial(m){
       + (tr.helped && !tr.hurt && !tr.same ? 'It helped then.' : tr.hurt && !tr.helped && !tr.same ? 'It scored lower then, so weigh your own result over the general rule.' : tr.same && !tr.helped && !tr.hurt ? 'It made no clear change then.' : 'It helped ' + tr.helped + ', hurt ' + tr.hurt + ' and made no clear change ' + tr.same + ' time' + (tr.helped + tr.hurt + tr.same === 1 ? '' : 's') + ', so the result is mixed.') : '';
     const note = chg => ({ symptom:dialSym, change:chg, fromId:base.id });
     const chgName = dialChangeName(fx.adjust, dialSym);
-    if (adv.notRecipe) out.append(h('div', { class:'notice', id:'notRecipe', style:'margin-top:16px' }, h('b', { text:'Check this first: ' }), adv.notRecipe.text));
+    const bag = bagCheckCard(dialSym, rec.method);
+    if (adv.notRecipe && !(bag && adv.notRecipe.age)) out.append(h('div', { class:'notice', id:'notRecipe', style:'margin-top:16px' }, h('b', { text:'Check this first: ' }), adv.notRecipe.text));
+    if (bag) out.append(bag);
     if (adv.stuck) out.append(h('div', { class:'notice', id:'stuckNote', style:'margin-top:16px' }, h('b', { text:'Maybe not the settings: ' }), adv.stuck.text));
     const blocked = !!adv.blocked && dialSym !== 'great';
     if (blocked && adv.alt){
@@ -11256,7 +11640,7 @@ function screenDetail(m){
     h('button', { type:'button', class:'btn danger block', text:'Delete this tasting', onclick:() => openDelete(new Set([o._i]), true) })));
 }
 
-const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, tend:screenTend, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, compare:screenCompare };
+const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, tend:screenTend, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, folk:screenFolk, compare:screenCompare };
 
 $('homeBtn').innerHTML = '<svg class="burger" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span class="ml">Menu</span>';
 $('homeBtn').addEventListener('click', openMenu);

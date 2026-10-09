@@ -2,6 +2,20 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 50: Solid or folklore?
+
+2026-10-09 01:31:44 UTC
+
+- New page in the Menu, under Learn: Solid or folklore? It takes ten pieces of common brewing advice (water temperature, the 18 to 22 percent extraction zone, sour coffee, gas from fresh coffee, rest days, bloom, water minerals, grinder microns, iced coffee) and gives each one verdict, from Solid to Not supported.
+- Each claim shows what the research found, what it does not show, what NeuroBrew does about it, and its sources, with each source marked as a peer-reviewed paper, a trade article or a company's own test. The page says where it could not open a source itself.
+
+## Release 49: Bag or brew, and Cost of coffee
+
+2026-10-09 00:32:35 UTC
+
+- On a sour, flat, thin or uneven cup, the Perfect step first checks the roast date: is the bag too fresh or too old for a change of settings to help? It also says when your last try changed more than one thing, or when the same settings gave very different times.
+- New Cost of coffee tool (Menu, then Tools): what a cup costs from the price and size of a bag in grams, ounces or pounds, per day, week and month, with a second bag to compare. Save costs makes a separate file, neurobrew-costs.csv, and changes nothing in your history.
+
 ## Release 48: Compare your cups, a planner and honest wording
 
 2026-10-08 23:40:03 UTC
