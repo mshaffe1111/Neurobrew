@@ -972,6 +972,45 @@ details.folk > summary::-webkit-details-marker{ display:none; }
 #prFile{ width:100%; min-width:0; }
 #prPaste{ width:100%; min-height:90px; box-sizing:border-box; }
 #prSort{ flex-wrap:wrap; }
+/* Taste your tastes */
+.tt-list{ list-style:none; margin:0; padding:0; }
+.tt-row{ display:flex; flex-direction:column; gap:3px; padding:10px 0; border-top:1px solid var(--edge); }
+.tt-row:first-child{ border-top:0; }
+.tt-amt{ font-size:.95rem; }
+.tt-cups{ margin:10px 0 0; padding-left:1.4em; }
+.tt-cups li{ padding:3px 0; }
+.wview .wtop{ display:flex; flex-direction:column; gap:10px; }
+.wview .wtop .seg{ width:100%; }
+.wview .wtop input[type=search]{ width:100%; }
+.wakerow{ margin-top:10px; }
+.wakerow .btn.small{ margin:0; }
+.wakebtn[aria-pressed="true"]{ background:var(--leaf); color:#fff; border-color:var(--leaf); }
+.wakebtn[aria-pressed="true"]::before{ content:'\2713'; margin-right:6px; font-weight:800; }
+.wbody{ margin-top:10px; }
+.wscreen .wheelwrap{ width:min(100%, 460px); max-width:460px; }
+.wcrumb{ display:flex; align-items:center; flex-wrap:wrap; gap:2px; font-size:15px; color:var(--muted); margin:6px 0 2px; }
+.wcrumb .btn.link{ margin:0; min-height:44px; padding:0 6px 0 0; font-size:15px; }
+.wlist .wfamtitle{ margin:18px 0 6px; }
+.wlist .wfamtitle:first-child{ margin-top:6px; }
+.wfix{ margin:12px 0 0; background:var(--tint); }
+.wlrow{ flex-direction:row; align-items:center; gap:14px; min-height:64px; }
+.wlrow .wltext{ display:flex; flex-direction:column; gap:2px; padding-right:22px; }
+.wlicon{ flex:none; width:46px; height:46px; border-radius:50%; position:relative; box-shadow:0 0 0 2px var(--surface); }
+.wlicon::after{ content:''; position:absolute; inset:14px; border-radius:50%; background:var(--surface); }
+.wlicon.chart{ border-radius:10px; background:var(--tint); border:1px solid var(--line); }
+.wlicon.chart::after{ inset:12px 9px 13px 15px; border-radius:3px; background:color-mix(in srgb, var(--leaf) 25%, transparent); border:2px solid var(--leaf); }
+.wheelsown{ margin-top:14px; }
+.chartwrap svg{ width:100%; height:auto; display:block; max-width:520px; margin:0 auto; }
+.chartin{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+.chartfield{ display:flex; flex-direction:column; gap:4px; }
+.chartfield input{ min-height:44px; font-size:16px; }
+.chartfold{ margin-top:12px; }
+.chartfold summary{ min-height:44px; display:flex; align-items:center; cursor:pointer; font-weight:600; }
+.wedge:focus, .hub:focus{ outline:none; }
+.hub:focus-visible{ outline:none; stroke:var(--focus) !important; stroke-width:3.5 !important; }
+.hub{ cursor:pointer; }
+.chartfold summary::before{ content:'\25B8'; display:inline-block; margin-right:8px; transition:none; }
+.chartfold[open] summary::before{ transform:rotate(90deg); }
 </style>
 </head>
 <body data-screen="start">
@@ -2610,13 +2649,13 @@ const CUP_GUIDE = {
   fragrance_aroma:{ what:'Fragrance is the smell of the dry grounds. Aroma is the smell once water touches them.',
     how:'Sniff the grounds right after grinding. Sniff again after the water goes on (and after you break the crust, if you are cupping). Score how pleasant, strong, and complex the smell is overall, then pick the words that fit.',
     why:'Most of what we call flavor is smell. A rich, clear aroma is an early sign of fresh, well-roasted coffee.' },
-  flavor:{ what:'The coffee\'s main character: taste and aroma together, from the first sip into the middle of the tasting.',
+  flavor:{ what:'The coffee\'s main character: its taste and the smell you get from inside your mouth, together as one impression.',
     how:'Slurp it loudly. Score how strong, how pleasant, and how layered it is. Distinct, enjoyable flavors score higher than flat or muddled ones.',
     why:'Flavor is the heart of the score and your best clue to what this coffee is.' },
-  aftertaste:{ what:'How long the pleasant flavor lasts after you swallow or spit.',
+  aftertaste:{ what:'The flavor that stays in your mouth and throat after you swallow or spit. The classic SCA form scores how long the pleasant part lasts.',
     how:'After you swallow, notice how long good flavor stays and whether it stays pleasant. A short or unpleasant finish lowers the score; a long, pleasant one raises it.',
     why:'A good coffee keeps tasting good. A bitter, drying, or quickly fading finish points to roast or brew problems.' },
-  acidity:{ what:'The bright, lively quality, like biting into a fresh fruit. It is a good thing in coffee, and it is not the same as sour.',
+  acidity:{ what:'The bright, lively quality, like biting into a fresh fruit. The SCA\'s 2024 tasting standard (SCA-103) defines acidity as the perception of sour taste from the brew, which can vary in strength and character.',
     how:'Score the quality: bright and sweet-tart is high, sharp or harsh is low. Then mark how intense it is from 1 (low) to 5 (high). Quality and intensity are different questions.',
     why:'Acidity gives coffee its fruit and sparkle. Strong acidity that tastes unpleasant often means the coffee was under-extracted.' },
   body:{ what:'The weight and feel of the coffee in your mouth, like the difference between skim milk and cream.',
@@ -2631,7 +2670,7 @@ const CUP_GUIDE = {
   clean_cup:{ what:'No unpleasant impressions from the first sip to the last aftertaste. A "transparent" cup.',
     how:'Tick each cup that has nothing unpleasant in it. An off note, even a small one, loses that cup\'s 2 points.',
     why:'Off-flavors hide good flavors, so a clean cup lets the coffee show itself.' },
-  sweetness:{ what:'A pleasing fullness of flavor, plus any obvious sweetness.',
+  sweetness:{ what:'How sweet the coffee seems, by taste or by sweet smells you notice as you drink (SCA-103, 2024). The classic form also counts a pleasing fullness of flavor.',
     how:'Tick each cup where sweetness comes through. It often shows more as the coffee cools. Think ripe fruit or caramel, not sugar.',
     why:'Sweetness balances acidity and bitterness. A lack of sweetness can point to under-developed, old, or badly brewed coffee.' },
   overall:{ what:'Your whole-cup impression. It is not an average of the other scores.',
@@ -2972,6 +3011,59 @@ const WHEELS = {
 const NEG_NOTES = ['musty','moldy','papery','cardboard','stale','rubbery','medicinal','metallic','vinegar'];
 const MID_NOTES = ['earth','earthy','cedar','wood','woody','leather','mushroom','grass','hay','herbal','green pepper','pea pod','cucumber','smoke','charred','pipe tobacco','tobacco','roasted coffee','winey','boozy','rum','yeasty','overripe','bitter','sour','salty','savory'];
 const ALL_NOTES = new Set();
+/* ---------- wheels beyond smell, taste and finish ----------
+   Mouthfeel: the five words in the SCA's descriptive standard (SCA-103, 2024, section 5.3: rough, oily, smooth, mouth-drying, metallic) are used as they are; the rest are everyday words of our own.
+   The list is short on purpose, so each word is one people use.
+   What to change: every label is a plain reading of the dial-in advice already in engine/16-dialin.js (fixFor). Each pick carries a pattern its advice text must match, so a wheel label can never drift from the advice.
+   Brew control chart: the 1.15-1.35 % strength and 18-22 % extraction box and the zones are the ones judgeBrew (engine/50-extraction.js) already reports, with the same hedged wording. */
+const MOUTH_WHEEL = [
+  { name:'Weight', short:'Weight', hue:205, groups:[['Light', ['watery', 'thin', 'light']], ['Medium', ['medium', 'round']], ['Full', ['full', 'heavy', 'thick', 'syrupy']]] },
+  { name:'Smooth', short:'Smooth', hue:35, groups:[['Smooth', ['smooth', 'silky', 'velvety', 'creamy']], ['Coating', ['oily', 'buttery', 'sticky']]] },
+  { name:'Rough', short:'Rough', hue:100, groups:[['Gritty', ['gritty', 'grainy', 'powdery', 'chalky']], ['Rough', ['rough']]] },
+  { name:'Dry', short:'Dry', hue:8, groups:[['Drying', ['drying', 'puckery', 'astringent']], ['Metallic', ['metallic']]] }
+];
+const MOUTH_NOTE = 'Rough, oily, smooth, mouth-drying (here, drying) and metallic are the SCA\'s own mouthfeel words from its descriptive standard (SCA-103). The rest of the words, and the way they are grouped, are ours. Mostly this is how it feels, not how it tastes. Metallic is partly a smell and a taste too.';
+const WHEEL_OWN = "This is NeuroBrew's own guide. It is not the official SCA / World Coffee Research Coffee Taster's Flavor Wheel, which is their copyrighted work. The official wheel is sold at sca.coffee, and the free WCR Sensory Lexicon is at worldcoffeeresearch.org/resources/sensory-lexicon.";
+/* [label, [], pattern the advice must match]; one family for each way a cup can go wrong (SYMPTOMS in engine/16-dialin.js) */
+const FIX_WHEEL = [
+  { name:'Sour or sharp', short:'Sour', sym:'sour', hue:75, groups:[['Grind finer', [], 'finer'], ['Hotter water', [], 'water temperature'], ['Brew longer', [], 'longer']] },
+  { name:'Bitter or harsh', short:'Bitter', sym:'bitter', hue:345, groups:[['Grind coarser', [], 'coarser'], ['Cooler water', [], 'Lower the water temperature'], ['Weaker ratio', [], 'weaker ratio']] },
+  { name:'Dry or puckery', short:'Dry', sym:'astringent', hue:40, groups:[['Grind coarser', [], 'coarser'], ['Rinse filter', [], 'rinse the paper filter'], ['Stir less', [], 'stirring']] },
+  { name:'Sour and bitter together', short:'Uneven', sym:'uneven', hue:15, groups:[['Stir once', [], 'stir once'], ['Even grind', [], 'consistent grinder']] },
+  { name:'Flat or weak', short:'Weak', sym:'flat', hue:205, groups:[['Stronger ratio', [], 'stronger ratio'], ['Weigh the dose', [], 'Weigh the dose'], ['Fresher beans', [], '30 days']] },
+  { name:'Muddy or silty', short:'Muddy', sym:'muddy', hue:23, groups:[['Pour gently', [], 'gently'], ['Rinse filter', [], 'rinse the paper filter']] },
+  { name:'Thin or hollow', short:'Thin', sym:'thin', hue:205, groups:[['Try immersion', [], 'immersion'], ['Check minerals', [], 'minerals']] },
+  { name:'Too strong or heavy', short:'Strong', sym:'strong', hue:340, groups:[['Weaker ratio', [], 'weaker ratio'], ['Add water', [], 'add a little hot water']] }
+];
+/* the advice behind one pick: { label, primary, secondary, why }. The same words the Perfect step shows, with the grind in words rather than microns. */
+function fixWheelPanel(sym, label){
+  const f = fixFor(sym, null, { plainGrind:true });
+  return { label:label || '', primary:f.primary || '', secondary:f.secondary || '', why:f.why || '' };
+}
+/* the chart's frame and the box (the conventional zone); judgeBrew supplies the words */
+const CHART = { ey:[14, 26], tds:[0.8, 2.0], box:{ ey:[18, 22], tds:[1.15, 1.35] }, high:[22, 24] };
+/* a brew read against the chart, or null when a number is missing or silly. { tds, ey, strength, extraction, lines, off (the point is outside the frame) } */
+function chartRead(tds, ey){
+  const t = parseFloat(tds), e = parseFloat(ey);
+  if (!(t > 0 && t <= 5) || !(e > 0 && e <= 40)) return null;
+  const j = judgeBrew('filter', Math.round(t * 100) / 100, Math.round(e * 10) / 10);
+  return { tds:t, ey:e, strength:j.strength, extraction:j.extraction, lines:j.lines, off:t < CHART.tds[0] || t > CHART.tds[1] || e < CHART.ey[0] || e > CHART.ey[1] };
+}
+/* where a brew sits in the frame, 0 to 1 across and 0 to 1 up, held at the edge when it is outside */
+function chartPos(tds, ey){
+  const c = v => Math.max(0, Math.min(1, v));
+  return { x:c((ey - CHART.ey[0]) / (CHART.ey[1] - CHART.ey[0])), y:c((tds - CHART.tds[0]) / (CHART.tds[1] - CHART.tds[0])) };
+}
+/* what the Wheels area lists, in order. data = the families; flat = two rings only, with no zooming; chart = a chart, not a wheel */
+const WHEEL_LIST = [
+  { key:'smell', title:'Smell wheel', center:'Smell', blurb:'What the dry grounds and the brewed coffee remind you of', data:AROMA_WHEEL, guide:WHEELS.fragrance_aroma.guide, note:WHEEL_OWN },
+  { key:'taste', title:'Taste wheel', center:'Taste', blurb:'Basic tastes first, then the flavors', data:FLAVOR_WHEEL, guide:WHEELS.flavor.guide, note:WHEEL_OWN },
+  { key:'finish', title:'Finish wheel', center:'Finish', blurb:'What is left after you swallow', data:AFTER_WHEEL, guide:WHEELS.aftertaste.guide, note:WHEEL_OWN },
+  { key:'mouth', title:'Mouthfeel wheel', center:'Feel', blurb:'Weight, smoothness, roughness and dryness', data:MOUTH_WHEEL, guide:'Press the coffee against the roof of your mouth. Notice how it feels, not how it tastes.', note:MOUTH_NOTE },
+  { key:'fix', title:'What do I change?', center:'Fix', blurb:'Pick what the cup tastes like, then see what to try', data:FIX_WHEEL, flat:true, guide:'Change one thing at a time, then taste again.' },
+  { key:'chart', title:'Brew control chart', blurb:'Strength against extraction, and what each part of it tends to taste like', chart:true },
+  { key:'kit', title:'Aroma kit wheel', center:'Kit', blurb:'For the 36-vial coffee kit', data:KIT_WHEEL, guide:KIT_GUIDE, note:KIT_CREDIT }
+];
 [AROMA_WHEEL, FLAVOR_WHEEL].forEach(w => w.forEach(f => f.groups.forEach(g => g[1].forEach(x => ALL_NOTES.add(x)))));
 function noteTone(w){
   w = String(w || '').toLowerCase();
@@ -3095,11 +3187,11 @@ const TERMS = [
   { key:'dose', title:'Dose', pat:'dose', def:'The weight of the coffee grounds you use.' },
   { key:'microns', title:'µm (microns)', pat:'µm|microns?', def:'A micrometer, or micron, is a tiny unit of length. We use it to say how coarse the grounds are. Bigger numbers mean coarser grounds.' },
   { key:'masl', title:'masl', pat:'masl', def:'Meters above sea level. It tells you how high the coffee farm is.' },
-  { key:'acidity', title:'Acidity', pat:'acidity', def:'In coffee, the bright, lively quality, like biting into a fresh apple. It is not the same as sour.' },
+  { key:'acidity', title:'Acidity', pat:'acidity', def:'In coffee, the sour taste of the cup, from bright and lively, like a fresh apple, to sharp and harsh. This follows the SCA tasting standard (SCA-103), which defines it as the perception of sour taste from the brew.' },
   { key:'body', title:'Body', pat:'body', def:'How heavy or light the coffee feels in your mouth, like the difference between skim milk and cream.' },
   { key:'mouthfeel', title:'Mouthfeel', pat:'mouthfeel', def:'How the coffee feels in your mouth: light, creamy, rough, and so on.' },
   { key:'astringent', title:'Astringent', pat:'astringen(?:t|cy)', def:'A dry, puckery feeling in your mouth, like strong black tea.' },
-  { key:'aftertaste', title:'Aftertaste', pat:'aftertaste', def:'What you taste after you swallow, and how long it lasts.' },
+  { key:'aftertaste', title:'Aftertaste', pat:'aftertaste', def:'The flavor that stays in your mouth and throat after you swallow or spit, and how long it lasts.' },
   { key:'taint', title:'Taint', pat:'taints?', def:'A small off-taste that you can notice but that does not take over the cup.' },
   { key:'fault', title:'Fault', pat:'faults?', def:'A big off-taste that takes over the cup and makes it unpleasant.' },
   { key:'uniformity', title:'Uniformity', pat:'uniformity', def:'Whether every cup of the same coffee tastes the same.' },
@@ -3115,7 +3207,7 @@ const TERMS = [
   { key:'tamp', title:'Tamp', pat:'tamp(?:ing)?', def:'Pressing the ground coffee flat and level in the basket.' },
   { key:'portafilter', title:'Portafilter', pat:'portafilter', def:'The handle with a basket that holds the coffee in an espresso machine.' },
   { key:'yield', title:'Yield', pat:'yield', def:'The weight of the liquid coffee in your cup.' },
-  { key:'intensity', title:'Intensity', pat:'intensity', def:'How strong something is, not how good it is.' },
+  { key:'intensity', title:'Intensity', pat:'intensity', def:'How strong something seems, not how good it is.' },
   { key:'degassing', title:'Degassing', pat:'degass(?:ing|es|ed)|degas', def:'Fresh roasted coffee releases carbon dioxide for days to weeks, and darker roasts release it faster. Very fresh coffee can foam and brew unevenly until it settles.' },
   { key:'refractometer', title:'Refractometer', pat:'refractometers?', def:'A small instrument that measures how much is dissolved in your coffee (its TDS), so you can work out extraction.' },
   { key:'dial it in', title:'Perfect', pat:'dial it in|dial-in|dialing in', def:'Making small changes to your brew settings, one at a time, until it tastes the way you want. Coffee people call this dialing in.' }
@@ -3460,7 +3552,7 @@ function judgeBrew(type, tds, ey){
   const eTxt = {
     under:'below 18%, the low edge of the zone people usually aim for. Low extraction often goes with a sour or thin cup (under-extraction), but 18% is a convention, not a cliff: 17.9% and 18.1% are the same cup. Taste decides.',
     ideal:'inside the usual 18–22% zone. That zone is a convention from the 1950s, not a law: its edges are not sharp, and people differ on where they like it.',
-    high:'a little above 22%. Many tasters like this, and a 2013 SCA study found a slight preference for 20–24%. The 22% edge is a convention.',
+    high:'a little above 22%. Many people like this, and a 2013 SCA study of European consumers found a slight preference for 20–24%. The 22% edge is a convention.',
     over:'above 24%, beyond the usual zone. That can mean a harsher cup, but taste decides: bitterness also follows how strong the coffee is.' }[out.extraction];
   out.lines.push('Strength: ' + tds + '% TDS is ' + sTxt + ' (' + (esp ? '8–12%' : '1.15–1.35%') + ').');
   out.lines.push('Extraction: ' + ey + '% is ' + eTxt);
@@ -3887,7 +3979,12 @@ const FAM_COLORS = {
   'Fruit':'#C2255C', 'Floral':'#7B3FA3', 'Sweet':'#F2A93B', 'Nutty and cocoa':'#7A4A2A', 'Spice':'#C2461A', 'Roasted':'#3F4B57',
   'Green and earthy':'#2F7D32', 'Off-smells':'#1D4E89', 'Basic tastes':'#1A7F8E', 'Fermented':'#B7A92F', 'Off-flavors':'#1D4E89',
   'Sweet finish':'#F2A93B', 'Clean finish':'#1A7F8E', 'Fruity and floral':'#C2255C', 'Chocolate and nut':'#7A4A2A', 'Spice and toast':'#C2461A',
-  'Smoky and roasty':'#3F4B57', 'Dry and puckery':'#7B3FA3', 'Bitter and harsh':'#2F7D32', 'Sour and sharp':'#B7A92F', 'Fades quickly':'#1D4E89'
+  'Smoky and roasty':'#3F4B57', 'Dry and puckery':'#B08D57', 'Bitter and harsh':'#6B2737', 'Sour and sharp':'#7CB518', 'Fades quickly':'#6F18AA',
+  /* mouthfeel wheel */
+  'Weight':'#2A6F97', 'Smooth':'#E0952B', 'Rough':'#5E7A4B', 'Dry':'#A23B2A',
+  /* what-do-I-change wheel: one color for each way a cup can go wrong */
+  'Sour or sharp':'#7CB518', 'Bitter or harsh':'#6B2737', 'Dry or puckery':'#B08D57', 'Sour and bitter together':'#C2461A',
+  'Flat or weak':'#6F18AA', 'Muddy or silty':'#7A4A2A', 'Thin or hollow':'#2A6F97', 'Too strong or heavy':'#C2255C'
 };
 const WHEEL_INK = '#1B2B2A';
 function whRgb(h){ return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); }
@@ -3897,16 +3994,37 @@ function whMix(h, w){ return '#' + whRgb(h).map(v => Math.round(v * (1 - w) + 25
 function whInk(h){ return whContrast(h, '#FFFFFF') >= whContrast(h, WHEEL_INK) ? '#FFFFFF' : WHEEL_INK; }
 function whHsl(h, s, l){ s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return '#' + [f(0), f(8), f(4)].map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join(''); }
 function whPalette(fam){
-  const fill = FAM_COLORS[fam.name] || whHsl(fam.hue || 200, 52, 38);
+  const fill = fam.color || FAM_COLORS[fam.name] || whHsl(fam.hue || 200, 52, 38);
   let sel = whMix(fill, 0.3);
   for (const w of [0.3, 0.25, 0.35, 0.2, 0.4, 0.15, 0.45, 0.1, 0.5]){ const t = whMix(fill, w); if (whContrast(t, whInk(t)) >= 4.5){ sel = t; break; } }
-  return { fill, ink:whInk(fill), tintA:whMix(fill, 0.62), tintB:whMix(fill, 0.74), tintSel:sel, selInk:whInk(sel) };
+  let mid = fill;   /* a slightly lighter shade for alternate slices, as light as the text on it allows */
+  for (const w of [0.22, 0.18, 0.14, 0.1, 0.06]){ const t = whMix(fill, w); if (whContrast(t, whInk(t)) >= 4.5){ mid = t; break; } }
+  return { fill, ink:whInk(fill), mid, midInk:whInk(mid), tintA:whMix(fill, 0.62), tintB:whMix(fill, 0.78), tintSel:sel, selInk:whInk(sel) };
 }
 function whFit(txt, radial, arc, max){
   const byArc = arc * 0.62, byLen = radial / (Math.max(1, String(txt).length) * 0.58);
   return Math.round(Math.max(7.5, Math.min(max, byArc, byLen)) * 10) / 10;
 }
 
+/* Share `total` degrees among slices by weight, none under `min` degrees (unless they cannot all fit, then equal). */
+function whSpread(weights, total, min){
+  const n = weights.length; if (!n) return [];
+  if (min * n >= total) return weights.map(() => total / n);
+  const fixed = new Array(n).fill(false), out = new Array(n).fill(0);
+  for (let pass = 0; pass < n; pass++){
+    let sw = 0, left = total; weights.forEach((w, i) => { if (fixed[i]) left -= out[i]; else sw += w; });
+    let again = false;
+    weights.forEach((w, i) => { if (fixed[i]) return; out[i] = left * w / sw; if (out[i] < min){ out[i] = min; fixed[i] = true; again = true; } });
+    if (!again) break;
+  }
+  return out;
+}
+/* Every wheel in one shape: { title, center, fams:[{ name, short, hue, groups:[{ name, words:[{ t (the word), n (a kit vial number, if any) }] }] }] }.
+   The data lists hold words as text, or as { n, name } for the aroma kit; an empty word list is allowed (the what-do-I-change wheel has only two rings). */
+function whNorm(title, center, data){
+  return { title:title, center:center, fams:data.map(f => ({ name:f.name, short:f.short, hue:f.hue, color:f.color, sym:f.sym,
+    groups:f.groups.map(g => ({ name:g[0], pat:g[2] || null, words:g[1].map(w => typeof w === 'string' ? { t:w } : { t:w.name, n:w.n }) })) })) };
+}
 /* why a field changes nothing in the recipe numbers; each one is checked by the tests, which change the field and rebuild every recipe */
 const PAGE_NONE = {
   process:'Sources disagree on which way process should move the grind, temperature or ratio, so none of them is applied.',
@@ -4697,7 +4815,7 @@ const GUIDE_SECTIONS = [
       'Tap Next: What\'s in your cup for one last look. It shows your final settings, what you changed (or why the settings are what they are), what to do before you start, and the steps. Tap Change to go back, or Brew it for a timer with scale targets. You can switch sound off, use a beep, or have a voice read each step. The voice can tell you where you should be along the way, so you do not have to watch the screen. When you have brewed it, tap I brewed it: taste it.'],
     tips:['If you already have earlier tries of this coffee, this screen offers them as a starting point. A new bag of a coffee you know can start from the best brew you kept.'] },
   { id:'cup', title:'5. ' + STEP_NAME.taste + ': smell, sip and score', lead:'Smell, sip hot, sip as it cools.',
-    paras:['There are two ways to taste, and ' + STEP_NAME.taste + ' opens on Quick. Give the coffee stars, which are your own. Say whether you would make it again. Pick the flavors from the bag that you liked, and the ones you did not. Nothing else changes your stars. Tap Add detail to rate the smell, taste, aftertaste, acidity, sweetness and body, each as Good, Okay or Not good.',
+    paras:['There are two ways to taste, and ' + STEP_NAME.taste + ' opens on Quick. Give the coffee stars, which are your own. Say whether you would make it again. Pick the flavors from the bag that you liked, and the ones you did not. Bag notes can nudge what you notice, so try tasting first and read the bag\'s flavors afterward. Nothing else changes your stars. Under How did each part taste?, rate the smell, taste, aftertaste, acidity, sweetness and body, each as Good, Okay or Not good. Smell, taste and aftertaste also have a word wheel to pick from.',
       'Tap Cupping at the top to score step by step, the way a cupper does, on the SCA affective form. Each section asks one question and takes a number from 1 to 9. That number is your impression of quality, how well the coffee delivers that part, and it is not how much you like it. The next section opens when you score the one before it. After Overall you retaste as the cup cools, then say whether it has a defect, and you get a total out of 100. You can skip the retaste, but coffee changes as it cools, so the score may be off. Cupping help sets how much each section explains. You can switch between Quick and Cupping at any time. In My setup you can choose Quick only, Quick first, or Cupping first. If you have a refractometer, you can add your TDS to see the extraction.',
       'When you save, NeuroBrew first asks once whether you want to do the other way too. Tap No to save as it is. With Quick only, it does not ask. Then you choose whether you already have a history file. Saving downloads a file called cuppings.csv with your whole history. If you are tasting several coffees in one sitting, keep each one in this browser and save one file at the end. After a save, the page is cleared and you are back at the start, ready for the next coffee. To work on the coffee you just saved, tap ' + STEP_NAME.perfect + ' the next brew on the Saved sheet, or open it later from Your tastings.'] },
   { id:'dial', title:'6. ' + STEP_NAME.perfect + ': make the next brew better', lead:'Your scores point to one change.',
@@ -4721,7 +4839,9 @@ const GUIDE_SECTIONS = [
       'Each bar counts coffees, and each dot is one coffee, so you can check every one. A picture appears when there is enough to draw. New shows one picture and folds the rest. Comfortable folds each card with a Why? note. Expert shows everything open, with ranges and a table you can save.',
       'After you have tasted five different coffees, NeuroBrew can show which details your higher-scored coffees share (roast, process, elevation, origin, varietal). It also shows how sure that is, and what to look for on a bag. Cups of the same coffee are averaged first, so brewing one coffee five times does not count as five coffees.',
       'This describes what you scored, not what is true of the coffee. Taste is personal, and a handful of coffees is a small sample. The same screen explains what every detail on a bag means, and compares two things side by side.',
-      'Solid or folklore? is in the menu under Learn. It takes common brewing advice and gives each claim one verdict: Solid, Partly supported, Practice only or Not supported. Tap a claim to see what the research found, what it does not show, what NeuroBrew does about it, and the sources. A verdict is about the claim as people phrase it. One study is never treated as proof, and a verdict can change when new research appears.'] },
+      'Solid or folklore? is in the menu under Learn. It takes common brewing advice and gives each claim one verdict: Solid, Partly supported, Practice only or Not supported. Tap a claim to see what the research found, what it does not show, what NeuroBrew does about it, and the sources. A verdict is about the claim as people phrase it. One study is never treated as proof, and a verdict can change when new research appears.',
+      'Taste your tastes is also under Learn. It shows how to make the SCA\'s reference solutions for salty, sweet, sour and savory at home, with the amounts in grams. You taste each, then a helper pours them in a mixed order for you to name. Nothing is saved. We found no study showing it improves how you taste coffee.',
+      'Wheels is also under Learn. It holds the smell, taste, finish and mouthfeel wheels and the aroma kit wheel. It also has a wheel of what to change when a cup tastes wrong, and a brew control chart. Tap a slice to zoom in, and tap the middle to go back. A List button shows the same words as text, and a search box finds a word. Keep screen on stops the screen dimming while you taste, where your phone allows it. Nothing here is saved. We found no study showing that a flavor wheel helps beginners taste more.'] },
   { id:'helpers', title:'Levels, underlined words and the glossary', lead:'Ways to get more or less explanation.',
     paras:['New to brewing keeps things short, Comfortable explains the reasons, and Expert shows every number. Change it any time from the start screen or the menu.',
       'My setup in the menu keeps your units, level, timer sound, taste card view and gear (your grinder, water and filter) in one place. New brews start with your gear filled in. The setup is saved inside your history file each time you save, so uploading the file on another device brings it back.',
@@ -5326,6 +5446,45 @@ const REGION_GUIDE = {
     tip:'Natural coffees are lively. If it tastes boozy, brew a little cooler or use a slightly weaker ratio.' }
 };
 (function mergeOriginAliases(){ ORIGINS.forEach(o => { (ORIGIN_EXTRA_ALIASES[o.key] || []).forEach(a => { if (!o.aliases.includes(a)) o.aliases.push(a); }); }); })();
+/* ---------- taste your tastes ----------
+   The strengths are from the SCA's descriptive assessment standard (SCA-103, 2024), section 5.2: salty 0.20 % sodium chloride, sour 0.04 % citric acid, sweet 0.52 % sucrose, umami 0.10 % monosodium glutamate;
+   for bitter it names dark roasted coffee at about Agtron #35 instead of a solution. The standard gives a percentage and does not say whether it is by weight or by volume, and does not say which form of citric acid.
+   We read a percentage as grams per 100 grams of water, so 0.20 % is 2 g in 1000 g (1 litre) of water. A water-based solution of a few grams per litre is within about 0.5 % either way, which is inside the rounding.
+   Citric acid is read as the anhydrous powder. The monohydrate form weighs 210.14 per mole against 192.12, so it takes 9.4 % more powder (tasteMonohydrate). Nothing here is saved. */
+const TASTE_SOLUTIONS = [
+  { key:'salty', name:'Salty', pct:0.20, stuff:'Plain table salt (sodium chloride)', how:'Fine salt, so it dissolves quickly.' },
+  { key:'sweet', name:'Sweet', pct:0.52, stuff:'White table sugar (sucrose)', how:'Not a sugar substitute.' },
+  { key:'sour', name:'Sour', pct:0.04, stuff:'Citric acid powder (anhydrous)', how:'Sold for canning and cleaning as well as cooking. Check the label says citric acid and nothing else.' },
+  { key:'umami', name:'Savory (umami)', pct:0.10, stuff:'MSG (monosodium glutamate)', how:'Sold as a seasoning. It tastes brothy, not salty.' }
+];
+const TASTE_BITTER = { name:'Bitter', agtron:35, text:'The standard names dark roasted coffee at about Agtron #35 as its bitter example. Brew a dark roast the way you normally do, and taste it for the bitterness.' };
+const TASTE_CITRIC_RATIO = 210.14 / 192.12;   /* monohydrate mass per anhydrous mass */
+/* grams of a solid for `litres` of water at `pct` percent (grams per 100 g of water), to 2 decimals; 0 when the numbers are not usable */
+function tasteGrams(pct, litres){
+  const p = parseFloat(pct), l = parseFloat(litres);
+  if (!(p > 0 && p <= 5) || !(l > 0 && l <= 20)) return 0;
+  return Math.round(p * 10 * l * 100) / 100;
+}
+/* the same acid weighed as the monohydrate form, 2 decimals */
+function tasteMonohydrate(grams){ const g = parseFloat(grams); return g > 0 ? Math.round(g * TASTE_CITRIC_RATIO * 100) / 100 : 0; }
+/* The sour solution is 0.4 g in a litre, too little for a kitchen scale, so make a stock ten times stronger (4 g per litre, 0.4 %) and dilute it ten to one.
+   Returns { stockGrams, stockMl, useMl, addMl } for `wantMl` millilitres (up to 2500, which is as much as the 250 mL stock makes) of finished solution: weigh stockGrams into stockMl of water, then mix useMl of that stock with addMl of water. */
+function tasteStock(wantMl){
+  const w = parseFloat(wantMl); if (!(w > 0 && w <= 2500)) return null;
+  const useMl = Math.round(w / 10 * 10) / 10;
+  return { stockGrams:1, stockMl:250, useMl, addMl:Math.round((w - useMl) * 10) / 10 };
+}
+/* a fresh random order of the cups for a blind round: the four tastes, the bitter coffee and plain water. `rnd` returns a number from 0 up to but not including 1; the list given is not changed. */
+function tasteShuffle(list, rnd){
+  const a = (Array.isArray(list) ? list : []).slice(), r = typeof rnd === 'function' ? rnd : () => 0.5;
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.min(i, Math.max(0, Math.floor(r() * (i + 1)))); const t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+/* the six cups, in the order the helper should pour them: [{ n (cup number from 1), key, name }] */
+function tasteRound(rnd){
+  const cups = TASTE_SOLUTIONS.map(s => ({ key:s.key, name:s.name })).concat([{ key:'bitter', name:TASTE_BITTER.name + ' (dark-roast coffee)' }, { key:'water', name:'Plain water' }]);
+  return tasteShuffle(cups, rnd).map((c, i) => ({ n:i + 1, key:c.key, name:c.name }));
+}
 function lev(a, b){   /* edit distance, counting a swap of two neighbors as one */
   const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
   let prev2 = null, prev = Array.from({ length:n + 1 }, (_, j) => j);
@@ -5868,6 +6027,31 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 53,
+  "at": "2026-10-09T15:57:10Z",
+  "date": "2026-10-09",
+  "title": "A new look for the wheels, and a Wheels area",
+  "notes": [
+   "New Wheels area in the Menu, under Learn: the smell, taste and finish wheels, a new mouthfeel wheel, a wheel of what to change when a cup tastes wrong, the aroma kit wheel, and a brew control chart of strength against extraction. Made for looking at while you drink. Nothing there is saved.",
+   "The wheels are redrawn: tap a slice to zoom in, tap the middle to go back, or switch to a plain List. Every slice is labelled, each family keeps one color across all the wheels, and a search box finds a word.",
+   "An optional Keep screen on switch stops the screen dimming while you taste, on phones that allow it.",
+   "Quick tasting now shows its six cards (smell, taste, aftertaste, acidity, sweetness, body) under How did each part taste?, so the word wheels are not missed. The Add detail button is gone.",
+   "The brew control chart can place your own brew from its strength and extraction, and works out extraction from your coffee and drink weights. It uses the same hedged wording as the Extraction page. Wording check: the 2013 SCA preference study is now described as a study of European consumers."
+  ]
+ },
+ {
+  "release": 52,
+  "at": "2026-10-09T14:27:04Z",
+  "date": "2026-10-09",
+  "title": "Bag notes and Taste your tastes",
+  "notes": [
+   "New Taste your tastes page under Learn: how to make the SCA's reference solutions for salty, sweet, sour and savory at home, with the amounts in grams, a taste-each round and a mix-up round where a helper pours. Nothing is saved, and the page says plainly that we found no study showing it improves how you taste coffee.",
+   "New Solid or folklore? entry: does what is printed on the bag change what you taste? Partly supported. Four papers, and no study of home brewers with their own bag notes.",
+   "The Quick tasting and the guide now suggest tasting before you read the bag's flavors.",
+   "Wording check against the SCA's 2024 tasting standard: the Taste step and glossary now describe flavor, aftertaste, acidity, sweetness and intensity the way the standard does, and say so."
+  ]
+ },
  {
   "release": 51,
   "at": "2026-10-09T02:32:04Z",
@@ -6419,7 +6603,19 @@ const FOLK_B = [
       'One lab study compared cold and hot immersion brews diluted to the same 2 % strength. Cold brew was less bitter, less sour and more floral. Hot coffee poured over ice was not part of the test, and the authors say their explanation may not apply to coffee brewed directly over ice.'],
     limits:['The arithmetic assumes the ice melts into the cup. Water the grounds keep, and ice left unmelted, change the totals.', 'The cold brew study was underwritten in part by a cold brew equipment supplier.', 'The 40 % share is a convention, and people like different strengths.'],
     app:'The ice share in NeuroBrew\'s iced brews is common practice, and the exact share is our own.',
-    sources:[{ kind:'paper', cite:'Batali ME, Lim LX, Liang J, Yeager SE, Thompson AN, Han J, Ristenpart WD, Guinard J-X (2022). Sensory analysis of full immersion coffee: cold brew is more floral, and less bitter, sour, and rubbery than hot brew. Foods 11:2440.', link:'https://doi.org/10.3390/foods11162440' }] }
+    sources:[{ kind:'paper', cite:'Batali ME, Lim LX, Liang J, Yeager SE, Thompson AN, Han J, Ristenpart WD, Guinard J-X (2022). Sensory analysis of full immersion coffee: cold brew is more floral, and less bitter, sour, and rubbery than hot brew. Foods 11:2440.', link:'https://doi.org/10.3390/foods11162440' }] },
+  { id:'bagnotes', claim:'What is printed on the bag changes what you taste.', tier:'partly',
+    verdict:'It can nudge what you notice, but the effects are uneven. We found no study of home brewers with their own bag notes, so the evidence is indirect.',
+    found:['In one study, 180 specialty-coffee drinkers in São Paulo tasted the same fermented coffee with no label, a "Fermentation" label or a "Carbonic maceration" label. The "Fermentation" label raised rated acidity (6.3 against 4.6 out of 10) and lowered liking (6.4 against 7.0). Both labels lowered rated sweetness (6.4 to 5.3 and 5.7). The "Carbonic maceration" label changed neither acidity nor liking. For acidity, what people expected moved more than what they rated after tasting.',
+      'In a study of 222 coffee drinkers, a five-minute video about bird-friendly farming raised what people would pay for the first coffee, but not significantly for the second. Its effect on the taste score was none for the first coffee and lower for the second. The authors say a video is a strong prompt and the result may not carry over to on-pack information.',
+      'In a virtual-reality study, non-experts smelled a Kenyan coffee. It seemed more acidic with a farm scene than with a white room, and less sweet with a city scene than with a white room, but how much they liked it did not differ. Thirty-four coffee professionals who tasted a Kenyan coffee rated their enjoyment of the experience higher with the farm scene, and none of their flavor ratings differed.',
+      'Outside coffee, a low-sodium label on a dipping sauce changed what people expected (less salty, more liked), but not how much they actually liked it.'],
+    limits:['None of these tested flavor notes printed on a bag. They tested a process word, a video and virtual scenes.', 'Each study used one or two coffees. The groups were specialty-coffee drinkers in a café, a university panel, a business-school pool and 34 coffee professionals.', 'The effects were uneven: one label lowered liking and the other changed nothing, and the video lowered one coffee\'s taste score.', 'We did not find a study of home brewers tasting their own coffee with the bag\'s printed flavors in view. We searched in October 2026.'],
+    app:'The Quick tasting offers the bag\'s flavors as words to pick, and the guide and a note there suggest tasting first. NeuroBrew does not hide the bag.',
+    sources:[{ kind:'paper', cite:'Carvalho FM, de Sousa MMM, Nadaleti DHS (2026). Label information about fermentation processing affects consumers\' sensory and hedonic judgements of specialty coffee. Foods 15:1287.', link:'https://doi.org/10.3390/foods15081287' },
+      { kind:'paper', cite:'Grunert KG, Seo H-S, Fang D, Hogan VJ, Nayga RM Jr (2024). Sustainability information, taste perception and willingness to pay: the case of bird-friendly coffee. Food Quality and Preference 115:105124.', link:'https://doi.org/10.1016/j.foodqual.2024.105124' },
+      { kind:'paper', cite:'Barbosa Escobar F, Petit O, Velasco C (2021). Virtual terroir and the premium coffee experience. Frontiers in Psychology 12:586983.', link:'https://doi.org/10.3389/fpsyg.2021.586983' },
+      { kind:'paper', cite:'Kim MJ, Kang BW, Kim JW, Lee MY, Chung SJ, Hong JH (2017). The effect of a low-sodium label on acceptability and perceived saltiness intensity of a dipping sauce for fried pork cutlets. Korean Journal of Food Science and Technology 49(1):72-79.', link:'https://doi.org/10.9721/KJFST.2017.49.1.72' }] }
 ];
 const FOLK_CLAIMS = FOLK_A.concat(FOLK_B);
 /* lists every way an entry is incomplete: no tier, no verdict, nothing found, no limit, no source, or a source with no kind or no link */
@@ -6749,7 +6945,7 @@ function loadDraft(){
     a.lastTotal = typeof src.lastTotal === 'number' ? src.lastTotal : null;
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
-    const ok = ['start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','tend','guide','tools','yield','ratio','cost','prices','folk'];
+    const ok = ['start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','tend','guide','tools','yield','ratio','cost','prices','tastes','wheels','chart','folk'];
     a.screen = ok.includes(src.screen) ? src.screen : 'start';
     /* a saved timer comes back only if it is recent: running for under 45 minutes in all, or paused within the last 30 minutes */
     { const ts = src.timerSave, now = Date.now();
@@ -6804,6 +7000,8 @@ const PARENT = {
   cup:() => app.cupBrew ? (isMachine(app.brew.method) ? 'recipe' : 'ready') : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', detail:'history',
   learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'start'),
   prices:() => (pricesFrom && pricesFrom !== 'prices' && pricesFrom !== 'timer') ? pricesFrom : (app.coffee.name ? 'coffee' : 'start'),
+  wheels:() => (wheelsFrom && wheelsFrom !== 'wheels' && wheelsFrom !== 'wheel' && wheelsFrom !== 'chart' && wheelsFrom !== 'timer') ? wheelsFrom : (app.coffee.name ? 'coffee' : 'start'), wheel:'wheels', chart:'wheels',
+  tastes:() => (tastesFrom && tastesFrom !== 'tastes' && tastesFrom !== 'timer') ? tastesFrom : (app.coffee.name ? 'coffee' : 'start'),
   folk:() => (folkFrom && folkFrom !== 'folk' && folkFrom !== 'timer') ? folkFrom : (app.coffee.name ? 'coffee' : 'start'),
   tend:() => (tendFrom && tendFrom !== 'tend' && tendFrom !== 'timer') ? tendFrom : (app.coffee.name ? 'coffee' : 'start'),
   guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'start'),
@@ -6842,7 +7040,7 @@ window.addEventListener('popstate', e => {
 });
 function go(screen){ stopTimer(); if (screen !== 'history'){ selectMode = false; selected.clear(); } const changed = screen !== app.screen; app.screen = screen; if (changed) navNote(true); render(); }
 function render(){
-  refreshers.length = 0;
+  wakeOff(); refreshers.length = 0;
   const m = $('mount'); m.textContent = '';
   if ((app.screen === 'history' || app.screen === 'detail') && !history) app.screen = 'start';
   if (app.screen === 'detail' && !history.objs.some(x => x._i === detailIdx)) app.screen = 'history';
@@ -6853,7 +7051,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Tools', yield:'Cup yield', ratio:'Ratio planner', cost:'Cost of coffee', prices:'Coffee prices', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details' };
+  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Tools', yield:'Cup yield', ratio:'Ratio planner', cost:'Cost of coffee', prices:'Coffee prices', tastes:'Taste your tastes', wheels:'Wheels', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details' };
   $('topTitle').textContent = sc === 'start' ? '' : (titles[sc] || 'NeuroBrew');
   SCREENS[sc](m);
   refreshAll(); updateBar();
@@ -6914,41 +7112,186 @@ function selectField(label, opts, get, set, o){
 /* a heading with its tag on the same line when there is room */
 function sectionHead(title, metaKey){ return h('div', { class:'sechead' }, h('h2', { text:title }), metaKey ? metaLine(metaKey) : null); }
 
-/* ---------- screen: start ---------- */
-function wheelSvg(data, selCat, selGrp, center, ariaLabel){
-  const CX = 180, CY = 180, R0 = 34, R1 = 98, R2 = 172, n = data.length, span = 360 / n;
-  const pt = (r, deg) => { const a = (deg - 90) * Math.PI / 180; return [CX + r * Math.cos(a), CY + r * Math.sin(a)]; };
-  const f = x => x.toFixed(1);
+/* ---------- the wheel drawing ----------
+   m = a wheel in the shape whNorm gives (engine/54-wheel-colors.js).
+   v = what is showing: f = the family looked at closely (-1 = the whole wheel), g = the group chosen (-1 = none), w = the word chosen (-1 = none),
+       hf = in the whole-wheel view, the family whose groups are chosen (the flat wheel does not zoom), picked(f, g, w) = true for a word the person ticked.
+   Every slice is a button (class "wedge") with data-f, data-g and data-w, and a label for screen readers. The hub of the close-up view is the Back button (class "hub").
+   Slices are never narrower than what a label needs: whSpread gives each a share by its number of words, and no family under 30 degrees, no group under 12 (40 close up). */
+const WH_C = 204;
+function wheelSvg(m, v, ariaLabel){
+  v = v || { f:-1, g:-1, w:-1 };
+  const C = WH_C, zoom = v.f >= 0, R = zoom ? { hub:52, a:122, b:196 } : { hub:46, a:120, b:196 };
+  const pt = (r, deg) => { const a = (deg - 90) * Math.PI / 180; return [C + r * Math.cos(a), C + r * Math.sin(a)]; };
+  const f1 = x => x.toFixed(1);
   const arcPts = (r, a0, a1) => { const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 2)), out = []; for (let k = 0; k <= n; k++) out.push(pt(r, a0 + (a1 - a0) * k / n)); return out; };
-  const arc = (r1, r2, a0, a1) => 'M' + arcPts(r2, a0, a1).concat(arcPts(r1, a1, a0)).map(q => f(q[0]) + ' ' + f(q[1])).join(' L') + ' Z';
+  const arc = (r1, r2, a0, a1) => 'M' + arcPts(r2, a0, a1).concat(arcPts(r1, a1, a0)).map(q => f1(q[0]) + ' ' + f1(q[1])).join(' L') + ' Z';
   const label = (txt, r, a0, a1, size, fill, weight) => {
     const mid = (a0 + a1) / 2, xy = pt(r, mid); let rot = mid - 90; if (mid > 180) rot += 180;
-    return '<text x="' + f(xy[0]) + '" y="' + f(xy[1]) + '" transform="rotate(' + f(rot) + ' ' + f(xy[0]) + ' ' + f(xy[1]) + ')" text-anchor="middle" dominant-baseline="central" font-size="' + size + '" font-weight="' + weight + '" fill="' + fill + '" style="pointer-events:none">' + txt + '</text>';
+    return '<text x="' + f1(xy[0]) + '" y="' + f1(xy[1]) + '" transform="rotate(' + f1(rot) + ' ' + f1(xy[0]) + ' ' + f1(xy[1]) + ')" text-anchor="middle" dominant-baseline="central" font-size="' + size + '" font-weight="' + weight + '" fill="' + fill + '" style="pointer-events:none">' + escHtml(txt) + '</text>';
   };
-  let out = '<svg viewBox="0 0 360 360" role="group" aria-label="' + escHtml(ariaLabel || 'Wheel') + '" shape-rendering="geometricPrecision" xmlns="http://www.w3.org/2000/svg">';
-  data.forEach((fam, i) => {
-    const a0 = i * span, a1 = a0 + span, sel = selCat === i, pal = whPalette(fam);
-    out += '<path class="wedge" data-c="' + i + '" tabindex="0" role="button" aria-label="' + escHtml(fam.name) + '" d="' + arc(R0, R1, a0, a1) + '" fill="' + pal.fill + '" style="stroke:' + (sel ? 'var(--ink)' : 'var(--surface)') + ';stroke-width:' + (sel ? 3.5 : 1.5) + '"/>';
-    const gs = (a1 - a0) / fam.groups.length;
-    fam.groups.forEach((gr, j) => {
-      const b0 = a0 + j * gs, b1 = b0 + gs, gsel = sel && selGrp === j;
-      out += '<path class="wedge" data-c="' + i + '" data-g="' + j + '" tabindex="0" role="button" aria-label="' + escHtml(fam.name + ', ' + gr[0]) + '" d="' + arc(R1, R2, b0, b1) + '" fill="' + (gsel ? pal.tintSel : (j % 2 ? pal.tintB : pal.tintA)) + '" fill-opacity="' + (selCat >= 0 && !sel ? 0.5 : 1) + '" style="stroke:' + (gsel ? 'var(--ink)' : 'var(--surface)') + ';stroke-width:' + (gsel ? 3.5 : 1.5) + '"/>';
+  const seg = (attrs, d, fill, on) => '<path class="wedge" ' + attrs + ' tabindex="0" role="button" d="' + d + '" fill="' + fill + '" style="stroke:' + (on ? 'var(--ink)' : 'var(--bg)') + ';stroke-width:' + (on ? 3 : 2) + '"/>';
+  const rim = (a0, a1, fill) => '<path d="' + arc(197, 203, a0 + 0.6, a1 - 0.6) + '" fill="' + fill + '"/>';
+  const wordText = (w, picked) => (picked ? '✓ ' : '') + (w.n ? w.n + ' ' : '') + w.t;
+  let out = '<svg viewBox="0 0 ' + C * 2 + ' ' + C * 2 + '" role="group" aria-label="' + escHtml(ariaLabel || m.title) + '" shape-rendering="geometricPrecision" xmlns="http://www.w3.org/2000/svg">', texts = '';
+  if (!zoom){
+    const fa = whSpread(m.fams.map(f => 4 + f.groups.reduce((a, g) => a + g.words.length, 0)), 360, 30);
+    let a0 = 0;
+    m.fams.forEach((fam, i) => {
+      const a1 = a0 + fa[i], pal = whPalette(fam), fon = v.hf === i && v.g < 0;
+      out += seg('data-f="' + i + '" aria-label="' + escHtml(fam.name) + '"', arc(R.hub, R.a, a0, a1), pal.fill, fon) + rim(a0, a1, pal.fill);
+      const gw = whSpread(fam.groups.map(g => 1 + g.words.length), a1 - a0, 12);
+      let b0 = a0;
+      fam.groups.forEach((gr, j) => {
+        const b1 = b0 + gw[j], rm = (R.a + R.b) / 2, gon = v.hf === i && v.g === j;
+        out += seg('data-f="' + i + '" data-g="' + j + '" aria-label="' + escHtml(fam.name + ', ' + gr.name) + '"', arc(R.a, R.b, b0, b1), gon ? pal.fill : (j % 2 ? pal.tintB : pal.tintA), gon);
+        texts += label(gr.name, rm, b0, b1, whFit(gr.name, R.b - R.a - 12, rm * (b1 - b0) * Math.PI / 180, 12), gon ? pal.ink : WHEEL_INK, gon ? 700 : 600);
+        b0 = b1;
+      });
+      const rm = (R.hub + R.a) / 2;
+      texts += label(fam.short, rm, a0, a1, whFit(fam.short, R.a - R.hub - 10, rm * (a1 - a0) * Math.PI / 180, 13), pal.ink, 700);
+      a0 = a1;
     });
-  });
-  data.forEach((fam, i) => {      /* a firm divider between families, so each one reads as a block */
-    const p0 = pt(R0, i * span), p1 = pt(R2, i * span);
-    out += '<line x1="' + f(p0[0]) + '" y1="' + f(p0[1]) + '" x2="' + f(p1[0]) + '" y2="' + f(p1[1]) + '" style="stroke:var(--surface);stroke-width:4;pointer-events:none"/>';
-  });
-  data.forEach((fam, i) => {
-    const a0 = i * span, a1 = a0 + span, gs = span / fam.groups.length, pal = whPalette(fam);
-    const rm = (R0 + R1) / 2, arcIn = rm * span * Math.PI / 180;
-    out += label(fam.short, rm, a0, a1, whFit(fam.short, R1 - R0 - 10, arcIn, 11.5), pal.ink, 700);
-    const ro = (R1 + R2) / 2, arcOut = ro * gs * Math.PI / 180;
-    fam.groups.forEach((gr, j) => { out += label(gr[0], ro, a0 + j * gs, a0 + (j + 1) * gs, whFit(gr[0], R2 - R1 - 12, arcOut, 11), (selCat === i && selGrp === j) ? pal.selInk : WHEEL_INK, 600); });
-  });
-  out += '<circle cx="' + CX + '" cy="' + CY + '" r="' + (R0 - 2) + '" style="fill:var(--surface);stroke:var(--line)"/>';
-  out += '<text x="' + CX + '" y="' + CY + '" text-anchor="middle" dominant-baseline="central" font-size="10" style="fill:var(--muted);pointer-events:none">' + escHtml(center || '') + '</text>';
+    out += texts + '<circle cx="' + C + '" cy="' + C + '" r="' + (R.hub - 2) + '" style="fill:var(--surface);stroke:var(--line)"/>';
+    out += '<text x="' + C + '" y="' + C + '" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700" style="fill:var(--ink);pointer-events:none">' + escHtml(m.center) + '</text>';
+  } else {
+    const fam = m.fams[v.f], pal = whPalette(fam), gw = whSpread(fam.groups.map(g => 1 + g.words.length * 1.2), 360, 40);
+    let b0 = 0;
+    fam.groups.forEach((gr, j) => {
+      const b1 = b0 + gw[j], gon = v.g === j, rm = (R.hub + R.a) / 2, rw = (R.a + R.b) / 2;
+      out += seg('data-f="' + v.f + '" data-g="' + j + '" aria-label="' + escHtml(fam.name + ', ' + gr.name) + '"', arc(R.hub, R.a, b0, b1), gon ? pal.fill : (j % 2 ? pal.mid : pal.fill), gon) + rim(b0, b1, pal.fill);
+      texts += label(gr.name, rm, b0, b1, whFit(gr.name, R.a - R.hub - 10, rm * (b1 - b0) * Math.PI / 180, 13), (gon || !(j % 2)) ? pal.ink : pal.midInk, 700);
+      const ww = (b1 - b0) / Math.max(1, gr.words.length);
+      gr.words.forEach((w, k) => {
+        const c0 = b0 + k * ww, c1 = c0 + ww, pk = !!(v.picked && v.picked(v.f, j, k)), won = pk || (gon && v.w === k), txt = wordText(w, pk);
+        out += seg('data-f="' + v.f + '" data-g="' + j + '" data-w="' + k + '" aria-label="' + escHtml(w.t) + '" aria-pressed="' + String(pk) + '"', arc(R.a, R.b, c0, c1), won ? pal.fill : (k % 2 ? pal.tintB : pal.tintA), won);
+        texts += label(txt, rw, c0, c1, whFit(txt, R.b - R.a - 12, rw * ww * Math.PI / 180, 13), won ? pal.ink : WHEEL_INK, won ? 700 : 600);
+      });
+      b0 = b1;
+    });
+    out += texts + '<circle class="hub" data-back="1" tabindex="0" role="button" aria-label="Back to the whole wheel" cx="' + C + '" cy="' + C + '" r="' + (R.hub - 2) + '" style="fill:var(--surface);stroke:var(--line)"/>';
+    out += '<text x="' + C + '" y="' + (C - 8) + '" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700" style="fill:var(--ink);pointer-events:none">\u2039 Back</text>';
+    out += '<text x="' + C + '" y="' + (C + 11) + '" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="600" style="fill:var(--muted);pointer-events:none">' + escHtml(fam.short) + '</text>';
+  }
   return out + '</svg>';
+}
+/* ---------- keep the screen on (optional, off by default, never saved) ----------
+   Uses the browser's Screen Wake Lock where there is one. A refusal is not an error: the switch just goes back off. render() lets it go whenever a screen is drawn. */
+let wakeSentinel = null, wakeWanted = false;
+function wakeCan(){ try { return !!(navigator.wakeLock && navigator.wakeLock.request); } catch(e){ return false; } }
+async function wakeOn(){
+  wakeWanted = true;
+  try { wakeSentinel = await navigator.wakeLock.request('screen'); wakeSentinel.addEventListener('release', () => { wakeSentinel = null; }); return true; }
+  catch(e){ wakeWanted = false; wakeSentinel = null; return false; }
+}
+function wakeOff(){ wakeWanted = false; try { if (wakeSentinel) wakeSentinel.release(); } catch(e){} wakeSentinel = null; }
+document.addEventListener('visibilitychange', () => {      /* the browser lets go when the tab is hidden; take it again when the person comes back */
+  if (wakeWanted && !wakeSentinel && document.visibilityState === 'visible'){ try { navigator.wakeLock.request('screen').then(s => { wakeSentinel = s; }).catch(() => {}); } catch(e){} }
+});
+/* ---------- the wheel view ----------
+   o = { m (the wheel, from whNorm), flat (two rings, no zooming), ariaLabel, guide, note, searchHint,
+         picker ({ list() the ticked ids, toggle(id) which must end by calling the view's refresh }) or none for look-only,
+         detail(fam, group, famIndex, groupIndex) for the flat wheel, wake (offer the keep-screen-on switch) }.
+   Returns the element; el.refresh() draws it again (the picker calls this after a tick). Look-only: tapping a word only highlights it. */
+function wheelView(o){
+  const m = o.m, P = o.picker || null, flat = !!o.flat;
+  const v = { f:-1, g:-1, w:-1, hf:-1 }; let mode = 'wheel', q = '', focusNext = '';
+  const idOf = w => w.n != null ? w.n : w.t, textOf = w => w.n != null ? w.n + ' · ' + w.t : w.t;
+  const ticked = w => !!P && P.list().includes(idOf(w));
+  const root = h('div', { class:'wview' });
+  const segBtns = [['wheel', 'Wheel'], ['list', 'List']].map(x => h('button', { type:'button', 'aria-pressed':'false', text:x[1], onclick:() => { mode = x[0]; q = ''; search.value = ''; draw(); } }));
+  const search = h('input', { type:'search', class:'plain', placeholder:o.searchHint || 'Search for a word', 'aria-label':'Search words' });
+  search.addEventListener('input', () => { q = search.value; draw(); });
+  const body = h('div', { class:'wbody' });
+  root.append(h('div', { class:'wtop' }, h('div', { class:'seg', role:'group', 'aria-label':'Show as a wheel or a list' }, segBtns), search));
+  root.append(body);
+  if (o.wake && wakeCan()){
+    const note = h('p', { class:'fine', style:'margin:4px 0 0', text:'Keeps the screen from dimming while you taste. It turns off when you leave this page.' });
+    const sw = h('button', { type:'button', class:'btn small wakebtn', 'aria-pressed':'false', text:'Keep screen on', onclick:async () => {
+      if (sw.getAttribute('aria-pressed') === 'true'){ wakeOff(); sw.setAttribute('aria-pressed', 'false'); note.textContent = 'Keeps the screen from dimming while you taste. It turns off when you leave this page.'; return; }
+      const got = await wakeOn(); sw.setAttribute('aria-pressed', String(got));
+      note.textContent = got ? 'The screen will stay on until you leave this page.' : 'Your browser did not allow that here.';
+    } });
+    root.append(h('div', { class:'wakerow' }, sw, note));
+  }
+  const clearQ = () => { q = ''; search.value = ''; };
+  /* a word chosen from a chip, a slice or a search result */
+  function show(fi, gi, k){ const same = mode === 'wheel' && v.f === fi && v.g === gi && v.w === k; v.f = fi; v.g = gi; v.w = same ? -1 : k; v.hf = -1; mode = 'wheel'; clearQ(); focusNext = '[data-f="' + fi + '"][data-g="' + gi + '"][data-w="' + k + '"]'; }
+  function pickWord(fi, gi, k){ const w = m.fams[fi].groups[gi].words[k]; if (P){ focusNext = '[data-f="' + fi + '"][data-g="' + gi + '"][data-w="' + k + '"]'; P.toggle(idOf(w)); } else { show(fi, gi, k); draw(); } }
+  function pickTry(fi, gi){ const same = v.hf === fi && v.g === gi; v.hf = same ? -1 : fi; v.g = same ? -1 : gi; clearQ(); mode = 'wheel'; focusNext = same ? '' : '[data-f="' + fi + '"][data-g="' + gi + '"]'; draw(); }
+  function wordChip(fi, gi, k){
+    const w = m.fams[fi].groups[gi].words[k], on = P ? ticked(w) : (v.f === fi && v.g === gi && v.w === k);
+    return h('button', { type:'button', class:'chip', 'aria-pressed':String(on), text:textOf(w), onclick:() => pickWord(fi, gi, k) });
+  }
+  function tryChips(fi){
+    const fam = m.fams[fi], pal = whPalette(fam);
+    return h('div', { class:'chips' }, fam.groups.map((gr, j) => h('button', { type:'button', class:'chip wgrp', style:'--c:' + pal.fill + ';--ci:' + pal.ink + ';--t:' + (j % 2 ? pal.tintB : pal.tintA), 'aria-pressed':String(v.hf === fi && v.g === j), text:gr.name, onclick:() => pickTry(fi, j) })));
+  }
+  function detailFor(fi){ return (v.hf === fi && v.g >= 0 && o.detail) ? o.detail(m.fams[fi], m.fams[fi].groups[v.g], fi, v.g) : null; }
+  function famHead(fi){ return h('h3', { class:'wfamtitle', style:'--c:' + whPalette(m.fams[fi]).fill, text:m.fams[fi].name }); }
+  function hitsView(query){
+    const hits = [];
+    m.fams.forEach((f, fi) => f.groups.forEach((gr, gi) => {
+      if (flat){ if ((gr.name + ' ' + f.name).toLowerCase().includes(query)) hits.push([fi, gi, -1, gr.name, f.name]); return; }
+      gr.words.forEach((w, k) => { if (textOf(w).toLowerCase().includes(query)) hits.push([fi, gi, k, textOf(w), f.name + ', ' + gr.name]); });
+    }));
+    if (!hits.length) return h('p', { class:'serif muted', style:'margin:10px 0', text:'Nothing matches "' + query + '".' + (P && !m.fams.some(f => f.groups.some(g => g.words.some(w => w.n != null))) ? ' You can add your own word below.' : '') });
+    return h('div', { class:'chips whits', style:'margin-top:10px' }, hits.slice(0, 40).map(x => {
+      const on = P ? ticked(m.fams[x[0]].groups[x[1]].words[x[2]]) : false;
+      return h('button', { type:'button', class:'chip', 'aria-pressed':String(on), title:x[4], text:x[3], onclick:() => { if (x[2] < 0) pickTry(x[0], x[1]); else if (P) P.toggle(idOf(m.fams[x[0]].groups[x[1]].words[x[2]])); else { show(x[0], x[1], x[2]); draw(); } } });
+    }));
+  }
+  function listView(){
+    const out = h('div', { class:'wlist' });
+    m.fams.forEach((fam, fi) => {
+      out.append(famHead(fi));
+      if (flat){ out.append(tryChips(fi)); const d = detailFor(fi); if (d) out.append(d); return; }
+      fam.groups.forEach((gr, gi) => out.append(h('div', { class:'gname', style:'margin-top:8px', text:gr.name }), h('div', { class:'chips' }, gr.words.map((w, k) => wordChip(fi, gi, k)))));
+    });
+    return out;
+  }
+  function onHit(e){
+    const t = e.target.closest ? e.target.closest('[data-f],[data-back]') : null; if (!t) return;
+    if (t.hasAttribute('data-back')){ focusNext = '[data-f="' + v.f + '"]'; v.f = -1; v.g = -1; v.w = -1; v.hf = -1; draw(); return; }
+    const fi = +t.getAttribute('data-f'), gi = t.hasAttribute('data-g') ? +t.getAttribute('data-g') : -1, wi = t.hasAttribute('data-w') ? +t.getAttribute('data-w') : -1;
+    if (wi >= 0){ pickWord(fi, gi, wi); return; }
+    if (v.f >= 0){ v.g = v.g === gi ? -1 : gi; v.w = -1; focusNext = '[data-g="' + gi + '"]:not([data-w])'; }
+    else if (flat){ if (gi >= 0) { pickTry(fi, gi); return; } const same = v.hf === fi && v.g < 0; v.hf = same ? -1 : fi; v.g = -1; focusNext = '[data-f="' + fi + '"]:not([data-g])'; }
+    else { v.f = fi; v.g = gi; v.w = -1; v.hf = -1; focusNext = '.hub'; }
+    draw();
+  }
+  function wheelBlock(){
+    const wrap = h('div', { class:'wheelwrap' }), panel = h('div', { class:'wpanel' }), box = h('div', null, wrap, panel);
+    wrap.innerHTML = wheelSvg(m, { f:v.f, g:v.g, w:v.w, hf:v.hf, picked:(fi, gi, k) => ticked(m.fams[fi].groups[gi].words[k]) }, o.ariaLabel || m.title);
+    wrap.addEventListener('click', onHit);
+    wrap.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); onHit(e); } });
+    if (flat){
+      if (v.hf < 0) panel.append(h('p', { class:'fine', style:'margin:6px 0 0', text:'Tap a slice to see what to try.' }), h('p', { class:'serif', style:'margin:6px 0', text:o.guide || '' }));
+      else panel.append(famHead(v.hf), tryChips(v.hf), detailFor(v.hf));
+      return box;
+    }
+    if (v.f < 0){
+      panel.append(h('p', { class:'fine', style:'margin:6px 0 0', text:'Tap a slice to zoom in.' }), h('p', { class:'serif', style:'margin:6px 0', text:o.guide || '' }));
+      if (o.note) panel.append(h('p', { class:'fine', style:'margin:6px 0 0', text:o.note }));
+      return box;
+    }
+    const fam = m.fams[v.f], pal = whPalette(fam);
+    panel.append(h('div', { class:'wcrumb' }, h('button', { type:'button', class:'btn link', text:'‹ ' + m.title, onclick:() => { focusNext = '[data-f="' + v.f + '"]'; v.f = -1; v.g = -1; v.w = -1; draw(); } }), h('span', { text:' › ' + fam.name })), famHead(v.f),
+      h('div', { class:'chips' }, fam.groups.map((gr, j) => h('button', { type:'button', class:'chip wgrp', style:'--c:' + pal.fill + ';--ci:' + pal.ink + ';--t:' + (j % 2 ? pal.tintB : pal.tintA), 'aria-pressed':String(v.g === j), text:gr.name, onclick:() => { v.g = v.g === j ? -1 : j; v.w = -1; draw(); } }))));
+    fam.groups.forEach((gr, j) => { if (v.g >= 0 && v.g !== j) return; panel.append(h('div', { class:'gname', style:'margin-top:12px', text:gr.name }), h('div', { class:'chips' }, gr.words.map((w, k) => wordChip(v.f, j, k)))); });
+    if (o.note) panel.append(h('p', { class:'fine', style:'margin:10px 0 0', text:o.note }));
+    return box;
+  }
+  function draw(){
+    segBtns.forEach((b, i) => b.setAttribute('aria-pressed', String((i === 0) === (mode === 'wheel'))));
+    const query = q.trim().toLowerCase();
+    body.textContent = '';
+    body.append(query ? hitsView(query) : (mode === 'list' ? listView() : wheelBlock()));
+    if (focusNext){ const e = body.querySelector(focusNext); focusNext = ''; if (e) { try { e.focus({ preventScroll:true }); } catch(x){} } }
+  }
+  root.refresh = draw;
+  draw();
+  return root;
 }
 let PROGRESS_FOR = null;
 function paintProgress(){
@@ -7505,6 +7848,71 @@ function prepCupEntry(){
   else if (!cupTouched() && !quickTouched() && !state.stars) state.way = tasteChoice() === 'cuppingfirst' ? 'cup' : 'quick';
 }
 
+/* ---------- screen: brew control chart ----------
+   The frame, the box and the words come from engine/39-wheels-extra.js (CHART, chartRead, chartPos), and the words from judgeBrew, so this chart can never say more than the Extraction page does.
+   chartIn holds what was typed. It lives only in memory. */
+let chartIn = { tds:'', ey:'', dose:'', out:'' };
+function chartSvg(read){
+  const W = 360, L = 46, T = 14, PW = 296, PH = 236, C = CHART;
+  const X = e => L + (e - C.ey[0]) / (C.ey[1] - C.ey[0]) * PW, Y = t => T + (1 - (t - C.tds[0]) / (C.tds[1] - C.tds[0])) * PH;
+  const f = n => n.toFixed(1), tx = (x, y, txt, extra) => '<text x="' + f(x) + '" y="' + f(y) + '" font-size="10.5" ' + (extra || '') + '>' + escHtml(txt) + '</text>';
+  let s = '<svg viewBox="0 0 ' + W + ' 300" role="img" aria-label="Brew control chart: strength up the side and extraction along the bottom, with the usual zone as a box. A list of what each part means follows." xmlns="http://www.w3.org/2000/svg" style="font-family:inherit">';
+  s += '<rect x="' + L + '" y="' + T + '" width="' + PW + '" height="' + PH + '" style="fill:var(--surface);stroke:var(--line)"/>';
+  s += '<rect x="' + f(X(C.high[0])) + '" y="' + T + '" width="' + f(X(C.high[1]) - X(C.high[0])) + '" height="' + PH + '" style="fill:var(--tint)"/>';
+  for (let e = C.ey[0]; e <= C.ey[1]; e += 2){ s += '<line x1="' + f(X(e)) + '" y1="' + T + '" x2="' + f(X(e)) + '" y2="' + (T + PH) + '" style="stroke:var(--line);stroke-width:.7"/>' + tx(X(e), T + PH + 15, String(e), 'text-anchor="middle" style="fill:var(--muted)"'); }
+  for (let t = C.tds[0]; t <= C.tds[1] + 1e-9; t += 0.2){ s += '<line x1="' + L + '" y1="' + f(Y(t)) + '" x2="' + (L + PW) + '" y2="' + f(Y(t)) + '" style="stroke:var(--line);stroke-width:.7"/>' + tx(L - 6, Y(t) + 3.5, t.toFixed(1), 'text-anchor="end" style="fill:var(--muted)"'); }
+  const b = C.box;
+  s += '<rect x="' + f(X(b.ey[0])) + '" y="' + f(Y(b.tds[1])) + '" width="' + f(X(b.ey[1]) - X(b.ey[0])) + '" height="' + f(Y(b.tds[0]) - Y(b.tds[1])) + '" style="fill:var(--leaf);fill-opacity:.25;stroke:var(--leaf);stroke-width:2"/>';
+  const cx = e => X(e), mid = (a, z) => (X(a) + X(z)) / 2, ink = 'text-anchor="middle" style="fill:var(--ink);font-weight:600"';
+  s += tx(mid(C.ey[0], b.ey[0]), Y(1.72), 'Under 18 %', ink) + tx(mid(C.ey[0], b.ey[0]), Y(1.72) + 13, 'often sour', ink) + tx(mid(C.ey[0], b.ey[0]), Y(1.72) + 26, 'or thin', ink);
+  s += tx(mid(b.ey[0], b.ey[1]), Y(b.tds[1]) - 19, 'Usual zone', ink) + tx(mid(b.ey[0], b.ey[1]), Y(b.tds[1]) - 6, '(a convention)', 'text-anchor="middle" style="fill:var(--ink)"');
+  s += '<text transform="translate(' + f(mid(C.high[0], C.high[1]) + 3.5) + ' ' + f(T + PH / 2) + ') rotate(-90)" font-size="10.5" text-anchor="middle" style="fill:var(--ink);font-weight:600">22 to 24 %: many like it</text>';
+  s += '<text transform="translate(' + f(mid(C.high[1], C.ey[1]) + 3.5) + ' ' + f(T + PH / 2) + ') rotate(-90)" font-size="10.5" text-anchor="middle" style="fill:var(--ink);font-weight:600">Above 24 %: can be harsher</text>';
+  s += tx(L + 6, T + 14, '↑ stronger', 'style="fill:var(--muted)"') + tx(L + 6, T + PH - 7, '↓ weaker', 'style="fill:var(--muted)"');
+  s += tx(L + PW / 2, 292, 'Extraction (% of the coffee\'s weight that dissolved)', 'text-anchor="middle" style="fill:var(--ink)"');
+  s += '<text transform="translate(11 ' + f(T + PH / 2) + ') rotate(-90)" font-size="10.5" text-anchor="middle" style="fill:var(--ink)">Strength (% TDS)</text>';
+  if (read){
+    const p = chartPos(read.tds, read.ey), px = L + p.x * PW, py = T + (1 - p.y) * PH;
+    s += '<circle id="chartDot" cx="' + f(px) + '" cy="' + f(py) + '" r="7" style="fill:var(--primary);stroke:var(--ink);stroke-width:2.5"/>' + tx(Math.max(L + 4, Math.min(px - 28, L + PW - 120)), Math.min(py + 24, T + PH - 4), read.off ? 'Your brew (off the chart)' : 'Your brew', 'style="fill:var(--ink);font-weight:700"');
+  }
+  return s + '</svg>';
+}
+function chartFill(host, outHost){
+  const read = chartRead(chartIn.tds, chartIn.ey);
+  host.innerHTML = chartSvg(read);
+  outHost.textContent = '';
+  if (read) read.lines.forEach(t => outHost.append(h('p', { class:'serif', style:'margin:6px 0', text:t })));
+  else if (chartIn.tds || chartIn.ey) outHost.append(h('p', { class:'fine', style:'margin:6px 0', text:'Enter a strength between 0 and 5 % and an extraction between 0 and 40 % to place your brew.' }));
+  else outHost.append(h('p', { class:'fine', style:'margin:6px 0', text:'Optional: type your brew\'s strength and extraction to see where it falls.' }));
+}
+function screenChart(m){
+  m.append(h('h1', { text:'Brew control chart' }), h('p', { class:'lede', text:'Strength against extraction for filter coffee, and where the usual zone sits. Look at it while you taste, or place your own brew on it.' }));
+  const plot = h('div', { class:'chartwrap', id:'chartPlot' }), out = h('div', { id:'chartOut' });
+  const num = (key, label, hint, id) => { const inp = h('input', { type:'text', inputmode:'decimal', class:'plain', id:id, 'aria-label':label, placeholder:hint, value:chartIn[key], style:'width:100%' }); inp.addEventListener('input', () => { chartIn[key] = inp.value.replace(',', '.'); chartFill(plot, out); calcPaint(); }); return h('label', { class:'chartfield' }, h('span', { class:'fine', style:'margin:0', text:label }), inp); };
+  const tdsF = num('tds', 'Strength (% TDS)', 'for example 1.3', 'chartTds'), eyF = num('ey', 'Extraction (%)', 'for example 20', 'chartEy');
+  const doseF = num('dose', 'Coffee (g)', 'for example 20', 'chartDose'), outF = num('out', 'Drink in the cup (g)', 'for example 320', 'chartOut2');
+  const calc = h('p', { class:'serif', id:'chartCalc', style:'margin:8px 0 0' }), use = h('button', { type:'button', class:'btn small', id:'chartUse', text:'Use this extraction', onclick:() => { const ey = extractionYield(parseFloat(chartIn.tds), parseFloat(chartIn.out), parseFloat(chartIn.dose)); if (ey != null){ chartIn.ey = String(ey); $('chartEy').value = String(ey); chartFill(plot, out); } } });
+  function calcPaint(){
+    const ey = extractionYield(parseFloat(chartIn.tds), parseFloat(chartIn.out), parseFloat(chartIn.dose));
+    calc.textContent = ey == null ? 'Fill in the strength above and both weights to work it out.' : 'Extraction = strength × drink weight ÷ coffee weight = ' + ey + ' %.';
+    use.hidden = ey == null;
+  }
+  m.append(h('div', { class:'card', id:'chartCard' }, plot,
+    h('div', { class:'chartin' }, tdsF, eyF),
+    h('details', { class:'chartfold', id:'chartFold' }, h('summary', { text:'Not sure of your extraction? Work it out' }),
+      h('p', { class:'fine', style:'margin:6px 0', text:'Weigh the coffee you used and the drink you made, and use the strength you typed above.' }), h('div', { class:'chartin' }, doseF, outF), calc, use),
+    out));
+  chartFill(plot, out); calcPaint();
+  m.append(h('div', { class:'card', id:'chartMeaning' }, h('h3', { text:'What the parts mean' }),
+    h('ul', { class:'prep', style:'margin:4px 0' }, [
+      'Under 18 % extraction is below the low edge of the zone people usually aim for. It often goes with a sour or thin cup, but 18 % is a convention, not a cliff.',
+      '18 to 22 % is the usual zone. It is usually credited to Lockhart\'s 1950s work. It is a convention, not a law, and people differ on where they like it.',
+      '22 to 24 % is a little above the zone. Many people like this, and a 2013 SCA study of European consumers found a slight preference for 20 to 24 %.',
+      'Above 24 % is beyond the usual zone. That can mean a harsher cup, but taste decides: bitterness also follows how strong the coffee is.',
+      'Strength of 1.15 to 1.35 % TDS is the usual zone for filter coffee. Lower is weaker and higher is stronger.'].map(t => h('li', { text:t })))));
+  m.append(h('p', { class:'fine', id:'chartFine', text:'This chart is for filter coffee. For espresso, 8 to 12 % TDS is the common café target, so the box does not apply. You need a coffee refractometer to measure TDS. Nothing here is saved.' }));
+  m.append(wheelBackRow('wheels'));
+}
 /* ---------- screen: solid or folklore ---------- */
 let folkFrom = '';
 function goFolk(){ if (app.screen !== 'folk') folkFrom = app.screen === 'timer' ? 'ready' : app.screen; go('folk'); }
@@ -7659,6 +8067,58 @@ function screenLearn(m){
   m.append(tendencySection(t), shopSection(t), bagSection(), compareSection());
   const back = typeof PARENT.learn === 'function' ? PARENT.learn() : PARENT.learn;
   m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
+}
+/* ---------- screen: taste your tastes ----------
+   tastesOrder is the helper's pouring order for the mix-up round. It lives only in memory: leaving the screen or reloading forgets it, and nothing about this page is saved or put in a file. */
+let tastesFrom = '', tastesOrder = { cups:null, shown:false };
+function goTastes(){ if (app.screen !== 'tastes') tastesFrom = app.screen === 'timer' ? 'ready' : app.screen; tastesOrder = { cups:null, shown:false }; go('tastes'); }
+const tsList = items => h('ul', { class:'prep', style:'margin:4px 0 10px' }, items.map(t => h('li', { text:t })));
+const tsG = g => String(g).replace(/\.0+$/, '');
+function tsMakeCard(){
+  const stock = tasteStock(1000), mono = tasteMonohydrate(tasteGrams(0.04, 1));
+  const rows = TASTE_SOLUTIONS.map(s => {
+    const sour = s.key === 'sour', perL = tasteGrams(s.pct, 1), perHalf = tasteGrams(s.pct, 0.5);
+    return h('li', { class:'tt-row', id:'tt-' + s.key },
+      h('b', { text:s.name + ': ' + s.stuff }),
+      h('span', { class:'tt-amt', text:tsG(perL) + ' g in 1 litre of water (' + tsG(perHalf) + ' g in 500 mL), which is ' + s.pct.toFixed(2) + ' %' }),
+      sour ? h('span', { class:'fine', style:'margin:0', text:'That is too little for a kitchen scale. Weigh ' + stock.stockGrams + ' g of citric acid into ' + stock.stockMl + ' mL of water and stir until it is gone. Then mix ' + tsG(stock.useMl) + ' mL of that with ' + tsG(stock.addMl) + ' mL of water for a litre. If your powder is the monohydrate form, use ' + tsG(mono) + ' g per litre instead of ' + tsG(tasteGrams(0.04, 1)) + ' g.' }) : null,
+      h('span', { class:'fine', style:'margin:0', text:s.how }));
+  });
+  rows.push(h('li', { class:'tt-row', id:'tt-bitter' }, h('b', { text:TASTE_BITTER.name + ': dark-roast coffee' }), h('span', { class:'fine', style:'margin:0', text:TASTE_BITTER.text })));
+  return h('div', { class:'card', id:'ttMake' }, h('h3', { text:'1. Make the solutions' }),
+    h('p', { class:'fine', style:'margin:0 0 8px', text:'Use clean water that tastes of nothing, and stir each until the powder is gone. A scale that reads to 0.1 g is enough for all but the citric acid. Keep each in its own labeled cup.' }),
+    h('ul', { class:'tt-list' }, rows));
+}
+function tsOrderPaint(){
+  const host = $('ttOrder'); if (!host) return; host.textContent = '';
+  const o = tastesOrder;
+  if (o.cups && o.shown) host.append(h('ol', { class:'tt-cups', id:'ttCups' }, o.cups.map(c => h('li', { 'data-key':c.key, text:'Cup ' + c.n + ': ' + c.name }))));
+  else if (o.cups) host.append(h('p', { class:'fine', id:'ttHidden', text:'The order is hidden. Your helper has it. Tap Show the order when you are done guessing.' }));
+  const row = h('div', { class:'row', style:'margin-top:8px;flex-wrap:wrap;gap:8px' });
+  row.append(h('button', { type:'button', class:'btn primary', id:'ttMix', text:o.cups ? 'Make a new order' : 'Make a pouring order', onclick:() => { tastesOrder = { cups:tasteRound(Math.random), shown:true }; tsOrderPaint(); } }));
+  if (o.cups) row.append(h('button', { type:'button', class:'btn', id:'ttToggle', text:o.shown ? 'Hide the order' : 'Show the order', onclick:() => { tastesOrder.shown = !tastesOrder.shown; tsOrderPaint(); } }));
+  host.append(row);
+}
+function tsRoundCard(){
+  const c = h('div', { class:'card', id:'ttRound' }, h('h3', { text:'2. Taste each one' }),
+    tsList(['Rinse your mouth with plain water.', 'Take a small sip of the first. Hold it for a few seconds and notice where you feel it and how long it stays.', 'Spit it out or swallow it, rinse, and move to the next. Take your time.', 'Nothing you notice here is saved.']),
+    h('h3', { text:'3. The mix-up round' }),
+    tsList(['Hand this page to a helper and look away. Your helper taps Make a pouring order, then hides it.', 'The helper pours a little of each of the six into six matching cups, numbered 1 to 6 in the order shown. Let the coffee cool to the same warmth as the rest, so its heat does not give it away. The sixth cup is plain water, our own addition, to see whether you name a taste that is not there.', 'You taste cup 1 to 6 and name each: salty, sweet, sour, savory, bitter or nothing.', 'Then tap Show the order and see how you did.']),
+    h('div', { id:'ttOrder' }));
+  return c;
+}
+function screenTastes(m){
+  m.append(h('h1', { text:'Taste your tastes' }), h('p', { class:'lede', text:'A short exercise at home with the basic tastes: salty, sweet, sour, savory and bitter. The strengths are the SCA\'s reference solutions from its descriptive assessment standard (SCA-103, 2024, section 5.2).' }));
+  m.append(h('div', { class:'card', id:'ttKnow' }, h('h3', { text:'What to know first' }),
+    tsList(['We found no study showing that practicing with these solutions makes someone better at tasting coffee. Treat this as a way to notice what each taste is like, and nothing more.',
+      'The standard gives percentages. It does not say whether they are by weight or by volume, or which form of citric acid. The grams here are our reading: grams of powder in a litre of water, anhydrous citric acid. Either way they land within rounding.',
+      'The standard calls these qualitative examples of each taste, not calibrated standards. It is written for professional tasting of green arabica coffee, so using it at home is our adaptation.',
+      'Take only a small sip, and spit if you prefer. Skip any solution you have a medical reason to avoid.'])));
+  m.append(tsMakeCard(), tsRoundCard());
+  tsOrderPaint();
+  m.append(h('p', { class:'fine', id:'ttSource', text:'Source: SCA Standard 103-2024, Descriptive Assessment, Specialty Coffee Association. This page paraphrases it. It is not the standard and the SCA has not reviewed it.' }));
+  const back = typeof PARENT.tastes === 'function' ? PARENT.tastes() : PARENT.tastes;
+  m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:'Back', onclick:() => navBack(back) })));
 }
 /* ---------- screen: tendencies ---------- */
 let tendFrom = '';
@@ -7843,6 +8303,45 @@ function tpBrewMap(group){
     else g += '<circle cx="' + x + '" cy="' + y + '" r="3" style="fill:none;stroke:var(--muted);stroke-width:1.5;opacity:.7"/>';
   });
   return g + '</svg>';
+}
+/* ---------- screens: wheels ----------
+   The wheels themselves are in engine/38-wheels-data.js and engine/39-wheels-extra.js; the drawing is ui/22-wheel-svg.js and the interactive view is ui/23-wheel-view.js.
+   wheelKey (which wheel is open) lives only in memory. After a reload the list is what comes back. */
+let wheelsFrom = '', wheelKey = 'taste';
+function goWheels(){ if (app.screen !== 'wheels' && app.screen !== 'wheel' && app.screen !== 'chart') wheelsFrom = app.screen === 'timer' ? 'ready' : app.screen; go('wheels'); }
+function goWheel(key){ const w = WHEEL_LIST.find(x => x.key === key); if (!w) return; wheelKey = key; go(w.chart ? 'chart' : 'wheel'); }
+const wheelDef = () => WHEEL_LIST.find(x => x.key === wheelKey) || WHEEL_LIST[1];
+function wheelTitle(){ return wheelDef().title; }
+/* the advice for one pick on the what-do-I-change wheel: the sentence the label stands for first, then the whole advice */
+function fixSentences(text){ return (String(text).match(/[^.?]*[.?]+|[^.?]+$/g) || []).map(x => x.trim()).filter(Boolean); }
+function fixDetail(fam, gr){
+  const p = fixWheelPanel(fam.sym, gr.name), all = (p.primary + ' ' + p.secondary).trim(), pat = (gr.pat || '').toLowerCase();
+  const lead = fixSentences(all).filter(x => pat && x.toLowerCase().includes(pat)).join(' ');
+  return h('div', { class:'card wfix', id:'wfix' }, h('div', { class:'cardlabel', text:fam.name + ': ' + gr.name }),
+    h('p', { class:'serif', style:'margin:4px 0', text:lead || all }),
+    lead && lead !== all ? h('p', { class:'fine', style:'margin:6px 0 0', text:'All the advice for this, in the order we suggest it: ' + all }) : null,
+    /stir once/i.test(lead) ? h('p', { class:'fine', style:'margin:6px 0 0', text:'Stirring once suits immersion brews, where the coffee steeps in the water.' }) : null,
+    p.why ? h('p', { class:'fine', style:'margin:6px 0 0', text:p.why }) : null,
+    h('p', { class:'fine', style:'margin:6px 0 0', text:'Change one thing at a time, then taste again.' }));
+}
+function wheelBackRow(to){ return h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', id:'wheelBack', text:'Back', onclick:() => navBack(to) })); }
+function screenWheels(m){
+  m.append(h('h1', { text:'Wheels' }), h('p', { class:'lede', text:'Keep these beside you while you drink. They only show things. Nothing here is saved, and nothing changes your tasting.' }));
+  const list = h('div', { class:'menulist wlist-rows', id:'wheelList' });
+  WHEEL_LIST.forEach(w => list.append(h('button', { type:'button', class:'menuitem wlrow', id:'wl-' + w.key, onclick:() => goWheel(w.key) },
+    h('span', { class:'wlicon' + (w.chart ? ' chart' : ''), 'aria-hidden':'true', style:w.chart ? null : 'background:' + wheelIconBg(w.data) }),
+    h('span', { class:'wltext' }, h('span', { class:'mi-t', text:w.title }), h('span', { class:'mi-s', text:w.blurb })))));
+  m.append(list, h('p', { class:'fine', id:'wheelsOwn', text:WHEEL_OWN }));
+  m.append(wheelBackRow(typeof PARENT.wheels === 'function' ? PARENT.wheels() : PARENT.wheels));
+}
+function screenWheel(m){
+  const w = wheelDef();
+  m.append(h('h1', { text:w.title }), h('p', { class:'lede', text:w.blurb + '.' }));
+  const view = wheelView({ m:whNorm(w.title, w.center, w.data), flat:!!w.flat, ariaLabel:w.title, guide:w.guide, wake:true,
+    searchHint:w.flat ? 'Search the wheel' : (w.key === 'kit' ? 'Search for a vial' : 'Search for a word'), detail:w.key === 'fix' ? fixDetail : null });
+  m.append(h('div', { class:'card wscreen', id:'wheelCard' }, view));
+  if (w.note) m.append(h('p', { class:'fine', id:'wheelNote', text:w.note }));
+  m.append(wheelBackRow('wheels'));
 }
 /* ---------- screen: brew (choose method) ---------- */
 function chooseMethod(key){
@@ -9758,7 +10257,7 @@ function screenQuick(m){
   const fw = quickFlavorWords();
   if (fw.words.length){
     m.append(h('div', { class:'card' }, h('div', { class:'qask', text:fw.fromBag ? 'The flavors on the bag' : 'Flavors coffees like this often have' }),
-      h('p', { class:'fine', style:'margin:0 0 10px', text:'Both questions are optional. Pick only what you noticed. You may not dislike any of them.' }),
+      h('p', { class:'fine', style:'margin:0 0 10px', text:'Both questions are optional. Pick only what you noticed. You may not dislike any of them.' + (fw.fromBag ? ' Bag notes can nudge what you notice, so taste first if you can, then pick.' : '') }),
       flavorGroup(fw.words, 'Which of these did you like?', 'Tap the ones you liked.', 'liked', 'notLiked'),
       flavorGroup(fw.words, "Which didn't you like?", "Skip this if you aren't sure.", 'notLiked', 'liked'),
       h('p', { class:'fine', style:'margin:8px 0 0', text:'A flavor can be in one list only. Tap it again to take it back.' })));
@@ -9766,19 +10265,13 @@ function screenQuick(m){
   let openKey = '';
   const cards = [], setOpen = k => { openKey = k; refreshAll(); };
   const count = h('span', { class:'fine', style:'margin:0' });
-  const detail = h('div', { class:'qdetail', hidden:true }), toggleBtn = h('button', { type:'button', class:'btn block', 'aria-expanded':'false', 'aria-controls':'qdetail' });
-  detail.id = 'qdetail';
-  const showDetail = () => { detail.hidden = !detail.hidden; if (detail.hidden) openKey = ''; refreshAll(); };
-  toggleBtn.addEventListener('click', showDetail);
+  const detail = h('div', { class:'qdetail', id:'qdetail' });
   QUICK_AREAS.forEach(a => cards.push(areaCard(a, () => openKey, setOpen)));
   detail.append(...cards);
-  refreshers.push(() => {
-    const n = Object.keys(q.areas).length; count.textContent = n + ' of ' + QUICK_AREAS.length + ' answered';
-    toggleBtn.textContent = detail.hidden ? 'Add detail' + (n ? ' (' + n + ' of ' + QUICK_AREAS.length + ' answered)' : '') : 'Hide detail'; toggleBtn.setAttribute('aria-expanded', String(!detail.hidden));
-  });
-  if (Object.keys(q.areas).length) detail.hidden = false;
-  m.append(h('div', { class:'card' }, h('div', { class:'qask', text:'Add detail (optional)' }),
-    h('p', { class:'fine', style:'margin:0 0 8px', text:newLvl ? 'Smell it, taste it, and tell us how each part was. This helps you learn what you like.' : 'Rate the smell, taste, aftertaste, acidity, sweetness and body, one at a time. Each is Good, Okay or Not good.' }), count, toggleBtn), detail);
+  refreshers.push(() => { const n = Object.keys(q.areas).length; count.textContent = n + ' of ' + QUICK_AREAS.length + ' answered'; });
+  /* the six cards are always shown, so the smell, taste and aftertaste word wheels are not missed */
+  m.append(h('div', { class:'card', id:'qdetailHead' }, h('div', { class:'qask', text:'How did each part taste? (optional)' }),
+    h('p', { class:'fine', style:'margin:0 0 8px', text:newLvl ? 'Tap a part, tell us how it was, and pick words from a wheel if you like. This helps you learn what you like.' : 'Rate the smell, taste, aftertaste, acidity, sweetness and body, one at a time. Each is Good, Okay or Not good. Smell, taste and aftertaste also have a word wheel.' }), count), detail);
   const gn = h('textarea', { placeholder:'About this coffee or this session', id:'general_notes_box' });
   gn.addEventListener('input', () => { state.general_notes = gn.value; scheduleDraft(); });
   refreshers.push(() => { if (document.activeElement !== gn) gn.value = state.general_notes || ''; });
@@ -10120,6 +10613,8 @@ function renderSheetBody(){
     rows.append(mi('Your tendencies', 'Pictures of what you rate and enjoy, so far', () => { closeSheet(); goTend(); }));
     rows.append(mi('Understanding coffee', 'Your tendencies, how to shop, and what bag details mean', () => { closeSheet(); goLearn(); }));
     rows.append(mi('Solid or folklore?', 'What the research says about common brewing advice', () => { closeSheet(); goFolk(); }));
+    rows.append(mi('Wheels', 'Look-only wheels to keep beside you while you drink', () => { closeSheet(); goWheels(); }));
+    rows.append(mi('Taste your tastes', 'An exercise with salty, sweet, sour, savory and bitter', () => { closeSheet(); goTastes(); }));
     rows.append(mi('Glossary', 'What every term means', () => { sheet = { step:'glossary', q:'', group:'All' }; renderSheet(); }));
     rows.append(lab('Help'));
     rows.append(mi('How to use NeuroBrew', 'A guide to each step and feature', () => { closeSheet(); goGuide(); }));
@@ -10258,66 +10753,39 @@ function renderSheetBody(){
     const key = sheet.key, cfg = WHEELS[key];
     sheetEl.textContent = '';
     sheetEl.append(h('div', { class:'sheethead' }, h('h3', { id:'sheetTitle', style:'margin:0', text:cfg.title }), h('button', { type:'button', class:'btn small', style:'margin:0', text:'Done', onclick:closeSheet })));
-    let tabBtns = null;
+    let tabBtns = null, view = null;
     if (key === 'fragrance_aroma'){
       const tabs = [['words', 'Smell words'], ['kit', 'Aroma kit']];
-      tabBtns = tabs.map(t => h('button', { type:'button', 'aria-pressed':'false', onclick:() => { sheet.tab = t[0]; sheet.cat = -1; sheet.grp = -1; sheet.q = ''; search.value = ''; upd(); } }));
+      tabBtns = tabs.map(t => h('button', { type:'button', 'aria-pressed':'false', onclick:() => { sheet.tab = t[0]; build(); upd(); } }));
       sheetEl.append(h('div', { class:'seg', role:'group', 'aria-label':'Smell words or aroma kit' }, tabBtns));
     }
-    const search = h('input', { type:'search', class:'plain', placeholder:'Search for a word', 'aria-label':'Search words', style:'margin-top:10px' });
-    const famRow = h('div', { class:'chips', style:'margin-top:10px' });
-    const picked = h('div', { class:'pickedbox' }), wrap = h('div', { class:'wheelwrap' }), panel = h('div', { class:'wpanel' });
+    const picked = h('div', { class:'pickedbox' }), holder = h('div');
     const custom = h('input', { type:'text', class:'plain', placeholder:'Not on the wheel? Type your own word', 'aria-label':'Your own word', style:'flex:1;min-width:0' });
     const addBtn = h('button', { type:'button', class:'btn small', style:'margin:0', text:'Add' });
     const customRow = h('div', { style:'display:flex;gap:8px;margin-top:14px' }, custom, addBtn);
     const foot = h('p', { class:'fine' });
-    sheetEl.append(search, famRow, picked, wrap, panel, customRow, foot);   /* wheel directly under the color buttons, so it fits on screen */
+    sheetEl.append(picked, holder, customRow, foot);
     const isKit = () => key === 'fragrance_aroma' && sheet.tab === 'kit';
-    const data = () => isKit() ? KIT_WHEEL : cfg.data;
     const list = () => isKit() ? state.kit : state.words[key];
     const toggle = id => { const L = list(), i = L.indexOf(id); if (i >= 0) L.splice(i, 1); else L.push(id); changed(); upd(); };
-    const itemId = it => isKit() ? it.n : it, itemText = it => isKit() ? it.n + ' · ' + it.name : it;
+    function build(){
+      holder.textContent = '';
+      view = wheelView({ m:isKit() ? whNorm('Aroma kit wheel', 'Kit', KIT_WHEEL) : whNorm(cfg.title, cfg.center, cfg.data), ariaLabel:isKit() ? 'Aroma kit wheel' : cfg.title, guide:isKit() ? KIT_GUIDE : cfg.guide, searchHint:isKit() ? 'Search for a vial' : 'Search for a word', picker:{ list, toggle } });
+      holder.append(view);
+    }
     function upd(){
-      const D = data(), L = list();
+      const L = list();
       if (tabBtns) tabBtns.forEach((b, i) => { const isK = i === 1; b.setAttribute('aria-pressed', String(isK === isKit())); b.textContent = (isK ? 'Aroma kit' : 'Smell words') + ((isK ? state.kit.length : state.words[key].length) ? ' (' + (isK ? state.kit.length : state.words[key].length) + ' picked)' : ''); });
       customRow.style.display = isKit() ? 'none' : 'flex';
-      foot.textContent = isKit() ? KIT_CREDIT : "This is NeuroBrew's own guide. It is not the official SCA / World Coffee Research Coffee Taster's Flavor Wheel, which is their copyrighted work. The official wheel is sold at sca.coffee, and the free WCR Sensory Lexicon is at worldcoffeeresearch.org/resources/sensory-lexicon.";
+      foot.textContent = isKit() ? KIT_CREDIT : WHEEL_OWN;
       picked.textContent = '';
       if (!L.length) picked.append(h('span', { class:'fine', style:'margin:0', text:isKit() ? 'No vials ticked yet.' : 'Nothing picked yet.' }));
       L.forEach(id => picked.append(h('button', { type:'button', class:'chip', 'aria-pressed':'true', 'aria-label':'Remove ' + (isKit() ? 'vial ' + id : id), text:(isKit() ? id + ' ' + KIT_NAMES[id] : id) + '  ×', onclick:() => toggle(id) })));
-      famRow.textContent = '';
-      D.forEach((f, i) => { const pal = whPalette(f); famRow.append(h('button', { type:'button', class:'chip wfam', style:'--c:' + pal.fill + ';--ci:' + pal.ink, 'aria-pressed':String(sheet.cat === i && !sheet.q), text:f.short, onclick:() => { sheet.cat = i; sheet.grp = -1; sheet.q = ''; search.value = ''; upd(); } })); });
-      wrap.innerHTML = wheelSvg(D, sheet.q ? -1 : sheet.cat, sheet.grp, isKit() ? 'Kit' : cfg.center, isKit() ? 'Aroma kit wheel' : cfg.title);
-      panel.textContent = '';
-      const q = (sheet.q || '').trim().toLowerCase();
-      if (q){
-        const hits = [];
-        D.forEach(f => f.groups.forEach(gr => gr[1].forEach(it => { if (itemText(it).toLowerCase().includes(q)) hits.push([it, f.name + ', ' + gr[0]]); })));
-        if (!hits.length) panel.append(h('p', { class:'serif muted', style:'margin:6px 0', text:'Nothing matches "' + q + '".' + (isKit() ? '' : ' You can add your own word below.') }));
-        else panel.append(h('div', { class:'chips' }, hits.slice(0, 40).map(x => h('button', { type:'button', class:'chip', 'aria-pressed':String(L.includes(itemId(x[0]))), title:x[1], text:itemText(x[0]), onclick:() => toggle(itemId(x[0])) }))));
-        return;
-      }
-      if (sheet.cat < 0){ panel.append(h('p', { class:'serif', style:'margin:6px 0', text:'Tap a color above, or a slice of the wheel, to see its ' + (isKit() ? 'vials.' : 'words.') }), h('p', { class:'fine', style:'margin:0 0 6px', text:isKit() ? KIT_GUIDE : cfg.guide })); return; }
-      const fam = D[sheet.cat];
-      const fpal = whPalette(fam);
-      panel.append(h('h3', { class:'wfamtitle', style:'--c:' + fpal.fill, text:fam.name }), h('div', { class:'chips' }, fam.groups.map((gr, i) => h('button', { type:'button', class:'chip wgrp', style:'--c:' + fpal.fill + ';--ci:' + fpal.ink + ';--t:' + (i % 2 ? fpal.tintB : fpal.tintA), 'aria-pressed':String(sheet.grp === i), text:gr[0], onclick:() => { sheet.grp = sheet.grp === i ? -1 : i; upd(); } }))));
-      (sheet.grp >= 0 ? [fam.groups[sheet.grp]] : fam.groups).forEach(gr => {
-        panel.append(h('div', { class:'gname', style:'margin-top:12px', text:gr[0] }), h('div', { class:'chips' }, gr[1].map(it => h('button', { type:'button', class:'chip', 'aria-pressed':String(L.includes(itemId(it))), text:itemText(it), onclick:() => toggle(itemId(it)) }))));
-      });
+      view.refresh();
     }
-    const hit = el => {
-      const t = el.closest ? el.closest('[data-c]') : null; if (!t) return;
-      sheet.q = ''; search.value = '';
-      const c = +t.getAttribute('data-c'), gI = t.hasAttribute('data-g') ? +t.getAttribute('data-g') : -1;
-      if (gI < 0){ sheet.cat = c; sheet.grp = -1; } else { sheet.grp = (sheet.cat === c && sheet.grp === gI) ? -1 : gI; sheet.cat = c; }
-      upd();
-    };
-    search.addEventListener('input', () => { sheet.q = search.value; upd(); });
-    wrap.addEventListener('click', e => hit(e.target));
-    wrap.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); hit(e.target); } });
     const addOwn = () => { const w = custom.value.trim().toLowerCase().slice(0, 30); if (!w) return; if (!state.words[key].includes(w)){ state.words[key].push(w); changed(); } custom.value = ''; upd(); };
     addBtn.addEventListener('click', addOwn); custom.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); addOwn(); } });
-    upd();
+    build(); upd();
     return;
   }
   if (sheet.step === 'term'){
@@ -11887,7 +12355,7 @@ function screenDetail(m){
     h('button', { type:'button', class:'btn danger block', text:'Delete this tasting', onclick:() => openDelete(new Set([o._i]), true) })));
 }
 
-const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, tend:screenTend, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, prices:screenPrices, folk:screenFolk, compare:screenCompare };
+const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, prices:screenPrices, folk:screenFolk, compare:screenCompare };
 
 $('homeBtn').innerHTML = '<svg class="burger" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span class="ml">Menu</span>';
 $('homeBtn').addEventListener('click', openMenu);

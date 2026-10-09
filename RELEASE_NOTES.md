@@ -2,6 +2,25 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 53: A new look for the wheels, and a Wheels area
+
+2026-10-09 15:57:10 UTC
+
+- New Wheels area in the Menu, under Learn: the smell, taste and finish wheels, a new mouthfeel wheel, a wheel of what to change when a cup tastes wrong, the aroma kit wheel, and a brew control chart of strength against extraction. Made for looking at while you drink. Nothing there is saved.
+- The wheels are redrawn: tap a slice to zoom in, tap the middle to go back, or switch to a plain List. Every slice is labelled, each family keeps one color across all the wheels, and a search box finds a word.
+- An optional Keep screen on switch stops the screen dimming while you taste, on phones that allow it.
+- Quick tasting now shows its six cards (smell, taste, aftertaste, acidity, sweetness, body) under How did each part taste?, so the word wheels are not missed. The Add detail button is gone.
+- The brew control chart can place your own brew from its strength and extraction, and works out extraction from your coffee and drink weights. It uses the same hedged wording as the Extraction page. Wording check: the 2013 SCA preference study is now described as a study of European consumers.
+
+## Release 52: Bag notes and Taste your tastes
+
+2026-10-09 14:27:04 UTC
+
+- New Taste your tastes page under Learn: how to make the SCA's reference solutions for salty, sweet, sour and savory at home, with the amounts in grams, a taste-each round and a mix-up round where a helper pours. Nothing is saved, and the page says plainly that we found no study showing it improves how you taste coffee.
+- New Solid or folklore? entry: does what is printed on the bag change what you taste? Partly supported. Four papers, and no study of home brewers with their own bag notes.
+- The Quick tasting and the guide now suggest tasting before you read the bag's flavors.
+- Wording check against the SCA's 2024 tasting standard: the Taste step and glossary now describe flavor, aftertaste, acidity, sweetness and intensity the way the standard does, and say so.
+
 ## Release 51: Coffee prices
 
 2026-10-09 02:32:04 UTC
