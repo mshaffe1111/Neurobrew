@@ -2,6 +2,26 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 48: Compare your cups, a planner and honest wording
+
+2026-10-08 23:40:03 UTC
+
+- Compare these cups: line up your brews of one coffee, best first, and see what changed. It suggests one thing to try only when the evidence is clear.
+- New Tool: Ratio and strength planner. The ratio for the strength you want, and how much water to add to a strong brew.
+- Strength and extraction wording is more honest: the 18 to 22% zone is a convention, not a rule, and the extraction basis is stated.
+- Menu: What each column means, a guide to your history file that you can save.
+
+## Release 47: Your tendencies, in pictures
+
+2026-10-08 22:20:54 UTC
+
+- The Menu has a new Your tendencies row. It opens pictures of what you rate and write, and you do not have to enter anything first.
+- It shows the flavors you liked and did not like, what you enjoy about a cup from your Quick tastings, how you use the stars, and how you rate kinds of coffee, one dot per coffee.
+- Brews you measured appear on the strength and extraction chart. Filled dots are brews you rated 4 or 5 stars.
+- Every bar counts coffees, and every picture says how many it is based on. A picture appears only when there is enough to draw, and the screen says how many more coffees the others need.
+- New shows one picture and folds the rest. Comfortable shows folded cards with a Why? note. Expert shows everything open, with ranges and a table you can save.
+- Understanding coffee now starts with a short so-far summary that reads Quick tastings too, and a button to the full screen.
+
 ## Release 46: Ask before saving: do the other way too?
 
 2026-10-08 21:26:36 UTC

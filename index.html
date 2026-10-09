@@ -255,6 +255,38 @@ details.mgroup > summary .mgt{ font-weight:700; font-size:17px; }
 .rrow.big strong{ font-size:22px; }
 .rrow .sub{ font-size:14px; margin-top:1px; }
 #readyRows h3{ margin-bottom:2px; }
+.tpdiv{ margin:4px 0 6px; }
+.tprow{ display:grid; grid-template-columns:minmax(84px,34%) 1fr 1fr; gap:6px; align-items:center; min-height:30px; }
+.tprow + .tprow{ border-top:1px solid var(--line); }
+.tphead{ min-height:22px; font-size:12.5px; color:var(--muted); border-top:0 !important; }
+.tphead .tpl{ text-align:right; } .tphead .tpr{ text-align:left; }
+.tplab{ font-size:15px; line-height:1.2; overflow-wrap:anywhere; }
+.tpside{ display:flex; align-items:center; gap:5px; min-width:0; }
+.tpside.tpl{ justify-content:flex-end; }
+.tpside i{ display:block; height:14px; min-width:0; }
+.tpside.tpl i{ background:var(--accent); border-radius:4px 0 0 4px; }
+.tpside.tpr i{ background:var(--leaf); border-radius:0 4px 4px 0; }
+.tpside b{ font-size:13.5px; font-weight:600; }
+.tpwords{ margin:6px 0 0; }
+.tpnums{ margin:10px 0 0; padding-top:8px; border-top:1px solid var(--line); }
+.tpstars{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; align-items:end; margin:6px 0; }
+.tpcol{ display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:3px; height:130px; }
+.tpcol b{ font-size:14px; font-weight:600; }
+.tpcol i{ display:block; width:100%; max-width:44px; background:var(--leaf); border-radius:4px 4px 0 0; }
+.tpcol span{ font-size:12.5px; color:var(--muted); white-space:nowrap; }
+.tpdrow{ display:grid; grid-template-columns:minmax(84px,34%) 1fr; gap:8px; align-items:center; padding:4px 0; }
+.tpdrow + .tpdrow{ border-top:1px solid var(--line); }
+.tpdrow .tplab{ display:flex; flex-direction:column; gap:1px; }
+.tpdrow small{ font-size:12.5px; color:var(--muted); }
+.tpplot{ display:block; min-width:0; }
+.tpaxis{ border-top:0 !important; padding:0; }
+.tpticks{ display:flex; justify-content:space-between; padding:0 3%; font-size:12px; color:var(--muted); }
+.tpplain{ margin:10px 0 0; }
+.tpwhy{ margin:8px 0 0; }
+.tpwhy summary{ cursor:pointer; color:var(--accent); font-size:15px; min-height:32px; display:flex; align-items:center; }
+.tpholder .seg, #tpHolder{ width:100%; }
+.tpmap{ margin:2px 0 4px; }
+.tpcard + .tpcard{ margin-top:12px; }
 /* timer */
 .bigtime{ font-size:72px; font-weight:800; text-align:center; font-variant-numeric:tabular-nums; letter-spacing:-0.03em; line-height:1; margin:18px 0 6px; }
 .now{ text-align:center; margin:0 0 14px; }
@@ -891,6 +923,21 @@ details.dialsec[open]{ padding-bottom:14px; }
 .yc-table .nw{ white-space:nowrap; }
 .yc-table tr.cur td{ font-weight:700; }
 .yc-table tr.cur td:first-child::before{ content:"\25B8 "; color:var(--leaf); }
+.tgdl{ margin:6px 0 2px; }
+.tgdl dt{ font:600 13px/1.3 ui-monospace, Menlo, Consolas, monospace; margin-top:10px; color:var(--label); overflow-wrap:anywhere; }
+.tgdl dd{ margin:2px 0 0; font-size:14.5px; line-height:1.4; }
+.cmphead{ font-weight:600; }
+.cmpsugg{ margin:10px 0 0; padding:10px 12px; border-left:4px solid var(--accent); background:var(--tint); border-radius:0 10px 10px 0; }
+.cmpnums{ font-variant-numeric:tabular-nums; }
+.cmpwrap{ overflow-x:auto; margin:8px -4px 0; padding:0 4px; }
+.cmptable{ width:100%; border-collapse:collapse; font-size:14.5px; font-variant-numeric:tabular-nums; }
+.cmptable th, .cmptable td{ text-align:left; padding:8px 8px 8px 0; border-top:1px solid var(--line); vertical-align:top; }
+.cmptable thead th{ border-top:0; font-size:12.5px; color:var(--muted); font-weight:600; white-space:nowrap; }
+.cmptable tbody th{ font-weight:500; white-space:nowrap; }
+.cmpstar{ font-weight:600; white-space:nowrap; }
+.cmpgap td{ text-align:center; color:var(--muted); font-size:13px; padding:6px 0; background:var(--tint); }
+.cmpside tbody th{ color:var(--muted); font-size:13px; }
+.cmpside .cmpchg td{ font-weight:600; }
 </style>
 </head>
 <body data-screen="start">
@@ -2641,10 +2688,10 @@ function analyzeCupping(i){
   const pts = { sour:0, bitter:0, astringent:0, flat:0, thin:0, strong:0 }, why = { sour:[], bitter:[], astringent:[], flat:[], thin:[], strong:[] };
   const add = (k, n, t) => { pts[k] += n; why[k].push(t); };
   if (typeof i.ey === 'number'){
-    if (i.ey < 18) add('sour', 2, 'Your measurement says the cup is under-extracted (' + i.ey + '% is below the usual 18–22%).');
+    if (i.ey < 18) add('sour', 2, 'Your measurement says the cup is under-extracted (' + i.ey + '% is below the usual 18–22%), which often goes with a sour cup.');
     else if (i.ey > 24){ /* above the usual range: taste decides, so the measurement alone adds no evidence; a note is added below */ }
     else if (i.ey >= 18 && i.ey <= 22 && i.strength === 'weak') add('thin', 2, 'The cup is well extracted (' + i.ey + '%) but weak, so a stronger ratio is the fix.');
-    else if (i.strength === 'strong') add('strong', 2, 'The cup is well extracted (' + i.ey + '%) but stronger than the classic target, so a weaker ratio is the fix.');
+    else if (i.strength === 'strong') add('strong', 2, 'The cup is well extracted (' + i.ey + '%) but stronger than the usual target, so a weaker ratio is the fix.');
   }
   const sw = used(NEG_WORDS.sour); if (sw.length) add('sour', 2 * sw.length, 'You picked ' + sw.join(', ') + '.');
   const wk = k => ((i.words && i.words[k]) || []).map(w => String(w).toLowerCase());
@@ -2999,7 +3046,7 @@ function brewPart(screen){ return screen === 'brew' || screen === 'recipe' || sc
 
 /* ---------- Piece 3B: tap-to-explain terms and plain wording ---------- */
 const TERMS = [
-  { key:'extraction yield', title:'Extraction yield (EY)', pat:'extraction yield', def:'The percentage of the ground coffee that dissolved into your drink. The classic target for filter coffee is about 18–22%.' },
+  { key:'extraction yield', title:'Extraction yield (EY)', pat:'extraction yield', def:'The percentage of the ground coffee that dissolved into your drink. The range usually aimed for in filter coffee is about 18–22%. It is a convention from the 1950s, not a rule, and its edges are not sharp.' },
   { key:'over-extraction', title:'Over-extraction', pat:'over-extract(?:ion|ed|s|ing)?', def:'More of the coffee dissolved into the water than most tasters like, including the harsh parts. It often tastes harsh, dry or bitter, though bitterness also depends on how strong the cup is.' },
   { key:'semi-washed', title:'Semi-washed', pat:'semi.?washed|partially.?washed|half.?washed', def:'A bag word with more than one meaning. In Indonesia it usually means wet-hulled (Giling Basah). Elsewhere it can mean a washed coffee with a short fermentation and some fruit left on. Check the origin and the roaster\'s notes.' },
   { key:'pulped natural', title:'Pulped natural', pat:'pulped.?natural|pulp.?natural', def:'The Brazilian name for a process very close to honey. The skin comes off and the sticky fruit layer stays on while the coffee dries. Some producers separate the two by how much of that layer is left. NeuroBrew treats it as honey.' },
@@ -3365,23 +3412,32 @@ function extractionYield(tdsPct, outG, doseG){
   if (!(tdsPct > 0 && outG > 0 && doseG > 0)) return null;
   return Math.round(tdsPct * outG / doseG * 10) / 10;
 }
+/* The verdict is a reading against two conventions, not a measurement of quality. The 1.15-1.35 % strength and 18-22 % extraction zone dates from the 1950s (Lockhart); its edges are not sharp
+   (17.9 % and 18.1 % are the same cup), and consumers split on where they like it. For espresso, 8-12 % is the common cafe target. The categories (weak / ideal / strong, under / ideal / high / over) are
+   unchanged; only the wording says what they are. Advice to grind finer is conditional: a longer steep does the same job in an immersion brew, and a shot that already runs slowly should not go finer. */
 function judgeBrew(type, tds, ey){
   const out = { strength:null, extraction:null, lines:[], kind:type === 'espresso' ? 'espresso' : 'filter' };
   if (type === 'cold' || ey == null) return out;
-  const lo = type === 'espresso' ? 8 : 1.15, hi = type === 'espresso' ? 12 : 1.35;
+  const esp = type === 'espresso', steeps = type === 'immersion' || type === 'hybrid' || type === 'siphon';
+  const lo = esp ? 8 : 1.15, hi = esp ? 12 : 1.35, zone = esp ? 'the common café target' : 'the Lockhart zone (from the 1950s)';
   out.strength = tds < lo ? 'weak' : tds > hi ? 'strong' : 'ideal';
   out.extraction = ey < 18 ? 'under' : ey <= 22 ? 'ideal' : ey <= 24 ? 'high' : 'over';
-  const sTxt = { weak:'a little weaker than the classic target', strong:'a little stronger than the classic target', ideal:'inside the classic target' }[out.strength];
-  const eTxt = { under:'below the usual 18–22%. That points to under-extraction (sour, thin).', ideal:'inside the usual 18–22% range.', high:'a little above 22%. Many tasters like this, and a 2013 SCA study found a slight preference for 20–24%.', over:'above 24%, which is above the usual SCA range. That can mean a harsher cup, but taste decides: bitterness also follows how strong the coffee is.' }[out.extraction];
-  out.lines.push('Strength: ' + tds + '% TDS is ' + sTxt + ' (' + (type === 'espresso' ? '8–12%' : '1.15–1.35%') + ').');
+  const sTxt = { weak:'a little below ' + zone, strong:'a little above ' + zone, ideal:'inside ' + zone }[out.strength];
+  const eTxt = {
+    under:'below 18%, the low edge of the zone people usually aim for. Low extraction often goes with a sour or thin cup (under-extraction), but 18% is a convention, not a cliff: 17.9% and 18.1% are the same cup. Taste decides.',
+    ideal:'inside the usual 18–22% zone. That zone is a convention from the 1950s, not a law: its edges are not sharp, and people differ on where they like it.',
+    high:'a little above 22%. Many tasters like this, and a 2013 SCA study found a slight preference for 20–24%. The 22% edge is a convention.',
+    over:'above 24%, beyond the usual zone. That can mean a harsher cup, but taste decides: bitterness also follows how strong the coffee is.' }[out.extraction];
+  out.lines.push('Strength: ' + tds + '% TDS is ' + sTxt + ' (' + (esp ? '8–12%' : '1.15–1.35%') + ').');
   out.lines.push('Extraction: ' + ey + '% is ' + eTxt);
   if (out.extraction === 'ideal' && out.strength === 'weak') out.lines.push('Well extracted but weak: use a little more coffee (a stronger ratio), not a finer grind.');
   if (out.extraction === 'ideal' && out.strength === 'strong') out.lines.push('Well extracted but strong: use a little less coffee (a weaker ratio), not a coarser grind.');
-  if (out.extraction === 'under') out.lines.push('Grind finer, or use hotter water, before you change the ratio.');
-  if (out.extraction === 'over') out.lines.push('If it tastes harsh or dry, grind coarser or use cooler water before you change the ratio.');
+  if (out.extraction === 'under') out.lines.push(esp
+    ? 'If it tastes sour or thin, a finer grind or hotter water can help. If the shot already runs slowly, going finer risks uneven flow: try a little more output weight instead. Do this before you change the dose.'
+    : 'If it tastes sour or thin, ' + (steeps ? 'steep longer, grind finer or use hotter water' : 'grind finer or use hotter water') + ' before you change the ratio.');
+  if (out.extraction === 'over') out.lines.push('If it tastes harsh or dry, ' + (steeps ? 'shorten the steep, grind coarser or use cooler water' : 'grind coarser or use cooler water') + ' before you change the ratio.');
   return out;
 }
-
 /* ---------- tendencies ----------
    Every saved cupping has a total score and the coffee's details. Brewing the same coffee five times must not count as five coffees,
    so the cups of one coffee are averaged first. A detail (for example "Natural") counts as a tendency only when at least
@@ -3500,6 +3556,148 @@ function fitToTendencies(t, cand){
   res.verdict = !res.rows.length ? 'Add the roast, process or origin to see how it fits.' : (good && !bad) ? 'Fits what you have scored well.' : (bad && !good) ? 'Differs from what you have scored well.' : (good && bad) ? 'Mixed: some details match what you like and some do not.' : 'Nothing here is strongly tied to your scores yet.';
   return res;
 }
+/* ---------- Tendencies pictures ----------
+   These describe what the person rated and wrote. They make no claim about coffee. Rules that keep them honest:
+   - the unit is a COFFEE, not a cup: the cups of one coffee are combined first, so one favorite brewed ten times is still one coffee;
+   - the rating is the person's own stars (every tasting, Quick or cupped, can have them); home, SCA and affective scores are never mixed in;
+   - flavors and Quick answers come from the newest cup of that coffee that has them;
+   - counts, not averages: an average star for "liked a flavor" would be circular, because the stars and the flavors are the same person's opinion of the same cup;
+   - a picture appears only when there is enough to draw (TP_MIN). */
+const TP_MIN = { rate:5, flavors:5, enjoy:5, groups:6, map:5 };
+const TP_STAR_BINS = [1, 2, 3, 4, 5];
+/* the finish wheel names its own families; these join the ones that match a main family so the person sees one list of families */
+const TP_AFTER_TO_MAIN = { 'Sweet finish':'Sweet', 'Fruity and floral':'Fruit', 'Chocolate and nut':'Nutty and cocoa', 'Spice and toast':'Spice', 'Smoky and roasty':'Roasted' };
+const TP_OTHER = 'Other words';
+function tpMedian(a){ const s = a.slice().sort((x, y) => x - y), n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : null; }
+/* Wilson score interval for k out of n, as a share (0 to 1), 95 %. 3 of 3 gives 0.44 to 1. */
+function wilson(k, n){
+  if (!(n > 0)) return null;
+  const z = 1.959964, p = k / n, d = 1 + z * z / n, c = p + z * z / (2 * n), m = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n));
+  return { lo:Math.max(0, (c - m) / d), hi:Math.min(1, (c + m) / d) };
+}
+/* word -> family, from the three wheels (taste wheel first). A phrase such as "blackberry jam" finds the longest wheel word inside it; "chocolate" finds "dark chocolate". */
+const TP_CACHE = { words:null };
+function tpWordMap(){
+  if (TP_CACHE.words) return TP_CACHE.words;
+  const m = {}; [FLAVOR_WHEEL, AROMA_WHEEL, AFTER_WHEEL].forEach(w => w.forEach(f => { const fam = TP_AFTER_TO_MAIN[f.name] || f.name; f.groups.forEach(g => g[1].forEach(x => { const k = String(x).toLowerCase(); if (!m[k]) m[k] = fam; })); }));
+  return (TP_CACHE.words = m);
+}
+function tpFamilyOf(word){
+  const w = String(word || '').toLowerCase().trim().replace(/\s+/g, ' '), m = tpWordMap();
+  if (!w) return TP_OTHER;
+  if (m[w]) return m[w];
+  const keys = Object.keys(m).sort((a, b) => b.length - a.length), has = (hay, needle) => (' ' + hay + ' ').indexOf(' ' + needle + ' ') >= 0;
+  const inside = keys.find(k => has(w, k)); if (inside) return m[inside];
+  const part = keys.find(k => has(k, w)); if (part) return m[part];
+  return TP_OTHER;
+}
+/* one entry per coffee. objs = the saved rows. */
+function tpCoffees(objs){
+  const by = {}, order = [];
+  (objs || []).forEach((o, i) => {
+    const nm = norm(unneutralize(o.coffee_name || '')).trim(), key = o.coffee_id || (nm ? nm + '|' + norm(unneutralize(o.roaster || '')).trim() : '');
+    if (!key) return;
+    if (!by[key]){ by[key] = { key, rows:[] }; order.push(key); }
+    by[key].rows.push({ o, i });
+  });
+  return order.map(k => {
+    const c = by[k], rows = c.rows.slice().sort((a, b) => (String(a.o.saved_at || '') < String(b.o.saved_at || '') ? -1 : String(a.o.saved_at || '') > String(b.o.saved_at || '') ? 1 : a.i - b.i)).map(r => r.o);
+    const first = f => { const r = rows.find(o => String(o[f] || '').trim()); return r ? r[f] : ''; };
+    const stars = rows.map(o => validStars(o.my_rating_stars)).filter(x => x > 0);
+    const newest = pick => { for (let i = rows.length - 1; i >= 0; i--){ const v = pick(rows[i]); if (v) return v; } return null; };
+    const fl = newest(o => { const q = quickAnswers(o); return (q.liked.length || q.notLiked.length) ? { liked:q.liked, notLiked:q.notLiked } : null; });
+    const ar = newest(o => { const q = quickAnswers(o); return Object.keys(q.areas).length ? q.areas : null; });
+    const om = originMatch(unneutralize(first('origin'))), vr = varietyFor(unneutralize(first('varietal')));
+    const proc = tendKey(PROCESSES, first('process')), dens = tendKey(DENSITIES, first('elevation_class'));
+    return { key:k, name:unneutralize(first('coffee_name')), roaster:unneutralize(first('roaster')), cups:rows.length, stars:stars.length ? stars.reduce((a, b) => a + b, 0) / stars.length : null,
+      roast:tendKey(ROASTS, first('roast_level')), process:proc === 'unknown' ? '' : proc, density:dens === 'unknown' ? '' : dens,
+      origin:om.origin ? (om.origin.key === 'africa' ? 'East Africa' : om.origin.name) : (om.country ? om.country.name : ''), variety:vr ? vr.name : '',
+      liked:fl ? fl.liked : [], notLiked:fl ? fl.notLiked : [], hasFlavors:!!fl, areas:ar || {}, hasAreas:!!ar };
+  });
+}
+/* How you rate: coffees per whole star. A half star is counted with the whole star above it. */
+function tpRating(cs){
+  const rated = cs.filter(c => c.stars != null), bars = TP_STAR_BINS.map(s => ({ star:s, n:0 }));
+  rated.forEach(c => { const b = Math.min(5, Math.max(1, Math.ceil(c.stars - 1e-9))); bars[b - 1].n++; });
+  const used = bars.filter(b => b.n > 0).length;
+  return { n:rated.length, bars, max:Math.max(1, ...bars.map(b => b.n)), ready:rated.length >= TP_MIN.rate, narrow:rated.length >= TP_MIN.rate && used <= 2 };
+}
+/* Flavors liked and not liked, by family: how many coffees had a liked word in the family, and how many a not-liked word. */
+function tpFlavors(cs){
+  const have = cs.filter(c => c.hasFlavors), fam = {};
+  const row = f => fam[f] || (fam[f] = { family:f, liked:0, notLiked:0, likedWords:{}, notWords:{} });
+  have.forEach(c => {
+    [['liked', 'likedWords', c.liked], ['notLiked', 'notWords', c.notLiked]].forEach(([side, wk, words]) => {
+      const seen = new Set(); words.forEach(w => { const f = tpFamilyOf(w), r = row(f); r[wk][w] = (r[wk][w] || 0) + 1; if (!seen.has(f)){ seen.add(f); r[side]++; } });
+    });
+  });
+  const rows = Object.keys(fam).map(k => fam[k]).sort((a, b) => (b.liked + b.notLiked) - (a.liked + a.notLiked) || (a.family === TP_OTHER ? 1 : b.family === TP_OTHER ? -1 : a.family < b.family ? -1 : 1));
+  rows.forEach(r => { r.total = have.length; r.likedCI = wilson(r.liked, have.length); r.words = side => Object.keys(side).sort((a, b) => side[b] - side[a] || (a < b ? -1 : 1)); r.topLiked = r.words(r.likedWords).slice(0, 3); r.topNot = r.words(r.notWords).slice(0, 3); });
+  return { n:have.length, rows, max:Math.max(1, ...rows.map(r => Math.max(r.liked, r.notLiked))), ready:have.length >= TP_MIN.flavors };
+}
+/* What you enjoy about a cup: for each of the six Quick answers, coffees answered Good and coffees answered Not good. Okay and Couldn't tell are counted but not drawn. */
+function tpEnjoy(cs){
+  const have = cs.filter(c => c.hasAreas);
+  const rows = QUICK_AREAS.map(a => { const r = { key:a.key, label:a.label, good:0, okay:0, notgood:0, unsure:0 }; have.forEach(c => { const g = c.areas[a.key]; if (g) r[g]++; }); r.answered = r.good + r.okay + r.notgood + r.unsure; return r; });
+  return { n:have.length, rows, max:Math.max(1, ...rows.map(r => Math.max(r.good, r.notgood))), ready:have.length >= TP_MIN.enjoy };
+}
+/* Ratings by group, one feature at a time. Each row has the stars of every rated coffee in the group; the median and the range appear only from 3 coffees. */
+function tpGroups(cs){
+  const rated = cs.filter(c => c.stars != null), feats = [];
+  TEND_FEATURES.forEach(F => {
+    const vals = Array.from(new Set(rated.map(c => c[F.key]).filter(Boolean)));
+    const rows = vals.map(v => {
+      const g = rated.filter(c => c[F.key] === v), s = g.map(c => c.stars).sort((a, b) => a - b);
+      return { value:v, label:tendLabel(F.key, v), n:g.length, stars:s, names:g.map(c => c.name), median:g.length >= 3 ? tpMedian(s) : null, lo:g.length >= 3 ? s[0] : null, hi:g.length >= 3 ? s[s.length - 1] : null };
+    }).sort((a, b) => b.n - a.n || (a.label < b.label ? -1 : 1));
+    if (rows.length >= 2) feats.push({ key:F.key, label:F.label, rows:rows.slice(0, 8), hidden:Math.max(0, rows.length - 8), coffees:rows.reduce((a, r) => a + r.n, 0) });
+  });
+  return { n:rated.length, feats, ready:rated.length >= TP_MIN.groups && feats.length > 0 };
+}
+/* Measured brews: a dot per brew with both a TDS and an extraction. Filter brews and espresso have different charts. */
+function tpMap(objs){
+  const pts = [];
+  (objs || []).forEach(o => {
+    const tds = tendNum(o.brew_tds_pct), ey = tendNum(o.brew_ey_pct); if (!(tds > 0) || !(ey > 0)) return;
+    const mt = METHODS.find(x => x.key === String(o.brew_method || '')); if (!mt || mt.type === 'cold') return;
+    pts.push({ kind:mt.type === 'espresso' ? 'espresso' : 'filter', tds, ey, stars:validStars(o.my_rating_stars), name:unneutralize(o.coffee_name || '') });
+  });
+  const kinds = ['filter', 'espresso'].map(k => ({ kind:k, pts:pts.filter(p => p.kind === k) })).filter(g => g.pts.length);
+  return { n:pts.length, kinds, ready:pts.length >= TP_MIN.map };
+}
+/* which pictures can be drawn now, and how many more coffees the others need */
+function tpAvailable(objs){
+  const cs = tpCoffees(objs), r = tpRating(cs), f = tpFlavors(cs), e = tpEnjoy(cs), g = tpGroups(cs), m = tpMap(objs);
+  const list = [
+    { id:'flavors', ready:f.ready, n:f.n, need:Math.max(0, TP_MIN.flavors - f.n), noun:'coffees with flavors saved' },
+    { id:'enjoy', ready:e.ready, n:e.n, need:Math.max(0, TP_MIN.enjoy - e.n), noun:'Quick tastings' },
+    { id:'rating', ready:r.ready, n:r.n, need:Math.max(0, TP_MIN.rate - r.n), noun:'rated coffees' },
+    { id:'groups', ready:g.ready, n:g.n, need:Math.max(0, TP_MIN.groups - g.n), noun:'rated coffees' },
+    { id:'map', ready:m.ready, n:m.n, need:Math.max(0, TP_MIN.map - m.n), noun:'measured brews' }
+  ];
+  return { cs, rating:r, flavors:f, enjoy:e, groups:g, map:m, list, any:list.some(x => x.ready), coffees:cs.length };
+}
+/* a short "so far" summary for the Learn screen: plain sentences from the same data */
+function tpSummary(objs){
+  const a = tpAvailable(objs), lines = [];
+  const top = (rows, side) => rows.filter(r => r[side] > 0 && r.family !== TP_OTHER).sort((x, y) => y[side] - x[side]).slice(0, 2);
+  if (a.flavors.ready){
+    const l = top(a.flavors.rows, 'liked'), nl = top(a.flavors.rows, 'notLiked');
+    if (l.length) lines.push('Flavors you have liked most so far: ' + l.map(r => r.family.toLowerCase() + ' (' + r.liked + ' of ' + a.flavors.n + ' coffees)').join(' and ') + '.');
+    if (nl.length) lines.push('Flavors you have not liked: ' + nl.map(r => r.family.toLowerCase() + ' (' + r.notLiked + ' of ' + a.flavors.n + ')').join(' and ') + '.');
+  }
+  if (a.enjoy.ready){
+    const g = a.enjoy.rows.slice().sort((x, y) => y.good - x.good)[0];
+    if (g && g.good > 0) lines.push('In Quick tastings you most often said "good" about the ' + g.label.toLowerCase() + ' (' + g.good + ' of ' + a.enjoy.n + ' coffees).');
+  }
+  return { lines, any:a.any, rated:a.rating.n, coffees:a.coffees, need:a.list.filter(x => !x.ready).map(x => x.need).reduce((m, x) => (m == null ? x : Math.min(m, x)), null) };
+}
+/* the coffee-level table behind the pictures, as a CSV (Expert) */
+function tpCsv(objs){
+  const cs = tpCoffees(objs), head = ['coffee', 'roaster', 'cups', 'stars', 'roast', 'process', 'elevation', 'origin', 'varietal', 'flavors_liked', 'flavors_not_liked'].concat(QUICK_AREAS.map(a => 'q_' + a.key));
+  const lines = [head].concat(cs.map(c => [c.name, c.roaster, c.cups, c.stars == null ? '' : c.stars.toFixed(2), c.roast, c.process, c.density, c.origin, c.variety, c.liked.join('; '), c.notLiked.join('; ')].concat(QUICK_AREAS.map(a => c.areas[a.key] || '')).map(x => neutralize(x))));
+  return toCSV(lines);
+}
 /* ---------- glossary: every term in one list ---------- */
 const TERM_GROUPS = {
   brewing:['extraction yield','extraction','over-extraction','under-extraction','bloom','drawdown','fines','channeling','agitation','ratio','dose','microns','immersion','tds','alkalinity','tamp','portafilter','yield','dial it in','degassing','refractometer'],
@@ -3544,7 +3742,7 @@ const ABOUT_LIMITS = [
   'Brew settings are starting points. The roast changes to temperature and grind come from brewer experience, not lab results. The app says so wherever they appear. Process, decaf and elevation do not change your brew settings on their own. They only offer optional tips.',
   "The flavor wheels are NeuroBrew's own. They are not the official SCA / World Coffee Research wheel.",
   'Le Nez du Café is a trademark of Éditions Jean Lenoir. NeuroBrew is not affiliated with or endorsed by them, the SCA, World Coffee Research, or any brand named here.',
-  'Where NeuroBrew uses its own rule of thumb, it says so. A total must move by one point before a try counts as better or worse. A bag a week older can change the taste. Three coffees must agree before a starting point is offered. Five coffees are needed before your tendencies are shown. A pattern must also stand out from the ordinary ups and downs of your scores. These are sensible limits, not published standards.',
+  'Where NeuroBrew uses its own rule of thumb, it says so. A total must move by one point before a try counts as better or worse. A bag a week older can change the taste. Three coffees must agree before a starting point is offered. Five coffees are needed before your tendencies are shown. A pattern must also stand out from the ordinary ups and downs of your scores. The Tendencies pictures need five coffees, or six for ratings by group, and show counts rather than rules. The shaded box on the brew map is a common target, not a rule. These are sensible limits, not published standards.',
   "Looking a coffee up reads the roaster's own shop listing, in the roaster's words. It works only with shops built on Shopify. NeuroBrew fills in only what the listing states, and you check every line first. It remembers each roaster's shop address in this browser. Your browser asks the roaster's website directly, so that website sees the visit, just as if you opened the page yourself. Nothing about your tastings is sent.",
   'Saving over a file you choose works only in Chrome and Edge. Your browser asks your permission again after it has been closed. Other browsers download a copy. Your setup is stored in one extra column of the history file. Older copies of NeuroBrew ignore it.',
   'Your data stays in your browser until you save a file.'
@@ -4064,6 +4262,181 @@ function quickTries(objs, coffee){
   });
   return list;
 }
+/* ---------- compare cups ----------
+   One coffee is every saved cup with the same name and roaster (or the same coffee id), whatever the bag. Methods are never mixed: grind, time and ratio mean different things in a V60 and a French press.
+   Only the person's own stars rank the cups, so home, SCA and affective scores are never compared with each other.
+   What changed between cups is plain arithmetic. Pointing at ONE thing is a claim, so it is held to a strict rule:
+   - at least CMP_MIN_RATED rated cups, and a spread of at least CMP_MIN_GAP star between the best and the lowest;
+   - the input varied beyond its tolerance and was recorded for every rated cup;
+   - Spearman rank correlation with the stars at least CMP_MIN_RHO, and a permutation p-value no larger than CMP_ALPHA divided by the number of inputs tested (so that testing several inputs does not make a chance match likely);
+   - and only ONE input passes. If two or more pass they moved together, and the app says it cannot tell which.
+   The permutation test shuffles the stars CMP_PERMS times with a fixed seed taken from the data, so the same cups always give the same answer.
+   Even then it says "suggests": a few home brews with several changes cannot prove a cause. */
+const CMP_MIN_RATED = 6, CMP_MIN_GAP = 1, CMP_MIN_RHO = 0.7, CMP_ALPHA = 0.05, CMP_PERMS = 2000;
+const CMP_INPUTS = [
+  { key:'dose', label:'Coffee', tol:0.5, suggest:true }, { key:'water', label:'Water', tol:2, suggest:true }, { key:'ratio', label:'Ratio', tol:0.3, suggest:true },
+  { key:'temp', label:'Temperature', tol:2, suggest:true }, { key:'grind', label:'Grind', tol:0, suggest:true }, { key:'time', label:'Time', tol:10, suggest:true },
+  { key:'age', label:'Days since roast', tol:2, suggest:true }, { key:'tds', label:'Strength (TDS)', tol:0.05, suggest:false }, { key:'ey', label:'Extraction', tol:0.5, suggest:false }
+];
+const cmpTrim = v => String(Math.round(v * 10) / 10);
+function cmpFmt(key, v){
+  if (v == null || v === '') return '';
+  if (key === 'dose' || key === 'water') return cmpTrim(v) + ' g';
+  if (key === 'ratio') return '1:' + cmpTrim(v);
+  if (key === 'temp') return Math.round(v) + '°F';
+  if (key === 'time'){ const s = Math.round(v); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  if (key === 'tds') return (Math.round(v * 100) / 100) + '%';
+  if (key === 'ey') return cmpTrim(v) + '%';
+  if (key === 'age') return Math.round(v) + ' d';
+  return String(v);
+}
+/* one saved row as a cup of its method; null when it is not a brew with a known method */
+function cmpCup(o){
+  const mt = METHODS.find(x => x.key === String(o.brew_method || '')); if (!mt) return null;
+  const n = k => { const v = parseFloat(o[k]); return isFinite(v) ? v : null; }, pos = k => { const v = n(k); return v != null && v > 0 ? v : null; };
+  const setting = unneutralize(String(o.brew_grind_setting || '')).trim(), um = pos('brew_grind_target_um'), sm = setting.match(/-?\d+(\.\d+)?/);
+  const grindNum = sm ? parseFloat(sm[0]) : um, grindText = setting || (um ? 'about ' + Math.round(um) + ' µm' : '');
+  const days = n('days_since_roast'), qa = quickAnswers(o);
+  return { id:String(o.id || ''), idx:o._i, date:String(o.cupping_date || ''), saved:String(o.saved_at || ''), method:mt.key, methodLabel:mt.label, stars:validStars(o.my_rating_stars),
+    in:{ dose:pos('brew_dose_g'), water:pos('brew_water_g'), ratio:pos('brew_ratio'), temp:pos('brew_temp_f'), grind:grindNum, time:pos('brew_actual_time_s'), age:days != null && days >= 0 ? days : null, tds:pos('brew_tds_pct'), ey:pos('brew_ey_pct') },
+    grindText, grindIsNumber:sm != null || um != null, answers:qa.areas, makeAgain:qa.makeAgain, liked:qa.liked, notLiked:qa.notLiked };
+}
+/* every brew of this coffee (same name and roaster, or the same id), newest first */
+function cmpCups(objs, c){ return historyForCoffee(objs, c).map(cmpCup).filter(Boolean); }
+function cmpMethods(cups){
+  const by = {}; cups.forEach(c => { const m = by[c.method] || (by[c.method] = { key:c.method, label:c.methodLabel, n:0, rated:0 }); m.n++; if (c.stars > 0) m.rated++; });
+  return Object.keys(by).map(k => by[k]).sort((a, b) => b.n - a.n || (a.label < b.label ? -1 : 1));
+}
+/* midranks (ties share the average rank) */
+function cmpRanks(a){
+  const idx = a.map((v, i) => i).sort((x, y) => a[x] - a[y]), r = new Array(a.length);
+  for (let i = 0; i < idx.length;){ let j = i; while (j + 1 < idx.length && a[idx[j + 1]] === a[idx[i]]) j++; const m = (i + j) / 2 + 1; for (let k = i; k <= j; k++) r[idx[k]] = m; i = j + 1; }
+  return r;
+}
+/* Spearman rank correlation from two lists of ranks; 0 when either has no spread */
+function cmpSpearman(rx, ry){
+  const n = rx.length, mx = rx.reduce((s, v) => s + v, 0) / n, my = ry.reduce((s, v) => s + v, 0) / n; let sxy = 0, sxx = 0, syy = 0;
+  for (let i = 0; i < n; i++){ sxy += (rx[i] - mx) * (ry[i] - my); sxx += (rx[i] - mx) * (rx[i] - mx); syy += (ry[i] - my) * (ry[i] - my); }
+  return sxx > 0 && syy > 0 ? sxy / Math.sqrt(sxx * syy) : 0;
+}
+/* a small seeded random generator (mulberry32), so the same cups always give the same answer */
+function cmpRng(seed){ let t = seed >>> 0; return () => { t = (t + 0x6D2B79F5) >>> 0; let x = t; x = Math.imul(x ^ (x >>> 15), x | 1); x ^= x + Math.imul(x ^ (x >>> 7), x | 61); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; }; }
+/* permutation p-value for |rho|: how often shuffled stars match the input at least as well. Fixed seed. */
+function cmpPerm(xs, stars, seed){
+  /* Spearman's rho is the dot product of the centered ranks over a constant, so a shuffle only needs the dot product */
+  const rx = cmpRanks(xs), ry = cmpRanks(stars), n = rx.length, mx = rx.reduce((s, v) => s + v, 0) / n, my = ry.reduce((s, v) => s + v, 0) / n, cx = rx.map(v => v - mx), cy = ry.map(v => v - my);
+  const sxx = cx.reduce((s, v) => s + v * v, 0), syy = cy.reduce((s, v) => s + v * v, 0), den = Math.sqrt(sxx * syy);
+  if (!(den > 0)) return { rho:0, p:1 };
+  const dot = a => { let t = 0; for (let i = 0; i < n; i++) t += cx[i] * a[i]; return t; }, obs = dot(cy), rnd = cmpRng(seed), sh = cy.slice(); let hit = 0;
+  for (let p = 0; p < CMP_PERMS; p++){
+    for (let i = n - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)), t = sh[i]; sh[i] = sh[j]; sh[j] = t; }
+    if (Math.abs(dot(sh)) >= Math.abs(obs) - 1e-9) hit++;
+  }
+  return { rho:obs / den, p:(hit + 1) / (CMP_PERMS + 1) };
+}
+const cmpSpan = a => { const s = a.slice().sort((x, y) => x - y); return { lo:s[0], hi:s[s.length - 1] }; };
+/* the cups of ONE method, analysed. cups = cmpCups(...) filtered to that method. */
+function cmpAnalyze(cups){
+  const rated = cups.filter(c => c.stars > 0).sort((a, b) => b.stars - a.stars || (b.date + b.saved < a.date + a.saved ? -1 : 1));
+  const out = { n:cups.length, rated:rated.length, cups:rated, unrated:cups.length - rated.length, rows:[], same:[], varied:[], repeats:null, range:null, suggestion:null, several:null, tested:0 };
+  if (!rated.length) return out;
+  out.range = { lo:rated[rated.length - 1].stars, hi:rated[0].stars };
+  CMP_INPUTS.forEach(I => {
+    const textual = I.key === 'grind' && !rated.every(c => c.grindIsNumber);
+    const vals = textual ? rated.map(c => c.grindText || null) : rated.map(c => c.in[I.key]), have = vals.filter(v => v != null);
+    if (!have.length) return;
+    const shown = rated.map(c => I.key === 'grind' ? (c.grindText || '') : cmpFmt(I.key, c.in[I.key]));
+    let varied;
+    if (textual) varied = new Set(rated.map(c => c.grindText)).size > 1;
+    else { const s = cmpSpan(have); varied = have.length > 1 && s.hi - s.lo > I.tol; }
+    const complete = have.length === rated.length;
+    out.rows.push({ key:I.key, label:I.label, values:shown, varied, complete, suggest:I.suggest });
+    if (varied) out.varied.push(I.label); else if (complete && rated.length > 1) out.same.push({ label:I.label, value:shown[0] });
+  });
+  /* repeats: cups with the same recipe (coffee, water, grind and temperature within the tolerance) */
+  const sig = c => (c.in.dose != null && c.in.water != null) ? [Math.round(c.in.dose / 0.5), Math.round(c.in.water / 2), c.grindIsNumber ? c.in.grind : c.grindText, c.in.temp == null ? '' : Math.round(c.in.temp / 2)].join('|') : '', sets = {};
+  rated.forEach(c => { const k = sig(c); if (k) (sets[k] = sets[k] || []).push(c); });
+  const groups = Object.keys(sets).map(k => sets[k]).filter(g => g.length >= 2).sort((a, b) => b.length - a.length);
+  if (groups.length){ const g = groups[0], s = cmpSpan(g.map(c => c.stars)); out.repeats = { n:g.length, spread:s.hi - s.lo, sets:groups.length }; }
+  /* the one-thing rule */
+  if (rated.length >= CMP_MIN_RATED && out.range.hi - out.range.lo >= CMP_MIN_GAP){
+    const cand = out.rows.filter(r => r.suggest && r.varied && r.complete && !(r.key === 'grind' && !rated.every(c => c.grindIsNumber)));
+    out.tested = cand.length;
+    const stars = rated.map(c => c.stars), passed = [];
+    cand.forEach(r => {
+      const xs = rated.map(c => c.in[r.key]);
+      let seed = 2166136261 >>> 0; xs.forEach((v, i) => { seed = Math.imul(seed ^ Math.round(v * 100), 16777619) >>> 0; seed = Math.imul(seed ^ Math.round(stars[i] * 10), 16777619) >>> 0; });
+      const t = cmpPerm(xs, stars, seed);
+      if (Math.abs(t.rho) >= CMP_MIN_RHO && t.p <= CMP_ALPHA / cand.length) passed.push({ key:r.key, label:r.label, rho:t.rho, p:t.p, xs });
+    });
+    if (passed.length === 1){
+      const P = passed[0], k = Math.max(2, Math.floor(rated.length / 3)), top = rated.slice(0, k).map(c => c.in[P.key]), low = rated.slice(rated.length - k).map(c => c.in[P.key]);
+      out.suggestion = { key:P.key, label:P.label, rho:P.rho, p:P.p, n:rated.length, tested:cand.length, dir:P.rho > 0 ? 'higher' : 'lower', top:cmpSpan(top), low:cmpSpan(low), k };
+    } else if (passed.length > 1) out.several = passed.map(x => x.label);
+  }
+  return out;
+}
+/* which cups to show: all when there are few, else the best k and the lowest k */
+function cmpShow(cups, k){
+  if (cups.length <= 2 * k) return { shown:cups, hidden:0 };
+  return { shown:cups.slice(0, k).concat(cups.slice(cups.length - k)), hidden:cups.length - 2 * k };
+}
+/* ratings by method, for the dot picture: each method with at least one rated cup */
+function cmpAcross(cups){
+  const by = {}; cups.filter(c => c.stars > 0).forEach(c => { (by[c.method] = by[c.method] || { key:c.method, label:c.methodLabel, stars:[] }).stars.push(c.stars); });
+  const rows = Object.keys(by).map(k => { const r = by[k]; r.stars.sort((a, b) => a - b); r.n = r.stars.length; r.median = r.n >= 3 ? tpMedian(r.stars) : null; r.lo = r.n >= 3 ? r.stars[0] : null; r.hi = r.n >= 3 ? r.stars[r.n - 1] : null; return r; }).sort((a, b) => b.n - a.n || (a.label < b.label ? -1 : 1));
+  return { rows, ready:rows.length >= 2 };
+}
+/* ---------- compare cups: the words ----------
+   Every sentence says what the cups show. A suggestion is always "suggests an experiment: hold X", never "caused". New sees no statistics words and no strength or extraction rows. */
+const CMP_MORE = {
+  dose:['more coffee', 'less coffee'], water:['more water', 'less water'], ratio:['a higher ratio', 'a lower ratio'], temp:['hotter water', 'cooler water'],
+  grind:['a higher grind setting number', 'a lower grind setting number'], time:['a longer brew time', 'a shorter brew time'], age:['older beans', 'fresher beans']
+};
+const CMP_NOUN = { dose:'the coffee dose', water:'the water', ratio:'the ratio', temp:'the temperature', grind:'the grind setting', time:'the brew time', age:'the bean age' };
+const CMP_MEASURES = ['Strength (TDS)', 'Extraction'];
+const cmpList = a => a.length <= 1 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+const cmpStarsText = v => (Math.round(v * 2) / 2) + (Math.round(v * 2) / 2 === 1 ? ' star' : ' stars');
+const cmpRange = (key, s) => { const f = v => cmpFmt(key, v); return f(s.lo) === f(s.hi) ? f(s.lo) : f(s.lo) + ' to ' + f(s.hi); };
+function cmpWords(a, lvl){
+  const isNew = lvl === 'new', expert = lvl === 'expert', w = { headline:'', repeat:'', changed:'', same:'', suggest:'', numbers:'', why:'', ready:a.rated >= 2 };
+  if (!w.ready){
+    w.headline = a.n < 2 ? 'Only one cup of this method so far.' : 'Fewer than two of these cups have your star rating, so there is nothing to compare yet. Rate them from the details page of each tasting.';
+    return w;
+  }
+  w.headline = a.rated + ' rated cups. Best ' + cmpStarsText(a.range.hi) + ', lowest ' + cmpStarsText(a.range.lo) + '.';
+  if (a.repeats){
+    const r = a.repeats;
+    w.repeat = r.spread === 0 ? 'You brewed it the same way ' + r.n + ' times and rated every cup the same.'
+      : 'You brewed it the same way ' + r.n + ' times and your ratings differed by ' + cmpStarsText(r.spread) + '. ' + (isNew ? 'Even the same brew is not the same every time.' : 'That is how much your ratings move even when nothing changes, so a smaller difference between brews may be noise.');
+  }
+  const hideMeasures = isNew, labs = a.rows.filter(r => r.varied && !(hideMeasures && CMP_MEASURES.includes(r.label))).map(r => r.label);
+  w.changed = labs.length ? 'What changed between these cups: ' + cmpList(labs) + '.' : 'Nothing you recorded changed between these cups.';
+  const same = a.same.filter(s => !(hideMeasures && CMP_MEASURES.includes(s.label)));
+  if (same.length) w.same = 'Same in all ' + a.rated + ': ' + same.map(s => s.label + ' ' + s.value).join(', ') + '.';
+  const S = a.suggestion;
+  if (S){
+    const m = CMP_MORE[S.key] || ['a higher ' + S.label.toLowerCase(), 'a lower ' + S.label.toLowerCase()], phrase = S.dir === 'higher' ? m[0] : m[1], noun = CMP_NOUN[S.key] || S.label.toLowerCase();
+    w.suggest = 'Your best ' + S.k + ' cups used ' + phrase + ' than your lowest ' + S.k + ' (' + cmpRange(S.key, S.top) + ' against ' + cmpRange(S.key, S.low) + '). That suggests an experiment: hold ' + noun + ' near ' + cmpRange(S.key, S.top) + ' for your next few brews. It is a hint from ' + S.n + ' cups, not proof.';
+    if (expert) w.numbers = S.label + ': Spearman ρ = ' + S.rho.toFixed(2) + ', permutation p = ' + S.p.toFixed(3) + ' (limit ' + (CMP_ALPHA / S.tested).toFixed(4) + ' for ' + S.tested + ' ' + (S.tested === 1 ? 'input' : 'inputs') + ' tested), n = ' + S.n + '.';
+  } else if (a.several){
+    w.suggest = 'Several things changed together (' + cmpList(a.several) + '), so these cups cannot say which one mattered. Try changing one thing at a time.';
+    if (expert) w.numbers = a.several.length + ' of ' + a.tested + ' inputs tested passed the rule together, so none is named.';
+  } else if (isNew){
+    w.suggest = 'Change one thing at a time between brews, and this page will show what helped.';
+  } else if (a.rated < CMP_MIN_RATED){
+    w.suggest = 'Pointing at one thing needs at least ' + CMP_MIN_RATED + ' rated cups of a method. You have ' + a.rated + '.';
+  } else if (a.range.hi - a.range.lo < CMP_MIN_GAP){
+    w.suggest = 'Your ratings are all within a star of each other, so there is no clear best and lowest to explain.';
+  } else if (!a.tested){
+    w.suggest = 'Too few of the things you changed were recorded for every cup to test.';
+  } else {
+    w.suggest = 'Nothing you changed lines up clearly with your ratings, so no suggestion.';
+    if (expert) w.numbers = a.tested + ' ' + (a.tested === 1 ? 'input' : 'inputs') + ' tested; none met |ρ| ≥ ' + CMP_MIN_RHO + ' with p ≤ ' + CMP_ALPHA + '/' + a.tested + '.';
+  }
+  w.why = 'A suggestion appears only when you have at least ' + CMP_MIN_RATED + ' rated cups of one method, your best and lowest ratings are at least a star apart, and exactly one thing you changed lines up strongly with your ratings (a rank correlation of at least ' + CMP_MIN_RHO + ') and a shuffle test says chance would rarely match it this well. If two things moved together, the page says it cannot tell which. Even then it is a hint: home brews change many things at once.';
+  return w;
+}
 /* ---------- edit a coffee's details in history. The cupping itself never changes. ---------- */
 const EDITABLE_COLUMNS = ['roaster', 'coffee_name', 'origin', 'blend', 'process', 'decaf', 'roast_level', 'elevation_class', 'elevation_m', 'roast_date', 'days_since_roast', 'varietal', 'bag_notes'];
 function cleanLine(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g, ' ').replace(/ {2,}/g, ' ').trim(); }
@@ -4298,19 +4671,25 @@ const GUIDE_SECTIONS = [
       'It keeps every try of a coffee on a method in order. Each try shows what changed and whether the total went up or down. A change counts as helped or hurt only when the total moves by at least a point. That is NeuroBrew\'s own rule of thumb, because one cup scored by one person is noisy. Repeat the same brew and it measures your own variation, and uses that instead if it is bigger.',
       'The next brew starts from your best try, not just your last. If a change scored lower, it is not suggested again; it offers a different one. If the problem looks like the coffee itself (stale or off words, an old bag), it says so. If several changes in a row did not help, it says the settings may not be the problem.',
       'When a cup tastes great, keep it as your best brew for that coffee and method. New brews start from it until you remove it. A new bag of the same coffee (a different roast date) starts from your best brew, or your best on the last bag. The first cup on the new bag is marked, because the bag is mixed in.',
-      'For a coffee you have never brewed on a method, NeuroBrew can offer a starting point based on where your other coffees ended up. It does this only when at least three of them agree. It is a suggestion; you choose whether to use it.'] },
+      'For a coffee you have never brewed on a method, NeuroBrew can offer a starting point based on where your other coffees ended up. It does this only when at least three of them agree. It is a suggestion; you choose whether to use it.',
+      'When a coffee has two or more brews, its page and its tasting page offer Compare these cups. It lines up your cups of one method, best first, and shows only what changed between them. Different bags of the same coffee are kept together, and different methods are never mixed. Only your own star ratings order the cups. New sees the best cup against the lowest. Comfortable sees the best three and the lowest three, with a Show all button. Expert sees every cup and the numbers.',
+      'It suggests one thing to try only when the evidence is clear. That takes at least six rated cups and a spread of a star or more. Exactly one change must line up strongly with your ratings. It says suggests and never caused, because home brews change many things at once. If two things moved together, it says it cannot tell which.'] },
   { id:'history', title:'Your tastings, files and backups', lead:'Everything stays with you.',
     paras:['Everything stays in your browser until you save a file. Your history is the cuppings.csv file you download: upload it when you come back and each new tasting is added to it. Replace your old file with the newest copy, because it holds everything.',
       'Your tastings list lets you search, sort, and open a tasting. You can fix a mistake in a coffee\'s name or details (the scores never change). You can brew or taste that coffee again, perfect it, and delete tastings you do not want.',
       'In Chrome and Edge you can save into a file of your own choosing. Save as opens your computer\'s Save box, where you can change the name or pick the file to replace. NeuroBrew remembers that file in this browser, so the next tasting offers to be added straight into it. Your browser asks your permission again after it has been closed. Forget my save file in the menu makes it stop remembering; the file itself is never touched. Other browsers download a fresh copy each time.',
+      'What each column means in the menu explains every column of your history file, so you can read it in a spreadsheet or a script. You can save that guide as a small file.',
       'If your view cannot save files, use Back up my history as text in the menu. It makes a code you can paste into Notes or an email and paste back to restore. Clear everything on this device removes the copy in this browser, but not files you downloaded.'] },
-  { id:'learn', title:'Understanding coffee: your tendencies', lead:'What you like, and how to shop for it.',
-    paras:['After you have tasted five different coffees, NeuroBrew can show which details your higher-scored coffees share (roast, process, elevation, origin, varietal). It also shows how sure that is, and what to look for on a bag. Cups of the same coffee are averaged first, so brewing one coffee five times does not count as five coffees.',
+  { id:'learn', title:'Your tendencies and understanding coffee', lead:'What you like, and how to shop for it.',
+    paras:['Your tendencies is also its own row in the menu, so you can open it any time. It draws pictures from your saved history. They show the flavors you liked and did not like, what you enjoy about a cup, and how you use the stars. They also show how you rate kinds of coffee and where your measured brews landed.',
+      'Each bar counts coffees, and each dot is one coffee, so you can check every one. A picture appears when there is enough to draw. New shows one picture and folds the rest. Comfortable folds each card with a Why? note. Expert shows everything open, with ranges and a table you can save.',
+      'After you have tasted five different coffees, NeuroBrew can show which details your higher-scored coffees share (roast, process, elevation, origin, varietal). It also shows how sure that is, and what to look for on a bag. Cups of the same coffee are averaged first, so brewing one coffee five times does not count as five coffees.',
       'This describes what you scored, not what is true of the coffee. Taste is personal, and a handful of coffees is a small sample. The same screen explains what every detail on a bag means, and compares two things side by side.'] },
   { id:'helpers', title:'Levels, underlined words and the glossary', lead:'Ways to get more or less explanation.',
     paras:['New to brewing keeps things short, Comfortable explains the reasons, and Expert shows every number. Change it any time from the start screen or the menu.',
       'My setup in the menu keeps your units, level, timer sound, taste card view and gear (your grinder, water and filter) in one place. New brews start with your gear filled in. The setup is saved inside your history file each time you save, so uploading the file on another device brings it back.',
-      'Words with a dotted underline are tappable and give a short definition. The Glossary in the menu lists every term and can be searched.'] },
+      'Words with a dotted underline are tappable and give a short definition. The Glossary in the menu lists every term and can be searched.',
+      'Tools in the menu holds small helpers. Cup yield shows how much ends up in your cup. The Ratio and strength planner gives the ratio for the strength you want, and how much water to add to a strong brew. The strengths and extractions it starts from are common targets, not rules.'] },
   { id:'trust', title:'What to trust', lead:'Starting points, not rules.',
     paras:['Brew settings are starting points. The roast changes to temperature and grind come from brewer experience, not lab results. The app says so wherever they appear. The cupping score follows the SCA affective form, but you score one cup yourself. Use it to compare your own cups. It is not an official grade.',
       'Where NeuroBrew uses its own rule of thumb, it says so. A try must change the total by one point to count as better or worse. A bag about a week older can change the taste. Three coffees must agree before it offers a starting point. About NeuroBrew in the menu lists the sources and the limits.'] }
@@ -4634,6 +5013,51 @@ function yieldWorking(res, mode){
   out.push({ note:'Subtracting alone would give ' + g(res.naive) + ' g, which is ' + g(Math.abs(res.B - res.naive)) + ' g off, because dissolved coffee also leaves in the cup. Weigh your drained bed and filter to test the check line.' });
   return out;
 }
+/* ---------- ratio and strength planner ----------
+   One mass balance, the same one Cup yield uses. For each gram of coffee: R grams of water go in, r grams stay in the grounds, and EY grams of coffee dissolve (EY as a fraction).
+   The cup holds (R - r + EY) grams, of which EY is dissolved coffee, so  TDS = EY / (EY + R - r).  Solved for the ratio:  R = r + EY (1 - TDS) / TDS.
+   The finished coffee per gram of coffee is EY / TDS (nothing else is needed), which is the ratio people quote for espresso.
+   Extraction here is on the cup basis the rest of the app uses (TDS x coffee in the cup / dose); see the note in the measuring block.
+   Diluting adds water and nothing else: final TDS = TDS x concentrate / (concentrate + water). Extraction does not change, only the strength.
+   Exact arithmetic. What is not exact: r (the band comes from Cup yield's table), and the extraction you aim for (a convention, not a rule). */
+const PLAN_PRESETS = {
+  filter:[['Lighter', 1.2, 19], ['Usual', 1.35, 20], ['Stronger', 1.45, 21]],
+  espresso:[['Lighter', 8, 18], ['Usual', 9.5, 20], ['Stronger', 10.5, 21]]
+};
+const PLAN_SRC = 'The sum is a mass balance, so the arithmetic is exact. The water your grounds keep is a band, not a number (see Cup yield). The strength and extraction you aim for are conventions that people disagree on, so treat the answer as a starting point to taste and adjust.';
+/* methods the planner covers: the filter-type ones in Cup yield, and espresso. Cold brew is left out (its extraction is not on the usual scale). */
+const planMethods = () => yieldMethods().filter(k => YIELD_TABLE[k].kind === 'filter' && k !== 'cold');
+/* the ratio for a strength and an extraction. tds and ey are percent, r is water kept per g of coffee. Returns the water ratio and the cup ratio, with the band from the water-kept band. */
+function planRatio(p){
+  const t = +p.tds / 100, e = +p.ey / 100, r = +p.r, o = { ok:false };
+  if (!(t > 0 && t < 0.2 && e > 0.05 && e < 0.35 && r >= 0 && r < 5)) return o;
+  const R = rr => rr + e * (1 - t) / t;
+  o.ok = true; o.water = R(r); o.waterLo = R(+p.rlo >= 0 ? +p.rlo : r); o.waterHi = R(+p.rhi >= 0 ? +p.rhi : r); o.cup = e / t; o.kept = r;
+  return o;
+}
+/* the strength a ratio gives at an extraction. For espresso pass the cup ratio (cup per coffee); for the rest the water ratio. */
+function planStrength(p){
+  const e = +p.ey / 100, o = { ok:false };
+  if (!(e > 0.05 && e < 0.35)) return o;
+  let tds;
+  if (p.espresso){ const c = +p.ratio; if (!(c > 0)) return o; tds = e / c; }
+  else { const R = +p.ratio, r = +p.r, d = e + R - r; if (!(R > 0 && r >= 0 && d > 0)) return o; tds = e / d; }
+  if (!(tds > 0 && tds < 1)) return o;
+  o.ok = true; o.tds = tds * 100; return o;
+}
+/* add water to a brew: the strength after (conc and water in g, tds in percent) */
+function planDilute(p){
+  const c = +p.conc, w = +p.water, t = +p.tds, o = { ok:false };
+  if (!(c > 0 && w >= 0 && t > 0 && t < 30)) return o;
+  o.ok = true; o.tds = t * c / (c + w); o.total = c + w; return o;
+}
+/* the water to add to reach a target strength */
+function planDiluteTo(p){
+  const c = +p.conc, t = +p.tds, g = +p.target, o = { ok:false };
+  if (!(c > 0 && t > 0 && g > 0)) return o;
+  if (g >= t){ o.why = 'The target is as strong as the brew or stronger, so there is nothing to add. Dilution only makes it weaker.'; return o; }
+  o.ok = true; o.water = c * (t / g - 1); o.total = c + o.water; return o;
+}
 /* ---------- recognizing what people type for an origin ---------- */
 /* More regions, towns, and districts for the origins that have a full guide. Names that two countries share are left out on purpose. */
 const ORIGIN_EXTRA_ALIASES = {
@@ -4922,6 +5346,146 @@ function evidenceFor(r, key){
   return null;
 }
 
+/* ---------- column guide ----------
+   One row per column of the history file, in file order: the column name, the group it belongs to, what it holds, the units or allowed values, and a short note.
+   columnGuideGaps() lists any column that has no entry and any entry that is not a column, so a new column cannot be added to the file without being explained here
+   (a logic test fails on it). Nothing here changes the file; it only describes it. */
+const COLUMN_NOTES = [
+  'One row is one tasting. A Quick tasting and a scored tasting share the same columns; a column that does not apply to a row is empty.',
+  'Score kinds are never pooled: home_1cup, sca_5cup, quick and cva_affective are different scales and different questions. Compare rows only within one score_kind.',
+  'Extraction (brew_ey_pct) is on the cup basis: TDS % x finished coffee weight / coffee dose. It leaves out dissolved coffee still held in the wet grounds, so it reads a few points lower than an extraction worked from the brew water weight. Do not mix the two in one analysis.',
+  'Text that starts with = + - or @ is saved with a leading apostrophe so a spreadsheet does not run it as a formula. Remove the apostrophe when you read it back.',
+  'Lists in one cell (flavors, words, changes made at the Perfect step) are separated by semicolons. Water minerals are in mg/L. Weights are in grams, temperatures in the unit named by the column, time in seconds.',
+  'Older rows may have empty cells for columns added later. An empty cell means not recorded, never zero.'
+];
+const COLUMN_GUIDE = [
+  ['schema_version', 'Row', 'Version of the file format the row was written in.', 'Currently 2'],
+  ['id', 'Row', 'Unique id of this row.', 'Text'],
+  ['coffee_id', 'Row', 'Id shared by every tasting of the same coffee bag, so repeat brews group together.', 'Text'],
+  ['saved_at', 'Row', 'When the row was saved.', 'Date and time, ISO 8601'],
+  ['cupping_date', 'Row', 'The date of the tasting.', 'YYYY-MM-DD'],
+  ['mode', 'Row', 'How the row was made.', 'single_cup = a scored tasting; quick = a Quick tasting'],
+  ['roaster', 'Coffee', 'The roaster named on the bag.', 'Text'],
+  ['coffee_name', 'Coffee', 'The coffee name on the bag.', 'Text'],
+  ['origin', 'Coffee', 'Country or region of the coffee.', 'Text'],
+  ['process', 'Coffee', 'Processing method (washed, natural, honey and so on).', 'Text label'],
+  ['decaf', 'Coffee', 'Whether the coffee is decaffeinated.', 'yes or empty'],
+  ['roast_level', 'Coffee', 'Roast level as chosen in the app.', 'Text label'],
+  ['elevation_class', 'Coffee', 'Growing altitude band, used as a stand-in for bean density.', 'Text label'],
+  ['elevation_m', 'Coffee', 'Growing altitude if the bag gave it.', 'Metres'],
+  ['roast_date', 'Coffee', 'Roast date from the bag.', 'YYYY-MM-DD'],
+  ['days_since_roast', 'Coffee', 'Days from the roast date to the brew.', 'Whole days'],
+  ['varietal', 'Coffee', 'Coffee variety named on the bag.', 'Text'],
+  ['bag_notes', 'Coffee', 'Tasting notes printed on the bag.', 'Text'],
+  ['brew_method', 'Brew', 'The brewing method used.', 'A method key such as v60; some older rows carry an old SCA label'],
+  ['brew_attempt', 'Brew', 'Which try this was for the same coffee and method.', 'Whole number'],
+  ['brew_dose_g', 'Brew', 'Ground coffee used.', 'Grams'],
+  ['brew_water_g', 'Brew', 'Brew water used.', 'Grams'],
+  ['brew_ratio', 'Brew', 'Water per gram of coffee.', 'The number after 1: (16.7 means 1:16.7)'],
+  ['brew_ratio_recommended', 'Brew', 'The ratio the app suggested for this brew.', 'The number after 1:'],
+  ['brew_temp_f', 'Brew', 'Water temperature used.', 'Degrees Fahrenheit'],
+  ['brew_temp_c', 'Brew', 'Water temperature used.', 'Degrees Celsius'],
+  ['brew_temp_recommended_f', 'Brew', 'The temperature the app suggested.', 'Degrees Fahrenheit'],
+  ['brew_grind_target_um', 'Brew', 'The grind size the app aimed for.', 'Micrometres (a target, not a measurement)'],
+  ['brew_grind_setting', 'Brew', 'The setting on your grinder, as you typed it.', 'Text'],
+  ['brew_time_s', 'Brew', 'The planned brew time.', 'Seconds'],
+  ['brew_actual_time_s', 'Brew', 'The brew time you measured.', 'Seconds'],
+  ['brew_out_g', 'Brew', 'Weight of the finished coffee in the cup.', 'Grams'],
+  ['brew_tds_pct', 'Brew', 'Strength of the brew from a refractometer reading.', 'Percent TDS'],
+  ['brew_ey_pct', 'Brew', 'Extraction worked out by the app from TDS, finished coffee and dose.', 'Percent, cup basis (see the notes)'],
+  ['brew_agitation', 'Brew', 'How much the brew was stirred or swirled.', 'gentle, standard or active'],
+  ['brew_technique', 'Brew', 'The pouring technique.', 'standard, pulse_4_6, iced_brew_over_ice or iced_add_after'],
+  ['brew_technique_detail', 'Brew', 'A readable name for the technique when it is not standard.', 'Text'],
+  ['brew_water_type', 'Brew', 'The kind of water used.', 'tap, filtered, bottled, distilled or remineral'],
+  ['brew_filter', 'Brew', 'The filter or paper used.', 'Text'],
+  ['brew_grinder_type', 'Brew', 'Kind of grinder.', 'Text label'],
+  ['brew_grinder_name', 'Brew', 'Grinder model, as you typed it.', 'Text'],
+  ['brew_pour_notes', 'Brew', 'What you saw while brewing, if it differed from what was expected.', 'Text'],
+  ['brew_adjustment', 'Brew', 'The change the app suggested at the Perfect step.', 'Text'],
+  ['fragrance_aroma', 'Scores (older form)', 'Fragrance and aroma score in the form used before Release 45.', 'SCA scale, 6 to 10'],
+  ['flavor', 'Scores', 'Flavor score.', 'SCA scale 6 to 10; cva_affective rows use 1 to 9'],
+  ['aftertaste', 'Scores', 'Aftertaste score.', 'Same scale as flavor'],
+  ['acidity', 'Scores', 'Acidity score.', 'Same scale as flavor'],
+  ['body', 'Scores', 'Body score.', 'Same scale as flavor'],
+  ['balance', 'Scores (older form)', 'Balance score in the form used before Release 45.', 'SCA scale, 6 to 10'],
+  ['overall', 'Scores', 'Overall score.', 'Same scale as flavor'],
+  ['acidity_intensity', 'Scores', 'How strong the acidity was, separate from how good it was.', '1 to 5'],
+  ['body_intensity', 'Scores', 'How strong the body was, separate from how good it was.', '1 to 5'],
+  ['words_fragrance_aroma', 'Scores (older form)', 'Words picked for fragrance and aroma.', 'Semicolon list'],
+  ['words_flavor', 'Scores (older form)', 'Words picked for flavor.', 'Semicolon list'],
+  ['words_aftertaste', 'Scores (older form)', 'Words picked for aftertaste.', 'Semicolon list'],
+  ['words_acidity', 'Scores (older form)', 'Words picked for acidity.', 'Semicolon list'],
+  ['words_body', 'Scores (older form)', 'Words picked for body.', 'Semicolon list'],
+  ['aftertaste_length', 'Scores (older form)', 'How long the aftertaste lasted.', 'Text'],
+  ['aroma_kit', 'Scores', 'Aroma kit vials you ticked on the Quick cards.', 'Semicolon list: number and name'],
+  ['cool_acidity', 'Scores (older form)', 'Acidity as the cup cooled.', 'Text'],
+  ['cool_sweetness', 'Scores (older form)', 'Sweetness as the cup cooled.', 'Text'],
+  ['cool_bitterness', 'Scores (older form)', 'Bitterness as the cup cooled.', 'Text'],
+  ['uniformity', 'Scores', 'Cup-to-cup consistency in a five-cup SCA tasting.', '0 to 10'],
+  ['clean_cup', 'Scores', 'Freedom from off tastes.', '0 to 10'],
+  ['sweetness', 'Scores', 'Sweetness score.', '0 to 10 on SCA rows; 1 to 9 on cva_affective rows'],
+  ['taint_cups', 'Scores', 'Number of cups with a taint (a smell or taste in the cup).', 'Whole number'],
+  ['fault_cups', 'Scores', 'Number of cups with a fault.', 'Whole number'],
+  ['defect_deduction', 'Scores', 'Points taken off the total for defects.', '0 or 4 on current rows'],
+  ['total_score', 'Scores', 'The total score for the tasting.', 'Scale depends on score_kind'],
+  ['score_kind', 'Scores', 'Which scoring scheme made total_score. Never pool across kinds.', 'home_1cup, sca_5cup, quick or cva_affective'],
+  ['aroma_vials', 'Scores', 'Aroma vials you recognised.', 'Semicolon list'],
+  ['note_fragrance_aroma', 'Notes', 'Your note on fragrance and aroma.', 'Text'],
+  ['note_flavor', 'Notes', 'Your note on flavor.', 'Text'],
+  ['note_aftertaste', 'Notes', 'Your note on aftertaste.', 'Text'],
+  ['note_acidity', 'Notes', 'Your note on acidity.', 'Text'],
+  ['note_body', 'Notes', 'Your note on body.', 'Text'],
+  ['note_balance', 'Notes', 'Your note on balance.', 'Text'],
+  ['note_overall', 'Notes', 'Your note on the whole cup.', 'Text'],
+  ['defect_notes', 'Notes', 'What you noticed that was wrong with the cup.', 'Text'],
+  ['general_notes', 'Notes', 'Anything else you wrote.', 'Text'],
+  ['blend', 'Coffee', 'Whether the coffee is a blend or a single origin.', 'single or blend'],
+  ['details_guessed', 'Brew', 'Which details the app had to guess because you did not give them.', 'Semicolon list'],
+  ['water_alkalinity_mgl', 'Brew', 'Alkalinity of the water if you entered it.', 'mg/L'],
+  ['water_hardness_mgl', 'Brew', 'Hardness of the water if you entered it.', 'mg/L'],
+  ['my_rating_stars', 'Your rating', 'How much you liked the coffee, kept apart from the scores.', 'Half-star steps from 0.5 to 5'],
+  ['dial_symptom', 'Perfect step', 'What was wrong with the previous cup, as you described it.', 'sour, bitter, astringent, uneven, flat, muddy, thin, strong, great or notforme'],
+  ['dial_change', 'Perfect step', 'What you changed on this brew to fix it.', 'Semicolon list'],
+  ['dial_from_id', 'Perfect step', 'The id of the earlier tasting this brew was a response to.', 'Text'],
+  ['dial_locked', 'Perfect step', 'Marks the one cup per coffee and method you chose as your best brew.', 'yes or empty'],
+  ['make_again', 'Quick answers', 'Whether you would make this cup again.', 'yes, maybe or no'],
+  ['q_smell', 'Quick answers', 'How the smell was.', 'good, okay, notgood or unsure'],
+  ['q_taste', 'Quick answers', 'How the taste was.', 'good, okay, notgood or unsure'],
+  ['q_aftertaste', 'Quick answers', 'How the aftertaste was.', 'good, okay, notgood or unsure'],
+  ['q_acidity', 'Quick answers', 'How the acidity was.', 'good, okay, notgood or unsure'],
+  ['q_sweetness', 'Quick answers', 'How the sweetness was.', 'good, okay, notgood or unsure'],
+  ['q_body', 'Quick answers', 'How the body was.', 'good, okay, notgood or unsure'],
+  ['flavors_liked', 'Quick answers', 'Flavors you liked.', 'Semicolon list'],
+  ['flavors_not_liked', 'Quick answers', 'Flavors you did not like.', 'Semicolon list'],
+  ['fragrance', 'Scores', 'Fragrance (dry grounds) score on a cva_affective row.', '1 to 9'],
+  ['aroma', 'Scores', 'Aroma (wet grounds) score on a cva_affective row.', '1 to 9'],
+  ['note_aroma', 'Notes', 'Your note on aroma.', 'Text'],
+  ['note_sweetness', 'Notes', 'Your note on sweetness.', 'Text'],
+  ['first_flavor', 'First impression', 'Flavor score before a retaste.', 'Same scale as flavor'],
+  ['first_aftertaste', 'First impression', 'Aftertaste score before a retaste.', 'Same scale as flavor'],
+  ['first_acidity', 'First impression', 'Acidity score before a retaste.', 'Same scale as flavor'],
+  ['first_sweetness', 'First impression', 'Sweetness score before a retaste.', 'Same scale as sweetness'],
+  ['first_body', 'First impression', 'Body score before a retaste.', 'Same scale as flavor'],
+  ['first_overall', 'First impression', 'Overall score before a retaste.', 'Same scale as flavor'],
+  ['cva_retasted', 'Scores', 'Whether you retasted and changed any score.', 'yes or no'],
+  ['defect_type', 'Scores', 'The kind of defect, when the cup had one.', 'Text label'],
+  ['fix_symptom', 'Perfect step', 'The one thing you chose to fix on the next brew, tapped after the score.', 'Same words as dial_symptom'],
+  ['setup_json', 'Setup', 'Your setup (units, level, gear) saved with the newest row so a new device can pick it up.', 'JSON text; safe to ignore']
+];
+function columnGuideGaps(){
+  const named = new Set(COLUMN_GUIDE.map(r => r[0])), cols = new Set(COLUMNS);
+  const missing = COLUMNS.filter(c => !named.has(c)), extra = COLUMN_GUIDE.map(r => r[0]).filter(c => !cols.has(c));
+  const dup = COLUMN_GUIDE.map(r => r[0]).filter((c, i, a) => a.indexOf(c) !== i);
+  return { missing, extra, dup, order: COLUMN_GUIDE.every((r, i) => r[0] === COLUMNS[i]) };
+}
+/* The guide as a small CSV: a Notes block first, then one row per column in file order. */
+function columnGuideCsv(){
+  const lines = [['column', 'group', 'what it holds', 'units or allowed values']];
+  COLUMNS.forEach(c => { const r = COLUMN_GUIDE.find(x => x[0] === c) || [c, '', '', '']; lines.push([r[0], r[1], r[2], r[3]]); });
+  lines.push([], ['notes']);
+  COLUMN_NOTES.forEach(n => lines.push([n]));
+  return toCSV(lines.map(l => l.length ? l : ['']));
+}
 /* the app's own target grind size range for each kind of method, in microns; a maker's click range for that kind of method is spread across it. Chemex is the app's own Chemex range, used only for a grinder whose maker gives a separate Chemex range. */
 const GRIND_UM = { espresso:[220, 340], moka:[350, 600], aeropress:[400, 900], filter:[550, 850], chemex:[700, 1000], drip:[650, 900], press:[900, 1300], cold:[1000, 1400] };
 const GRINDERS = [
@@ -5113,6 +5677,32 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 48,
+  "at": "2026-10-08T23:40:03Z",
+  "date": "2026-10-08",
+  "title": "Compare your cups, a planner and honest wording",
+  "notes": [
+   "Compare these cups: line up your brews of one coffee, best first, and see what changed. It suggests one thing to try only when the evidence is clear.",
+   "New Tool: Ratio and strength planner. The ratio for the strength you want, and how much water to add to a strong brew.",
+   "Strength and extraction wording is more honest: the 18 to 22% zone is a convention, not a rule, and the extraction basis is stated.",
+   "Menu: What each column means, a guide to your history file that you can save."
+  ]
+ },
+ {
+  "release": 47,
+  "at": "2026-10-08T22:20:54Z",
+  "date": "2026-10-08",
+  "title": "Your tendencies, in pictures",
+  "notes": [
+   "The Menu has a new Your tendencies row. It opens pictures of what you rate and write, and you do not have to enter anything first.",
+   "It shows the flavors you liked and did not like, what you enjoy about a cup from your Quick tastings, how you use the stars, and how you rate kinds of coffee, one dot per coffee.",
+   "Brews you measured appear on the strength and extraction chart. Filled dots are brews you rated 4 or 5 stars.",
+   "Every bar counts coffees, and every picture says how many it is based on. A picture appears only when there is enough to draw, and the screen says how many more coffees the others need.",
+   "New shows one picture and folds the rest. Comfortable shows folded cards with a Why? note. Expert shows everything open, with ranges and a table you can save.",
+   "Understanding coffee now starts with a short so-far summary that reads Quick tastings too, and a button to the full screen."
+  ]
+ },
  {
   "release": 46,
   "at": "2026-10-08T21:26:36Z",
@@ -5811,7 +6401,7 @@ function loadDraft(){
     a.lastTotal = typeof src.lastTotal === 'number' ? src.lastTotal : null;
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
-    const ok = ['start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','guide','tools','yield'];
+    const ok = ['start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','tend','guide','tools','yield','ratio'];
     a.screen = ok.includes(src.screen) ? src.screen : 'start';
     /* a saved timer comes back only if it is recent: running for under 45 minutes in all, or paused within the last 30 minutes */
     { const ts = src.timerSave, now = Date.now();
@@ -5821,7 +6411,7 @@ function loadDraft(){
         if (run ? total <= 45 * 60 : (now - ts.at <= 30 * 60000 && ts.base > 0)) a.timerSave = { running:run, startMs:run ? ts.startMs : 0, base:+ts.base, at:ts.at };
       } }
     if (a.screen === 'timer' && (!a.timerSave || isMachine(a.brew.method))){ a.screen = isMachine(a.brew.method) ? 'recipe' : 'ready'; a.timerSave = null; }   /* a timer that is not running goes back to the last look, where Brew it is */
-    if (!a.coffee.name && a.screen !== 'history' && a.screen !== 'detail') a.screen = 'start';
+    if (!a.coffee.name && a.screen !== 'history' && a.screen !== 'detail' && a.screen !== 'tend') a.screen = 'start';
     if (a.screen === 'change' || (a.screen === 'ready' && isMachine(a.brew.method))) a.screen = 'recipe';   /* a half-made change is not worth coming back to; the machine has no summary page */
     if ((a.screen === 'recipe' || a.screen === 'ready' || a.screen === 'timer' || a.screen === 'gear') && !a.brew.method){ a.screen = 'brew'; a.timerSave = null; }
     if (a.screen === 'gear' && isMachine(a.brew.method)) a.screen = 'recipe';   /* the machine has no gear page */
@@ -5865,8 +6455,10 @@ const PARENT = {
   start:null, coffee:'start', brew:'coffee', gear:() => gearFrom === 'recipe' ? 'recipe' : 'brew', recipe:() => recipeVia === 'gear' ? 'gear' : 'brew', change:'recipe', ready:'recipe', timer:'ready',
   cup:() => app.cupBrew ? (isMachine(app.brew.method) ? 'recipe' : 'ready') : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', detail:'history',
   learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'start'),
+  tend:() => (tendFrom && tendFrom !== 'tend' && tendFrom !== 'timer') ? tendFrom : (app.coffee.name ? 'coffee' : 'start'),
   guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'start'),
-  tools:() => (toolsFrom && toolsFrom !== 'tools' && toolsFrom !== 'yield' && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'start'), yield:'tools'
+  compare:() => (cmpFrom && cmpFrom !== 'compare' && cmpFrom !== 'timer') ? cmpFrom : (app.coffee.name ? 'coffee' : 'start'),
+  tools:() => (toolsFrom && toolsFrom !== 'tools' && toolsFrom !== 'yield' && toolsFrom !== 'ratio' && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'start'), yield:'tools', ratio:'tools'
 };
 /* ---------- the phone's Back button ----------
    Every screen change adds one browser-history entry, so Back goes to the previous screen instead of leaving the app, and a Back press with a menu or dialog open closes it first.
@@ -5911,7 +6503,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', guide:'User guide', tools:'Tools', yield:'Cup yield', detail:'Tasting details' };
+  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Tools', yield:'Cup yield', ratio:'Ratio planner', compare:'Compare cups', detail:'Tasting details' };
   $('topTitle').textContent = sc === 'start' ? '' : (titles[sc] || 'NeuroBrew');
   SCREENS[sc](m);
   refreshAll(); updateBar();
@@ -6494,7 +7086,7 @@ function historyCoffeeCard(c){
     const bits = [o.cupping_date, unneutralize(o.brew_method || ''), o.brew_temp_f ? o.brew_temp_f + '°F' : '', o.brew_ratio ? '1:' + o.brew_ratio : ''].filter(Boolean).join(' · ');
     list.append(h('div', { style:'display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:15px' }, h('span', { text:bits }), h('b', { text:isNaN(sc(o)) ? (validStars(o.my_rating_stars) ? '★ ' + validStars(o.my_rating_stars) : '—') : fmt2(sc(o)) + (o === best && rows.length > 1 ? ' (best)' : '') })));
   });
-  return h('div', { class:'card' }, h('h3', { text:'Your past tastings of this coffee' }), h('p', { class:'fine', style:'margin:2px 0 6px', text:'Compare what you changed with how it scored.' }), scoreChart(rows), list);
+  return h('div', { class:'card' }, h('h3', { text:'Your past tastings of this coffee' }), h('p', { class:'fine', style:'margin:2px 0 6px', text:'Compare what you changed with how it scored.' }), scoreChart(rows), list, compareButton(c));
 }
 /* the origin as the person typed it, matched to a country when we can */
 function originChip(c, p){
@@ -6577,8 +7169,16 @@ function tendencyRow(gr){
     gr.together ? h('p', { class:'fine tsame', style:'margin:4px 0 0', text:'These always came together in your coffees, so we cannot tell which one you like.' })
       : (gr.items[0].same.length ? h('p', { class:'fine tsame', style:'margin:4px 0 0', text:'Careful: all of these were also ' + gr.items[0].same.map(x => x.label.toLowerCase()).join(' and ') + ', so we cannot tell which one you like.' }) : null));
 }
+/* a short "so far" summary from the same data as the Tendencies pictures, so Quick tastings count here too */
+function picturesCard(){
+  const sm = tpSummary(history && history.objs ? history.objs : []);
+  return h('div', { class:'card', id:'learnPics' }, h('h3', { text:'From your ratings and Quick tastings' }),
+    sm.lines.length ? sm.lines.map(l => h('p', { class:'serif', style:'margin:6px 0 0', text:l })) : h('p', { class:'serif', style:'margin:4px 0 0', text:'Pictures of your flavors, ratings and measured brews appear as you rate coffees.' }),
+    h('p', { class:'fine', style:'margin:6px 0 8px', text:'So far, from the coffees you have saved. These are counts, not rules.' }),
+    h('button', { type:'button', class:'btn block', id:'tendOpen', text:'See your tendencies', onclick:goTend }));
+}
 function tendencySection(t){
-  const sec = h('div', { class:'lsec', id:'learnTend' }, h('h2', { text:'Your tendencies' }));
+  const sec = h('div', { class:'lsec', id:'learnTend' }, h('h2', { text:'Your tendencies' }), picturesCard());
   const n = history && history.objs ? history.objs.length : 0;
   if (!t.enough){
     sec.append(h('div', { class:'card' }, h('h3', { text:t.coffees ? 'Not enough coffees yet' : 'Nothing to learn from yet' }),
@@ -6681,6 +7281,190 @@ function screenLearn(m){
   m.append(tendencySection(t), shopSection(t), bagSection(), compareSection());
   const back = typeof PARENT.learn === 'function' ? PARENT.learn() : PARENT.learn;
   m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
+}
+/* ---------- screen: tendencies ---------- */
+let tendFrom = '';
+function goTend(){ if (app.screen !== 'tend') tendFrom = app.screen === 'timer' ? 'ready' : app.screen; go('tend'); }
+const TP_CAUTION = 'These pictures describe what you rated and wrote. They are not rules about coffee. A few coffees is a small sample, and details overlap.';
+/* title, the question it answers, and how it is counted */
+const TP_TEXT = {
+  flavors:{ title:'Flavors you liked and did not like', q:'Which kinds of flavor do you enjoy?',
+    why:'Each bar counts coffees, not cups or words. A coffee counts once for a family, even if you ticked several words in it. Words are grouped into the families on the flavor wheels. Words that match none are under Other words. This shows the words you chose, not what is in the coffee.' },
+  enjoy:{ title:'What you enjoy about a cup', q:'Is it the smell, taste, aftertaste, acidity, sweetness or body?',
+    why:'Each bar counts coffees where you answered Good or Not good in a Quick tasting. Okay and Couldn’t tell are not drawn. Each coffee uses the newest tasting that has answers.' },
+  rating:{ title:'How you rate', q:'Do you use the whole scale?',
+    why:'This counts coffees by their star rating. When a coffee has several tastings, its stars are averaged. A half star is counted with the whole star above it.' },
+  groups:{ title:'How you rate kinds of coffee', q:'Do you rate some kinds of coffee higher?',
+    why:'One dot is one coffee at its star rating. From 3 coffees in a group, the tall mark is the middle rating (the median) and the grey line is the range. Smaller groups show dots only. This is not a test. Details overlap: a natural is often also an Ethiopian.' },
+  map:{ title:'Where your measured brews landed', q:'Where are the brews you liked on the strength and extraction chart?',
+    why:'Each dot is one brew with a TDS reading and an extraction. The shaded box is a common target. It is a convention, not a rule, and people differ in where they like coffee. Filled dots are brews you rated 4 or 5 stars.' }
+};
+const tpFmt = x => (Math.round(x * 10) / 10).toString();
+const tpOf = (n, total, noun) => n + ' of ' + total + ' ' + noun;
+/* one plain sentence under each picture */
+function tpPlain(id, a){
+  if (id === 'flavors'){
+    const top = (side) => a.flavors.rows.filter(r => r[side] > 0 && r.family !== TP_OTHER).sort((x, y) => y[side] - x[side])[0];
+    const l = top('liked'), nl = top('notLiked');
+    return (l ? 'So far, ' + l.family.toLowerCase() + ' is what you liked most (' + tpOf(l.liked, a.flavors.n, 'coffees') + ').' : 'You have not marked a flavor as liked yet.') + (nl ? ' ' + nl.family + ' is the family you did not like most often (' + tpOf(nl.notLiked, a.flavors.n, 'coffees') + ').' : '');
+  }
+  if (id === 'enjoy'){
+    const g = a.enjoy.rows.slice().sort((x, y) => y.good - x.good)[0], b = a.enjoy.rows.slice().sort((x, y) => y.notgood - x.notgood)[0];
+    return (g && g.good ? 'So far, the ' + g.label.toLowerCase() + ' is what you said Good about most (' + tpOf(g.good, a.enjoy.n, 'coffees') + ').' : 'You have not answered Good yet.') + (b && b.notgood ? ' You said Not good about the ' + b.label.toLowerCase() + ' most (' + tpOf(b.notgood, a.enjoy.n, 'coffees') + ').' : '');
+  }
+  if (id === 'rating'){
+    const r = a.rating, top = r.bars.slice().sort((x, y) => y.n - x.n)[0];
+    return 'Most of your coffees are at ' + top.star + (top.star === 1 ? ' star' : ' stars') + ' (' + tpOf(top.n, r.n, 'rated coffees') + ').' + (r.narrow ? ' Your ratings sit in a narrow band so far. Using more of the scale makes the other pictures easier to read.' : '');
+  }
+  if (id === 'groups') return 'Each dot is one coffee. Look at one kind at a time. A group with fewer than 3 coffees shows dots only.';
+  return 'Filled dots are brews you rated 4 or 5 stars. Hollow dots are rated lower. Small grey rings are not rated.';
+}
+/* the body of one picture */
+function tpBody(id, a, expert, st){
+  if (id === 'flavors'){
+    const f = a.flavors, rows = f.rows.map(r => ({ label:r.family, left:r.notLiked, right:r.liked, say:r.family + ': liked in ' + r.liked + ' of ' + f.n + ' coffees, not liked in ' + r.notLiked }));
+    const out = [h('p', { class:'fine', style:'margin:0 0 6px', text:'Based on ' + f.n + ' coffees with flavors saved.' }), tpDiverge(rows, f.max, 'Not liked', 'Liked', 'Flavor families, liked and not liked')];
+    out.push(h('p', { class:'fine tpwords', text:f.rows.filter(r => r.topLiked.length || r.topNot.length).slice(0, 6).map(r => r.family + ': ' + (r.topLiked.length ? 'liked ' + r.topLiked.join(', ') : '') + (r.topLiked.length && r.topNot.length ? '; ' : '') + (r.topNot.length ? 'not liked ' + r.topNot.join(', ') : '')).join('. ') + '.' }));
+    if (expert) out.push(h('div', { class:'tpnums' }, h('b', { text:'Numbers' }), f.rows.map(r => h('p', { class:'fine', style:'margin:2px 0 0', text:r.family + ': liked in ' + tpOf(r.liked, f.n, 'coffees') + ' (95% range ' + tpPct(r.likedCI.lo) + ' to ' + tpPct(r.likedCI.hi) + '%), not liked in ' + r.notLiked + '.' }))));
+    return out;
+  }
+  if (id === 'enjoy'){
+    const e = a.enjoy, rows = e.rows.map(r => ({ label:r.label, left:r.notgood, right:r.good, say:r.label + ': Good for ' + r.good + ' coffees, Not good for ' + r.notgood + ', Okay for ' + r.okay + ', Couldn’t tell for ' + r.unsure }));
+    const out = [h('p', { class:'fine', style:'margin:0 0 6px', text:'Based on ' + e.n + ' Quick tastings.' }), tpDiverge(rows, e.max, 'Not good', 'Good', 'What you enjoy about a cup')];
+    if (expert) out.push(h('div', { class:'tpnums' }, h('b', { text:'Numbers' }), e.rows.map(r => h('p', { class:'fine', style:'margin:2px 0 0', text:r.label + ': Good ' + r.good + ', Okay ' + r.okay + ', Not good ' + r.notgood + ', Couldn’t tell ' + r.unsure + '.' }))));
+    return out;
+  }
+  if (id === 'rating') return [h('p', { class:'fine', style:'margin:0 0 6px', text:'Based on ' + a.rating.n + ' rated coffees.' }), tpStarBars(a.rating)];
+  if (id === 'groups'){
+    const g = a.groups, feat = g.feats.find(x => x.key === st.feat) || g.feats[0], holder = h('div', { class:'tpholder' });
+    const seg = h('div', { class:'seg', role:'group', 'aria-label':'Group the coffees by' });
+    const btns = g.feats.map(F => h('button', { type:'button', id:'tpf-' + F.key, text:F.label, 'aria-pressed':String(F.key === feat.key), onclick:() => { st.feat = F.key; paint(); } }));
+    btns.forEach(b => seg.append(b));
+    function paint(){
+      const cur = g.feats.find(x => x.key === st.feat) || g.feats[0];
+      btns.forEach((b, i) => b.setAttribute('aria-pressed', String(g.feats[i].key === cur.key)));
+      holder.textContent = '';
+      holder.append(...kept(h('p', { class:'fine', style:'margin:6px 0', text:'Based on ' + cur.coffees + ' rated coffees' + (cur.coffees < g.n ? ' that have this detail (of ' + g.n + ' rated)' : '') + '.' }), tpDots(cur, expert),
+        cur.hidden ? h('p', { class:'fine', text:cur.hidden + ' smaller ' + (cur.hidden === 1 ? 'group is' : 'groups are') + ' not shown.' }) : null));
+    }
+    paint();
+    return [seg, holder];
+  }
+  const out = [h('p', { class:'fine', style:'margin:0 0 6px', text:'Based on ' + a.map.n + ' measured brews.' })];
+  a.map.kinds.forEach(k => { const box = h('div', { class:'ecchart tpmap', id:'tpmap-' + k.kind }); box.innerHTML = tpBrewMap(k); out.push(h('p', { class:'fine', style:'margin:8px 0 2px', text:(k.kind === 'espresso' ? 'Espresso' : 'Filter and immersion') + ': ' + k.pts.length + (k.pts.length === 1 ? ' brew' : ' brews') + '. Across is extraction, up is TDS. The shaded box is a common target, not a rule.' }), box); });
+  return out;
+}
+/* which pictures are drawn, and what the others need */
+function tpPictures(a){
+  const order = ['flavors', 'enjoy', 'rating', 'groups', 'map'];
+  return order.filter(id => a.list.find(x => x.id === id).ready);
+}
+function tpPending(a, lvl){
+  const rest = a.list.filter(x => !x.ready);
+  if (!rest.length) return null;
+  if (lvl === 'new'){
+    const next = rest.filter(x => x.need > 0).sort((x, y) => x.need - y.need)[0];
+    return next ? h('p', { class:'fine', id:'tpNext', text:next.need + ' more ' + next.noun + ' and the next picture appears.' }) : null;
+  }
+  return h('div', { class:'card', id:'tpPending' }, h('h3', { text:'Not drawn yet' }), h('p', { class:'fine', style:'margin:2px 0 6px', text:'A picture appears when there is enough to draw. Nothing is guessed from fewer.' }),
+    rest.map(x => h('p', { class:'serif gp', style:'margin:4px 0 0' }, h('b', { style:'font-family:var(--ui);font-weight:600', text:TP_TEXT[x.id].title + ': ' }), x.need > 0 ? 'needs ' + x.need + ' more ' + x.noun + ' (you have ' + x.n + ').' : 'needs rated coffees that differ in a bag detail, such as two processes.')));
+}
+async function tpDownload(status){
+  const text = tpCsv(history && history.objs ? history.objs : []), name = 'neurobrew-tendencies.csv';
+  try {
+    if (inClaude()){ const dl = await getDownloads(); if (!dl) throw new Error('no downloads'); await dl.save({ filename:name, data:text }); }
+    else plainDownload(text, name);
+    status.textContent = 'Saved ' + name + '.';
+  } catch(e){ status.textContent = 'This view could not save the table. Open NeuroBrew in your browser and try again.'; }
+}
+function screenTend(m){
+  const lvl = level(), expert = lvl === 'expert', objs = history && history.objs ? history.objs : [], a = tpAvailable(objs), st = { feat:'' };
+  m.append(h('h1', { text:'Your tendencies' }), h('p', { class:'lede', text:'Pictures of what you rate and write about your coffees. Each bar counts coffees, and each dot is one coffee, so you can check every one.' }));
+  if (!a.coffees){
+    m.append(h('div', { class:'card', id:'tpEmpty' }, h('h3', { text:'Nothing to show yet' }), h('p', { class:'serif', style:'margin:4px 0 0', text:'Rate a few coffees and tick the flavors you liked, and pictures appear here.' }),
+      h('p', { class:'fine', style:'margin:8px 0 0', text:'They come from your saved history. Open your history file from the first screen, or save a tasting, and they will appear.' })));
+    m.append(tpPending(a, 'comfortable'));
+  } else {
+    const ids = tpPictures(a), card = (id, open, extra) => {
+      const T = TP_TEXT[id], body = tpBody(id, a, expert, st), plain = h('p', { class:'serif tpplain', text:tpPlain(id, a) });
+      const why = lvl === 'new' ? null : h('details', { class:'tpwhy' }, h('summary', { text:expert ? 'How this is counted' : 'Why?' }), h('p', { class:'serif gp', text:T.why }));
+      const isNums = n => n && n.classList && n.classList.contains('tpnums'), nodes = [].concat(body.filter(n => !isNums(n)), [plain], body.filter(isNums), [why]);   /* the plain sentence comes before the Expert numbers */
+      if (lvl === 'comfortable') return gcard(T.title, T.q, nodes, open);
+      return h('div', { class:'card tpcard', id:'tp-' + id }, h('h3', { text:T.title }), h('p', { class:'fine', style:'margin:0 0 8px', text:T.q }), nodes);
+    };
+    if (!ids.length) m.append(h('div', { class:'card', id:'tpNone' }, h('h3', { text:'Not enough yet to draw' }), h('p', { class:'serif', style:'margin:4px 0 0', text:'You have ' + a.coffees + (a.coffees === 1 ? ' coffee' : ' coffees') + ' saved. A picture appears when there is enough to draw, and nothing is guessed from fewer.' })));
+    else if (lvl === 'new'){
+      m.append(card(ids[0], true));
+      if (ids.length > 1) m.append(gcard('More pictures', (ids.length - 1) + (ids.length === 2 ? ' more is ready' : ' more are ready'), ids.slice(1).map(id => card(id, false)), false));
+    } else ids.forEach((id, i) => m.append(card(id, i === 0)));
+    const pend = tpPending(a, lvl); if (pend) m.append(pend);
+    const status = h('p', { class:'fine', id:'tpDlStatus', role:'status', style:'margin:6px 0 0' });
+    m.append(gcard('The numbers behind these pictures', 'One row per coffee, as a spreadsheet file', [h('p', { class:'fine', style:'margin:0 0 8px', text:'Coffee, stars, bag details, liked and not liked flavors, and the six Quick answers. Your own history file is not changed.' }),
+      h('button', { type:'button', class:'btn block', id:'tpDownload', text:'Save the table (CSV)', onclick:() => tpDownload(status) }), status], expert));
+  }
+  m.append(h('p', { class:'fine', id:'tpCaution', text:TP_CAUTION }));
+  const back = typeof PARENT.tend === 'function' ? PARENT.tend() : PARENT.tend;
+  m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
+}
+/* ---------- Tendencies pictures ----------
+   Bars are plain HTML (real text, grows with the person's text size). Dots and the brew map are SVG. Every count is printed, so color is never the only carrier. */
+const tpPct = x => Math.round(x * 100);
+/* rows: [{ label, left, right, say }]; liked/good is on the right, not liked/not good on the left. */
+function tpDiverge(rows, max, leftName, rightName, ariaName){
+  const bar = (n, cls) => h('span', { class:'tpside ' + cls }, cls === 'tpl' ? [n ? h('b', { text:String(n) }) : null, h('i', { style:'width:' + (n ? Math.max(3, n / max * 100) : 0) + '%' })] : [h('i', { style:'width:' + (n ? Math.max(3, n / max * 100) : 0) + '%' }), n ? h('b', { text:String(n) }) : null]);
+  const wrap = h('div', { class:'tpdiv', role:'list', 'aria-label':ariaName },
+    h('div', { class:'tprow tphead', 'aria-hidden':'true' }, h('span'), h('span', { class:'tpl', text:'← ' + leftName }), h('span', { class:'tpr', text:rightName + ' →' })));
+  rows.forEach(r => wrap.append(h('div', { class:'tprow', role:'listitem', 'aria-label':r.say }, h('span', { class:'tplab', text:r.label }), bar(r.left, 'tpl'), bar(r.right, 'tpr'))));
+  return wrap;
+}
+/* five bars, one per whole star */
+function tpStarBars(r){
+  const wrap = h('div', { class:'tpstars', role:'list', 'aria-label':'Coffees at each star rating' });
+  r.bars.forEach(b => wrap.append(h('div', { class:'tpcol', role:'listitem', 'aria-label':b.n + (b.n === 1 ? ' coffee' : ' coffees') + ' at ' + b.star + (b.star === 1 ? ' star' : ' stars') },
+    h('b', { text:String(b.n) }), h('i', { style:'height:' + (b.n ? Math.max(4, b.n / r.max * 84) : 0) + 'px' }), h('span', { text:b.star + (b.star === 1 ? ' star' : ' stars') }))));
+  return wrap;
+}
+/* One group: its dots on a 0.5 to 5 star line. Dots at the same rating stack. The median tick and the range line appear from 3 coffees. */
+function tpDotRow(row){
+  const W = 220, L = 10, R = 10, X = s => L + (s - 0.5) / 4.5 * (W - L - R), by = {};
+  row.stars.forEach(s => { by[s] = (by[s] || 0) + 1; });
+  const stack = Math.max(...Object.keys(by).map(k => by[k])), step = stack > 3 ? 6 : 9, H = 14 + stack * step + 6, base = H - 12;
+  let g = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">';
+  g += '<line x1="' + X(0.5) + '" x2="' + X(5) + '" y1="' + base + '" y2="' + base + '" style="stroke:var(--line);stroke-width:1.5"/>';
+  if (row.lo != null) g += '<line x1="' + X(row.lo) + '" x2="' + X(row.hi) + '" y1="' + base + '" y2="' + base + '" style="stroke:var(--muted);stroke-width:3;stroke-linecap:round;opacity:.55"/>';
+  if (row.median != null) g += '<line x1="' + X(row.median) + '" x2="' + X(row.median) + '" y1="' + (base - 3) + '" y2="' + (base + 5) + '" style="stroke:var(--ink);stroke-width:2.5"/>';
+  Object.keys(by).forEach(k => { for (let i = 0; i < by[k]; i++) g += '<circle cx="' + X(+k) + '" cy="' + (base - 8 - i * step) + '" r="4" style="fill:var(--accent);stroke:var(--surface);stroke-width:1.2"/>'; });
+  return g + '</svg>';
+}
+function tpDots(feat, expert){
+  const fmt = x => (Math.round(x * 10) / 10).toString();
+  const say = r => r.label + ': ' + r.n + (r.n === 1 ? ' coffee' : ' coffees') + ', rated ' + r.stars.map(fmt).join(', ') + ' stars' + (r.median != null ? '; median ' + fmt(r.median) + ', range ' + fmt(r.lo) + ' to ' + fmt(r.hi) : '');
+  const wrap = h('div', { class:'tpdots', role:'list', 'aria-label':'Ratings by ' + feat.label.toLowerCase() });
+  feat.rows.forEach(r => {
+    const plot = h('span', { class:'tpplot' }); plot.innerHTML = tpDotRow(r);
+    wrap.append(h('div', { class:'tpdrow', role:'listitem', 'aria-label':say(r) },
+      h('span', { class:'tplab' }, h('span', { text:r.label }), h('small', { text:'n=' + r.n }), expert && r.median != null ? h('small', { text:'median ' + fmt(r.median) + ', ' + fmt(r.lo) + ' to ' + fmt(r.hi) }) : null), plot));
+  });
+  wrap.append(h('div', { class:'tpdrow tpaxis', 'aria-hidden':'true' }, h('span'), h('span', { class:'tpticks' }, ['1', '2', '3', '4', '5'].map(s => h('span', { text:s + '★' })))));
+  return wrap;
+}
+/* the strength and extraction chart with one dot per measured brew: filled for 4 to 5 stars, hollow for lower, small and faint when not rated */
+function tpBrewMap(group){
+  const kind = group.kind, W = 300, H = 170, L = 34, R = 8, T = 8, B = 26, x0 = 14, x1 = 26, y0 = kind === 'espresso' ? 4 : 0.9, y1 = kind === 'espresso' ? 16 : 1.7, lo = kind === 'espresso' ? 8 : 1.15, hi = kind === 'espresso' ? 12 : 1.35;
+  const X = v => L + (Math.min(x1, Math.max(x0, v)) - x0) / (x1 - x0) * (W - L - R), Y = v => T + (1 - (Math.min(y1, Math.max(y0, v)) - y0) / (y1 - y0)) * (H - T - B);
+  const liked = group.pts.filter(p => p.stars >= 4).length, rated = group.pts.filter(p => p.stars > 0).length;
+  let g = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + escHtml((kind === 'espresso' ? 'Espresso' : 'Filter') + ' brews on the strength and extraction chart: ' + group.pts.length + ' measured, ' + rated + ' rated, ' + liked + ' rated 4 or 5 stars') + '" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">';
+  g += '<rect x="' + X(14) + '" y="' + Y(y1) + '" width="' + (X(26) - X(14)) + '" height="' + (Y(y0) - Y(y1)) + '" rx="6" style="fill:var(--tint)"/>';
+  g += '<rect x="' + X(18) + '" y="' + Y(hi) + '" width="' + (X(22) - X(18)) + '" height="' + (Y(lo) - Y(hi)) + '" rx="3" style="fill:var(--leaf);opacity:.22"/>';
+  [14, 18, 22, 26].forEach(v => { g += '<text x="' + X(v) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" style="fill:var(--muted)">' + v + '%</text>'; });
+  [lo, hi].forEach(v => { g += '<text x="' + (L - 4) + '" y="' + (Y(v) + 4) + '" text-anchor="end" font-size="11" style="fill:var(--muted)">' + v + '</text>'; });
+  group.pts.forEach(p => {
+    const x = X(p.ey), y = Y(p.tds);
+    if (p.stars >= 4) g += '<circle cx="' + x + '" cy="' + y + '" r="6" style="fill:var(--accent);stroke:var(--surface);stroke-width:2;opacity:.9"/>';
+    else if (p.stars > 0) g += '<circle cx="' + x + '" cy="' + y + '" r="5" style="fill:none;stroke:var(--accent);stroke-width:2.2"/>';
+    else g += '<circle cx="' + x + '" cy="' + y + '" r="3" style="fill:none;stroke:var(--muted);stroke-width:1.5;opacity:.7"/>';
+  });
+  return g + '</svg>';
 }
 /* ---------- screen: brew (choose method) ---------- */
 function chooseMethod(key){
@@ -7706,10 +8490,11 @@ function screenReady(m){
 }
 /* ---------- screen: tools ---------- */
 let toolsFrom = '';
-function goTools(){ if (app.screen !== 'tools' && app.screen !== 'yield') toolsFrom = app.screen === 'timer' ? 'ready' : app.screen; go('tools'); }
+function goTools(){ if (app.screen !== 'tools' && app.screen !== 'yield' && app.screen !== 'ratio') toolsFrom = app.screen === 'timer' ? 'ready' : app.screen; go('tools'); }
 /* One row per tool. Add a tool here and it shows up in the list; the Menu stays one row long. */
 const TOOLS = [
-  { id:'yield', name:'Cup yield', text:'How much ends up in your cup, and how much water to pour for the cup you want', open:() => goYield() }
+  { id:'yield', name:'Cup yield', text:'How much ends up in your cup, and how much water to pour for the cup you want', open:() => goYield() },
+  { id:'ratio', name:'Ratio and strength planner', text:'The ratio for the strength you want, and how much water to add to a strong brew', open:() => goRatio() }
 ];
 function screenTools(m){
   m.append(h('h1', { text:'Tools' }), h('p', { class:'lede', text:'Small helpers for the numbers behind a good cup.' }));
@@ -7718,6 +8503,93 @@ function screenTools(m){
   m.append(list);
   const back = typeof PARENT.tools === 'function' ? PARENT.tools() : PARENT.tools;
   m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
+}
+/* ---------- screen: ratio and strength planner ----------
+   Nothing here is saved. The water your grounds keep comes from Cup yield (its band, or your own saved figure). */
+let rp = null, rpHost = null;
+function goRatio(){ if (!rp) rpStart(); go('ratio'); }
+const rpEsp = () => rp.key === 'espresso';
+const rpSet = () => PLAN_PRESETS[rpEsp() ? 'espresso' : 'filter'];
+function rpStart(){
+  const b = app.brew, key = b.method && planMethods().includes(b.method) ? b.method : 'v60', dose = b.method === key && b.water > 0 && b.ratio >= 1.5 && b.ratio <= 20 ? Math.round(b.water / b.ratio * 2) / 2 : (key === 'espresso' ? 18 : 20);
+  rp = { key, dose, preset:'Usual', tds:null, ey:null, open:{ set:false, work:false, sure:false }, dil:{ conc:'', tds:'', mode:'target', target:'', water:'' } };
+  rpPreset('Usual');
+}
+function rpPreset(name){ const p = rpSet().find(x => x[0] === name) || rpSet()[1]; rp.preset = p[0]; rp.tds = p[1]; rp.ey = p[2]; }
+/* your own saved water-kept figure for this method, if you made one in Cup yield */
+const rpOwn = () => (app.prefs.yieldCal && app.prefs.yieldCal[rp.key]) || null;
+function rpRun(){ const d = yieldRetention(rp.key, rpOwn()); return Object.assign(planRatio({ tds:rp.tds, ey:rp.ey, r:d.r, rlo:d.lo, rhi:d.hi }), { d }); }
+const rpG = x => !isFinite(x) ? '–' : Math.abs(x) >= 100 ? String(Math.round(x)) : String(Math.round(x * 10) / 10);
+const rpR = x => '1:' + (Math.round(x * 10) / 10).toFixed(1);
+function rpResultNodes(res, lvl){
+  if (!res.ok) return [h('div', { class:'yc-warn', text:'Those numbers do not give a ratio. Strength should be between about 0.5 and 15 %, and extraction between about 10 and 30 %.' })];
+  const esp = rpEsp(), dose = rp.dose, main = esp ? res.cup : res.water, lo = esp ? res.cup : res.waterLo, hi = esp ? res.cup : res.waterHi, out = [];
+  out.push(h('div', { class:'yc-rlab', text:esp ? 'Cup per gram of coffee' : 'Water per gram of coffee' }), h('div', { class:'yc-big', id:'rpBig', text:rpR(main) }));
+  if (dose > 0){
+    out.push(h('div', { class:'yc-line' }, h('b', { text:esp ? 'About ' + rpG(dose * res.cup) + ' g out for ' + rpG(dose) + ' g of coffee' : 'About ' + rpG(dose * res.water) + ' g of water for ' + rpG(dose) + ' g of coffee' })));
+    out.push(h('div', { class:'yc-line mute', text:esp ? 'About ' + rpG(dose * res.water) + ' g of water goes through the puck, and the coffee keeps the rest.' : 'Your cup will weigh about ' + rpG(dose * res.cup) + ' g (' + ycOz(dose * res.cup) + ' fl oz).' }));
+  }
+  if (!esp && Math.abs(hi - lo) > 0.05) out.push(h('div', { class:'yc-line mute', id:'rpBand', text:'From ' + rpR(lo) + ' to ' + rpR(hi) + ', depending on how much water your grounds keep.' }));
+  if (rpOwn()) out.push(h('div', { class:'yc-line mute', text:'This uses the water-kept figure you saved in Cup yield.' }));
+  return out;
+}
+function rpLive(){ const r = $('rpResult'); if (r){ r.textContent = ''; r.append(...rpResultNodes(rpRun(), level())); } const w = $('rpWork'); if (w) w.textContent = rpWorkText(); }
+function rpWorkText(){
+  const res = rpRun(); if (!res.ok) return 'Enter a strength and an extraction to see the working.';
+  const t = rp.tds / 100, e = rp.ey / 100, r = res.d.r, f = x => (Math.round(x * 100) / 100), esp = rpEsp();
+  return 'For every 1 g of coffee, ' + f(rp.ey) / 100 + ' g dissolves (extraction ' + rp.ey + ' %). The grounds keep ' + f(r) + ' g of water. The cup then holds ' + f(e) + ' g of dissolved coffee in ' + f(e / t) + ' g of liquid, because ' + rp.tds + ' % strength means ' + f(e) + ' ÷ ' + f(t) + '. '
+    + 'Water in = liquid in the cup + water kept − coffee dissolved: ' + f(e / t) + ' + ' + f(r) + ' − ' + f(e) + ' = ' + f(res.water) + ' g per g of coffee (' + rpR(res.water) + '). Written as one formula: R = r + EY × (1 − TDS) ÷ TDS.'
+    + (esp ? ' For espresso the cup ratio, ' + rpR(res.cup) + ', is what people quote: extraction ÷ strength.' : '');
+}
+function rpDilNodes(){
+  const d = rp.dil, out = h('div', { class:'yc-result', id:'rpDilOut', 'aria-live':'polite' }), box = [];
+  const live = () => {
+    out.textContent = '';
+    if (!(+d.conc > 0 && +d.tds > 0)){ out.append(h('p', { class:'fine', style:'margin:0', text:'Enter the weight of the strong brew and its strength.' })); return; }
+    if (d.mode === 'target'){
+      if (!(+d.target > 0)) { out.append(h('p', { class:'fine', style:'margin:0', text:'Enter the strength you want.' })); return; }
+      const r = planDiluteTo({ conc:d.conc, tds:d.tds, target:d.target });
+      out.append(...(r.ok ? [h('div', { class:'yc-rlab', text:'Add about' }), h('div', { class:'yc-big' }, rpG(r.water), h('small', { text:' g of water' })), h('div', { class:'yc-line mute', text:'You will have about ' + rpG(r.total) + ' g at ' + d.target + ' % strength.' })] : [h('div', { class:'yc-warn', text:r.why || 'Check the numbers.' })]));
+    } else {
+      if (!(+d.water >= 0) || d.water === '') { out.append(h('p', { class:'fine', style:'margin:0', text:'Enter the water you will add.' })); return; }
+      const r = planDilute({ conc:d.conc, tds:d.tds, water:d.water });
+      out.append(...(r.ok ? [h('div', { class:'yc-rlab', text:'Strength after' }), h('div', { class:'yc-big' }, (Math.round(r.tds * 100) / 100).toFixed(2), h('small', { text:' % TDS' })), h('div', { class:'yc-line mute', text:'You will have about ' + rpG(r.total) + ' g.' })] : [h('div', { class:'yc-warn', text:'Check the numbers.' })]));
+    }
+  };
+  const mode = h('div', { class:'yc-mini', role:'group', 'aria-label':'What do you know' }, [['target', 'I know the strength I want'], ['water', 'I know the water I will add']].map(m => h('button', { type:'button', 'data-m':m[0], 'aria-pressed':String(d.mode === m[0]), text:m[1], onclick:() => { d.mode = m[0]; rpPaint(); } })));
+  box.push(h('p', { class:'fine', style:'margin:0 0 8px', text:'Water added to a brew lowers its strength and changes nothing else: the extraction stays the same.' }), mode,
+    h('div', { class:'yc-row' }, ycNum('rpConc', 'Strong brew', 'g', d.conc, 1, v => { d.conc = v; live(); }), ycNum('rpTds', 'Its strength', '% TDS', d.tds, 0.05, v => { d.tds = v; live(); })),
+    d.mode === 'target' ? ycNum('rpTarget', 'Strength you want', '% TDS', d.target, 0.05, v => { d.target = v; live(); }, '1.35') : ycNum('rpWater', 'Water to add', 'g', d.water, 1, v => { d.water = v; live(); }), out);
+  live();
+  return box;
+}
+function rpPaint(){
+  const host = rpHost, lvl = level(), isNew = lvl === 'new', t = YIELD_TABLE[rp.key];
+  host.textContent = '';
+  host.append(h('h1', { text:'Ratio and strength planner' }), h('p', { class:'lede', text:'Work out how much water to use for the cup you want to drink.' }));
+  const sel = h('select', { id:'rpMethod', class:'yc-pick' });
+  YIELD_GROUPS.forEach(g => { const ks = g[1].filter(k => planMethods().includes(k)); if (ks.length) sel.append(h('optgroup', { label:g[0] }, ks.map(k => h('option', { value:k, text:METHODS.find(x => x.key === k).label, selected:k === rp.key })))); });
+  sel.addEventListener('change', () => { rp.key = sel.value; rp.dose = rpEsp() ? 18 : 20; rpPreset('Usual'); rpPaint(); });
+  const chips = h('div', { class:'yc-chips', id:'rpPresets', role:'group', 'aria-label':'How strong' });
+  const mark = () => Array.from(chips.children).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === rp.preset)));
+  rpSet().forEach(p => chips.append(h('button', { type:'button', class:'yc-chip', 'data-p':p[0], 'aria-pressed':String(p[0] === rp.preset), onclick:() => { rpPreset(p[0]); if ($('rpTdsIn')){ $('rpTdsIn').value = String(rp.tds); $('rpEyIn').value = String(rp.ey); } mark(); rpLive(); } }, p[0], isNew ? null : h('em', { text:p[1] + ' %' }))));
+  const nums = [ycNum('rpTdsIn', 'Strength you want', '% TDS', rp.tds, 0.05, v => { rp.tds = parseFloat(v) || 0; rp.preset = ''; mark(); rpLive(); }),
+    ycNum('rpEyIn', 'Extraction you aim for', '%', rp.ey, 0.5, v => { rp.ey = parseFloat(v) || 0; rp.preset = ''; mark(); rpLive(); })];
+  const card = h('div', { class:'card', id:'rpPlan' }, h('h3', { text:'Plan a ratio' }), h('div', { class:'yc-f wide' }, h('label', { for:'rpMethod', text:'Method' }), sel),
+    h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:'How strong' }), chips), ycNum('rpDose', 'Coffee', 'g', rp.dose, 0.5, v => { rp.dose = parseFloat(v) || 0; rpLive(); }));
+  if (isNew){ const d = h('details', { class:'yc-fold', id:'rpSet' }, h('summary', { text:'Set the numbers yourself' }), h('div', { class:'yc-fbody' }, nums)); d.open = rp.open.set; d.addEventListener('toggle', () => { rp.open.set = d.open; }); card.append(d); }
+  else card.append(h('div', { class:'yc-row' }, nums));
+  card.append(h('div', { class:'yc-result', id:'rpResult', 'aria-live':'polite' }), h('p', { class:'fine', style:'margin:10px 0 0', text:'A starting point to taste and adjust. The strengths and extractions here are common targets, not rules, and people like different cups.' }));
+  host.append(card);
+  host.append(gcard('Dilute a strong brew', 'Add water to reach a strength', rpDilNodes(), !isNew));
+  const fold = (id, key, name, body) => { const d = h('details', { class:'yc-fold', id }, h('summary', { text:name }), h('div', { class:'yc-fbody' }, body)); d.open = !!rp.open[key]; d.addEventListener('toggle', () => { rp.open[key] = d.open; }); return d; };
+  host.append(fold('rpWorkd', 'work', 'How this is worked out', h('p', { class:'fine', id:'rpWork', style:'margin:0' })));
+  host.append(fold('rpSured', 'sure', 'How sure are we', h('div', null, h('p', { class:'fine', style:'margin:0 0 8px', text:PLAN_SRC }), h('p', { class:'fine', style:'margin:0' }, h('b', { text:'Water the coffee keeps: ' + YIELD_SURE[t.sure] + '. ' }), t.src))));
+  rpLive();
+}
+function screenRatio(m){
+  if (!rp || !YIELD_TABLE[rp.key]) rpStart();
+  rpHost = h('div', { id:'rpHost' }); m.append(rpHost); rpPaint();
 }
 /* ---------- screen: cup yield ----------
    The sums are in engine/67-cup-yield.js. Nothing here is saved except a calibration you choose to keep (app.prefs.yieldCal, kept in this browser with your other settings). */
@@ -8139,7 +9011,7 @@ function measureBlock(b){
   return h('details', { class:'moreinfo' }, h('summary', { text:'Measured it with a refractometer? (optional)' }),
     h('p', { class:'fine', style:'margin:6px 0 8px', text:'Strength (TDS) and extraction are different things. A cup can be strong but under-extracted, or weak but well extracted. Measuring both tells you whether to change the grind or the ratio.' }),
     outIn, outHint, tdsIn, warnLine, res, chart,
-    h('p', { class:'fine', text:'Extraction % = TDS % × finished coffee weight ÷ coffee dose. The classic chart targets 18–22% extraction and 1.15–1.35% TDS for filter coffee, and 8–12% TDS for espresso. Tasters in a 2013 SCA study leaned toward 20–24%.' }));
+    h('p', { class:'fine', text:'Extraction % = TDS % × finished coffee weight ÷ coffee dose (the cup basis). It leaves out dissolved coffee still held in the wet grounds, so it reads a few points lower than papers that work from the brew water weight; do not mix the two. The 18–22% extraction and 1.15–1.35% TDS zone for filter coffee is a convention from the 1950s (Lockhart), and 8–12% TDS is the common café target for espresso. Neither is a rule: tasters in a 2013 SCA study leaned toward 20–24%, and people differ.' }));
 }
 function screenCup(m){
   const c = app.coffee, b = app.cupBrew;
@@ -8623,6 +9495,7 @@ function renderSheetBody(){
   if (sheet.step === 'setup'){ renderSetupSheet(title); return; }   /* My setup (63-sheet-setup.js) */
   if (sheet.step === 'setupFound'){ renderSetupFoundSheet(title); return; }
   if (sheet.step === 'otherWay'){ renderOtherWaySheet(title); return; }   /* Cup this one too? / Rate it too?, before saving (69-sheet-other-way.js) */
+  if (sheet.step === 'tableGuide'){ renderTableGuideSheet(title); return; }   /* what every column of the history file means (69-sheet-table-guide.js) */
   if (sheet.step === 'keepFirst'){ renderKeepFirstSheet(title); return; }   /* cuppings kept only in this browser, before a file replaces them (69-sheet-keep-first.js) */
   if (sheet.step === 'menu'){
     title.textContent = 'Menu';
@@ -8634,8 +9507,9 @@ function renderSheetBody(){
     rows.append(mi('Start a fresh coffee', 'Clears the form, brew, and scores. Keeps your history.', () => { closeSheet(); resetAll(); }));
     rows.append(mi('My setup', 'Units, level, timer and your gear. Saved in your file.', () => { sheet = { step:'setup' }; renderSheet(); }));
     rows.append(lab('Tools'));
-    rows.append(mi('Tools', 'Cup yield, and more to come', () => { closeSheet(); goTools(); }));
+    rows.append(mi('Tools', 'Cup yield and the Ratio and strength planner', () => { closeSheet(); goTools(); }));
     rows.append(lab('Learn'));
+    rows.append(mi('Your tendencies', 'Pictures of what you rate and enjoy, so far', () => { closeSheet(); goTend(); }));
     rows.append(mi('Understanding coffee', 'Your tendencies, how to shop, and what bag details mean', () => { closeSheet(); goLearn(); }));
     rows.append(mi('Glossary', 'What every term means', () => { sheet = { step:'glossary', q:'', group:'All' }; renderSheet(); }));
     rows.append(lab('Help'));
@@ -8657,6 +9531,7 @@ function renderSheetBody(){
       if (!history || !history.ex || !history.ex.count){ sheet = { step:'noBackup' }; renderSheet(); return; }
       sheet = { step:'backup', csv:history.text, back:'menu', bk:null, mode:'menu' }; renderSheet();
     }));
+    rows.append(mi('What each column means', 'A guide to your history file, for a spreadsheet or a script', () => { sheet = { step:'tableGuide', back:'menu' }; renderSheet(); }));
     rows.append(mi('Restore from a backup code', 'Paste a code you saved earlier', () => { sheet = { step:'histUpload', existing:null, csv:'', error:'', info:'', openBackup:true }; renderSheet(); }));
     if (storageFailed) rows.append(h('p', { class:'fine warnline', role:'status', style:'margin:0 0 6px', text:'This browser could not keep a copy of your work (its storage may be full or blocked). Your downloaded files are not affected. Save your history file now to be safe.' }));
     if (pickedFile) rows.append(twoTap('Forget my save file (' + pickedFile.name + ')', 'Tap again. The file itself is not touched', () => { forgetPicked().then(() => { if (sheet.step === 'menu') renderSheet(); }); }));
@@ -10023,6 +10898,29 @@ function renderOtherWaySheet(title){
     h('button', { type:'button', class:'btn', id:'otherNo', text:'No, save it as it is',
       onclick:() => { state.otherNo = true; sheet = { step:'ask', existing:null, csv:'', error:'', info:'' }; renderSheet(); } }));
 }
+async function tableGuideSave(status){
+  const text = columnGuideCsv(), name = 'neurobrew-column-guide.csv';
+  try {
+    if (inClaude()){ const dl = await getDownloads(); if (!dl) throw new Error('no downloads'); await dl.save({ filename:name, data:text }); }
+    else plainDownload(text, name);
+    status.textContent = 'Saved ' + name + '.';
+  } catch(e){ status.textContent = 'This view could not save the guide. Open NeuroBrew in your browser and try again.'; }
+}
+function renderTableGuideSheet(title){
+  title.textContent = 'What each column means';
+  const status = h('p', { class:'fine', id:'tgStatus', role:'status', style:'margin:8px 0 0' });
+  const groups = [];
+  COLUMN_GUIDE.forEach(r => { if (!groups.includes(r[1])) groups.push(r[1]); });
+  sheetEl.append(h('p', { style:'margin-top:0', text:'Your history file has ' + COLUMNS.length + ' columns, one row per tasting. This guide says what each one holds, so you can read the file in a spreadsheet or a script.' }),
+    h('ul', { class:'prep', style:'margin:0 0 10px' }, COLUMN_NOTES.map(n => h('li', { text:n }))),
+    h('button', { type:'button', class:'btn primary block', id:'tgSave', text:'Save the guide (CSV)', onclick:() => tableGuideSave(status) }), status);
+  groups.forEach(g => {
+    const rows = COLUMN_GUIDE.filter(r => r[1] === g);
+    sheetEl.append(h('details', { class:'tgroup', style:'margin-top:8px' }, h('summary', { text:g + ' (' + rows.length + ')' }),
+      h('dl', { class:'tgdl' }, rows.map(r => [h('dt', { text:r[0] }), h('dd', { text:r[2] + ' (' + r[3] + ')' })]).reduce((a, b) => a.concat(b), []))));
+  });
+  sheetEl.append(h('div', { class:'row', style:'margin-top:14px' }, h('button', { type:'button', class:'btn', text:'Back to the menu', onclick:openMenu }), h('button', { type:'button', class:'btn primary', text:'Close', onclick:closeSheet })));
+}
 function historyCard(){
   const card = h('div', { class:'card' });
   if (history){
@@ -10152,6 +11050,104 @@ function screenHistory(m){
   m.append(h('div', { class:'row', style:'margin-top:18px' }, h('button', { type:'button', class:'btn link', text:'Load a different file', onclick:openHistoryUpload }), forget),
     h('p', { class:'fine', text:'Forgetting removes the copy kept in this browser. Your downloaded file is not touched.' }));
 }
+/* The table shows only what varied: the things that were the same in every cup are one sentence above it. Cups are rows, so six cups still fit on a phone. */
+const CMP_K = 3;
+
+const cmpStarCell = v => v + ' ★';
+/* the rows of the analysis that changed between cups, in the order they are listed; New does not see strength or extraction */
+function cmpColumns(a, lvl){ return a.rows.filter(r => r.varied && !(lvl === 'new' && CMP_MEASURES.includes(r.label))); }
+const cmpCell = (r, i) => r.values[i] === '' || r.values[i] == null ? '–' : r.values[i];
+const cmpDate = c => c.date || (c.saved || '').slice(0, 10);
+/* cups = a.cups (best first). all = true shows every cup; otherwise the best CMP_K and the lowest CMP_K. */
+function cmpTable(a, lvl, all){
+  const cols = cmpColumns(a, lvl), sh = all ? { shown:a.cups, hidden:0 } : cmpShow(a.cups, CMP_K), idx = c => a.cups.indexOf(c);
+  const head = h('tr', null, h('th', { scope:'col', text:'Cup' }), h('th', { scope:'col', text:'Rating' }), cols.map(r => h('th', { scope:'col', text:r.label })));
+  const body = h('tbody');
+  sh.shown.forEach((c, n) => {
+    if (sh.hidden && n === CMP_K) body.append(h('tr', { class:'cmpgap' }, h('td', { colspan:String(2 + cols.length), text:'· · ·  ' + sh.hidden + ' more ' + (sh.hidden === 1 ? 'cup' : 'cups') + ' in between  · · ·' })));
+    body.append(h('tr', { class:'cmprow' }, h('th', { scope:'row', text:cmpDate(c) }), h('td', { class:'cmpstar', text:cmpStarCell(c.stars) }), cols.map(r => h('td', { text:cmpCell(r, idx(c)) }))));
+  });
+  return h('div', { class:'cmpwrap' }, h('table', { class:'cmptable', id:'cmpTable' }, h('caption', { class:'sr-only', text:'Your cups, best first. Only the things that changed are shown.' }), h('thead', null, head), body));
+}
+/* New: the best cup and the lowest cup, side by side. */
+function cmpSideBySide(a, lvl){
+  const best = a.cups[0], low = a.cups[a.cups.length - 1], last = a.cups.length - 1, cols = cmpColumns(a, lvl);
+  const row = (label, x, y, cls) => h('tr', { class:cls || '' }, h('th', { scope:'row', text:label }), h('td', { text:x }), h('td', { text:y }));
+  return h('div', { class:'cmpwrap' }, h('table', { class:'cmptable cmpside', id:'cmpTable' }, h('caption', { class:'sr-only', text:'Your best cup and your lowest cup, side by side. Only the things that changed are shown.' }),
+    h('thead', null, h('tr', null, h('th', { scope:'col' }, h('span', { class:'sr-only', text:'What' })), h('th', { scope:'col', text:'Best cup' }), h('th', { scope:'col', text:'Lowest cup' }))),
+    h('tbody', null, row('Your rating', cmpStarCell(best.stars), cmpStarCell(low.stars), 'cmpstar'), row('Date', cmpDate(best), cmpDate(low)), cols.map(r => row(r.label, cmpCell(r, 0), cmpCell(r, last), 'cmpchg')))));
+}
+/* ---------- screen: compare cups ---------- */
+let cmpFrom = '', cmpCoffee = null, cmpSel = { method:'', all:false };
+function goCompare(c){
+  cmpCoffee = { id:c.id || '', name:c.name || '', roaster:c.roaster || '' }; cmpSel = { method:'', all:false };
+  if (app.screen !== 'compare') cmpFrom = app.screen === 'timer' ? 'ready' : app.screen;
+  go('compare');
+}
+const compareCoffeeOf = o => ({ id:o.coffee_id || '', name:unneutralize(o.coffee_name || ''), roaster:unneutralize(o.roaster || '') });
+/* the button appears only for a coffee with two or more brewed tastings */
+function compareButton(c){
+  if (!history || !history.objs || cmpCups(history.objs, c).length < 2) return null;
+  return h('button', { type:'button', class:'btn block', id:'compareBtn', style:'margin-top:12px', text:'Compare these cups', onclick:() => goCompare(c) });
+}
+function cmpMethodChips(methods, onPick){
+  const chips = h('div', { class:'yc-chips', id:'cmpMethods', role:'group', 'aria-label':'Brewing method' });
+  const mark = () => Array.from(chips.children).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === cmpSel.method)));
+  methods.forEach(x => chips.append(h('button', { type:'button', class:'yc-chip', 'data-k':x.key, 'aria-pressed':String(x.key === cmpSel.method), onclick:() => { cmpSel.method = x.key; cmpSel.all = false; mark(); onPick(); } },
+    x.label, h('em', { text:String(x.n) }))));
+  return chips;
+}
+function cmpSummaryCard(mc, a, w, lvl){
+  const card = h('div', { class:'card', id:'cmpSummary' }, h('h3', { text:mc[0].methodLabel + ': ' + mc.length + (mc.length === 1 ? ' cup' : ' cups') }), h('p', { class:'serif cmphead', style:'margin:4px 0 0', text:w.headline }));
+  if (!w.ready) return card;
+  if (w.suggest) card.append(h('p', { class:'serif cmpsugg', id:'cmpSuggest', text:w.suggest }));
+  if (w.repeat) card.append(h('p', { class:'serif', id:'cmpRepeat', style:'margin:8px 0 0', text:w.repeat }));
+  card.append(h('p', { class:'serif', id:'cmpChanged', style:'margin:8px 0 0', text:w.changed }));
+  if (w.same) card.append(h('p', { class:'fine', id:'cmpSame', style:'margin:6px 0 0', text:w.same }));
+  if (a.unrated) card.append(h('p', { class:'fine', style:'margin:8px 0 0', text:a.unrated + ' of these ' + mc.length + ' cups ' + (a.unrated === 1 ? 'has' : 'have') + ' no star rating and ' + (a.unrated === 1 ? 'is' : 'are') + ' left out.' }));
+  if (lvl === 'expert' && w.numbers) card.append(h('p', { class:'fine cmpnums', id:'cmpNumbers', style:'margin:8px 0 0', text:w.numbers }));
+  if (lvl === 'comfortable') card.append(h('details', { class:'tpwhy' }, h('summary', { text:'Why?' }), h('p', { class:'serif gp', text:w.why })));
+  if (lvl === 'expert') card.append(h('details', { class:'tpwhy' }, h('summary', { text:'How this is decided' }), h('p', { class:'serif gp', text:w.why + ' The shuffle test reorders your star ratings ' + CMP_PERMS + ' times with a fixed seed taken from your cups, so the same cups always give the same answer. Ratings of different scoring kinds are never mixed: only your own stars rank the cups.' })));
+  return card;
+}
+function cmpTableCard(a, lvl, repaint){
+  if (lvl === 'new') {
+    const best = a.cups[0], low = a.cups[a.cups.length - 1];
+    if (best.stars === low.stars) return h('div', { class:'card' }, h('h3', { text:'Best cup and lowest cup' }), h('p', { class:'serif', style:'margin:4px 0 0', text:'Your best and lowest cups have the same rating, so there is nothing to set side by side yet.' }));
+    return h('div', { class:'card', id:'cmpTableCard' }, h('h3', { text:'Best cup and lowest cup' }), cmpSideBySide(a, lvl));
+  }
+  const all = lvl === 'expert' || cmpSel.all, card = h('div', { class:'card', id:'cmpTableCard' }, h('h3', { text:'Your cups, best first' }), cmpTable(a, lvl, all));
+  if (lvl === 'comfortable' && a.cups.length > 2 * CMP_K){
+    card.append(h('button', { type:'button', class:'btn small', id:'cmpAll', style:'margin-top:10px', text:cmpSel.all ? 'Show only the best and lowest' : 'Show all ' + a.cups.length + ' cups', onclick:() => { cmpSel.all = !cmpSel.all; repaint(); } }));
+  }
+  return card;
+}
+function cmpAcrossCard(cups, lvl){
+  const ac = cmpAcross(cups); if (!ac.ready) return null;
+  return gcard('Across methods', 'Your ratings for each method', [tpDots({ label:'method', rows:ac.rows }, lvl === 'expert'),
+    h('p', { class:'fine', style:'margin:8px 0 0', text:'Each dot is one rated cup. Methods are never mixed in the table above, because grind, time and ratio mean different things in each.' })], false);
+}
+function screenCompare(m){
+  const lvl = level(), c = cmpCoffee || {}, objs = history && history.objs ? history.objs : [], cups = cmpCups(objs, c), methods = cmpMethods(cups);
+  m.append(h('h1', { text:'Compare your cups' }), h('p', { class:'lede', text:[c.name, c.roaster].filter(Boolean).join(' · ') || 'This coffee' }));
+  if (cups.length < 2){
+    m.append(h('div', { class:'card', id:'cmpEmpty' }, h('h3', { text:'Not enough cups yet' }), h('p', { class:'serif', style:'margin:4px 0 0', text:'Comparing needs at least two brews of the same coffee. Brew it again and rate both, and the two will line up here.' })));
+    return;
+  }
+  if (!methods.some(x => x.key === cmpSel.method)) cmpSel.method = methods[0].key;
+  const body = h('div', { id:'cmpBody' });
+  const paint = () => {
+    body.textContent = '';
+    const mc = cups.filter(x => x.method === cmpSel.method), a = cmpAnalyze(mc), w = cmpWords(a, lvl);
+    body.append(cmpSummaryCard(mc, a, w, lvl));
+    if (w.ready) body.append(cmpTableCard(a, lvl, paint));
+    const ac = cmpAcrossCard(cups, lvl); if (ac) body.append(ac);
+  };
+  if (methods.length > 1) m.append(cmpMethodChips(methods, paint));
+  m.append(body);
+  paint();
+  m.append(h('p', { class:'fine', style:'margin:14px 0 0', text:'Only your own star ratings order the cups. This shows what differed between cups. It cannot prove what caused a difference.' }));
+}
 function kvList(pairs){
   const rows = pairs.filter(p => p[1] !== '' && p[1] != null);
   if (!rows.length) return null;
@@ -10194,6 +11190,7 @@ function screenDetail(m){
   }
 
   { const qt = quickTriesCard(trailCoffee(o), { mark:o.id }); if (qt) m.append(qt); }
+  { const cb = compareButton(compareCoffeeOf(o)); if (cb) m.append(h('div', { class:'card', style:'margin:0 0 14px' }, h('h3', { text:'Other cups of this coffee' }), h('p', { class:'fine', style:'margin:2px 0 0', text:'See what changed between your brews and how you rated them.' }), cb)); }
 
   const days = o.days_since_roast !== '' && o.days_since_roast != null ? o.days_since_roast : '';
   const coffeeKv = kvList([['Type', g('blend')], ['Roast', g('roast_level')], ['Process', g('process')], ['Decaf', o.decaf ? 'Yes' : ''], ['Elevation', g('elevation_class') ? g('elevation_class') + (o.elevation_m ? ' (about ' + Number(o.elevation_m).toLocaleString('en-US') + ' m)' : '') : ''],
@@ -10259,7 +11256,7 @@ function screenDetail(m){
     h('button', { type:'button', class:'btn danger block', text:'Delete this tasting', onclick:() => openDelete(new Set([o._i]), true) })));
 }
 
-const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, guide:screenGuide, tools:screenTools, yield:screenYield };
+const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, dial:screenDial, learn:screenLearn, tend:screenTend, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, compare:screenCompare };
 
 $('homeBtn').innerHTML = '<svg class="burger" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span class="ml">Menu</span>';
 $('homeBtn').addEventListener('click', openMenu);
