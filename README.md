@@ -1,8 +1,8 @@
-# Neurobrew
+# BeanTelligence
 
-Neurobrew helps people create perfect coffee brews.  It has a workflow that uses to brew, cup and perfect based on their exact coffee.
+BeanTelligence (formerly NeuroBrew) helps people create perfect coffee brews.  It has a workflow that uses to brew, cup and perfect based on their exact coffee.
 
-**Brew it. Cup it. Perfect it.**
+**A little science, a lot of delicious.**
 
 **Try it:** https://mshaffe1111.github.io/Neurobrew/
 

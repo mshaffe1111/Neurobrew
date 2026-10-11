@@ -1,6 +1,70 @@
-# NeuroBrew release notes
+# BeanTelligence release notes
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
+
+## Release 59: BeanTelligence: a fresh look
+
+2026-10-11 10:02:51 UTC
+
+- NeuroBrew is now BeanTelligence, with a new name, a bean-scholar mascot and the slogan "A little science, a lot of delicious." Every screen has new art and works in light and dark.
+- The Coffee screen asks five quick questions, then folds each answered one into a single line. Everything else sits under "More about this coffee".
+- The Menu is grouped: Tools, Learn and About me. About BeanTelligence holds How it works, What it is for, the Glossary and Release notes. My files holds saving, backing up and restoring your history.
+- Method, Gear, Brew and the timer share one look. Ready is part of Brew now, and the timer shows a pour-level gauge with a coach who tells you what to do next.
+- Taste has two big choices, Quick and Cupping. Quick uses beans, faces and thumbs. Cupping shows one section at a time with a row of dots that shows how far you have got.
+- Ratings are five beans, with half steps. Your tastings show the beans, a Quick or Cupping tag, and a drop-down to show and sort.
+- The About page shows the BeanTelligence badge and credits the two fonts built into the page.
+
+## Release 58: Accessibility fixes
+
+2026-10-11 03:17:36 UTC
+
+- Text fields, drop-downs and unchosen buttons now have a darker outline, so their edges are easy to see in both light and dark themes.
+- In Windows high-contrast mode, the chosen button, the current step and the sliders are now clearly marked.
+- Keyboard: a skip link at the top jumps past the menu, and each flavor wheel is one Tab stop that you move around with the arrow keys.
+- Screen readers now hear the step name on the timer, the keep-screen-on note, and the changed-settings messages. Glossary words are read as themselves, and the grinder list reads its group names.
+- Clearing a star rating moves the focus to the stars instead of dropping it.
+- After Start a fresh coffee, the phone's Back button no longer steps through the screens of the brew you threw away.
+
+## Release 57: Cupping fixes
+
+2026-10-11 02:29:38 UTC
+
+- The 1 to 9 scores on the cupping screen now work with the arrow keys, Home and End, and have one Tab stop instead of nine.
+- Retasting a second time shows the number you gave last time beside each question. It is only a reminder and is never counted in the score.
+- An SCA cupping session can now have up to six coffees, as the standard allows. Before, the screen showed six but drew only five circles.
+- Adding scores to a tasting that is no longer in the loaded history now says so, instead of failing without a word.
+- The score on the cupping screen and tasting page is now named as BeanTelligence's own tasting form. The help and About text credit the SCA affective form (SCA-104) it is based on.
+
+## Release 56: Method ranking rework
+
+2026-10-11 01:58:59 UTC
+
+- Light and medium-light roasts are no longer blocked for espresso, moka and the Philips machine. They rank lower, and medium-light now sits between light and medium.
+- Methods are grouped as Top picks, Also good, Possible with care and Less common pairing, instead of Best match, Good match, Works and Not ideal.
+- Tasting notes now only break ties between methods that score the same, and the process only stands in when the bag lists no notes.
+- New tips: hotter water, a finer grind and a longer ratio for light roasts on pressure methods, and a note that milk mutes delicate flavors.
+- Tapping the method you already picked keeps your settings. Rows no longer look recommended when the roast is not set.
+- On your past tastings of a coffee, the best score is only picked among scores on the same scale, and home scores show one decimal.
+
+## Release 55: Timer, sound and wording fixes
+
+2026-10-11 01:08:02 UTC
+
+- The 4:6 pour-over plans with 4 or 6 pours now finish on the right time, and the dripper comes off the same time after the last pour.
+- The timer is steadier: the screen stays awake and says so if it can't, voice no longer switches off after one hiccup, a finished brew stays finished after a reload, and tapping Drained too early tells you what to do.
+- The Clever Dripper can now make iced coffee: steep hot, then set it on a cup of ice.
+- High elevation now starts at 1,500 m. Panama and Hawaii now have typical elevations, and Tanzania shows its range.
+- The monohydrate citric acid stock for the sour taste test is now 1.1 g in 250 mL, a weight a kitchen scale can read.
+- Clearer wording: Facts says when you chose Not sure, buttons are named the same way everywhere, tasting notes match whole words only, and many glossary and origin entries were corrected.
+
+## Release 54: SCA cupping
+
+2026-10-09 20:36:41 UTC
+
+- New in the Menu: SCA cupping, a guided table session with timers. It follows the steps of the SCA's standard 102-2024 in our own words. The SCA has not reviewed it.
+- Choose to describe the coffees or to judge them, the same coffee or different ones, and how many cups of each. A circle at the top stands for each coffee and shows its name.
+- Timers tell you when each crust is ready to break, with a beep or a voice that names the coffee. Keep screen on is optional.
+- It gives no scores and nothing is saved. At the end you get your notes to copy, and a list of where your setup differed from the standard.
 
 ## Release 53: A new look for the wheels, and a Wheels area
 
@@ -34,7 +98,7 @@ Newest first. Each release is one tested build; the time is when the release was
 2026-10-09 01:31:44 UTC
 
 - New page in the Menu, under Learn: Solid or folklore? It takes ten pieces of common brewing advice (water temperature, the 18 to 22 percent extraction zone, sour coffee, gas from fresh coffee, rest days, bloom, water minerals, grinder microns, iced coffee) and gives each one verdict, from Solid to Not supported.
-- Each claim shows what the research found, what it does not show, what NeuroBrew does about it, and its sources, with each source marked as a peer-reviewed paper, a trade article or a company's own test. The page says where it could not open a source itself.
+- Each claim shows what the research found, what it does not show, what BeanTelligence does about it, and its sources, with each source marked as a peer-reviewed paper, a trade article or a company's own test. The page says where it could not open a source itself.
 
 ## Release 49: Bag or brew, and Cost of coffee
 
@@ -67,7 +131,7 @@ Newest first. Each release is one tested build; the time is when the release was
 
 2026-10-08 21:26:36 UTC
 
-- When you save from Quick, NeuroBrew now asks once whether you want to cup this one too. Yes opens Cupping with your quick answers kept. No goes on to save.
+- When you save from Quick, BeanTelligence now asks once whether you want to cup this one too. Yes opens Cupping with your quick answers kept. No goes on to save.
 - When you save from Cupping, it asks whether you want to rate how much you liked it too, in the same way.
 - It does not ask again after a No, when you have already done both ways, or when My setup is on Quick only. The old "Want to cup this one too?" button after saving is gone.
 
@@ -111,7 +175,7 @@ Newest first. Each release is one tested build; the time is when the release was
 - The two Clear buttons are gone from the Coffee screen. Start a fresh coffee and Clear everything are in the Menu.
 - Single origin or blend is now two buttons, and Country has a Type to search box.
 - The Menu now says when your history was last backed up, how many tastings are only in this browser, and whether the browser promised to keep your data.
-- New in the Menu: Save my history to a file now, in one step, and a tip for adding NeuroBrew to your Home Screen.
+- New in the Menu: Save my history to a file now, in one step, and a tip for adding BeanTelligence to your Home Screen.
 
 ## Release 40: Five answers up front, Brew again, Facts in four parts
 
@@ -197,7 +261,7 @@ Newest first. Each release is one tested build; the time is when the release was
 - Five cups: Uniformity, Clean cup and Sweetness now start as Not checked. Tap the cups that passed, or tap None passed. No total shows until all three are answered, so skipping them no longer counts as zero.
 - The cup screen shows how far along you are. A scored card says Scored, the bar says how many are done and has a Next link that takes you to the next one, and Save lists anything still missing as links.
 - The General notes box has a visible label, and buttons and the Menu button have clearer outlines.
-- Loading a file, or saving into a different one, no longer quietly removes cups you kept only in this browser. NeuroBrew names them and offers to add them to the file first.
+- Loading a file, or saving into a different one, no longer quietly removes cups you kept only in this browser. BeanTelligence names them and offers to add them to the file first.
 
 ## Release 31: A stray word removed from the save sheets
 
@@ -212,7 +276,7 @@ Newest first. Each release is one tested build; the time is when the release was
 
 - New My setup page in the menu: your units, experience level, timer sound, cup card view and gear (grinder, water, filter) in one place. New brews start with your gear filled in.
 - Your setup is saved inside your cupping file, so uploading the file on another device brings it back. If a file's setup differs from this browser's, you choose which to use.
-- In Chrome and Edge you can save into a file you choose: Save as lets you name it, NeuroBrew remembers it, and the next cupping goes straight into it. A file that changed since you opened it is never written over. Other browsers still download a copy.
+- In Chrome and Edge you can save into a file you choose: Save as lets you name it, BeanTelligence remembers it, and the next cupping goes straight into it. A file that changed since you opened it is never written over. Other browsers still download a copy.
 
 ## Release 29: Saving a cupping starts you fresh
 
@@ -234,16 +298,16 @@ Newest first. Each release is one tested build; the time is when the release was
 2026-10-06 18:03:20 UTC
 
 - New "Look up this coffee" button under the coffee name and roaster. It reads the roaster's own online shop listing (shops built on Shopify) and offers the origin, process, varietal, elevation, roast level and tasting notes the listing states. You check every line before anything fills in.
-- Type the roaster's website once, or paste a link to the coffee's own page. NeuroBrew remembers the website for that roaster in this browser, and never replaces something you already entered unless you tick it.
-- Your browser asks the roaster's website directly. Nothing goes through NeuroBrew, and nothing about your cuppings is sent. About NeuroBrew and the guide explain this.
+- Type the roaster's website once, or paste a link to the coffee's own page. BeanTelligence remembers the website for that roaster in this browser, and never replaces something you already entered unless you tick it.
+- Your browser asks the roaster's website directly. Nothing goes through BeanTelligence, and nothing about your cuppings is sent. About BeanTelligence and the guide explain this.
 
 ## Release 26: A tidier menu, a user guide and release notes
 
 2026-10-06 16:31:21 UTC
 
 - The Menu button now sits in the same place at the top right of every screen, including the first one. On wide screens it opens as a panel under the header.
-- New "How to use NeuroBrew" guide in the menu: the six steps, what each screen does, and how your history helps. Tap a section to open it.
-- "About NeuroBrew" is rewritten to say what the app is, what it is not, where its guidance comes from and what to keep in mind.
+- New "How to use BeanTelligence" guide in the menu: the six steps, what each screen does, and how your history helps. Tap a section to open it.
+- "About BeanTelligence" is rewritten to say what the app is, what it is not, where its guidance comes from and what to keep in mind.
 - The bottom of the menu now shows which release you are on, with the date and time it was made, and a Release notes page lists what changed in each release.
 
 ## Release 25: Dial it in knows about new bags
