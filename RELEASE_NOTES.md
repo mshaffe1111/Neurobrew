@@ -2,6 +2,28 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 61: Taste: faces, steps and sixteen next-brew answers
+
+2026-10-11 22:05:56 UTC
+
+- Quick taste now starts with what to do and a one-line tip from the mascot, then asks whether you would make it again with green, amber and red faces. The bean rating moved to the bottom, and either one is enough to save.
+- Every cupping section now has a What to do box (for example, how to slurp, how long to wait before smelling the crust). The 1 to 9 scale runs from red to green; the number and the word stay on the screen. The boxes are hidden at the Bean Scientist level.
+- What did it taste like? is now sixteen picture tiles in four groups. New: muted (can't taste the notes), burnt or smoky, papery or stale, off or chemical taste, winey or boozy, and different every time. Sour now reads Sour, sharp or salty.
+- Brew again can now carry a cooler water temperature (for burnt and winey cups), and the advice says what to try, not what will fix it. The matching Philips machine advice is in too.
+
+## Release 60: One bottom bar, and a timer you can use without looking
+
+2026-10-11 19:35:16 UTC
+
+- Every screen now has the same bottom bar: a Back arrow, Menu, and the screen's main button. The Back link at the top and the Back links inside Menu pages are gone.
+- The timer screen is called Timer. Press Start and it shrinks to Pause, with Done brewing beside it; after that, Taste this brew appears in the same bar.
+- More voice on the timer: each step says its pour number and grams and what comes next, the last step tells you to tap Done brewing, and a reminder follows if you go well past the time. Open the Sound card on the timer to turn voice on.
+- Your screen stays on from the moment you open the timer until you tap Done brewing or leave, and a note shows when your browser cannot do that.
+- Half beans: minus and plus buttons beside the rating step it by half a bean.
+- History: Use this coffee is now an optional row, and backing out of History leaves the Coffee screen as it was.
+- Gear: a type-to-search list of 50 common filters, and Water and Filter paper are now under More, optional for new brewers.
+- Small phones: titles, menu tiles, search boxes and the bottom buttons no longer get cut off at 320 px.
+
 ## Release 59: BeanTelligence: a fresh look
 
 2026-10-11 10:02:51 UTC

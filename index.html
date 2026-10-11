@@ -498,6 +498,9 @@ details.help summary{ color:var(--accent); }
 .starfoot{ display:flex; flex-direction:column; align-items:center; gap:0; margin-top:6px }
 .starread{ font:700 19px/1.25 var(--ui); color:var(--ink); text-align:center }
 .starclear{ margin:0 }
+.starstep{ display:flex; align-items:center; justify-content:center; gap:12px; margin-top:8px; width:100% }
+.starstep .starread{ flex:1 1 auto; min-width:0 }
+.starhint{ margin:0; text-align:center }
 .cva-prog{ margin:0 0 14px; scroll-margin-top:136px; }
 .cvahead{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin:0 0 6px; }
 .cvastep{ font-weight:700; font-size:16px; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink); }
@@ -560,6 +563,79 @@ details.help summary{ color:var(--accent); }
 .cva-help{ margin:6px 0 10px; }
 @media (max-width:359px){ .cva-scale{ gap:10px 8px; } .cvadot.done{ width:30px; height:30px; } .cvadot.now{ width:38px; height:38px; font-size:20px; } .cvadot.lock{ width:28px; height:28px; font-size:14px; } }
 @media (prefers-reduced-motion:no-preference){ .cvacard .tbody{ animation:cvaIn .18s ease-out; } @keyframes cvaIn{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } } }
+:root{
+  --fg-line:#2E7D4F; --fg-ink:#1F5C38; --fg-fill:#2E7D4F; --fg-on:#FFFFFF;
+  --fa-line:#B87A00; --fa-ink:#7A5200; --fa-fill:#F2B33D; --fa-on:#22120C;
+  --fr-line:#B8322A; --fr-ink:#8E2019; --fr-fill:#B8322A; --fr-on:#FFFFFF;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --fg-line:#6FCF97; --fg-ink:#8FE0AF; --fa-line:#F2B33D; --fa-ink:#F2C87A; --fr-line:#FF8A80; --fr-ink:#FFB4AB; }
+}
+:root[data-theme="dark"]{ --fg-line:#6FCF97; --fg-ink:#8FE0AF; --fa-line:#F2B33D; --fa-ink:#F2C87A; --fr-line:#FF8A80; --fr-ink:#FFB4AB; }
+
+/* faces: green, amber and red before they are chosen, filled once chosen; the word stays on the tile */
+.ttile.fg, .ttile.fa, .ttile.fr{ flex-direction:column; gap:2px; }
+.ttile.fg{ border-color:var(--fg-line); color:var(--fg-ink); box-shadow:0 3px 0 var(--fg-line); }
+.ttile.fa{ border-color:var(--fa-line); color:var(--fa-ink); box-shadow:0 3px 0 var(--fa-line); }
+.ttile.fr{ border-color:var(--fr-line); color:var(--fr-ink); box-shadow:0 3px 0 var(--fr-line); }
+.ttile.fg[aria-pressed="true"]{ background:var(--fg-fill); border-color:var(--fg-fill); color:var(--fg-on); }
+.ttile.fa[aria-pressed="true"]{ background:var(--fa-fill); border-color:var(--fa-fill); color:var(--fa-on); }
+.ttile.fr[aria-pressed="true"]{ background:var(--fr-fill); border-color:var(--fr-fill); color:var(--fr-on); }
+.mkgrid .ttile.fg, .mkgrid .ttile.fa, .mkgrid .ttile.fr{ min-height:88px; font-size:19px; }
+.mkgrid .ttile.fg .mico, .mkgrid .ttile.fa .mico, .mkgrid .ttile.fr .mico{ width:44px; height:44px; }
+.tbtns .ttile.fg .mico, .tbtns .ttile.fa .mico, .tbtns .ttile.fr .mico{ width:30px; height:30px; }
+
+/* the 1 to 9 scale: red at 1, green at 9; the number is always on the tile and the word is under the grid */
+.cva-scale button:nth-child(1){ background:#B8322A; color:#FFFFFF; }
+.cva-scale button:nth-child(2){ background:#CF4A2C; color:#FFFFFF; }
+.cva-scale button:nth-child(3){ background:#E2702A; color:#22120C; }
+.cva-scale button:nth-child(4){ background:#F0A12E; color:#22120C; }
+.cva-scale button:nth-child(5){ background:#F5D547; color:#22120C; }
+.cva-scale button:nth-child(6){ background:#C9D94F; color:#22120C; }
+.cva-scale button:nth-child(7){ background:#8FC45A; color:#22120C; }
+.cva-scale button:nth-child(8){ background:#4FA867; color:#22120C; }
+.cva-scale button:nth-child(9){ background:#2E7D4F; color:#FFFFFF; }
+.cva-scale button{ position:relative; border-color:var(--btn-edge); box-shadow:0 4px 0 var(--btn-edge); }
+.cva-scale button[aria-checked="true"]{ border-color:var(--btn-edge); transform:translateY(-2px); box-shadow:0 4px 0 var(--btn-edge); outline:4px solid var(--ink); outline-offset:3px; }
+.cva-scale button[aria-checked="true"]::after{ content:""; position:absolute; top:-13px; right:-11px; width:26px; height:26px; border-radius:50%; background:#2E7D4F url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 12.5l3.5 3.5L17 9' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% 100% no-repeat; border:2px solid var(--btn-edge); }
+.cva-word{ border:2px solid var(--btn-edge); border-radius:12px; padding:8px 12px; font-weight:700; font-size:19px; background:var(--surface); }
+.cva-word[data-s="1"]{ background:#B8322A; color:#FFFFFF; } .cva-word[data-s="2"]{ background:#CF4A2C; color:#FFFFFF; }
+.cva-word[data-s="3"]{ background:#E2702A; color:#22120C; } .cva-word[data-s="4"]{ background:#F0A12E; color:#22120C; }
+.cva-word[data-s="5"]{ background:#F5D547; color:#22120C; } .cva-word[data-s="6"]{ background:#C9D94F; color:#22120C; }
+.cva-word[data-s="7"]{ background:#8FC45A; color:#22120C; } .cva-word[data-s="8"]{ background:#4FA867; color:#22120C; }
+.cva-word[data-s="9"]{ background:#2E7D4F; color:#FFFFFF; }
+
+/* the mascot says one line; the What to do box lists the steps */
+.sayrow{ display:flex; align-items:flex-end; gap:12px; margin:0 0 14px; }
+.saymark{ flex:none; width:64px; height:68px; display:block; }
+.saymark svg{ width:100%; height:100%; display:block; }
+.saybub{ position:relative; flex:1; margin:0 0 8px; padding:10px 12px; background:var(--surface); color:var(--ink); border:2px solid var(--frame); border-radius:16px; font:700 18px/1.2 var(--ui); }
+.saybub::before{ content:""; position:absolute; left:-9px; bottom:16px; width:13px; height:13px; background:var(--surface); border-left:2px solid var(--frame); border-bottom:2px solid var(--frame); transform:rotate(45deg); }
+.dobox{ margin:0 0 14px; padding:10px 12px; background:var(--pick); color:var(--pick-ink); border:2px solid var(--frame); border-radius:14px; display:flex; flex-direction:column; gap:8px; }
+.dohead{ display:flex; align-items:center; gap:8px; font:700 17px/1.1 var(--ui); text-transform:uppercase; letter-spacing:.05em; }
+.dopic{ flex:none; width:32px; height:32px; display:block; }
+.dopic svg{ width:100%; height:100%; display:block; }
+.dolist{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:8px; counter-reset:dostep; }
+.dolist li{ display:flex; gap:10px; align-items:flex-start; font-size:17px; line-height:1.3; counter-increment:dostep; }
+.dolist li::before{ content:counter(dostep); flex:none; width:26px; height:26px; border-radius:50%; background:var(--band); color:#FFFFFF; font:700 15px/26px var(--ui); text-align:center; }
+.tbody > .dobox:first-child{ margin-bottom:12px; }
+
+/* the next-brew picker: a drawing and a name on each tile, in groups */
+.symgroup{ margin:14px 0 6px; font:700 15px/1.1 var(--ui); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.symgroup:first-child{ margin-top:0; }
+.symgrid .ttile.symopt{ justify-content:flex-start; text-align:left; min-height:84px; padding:8px 10px; gap:10px; font-size:17px; line-height:1.12; }
+.symgrid .ttile.symopt .sympic{ flex:none; width:52px; height:52px; display:block; }
+.symgrid .ttile.symopt .sympic svg{ width:100%; height:100%; display:block; }
+.symgrid .ttile.symopt small{ display:block; font:400 14px/1.15 var(--ui); margin-top:3px; }
+.symgrid .ttile.symopt[aria-pressed="true"]{ background:var(--pick); border-color:var(--frame); color:var(--pick-ink); transform:none; box-shadow:0 3px 0 var(--frame); outline:3px solid var(--frame); outline-offset:2px; }
+.symgrid .ttile.symopt[aria-pressed="true"]::after{ content:""; position:absolute; top:-11px; right:-9px; width:24px; height:24px; border-radius:50%; background:#2E7D4F url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 12.5l3.5 3.5L17 9' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% 100% no-repeat; border:2px solid var(--frame); }
+.symgrid .ttile.symopt{ position:relative; }
+@media (max-width:359px){ .symgrid .ttile.symopt{ padding:6px 8px; gap:6px; font-size:16px; } .symgrid .ttile.symopt .sympic{ width:40px; height:40px; } .saymark{ width:52px; height:56px; } }
+.symwrap{ display:flex; flex-direction:column; }
+.symwrap .symgrid{ margin:0; }
+.sayrow .saybub.dialq-line{ margin:0 0 8px; color:var(--ink); font-size:17px; }
+.symgrid .ttile.symopt .symtx{ display:block; min-width:0; }
+.dolist li span{ flex:1; min-width:0; }
 /* bag guide, wheel, scan */
 .gcard{ padding:12px 14px; }
 .gcard summary{ list-style:none; cursor:pointer; display:flex; flex-direction:column; gap:2px; position:relative; padding-right:28px; min-height:44px; justify-content:center; }
@@ -1072,27 +1148,45 @@ input[type=checkbox]{ width:26px; height:26px; accent-color:var(--frame); margin
 .wrap,body[data-screen] .wrap{ padding-bottom:calc(128px + env(safe-area-inset-bottom, 0px)); }
 :root:has(body){ scroll-padding-bottom:120px; }
 .gdock{ position:fixed; left:0; right:0; bottom:0; z-index:6; background:var(--surface); border-top:3px solid var(--btn-edge); box-shadow:0 -6px 0 rgba(34,18,12,.08); padding:14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); }
-.gdock-inner{ max-width:600px; margin:0 auto; height:64px; }
-.menubtn{ display:flex; align-items:center; justify-content:center; gap:10px; width:128px; height:64px; min-height:64px; padding:0; border:3px solid var(--btn-edge); border-radius:14px; background:var(--gold); color:#22120C; box-shadow:0 4px 0 var(--press); font-family:var(--ui); font-weight:700; font-size:24px; cursor:pointer; }
+.gdock-inner{ max-width:600px; margin:0 auto; height:64px; display:flex; align-items:center; gap:8px; }
+/* the room the Back and Menu buttons take on the left; the screen's own buttons sit after it. The Back slot is always kept (empty on the first screen) so Menu stays in one place */
+body{ --lead:184px; }
+.gdock .back{ flex:none; display:flex; align-items:center; justify-content:center; width:56px; min-width:56px; height:64px; min-height:64px; padding:0; border:3px solid var(--btn-edge); border-radius:14px; background:var(--surface); color:var(--leaf); box-shadow:0 4px 0 var(--press); cursor:pointer; }
+.gdock .back[hidden]{ display:flex; visibility:hidden; pointer-events:none; }   /* on the first screen the slot stays empty, so Menu never moves */
+.gdock .back::before{ width:14px; height:14px; margin:0 0 0 7px; border-left-width:4px; border-bottom-width:4px; }
+.gdock .back:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--press); }
+.gdock .back:focus-visible{ outline:3px solid var(--focus); outline-offset:3px; }
+body:has(.overlay.open) #backBtn{ visibility:hidden; }
+.menubtn{ display:flex; align-items:center; justify-content:center; gap:8px; flex:none; width:108px; height:64px; min-height:64px; padding:0; border:3px solid var(--btn-edge); border-radius:14px; background:var(--gold); color:#22120C; box-shadow:0 4px 0 var(--press); font-family:var(--ui); font-weight:700; font-size:22px; cursor:pointer; }
 .menubtn:hover{ background:var(--gold); filter:brightness(1.04); }
 .menubtn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--press); }
 .dock{ position:fixed; left:0; right:0; bottom:0; z-index:7; background:transparent; border:0; padding:14px 16px calc(14px + env(safe-area-inset-bottom, 0px)); pointer-events:none; }
 .dock[hidden]{ display:none; }
-.dock-inner{ max-width:600px; margin:0 auto; padding-left:140px; display:flex; gap:12px; pointer-events:none; }
+.dock-inner{ max-width:600px; margin:0 auto; padding-left:var(--lead); display:flex; gap:12px; pointer-events:none; }
 .dock-inner > *{ pointer-events:auto; }
 .dock .btn{ min-height:64px; font-size:22px; padding:6px 10px; }
 .dock-inner.two .btn{ font-size:20px; }
 .dock-inner.two .btn:not(.primary){ flex:0 0 auto; padding:6px 12px; }
 .dock-inner.two .btn.primary{ flex:1 1 0; }
 .dock .btn .sub{ display:block; margin-top:2px; font-size:15px; font-weight:400; opacity:.95; }
+/* a main button with a second line: two lines of title and the small line always fit the 64 px bar */
+.dock .btn:has(.sub){ font-size:19px; line-height:1.05; padding:4px 8px; }
+.dock .btn:has(.sub) .sub{ font-size:13px; line-height:1.1; margin-top:1px; }
+@media (max-width:359px){ .dock .btn:has(.sub){ font-size:17px; } }
 .dock-inner:has(> .btn + .btn) .btn{ font-size:18px; line-height:1.1; }
+@media (max-width:359px){ body{ --lead:132px; }  .menubtn{ width:56px; } .menubtn .ml{ display:none; } }
+/* Release 60: Timer bar with Pause/Resume beside Done brewing / Taste this brew. The first button shrinks to an icon (its words stay for screen readers). */
+.timerdock .dock-inner.two{ gap:8px; }
+.timerdock .dock-inner.two .btn:not(.primary){ flex:0 0 64px; width:64px; padding:0; font-size:0; gap:0; display:flex; align-items:center; justify-content:center; }
+.timerdock .dock-inner.two .btn.primary{ font-size:20px; line-height:1.05; padding:6px 8px; }
+.timerdock .dock-inner.two .btn.primary::before{ display:none; }
+.timerdock .dock-inner.two .btn{ height:64px; min-height:64px; }
+@media (max-width:359px){ .timerdock .dock-inner.two .btn:not(.primary){ flex-basis:52px; width:52px; } .timerdock .dock-inner.two .btn.primary{ font-size:18px; padding:4px 6px; } }
 .stick{ background:var(--bg); border-bottom:2px solid var(--line); }
 .topbar{ min-height:56px; padding:4px 14px; gap:10px; }
-.back{ font-family:var(--ui); font-weight:700; font-size:18px; color:var(--leaf); padding:8px 12px 8px 2px; }
-.back::before{ width:11px; height:11px; border-left-width:3px; border-bottom-width:3px; }
 .toptitle{ font-family:var(--display); font-weight:700; font-size:21px; letter-spacing:-0.2px; color:var(--ink); }
 .topmark{ flex:none; width:44px; height:44px; display:block; }
-.back[hidden] + .toptitle{ text-align:left; }
+.topbar::before{ content:''; flex:none; width:44px; }   /* balances the mascot so the title sits in the middle */
 body[data-screen="start"] .stick{ position:static; border-bottom:0; }
 body[data-screen="start"] .topbar{ display:none; }
 
@@ -1130,6 +1224,7 @@ body:not([data-screen="start"]) .pstep .pl{ font-size:14px; }
 .pstep:not(.plocked):not(.pnow):hover{ background:transparent; }
 @media (max-width:379px){ .pstep{ flex:1 1 0; font-size:14px; } .progress{ padding-left:8px; padding-right:8px; } }
 .progressmsg{ padding:8px 16px; font-size:16px; font-weight:700; background:var(--pick); color:var(--pick-ink); border-bottom:2px solid var(--line); }
+@media (max-width:359px){ .topbar{ padding:4px 10px; gap:6px; } .toptitle{ font-size:19px; letter-spacing:-0.3px; } }   /* "Understanding coffee" fits on the smallest phone */
 /* small coloured pictures (art-* in the sprite) sit on a light plate in dark mode so the outlines still show */
 .pic{ display:inline-flex; flex:none; width:38px; height:38px; border-radius:12px; background:var(--icon-bg); }
 .pic svg{ width:100%; height:100%; display:block; }
@@ -1550,6 +1645,8 @@ body:has(.overlay.menupanel.open) .dock{ opacity:.5; }
 .gl-grp{ font-size:13px; border-radius:6px; padding:1px 8px; border:1.5px solid var(--frame); background:var(--surface); }
 .gl-item{ padding:12px 0; }
 .gl-term b{ font-size:17px; }
+@media (max-width:359px){ .hubhero h1{ font-size:26px; } .hubhero .hhmark{ width:52px; height:52px; } .hubhero .hhmark svg{ width:46px; height:46px; } }
+@media (max-width:359px){ .mgrid.g2 .mtile{ padding:0 6px; gap:5px; } .mgrid.g2 .mtile .mdisc{ width:32px; height:32px; } .mgrid.g2 .mtile .mdisc .mico{ width:18px; height:18px; } .mgrid.g2 .mtile .mi-t{ font-size:15px; } }
 /* a method's picture: a cream plate with the brewer on it */
 .mpic{ flex:none; display:inline-flex; align-items:center; justify-content:center; width:58px; height:58px; border-radius:50%; background:#FFF8EA; border:2px solid #22120C; }
 .mpic svg{ width:46px; height:46px; display:block; }
@@ -2229,6 +2326,27 @@ button.hrow:active, .hrow.sel:active{ transform:translateY(3px); box-shadow:0 1p
 <symbol id="mi-cupheart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 12h1.500a2.500 2.500 0 0 1 0 5H16"/><path d="M10 15.500c-1.600-1.100-2.300-1.800-2.300-2.800a1.300 1.300 0 0 1 2.300-.8 1.300 1.300 0 0 1 2.300.8c0 1-.7 1.700-2.300 2.800z" stroke-width="1.600"/></g></symbol>
 <symbol id="bn-on" viewBox="0 0 48 48"><g transform="rotate(-28 24 24)"><ellipse cx="24" cy="24" rx="12.5" ry="18" fill="#8C5A33" stroke="#22120C" stroke-width="2.6"/><path d="M24 7 C18 15 30 20 24 26 C19 32 29 36 24 41" fill="none" stroke="#22120C" stroke-width="2.4" stroke-linecap="round" opacity=".7"/></g></symbol>
 <symbol id="bn-off" viewBox="0 0 48 48"><g transform="rotate(-28 24 24)"><ellipse cx="24" cy="24" rx="12.5" ry="18" style="fill:var(--surface);stroke:var(--muted)" stroke-width="2.6" stroke-dasharray="4 3.4"/><path d="M24 7 C18 15 30 20 24 26 C19 32 29 36 24 41" fill="none" style="stroke:var(--muted)" stroke-width="2.4" stroke-linecap="round" opacity=".5"/></g></symbol>
+<!-- r61-art:start (Release 61: the next-brew picker, one drawing for each way a cup can taste, and three pictures for the answer cards) -->
+<symbol id="p-sour" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="19" fill="#F5D547"/><circle cx="24" cy="24" r="14.5" fill="#FFF3A8" stroke-width="1.8"/><path d="M24 10v28M10 24h28M14 14l20 20M34 14L14 34" fill="none" stroke="#F0B400" stroke-width="1.8"/><path d="M38 6c4 0 6 2 6 6-4 0-6-2-6-6z" fill="#6FB98A" stroke-width="2"/></g></symbol>
+<symbol id="p-flat" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20h26v8a11 11 0 0 1-11 11h-4A11 11 0 0 1 9 28z" fill="#FFF8EA"/><path d="M35 23h3a4 4 0 0 1 0 8h-4" fill="none"/><path d="M11 24h22" stroke="#C9AE86" stroke-width="3"/><path d="M6 43h32" fill="none"/><path d="M12 11h20" fill="none" stroke-dasharray="3 3.5" opacity=".7"/></g></symbol>
+<symbol id="p-thin" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6h22l-2 36a2 2 0 0 1-2 2H17a2 2 0 0 1-2-2z" fill="#E5F2F7"/><path d="M14.4 32h19.2L33 42a2 2 0 0 1-2 2H17a2 2 0 0 1-2-2z" fill="#E6D2AC" stroke-width="2"/><circle cx="21" cy="37" r="1.5" fill="#fff" stroke-width="1.2"/><circle cx="27" cy="39" r="1.2" fill="#fff" stroke-width="1.2"/></g></symbol>
+<symbol id="p-muted" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M28 8v24" fill="none"/><ellipse cx="22" cy="34" rx="7" ry="5.5" fill="#6FB5D9" transform="rotate(-18 22 34)"/><path d="M28 8l9 4v7l-9-3z" fill="#6FB5D9"/><path d="M7 7l34 34" fill="none" stroke="#B8322A" stroke-width="4"/></g></symbol>
+<symbol id="p-bitter" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-28 20 28)"><ellipse cx="20" cy="28" rx="11" ry="15" fill="#3E2516"/><path d="M20 14c-5 6 5 10 0 15-4 4 4 7 0 12" fill="none" stroke="#E9D2B4" opacity=".55"/></g><polygon points="36,5 26,22 32,22 25,38 43,17 36,17" fill="#F2A93B"/></g></symbol>
+<symbol id="p-dry" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="19" fill="#F5C97A"/><path d="M13 19q4-4 8 0M27 19q4-4 8 0" fill="none"/><circle cx="24" cy="31" r="4" fill="#C65A4A"/><path d="M24 24v3M18 29l2.5 1M30 29l-2.5 1" fill="none" stroke-width="2"/></g></symbol>
+<symbol id="p-burnt" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="38" rx="14" ry="7" fill="#3E2516"/><path d="M14 38c6-2 14-2 20 0" fill="none" stroke="#E9D2B4" opacity=".5"/><path d="M24 3c3 6 8 9 8 15a8 8 0 0 1-16 0c0-3 2-5 3-7 1 3 3 3 3 0 0-3 0-5 2-8z" fill="#F2A93B"/><path d="M24 18c2 2 4 3 4 6a4 4 0 0 1-8 0c0-2 2-3 4-6z" fill="#E0432A" stroke-width="2"/></g></symbol>
+<symbol id="p-strong" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19c-3-15 15-15 18 0" fill="none" stroke-width="5"/><circle cx="24" cy="30" r="14" fill="#5A3320"/><path d="M15 27c2-5 6-7 10-7" fill="none" stroke="#C99872" opacity=".7"/></g></symbol>
+<symbol id="p-both" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="19" fill="#5A3320"/><path d="M24 5a19 19 0 0 0 0 38l-3-6 6-6-6-6 6-6-6-6z" fill="#F5D547" stroke="none"/><path d="M24 5l-3 6 6 6-6 6 6 6-6 6 3 6" fill="none"/><circle cx="24" cy="24" r="19" fill="none"/></g></symbol>
+<symbol id="p-muddy" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h26v10a11 11 0 0 1-11 11h-4A11 11 0 0 1 9 28z" fill="#8A6A4A"/><path d="M35 22h3a4 4 0 0 1 0 8h-4" fill="none"/><ellipse cx="22" cy="18" rx="13" ry="3" fill="#5A3E26"/><circle cx="17" cy="27" r="1.6" fill="#3E2516" stroke="none"/><circle cx="25" cy="31" r="1.6" fill="#3E2516" stroke="none"/><circle cx="29" cy="25" r="1.6" fill="#3E2516" stroke="none"/><path d="M6 43h32" fill="none"/><path d="M15 10c2-3 4 0 6-3M25 10c2-3 4 0 6-3" fill="none" stroke-width="2" opacity=".6"/></g></symbol>
+<symbol id="p-paper" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5h19l8 8v30H11z" fill="#E8D7B0"/><path d="M30 5v8h8" fill="#D6C291"/><path d="M16 21h16M16 27h16M16 33h9" fill="none" stroke="#8A7A62" stroke-width="2"/><circle cx="31" cy="36" r="5.5" fill="none" stroke="#8A5230" stroke-width="2.4"/></g></symbol>
+<symbol id="p-off" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5h10M21 5v14L9 38a4 4 0 0 0 3.5 6h23A4 4 0 0 0 39 38L27 19V5" fill="#E5F2F7"/><path d="M13 32h22l4 6a4 4 0 0 1-3.5 6h-23A4 4 0 0 1 9 38z" fill="#8FC45A" stroke-width="2"/><circle cx="19" cy="37" r="2" fill="#E2F2BE" stroke-width="1.4"/><circle cx="28" cy="39" r="1.6" fill="#E2F2BE" stroke-width="1.4"/><circle cx="25" cy="12" r="1.4" fill="#8FC45A" stroke-width="1.4"/></g></symbol>
+<symbol id="p-wine" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5h20c1 14-3 22-10 22S13 19 14 5z" fill="#F4F0F8"/><path d="M14.5 14h19c-.5 8-3.5 13-9.5 13s-9-5-9.5-13z" fill="#8E2C4A" stroke-width="2"/><path d="M24 27v14M15 43h18" fill="none"/></g></symbol>
+<symbol id="p-dice" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" transform="rotate(-10 24 24)"><rect x="7" y="7" width="34" height="34" rx="7" fill="#FFF8EA"/><circle cx="16" cy="16" r="3" fill="#22120C"/><circle cx="32" cy="16" r="3" fill="#22120C"/><circle cx="24" cy="24" r="3" fill="#22120C"/><circle cx="16" cy="32" r="3" fill="#22120C"/><circle cx="32" cy="32" r="3" fill="#22120C"/></g></symbol>
+<symbol id="p-great" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="24,6 29.5,18.5 43,19.5 33,28.5 36,42 24,35 12,42 15,28.5 5,19.5 18.5,18.5" fill="#F2B33D"/><path d="M41 4v7M37.5 7.5h7M8 34v5M5.5 36.5h5" fill="none" stroke-width="2.2"/></g></symbol>
+<symbol id="p-notme" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 24h26v6a12 12 0 0 1-12 12h-2A12 12 0 0 1 8 30z" fill="#FFF8EA"/><path d="M34 27h3a4 4 0 0 1 0 8h-4" fill="none"/><path d="M6 44h32" fill="none"/><path d="M24 24V13" fill="none" stroke-width="1.8"/><path d="M20 5h9v8h-9z" fill="#6FB98A" stroke-width="2"/><path d="M10 28h22" fill="none" stroke="#C9AE86" stroke-width="2.5"/></g></symbol>
+<symbol id="a-cal" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="9" width="34" height="32" rx="5" fill="#FFF8EA"/><path d="M7 20V14a5 5 0 0 1 5-5h24a5 5 0 0 1 5 5v6z" fill="#D9503B"/><path d="M16 5v8M32 5v8" fill="none"/><path d="M14 27h4M22 27h4M30 27h4M14 34h4M22 34h4" fill="none" stroke-width="2.2"/></g></symbol>
+<symbol id="a-thermo" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 28V10a4 4 0 0 1 8 0v18a8 8 0 1 1-8 0z" fill="#FFF8EA"/><circle cx="24" cy="35" r="4.5" fill="#E0432A" stroke-width="2"/><path d="M24 14v20" fill="none" stroke="#E0432A" stroke-width="3"/><path d="M33 12h6M33 18h4M33 24h6" fill="none" stroke-width="2"/></g></symbol>
+<symbol id="a-grind" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14h24l-4 18H16z" fill="#C79A66"/><path d="M10 14h28" fill="none" stroke-width="3"/><path d="M36 14l6-6M42 8v6" fill="none"/><rect x="14" y="34" width="20" height="8" rx="2" fill="#8A5230"/><circle cx="20" cy="38" r="1.2" fill="#22120C" stroke="none"/><circle cx="25" cy="39" r="1.2" fill="#22120C" stroke="none"/><circle cx="29" cy="37.5" r="1.2" fill="#22120C" stroke="none"/></g></symbol>
+<!-- r61-art:end -->
 <!-- bt-art:end -->
 </defs></svg>
 
@@ -2237,7 +2355,6 @@ button.hrow:active, .hrow.sel:active{ transform:translateY(3px); box-shadow:0 1p
 <header class="stick">
   <div class="brandslot" id="brandSlot" hidden></div>
   <div class="topbar">
-    <button type="button" class="back" id="backBtn" hidden>Back</button>
     <div class="toptitle" id="topTitle"></div>
     <svg class="topmark" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><use href="#bt-mark"/></svg>
   </div>
@@ -2247,7 +2364,7 @@ button.hrow:active, .hrow.sel:active{ transform:translateY(3px); box-shadow:0 1p
 
 <main class="wrap" id="app" tabindex="-1"><div id="mount"></div></main>
 
-<div class="gdock" id="gdock"><div class="gdock-inner"><button type="button" class="menubtn" id="homeBtn" aria-label="Menu" aria-haspopup="dialog"></button></div></div>
+<div class="gdock" id="gdock"><div class="gdock-inner"><button type="button" class="back" id="backBtn" hidden><span class="sr-only">Back</span></button><button type="button" class="menubtn" id="homeBtn" aria-label="Menu" aria-haspopup="dialog"></button></div></div>
 
 <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
   <div class="sheet" id="sheet"></div>
@@ -3089,11 +3206,17 @@ function expectFor(coffee, now){
   return { profile:p, bars, notes:[roastText, procText ? procText + gsn('process') : '', densText ? densText + gsn('density') : ''].filter(Boolean), look, freshness:freshnessFor(p) };
 }
 
+/* what the cup tasted like: 16 answers in four groups, each with a drawing (art, from the sprite) so the picker can be read at a glance. `sub` is a small line under a label. The order is the order on screen. */
+const SYMPTOM_GROUPS = [{ g:'weak', label:'Weak, sharp or faint' }, { g:'harsh', label:'Harsh or heavy' }, { g:'odd', label:'Odd or inconsistent' }, { g:'none', label:'Nothing to fix' }];
 const SYMPTOMS = [
-  { v:'sour', label:'Sour or sharp' }, { v:'bitter', label:'Bitter or harsh' }, { v:'astringent', label:'Dry or puckery' },
-  { v:'uneven', label:'Sour and bitter together' }, { v:'flat', label:'Flat or weak' }, { v:'muddy', label:'Muddy or silty' },
-  { v:'thin', label:'Thin or hollow' }, { v:'strong', label:'Too strong or heavy' }, { v:'great', label:'Tastes great' },
-  { v:'notforme', label:'Not to my taste: nothing wrong with the brew' }
+  { v:'sour', label:'Sour, sharp or salty', g:'weak', art:'p-sour' }, { v:'flat', label:'Flat or weak', g:'weak', art:'p-flat' }, { v:'thin', label:'Thin or hollow', g:'weak', art:'p-thin' },
+  { v:'muted', label:"Muted: I can't taste the notes", g:'weak', art:'p-muted' },
+  { v:'bitter', label:'Bitter or harsh', g:'harsh', art:'p-bitter' }, { v:'astringent', label:'Dry or puckery', g:'harsh', art:'p-dry' }, { v:'burnt', label:'Burnt, ashy or smoky', g:'harsh', art:'p-burnt' },
+  { v:'strong', label:'Too strong or heavy', g:'harsh', art:'p-strong' },
+  { v:'uneven', label:'Sour and bitter together', g:'odd', art:'p-both' }, { v:'muddy', label:'Muddy or silty', g:'odd', art:'p-muddy' }, { v:'stale', label:'Papery or stale', g:'odd', art:'p-paper' },
+  { v:'offtaste', label:'Off or chemical taste', g:'odd', art:'p-off' }, { v:'winey', label:'Winey, boozy or fermented', g:'odd', art:'p-wine' }, { v:'varies', label:'Different every time', g:'odd', art:'p-dice' },
+  { v:'great', label:'Tastes great', g:'none', art:'p-great' },
+  { v:'notforme', label:'Not to my taste: nothing wrong with the brew', g:'none', art:'p-notme', short:'Not to my taste', sub:'Nothing wrong with the brew' }
 ];
 function fixFor(sym, rec, ctx){
   ctx = ctx || {};
@@ -3195,6 +3318,27 @@ function fixForBase(sym, rec, ctx){
     case 'thin':
       return { primary:'Try an immersion method such as French press or Hario Switch for more body.', secondary:'Check your water: filtered, with dissolved minerals around 150 mg/L (the SCA accepts 75 to 250).',
         why:'Filter methods keep less of the coffee\'s oils and fine particles, so they feel lighter.', adjust:A() };
+    case 'muted': {
+      const old = ctx.days != null && ctx.days > 30;
+      return { primary:old ? 'Try fresher beans, and grind right before you brew. Then taste the cup again as it cools.' : 'Taste the cup again as it cools. Many notes show up between about 130 and 160°F (55 to 70°C), after the first heat has passed.',
+        secondary:(old ? 'Your beans are about ' + ctx.days + ' days past roast. ' : 'Still muted? ') + 'You could also try grinding one step finer' + stepTxt + ', and check the beans are not ground ahead of time.',
+        why:'The smell compounds that carry most of the flavor fade within hours of grinding, and fastest in the first month after roasting. Water that is too cool, a coarse grind and a dark roast can also mute a cup. These are things to try, not promises.', adjust:A(), btnLabel:'Brew again' };
+    }
+    case 'burnt':
+      return { primary:'Try lowering the water temperature by about 5°F (3°C).', secondary:'Still burnt? Try grinding one step coarser' + stepTxt + '. If a light roast tastes burnt, the roast itself is the likely cause, and brew changes will not help. A different bag would.',
+        why:'Hotter water pulls more of the roasty, ashy compounds out of the beans, especially a dark roast. Cooler water is the gentlest thing to try first.' + (dark ? ' A dark roast tastes smoky by nature, so some of it may stay.' : ''), adjust:Object.assign(A(), { tempDir:'cooler', tempDelta:-5 }) };
+    case 'stale':
+      return { primary:'Rinse the paper filter with hot water before you brew, and check the roast date.', secondary:(ctx.days != null && ctx.days > 30 ? 'Your beans are about ' + ctx.days + ' days past roast, which may be the cause. ' : '') + 'Keep the beans in an airtight container, away from heat and light.',
+        why:'A papery or cardboard taste comes from an unrinsed paper filter, or from coffee that has gone stale. Coffee loses its aroma as it ages, and the loss is fastest in the first weeks.', adjust:A(), btnLabel:'Brew again' };
+    case 'offtaste':
+      return { primary:'Clean the grinder and the brewer, and rinse everything well.', secondary:'Use filtered water with no chlorine taste. If only this bag tastes off, contact the roaster.',
+        why:'A chemical or off taste usually comes from old coffee oils, soap or chlorine, not from the grind or ratio. Changing those will not help.', adjust:A(), btnLabel:'Brew again' };
+    case 'winey':
+      return { primary:'Try lowering the water temperature by 3 to 5°F (2 to 3°C).', secondary:'Still winey? Try a slightly weaker ratio (for example 1:16 becomes 1:17).',
+        why:'A winey or boozy taste comes from fermented fruit sugars. Natural and fermented coffees can taste this way by design, and a cooler, lighter brew pulls out less of it.', adjust:Object.assign(A(), { tempDir:'cooler', tempDelta:-4 }) };
+    case 'varies':
+      return { primary:'Weigh the coffee and the water each time, and use the same water temperature and the same pour.', secondary:'Change one thing at a time. Brewing the same cup twice shows how much your own cups vary.',
+        why:'When a cup changes from brew to brew, the cause is usually the routine, not the settings. A steady routine makes a later change easier to judge.', adjust:A(), btnLabel:'Brew again' };
     default:
       return { primary:'Keep these settings. From here, change one thing at a time so you know what made the difference.', secondary:'', why:'', adjust:A() };
   }
@@ -3902,31 +4046,31 @@ function noteCheck(expected, picked){
   if (exp.length && pk.length >= 2) verdict = matched.length === 0 ? 'missed' : matched.length < exp.length ? 'partial' : 'matched';
   return { expected:exp, matched, missed, verdict };
 }
-/* For each section: `when` is the short line under its name, `q` the question in plain words, `ex` the fuller help (New level), `cm` the short help (Comfortable level), and
+/* For each section: `say` the mascot's line, `do` the steps of What to do (from the SCA June 2024 cupping procedure), `when` the short line under its name, `q` the question in plain words, `ex` the fuller help (New level), `cm` the short help (Comfortable level), and
    `skip` the label of the link that lets a section be left out when there was nothing to judge. The scale is the same for every section, as in the standard: an impression of quality. */
 const CVA_GUIDE = {
-  fragrance:{ when:'Dry grounds · scored once', q:'How good does the dry coffee smell?',
+  fragrance:{ say:'Dry grounds, short sniffs, then one score.', do:['Lift the dry grounds to your nose, before any water touches them.', 'Take two or three short sniffs, then one slow breath.', 'Give one score. It does not change as the cup cools.'], when:'Dry grounds · scored once', q:'How good does the dry coffee smell?',
     ex:'Smell the ground coffee before any water touches it. A flat or off smell scores low. A clear, expressive smell you like scores high. It does not change as the cup cools, so this is scored once.',
     cm:'Smell of the dry grounds. Scored once.', skip:'No grounds to smell' },
-  aroma:{ when:'Brew, then crust broken · scored once', q:'How good does the brew smell?',
+  aroma:{ say:'Two smells, one score. Get your nose in close for both.', do:['Pour hot water to the rim and start your timer.', 'Leave the crust alone for 3 to 5 minutes. Lean in and smell it. That is the first moment.', 'Stir the crust three times with a spoon and lean in for the steam. That is the second moment.', 'Skim the foam off with a spoon. Then give one score for both moments.'], when:'Brew, then crust broken · scored once', q:'How good does the brew smell?',
     ex:'Smell right after pouring, then again when you break the crust with a spoon. Give one score for both moments.',
     cm:'Smell of the brew at two moments: just after pouring, and at the break. One score.', skip:'Could not smell it' },
-  flavor:{ when:'In the mouth', q:'How good is the flavor?',
+  flavor:{ say:'Slurp it loud. The air is what spreads the flavor.', do:['Wait until the cup is about 70°C (160°F).', 'Slurp a spoonful hard, so air spreads it over your tongue and the roof of your mouth.', 'Breathe out through your nose. Taste and smell count together.', 'At home you can swallow. Taste again as it cools, at least three rounds.'], when:'In the mouth', q:'How good is the flavor?',
     ex:'Taste, and the smell that rises from your mouth to your nose, count together as one impression. Dull or unpleasant scores low. Distinctive and appealing scores high.',
     cm:'Taste plus the smell from the back of the mouth, judged as one impression.' },
-  aftertaste:{ when:'After you swallow or spit', q:'How good is what stays behind?',
+  aftertaste:{ say:'Do not sip anything. Just notice what stays.', do:['Do not drink or eat anything yet.', 'Breathe slowly and notice what stays on your tongue and in your throat.', 'Is it clean and pleasant, or harsh, or gone?'], when:'After you swallow or spit', q:'How good is what stays behind?',
     ex:'What lingers in your mouth and throat once the coffee is gone. A clean, pleasant finish can score high. One that turns harsh or empty scores low.',
     cm:'Taste and smell left in the mouth and throat after the coffee is gone.' },
-  acidity:{ when:'The sour taste of the brew', q:'How good is the acidity?',
+  acidity:{ say:'Juicy and lively is good. Sharp and harsh is not.', do:['Notice the sour taste: how much, and what kind.', 'Juicy and lively is a good sign. Sharp or harsh is not.', 'Score how good it is, not how strong it is.'], when:'The sour taste of the brew', q:'How good is the acidity?',
     ex:'The sour taste, how much and what kind. Bright and lively can score high. Sharp or harsh sourness you dislike scores low. None at all can also score low. Score how good it is, not how strong it is.',
     cm:'Sour taste, its intensity and its character.' },
-  sweetness:{ when:'Taste or smell of sweet', q:'How good is the sweetness?',
+  sweetness:{ say:'Smell for sweet too, not only taste.', do:['Look for sweetness in the taste and in the smell as you breathe out.', 'Think honey, caramel or ripe fruit.', 'It often shows up more as the cup cools.'], when:'Taste or smell of sweet', q:'How good is the sweetness?',
     ex:'Sweetness you taste or smell. None scores low. Clear, pleasant sweetness scores high.',
     cm:'Sweetness you taste or smell in the brew.' },
-  mouthfeel:{ when:'Texture, not temperature', q:'How good is the feel in the mouth?',
+  mouthfeel:{ say:'Feel the texture. Leave out how hot it is.', do:['Roll the coffee around your mouth.', 'Is it watery, silky or heavy? Smooth, gritty or drying?', 'Leave temperature out of it.'], when:'Texture, not temperature', q:'How good is the feel in the mouth?',
     ex:'Thin or thick can both score high. What counts is whether the feel suits this coffee and is pleasant. A watery, empty feel scores low. So does a heavy or drying feel you dislike. Leave temperature out of it.',
     cm:'Thickness, texture and dryness in the mouth. Leave temperature out.' },
-  overall:{ when:'The whole cup', q:'How good is the whole cup?',
+  overall:{ say:'Step back. Score the whole cup, including what you like.', do:['After your last taste, step back from the details.', 'Score the whole cup, including balance and what you personally like.'], when:'The whole cup', q:'How good is the whole cup?',
     ex:'Your general impression, including balance and anything the other sections did not cover. Your personal appreciation counts here. If the notes are not your thing, Overall can come out lower than the sections above.',
     cm:'General impression, including balance and personal appreciation.' }
 };
@@ -4027,7 +4171,7 @@ function analyzeCupping(i){
   cmp('Acidity', eb('Acidity'), aI);
   cmp('Body', eb('Body'), bI);
   cmp('Sweetness', eb('Sweetness'), sweet == null ? null : Math.max(1, Math.min(5, Math.round(sweet / 2))));
-  const ctx = { roast:i.roast, methodType:i.methodType, agit:i.agit, plainGrind:!!i.plainGrind };
+  const ctx = { roast:i.roast, methodType:i.methodType, agit:i.agit, plainGrind:!!i.plainGrind, days:typeof i.days === 'number' ? i.days : null };
   const wp = waterProfile(i.water, i.alk, i.gh);
   let fix = symptom ? fixFor(symptom, { grind:{ stepUm:i.stepUm || 60 } }, ctx) : null;
   fix = applyWaterFirst(fix, symptom, wp);
@@ -4694,6 +4838,14 @@ function philipsFix(sym, used, ctx){
     case 'muddy': return { primary:'Move the grinder one notch coarser.', why:'A muddy or silty cup means the grind is too fine.', secondary:'Rinse the machine, and check the beans are not too oily.', change:A() };
     case 'thin': return { primary:'Raise the strength one level (to ' + up(used.strength) + '), and lower the coffee volume one level.', why:'A thin cup has too little coffee for the water.', secondary:'A light roast tastes thin from a machine, so a medium or darker roast would help.', change:A(1, 0) };
     case 'strong': return { primary:'Lower the strength one level (to ' + dn(used.strength) + ').', why:'Too strong or heavy means too much coffee in the drink.', secondary:'Or raise the coffee volume one level to dilute it.', change:A(-1, 0) };
+    case 'muted': return { primary:'Taste the drink again as it cools, and check the roast date of the beans in the hopper.', why:'Aroma fades fast once beans are open, so old beans are the usual reason a cup tastes muted. These are things to try, not promises.', secondary:used.temp < 3 ? 'You could also raise the temperature one level (to ' + (used.temp + 1) + ').' : 'You could also move the grinder one notch finer.', change:A() };
+    case 'burnt': return used.temp > 1 ? { primary:'Lower the temperature one level (to ' + (used.temp - 1) + ').', why:'Hotter water pulls more of the roasty, ashy taste out of the beans.', secondary:'If a light roast still tastes burnt, the roast is the cause, and a different bag would help.', change:A(0, -1) }
+      : { primary:'The temperature is already at the bottom, so lower the strength one level (to ' + dn(used.strength) + ').', why:'Less coffee in the drink means less of the roasty taste.', secondary:'If it still tastes burnt, the roast itself is the likely cause.', change:A(-1, 0) };
+    case 'stale': return { primary:'Check the roast date of the beans in the hopper, and use fresher beans.', why:'A papery or stale taste means the coffee has aged. The loss is fastest in the first weeks.', secondary:'Keep the hopper lid closed, and only fill what you will use in a week or two.', change:A() };
+    case 'offtaste': return { primary:'Clean the machine as the maker describes, and descale it.', why:'An off or chemical taste usually comes from old coffee oils, scale or the water, not from the settings.', secondary:'Use filtered water. If only this bag tastes off, contact the roaster.', change:A() };
+    case 'winey': return used.temp > 1 ? { primary:'Lower the temperature one level (to ' + (used.temp - 1) + ').', why:'A winey or boozy taste comes from fermented fruit sugars. Cooler water pulls out less of it.', secondary:'Natural and fermented coffees can taste this way by design.', change:A(0, -1) }
+      : { primary:'The temperature is already at the bottom, so lower the strength one level (to ' + dn(used.strength) + ').', why:'A lighter drink pulls out less of the winey taste.', secondary:'Natural and fermented coffees can taste this way by design.', change:A(-1, 0) };
+    case 'varies': return { primary:'Keep the same settings for a few drinks, and change only one setting at a time.', why:'When a drink changes every time, a steady routine makes a later change easier to judge.', secondary:'Use the same beans, the same cup size and the same drink each time.', change:A() };
     default: return { primary:'Keep the same settings and make it again.', why:'Nothing needs changing.', secondary:'', change:A() };
   }
 }
@@ -5525,7 +5677,7 @@ function dialAdvice(t, sym, fx, rec){
   const out = { lever:'', blocked:null, alt:null, altBlocked:null, notRecipe:null, stuck:null };
   if (!t || !fx) return out;
   const adj = fx.adjust || {};
-  out.lever = adj.grind ? 'grind:' + (adj.grind > 0 ? 'finer' : 'coarser') : adj.ratio ? 'ratio:' + (adj.ratio < 0 ? 'stronger' : 'weaker') : adj.agit ? 'pour:' + adj.agit : '';
+  out.lever = adj.grind ? 'grind:' + (adj.grind > 0 ? 'finer' : 'coarser') : adj.ratio ? 'ratio:' + (adj.ratio < 0 ? 'stronger' : 'weaker') : adj.agit ? 'pour:' + adj.agit : adj.tempDir ? 'temp:' + adj.tempDir : '';
   const tr = out.lever ? t.tried[out.lever] : null;
   if (tr && tr.hurt > 0 && tr.helped === 0){
     out.blocked = trailBlockedText(out.lever, tr); out.blocked.lever = out.lever; out.blocked.tries = tr.at.slice();
@@ -7223,6 +7375,67 @@ function columnGuideCsv(){
   COLUMN_NOTES.forEach(n => lines.push([n]));
   return toCSV(lines.map(l => l.length ? l : ['']));
 }
+/* name is what is saved with the tasting (free text, as before); group is the heading it sits under; fits lists the method keys it suits (an empty list suits any) */
+const FILTERS = [
+  { name:'Hario V60 White 01', group:'Hario V60', fits:['v60', 'clever'] },
+  { name:'Hario V60 White 02', group:'Hario V60', fits:['v60', 'clever'] },
+  { name:'Hario V60 White 03', group:'Hario V60', fits:['v60'] },
+  { name:'Hario V60 Natural 01', group:'Hario V60', fits:['v60'] },
+  { name:'Hario V60 Natural 02', group:'Hario V60', fits:['v60'] },
+  { name:'Hario V60 Natural 03', group:'Hario V60', fits:['v60'] },
+  { name:'Cafec Abaca (red)', group:'Cafec', fits:['v60'] },
+  { name:'Cafec Abaca+ (black)', group:'Cafec', fits:['v60'] },
+  { name:'Cafec Deep 27 Abaca (1 cup)', group:'Cafec', fits:['v60'] },
+  { name:'Cafec T90 Medium Roast', group:'Cafec', fits:['v60'] },
+  { name:'Cafec T92 Light Roast', group:'Cafec', fits:['v60'] },
+  { name:'Cafec T83 Dark Roast', group:'Cafec', fits:['v60'] },
+  { name:'Sibarist FAST', group:'Sibarist', fits:['v60'] },
+  { name:'Sibarist FAST Flat', group:'Sibarist', fits:['kalita'] },
+  { name:'Kalita Wave 155', group:'Kalita', fits:['kalita'] },
+  { name:'Kalita Wave 185', group:'Kalita', fits:['kalita'] },
+  { name:'Kalita 102 White', group:'Kalita', fits:['v60', 'clever'] },
+  { name:'Kalita 103 White', group:'Kalita', fits:['v60', 'clever'] },
+  { name:'Chemex bonded square', group:'Chemex', fits:['chemex'] },
+  { name:'Chemex pre-folded square, white', group:'Chemex', fits:['chemex'] },
+  { name:'Chemex pre-folded square, natural', group:'Chemex', fits:['chemex'] },
+  { name:'Chemex pre-folded circle', group:'Chemex', fits:['chemex'] },
+  { name:'Chemex half-moon, white', group:'Chemex', fits:['chemex'] },
+  { name:'Chemex half-moon, natural', group:'Chemex', fits:['chemex'] },
+  { name:'Fellow Stagg XF', group:'Fellow', fits:['v60'] },
+  { name:'Fellow Stagg X', group:'Fellow', fits:['v60'] },
+  { name:'NotNeutral Gino', group:'Other pour-over', fits:['v60'] },
+  { name:'Bonmac flat-bottom No. 2', group:'Other pour-over', fits:['kalita'] },
+  { name:'Origami paper cone', group:'Other pour-over', fits:['v60'] },
+  { name:'Hario cloth, Woodneck', group:'Other pour-over', fits:['v60', 'chemex'] },
+  { name:'Melitta #2 Natural', group:'Melitta and baskets', fits:['v60', 'drip', 'clever'] },
+  { name:'Melitta #4 Natural', group:'Melitta and baskets', fits:['drip', 'clever'] },
+  { name:'Melitta basket, 10 to 12 cup', group:'Melitta and baskets', fits:['drip'] },
+  { name:'Bunn basket, 12 cup', group:'Melitta and baskets', fits:['drip'] },
+  { name:'Basket filter, 8 to 12 cup', group:'Melitta and baskets', fits:['drip'] },
+  { name:'#2 cone, unbleached', group:'Generic cones', fits:['v60', 'drip', 'clever'] },
+  { name:'#2 cone (DechoPak)', group:'Generic cones', fits:['v60', 'drip', 'clever'] },
+  { name:'#4 cone, flat-bottom', group:'Generic cones', fits:['drip', 'clever'] },
+  { name:'If You Care #4', group:'Generic cones', fits:['drip', 'clever'] },
+  { name:'Brew Choice #6', group:'Generic cones', fits:['drip', 'clever'] },
+  { name:'Bake Choice pre-folded', group:'Generic cones', fits:['drip', 'clever'] },
+  { name:'AeroPress paper micro-filters', group:'AeroPress', fits:['aeropress'] },
+  { name:'AeroPress XL paper', group:'AeroPress', fits:['aeropress'] },
+  { name:'AeroPress stainless, standard', group:'AeroPress', fits:['aeropress'] },
+  { name:'AeroPress stainless, XL', group:'AeroPress', fits:['aeropress'] },
+  { name:'Able Kone (stainless)', group:'Reusable metal', fits:['v60', 'chemex'] },
+  { name:'Stainless cone for V60 02', group:'Reusable metal', fits:['v60'] },
+  { name:'OXO cold brew paper', group:'Cold brew', fits:['cold'] },
+  { name:'Yama cold brew paper', group:'Cold brew', fits:['cold'] },
+  { name:'Toddy', group:'Cold brew', fits:['cold'] }
+];
+const FILTER_GROUPS = ['Hario V60', 'Cafec', 'Sibarist', 'Kalita', 'Chemex', 'Fellow', 'Other pour-over', 'Melitta and baskets', 'Generic cones', 'AeroPress', 'Reusable metal', 'Cold brew'];
+/* the filters for a search text and a method: the ones that suit the method first (in list order), then the rest. An empty method key puts nothing first. */
+function filtersFor(query, method){
+  const q = String(query || '').trim().toLowerCase();
+  const hit = FILTERS.filter(f => !q || f.name.toLowerCase().includes(q) || f.group.toLowerCase().includes(q));
+  const fit = f => !!method && (!f.fits.length || f.fits.indexOf(method) >= 0);
+  return { fits:hit.filter(fit), others:hit.filter(f => !fit(f)) };
+}
 /* the app's own target grind size range for each kind of method, in microns; a maker's click range for that kind of method is spread across it. Chemex is the app's own Chemex range, used only for a grinder whose maker gives a separate Chemex range. */
 const GRIND_UM = { espresso:[220, 340], moka:[350, 600], aeropress:[400, 900], filter:[550, 850], chemex:[700, 1000], drip:[650, 900], press:[900, 1300], cold:[1000, 1400] };
 const GRINDERS = [
@@ -7414,6 +7627,34 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 61,
+  "at": "2026-10-11T22:05:56Z",
+  "date": "2026-10-11",
+  "title": "Taste: faces, steps and sixteen next-brew answers",
+  "notes": [
+   "Quick taste now starts with what to do and a one-line tip from the mascot, then asks whether you would make it again with green, amber and red faces. The bean rating moved to the bottom, and either one is enough to save.",
+   "Every cupping section now has a What to do box (for example, how to slurp, how long to wait before smelling the crust). The 1 to 9 scale runs from red to green; the number and the word stay on the screen. The boxes are hidden at the Bean Scientist level.",
+   "What did it taste like? is now sixteen picture tiles in four groups. New: muted (can't taste the notes), burnt or smoky, papery or stale, off or chemical taste, winey or boozy, and different every time. Sour now reads Sour, sharp or salty.",
+   "Brew again can now carry a cooler water temperature (for burnt and winey cups), and the advice says what to try, not what will fix it. The matching Philips machine advice is in too."
+  ]
+ },
+ {
+  "release": 60,
+  "at": "2026-10-11T19:35:16Z",
+  "date": "2026-10-11",
+  "title": "One bottom bar, and a timer you can use without looking",
+  "notes": [
+   "Every screen now has the same bottom bar: a Back arrow, Menu, and the screen's main button. The Back link at the top and the Back links inside Menu pages are gone.",
+   "The timer screen is called Timer. Press Start and it shrinks to Pause, with Done brewing beside it; after that, Taste this brew appears in the same bar.",
+   "More voice on the timer: each step says its pour number and grams and what comes next, the last step tells you to tap Done brewing, and a reminder follows if you go well past the time. Open the Sound card on the timer to turn voice on.",
+   "Your screen stays on from the moment you open the timer until you tap Done brewing or leave, and a note shows when your browser cannot do that.",
+   "Half beans: minus and plus buttons beside the rating step it by half a bean.",
+   "History: Use this coffee is now an optional row, and backing out of History leaves the Coffee screen as it was.",
+   "Gear: a type-to-search list of 50 common filters, and Water and Filter paper are now under More, optional for new brewers.",
+   "Small phones: titles, menu tiles, search boxes and the bottom buttons no longer get cut off at 320 px."
+  ]
+ },
  {
   "release": 59,
   "at": "2026-10-11T10:02:51Z",
@@ -8521,7 +8762,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:STEP_NAME.brew, cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Tools', yield:'Cup yield', ratio:'Ratio planner', cost:'Cost of coffee', prices:'Coffee prices', tastes:'Taste your tastes', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', about:'About BeanTelligence', files:'My files' };
+  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Tools', yield:'Cup yield', ratio:'Ratio planner', cost:'Cost of coffee', prices:'Coffee prices', tastes:'Taste your tastes', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', about:'About', files:'My files' };
   $('topTitle').textContent = sc === 'start' ? '' : (titles[sc] || 'BeanTelligence');
   SCREENS[sc](m);
   refreshAll();
@@ -9795,7 +10036,6 @@ function screenChart(m){
       'Above 24 % is beyond the usual zone. That can mean a harsher cup, but taste decides: bitterness also follows how strong the coffee is.',
       'Strength of 1.15 to 1.35 % TDS is the usual zone for filter coffee. Lower is weaker and higher is stronger.'].map(t => h('li', { text:t })))));
   m.append(h('p', { class:'fine', id:'chartFine', text:'This chart is for filter coffee. For espresso, 8 to 12 % TDS is the common café target, so the box does not apply. You need a coffee refractometer to measure TDS. Nothing here is saved.' }));
-  m.append(wheelBackRow('wheels'));
 }
 /* ---------- screen: solid or folklore ---------- */
 let folkFrom = '';
@@ -9824,8 +10064,6 @@ function screenFolk(m){
   const list = h('div', { class:'folk-list', id:'folkList' }, FOLK_CLAIMS.map(c => folkEntry(c, lvl)));
   m.append(list);
   m.append(h('p', { class:'fine', id:'folkNote', text:'This page reports what the sources say, and a verdict can change when new research appears. We read these sources in October 2026. Where a source was read only through someone else\'s summary, the finding says so. Sources marked as not peer reviewed are here because they were the only data we found, so weigh them accordingly. A verdict is about the claim as people phrase it, not about the whole subject.' }));
-  const back = typeof PARENT.folk === 'function' ? PARENT.folk() : PARENT.folk;
-  m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
 }
 /* ---------- screen: learn ---------- */
 let learnFrom = '';
@@ -9947,8 +10185,6 @@ function screenLearn(m){
   const t = tendencies(history && history.objs ? history.objs : []);
   m.append(hubHero('Understanding coffee', 'What your scores say about your taste, how to shop for it, and what every detail on a bag really tells you.', false, 'book'));
   m.append(h('div', { class:'lfolds' }, tendencySection(t), shopSection(t), bagSection(), compareSection()));
-  const back = typeof PARENT.learn === 'function' ? PARENT.learn() : PARENT.learn;
-  m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
 }
 /* ---------- screen: taste your tastes ----------
    tastesOrder is the helper's pouring order for the mix-up round. It lives only in memory: leaving the screen or reloading forgets it, and nothing about this page is saved or put in a file. */
@@ -10003,8 +10239,6 @@ function screenTastes(m){
   m.append(tsMakeCard(), ...tsRoundCard());
   tsOrderPaint();
   m.append(h('p', { class:'fine', id:'ttSource', text:'Source: SCA Standard 103-2024, Descriptive Assessment, Specialty Coffee Association. This page paraphrases it. It is not the standard and the SCA has not reviewed it.' }));
-  const back = typeof PARENT.tastes === 'function' ? PARENT.tastes() : PARENT.tastes;
-  m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:'Back', onclick:() => navBack(back) })));
 }
 /* ---------- screen: tendencies ---------- */
 let tendFrom = '';
@@ -10128,8 +10362,6 @@ function screenTend(m){
       h('button', { type:'button', class:'btn block', id:'tpDownload', text:'Save the table (CSV)', onclick:() => tpDownload(status) }), status], expert));
   }
   m.append(h('p', { class:'fine', id:'tpCaution', text:TP_CAUTION }));
-  const back = typeof PARENT.tend === 'function' ? PARENT.tend() : PARENT.tend;
-  m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
 }
 /* ---------- Tendencies pictures ----------
    Bars are plain HTML (real text, grows with the person's text size). Dots and the brew map are SVG. Every count is printed, so color is never the only carrier. */
@@ -10211,7 +10443,6 @@ function fixDetail(fam, gr){
     p.why ? h('p', { class:'fine', style:'margin:6px 0 0', text:p.why }) : null,
     h('p', { class:'fine', style:'margin:6px 0 0', text:'Change one thing at a time, then taste again.' }));
 }
-function wheelBackRow(to){ return h('div', { class:'flinks one' }, h('button', { type:'button', class:'flink', id:'wheelBack', text:'Back', onclick:() => navBack(to) })); }
 function screenWheels(m){
   m.append(hubHero('Wheels', 'Keep these beside you while you drink. They only show things. Nothing here is saved, and nothing changes your tasting.', false, 'wheel'));
   const list = h('div', { class:'hublist', id:'wheelList' });
@@ -10219,7 +10450,6 @@ function screenWheels(m){
     h('span', { class:'wlicon' + (w.chart ? ' chart' : ''), 'aria-hidden':'true', style:w.chart ? null : 'background:' + wheelIconBg(w.data) }),
     h('span', { class:'htx' }, h('span', { class:'hn', text:w.title }), h('span', { class:'hs', text:w.blurb })), h('span', { class:'hchev', 'aria-hidden':'true' }))));
   m.append(list, h('p', { class:'fine', id:'wheelsOwn', text:WHEEL_OWN }));
-  m.append(wheelBackRow(typeof PARENT.wheels === 'function' ? PARENT.wheels() : PARENT.wheels));
 }
 function screenWheel(m){
   const w = wheelDef();
@@ -10228,7 +10458,6 @@ function screenWheel(m){
     searchHint:w.flat ? 'Search the wheel' : (w.key === 'kit' ? 'Search for a vial' : 'Search for a word'), detail:w.key === 'fix' ? fixDetail : null });
   m.append(h('div', { class:'card wscreen', id:'wheelCard' }, view));
   if (w.note) m.append(h('p', { class:'fine', id:'wheelNote', text:w.note }));
-  m.append(wheelBackRow('wheels'));
 }
 /* ---------- screen: brew (choose method) ---------- */
 function chooseMethod(key){
@@ -10321,8 +10550,47 @@ function screenGuide(m){
   const setAll = on => cards.forEach(d => { d.open = on; });
   m.append(h('div', { class:'lfolds' }, ...cards));
   m.append(h('div', { class:'flinks' }, h('button', { type:'button', class:'flink', id:'guideOpenAll', text:'Open all', onclick:() => setAll(true) }), h('button', { type:'button', class:'flink', id:'guideCloseAll', text:'Close all', onclick:() => setAll(false) })));
-  const back = typeof PARENT.guide === 'function' ? PARENT.guide() : PARENT.guide;
-  m.append(h('div', { class:'row', style:'margin-top:8px' }, h('button', { type:'button', class:'btn link', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
+}
+/* get() returns the saved text and set(text) is told a new one. What you type is kept as typed: the list only offers names. */
+function filterPicker(get, set){
+  const id = 'gear_filter', listId = 'gear_filter_list';
+  const input = h('input', { id, type:'text', class:'plain', autocomplete:'off', placeholder:'Search, or type your own', role:'combobox', 'aria-expanded':'false', 'aria-controls':listId, 'aria-autocomplete':'list', value:get() || '' });
+  const list = h('div', { id:listId, class:'gpick-list', role:'listbox', 'aria-label':'Common filters', hidden:true });
+  let typed = false, active = -1, shown = [];
+  const close = () => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); active = -1; };
+  function draw(){
+    const q = typed ? input.value.trim() : '', f = filtersFor(q, app.brew.method), m = METHODS.find(x => x.key === app.brew.method);
+    shown = [];
+    if (q && !FILTERS.some(x => x.name.toLowerCase() === q.toLowerCase())) shown.push({ group:'Your own words', name:q, text:'Use "' + q + '"' });
+    f.fits.forEach(x => shown.push({ group:'Suits ' + (m ? m.label : 'your brewer'), name:x.name, text:x.name }));
+    f.others.forEach(x => shown.push({ group:f.fits.length ? 'Other filters' : 'Common filters', name:x.name, text:x.name }));
+    list.textContent = ''; active = shown.length && typed ? 0 : -1;
+    let last = '', box = list;
+    shown.forEach((c, i) => {
+      if (c.group !== last){ last = c.group; box = h('div', { role:'group', 'aria-label':c.group }, h('div', { class:'gpick-group', 'aria-hidden':'true', text:c.group })); list.append(box); }
+      box.append(h('button', { type:'button', class:'gpick-opt', role:'option', id:'fopt_' + i, 'aria-selected':String(c.name === get()), tabindex:'-1', text:c.text, onmousedown:e => e.preventDefault(), onclick:() => pick(c.name) }));
+    });
+    if (!shown.length) list.append(h('div', { class:'gpick-none', role:'presentation', text:'Type the name of your filter.' }));
+    mark(); list.hidden = false; input.setAttribute('aria-expanded', 'true');
+  }
+  function mark(){
+    list.querySelectorAll('.gpick-opt').forEach((b, i) => b.classList.toggle('on', i === active));
+    if (active >= 0) input.setAttribute('aria-activedescendant', 'fopt_' + active); else input.removeAttribute('aria-activedescendant');
+  }
+  function pick(name){ close(); typed = false; input.value = name; set(name); input.blur(); }
+  input.addEventListener('focus', () => { typed = false; draw(); });
+  input.addEventListener('click', () => { if (list.hidden){ typed = false; draw(); } });
+  input.addEventListener('input', () => { typed = true; set(input.value.trim()); draw(); });
+  input.addEventListener('blur', () => { close(); typed = false; });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape'){ close(); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+      e.preventDefault(); if (list.hidden) draw(); if (!shown.length) return;
+      active = e.key === 'ArrowDown' ? Math.min(shown.length - 1, active + 1) : Math.max(0, active - 1); mark();
+      const b = list.querySelectorAll('.gpick-opt')[active]; if (b && b.scrollIntoView) b.scrollIntoView({ block:'nearest' });
+    } else if (e.key === 'Enter' && !list.hidden && active >= 0 && shown[active]){ e.preventDefault(); pick(shown[active].name); }
+  });
+  return { el:h('div', { class:'gpick' }, input, list), refresh:() => { if (document.activeElement !== input) input.value = get() || ''; } };
 }
 /* the short name shown for a grinder choice */
 function grinderLabel(key){
@@ -10343,7 +10611,7 @@ function grinderChoices(){
 /* a text box with a list under it. Tapping it shows every grinder; typing narrows the list. onPick gets the chosen key. */
 function grinderPicker(onPick){
   const id = 'gear_sel', listId = 'gear_list';
-  const input = h('input', { id, type:'text', class:'plain', autocomplete:'off', placeholder:'Type to search, or tap to see all', role:'combobox', 'aria-expanded':'false', 'aria-controls':listId, 'aria-autocomplete':'list' });
+  const input = h('input', { id, type:'text', class:'plain', autocomplete:'off', placeholder:'Search, or tap to see all', role:'combobox', 'aria-expanded':'false', 'aria-controls':listId, 'aria-autocomplete':'list' });
   const list = h('div', { id:listId, class:'gpick-list', role:'listbox', 'aria-label':'Grinders', hidden:true });
   let typed = false, active = -1, shown = [];
   const close = () => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); active = -1; };
@@ -10460,11 +10728,15 @@ function gearFields(){
   const altBody = [altField, altMsg, h('p', { class:'fine', style:'margin:-4px 0 0', text:'Water boils about 1.8°F lower for every 1,000 ft (300 m) you climb. If the setting is hotter than your water can get, we cap it just off the boil. This is for this brew only. We show feet.' })];
   const card = (id, title, tan, sub, art, ...kids) => { const c = tband(title, { tan }, sub, { pic:art }, ...kids); c.id = id; return c; };
   const cards = [card('gearGrinderCard', 'Grinder', 'Sets your grind', 'we suggest a starting setting', 'grinder', ...grinderBody)];
-  if (lv === 'new') cards.push(plainFold('gearMore', 'More, optional', 'Altitude where you brew', 'peak', ...altBody));
+  const filterPick = filterPicker(() => b.filter, v => { b.filter = v; });
+  refreshers.push(filterPick.refresh);
+  const filterCard = card('gearFilterCard', 'Filter paper', 'Saved with your tasting', 'the paper you use', 'filter', h('div', { class:'field' }, h('label', { for:'gear_filter', text:'Filter paper' }), filterPick.el, h('p', { class:'fine', style:'margin:4px 0 0', text:'Pick one we know, or type your own. It is saved with your tasting.' })));
+  const waterCard = card('gearWaterCard', 'Water', 'Changes your advice', 'tap, filtered, bottled', 'water', choiceGroup(WATER_TYPES, () => b.waterType, v => { b.waterType = v; }, { label:'Water type' }), waterTip, numbers);
+  const altCard = card('gearAltCard', 'Altitude', 'Changes your brew settings', 'for this brew only', 'elev', ...altBody);
+  if (lv === 'new') cards.push(plainFold('gearMore', 'More, optional', 'Water, filter paper and altitude', 'peak', waterCard, filterCard, altCard));
   else cards.push(
-    card('gearWaterCard', 'Water', 'Changes your advice', 'tap, filtered, bottled', 'water', choiceGroup(WATER_TYPES, () => b.waterType, v => { b.waterType = v; }, { label:'Water type' }), waterTip, numbers),
-    card('gearFilterCard', 'Filter paper', 'Saved with your tasting', 'the paper you use', 'filter', textInput('Filter paper', () => b.filter, v => { b.filter = v; }, { placeholder:'e.g. Cafec Abaca, Hario tabbed' })),
-    card('gearAltCard', 'Altitude', 'Changes your brew settings', 'for this brew only', 'elev', ...altBody));
+    waterCard,
+    filterCard, altCard);
   return h('div', { id:'gearCard' }, cards);
 }
 function gearRow(label, value, subs, art){ return drow(artDisc(art), label, [value].concat(subs || []).filter(Boolean).join('. ')); }
@@ -11105,18 +11377,25 @@ function speak(text, onResult, soft){
     setTimeout(() => fin(false, 'slow'), 3000);
   } catch(e){ fin(false, 'error'); }
 }
-function stepSpeech(st){
+/* what is said at a step: the step and its grams, then (in Guide mode) what comes next, and at the last step how to finish. nxt is the following step, if any */
+function stepSpeech(st, nxt){
   if (!st) return '';
-  if (!st.scale) return st.title + '.';
-  if (/^stop/i.test(st.title)) return st.title + ' at ' + st.scale + ' grams.';
-  return st.title + '. Pour to ' + st.scale + ' grams' + (st.pourSecs >= 8 ? ', in about ' + st.pourSecs + ' seconds' : '') + '.';
+  let say;
+  if (!st.scale) say = st.title + '.';
+  else if (/^stop/i.test(st.title)) say = st.title + ' at ' + st.scale + ' grams.';
+  else say = st.title + '. Pour to ' + st.scale + ' grams' + (st.pourSecs >= 8 ? ', in about ' + st.pourSecs + ' seconds' : '') + '.';
+  const lastOne = !nxt || /^finish/i.test(nxt.title);
+  if (/^finish/i.test(st.title)) return say + ' Tap Done brewing when you are ready to taste.';
+  if (lastOne) return say + ' When it is done, or your time is up, tap Done brewing to taste.';   /* a French press or a slow drain: nobody can see the screen, so say what to tap */
+  if (app.prefs.coach !== 'steps' && nxt.t != null && st.t != null && nxt.t > st.t) say += ' Next: ' + nxt.title + ' in ' + coachTime(nxt.t - st.t) + '.';
+  return say;
 }
-function cue(step){
+function cue(step, nxt){
   const mode = app.prefs.sound;
   if (mode === 'chime'){ chime(); return; }
   if (mode !== 'voice' || !step) return;
   if (voiceState.ok === false){ chime(); return; }
-  speak(stepSpeech(step), ok => { if (!ok) chime(); });
+  speak(stepSpeech(step, nxt), ok => { if (!ok) chime(); });
 }
 /* ---------- screen: change settings ---------- */
 function screenChange(m){
@@ -11144,9 +11423,11 @@ let timer = { running:false, startMs:0, base:0, iv:null, lastIdx:-1, lock:null }
 /* The browser releases a screen wake lock whenever the page is hidden, so it is asked for again whenever the timer runs and no live lock exists */
 /* lockMissing is true when the phone could not be told to stay awake (no support, or the request was refused); the timer screen then says so */
 let lockMissing = false;
+/* timerScreen: the timer screen is showing. The screen is held awake from the moment it opens until the brew is marked done or the person leaves, not only while the clock runs. */
+let timerScreen = false;
 async function holdScreen(){
   try {
-    if (!timer.running) return;
+    if (!timerScreen || timer.done) return;
     if (!navigator.wakeLock){ lockMissing = true; return; }
     if (timer.lock && !timer.lock.released) return;
     const lock = await navigator.wakeLock.request('screen');
@@ -11157,11 +11438,12 @@ async function holdScreen(){
 /* The timer's state rides along with the saved draft, so a reload (or a phone that discards the tab) can pick the brew up where it was. */
 function persistTimer(){ app.timerSave = (timer.running || timer.base > 0) ? { running:timer.running, startMs:timer.running ? timer.startMs : 0, base:timer.base, done:!!timer.done && !timer.running, at:Date.now() } : null; scheduleDraft(); }
 function stopTimer(){
-  clearInterval(timer.iv); timer.iv = null; timer.running = false; timer.done = false; timer.base = 0; timer.lastIdx = -1; app.timerSave = null;
+  clearInterval(timer.iv); timer.iv = null; timer.running = false; timer.done = false; timer.base = 0; timer.lastIdx = -1; app.timerSave = null; timerScreen = false;
   try { if (timer.lock){ timer.lock.release(); timer.lock = null; } } catch(e){}
 }
 function elapsed(){ return timer.base + (timer.running ? (Date.now() - timer.startMs) / 1000 : 0); }
 function screenTimer(m){
+  timerScreen = true; holdScreen();
   const r = getRecipe(); const steps = r.steps.filter(s => s.t != null);
   const big = h('div', { class:'bigtime', 'aria-live':'off', text:'0:00' });
   const nowEl = h('div', { class:'now' });
@@ -11176,7 +11458,7 @@ function screenTimer(m){
       h('div', null, h('div', { class:'sh' }, h('b', { text:s.title }), h('span', { class:'smark', 'aria-hidden':'true' })), h('div', { class:'d', text:s.detail }), s.scale != null && maxScale > 0 ? pourBar(s, maxScale) : null));
     list.append(li); return li;
   });
-  const startBtn = h('button', { type:'button', class:'btn primary', text:'Start' });
+  const startBtn = h('button', { type:'button', class:'btn primary', id:'timerStartBtn', text:'Start' });
   const resetBtn = h('button', { type:'button', class:'tp-reset', 'aria-label':'Reset the timer' }); resetBtn.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/></svg><span class="sr-only">Reset</span>';
   const soundNote = h('p', { class:'fine', role:'status', style:'margin:6px 0 0;min-height:18px' });
   const paintSound = () => {
@@ -11200,18 +11482,18 @@ function screenTimer(m){
   const coachWrap = h('div', { style:'margin:8px 0 0' }, coachSeg);
   refreshers.push(paintSound);
   const drained = h('p', { class:'ok', role:'status', style:'text-align:center;margin:0' });
-  const drainBtn = h('button', { type:'button', class:'btn tp-drainbtn', text:r.method.type === 'espresso' ? 'Tap when the shot stops' : r.method.type === 'immersion' ? 'Tap when finished' : 'Tap when drained' });
-  const drainRow = h('div', { class:'tp-drain', hidden:true }, drainBtn);
-  drainBtn.addEventListener('click', () => {
+  /* Done brewing: the brew is over. The clock stops at the time recorded, the cues stop, the screen may sleep again, and the bar offers Taste this brew. */
+  const doneBtn = h('button', { type:'button', class:'btn primary', id:'timerDoneBtn', text:'Done brewing' });
+  const tasteBtn = h('button', { type:'button', class:'btn primary', id:'timerTasteBtn', onclick:() => { stopTimer(); snapshotBrew(); prepCupEntry(); go('cup'); } }, 'Taste this brew');
+  doneBtn.addEventListener('click', () => {
     const t = Math.round(elapsed()); if (t < 5){ drained.textContent = 'Start the timer first, or wait a few seconds.'; return; }
     app.brew.actualSecs = t; app.brew.actualFromTimer = true;
-    /* the brew is over: freeze the clock at the time recorded, stop the cues, and let the screen sleep again */
     timer.base = t; timer.running = false; timer.done = true; clearInterval(timer.iv); timer.iv = null; startBtn.textContent = 'Resume';
     try { if (timer.lock){ timer.lock.release(); timer.lock = null; } } catch(e){}
     drained.textContent = 'Recorded ' + fmtTime(t) + (r.totalSecs ? ' (target ' + fmtTime(r.totalSecs) + ')' : '') + '. The timer is stopped, and the time is saved with your tasting.';
     persistTimer(); scheduleDraft(); tick();
   });
-  /* the top part stays put while the steps scroll under it: the clock, how far along the brew is, what to do now, what the scale should read, and Reset / Tap when drained. Start and Pause live in the bottom bar. */
+  /* the top part stays put while the steps scroll under it: the clock, how far along the brew is, what to do now, what the scale should read, and Reset / Tap when drained. Start, Pause, Done brewing and Taste this brew live in the bottom bar. */
   const total = Math.max(r.totalSecs || 0, steps.length ? steps[steps.length - 1].t + 1 : 1);
   const fillEl = h('div', { class:'tfill' });
   const bar = h('div', { class:'tbar', role:'progressbar', 'aria-label':'Brew progress', 'aria-valuemin':'0', 'aria-valuemax':'100', 'aria-valuenow':'0' }, fillEl, ...steps.filter(s => s.t > 0).map(s => h('div', { class:'ttick', style:'left:' + Math.min(99, 100 * s.t / total).toFixed(1) + '%' })));
@@ -11224,15 +11506,22 @@ function screenTimer(m){
     h('div', { class:'tp-head' }, h('div', null, h('p', { class:'tp-title', text:'Guided brew' }), h('p', { class:'tp-sum', text:summary })), resetBtn),
     h('div', { class:'tp-main' }, h('div', { class:'tp-left' }, stepEl, big, nowEl), gaugeBox),
     bar, lockNote, h('div', { class:'tcoach' }, mark, h('div', { class:'tbubble' }, paceEl)),
-    drainRow, drained));
+    drained));
   /* the sound choices sit in a closed card: most people set them once */
   const soundSub = h('span', { class:'gs' }), soundFold = h('details', { class:'card gcard haspico soundfold' }, h('summary', null, h('span', { class:'gdisc' }, lineIcon('speaker')), h('span', { class:'gtx' }, h('span', { class:'gt', text:'Sound' }), soundSub)),
     h('div', { class:'gbody' }, h('div', { class:'soundbox' }, soundSeg, coachWrap, soundNote, testBtn)));
-  refreshers.push(() => { soundSub.textContent = app.prefs.sound === 'off' ? 'Off' : app.prefs.sound === 'chime' ? 'A beep at each step' : (app.prefs.coach === 'steps' ? 'Voice, key steps only' : 'Voice, guides you'); });
-  m.append(h('div', { class:'stepswrap' }, list), soundFold,
-    h('div', { class:'actions', style:'flex-direction:column' },
-      h('button', { type:'button', class:'btn primary block', text:'Done: taste this brew', onclick:() => { stopTimer(); snapshotBrew(); prepCupEntry(); go('cup'); } })));
-  m.append(h('div', { class:'dock timerdock' }, h('div', { class:'dock-inner' }, startBtn)));
+  refreshers.push(() => { soundSub.textContent = app.prefs.sound === 'off' ? 'Off. Open to hear each step spoken' : app.prefs.sound === 'chime' ? 'A beep at each step' : (app.prefs.coach === 'steps' ? 'Voice, key steps only' : 'Voice, guides you'); });
+  m.append(soundFold, h('div', { class:'stepswrap' }, list));
+  const dockInner = h('div', { class:'dock-inner' }); let dockMode = '';
+  m.append(h('div', { class:'dock timerdock' }, dockInner));
+  /* the bar follows the brew: Start alone; then Pause (smaller) beside Done brewing; then Resume (smaller) beside Taste this brew */
+  function paintDock(mode){
+    if (mode === dockMode) return; dockMode = mode;
+    startBtn.classList.toggle('primary', mode === 'idle');
+    dockInner.classList.toggle('two', mode !== 'idle');
+    dockInner.textContent = '';
+    dockInner.append(...(mode === 'idle' ? [startBtn] : mode === 'mid' ? [startBtn, doneBtn] : [startBtn, tasteBtn]));
+  }
   const setT = (el, t) => { if (el.textContent !== t) el.textContent = t; };   /* write only when the text really changed */
   const cues = coachCues(steps); let cueIdx = 0;
   const seekCues = t => { const i = cues.findIndex(c => c.t >= t - 0.5); cueIdx = i < 0 ? cues.length : i; };
@@ -11240,7 +11529,7 @@ function screenTimer(m){
     if (!timer.running || app.prefs.sound !== 'voice' || app.prefs.coach === 'steps' || voiceState.ok === false) return;
     while (cueIdx < cues.length && cues[cueIdx].t <= t){ const c = cues[cueIdx++]; if (t - c.t <= 2.5) speak(c.text, null, true); }   /* a late cue (after a pause) is skipped, never replayed */
   }
-  let clsIdx = -2;
+  let clsIdx = -2, reminded = false;
   function tick(){
     const t = elapsed(); setT(big, fmtTime(t));
     const pct = Math.min(100, Math.round(100 * t / total)); fillEl.style.width = pct + '%'; bar.setAttribute('aria-valuenow', String(pct)); startBtn.classList.toggle('running', timer.running);
@@ -11249,37 +11538,38 @@ function screenTimer(m){
     const cur = steps[idx], nxt = steps[idx + 1];
     const fin = timer.done && !timer.running;
     if (fin){
-      setT(whatEl, 'Brew finished'); setT(nextEl, 'Tap Resume if you stopped by mistake.'); 
+      setT(whatEl, 'Brew finished'); setT(nextEl, 'Tap Taste this brew, or Resume if you stopped by mistake.'); 
     } else if (!timer.running && t === 0){
       setT(whatEl, 'Ready'); setT(nextEl, 'Weigh your coffee, then tap Start when the water hits the grounds.'); 
     } else {
       setT(whatEl, cur ? cur.title : 'Get ready');
       setT(nextEl, nxt ? 'Next: ' + nxt.title + ' in ' + fmtTime(Math.max(0, Math.ceil(nxt.t - t))) : (idx === steps.length - 1 ? 'All done. Enjoy.' : ''));
     }
-    setT(paceEl, fin ? 'Nice brew! Tap Done to taste it.' : (timer.running || t > 0) ? (coachLine(steps, t) || (cur ? cur.title + '. Steady hands!' : '')) : 'Ready when you are. Steady hands!');
+    setT(paceEl, fin ? 'Nice brew! Tap Taste this brew.' : (timer.running || t > 0) ? (coachLine(steps, t) || (cur ? cur.title + '. Steady hands!' : '')) : 'Ready when you are. Steady hands!');
     setT(stepEl, !fin && (timer.running || t > 0) && idx >= 0 ? 'Step ' + (idx + 1) + ' of ' + steps.length : fin ? 'All done' : 'Step 1 of ' + steps.length);
-    drainRow.hidden = !((timer.running || t > 0) && !fin);
+    paintDock(fin ? 'fin' : (timer.running || t > 0) ? 'mid' : 'idle');
     if (gaugeBox){ const g = pourAt(steps, t), key = g.now + '|' + g.tgt + '|' + g.pouring; if (key !== gaugeKey){ gaugeKey = key; g.cone = cone; gaugeBox.innerHTML = pourGauge(g); } }
-    setT(lockNote, timer.running && lockMissing ? 'Your phone may turn the screen off. Keep it awake while you brew.' : '');
+    setT(lockNote, fin ? '' : lockMissing ? 'Your phone may turn the screen off. Keep it awake while you brew.' : (timer.lock && !timer.lock.released) ? 'Your screen stays on until you tap Done brewing.' : '');
     if (idx !== timer.lastIdx){
-      if (timer.lastIdx !== -1 && timer.running){ try { if (navigator.vibrate) navigator.vibrate(200); } catch(e){} cue(cur); }
+      if (timer.lastIdx !== -1 && timer.running){ try { if (navigator.vibrate) navigator.vibrate(200); } catch(e){} cue(cur, nxt); }
       timer.lastIdx = idx;
     }
     coachTick(t);
+    if (timer.running && !timer.done && !reminded && t >= total + 45){ reminded = true; if (app.prefs.sound === 'voice' && voiceState.ok !== false) speak('Tap Done brewing when you are ready to taste.', null, true); }   /* said once, if the brew time is well past and nobody has tapped */
   }
   startBtn.addEventListener('click', async () => {
     if (!timer.running){
-      seekCues(elapsed()); timer.running = true; timer.done = false; timer.startMs = Date.now(); startBtn.textContent = 'Pause'; clearInterval(timer.iv); timer.iv = setInterval(tick, 250);
+      seekCues(elapsed()); timer.running = true; timer.done = false; drained.textContent = ''; timer.startMs = Date.now(); startBtn.textContent = 'Pause'; clearInterval(timer.iv); timer.iv = setInterval(tick, 250);
       const fresh = timer.base < 1, first = steps[0];
       primeAudio();   /* this tap is what lets a later beep play on an iPhone */
-      if (app.prefs.sound === 'chime') chime(); else if (app.prefs.sound === 'voice' && fresh) speak(first && first.t === 0 && first.scale != null ? 'Start. ' + stepSpeech(first) : 'Start', ok => { if (!ok) chime(); paintSound(); });   /* a resume does not say "Start" again: it could cut off a step cue */
+      if (app.prefs.sound === 'chime') chime(); else if (app.prefs.sound === 'voice' && fresh) speak(first && first.t === 0 && first.scale != null ? 'Start. ' + stepSpeech(first, steps[1]) : 'Start', ok => { if (!ok) chime(); paintSound(); });   /* a resume does not say "Start" again: it could cut off a step cue */
       persistTimer(); await holdScreen();
     } else {
       timer.base = elapsed(); timer.running = false; startBtn.textContent = 'Resume'; clearInterval(timer.iv); persistTimer();
     }
     tick();
   });
-  resetBtn.addEventListener('click', () => { try { if (timer.lock) timer.lock.release(); } catch(e){} clearInterval(timer.iv); timer = { running:false, startMs:0, base:0, iv:null, lastIdx:-1, lock:null }; cueIdx = 0; startBtn.textContent = 'Start'; drained.textContent = ''; lockMissing = false; persistTimer(); tick(); });   /* Reset lets the screen sleep again; Start asks for the lock afresh */
+  resetBtn.addEventListener('click', () => { try { if (timer.lock) timer.lock.release(); } catch(e){} clearInterval(timer.iv); timer = { running:false, startMs:0, base:0, iv:null, lastIdx:-1, lock:null }; cueIdx = 0; startBtn.textContent = 'Start'; reminded = false; drained.textContent = ''; lockMissing = false; persistTimer(); tick(); });   /* Reset lets the screen sleep again; Start asks for the lock afresh */
   if (app.timerSave && !timer.running && timer.base === 0){   /* picking up a saved brew after a reload */
     const ts = app.timerSave; app.timerSave = null; timer.base = ts.base; timer.lastIdx = -1;
     if (ts.running){ timer.running = true; timer.startMs = ts.startMs; startBtn.textContent = 'Pause'; timer.iv = setInterval(tick, 250); holdScreen(); }
@@ -11369,8 +11659,6 @@ const TOOLS = [
 function screenTools(m){
   m.append(hubHero('Tools', 'Small helpers for the numbers behind a good cup.', false),
     h('div', { class:'hublist' }, TOOLS.map(t => hubRow(t.icon, t.name, t.text, t.open, { tone:t.tone, id:'tool-' + t.id }))));
-  const back = typeof PARENT.tools === 'function' ? PARENT.tools() : PARENT.tools;
-  m.append(h('div', { class:'flinks one' }, h('button', { type:'button', class:'flink', text:back === 'coffee' ? 'Back to your coffee' : 'Back', onclick:() => navBack(back) })));
 }
 /* ---------- screen: cost of coffee ----------
    Nothing here is kept in your saved work or your history file. A bag is kept only when the person presses Add to my coffee prices, which puts it in the separate prices list (49-screen-prices.js). */
@@ -11598,7 +11886,6 @@ function prPaint(){
     h('button', { type:'button', class:'btn small', style:'margin:0', text:'Undo', onclick:() => { const l = pr.list.slice(); l.splice(Math.min(pr.undo.at, l.length), 0, pr.undo.e); pr.list = l; pr.changes = Math.max(0, pr.changes - 1); pr.undo = null; persistPrices(); prPaint(); } })) : null;
   const bags = tband('Your bags', { tan:pr.list.length + (pr.list.length === 1 ? ' bag' : ' bags') }, null, { pic:'beans' }, pr.list.length > 1 ? head : null, undo, q, h('div', { id:'prList', class:'pr-list', style:'margin-top:10px' }, prListNodes())); bags.id = 'prCard';
   host.append(bags, prAddCard());
-  host.append(h('div', { class:'flinks one' }, h('button', { type:'button', class:'flink', text:'Back', onclick:() => navBack(typeof PARENT.prices === 'function' ? PARENT.prices() : PARENT.prices) })));
 }
 function goPrices(){ if (app.screen !== 'prices') pricesFrom = app.screen === 'timer' ? 'ready' : app.screen; if (!pr.add){ pr.add = prNewBag(); if (app.coffee) { pr.add.coffee = app.coffee.name || ''; pr.add.roaster = app.coffee.roaster || ''; } } go('prices'); }
 function screenPrices(m){ prHost = h('div', { id:'prHost' }); m.append(prHost); if (!pr.add) pr.add = prNewBag(); prPaint(); }
@@ -11978,12 +12265,15 @@ function beanMini(v){
   }
   return w;
 }
-/* get() returns the beans (0 for none); set(v) is told the new value. Ten invisible buttons sit over the five beans, one per half, and read out as "3.5 of 5 beans" (a radio group, with the arrow keys stepping by a half). */
+/* get() returns the beans (0 for none); set(v) is told the new value. Minus and plus buttons step by a half (a phone tap on the left half of a bean was easy to miss). Ten invisible buttons sit over the five beans, one per half, and read out as "3.5 of 5 beans" (a radio group, with the arrow keys stepping by a half). */
 function starRating(get, set, o){
   o = o || {};
   const wrap = h('div', { class:'stars', role:'radiogroup', 'aria-label':o.label || 'Your rating' });
   const row = h('div', { class:'starrow' }), read = h('div', { class:'starread', role:'status' });
   const clear = h('button', { type:'button', class:'btn link starclear', text:'Clear rating' });
+  const minus = h('button', { type:'button', class:'nudge starminus', text:'−', 'aria-label':'Half a bean less' }), plus = h('button', { type:'button', class:'nudge starplus', text:'+', 'aria-label':'Half a bean more' });
+  minus.addEventListener('click', () => apply(Math.max(0, validStars(get()) - 0.5)));
+  plus.addEventListener('click', () => apply(Math.min(5, validStars(get()) + 0.5)));
   const stars = [], hits = [];
   function apply(v){ set(v); paint(); }
   for (let i = 1; i <= 5; i++){
@@ -12008,10 +12298,22 @@ function starRating(get, set, o){
     const v = validStars(get());
     stars.forEach((s, k) => { s.classList.toggle('full', v >= k + 1); s.classList.toggle('half', v === k + 0.5); });
     hits.forEach(x => { const on = x.val === v; x.b.setAttribute('aria-checked', String(on)); x.b.tabIndex = (on || (!v && x.val === 0.5)) ? 0 : -1; });
-    read.textContent = v ? v + ' of 5 · ' + beanWord(v) : 'Not rated yet'; clear.hidden = !v;
+    read.textContent = v ? v + ' of 5 · ' + beanWord(v) : 'Not rated yet'; clear.hidden = !v; minus.disabled = !v; plus.disabled = v >= 5;
   }
-  wrap.append(row, h('div', { class:'starfoot' }, read, clear)); paint(); refreshers.push(paint);
+  wrap.append(row, h('div', { class:'starstep' }, minus, read, plus), h('div', { class:'starfoot' }, h('div', { class:'fine starhint', text:'Tap a bean, or use − and + for half beans.' }), clear)); paint(); refreshers.push(paint);
   return wrap;
+}
+/* the mascot says one short line in a speech bubble */
+function sayRow(text, cls){
+  const m = h('span', { class:'saymark' }); m.innerHTML = '<svg viewBox="14 10 172 186" aria-hidden="true" focusable="false"><use href="#bt-mark"/></svg>';
+  return h('div', { class:'sayrow' }, m, h('p', { class:'saybub' + (cls ? ' ' + cls : ''), text }));
+}
+/* "What to do": a short numbered list of steps, worded for someone who has never done it */
+function doBox(steps){
+  const head = h('div', { class:'dohead' }), ic = h('span', { class:'dopic' });
+  ic.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><use href="#ic-cup-steam"/></svg>';
+  head.append(ic, h('b', { text:'What to do' }));
+  return h('div', { class:'dobox' }, head, h('ol', { class:'dolist' }, ...steps.map(s => h('li', null, h('span', { text:s })))));
 }
 /* The steps are: 0 to 7 the sections in the order of the SCA form, 8 the retaste as the cup cools, 9 defects, 10 the review. One step shows at a time. The next one opens only once this one is done; a finished
    section stays in the row of dots with a check and can be opened again to change it. state.cva (see pure/12-cva.js) holds where the person has got to: cur is the furthest step reached, open is the one on screen. */
@@ -12039,6 +12341,7 @@ function cvaPaint(){
   if (!cvaBox || !cvaBox.isConnected) return;
   const c = state.cva; cvaBox.textContent = ''; cvaProg.textContent = ''; cvaAct = null;
   cvaProg.append(cvaRail());
+  if (c.open < 8 && cvaHelp() !== 'expert') cvaBox.append(sayRow(CVA_GUIDE[CVA_SECTIONS[c.open].key].say));
   cvaBox.append(cvaStepEl(c.open)); { const pk = cvaPeek(); if (pk) cvaBox.append(pk); }
   if (cvaFinishBox) cvaFinishBox.hidden = c.open !== 10;
   cvaDockPaint();
@@ -12083,7 +12386,7 @@ function cvaScale(i, which, label){
   }
   return [h('div', { class:'cva-scale', role:'radiogroup', 'aria-label':label + ', 1 to 9' }, btns),
     h('div', { class:'cva-ends', 'aria-hidden':'true' }, h('span', { text:'1 extremely low' }), h('span', { text:'9 extremely high' })),
-    h('p', { class:'cva-word', role:'status', 'aria-live':'polite', text:cur ? cur + ' · ' + CVA_WORDS[cur - 1] : 'Tap a number' })];
+    h('p', { class:'cva-word', role:'status', 'aria-live':'polite', 'data-s':cur ? String(cur) : '', text:cur ? cur + ' · ' + CVA_WORDS[cur - 1] : 'Tap a number' })];
 }
 /* the dented box with a pencil for "Why?", the same as every other typed answer */
 function cvaNoteField(k, label){
@@ -12094,7 +12397,7 @@ function cvaSectionBody(i){
   const c = state.cva, s = CVA_SECTIONS[i], g = CVA_GUIDE[s.key], k = s.key, editing = i < c.cur, lv = cvaHelp(), ok = !!c.score[k];
   const next = i < 7 ? 'Next: ' + CVA_SECTIONS[i + 1].name : 'Next: ' + CVA_LINES.coolHead;
   cvaAct = { id:'cva-go-' + i, text:editing ? 'Save change' : next, sub:ok ? '' : 'Pick a score first', disabled:!ok, onclick:() => { if (editing){ c.open = c.cur; cvaChanged(); cvaScrollOpen(); } else cvaAdvance(); } };
-  return [h('p', { class:'cq', text:g.q }),
+  return [cvaHelp() === 'expert' ? null : doBox(g.do), h('p', { class:'cq', text:g.q }),
     lv === 'new' ? h('p', { class:'cva-hint', text:g.ex }) : lv === 'comfortable' ? h('p', { class:'cva-hint', text:g.cm }) : null,
     i === 0 && lv !== 'expert' ? h('p', { class:'cva-hint', text:CVA_LINES.basis }) : null,
     s.retaste && !c.cool.done ? h('p', { class:'cva-note', text:CVA_LINES.first }) : null,
@@ -12291,11 +12594,11 @@ function quickFlavorWords(){
   const base = bag.length ? bag : expectFor(app.coffee, new Date()).look.map(x => String(x).toLowerCase()).filter(x => x.length >= 3 && x.length <= 24).slice(0, 6);
   return { words:Array.from(new Set(base.concat(state.quick.liked, state.quick.notLiked))), fromBag:bag.length > 0 };
 }
-/* The flavors as a small table: a word, then a thumb up (liked) and a thumb down (not for me). Tapping the other thumb moves the word across, so nothing is ever both; tapping a lit thumb takes it back. */
+/* The flavors as a small table: a word, then a green smile (liked) and a red frown (not for me). Tapping the other face moves the word across, so nothing is ever both; tapping a lit face takes it back. */
 function flavorTable(words){
   const wrap = h('div', { class:'ttable', role:'group', 'aria-label':'Flavors you noticed' }, h('div', { class:'tcaps', 'aria-hidden':'true' }, h('span', { text:'Liked' }), h('span', { text:'Not for me' })));
   words.forEach(w => {
-    const up = ttile('thumbup', '', '', 'Liked ' + w), dn = ttile('thumbdown', '', 'neg', 'Not for me: ' + w);
+    const up = ttile('smile', '', 'fg', 'Liked ' + w), dn = ttile('frown', '', 'fr', 'Not for me: ' + w);
     const flip = (mine, other) => { const l = state.quick[mine], i = l.indexOf(w); if (i >= 0) l.splice(i, 1); else { l.push(w); const j = state.quick[other].indexOf(w); if (j >= 0) state.quick[other].splice(j, 1); } changed(); };
     up.addEventListener('click', () => flip('liked', 'notLiked')); dn.addEventListener('click', () => flip('notLiked', 'liked'));
     refreshers.push(() => { up.setAttribute('aria-pressed', String(state.quick.liked.includes(w))); dn.setAttribute('aria-pressed', String(state.quick.notLiked.includes(w))); });
@@ -12304,7 +12607,7 @@ function flavorTable(words){
   return wrap;
 }
 /* One part (smell, taste and so on): a name and three faces (Good, Okay, Not good). The name opens a small panel with "Couldn't tell" and, for smell, taste and aftertaste, the word lists and wheel. */
-const PART_FACE = [{ v:'good', icon:'smile', tone:'' }, { v:'okay', icon:'meh', tone:'mid' }, { v:'notgood', icon:'frown', tone:'neg' }];
+const PART_FACE = [{ v:'good', icon:'smile', tone:'fg' }, { v:'okay', icon:'meh', tone:'fa' }, { v:'notgood', icon:'frown', tone:'fr' }];
 function partRow(a){
   const set = v => { if (state.quick.areas[a.key] === v) delete state.quick.areas[a.key]; else state.quick.areas[a.key] = v; changed(); };
   const faces = PART_FACE.map(f => { const g = QUICK_GRADES.find(x => x.v === f.v), b = ttile(f.icon, '', f.tone, a.label + ': ' + g.label.toLowerCase()); b.addEventListener('click', () => set(f.v)); return b; });
@@ -12328,16 +12631,19 @@ function quickMissing(){
   if (state.stars || state.quick.make) return '';
   return 'Give it beans, or say whether you would make it again.';
 }
-const MAKE_ICON = { yes:'thumbup', maybe:'meh', no:'thumbdown' };
+const MAKE_ICON = { yes:'smile', maybe:'meh', no:'frown' };
+const MAKE_TONE = { yes:'fg', maybe:'fa', no:'fr' };
+/* what to do, in plain steps, and the mascot's line */
+const QUICK_DO = ['Take a sip and let it sit in your mouth for a few seconds.', 'Breathe out slowly through your nose. A lot of flavor shows up there.', 'Pick a face first, then the beans.'];
 function screenQuick(m){
   const q = state.quick, newLvl = level() === 'new';
-  /* required: the beans, and would you make it again */
-  const makeBtns = MAKE_AGAIN.map(x => { const b = ttile(MAKE_ICON[x.v], x.label, x.v === 'no' ? 'neg' : x.v === 'maybe' ? 'mid' : ''); b.addEventListener('click', () => { q.make = q.make === x.v ? '' : x.v; changed(); }); return b; });
+  /* what to do, then the mascot's line, then the required answer: would you make it again (this or the beans is enough) */
+  m.append(doBox(QUICK_DO), sayRow('Go with your gut. This one is about you, not a score.'));
+  const makeBtns = MAKE_AGAIN.map(x => { const b = ttile(MAKE_ICON[x.v], x.label, MAKE_TONE[x.v]); b.addEventListener('click', () => { q.make = q.make === x.v ? '' : x.v; changed(); }); return b; });
   refreshers.push(() => makeBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(q.make === MAKE_AGAIN[i].v))));
-  m.append(tband('How much did you like it?', true, 'your own taste, nothing else', { icon:'tap', text:'Tap a bean' },
-    starRating(() => state.stars, v => { state.stars = v; changed(); }, { label:'Your rating of this coffee' }),
-    h('div', { class:'tlabel', text:'Would you make this again?' }), h('div', { class:'mkgrid', role:'group', 'aria-label':'Would you make this again' }, makeBtns),
-    newLvl ? h('p', { class:'fine', text:'Either one is enough to save. Everything below is optional.' }) : null));
+  m.append(tband('Would you make this again?', 'Required', 'this or the beans', null,
+    h('div', { class:'mkgrid', role:'group', 'aria-label':'Would you make this again' }, makeBtns),
+    newLvl ? h('p', { class:'fine', text:'Either one is enough to save. Everything else is optional.' }) : null));
   /* optional: the flavors */
   const fw = quickFlavorWords();
   if (fw.words.length){
@@ -12351,6 +12657,9 @@ function screenQuick(m){
   m.append(tband('How did each part taste?', false, count, null, caps, h('div', { class:'ttable', id:'qdetail' }, rows),
     h('p', { class:'fine', text:newLvl ? 'Tap a name to say you could not tell, or to pick words from a wheel.' : 'Tap a name for "Couldn\'t tell" and, for smell, taste and aftertaste, a word wheel.' })));
   m.append(h('div', { class:'notesbox' }, notesField()));
+  /* last: the beans (required, but the faces above count instead) */
+  m.append(tband('How much did you like it?', 'Required', 'this or "make again"', { icon:'tap', text:'Tap a bean' },
+    starRating(() => state.stars, v => { state.stars = v; changed(); }, { label:'Your rating of this coffee' })));
   const msg = h('p', { class:'msg', id:'msg', role:'status' });
   let armed = false, tmr = null;
   const clearBtn = h('button', { type:'button', class:'flink danger', text:'Clear answers' });
@@ -12361,7 +12670,7 @@ function screenQuick(m){
   m.append(h('div', { class:'flinks one' }, clearBtn), msg,
     h('p', { class:'fine tcenter', text:'Your in-progress form is kept in this browser until you save or clear it. Your saved history lives in the CSV file you download.' }));
   const sub = h('span', { class:'sub' });
-  refreshers.push(() => { const mk = MAKE_AGAIN.find(x => x.v === q.make); sub.textContent = state.stars ? 'Rated ' + state.stars + ' of 5' : mk ? 'Would make again: ' + mk.label : 'Give it a rating first'; });
+  refreshers.push(() => { const mk = MAKE_AGAIN.find(x => x.v === q.make); sub.textContent = state.stars ? 'Rated ' + state.stars + ' of 5' : mk ? 'Would make again: ' + mk.label : 'Pick a face or rate it first'; });
   m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary', id:'quickSaveBtn', onclick:onSaveClick }, 'Save tasting', sub))));
 }
 /* the quick columns of a row: written whenever any quick answer was given, so a cupping can carry them too */
@@ -12423,8 +12732,9 @@ function cvaBest(){
 }
 function cvaFixBlock(){
   const c = state.cva, an = cvaAnalysis(), gpn = t => h('p', { class:'cva-hint', text:t });
-  const tiles = SYMPTOMS.map(s => { const b = ttile('', s.label, 'wide'); b.id = 'cva-sym-' + s.v; b.setAttribute('aria-pressed', String(c.sym === s.v)); b.addEventListener('click', () => { c.sym = c.sym === s.v ? '' : s.v; cvaChanged('cva-sym-' + s.v); }); return b; });
-  const kids = [h('p', { class:'cq', text:CVA_LINES.fixAsk }), gpn(CVA_LINES.fixHint), h('div', { class:'symgrid', role:'group', 'aria-label':CVA_LINES.fixAsk }, tiles)];
+  const pk = symPicker(v => { c.sym = c.sym === v ? '' : v; cvaChanged('cva-sym-' + v); }, { id:'cva-sym-' });
+  pk.mark(c.sym);
+  const kids = [h('p', { class:'cq', text:CVA_LINES.fixAsk }), gpn(CVA_LINES.fixHint), pk.el];
   if (an.symptom){
     kids.push(h('p', { class:'cq', text:an.symptom === 'great' ? 'Looks like a keeper' : 'Try this next' }));
     an.reasons.forEach(r => kids.push(gpn(r)));
@@ -13452,6 +13762,7 @@ function applyAttempt(key, rs, adj, base, note, toGear){
   if (adj.pulse){ if (adj.pulse.taste) b.pulseTaste = adj.pulse.taste; if (adj.pulse.strength) b.pulseStrength = adj.pulse.strength; }
   if (adj.tech) b.technique = adj.tech;
   if (adj.tempF) b.tempF = Math.max(165, Math.min(212, Math.round(adj.tempF)));
+  else if (adj.tempDelta) applyTempDelta(adj.tempDelta);
   app.dialNote = note || null;
   state = newCup(); dialSym = ''; dialBasePick = ''; app.lastSymptom = ''; app.lastReasons = []; app.dialMethod = ''; recipeVia = '';
   if (toGear) openGear('recipe', true); else go('recipe');
@@ -13636,24 +13947,47 @@ function dialDock(host, id, text, sub, onclick){
   host.textContent = '';
   host.append(h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary', id, onclick }, text, sub ? h('span', { class:'sub', text:sub }) : null)));
 }
-/* what each answer feels like, and its picture */
-const DIAL_FEEL = { sour:['sour', 'Like a lemon'], bitter:['bitter', 'Like dark toast'], astringent:['dry', 'Cottony, rough'], uneven:['both', 'Sharp and harsh'], flat:['flat', 'Not much there'],
-  muddy:['muddy', 'Grit in the cup'], thin:['thin', 'Watery body'], strong:['heavy', 'Heavy, intense'], great:['great', 'Nothing to fix'], notforme:['', 'The brew is fine'] };
-/* The question the page asks, with the nine things you may have tasted as picture tiles. ourPick is the one we chose from the scores ('' for none); between is a note to show above the choices.
+/* What the cup tasted like: 16 picture tiles in four groups (SYMPTOM_GROUPS and SYMPTOMS, in engine/16-dialin.js). onPick(v) is told the answer; o.ourPick marks one tile "Our pick"; o.id gives each tile the id o.id + its value.
+   Returns { el, mark(sym) }; mark shows which tile is pressed. The Perfect page and the end of the cupping form both use it. */
+function symPicker(onPick, o){
+  o = o || {};
+  const wrap = h('div', { class:'symwrap' }), btns = {};
+  SYMPTOM_GROUPS.forEach(gr => {
+    const grid = h('div', { class:'symgrid', role:'group', 'aria-label':gr.label });
+    SYMPTOMS.filter(s => s.g === gr.g).forEach(s => {
+      const b = ttile('', '', 'symopt'), pc = h('span', { class:'sympic' });
+      pc.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><use href="#' + s.art + '"/></svg>';
+      b.append(pc, h('span', { class:'symtx' }, h('b', { text:s.short || s.label }), s.sub ? h('small', { text:s.sub }) : null));
+      if (s.short) b.setAttribute('aria-label', s.label);
+      if (o.id) b.id = o.id + s.v;
+      if (o.ourPick === s.v) b.append(h('span', { class:'ourpick', text:'Our pick' }));
+      b.addEventListener('click', () => onPick(s.v)); btns[s.v] = b; grid.append(b);
+    });
+    wrap.append(h('p', { class:'symgroup', text:gr.label }), grid);
+  });
+  return { el:wrap, btns, mark:sym => Object.keys(btns).forEach(k => btns[k].setAttribute('aria-pressed', String(k === sym))) };
+}
+/* The question the page asks, with the sixteen things you may have tasted as picture tiles. ourPick is the one we chose from the scores ('' for none); between is a note to show above the choices.
    Returns { mark(sym) }, which shows which choice is pressed. */
 function dialQuestion(m, heading, ourPick, onPick, between){
-  const grp = h('div', { class:'choices ptiles dialq', role:'group', 'aria-labelledby':'dialQ' });
-  const btns = SYMPTOMS.map(s => {
-    const f = DIAL_FEEL[s.v] || ['', ''], disc = h('span', { class:'pfdisc' + (s.v === 'great' ? ' gold' : '') });
-    disc.innerHTML = f[0] ? '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#pf-' + f[0] + '"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#mi-thumbdown"/></svg>';
-    return h('button', { type:'button', class:'choice ptile pftile' + (s.v === 'great' || s.v === 'notforme' ? ' wide' : ''), 'aria-pressed':'false', onclick:() => onPick(s.v) },
-      disc, h('span', { class:'ptxt' }, h('b', { text:s.label }), f[1] ? h('small', { text:f[1] }) : null), s.v === ourPick ? h('span', { class:'ourpick', text:'Our pick' }) : null);
-  });
-  btns.forEach(x => grp.append(x));
+  const pk = symPicker(onPick, { ourPick }), grp = h('div', { class:'dialq', role:'group', 'aria-labelledby':'dialQ' }, pk.el);
   m.append(...kept(h('h2', { id:'dialQ', class:'dialq-h', text:heading }),
-    h('p', { class:'dialq-line', text:'Pick the one that bothers you most. We change one thing at a time, so one answer gives one suggestion.' }),
+    sayRow('Pick the one that bothers you most. We change one thing at a time, so one answer gives one suggestion.', 'dialq-line'),
     between || null, grp));
-  return { mark:sym => btns.forEach((x, i) => x.setAttribute('aria-pressed', String(SYMPTOMS[i].v === sym))) };
+  return { mark:pk.mark };
+}
+/* A temperature change in a suggestion (tempDelta, in °F from the temperature the brew used) can only be carried by a hot brew: for any other, it is dropped, so no button names it. */
+function carryTemp(fx, rec){
+  if (!fx || !fx.adjust || !fx.adjust.tempDelta || (rec && rec.temp && rec.temp.kind === 'hot')) return fx;
+  const a = Object.assign({}, fx.adjust); delete a.tempDelta; delete a.tempDir;
+  return Object.assign({}, fx, { adjust:a });
+}
+/* put the change on the Brew screen's water temperature (it stays inside 165 to 212°F, and back at the recommended temperature it is cleared) */
+function applyTempDelta(d){
+  if (!d || !app.brew.method) return;
+  const r = getRecipe(); if (!r.temp || r.temp.kind !== 'hot') return;
+  const f = Math.max(165, Math.min(212, Math.round(r.temp.f + d)));
+  app.brew.tempF = f === r.temp.recF ? null : f;
 }
 /* the reasons behind our pick, closed until asked for */
 function dialWhy(sym, ...parts){
@@ -13763,7 +14097,7 @@ function screenDialBasic(m){
     if (dialSym === 'notforme') return notForMeCard(out, null, dock);
     if (b && b.machine) return paintMachine();
     const rec = b && b.key ? buildRecipe(app.coffee, b.key, { altitudeFt:app.brew.altitudeFt, grinderKey:app.brew.grinderKey, calib:app.prefs.calib, water:b.water, tech:b.tech, pulseTaste:b.tech_taste, pulseStrength:b.tech_strength, ice:b.tech_ice }, app.adjust, new Date()) : null;
-    const fx = applyWaterFirst(fixFor(dialSym, rec, { roast:profileOf(app.coffee, new Date()).roast, methodType:rec ? rec.method.type : '', agit:b ? b.agit : '', tech:b ? b.tech : '', pulseTaste:b ? b.tech_taste : '', pulseStrength:b ? b.tech_strength : '', ice:b ? b.tech_ice : 0.4, plainGrind:level() === 'new' }), dialSym, waterProfile(b ? b.water_type : '', b ? b.water_alk : '', b ? b.water_gh : ''));
+    const fx = carryTemp(applyWaterFirst(fixFor(dialSym, rec, { roast:profileOf(app.coffee, new Date()).roast, days:profileOf(app.coffee, new Date()).days, methodType:rec ? rec.method.type : '', agit:b ? b.agit : '', tech:b ? b.tech : '', pulseTaste:b ? b.tech_taste : '', pulseStrength:b ? b.tech_strength : '', ice:b ? b.tech_ice : 0.4, plainGrind:level() === 'new' }), dialSym, waterProfile(b ? b.water_type : '', b ? b.water_alk : '', b ? b.water_gh : '')), rec);
     { const bg = bagCheckCard(dialSym, rec ? rec.method : null); if (bg) out.append(bg); }
     out.append(dialTryCard(fx));
     if (dialSym === 'great'){ const cc = calibCard(b); if (cc) out.append(cc); }
@@ -13773,6 +14107,7 @@ function screenDialBasic(m){
       if (fx.adjust.agit) app.brew.agitation = fx.adjust.agit;
       if (fx.adjust.pulse){ if (fx.adjust.pulse.taste) app.brew.pulseTaste = fx.adjust.pulse.taste; if (fx.adjust.pulse.strength) app.brew.pulseStrength = fx.adjust.pulse.strength; }
       if (fx.adjust.tech) app.brew.technique = fx.adjust.tech;
+      if (fx.adjust.tempDelta) applyTempDelta(fx.adjust.tempDelta);
       state = newCup(); dialSym = ''; app.lastSymptom = ''; app.lastReasons = []; recipeVia = '';
       if (fx.waterFirst) openGear('recipe', true); else go('recipe');
     });
@@ -13838,7 +14173,7 @@ function screenDial(m){
     const rec = buildRecipe(app.coffee, t.methodKey, batch, useSession ? app.adjust : rs.adjust, now), r = base.row;
     const ctx = useSession ? { agit:b.agit, tech:b.tech, pulseTaste:b.tech_taste, pulseStrength:b.tech_strength, ice:b.tech_ice } : { agit:rs.brew.agitation, tech:rs.brew.technique, pulseTaste:'balanced', pulseStrength:'', ice:0.4 };
     const wp = useSession ? waterProfile(b.water_type, b.water_alk, b.water_gh) : waterProfile(r.brew_water_type || '', r.water_alkalinity_mgl || '', r.water_hardness_mgl || '');
-    const fx = applyWaterFirst(fixFor(dialSym, rec, Object.assign({ roast:profileOf(app.coffee, now).roast, methodType:rec.method.type, plainGrind:level() === 'new' }, ctx)), dialSym, wp);
+    const fx = carryTemp(applyWaterFirst(fixFor(dialSym, rec, Object.assign({ roast:profileOf(app.coffee, now).roast, days:profileOf(app.coffee, now).days, methodType:rec.method.type, plainGrind:level() === 'new' }, ctx)), dialSym, wp), rec);
     const adv = dialAdvice(t, dialSym, fx, rec), lev = adv.lever, tr = lev ? t.tried[lev] : null;
     const triedNote = tr ? 'You already tried ' + lev.replace(':', ' ') + ' on ' + (tr.at.length === 1 ? 'try ' + tr.at[0] : 'tries ' + tr.at.join(', ')) + ', changing nothing else. '
       + (tr.helped && !tr.hurt && !tr.same ? 'It helped then.' : tr.hurt && !tr.helped && !tr.same ? 'It scored lower then, so weigh your own result over the general rule.' : tr.same && !tr.helped && !tr.hurt ? 'It made no clear change then.' : 'It helped ' + tr.helped + ', hurt ' + tr.hurt + ' and made no clear change ' + tr.same + ' time' + (tr.helped + tr.hurt + tr.same === 1 ? '' : 's') + ', so the result is mixed.') : '';
@@ -14511,14 +14846,13 @@ function screenDetail(m){
   if (exKv) m.append(plainFold('otherCols', 'Other columns in your file', extra.length + (extra.length === 1 ? ' column' : ' columns') + ' this app does not use', 'cols', exKv));
 
   /* what you can do with it */
-  const acts = [];
+  const acts = [hubRow('bean', 'Use this coffee', 'Optional: copy it onto a new Coffee screen', () => useCoffeeFromRow(o), { tone:'g', id:'brewAgainBtn' })];   /* never automatic: backing out of History leaves the Coffee screen as it was */
   if (canAddCupping(o)) acts.push(hubRow('spoon', 'Add cupping scores', 'Score this cup the careful way', () => startCupFor(o), { tone:'g', id:'addCuppingBtn' }));
   if (trailMethod(o) && way !== 'quick') acts.push(hubRow('peak', 'Perfect this coffee', 'Fix what you tasted, one change at a time', () => dialFromRow(o, 'detail'), { tone:'a', id:'dialThisBtn' }));
   if (acts.length) m.append(h('div', { class:'hublist dacts' }, ...acts));
   m.append(h('div', { class:'dpair' },
     h('button', { type:'button', class:'btn', id:'editCoffeeBtn', text:'Edit coffee details', onclick:() => openEditCoffee(o) }),
     h('button', { type:'button', class:'btn danger', id:'deleteTastingBtn', 'aria-label':'Delete this tasting', text:'Delete', onclick:() => openDelete(new Set([o._i]), true) })));
-  m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary', id:'brewAgainBtn', onclick:() => useCoffeeFromRow(o) }, 'Brew this again', h('span', { class:'sub', text:'Start from this coffee' })))));
 }
 let aboutFrom = '', filesFrom = '';
 function goAbout(){ if (app.screen !== 'about') aboutFrom = app.screen === 'timer' ? 'ready' : app.screen; go('about'); }
