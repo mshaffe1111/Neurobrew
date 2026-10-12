@@ -259,38 +259,105 @@ details.mgroup > summary .mgt{ font-weight:700; font-size:17px; }
 .rrow.big strong{ font-size:22px; }
 .rrow .sub{ font-size:14px; margin-top:1px; }
 #readyRows h3{ margin-bottom:2px; }
-.tpdiv{ margin:4px 0 6px; }
-.tprow{ display:grid; grid-template-columns:minmax(84px,34%) 1fr 1fr; gap:6px; align-items:center; min-height:30px; }
-.tprow + .tprow{ border-top:1px solid var(--line); }
-.tphead{ min-height:22px; font-size:12.5px; color:var(--muted); border-top:0 !important; }
-.tphead .tpl{ text-align:right; } .tphead .tpr{ text-align:left; }
-.tplab{ font-size:15px; line-height:1.2; overflow-wrap:anywhere; }
-.tpside{ display:flex; align-items:center; gap:5px; min-width:0; }
-.tpside.tpl{ justify-content:flex-end; }
-.tpside i{ display:block; height:14px; min-width:0; }
-.tpside.tpl i{ background:var(--accent); border-radius:4px 0 0 4px; }
-.tpside.tpr i{ background:var(--leaf); border-radius:0 4px 4px 0; }
-.tpside b{ font-size:13.5px; font-weight:600; }
-.tpwords{ margin:6px 0 0; }
-.tpnums{ margin:10px 0 0; padding-top:8px; border-top:1px solid var(--line); }
-.tpstars{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; align-items:end; margin:6px 0; }
-.tpcol{ display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:3px; height:130px; }
-.tpcol b{ font-size:14px; font-weight:600; }
-.tpcol i{ display:block; width:100%; max-width:44px; background:var(--leaf); border-radius:4px 4px 0 0; }
-.tpcol span{ font-size:12.5px; color:var(--muted); white-space:nowrap; }
-.tpdrow{ display:grid; grid-template-columns:minmax(84px,34%) 1fr; gap:8px; align-items:center; padding:4px 0; }
-.tpdrow + .tpdrow{ border-top:1px solid var(--line); }
-.tpdrow .tplab{ display:flex; flex-direction:column; gap:1px; }
-.tpdrow small{ font-size:12.5px; color:var(--muted); }
-.tpplot{ display:block; min-width:0; }
-.tpaxis{ border-top:0 !important; padding:0; }
-.tpticks{ display:flex; justify-content:space-between; padding:0 3%; font-size:12px; color:var(--muted); }
-.tpplain{ margin:10px 0 0; }
-.tpwhy{ margin:8px 0 0; }
-.tpwhy summary{ cursor:pointer; color:var(--accent); font-size:15px; min-height:32px; display:flex; align-items:center; }
-.tpholder .seg, #tpHolder{ width:100%; }
-.tpmap{ margin:2px 0 4px; }
-.tpcard + .tpcard{ margin-top:12px; }
+:root{ --tp-paper:#FBF4E2; --tp-ink:#22120C; --tp-soft:#5C4A3E; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --tp-paper:#EADFC6; } }
+:root[data-theme="dark"]{ --tp-paper:#EADFC6; }
+body[data-screen="tend"] .wrap, body[data-screen^="tp"] .wrap{ padding-bottom:128px; }
+:root:has(body[data-screen="tend"]), :root:has(body[data-screen^="tp"]){ scroll-padding-bottom:128px; }
+.tpart{ display:inline-flex; flex:none; line-height:0; }
+.tph1{ margin:16px 0 4px; font:700 28px/1.1 var(--display); }
+.tpintro{ margin:0 0 14px; font-size:17px; line-height:1.35; }
+.tplab{ display:block; margin:18px 0 6px; font:700 16px/1.2 var(--ui); }
+.tph2{ margin:24px 0 10px; font:700 21px/1.15 var(--display); }
+.tpcard{ background:var(--surface); border:2px solid var(--frame); border-radius:16px; box-shadow:0 4px 0 var(--frame); padding:12px; margin:0 0 12px; }
+.tpcard.paper{ padding:10px; }
+.tppaper{ background:var(--tp-paper); border-radius:12px; padding:6px; overflow:hidden; }
+.tpsel{ width:100%; min-height:52px; padding:6px 44px 6px 14px; font:600 18px var(--ui); color:var(--pick-ink); background:var(--pick) var(--chev) no-repeat right 8px center; border:2px solid var(--frame); border-radius:14px; box-shadow:0 3px 0 var(--frame); appearance:none; -webkit-appearance:none; }
+.tpsel:focus-visible, .tpbtn:focus-visible, .tpt:focus-visible, .tpwide:focus-visible, .tphero:focus-visible, .tpstand:focus-visible, .tphit:focus-visible, .tpfold summary:focus-visible{ outline:3px solid var(--focus); outline-offset:3px; }
+.tpbtn{ position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:60px; padding:8px 4px; text-align:center; font:700 15px/1.1 var(--ui); background:var(--surface); color:var(--ink); border:2px solid var(--frame); border-radius:14px; box-shadow:0 3px 0 var(--frame); }
+.tpbtn.on{ background:var(--gold); color:#22120C; border-color:#22120C; box-shadow:0 3px 0 #22120C; }
+.tpbtn:active{ transform:translateY(3px); box-shadow:none; }
+.tpbtn .tpn{ position:absolute; top:-9px; right:-5px; min-width:26px; height:26px; padding:0 5px; display:flex; align-items:center; justify-content:center; font:700 14px var(--ui); color:#22120C; background:var(--gold); border:2px solid #22120C; border-radius:13px; }
+.tpbtn small{ font-weight:400; font-size:13px; color:inherit; opacity:.85; }
+.tpbtn.zero{ opacity:.55; }
+.tprow3{ display:grid; gap:10px; grid-template-columns:repeat(3, minmax(0, 1fr)); } .tprow4{ display:grid; gap:10px; grid-template-columns:repeat(4, minmax(0, 1fr)); } .tprow2{ display:grid; gap:10px; grid-template-columns:repeat(2, minmax(0, 1fr)); }
+/* the home */
+.tphero{ display:flex; align-items:center; gap:6px; width:100%; text-align:left; margin:16px 0 0; padding:12px 12px 14px 6px; color:var(--pick-ink); background:var(--pick); border:2px solid var(--frame); border-radius:16px; box-shadow:0 4px 0 var(--frame); }
+.tphero h2{ margin:0; font:700 30px/1.05 var(--display); } .tphero p{ margin:6px 0 0; font-size:17px; line-height:1.3; }
+.tpkey{ display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:10px; font-size:15px; font-weight:600; }
+.tpkey i{ display:inline-block; width:14px; height:14px; margin-right:5px; vertical-align:-2px; border:2px solid #22120C; border-radius:50%; }
+.tpstands{ padding:0; overflow:hidden; }
+.tpstand{ display:flex; align-items:center; gap:12px; width:100%; min-height:72px; padding:10px 12px; text-align:left; font-size:17px; line-height:1.3; color:var(--ink); background:transparent; border:0; }
+.tpstand + .tpstand{ border-top:2px solid var(--line); }
+.tpstand span.tx{ flex:1; }
+.tpchev{ flex:none; width:16px; height:16px; background:currentColor; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") center/contain no-repeat; }
+.tpgrid{ display:grid; gap:12px; grid-template-columns:repeat(2, minmax(0, 1fr)); }
+.tpt{ position:relative; display:flex; flex-direction:column; gap:4px; min-height:206px; padding:10px 12px 12px; text-align:left; color:var(--ink); background:var(--surface); border:2px solid var(--frame); border-radius:16px; box-shadow:0 4px 0 var(--frame); }
+.tpt:active, .tpwide:active, .tphero:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--frame); }
+.tpt .pic{ box-sizing:border-box; display:block; align-self:stretch; width:auto; height:88px; margin:0 -4px 6px; overflow:hidden; background:var(--tp-paper); border-radius:10px; }
+.tpt .pic .tpart{ display:block; width:100%; height:100%; }
+.tpt .pic svg{ display:block !important; width:100% !important; height:100% !important; max-width:none !important; }
+.tpt b{ font:700 19px/1.1 var(--ui); } .tpt .ts{ flex:1; padding-right:40px; font-size:15px; line-height:1.25; color:var(--muted); }
+.tpt .go, .tpwide .go{ position:absolute; right:10px; bottom:10px; display:flex; align-items:center; justify-content:center; width:34px; height:34px; color:#fff; background:var(--chev-box); border-radius:8px; }
+.tpt .go i, .tpwide .go i{ display:block; width:16px; height:16px; background:currentColor; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") center/contain no-repeat; }
+.tpt.off .pic{ opacity:.5; } .tpt.off .ts{ color:var(--ink); }
+.tpwide{ position:relative; display:flex; align-items:center; gap:12px; width:100%; min-height:84px; margin-top:12px; padding:12px 54px 12px 12px; text-align:left; color:var(--ink); background:var(--surface); border:2px solid var(--frame); border-radius:16px; box-shadow:0 4px 0 var(--frame); }
+.tpwide .wp{ display:flex; justify-content:center; width:128px; flex:none; padding:8px 4px; background:var(--tp-paper); border-radius:10px; }
+.tpwide b{ display:block; font:700 19px/1.1 var(--ui); } .tpwide .ts2{ display:block; margin-top:2px; font-size:15px; line-height:1.25; color:var(--muted); }
+.tpfold{ margin-top:14px; } .tpfold summary{ min-height:44px; display:flex; align-items:center; gap:10px; cursor:pointer; font:700 17px var(--ui); }
+.tpnote{ display:flex; gap:10px; align-items:flex-start; padding:12px; margin-top:14px; font-size:15px; line-height:1.35; color:var(--muted); border:2px solid var(--line); border-radius:14px; }
+@media (max-width:359px){ .tpt{ min-height:196px; } .tpwide .wp{ width:104px; } .tph1{ font-size:25px; } }
+.tpshelf, .tpcupbox, .tpplot, .tpjar{ position:relative; }
+.tphit{ position:absolute; top:0; bottom:0; padding:0; margin:0; background:transparent; border:3px solid transparent; border-radius:16px; }
+.tphit.on{ border:3px dashed var(--frame); }
+.tphit.round{ bottom:auto; border-radius:50%; }
+.tplegend{ display:flex; gap:10px; }
+.tplegend div{ flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; font-size:14px; line-height:1.2; color:var(--muted); }
+.tpsw{ flex:none; width:30px; height:30px; border-radius:50%; border:2px solid #22120C; }
+.tpglass{ position:relative; flex:none; width:46px; height:56px; overflow:hidden; background:#FFF8EA; border:3px solid #22120C; border-radius:6px 6px 14px 14px; }
+.tpglass i{ position:absolute; left:0; right:0; bottom:0; background:linear-gradient(#FFC15A, #F2A93B); border-top:3px solid #22120C; }
+.tpglass.big{ width:70px; height:86px; border-width:4px; border-radius:8px 8px 20px 20px; }
+.tpbtn.tppt{ flex-direction:row; justify-content:flex-start; gap:10px; min-height:68px; padding:8px 10px; text-align:left; }
+.tpbtn.tppt small{ display:block; }
+.tptx{ display:flex; flex-direction:column; min-width:0; }
+.tpbtn.tppt .tptx{ align-items:flex-start; }
+.tpbtn.tppt .tptx small{ margin-top:2px; }
+.tpshelf .tpart, .tpplot .tpart, .tpcupbox .tpart, .tpjarsvg .tpart{ display:block; width:100%; }
+.tpcup{ width:100%; height:auto; }
+.tpG{ opacity:var(--o, 1); }
+.tpcup.has .tpG{ opacity:calc(var(--o, 1) * .4); }
+.tpcup.sel-smell .tpg-aroma, .tpcup.sel-acidity .tpg-acid, .tpcup.sel-sweetness .tpg-sweet, .tpcup.sel-aftertaste .tpg-after, .tpcup.sel-body .tpg-body{ opacity:1; }
+/* the jar: the labels sit level with their layers */
+.tpjar .tpjarsvg{ width:56%; }
+.tpjarside{ position:absolute; top:0; bottom:0; left:58%; right:0; }
+.tpjl{ position:absolute; left:0; right:0; display:flex; align-items:center; gap:4px; padding:0 4px; text-align:left; white-space:nowrap; color:var(--ink); background:var(--surface); border:2px solid var(--frame); border-radius:12px; box-shadow:0 3px 0 var(--frame); }
+.tpjl.on{ background:var(--gold); color:#22120C; border-color:#22120C; box-shadow:0 3px 0 #22120C; }
+.tpjl b{ display:block; font:700 16px/1.05 var(--ui); } .tpjl small{ display:block; font-size:14px; line-height:1.05; }
+.tpjl .tpart{ width:28px; height:28px; flex:none; } .tpjl .tpart svg{ width:100%; height:100%; }
+.tpjarsvg.has .tpL{ opacity:.32; }
+.tpjarsvg.sel-1 .tpl1, .tpjarsvg.sel-2 .tpl2, .tpjarsvg.sel-3 .tpl3, .tpjarsvg.sel-4 .tpl4, .tpjarsvg.sel-5 .tpl5{ opacity:1; }
+.tplegs{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; margin-top:8px; padding-top:10px; border-top:2px solid var(--line); font-size:15px; font-weight:600; }
+.tplegs2{ display:flex; flex-direction:column; gap:8px; padding:12px 14px; margin-top:14px; }
+.tplegs2 div{ display:flex; align-items:center; gap:10px; font-size:16px; }
+/* a group of coffees: picture, name, middle, heap */
+.tpgroup{ display:block; width:100%; margin:0 0 12px; padding:10px 12px 6px; text-align:left; color:var(--ink); background:var(--surface); border:2px solid var(--frame); border-radius:16px; box-shadow:0 3px 0 var(--frame); }
+.tpgroup.on{ background:var(--pick); }
+.tpgroup.static{ box-shadow:0 3px 0 var(--frame); }
+.tpghead{ display:flex; align-items:center; gap:10px; }
+.tpgname{ flex:1; min-width:0; } .tpgname b{ display:block; font:700 20px/1.1 var(--display); } .tpgname small{ display:block; font-size:15px; color:var(--muted); }
+.tpgmid{ font:700 16px var(--ui); text-align:right; }
+.tpheapart{ display:block; width:100%; } .tpheapart svg{ width:100%; }
+.tpkey2{ display:flex; align-items:center; gap:10px; margin-top:10px; font-size:15px; font-weight:600; }
+/* coffee street */
+.tpscroll{ overflow-x:auto; padding:0 6px 4px; -webkit-overflow-scrolling:touch; }
+.tpscroll:focus-visible{ outline:3px solid var(--focus); outline-offset:-3px; }
+.tptwo{ display:flex; gap:10px; margin-top:2px; } .tptwo div{ flex:1; text-align:center; font-size:16px; line-height:1.2; }
+.tpbtn.tally{ cursor:default; min-height:92px; padding-top:10px; } .tpbtn.tally:active{ transform:none; box-shadow:0 3px 0 var(--frame); }
+.tpbtn.tally .tpn{ background:var(--tint); color:var(--ink); border-color:var(--btn-edge); }
+.tpusual{ display:flex; align-items:center; gap:10px; min-height:60px; padding:8px 10px; background:var(--surface); border:2px solid var(--line); border-radius:12px; }
+.tpusual b{ display:block; font:700 17px/1.1 var(--ui); } .tpusual small{ font-size:14px; color:var(--muted); }
+.tpjoin{ display:flex; justify-content:center; margin:14px 0 2px; }
+.tppt .tpglass{ width:40px; height:50px; }
 /* timer */
 .bigtime{ font-size:72px; font-weight:800; text-align:center; font-variant-numeric:tabular-nums; letter-spacing:-0.03em; line-height:1; margin:18px 0 6px; }
 .now{ text-align:center; margin:0 0 14px; }
@@ -2467,6 +2534,7 @@ body[data-screen="shop"] .pstep .pl{ font-size:16px; }
 <symbol id="wp-n" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18 h14 l18 18 -13 12 L5 30z" fill="#F2A93B"/><circle cx="12" cy="24" r="2.6" fill="#FFF8EA"/><circle cx="37" cy="11" r="8.5" fill="#B8322A"/><path d="M37 6.5 v6" fill="none" stroke="#fff" stroke-width="2.6"/><circle cx="37" cy="16" r="1.1" fill="#fff" stroke="none"/></g></symbol>
 <symbol id="s-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></g></symbol>
 <symbol id="s-tag" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M6 6h17l19 19-17 17L6 23z" fill="#F2A93B"/><circle cx="14" cy="14" r="3" fill="#FFF8EA"/><text x="26" y="31" font-family="Lora, serif" font-weight="700" font-size="16" fill="#22120C" stroke="none" text-anchor="middle" transform="rotate(45 26 26)">$</text></g></symbol>
+<symbol id="tp-bean" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="24" cy="44" rx="11" ry="2" fill="#22120C" stroke="none" opacity=".18"/><path d="M24 6 C34 6 40 14 40 24 C40 35 33 42 24 42 C15 42 8 35 8 24 C8 14 14 6 24 6Z" fill="#8A5230"/><circle cx="15" cy="32" r="4" fill="#F27D9B" stroke-width="2"/><circle cx="34" cy="31" r="3.4" fill="#F2B04A" stroke-width="2"/><circle cx="33" cy="15" r="2.8" fill="#C79AE0" stroke-width="2"/><circle cx="19" cy="21" r="3.6" fill="#FFF8EA" stroke-width="2"/><circle cx="29" cy="21" r="3.6" fill="#FFF8EA" stroke-width="2"/><circle cx="19.5" cy="21.6" r="1.4" fill="#22120C" stroke="none"/><circle cx="29.5" cy="21.6" r="1.4" fill="#22120C" stroke="none"/><path d="M20 28 Q24 31.5 28 28" fill="none"/></g></symbol>
 </defs></svg>
 
 <a class="skiplink" href="#app" id="skipLink">Skip to main content</a>
@@ -5172,7 +5240,7 @@ function tpCoffees(objs){
     return { key:k, name:unneutralize(first('coffee_name')), roaster:unneutralize(first('roaster')), cups:rows.length, stars:stars.length ? stars.reduce((a, b) => a + b, 0) / stars.length : null,
       roast:tendKey(ROASTS, first('roast_level')), process:proc === 'unknown' ? '' : proc, density:dens === 'unknown' ? '' : dens,
       origin:om.origin ? (om.origin.key === 'africa' ? 'East Africa' : om.origin.name) : (om.country ? om.country.name : ''), variety:vr ? vr.name : '',
-      liked:fl ? fl.liked : [], notLiked:fl ? fl.notLiked : [], hasFlavors:!!fl, areas:ar || {}, hasAreas:!!ar };
+      liked:fl ? fl.liked : [], notLiked:fl ? fl.notLiked : [], hasFlavors:!!fl, areas:ar || {}, hasAreas:!!ar, objs:rows };
   });
 }
 /* How you rate: coffees per whole star. A half star is counted with the whole star above it. */
@@ -5185,11 +5253,13 @@ function tpRating(cs){
 /* Flavors liked and not liked, by family: how many coffees had a liked word in the family, and how many a not-liked word. */
 function tpFlavors(cs){
   const have = cs.filter(c => c.hasFlavors), fam = {};
-  const row = f => fam[f] || (fam[f] = { family:f, liked:0, notLiked:0, likedWords:{}, notWords:{} });
+  const row = f => fam[f] || (fam[f] = { family:f, liked:0, notLiked:0, tasted:0, likedWords:{}, notWords:{} });
   have.forEach(c => {
+    const any = new Set();   /* a coffee counts once as "tasted" for a family, whichever side its words were on */
     [['liked', 'likedWords', c.liked], ['notLiked', 'notWords', c.notLiked]].forEach(([side, wk, words]) => {
-      const seen = new Set(); words.forEach(w => { const f = tpFamilyOf(w), r = row(f); r[wk][w] = (r[wk][w] || 0) + 1; if (!seen.has(f)){ seen.add(f); r[side]++; } });
+      const seen = new Set(); words.forEach(w => { const f = tpFamilyOf(w), r = row(f); r[wk][w] = (r[wk][w] || 0) + 1; any.add(f); if (!seen.has(f)){ seen.add(f); r[side]++; } });
     });
+    any.forEach(f => { row(f).tasted++; });
   });
   const rows = Object.keys(fam).map(k => fam[k]).sort((a, b) => (b.liked + b.notLiked) - (a.liked + a.notLiked) || (a.family === TP_OTHER ? 1 : b.family === TP_OTHER ? -1 : a.family < b.family ? -1 : 1));
   rows.forEach(r => { r.total = have.length; r.likedCI = wilson(r.liked, have.length); r.words = side => Object.keys(side).sort((a, b) => side[b] - side[a] || (a < b ? -1 : 1)); r.topLiked = r.words(r.likedWords).slice(0, 3); r.topNot = r.words(r.notWords).slice(0, 3); });
@@ -5214,12 +5284,14 @@ function tpGroups(cs){
   });
   return { n:rated.length, feats, ready:rated.length >= TP_MIN.groups && feats.length > 0 };
 }
+/* The method a saved row was brewed with. The app saves the method's label ("Hario V60"); older or hand-made files may hold its key ("v60"). Both count; cupping sessions and unknown machines give null. */
+function tpMethodOf(o){ const v = unneutralize(String(o && o.brew_method || '')).trim(); return v ? METHODS.find(x => x.key === v || x.label === v) || null : null; }
 /* Measured brews: a dot per brew with both a TDS and an extraction. Filter brews and espresso have different charts. */
 function tpMap(objs){
   const pts = [];
   (objs || []).forEach(o => {
     const tds = tendNum(o.brew_tds_pct), ey = tendNum(o.brew_ey_pct); if (!(tds > 0) || !(ey > 0)) return;
-    const mt = METHODS.find(x => x.key === String(o.brew_method || '')); if (!mt || mt.type === 'cold') return;
+    const mt = tpMethodOf(o); if (!mt || mt.type === 'cold') return;
     pts.push({ kind:mt.type === 'espresso' ? 'espresso' : 'filter', tds, ey, stars:validStars(o.my_rating_stars), name:unneutralize(o.coffee_name || '') });
   });
   const kinds = ['filter', 'espresso'].map(k => ({ kind:k, pts:pts.filter(p => p.kind === k) })).filter(g => g.pts.length);
@@ -5302,7 +5374,7 @@ const ABOUT_LIMITS = [
   'Brew settings are starting points. The roast changes to temperature and grind come from brewer experience, not lab results. The app says so wherever they appear. Process, decaf and elevation do not change your brew settings on their own. They only offer optional tips.',
   "The flavor wheels are BeanTelligence's own. They are not the official SCA / World Coffee Research wheel.",
   'Le Nez du Café is a trademark of Éditions Jean Lenoir. BeanTelligence is not affiliated with or endorsed by them, the SCA, World Coffee Research, or any brand named here.',
-  'Where BeanTelligence uses its own rule of thumb, it says so. A total must move by one point before a try counts as better or worse. A bag a week older can change the taste. Three coffees must agree before a starting point is offered. Five coffees are needed before your tendencies are shown. A pattern must also stand out from the ordinary ups and downs of your scores. The Tendencies pictures need five coffees, or six for ratings by group, and show counts rather than rules. The shaded box on the brew map is a common target, not a rule. These are sensible limits, not published standards.',
+  'Where BeanTelligence uses its own rule of thumb, it says so. A total must move by one point before a try counts as better or worse. A bag a week older can change the taste. Three coffees must agree before a starting point is offered. Five coffees are needed before your tendencies are shown. A pattern must also stand out from the ordinary ups and downs of your scores. The Tendencies pictures need about five coffees each. Kinds of coffee and mix and match need six, and a flag at the middle needs three. They show counts rather than rules. The dashed box on the cup-ring paper is a common target, not a rule. These are sensible limits, not published standards.',
   "Looking a coffee up reads the roaster's own shop listing, in the roaster's words. It works only with shops built on Shopify. BeanTelligence fills in only what the listing states, and you check every line first. It remembers each roaster's shop address in this browser. Your browser asks the roaster's website directly, so that website sees the visit, just as if you opened the page yourself. Nothing about your tastings is sent.",
   'Saving over a file you choose works only in Chrome and Edge. Your browser asks your permission again after it has been closed. Other browsers download a copy. Your setup is stored in one extra column of the history file. Older copies of BeanTelligence ignore it.',
   'Your data stays in your browser until you save a file.'
@@ -5407,6 +5479,172 @@ function compareThings(kind, aKey, bKey){
   if (kind === 'roast'){ const a = ROAST_GUIDE[aKey], b = ROAST_GUIDE[bKey]; if (!a || !b) return null;
     return { aName:labelOf(ROASTS, aKey) + ' roast', bName:labelOf(ROASTS, bKey) + ' roast', rows:[['What it is', a.what, b.what], ['In the cup', a.cup, b.cup], ['Brewing', a.brew, b.brew]], why:[] }; }
   return null;
+}
+/* ---------- Tendencies pictures, part three ----------
+   For the brew rack and mix and match the unit is a coffee made with one brewer (a coffee brewed on two brewers is two units); its stars are the average of those cups.
+   A usual setting is the middle of at least 3 brews. A group's middle needs 3 coffees. These are your ratings, not rules about coffee. */
+const TP_MIN_MORE = { rack:3, mix:6, shops:1 };
+const TP_MIX_CAUTION = 'Elevation, process and roast often travel together, so one group can look good because of something else about it. These are your own ratings, not rules about coffee.';
+const TP_SPLITS = [['density', 'Elevation'], ['process', 'Process'], ['roast', 'Roast'], ['origin', 'Origin'], ['variety', 'Varietal']];
+/* the saved rows from a start date on (ISO, compared as text). Blank date keeps everything. */
+function tpSince(objs, iso){ return iso ? (objs || []).filter(o => String(o.saved_at || '') >= iso) : (objs || []); }
+/* one unit for each coffee and brewer. Cold brew counts as a brewer here. */
+function tpUnits(cs){
+  const out = [];
+  (cs || []).forEach(c => {
+    const by = {}; c.objs.forEach(o => { const mt = tpMethodOf(o); if (mt) (by[mt.key] || (by[mt.key] = [])).push(o); });
+    Object.keys(by).forEach(m => {
+      const rows = by[m], st = rows.map(o => validStars(o.my_rating_stars)).filter(x => x > 0);
+      out.push({ coffee:c.key, name:c.name, method:m, cups:rows.length, rows, stars:st.length ? st.reduce((a, b) => a + b, 0) / st.length : null, roast:c.roast, process:c.process, density:c.density, origin:c.origin, variety:c.variety });
+    });
+  });
+  return out;
+}
+/* the middle of a setting across brews, only from 3 brews */
+function tpUsual(rows, pick){ const v = rows.map(pick).filter(x => x != null && x > 0); return v.length >= TP_FLAG_MIN ? tpMedian(v) : null; }
+function tpRack(units){
+  const tiles = METHODS.map(mt => {
+    const us = units.filter(u => u.method === mt.key); if (!us.length) return null;
+    const rows = [].concat(...us.map(u => u.rows)), rated = us.filter(u => u.stars != null);
+    return { key:mt.key, label:mt.label, n:us.length, cups:rows.length, rated:rated.length, heap:tpHeap(rated.map(u => u.stars)),
+      usual:{ ratio:tpUsual(rows, o => tendNum(o.brew_ratio)), tempF:tpUsual(rows, o => { const f = tendNum(o.brew_temp_f), c = tendNum(o.brew_temp_c); return f > 0 ? f : c > 0 ? c * 9 / 5 + 32 : null; }), grind:tpUsual(rows, o => tendNum(o.brew_grind_target_um)), time:tpUsual(rows, o => tendNum(o.brew_actual_time_s) || tendNum(o.brew_time_s)), water:tpUsual(rows, o => tendNum(o.brew_water_g)), dose:tpUsual(rows, o => tendNum(o.brew_dose_g)) } };
+  }).filter(Boolean).sort((a, b) => b.n - a.n || b.cups - a.cups || (a.label < b.label ? -1 : 1));
+  const mx = Math.max(0, ...tiles.map(t => t.heap.max));
+  return { n:units.length, tiles, unit:tpUnit(mx), ready:units.length >= TP_MIN_MORE.rack, top:tiles[0] || null };
+}
+/* Mix and match: pick which brewer to look at ('all' or a brewer key) and what to split by. One heap for each group and a dashed flag for the middle of all of them. */
+function tpMix(units, look, split){
+  const rated = units.filter(u => u.stars != null), pool = look && look !== 'all' ? rated.filter(u => u.method === look) : rated;
+  const splits = TP_SPLITS.map(([key, label]) => ({ key, label, groups:new Set(pool.map(u => u[key]).filter(Boolean)).size })).filter(s => s.groups >= 2);
+  const sp = splits.find(s => s.key === split) || splits[0] || null;
+  const looks = [{ key:'all', label:'All coffees', n:rated.length }].concat(METHODS.map(mt => ({ key:mt.key, label:mt.label, n:rated.filter(u => u.method === mt.key).length })).filter(l => l.n >= TP_FLAG_MIN).sort((a, b) => b.n - a.n));
+  if (!sp) return { ready:rated.length >= TP_MIN_MORE.mix, looks, splits, look:look || 'all', split:null, groups:[], ghost:null, say:'', unit:1 };
+  const vals = Array.from(new Set(pool.map(u => u[sp.key]).filter(Boolean))), withVal = pool.filter(u => u[sp.key]);
+  const groups = vals.map(v => ({ value:v, label:tendLabel(sp.key, v), n:withVal.filter(u => u[sp.key] === v).length, heap:tpHeap(withVal.filter(u => u[sp.key] === v).map(u => u.stars)) })).sort((a, b) => b.n - a.n || (a.label < b.label ? -1 : 1));
+  const all = tpHeap(withVal.map(u => u.stars)), ok = groups.filter(g => g.heap.enough).slice().sort((a, b) => b.heap.median - a.heap.median || b.n - a.n), who = look && look !== 'all' ? (METHODS.find(m => m.key === look) || {}).label + ' coffees' : 'coffees';
+  let say = 'Each group needs 3 coffees before it gets a middle.';
+  if (ok.length >= 2){ const hi = ok[0], lo = ok[ok.length - 1]; say = hi.heap.median === lo.heap.median ? 'Your ' + who + ' sit about the same in every ' + sp.label.toLowerCase() + ' group: the middle is ' + hi.heap.median + '.' : 'Your ' + who + ' sit highest in ' + hi.label + ' (middle ' + hi.heap.median + ') and lowest in ' + lo.label + ' (middle ' + lo.heap.median + ').'; }
+  return { ready:rated.length >= TP_MIN_MORE.mix, looks, splits, look:look || 'all', split:sp.key, splitLabel:sp.label, groups, ghost:all.median, unit:tpUnit(Math.max(0, ...groups.map(g => g.heap.max))), say, n:withVal.length };
+}
+/* Coffee street: home against the shops. homeStars = stars of the coffees you rated at home. bags = the prices list (gives a cost per cup). */
+function tpShops(store, cs, bags){
+  const st = store || shopStore(), ds = st.drinks, list = shopList(st), median = a => (a.length ? tpMedian(a) : null);
+  const homeStars = (cs || []).filter(c => c.stars != null).map(c => c.stars), beans = ds.map(d => d.beans).filter(b => b != null);
+  const syms = {}; ds.forEach(d => { if (d.price > 0) syms[d.sym] = (syms[d.sym] || 0) + 1; });
+  const sym = Object.keys(syms).sort((a, b) => syms[b] - syms[a])[0] || '$', prices = ds.filter(d => d.price > 0 && d.sym === sym).map(d => d.price);
+  const midPrice = median(prices), vs = shopVsHome({ sym, price:midPrice }, homeStars, bags);
+  const kinds = SHOP_KINDS.map(k => ({ kind:k.v, label:k.label, n:ds.filter(d => d.kind === k.v).length })).filter(k => k.n).sort((a, b) => b.n - a.n);
+  const worths = SHOP_WORTHS.map(w => ({ worth:w.v, label:w.label, n:ds.filter(d => d.worth === w.v).length }));
+  const places = {}; list.forEach(s => { const t = shopPlaceText(s) || 'No place saved'; (places[t] || (places[t] = { place:t, shops:0, visits:0 })); places[t].shops++; places[t].visits += s.visits; });
+  const mx = Math.max(1, ...list.map(s => s.visits));
+  const detail = s => {
+    const mine = ds.filter(d => csKey({ name:d.shop, city:d.city, region:d.region, country:d.country }) === csKey(s)), bn = mine.map(d => d.beans).filter(b => b != null), pr = mine.filter(d => d.price > 0 && d.sym === sym).map(d => d.price), kc = {};
+    mine.forEach(d => { kc[d.kind] = (kc[d.kind] || 0) + 1; });
+    return Object.assign({ size:s.visits / mx, fav:mine.some(d => d.fav), mid:bn.length >= TP_FLAG_MIN ? tpMedian(bn) : null, price:pr.length ? tpMedian(pr) : null, kind:Object.keys(kc).sort((a, b) => kc[b] - kc[a])[0] || '' }, s);
+  };
+  return { n:ds.length, ready:ds.length >= TP_MIN_MORE.shops, sym, home:{ mid:median(homeStars), n:homeStars.length, cup:vs.homeCup }, shop:{ mid:median(beans), n:beans.length, cup:midPrice },
+    kinds, worths, favs:ds.filter(d => d.fav).length, street:list.slice(0, 5).map(detail), more:Math.max(0, list.length - 5), moreVisits:list.slice(5).reduce((a, x) => a + x.visits, 0), rest:list.slice(5).map(detail), shops:list.length,
+    places:Object.keys(places).map(k => places[k]).sort((a, b) => b.visits - a.visits || (a.place < b.place ? -1 : 1)), top:list[0] || null };
+}
+/* the three sentences under "What stands out": what you liked most, your best-rated group, your most visited shop */
+function tpStand(h){
+  const out = [];
+  if (h.garden.ready && h.garden.best){ const b = h.garden.best; out.push({ art:'art-cf-flavor', go:'flavors', text:'You liked ' + b.family.toLowerCase() + ' in ' + b.liked + ' of ' + h.garden.n + ' coffees, more than any other flavor family.' }); }
+  let top = null;
+  if (h.kinds.ready) h.kinds.feats.forEach(f => f.rows.forEach(r => { if (r.heap.enough && (!top || r.heap.median > top.r.heap.median || (r.heap.median === top.r.heap.median && r.n > top.r.n))) top = { f, r }; }));
+  if (top) out.push({ art:'art-proc', go:'kinds', text:'Your ' + top.f.label.toLowerCase() + ' group with the highest middle is ' + top.r.label + ': ' + top.r.heap.median + (top.r.heap.median === 1 ? ' bean' : ' beans') + ' across ' + top.r.n + ' coffees.' });
+  if (h.shops.ready && h.shops.top) out.push({ art:'s-shop', go:'shops', text:'You went to ' + h.shops.top.name + ' most: ' + h.shops.top.visits + (h.shops.top.visits === 1 ? ' time.' : ' times.') });
+  return out;
+}
+/* everything the Tendencies home needs. tiles say what each picture needs when it is not ready. */
+function tpHub(objs, store, bags){
+  const a = tpAvailable(objs), cs = a.cs, units = tpUnits(cs), garden = tpGarden(a.flavors, cs), glow = tpGlow(a.enjoy), jar = tpJar(a.rating), kinds = tpKinds(cs), rings = tpRings(a.map), rack = tpRack(units), mix = tpMix(units, 'all', null), shops = tpShops(store, cs, bags);
+  const ready = { flavors:garden.ready, enjoy:glow.ready, rate:jar.ready, kinds:kinds.ready, brews:rings.ready, shops:shops.ready, brewers:rack.ready, mix:mix.ready && mix.splits.length > 0 };
+  const need = { flavors:Math.max(0, TP_MIN.flavors - a.flavors.n) + ' more coffees with flavors saved', enjoy:Math.max(0, TP_MIN.enjoy - a.enjoy.n) + ' more Quick tastings', rate:Math.max(0, TP_MIN.rate - a.rating.n) + ' more rated coffees', kinds:a.groups.n >= TP_MIN.groups ? 'rated coffees from at least two different roasts, processes or elevations' : (TP_MIN.groups - a.groups.n) + ' more rated coffees',
+    brews:Math.max(0, TP_MIN.map - a.map.n) + ' more measured brews', shops:'a coffee shop drink', brewers:Math.max(0, TP_MIN_MORE.rack - rack.n) + ' more coffees with a brewer', mix:mix.looks[0].n >= TP_MIN_MORE.mix ? 'rated coffees from at least two different roasts, processes or elevations' : (TP_MIN_MORE.mix - mix.looks[0].n) + ' more rated coffees' };
+  const h = { a, cs, units, garden, glow, jar, kinds, rings, rack, mix, shops, ready, need, freckles:tpFreckles(a.flavors), line:tpBeanLine(a.flavors) };
+  h.stand = tpStand(h); h.any = a.any || shops.ready || rack.ready;
+  return h;
+}
+/* ---------- Tendencies pictures, part two ----------
+   Same honesty rules as 51-tendency-pictures.js: the unit is a coffee, stars are the person's own, counts not averages, and a flag (the middle) needs 3 coffees. The numbers here only say what was rated and written; they are not rules about coffee. */
+const TP_FLAG_MIN = 3;
+const TP_UNITS = [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000];
+const TP_ADJ = { 'Basic tastes':'clean', Fruit:'fruity', Floral:'floral', Sweet:'sweet', 'Nutty and cocoa':'nutty', Spice:'spicy', Roasted:'roasty', 'Green and earthy':'earthy', Fermented:'winey' };
+const TP_FAMILY_ORDER = ['Fruit', 'Floral', 'Sweet', 'Nutty and cocoa', 'Spice', 'Roasted', 'Green and earthy', 'Fermented', 'Basic tastes', 'Off-flavors'];
+/* the smallest unit (1 bean = unit coffees) that keeps the tallest pile at cap beans or fewer */
+function tpUnit(max, cap){ cap = cap || 12; return TP_UNITS.find(u => max / u <= cap) || 1000; }
+function tpHue(family){ const f = FLAVOR_WHEEL.find(x => x.name === family); return f ? f.hue : null; }
+/* One flower for each family. tasted = coffees that had any word in the family; the face says how often the words were on the liked side (smile from 60 %, flat from 40 %, droop below). */
+function tpGarden(fl, cs){
+  const by = {}; fl.rows.forEach(r => { by[r.family] = r; });
+  const flowers = TP_FAMILY_ORDER.map(name => {
+    const r = by[name] || { family:name, liked:0, notLiked:0, tasted:0, topLiked:[], topNot:[] }, said = r.liked + r.notLiked, share = said ? r.liked / said : null;
+    const coffees = (cs || []).filter(c => c.hasFlavors).map(c => ({ name:c.name, stars:c.stars, liked:c.liked.filter(w => tpFamilyOf(w) === name), not:c.notLiked.filter(w => tpFamilyOf(w) === name) })).filter(c => c.liked.length || c.not.length);
+    return { family:name, hue:tpHue(name), tasted:r.tasted, liked:r.liked, notLiked:r.notLiked, share, mood:share == null ? 'none' : share >= 0.6 ? 'smile' : share >= 0.4 ? 'flat' : 'droop', topLiked:r.topLiked, topNot:r.topNot, coffees };
+  });
+  const other = by[TP_OTHER] || null;
+  return { n:fl.n, ready:fl.ready, flowers, maxTasted:Math.max(1, ...flowers.map(f => f.tasted)), other:other ? other.tasted : 0, best:flowers.filter(f => f.liked > 0).sort((a, b) => b.liked - a.liked || b.tasted - a.tasted)[0] || null };
+}
+/* the freckles on your bean: the families you tasted most, biggest first (at most 7) */
+function tpFreckles(fl){
+  const rows = fl.rows.filter(r => r.family !== TP_OTHER && r.tasted > 0).slice().sort((a, b) => b.tasted - a.tasted || (a.family < b.family ? -1 : 1)).slice(0, 7), mx = Math.max(1, ...rows.map(r => r.tasted));
+  return rows.map(r => ({ family:r.family, hue:tpHue(r.family), tasted:r.tasted, size:r.tasted / mx }));
+}
+/* "Fruity and sweet, mostly": the two families with the most liked coffees */
+function tpBeanLine(fl){
+  const top = fl.rows.filter(r => r.liked > 0 && TP_ADJ[r.family]).sort((a, b) => b.liked - a.liked || b.tasted - a.tasted).slice(0, 2).map(r => TP_ADJ[r.family]);
+  if (!top.length) return '';
+  const s = top.join(' and ') + ', mostly';
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+/* The cup glow: how many coffees you said Good about each part of the cup. share = Good out of the coffees where you answered (Couldn't tell counts as answered). */
+function tpGlow(e){
+  const parts = e.rows.map(r => ({ key:r.key, label:r.label, good:r.good, okay:r.okay, notgood:r.notgood, unsure:r.unsure, answered:r.answered, share:r.answered ? r.good / r.answered : 0 }));
+  const best = parts.filter(p => p.good > 0).sort((a, b) => b.share - a.share || b.good - a.good)[0] || null, weak = parts.filter(p => p.notgood > 0).sort((a, b) => b.notgood - a.notgood)[0] || null;
+  return { n:e.n, ready:e.ready, parts, best, weak };
+}
+/* How big one bean in the jar is. One bean is one coffee until the jar would pass 10 rows; then a big bean is a unit of coffees and a small bean is one. */
+function tpJarUnit(counts){
+  const vals = [5, 4, 3, 2, 1].map(s => counts[s] || 0);
+  if (vals.reduce((a, c) => a + Math.ceil(c / 5), 0) <= 10) return 1;
+  return TP_UNITS.slice(1).find(u => vals.reduce((a, c) => a + Math.ceil(Math.floor(c / u) / 4) + (c % u ? 1 : 0), 0) <= 10) || 1000;
+}
+/* the jar: layers from 5 stars down to 1, each with its coffees, big beans and small beans */
+function tpJar(r){
+  const counts = {}; r.bars.forEach(b => { counts[b.star] = b.n; });
+  const unit = tpJarUnit(counts);
+  const layers = [5, 4, 3, 2, 1].map(s => { const n = counts[s] || 0; return { star:s, n, big:unit === 1 ? n : Math.floor(n / unit), small:unit === 1 ? 0 : n % unit }; });
+  const top = layers.slice().sort((a, b) => b.n - a.n || b.star - a.star)[0];
+  return { n:r.n, ready:r.ready, narrow:r.narrow, unit, layers, top:top && top.n ? top : null };
+}
+/* One pile of beans for each whole star. Half stars count with the whole star above, as everywhere else. The middle (the flag) and the middle half show from 3 coffees. */
+function tpHeap(stars){
+  const counts = [0, 0, 0, 0, 0], bin = (stars || []).map(s => Math.min(5, Math.max(1, Math.ceil(s - 1e-9))));
+  bin.forEach(b => { counts[b - 1]++; });
+  const n = bin.length, s = bin.slice().sort((a, b) => a - b), enough = n >= TP_FLAG_MIN;
+  return { counts, n, enough, median:enough ? tpMedian(s) : null, band:enough ? [s[Math.floor((n - 1) * 0.25)], s[Math.min(n - 1, Math.round((n - 1) * 0.75))]] : null, max:Math.max(0, ...counts) };
+}
+/* Ratings by roast, process, elevation, origin and variety as heaps. One unit for the whole feature so the piles can be compared; the dashed flag is the middle of all your rated coffees. */
+function tpKinds(cs){
+  const g = tpGroups(cs), all = tpHeap(cs.filter(c => c.stars != null).map(c => c.stars));
+  const feats = g.feats.map(f => {
+    const rows = f.rows.map(r => ({ value:r.value, label:r.label, n:r.n, heap:tpHeap(r.stars), names:r.names }));
+    return { key:f.key, label:f.label, rows, hidden:f.hidden, unit:tpUnit(Math.max(...rows.map(r => r.heap.max))) };
+  });
+  return { n:g.n, ready:g.ready, feats, ghost:all.median };
+}
+/* the common target on the strength and extraction chart (the same box as the Dial-in chart) */
+function tpMapBox(kind){ return kind === 'espresso' ? { x0:18, x1:22, y0:8, y1:12 } : { x0:18, x1:22, y0:1.15, y1:1.35 }; }
+/* Brews as cup rings. Brews that land in the same small square share one ring that grows with the count. Each ring keeps its stars so a bean can sit on it. */
+function tpRings(m){
+  return { n:m.n, ready:m.ready, kinds:m.kinds.map(k => {
+    const bx = tpMapBox(k.kind), sx = 1, sy = k.kind === 'espresso' ? 0.5 : 0.05, cells = {};
+    k.pts.forEach(p => { const a = Math.round(p.ey / sx), b = Math.round(p.tds / sy), id = a + ',' + b; (cells[id] || (cells[id] = { ey:0, tds:0, stars:[], names:[] })); const c = cells[id]; c.ey += p.ey; c.tds += p.tds; c.stars.push(p.stars); c.names.push(p.name); });
+    const rings = Object.keys(cells).map(id => { const c = cells[id], n = c.stars.length, rated = c.stars.filter(x => x > 0); return { ey:c.ey / n, tds:c.tds / n, count:n, stars:c.stars, rated:rated.length, names:c.names, mid:rated.length ? tpMedian(rated) : null }; });
+    const inBox = k.pts.filter(p => p.ey >= bx.x0 && p.ey <= bx.x1 && p.tds >= bx.y0 && p.tds <= bx.y1), liked = k.pts.filter(p => p.stars >= 4);
+    return { kind:k.kind, n:k.pts.length, rings, box:bx, inBox:inBox.length, inBoxLiked:inBox.filter(p => p.stars >= 4).length, liked:liked.length, rated:k.pts.filter(p => p.stars > 0).length };
+  }) };
 }
 /* ---------- wheel colors: every family gets its own clear color ---------- */
 const FAM_COLORS = {
@@ -5879,7 +6117,7 @@ function cmpFmt(key, v){
 }
 /* one saved row as a cup of its method; null when it is not a brew with a known method */
 function cmpCup(o){
-  const mt = METHODS.find(x => x.key === String(o.brew_method || '')); if (!mt) return null;
+  const mt = tpMethodOf(o); if (!mt) return null;
   const n = k => { const v = parseFloat(o[k]); return isFinite(v) ? v : null; }, pos = k => { const v = n(k); return v != null && v > 0 ? v : null; };
   const setting = unneutralize(String(o.brew_grind_setting || '')).trim(), um = pos('brew_grind_target_um'), sm = setting.match(/-?\d+(\.\d+)?/);
   const grindNum = sm ? parseFloat(sm[0]) : um, grindText = setting || (um ? 'about ' + Math.round(um) + ' µm' : '');
@@ -6275,8 +6513,9 @@ const GUIDE_SECTIONS = [
       'The Coffee shops screen in the Menu lists every drink, your shops with how many times you went, and your Favorites, with a search. Your drinks are kept in this browser and in a small file of their own under Menu, My files. It is not your tasting history, and loading it only adds drinks.'],
     tips:['Your home coffee waits while you log a shop drink. Starting a fresh coffee is what throws it away, and it asks twice.', 'A draft left alone for 3 hours opens on the first screen next time. It is not deleted.'] },
   { id:'learn', title:'Your tendencies and understanding coffee', lead:'What you like, and how to shop for it.',
-    paras:['Your tendencies is also its own row in the menu, so you can open it any time. It draws pictures from your saved history. They show the flavors you liked and did not like, what you enjoy about a cup, and how you use the stars. They also show how you rate kinds of coffee and where your measured brews landed.',
-      'Each bar counts coffees, and each dot is one coffee, so you can check every one. A picture appears when there is enough to draw. New shows one picture and folds the rest. Comfortable folds each card with a Why? note. Expert shows everything open, with ranges and a table you can save.',
+    paras:['Your tendencies is its own tile in the menu, under About me. It opens on your bean, a drawing that grows a freckle for every flavor family you taste. The pictures come from your saved history and your coffee shop drinks. "Look at" at the top lets you read all your coffees, or only the newest ones.',
+      'Flavor garden is one flower for each flavor family: taller for more coffees, and the face shows how often you liked it. What you enjoy is a cup that glows brighter for the parts you called Good. Bean jar holds one bean for each coffee you rated, the best on top. Kinds of coffee piles beans into a heap for each roast, process, elevation, origin or varietal, with a flag at the middle rating. Your brews stains a sheet of paper with a ring for each measured brew. Coffee street sets your cups at home beside your cups in shops. Your brew rack counts how often you used each brewer. Mix and match asks questions such as whether your V60 coffees did better at higher elevations.',
+      'Every picture counts coffees, not cups, and every flower, part, bean, ring and shop can be tapped to see the coffees behind it. A picture appears when there is enough to draw, and the home says what each one still needs. A flag at the middle needs 3 coffees. Just Starting keeps each page short. Comfy Brewer adds a Why? note to each page. Bean Scientist adds the exact numbers and a table you can save.',
       'After you have tasted five different coffees, BeanTelligence can show which details your higher-scored coffees share (roast, process, elevation, origin, varietal). It also shows how sure that is, and what to look for on a bag. Cups of the same coffee are averaged first, so brewing one coffee five times does not count as five coffees.',
       'This describes what you scored, not what is true of the coffee. Taste is personal, and a handful of coffees is a small sample. The same screen explains what every detail on a bag means, and compares two things side by side.',
       'Solid or folklore? is in the menu under Learn. It takes common brewing advice and gives each claim one verdict: Solid, Partly supported, Practice only or Not supported. Tap a claim to see what the research found, what it does not show, what BeanTelligence does about it, and the sources. A verdict is about the claim as people phrase it. One study is never treated as proof, and a verdict can change when new research appears.',
@@ -7752,6 +7991,30 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 64,
+  "at": "2026-10-12T04:59:26Z",
+  "date": "2026-10-12",
+  "title": "Brew rack and brew map fix",
+  "notes": [
+   "Your brew rack and Your brews now find the brewer in your saved coffees. They were counting every coffee as having no brewer, because the app saves the brewer by name and the pictures were looking for a short code.",
+   "The Compare screen's Across methods card reads your saved brewers the same way.",
+   "When the brew rack needs more coffees it now says how many, instead of showing NaN."
+  ]
+ },
+ {
+  "release": 63,
+  "at": "2026-10-12T04:11:31Z",
+  "date": "2026-10-12",
+  "title": "Your tendencies, redrawn",
+  "notes": [
+   "Your tendencies is now its own tile in the Menu, under About me, and opens on your bean: a drawing that grows a freckle for every flavor family you taste.",
+   "Six new pictures, each drawn for BeanTelligence: a flavor garden, a cup that glows for what you enjoy, a bean jar for your ratings, bean heaps for roast, process, elevation, origin and varietal, cup rings for your measured brews, and a coffee street that sets home against the shops.",
+   "Your brew rack counts how often you used each brewer, and Mix and match lets you pick two things, such as a brewer and an elevation, and see how your own coffees did.",
+   "Every flower, part of the cup, bean, ring and shop can be tapped to see the coffees behind it. Each page says what it still needs, and a flag at the middle shows from three coffees.",
+   "Look at lets you read all your coffees or only the newest. Just Starting keeps each page short, Comfy Brewer adds a Why? note, and Bean Scientist adds the exact numbers and a table you can save."
+  ]
+ },
+ {
   "release": 62,
   "at": "2026-10-12T01:21:29Z",
   "date": "2026-10-12",
@@ -8916,7 +9179,7 @@ function loadDraft(){
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
     const ok = ['door','shop','sdrink','staste','sperfect','shops','start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','tend','guide','tools','yield','ratio','cost','prices','tastes','wheels','chart','folk'];
-    a.screen = ok.includes(src.screen) ? src.screen : 'door';
+    a.screen = ok.includes(src.screen) ? src.screen : /^tp[a-z]+$/.test(String(src.screen)) ? 'tend' : 'door';   /* a Tendencies page opens its home again */
     a.resume = TRAIL_HOME.includes(src.resume) ? src.resume : (TRAIL_HOME.includes(src.screen) ? src.screen : ['change', 'ready', 'timer'].includes(src.screen) ? 'recipe' : '');   /* where Keep brewing returns to */
     if (isFinite(d.at) && d.at > 0 && d.at <= Date.now() + 60000){ draftAt = d.at; if (Date.now() - d.at > DRAFT_STALE_MS) a.screen = 'door'; }   /* untouched for 3 hours: open on the first screen, the draft stays */
     /* a saved timer comes back only if it is recent: running for under 45 minutes in all, or paused within the last 30 minutes */
@@ -8977,6 +9240,7 @@ const PARENT = {
   tastes:() => (tastesFrom && tastesFrom !== 'tastes' && tastesFrom !== 'timer') ? tastesFrom : (app.coffee.name ? 'coffee' : 'door'),
   folk:() => (folkFrom && folkFrom !== 'folk' && folkFrom !== 'timer') ? folkFrom : (app.coffee.name ? 'coffee' : 'door'),
   tend:() => (tendFrom && tendFrom !== 'tend' && tendFrom !== 'timer') ? tendFrom : (app.coffee.name ? 'coffee' : 'door'),
+  tpflavors:'tend', tpenjoy:'tend', tprate:'tend', tpkinds:'tend', tpbrews:'tend', tpshops:'tend', tpbrewers:'tend', tpmix:() => tpMixFrom === 'tpbrewers' ? 'tpbrewers' : 'tend',
   guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'door'),
   compare:() => (cmpFrom && cmpFrom !== 'compare' && cmpFrom !== 'timer') ? cmpFrom : (app.coffee.name ? 'coffee' : 'door'),
   tools:() => (toolsFrom && toolsFrom !== 'tools' && toolsFrom !== 'yield' && toolsFrom !== 'ratio' && toolsFrom !== 'cost' && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'door'), yield:'tools', ratio:'tools', cost:'tools',
@@ -9029,6 +9293,7 @@ function render(){
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
   const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Tools', yield:'Cup yield', ratio:'Ratio planner', cost:'Cost of coffee', prices:'Coffee prices', tastes:'Taste your tastes', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', about:'About', files:'My files' };
+  Object.assign(titles, TP_TITLES);
   $('topTitle').textContent = sc === 'start' || sc === 'door' || sc === 'shop' ? '' : (titles[sc] || 'BeanTelligence');
   SCREENS[sc](m);
   refreshAll();
@@ -10352,7 +10617,7 @@ function tendencyRow(gr){
 function picturesCard(){
   const sm = tpSummary(history && history.objs ? history.objs : []);
   return h('div', { class:'card', id:'learnPics' }, h('h3', { text:'From your ratings and Quick tastings' }),
-    sm.lines.length ? sm.lines.map(l => h('p', { class:'serif', style:'margin:6px 0 0', text:l })) : h('p', { class:'serif', style:'margin:4px 0 0', text:'Pictures of your flavors, ratings and measured brews appear as you rate coffees.' }),
+    sm.lines.length ? sm.lines.map(l => h('p', { class:'serif', style:'margin:6px 0 0', text:l })) : h('p', { class:'serif', style:'margin:4px 0 0', text:'Pictures of your flavors, ratings, brews and shops appear as you rate coffees.' }),
     h('p', { class:'fine', style:'margin:6px 0 8px', text:'So far, from the coffees you have saved. These are counts, not rules.' }),
     h('button', { type:'button', class:'btn block', id:'tendOpen', text:'See your tendencies', onclick:goTend }));
 }
@@ -10512,145 +10777,50 @@ function screenTastes(m){
 /* ---------- screen: tendencies ---------- */
 let tendFrom = '';
 function goTend(){ if (app.screen !== 'tend') tendFrom = app.screen === 'timer' ? 'ready' : app.screen; go('tend'); }
-const TP_ICON = { flavors:'drop', enjoy:'smile', rating:'bars', groups:'cols', map:'flask' };
-const TP_CAUTION = 'These pictures describe what you rated and wrote. They are not rules about coffee. A few coffees is a small sample, and details overlap.';
-/* title, the question it answers, and how it is counted */
-const TP_TEXT = {
-  flavors:{ title:'Flavors you liked and did not like', q:'Which kinds of flavor do you enjoy?',
-    why:'Each bar counts coffees, not cups or words. A coffee counts once for a family, even if you ticked several words in it. Words are grouped into the families on the flavor wheels. Words that match none are under Other words. This shows the words you chose, not what is in the coffee.' },
-  enjoy:{ title:'What you enjoy about a cup', q:'Is it the smell, taste, aftertaste, acidity, sweetness or body?',
-    why:'Each bar counts coffees where you answered Good or Not good in a Quick tasting. Okay and Couldn’t tell are not drawn. Each coffee uses the newest tasting that has answers.' },
-  rating:{ title:'How you rate', q:'Do you use the whole scale?',
-    why:'This counts coffees by their star rating. When a coffee has several tastings, its stars are averaged. A half star is counted with the whole star above it.' },
-  groups:{ title:'How you rate kinds of coffee', q:'Do you rate some kinds of coffee higher?',
-    why:'One dot is one coffee at its star rating. From 3 coffees in a group, the tall mark is the middle rating (the median) and the grey line is the range. Smaller groups show dots only. This is not a test. Details overlap: a natural is often also an Ethiopian.' },
-  map:{ title:'Where your measured brews landed', q:'Where are the brews you liked on the strength and extraction chart?',
-    why:'Each dot is one brew with a TDS reading and an extraction. The shaded box is a common target. It is a convention, not a rule, and people differ in where they like coffee. Filled dots are brews you rated 4 or 5 stars.' }
-};
-const tpFmt = x => (Math.round(x * 10) / 10).toString();
-const tpOf = (n, total, noun) => n + ' of ' + total + ' ' + noun;
-/* one plain sentence under each picture */
-function tpPlain(id, a){
-  if (id === 'flavors'){
-    const top = (side) => a.flavors.rows.filter(r => r[side] > 0 && r.family !== TP_OTHER).sort((x, y) => y[side] - x[side])[0];
-    const l = top('liked'), nl = top('notLiked');
-    return (l ? 'So far, ' + l.family.toLowerCase() + ' is what you liked most (' + tpOf(l.liked, a.flavors.n, 'coffees') + ').' : 'You have not marked a flavor as liked yet.') + (nl ? ' ' + nl.family + ' is the family you did not like most often (' + tpOf(nl.notLiked, a.flavors.n, 'coffees') + ').' : '');
-  }
-  if (id === 'enjoy'){
-    const g = a.enjoy.rows.slice().sort((x, y) => y.good - x.good)[0], b = a.enjoy.rows.slice().sort((x, y) => y.notgood - x.notgood)[0];
-    return (g && g.good ? 'So far, the ' + g.label.toLowerCase() + ' is what you said Good about most (' + tpOf(g.good, a.enjoy.n, 'coffees') + ').' : 'You have not answered Good yet.') + (b && b.notgood ? ' You said Not good about the ' + b.label.toLowerCase() + ' most (' + tpOf(b.notgood, a.enjoy.n, 'coffees') + ').' : '');
-  }
-  if (id === 'rating'){
-    const r = a.rating, top = r.bars.slice().sort((x, y) => y.n - x.n)[0];
-    return 'Most of your coffees are at ' + top.star + (top.star === 1 ? ' star' : ' stars') + ' (' + tpOf(top.n, r.n, 'rated coffees') + ').' + (r.narrow ? ' Your ratings sit in a narrow band so far. Using more of the scale makes the other pictures easier to read.' : '');
-  }
-  if (id === 'groups') return 'Each dot is one coffee. Look at one kind at a time. A group with fewer than 3 coffees shows dots only.';
-  return 'Filled dots are brews you rated 4 or 5 stars. Hollow dots are rated lower. Small grey rings are not rated.';
-}
-/* the body of one picture */
-function tpBody(id, a, expert, st){
-  if (id === 'flavors'){
-    const f = a.flavors, rows = f.rows.map(r => ({ label:r.family, left:r.notLiked, right:r.liked, say:r.family + ': liked in ' + r.liked + ' of ' + f.n + ' coffees, not liked in ' + r.notLiked }));
-    const out = [h('p', { class:'fine', style:'margin:0 0 6px', text:'Based on ' + f.n + ' coffees with flavors saved.' }), tpDiverge(rows, f.max, 'Not liked', 'Liked', 'Flavor families, liked and not liked')];
-    out.push(h('p', { class:'fine tpwords', text:f.rows.filter(r => r.topLiked.length || r.topNot.length).slice(0, 6).map(r => r.family + ': ' + (r.topLiked.length ? 'liked ' + r.topLiked.join(', ') : '') + (r.topLiked.length && r.topNot.length ? '; ' : '') + (r.topNot.length ? 'not liked ' + r.topNot.join(', ') : '')).join('. ') + '.' }));
-    if (expert) out.push(h('div', { class:'tpnums' }, h('b', { text:'Numbers' }), f.rows.map(r => h('p', { class:'fine', style:'margin:2px 0 0', text:r.family + ': liked in ' + tpOf(r.liked, f.n, 'coffees') + ' (95% range ' + tpPct(r.likedCI.lo) + ' to ' + tpPct(r.likedCI.hi) + '%), not liked in ' + r.notLiked + '.' }))));
-    return out;
-  }
-  if (id === 'enjoy'){
-    const e = a.enjoy, rows = e.rows.map(r => ({ label:r.label, left:r.notgood, right:r.good, say:r.label + ': Good for ' + r.good + ' coffees, Not good for ' + r.notgood + ', Okay for ' + r.okay + ', Couldn’t tell for ' + r.unsure }));
-    const out = [h('p', { class:'fine', style:'margin:0 0 6px', text:'Based on ' + e.n + ' Quick tastings.' }), tpDiverge(rows, e.max, 'Not good', 'Good', 'What you enjoy about a cup')];
-    if (expert) out.push(h('div', { class:'tpnums' }, h('b', { text:'Numbers' }), e.rows.map(r => h('p', { class:'fine', style:'margin:2px 0 0', text:r.label + ': Good ' + r.good + ', Okay ' + r.okay + ', Not good ' + r.notgood + ', Couldn’t tell ' + r.unsure + '.' }))));
-    return out;
-  }
-  if (id === 'rating') return [h('p', { class:'fine', style:'margin:0 0 6px', text:'Based on ' + a.rating.n + ' rated coffees.' }), tpStarBars(a.rating)];
-  if (id === 'groups'){
-    const g = a.groups, feat = g.feats.find(x => x.key === st.feat) || g.feats[0], holder = h('div', { class:'tpholder' });
-    const seg = h('div', { class:'field inl' }, h('label', { for:'tpFeat', text:'Group the coffees by' }));
-    const fsel = h('select', { id:'tpFeat', class:'plain' }, g.feats.map(F => h('option', { value:F.key, text:F.label })));
-    fsel.value = feat.key; fsel.addEventListener('change', () => { st.feat = fsel.value; paint(); }); seg.append(fsel);
-    function paint(){
-      const cur = g.feats.find(x => x.key === st.feat) || g.feats[0];
-      holder.textContent = '';
-      holder.append(...kept(h('p', { class:'fine', style:'margin:6px 0', text:'Based on ' + cur.coffees + ' rated coffees' + (cur.coffees < g.n ? ' that have this detail (of ' + g.n + ' rated)' : '') + '.' }), tpDots(cur, expert),
-        cur.hidden ? h('p', { class:'fine', text:cur.hidden + ' smaller ' + (cur.hidden === 1 ? 'group is' : 'groups are') + ' not shown.' }) : null));
-    }
-    paint();
-    return [seg, holder];
-  }
-  const out = [h('p', { class:'fine', style:'margin:0 0 6px', text:'Based on ' + a.map.n + ' measured brews.' })];
-  a.map.kinds.forEach(k => { const box = h('div', { class:'ecchart tpmap', id:'tpmap-' + k.kind }); box.innerHTML = tpBrewMap(k); out.push(h('p', { class:'fine', style:'margin:8px 0 2px', text:(k.kind === 'espresso' ? 'Espresso' : 'Filter and immersion') + ': ' + k.pts.length + (k.pts.length === 1 ? ' brew' : ' brews') + '. Across is extraction, up is TDS. The shaded box is a common target, not a rule.' }), box); });
-  return out;
-}
-/* which pictures are drawn, and what the others need */
-function tpPictures(a){
-  const order = ['flavors', 'enjoy', 'rating', 'groups', 'map'];
-  return order.filter(id => a.list.find(x => x.id === id).ready);
-}
-function tpPending(a, lvl){
-  const rest = a.list.filter(x => !x.ready);
-  if (!rest.length) return null;
-  if (lvl === 'new'){
-    const next = rest.filter(x => x.need > 0).sort((x, y) => x.need - y.need)[0];
-    return next ? h('p', { class:'fine', id:'tpNext', text:next.need + ' more ' + next.noun + ' and the next picture appears.' }) : null;
-  }
-  return plainFold('tpPending', 'Not drawn yet', rest.length + (rest.length === 1 ? ' picture needs' : ' pictures need') + ' more coffees', 'clock', h('p', { class:'fine', style:'margin:2px 0 6px', text:'A picture appears when there is enough to draw. Nothing is guessed from fewer.' }),
-    rest.map(x => h('p', { class:'serif gp', style:'margin:4px 0 0' }, h('b', { style:'font-family:var(--ui);font-weight:600', text:TP_TEXT[x.id].title + ': ' }), x.need > 0 ? 'needs ' + x.need + ' more ' + x.noun + ' (you have ' + x.n + ').' : 'needs rated coffees that differ in a bag detail, such as two processes.')));
-}
 async function tpDownload(status){
-  const text = tpCsv(history && history.objs ? history.objs : []), name = 'beantelligence-tendencies.csv';
+  const text = tpCsv(tpObjs()), name = 'beantelligence-tendencies.csv';
   try {
     if (inClaude()){ const dl = await getDownloads(); if (!dl) throw new Error('no downloads'); await dl.save({ filename:name, data:text }); }
     else plainDownload(text, name);
     status.textContent = 'Saved ' + name + '.';
   } catch(e){ status.textContent = 'This view could not save the table. Open BeanTelligence in your browser and try again.'; }
 }
+function tpTiles(d){
+  const tall = d.garden.flowers.slice().sort((a, b) => b.tasted - a.tasted)[0], t = d.need;
+  return [
+    { id:'tpTileFlavors', go:'tpflavors', title:'Flavor garden', ready:d.ready.flavors, need:t.flavors, line:tall && tall.tasted ? 'One flower per family. ' + tall.family + ' grows tallest.' : 'One flower per flavor family.', pic:tpMiniGarden(d.garden) },
+    { id:'tpTileEnjoy', go:'tpenjoy', title:'What you enjoy', ready:d.ready.enjoy, need:t.enjoy, line:d.glow.best ? d.glow.best.label + ' glows brightest.' : 'Which part of the cup glows.', pic:tpMiniCup(d.glow) },
+    { id:'tpTileRate', go:'tprate', title:'Bean jar', ready:d.ready.rate, need:t.rate, line:d.jar.top ? 'The best beans float up. Most sit at ' + d.jar.top.star + '.' : 'The best beans float up.', pic:tpMiniJar(d.jar) },
+    { id:'tpTileKinds', go:'tpkinds', title:'Kinds of coffee', ready:d.ready.kinds, need:t.kinds, line:'A heap for each kind, a flag at the middle.', pic:tpMiniHeaps(d.kinds) },
+    { id:'tpTileBrews', go:'tpbrews', title:'Your brews', ready:d.ready.brews, need:t.brews, line:'Where your cups land, stained like a cup ring.', pic:tpMiniRings() },
+    { id:'tpTileShops', go:'tpshops', title:'Coffee street', ready:d.ready.shops, need:t.shops, line:'Home against the shops, one storefront each.', pic:tpMiniStreet() }
+  ].map(tpTile);
+}
 function screenTend(m){
-  const lvl = level(), expert = lvl === 'expert', objs = history && history.objs ? history.objs : [], a = tpAvailable(objs), st = { feat:'' };
-  m.append(hubHero('Your tendencies', 'Pictures of what you rate and write about your coffees. Each bar counts coffees, and each dot is one coffee, so you can check every one.', false, 'bars'));
-  if (!a.coffees){
-    const emp = tband('Nothing to show yet', { tan:'Empty' }, null, null, h('p', { class:'serif', style:'margin:0', text:'Rate a few coffees and tick the flavors you liked, and pictures appear here.' }),
-      h('p', { class:'fine', style:'margin:8px 0 0', text:'They come from your saved history. Open your history file from the first screen, or save a tasting, and they will appear.' }));
-    emp.id = 'tpEmpty'; m.append(emp);
-    m.append(tpPending(a, 'comfortable'));
-  } else {
-    const ids = tpPictures(a), card = (id, open, extra) => {
-      const T = TP_TEXT[id], body = tpBody(id, a, expert, st), plain = h('p', { class:'serif tpplain', text:tpPlain(id, a) });
-      const why = lvl === 'new' ? null : h('details', { class:'tpwhy' }, h('summary', { text:expert ? 'How this is counted' : 'Why?' }), h('p', { class:'serif gp', text:T.why }));
-      const isNums = n => n && n.classList && n.classList.contains('tpnums'), nodes = [].concat(body.filter(n => !isNums(n)), [plain], body.filter(isNums), [why]);   /* the plain sentence comes before the Expert numbers */
-      if (lvl === 'comfortable') return gcard(T.title, T.q, nodes, open, TP_ICON[id]);
-      const tb = tband(T.title, { tan:'Your coffees' }, T.q, null, ...nodes); tb.id = 'tp-' + id; tb.classList.add('tpcard'); return tb;
-    };
-    if (!ids.length) { const none = tband('Not enough yet to draw', { tan:'Soon' }, null, null, h('p', { class:'serif', style:'margin:0', text:'You have ' + a.coffees + (a.coffees === 1 ? ' coffee' : ' coffees') + ' saved. A picture appears when there is enough to draw, and nothing is guessed from fewer.' })); none.id = 'tpNone'; m.append(none); }
-    else if (lvl === 'new'){
-      m.append(card(ids[0], true));
-      if (ids.length > 1) m.append(gcard('More pictures', (ids.length - 1) + (ids.length === 2 ? ' more is ready' : ' more are ready'), ids.slice(1).map(id => card(id, false)), false));
-    } else ids.forEach((id, i) => m.append(card(id, i === 0)));
-    const pend = tpPending(a, lvl); if (pend) m.append(pend);
-    const status = h('p', { class:'fine', id:'tpDlStatus', role:'status', style:'margin:6px 0 0' });
-    m.append(gcard('The numbers behind these pictures', 'One row per coffee, as a spreadsheet file', [h('p', { class:'fine', style:'margin:0 0 8px', text:'Coffee, stars, bag details, liked and not liked flavors, and the six Quick answers. Your own history file is not changed.' }),
-      h('button', { type:'button', class:'btn block', id:'tpDownload', text:'Save the table (CSV)', onclick:() => tpDownload(status) }), status], expert));
+  const lvl = level(), d = tpNow(), n = d.cs.length, wide = (id, to, pic, title, line) => h('button', { type:'button', class:'tpwide', id, onclick:() => go(to) }, h('div', { class:'wp' }, pic), h('div', { style:'flex:1;min-width:0' }, h('b', { text:title }), h('span', { class:'ts2', text:line })), h('span', { class:'go', 'aria-hidden':'true' }, h('i')));
+  m.append(h('h1', { class:'sr-only', text:'Your tendencies' }));
+  /* your bean */
+  const keyDots = d.freckles.slice(0, 3).map(f => h('span', null, h('i', { style:'background:' + tpHsl(f.hue, 62, 66) }), f.family));
+  m.append(h('button', { type:'button', class:'tphero', id:'tpHero', onclick:() => go('tpflavors') }, tpArt(tpYourBean(lvl === 'new' ? 138 : 158, d.freckles)),
+    h('div', { style:'flex:1;min-width:0' }, h('h2', { text:'Your bean' }), h('p', { text:(d.line ? d.line + '. ' : '') + 'Your bean grows a freckle for every flavor family you taste.' }), keyDots.length ? h('div', { class:'tpkey', 'aria-label':'Your biggest freckles' }, keyDots) : null)));
+  m.append(h('div', { style:'height:14px' }), sayRow(n ? 'That is what ' + n + (n === 1 ? ' coffee says' : ' coffees say') + ' about you so far. Tap a freckle, a flower, a bean or a stain. Every picture opens up.' : 'Rate a few coffees and tick the flavors you liked. Your bean fills in, and a picture opens up as soon as it has enough.'));
+  if (history && history.objs && history.objs.length){
+    tpLookRow(m);
   }
-  m.append(h('p', { class:'fine', id:'tpCaution', text:TP_CAUTION }));
+  if (d.stand.length){
+    m.append(h('h2', { class:'tph2', text:'What stands out' }), h('div', { class:'tpcard tpstands', id:'tpStands' }, d.stand.map(s => h('button', { type:'button', class:'tpstand', onclick:() => go(s.go === 'flavors' ? 'tpflavors' : s.go === 'kinds' ? 'tpkinds' : 'tpshops') }, tpIcon(s.art, 44), h('span', { class:'tx', text:s.text }), h('i', { class:'tpchev', 'aria-hidden':'true' })))));
+  }
+  m.append(h('h2', { class:'tph2', text:'Look closer' }), h('div', { class:'tpgrid', id:'tpTiles' }, tpTiles(d)));
+  const rack = '<div style="display:flex;gap:2px;align-items:flex-end;padding-bottom:6px;border-bottom:5px solid #C79A66">' + ['v60', 'aeropress', 'chemex'].map(k => '<svg width="32" height="32" viewBox="0 0 64 64" aria-hidden="true"><use href="#m-' + k + '"/></svg>').join('') + '</div>';
+  const mix = '<div style="display:flex;align-items:center;gap:4px"><svg width="40" height="40" viewBox="0 0 64 64" aria-hidden="true"><use href="#m-v60"/></svg><svg width="26" height="14" viewBox="0 0 26 14" aria-hidden="true"><path d="M2 7 H24" stroke="#22120C" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 6"/></svg><svg width="40" height="40" viewBox="0 0 48 48" aria-hidden="true"><use href="#art-elev"/></svg></div>';
+  m.append(h('h2', { class:'tph2', text:'Ask your coffees' }), wide('tpWideRack', 'tpbrewers', tpArt(rack), 'Your brew rack', d.ready.brewers && d.rack.top ? 'You reach for the ' + d.rack.top.label + ' most: ' + d.rack.top.n + ' of ' + d.rack.n + ' coffees.' : 'How many times you used each brewer, and how it did.'),
+    wide('tpWideMix', 'tpmix', tpArt(mix), 'Mix and match', 'Did my V60 do better with higher elevations? Pick two things and see.'));
+  const status = h('p', { class:'fine', id:'tpDlStatus', role:'status', style:'margin:6px 0 0' });
+  m.append(gcard('The numbers behind these pictures', 'One row per coffee, as a spreadsheet file', [h('p', { class:'fine', style:'margin:0 0 8px', text:'Coffee, stars, bag details, liked and not liked flavors, and the six Quick answers. You can open it in any spreadsheet.' }),
+    h('button', { type:'button', class:'btn block', id:'tpDownload', text:'Save the table (CSV)', onclick:() => tpDownload(status) }), status], lvl === 'expert', 'file'));
+  m.append(tpFoot(''), tpDone());
 }
-/* ---------- Tendencies pictures ----------
-   Bars are plain HTML (real text, grows with the person's text size). Dots and the brew map are SVG. Every count is printed, so color is never the only carrier. */
-const tpPct = x => Math.round(x * 100);
-/* rows: [{ label, left, right, say }]; liked/good is on the right, not liked/not good on the left. */
-function tpDiverge(rows, max, leftName, rightName, ariaName){
-  const bar = (n, cls) => h('span', { class:'tpside ' + cls }, cls === 'tpl' ? [n ? h('b', { text:String(n) }) : null, h('i', { style:'width:' + (n ? Math.max(3, n / max * 100) : 0) + '%' })] : [h('i', { style:'width:' + (n ? Math.max(3, n / max * 100) : 0) + '%' }), n ? h('b', { text:String(n) }) : null]);
-  const wrap = h('div', { class:'tpdiv', role:'list', 'aria-label':ariaName },
-    h('div', { class:'tprow tphead', 'aria-hidden':'true' }, h('span'), h('span', { class:'tpl', text:'← ' + leftName }), h('span', { class:'tpr', text:rightName + ' →' })));
-  rows.forEach(r => wrap.append(h('div', { class:'tprow', role:'listitem', 'aria-label':r.say }, h('span', { class:'tplab', text:r.label }), bar(r.left, 'tpl'), bar(r.right, 'tpr'))));
-  return wrap;
-}
-/* five bars, one per whole star */
-function tpStarBars(r){
-  const wrap = h('div', { class:'tpstars', role:'list', 'aria-label':'Coffees at each star rating' });
-  r.bars.forEach(b => wrap.append(h('div', { class:'tpcol', role:'listitem', 'aria-label':b.n + (b.n === 1 ? ' coffee' : ' coffees') + ' at ' + b.star + (b.star === 1 ? ' star' : ' stars') },
-    h('b', { text:String(b.n) }), h('i', { style:'height:' + (b.n ? Math.max(4, b.n / r.max * 84) : 0) + 'px' }), h('span', { text:b.star + (b.star === 1 ? ' star' : ' stars') }))));
-  return wrap;
-}
-/* One group: its dots on a 0.5 to 5 star line. Dots at the same rating stack. The median tick and the range line appear from 3 coffees. */
+/* ---------- Dots by group (Compare screen) ---------- */
 function tpDotRow(row){
   const W = 220, L = 10, R = 10, X = s => L + (s - 0.5) / 4.5 * (W - L - R), by = {};
   row.stars.forEach(s => { by[s] = (by[s] || 0) + 1; });
@@ -10674,23 +10844,244 @@ function tpDots(feat, expert){
   wrap.append(h('div', { class:'tpdrow tpaxis', 'aria-hidden':'true' }, h('span'), h('span', { class:'tpticks' }, ['1', '2', '3', '4', '5'].map(s => h('span', { text:s + '★' })))));
   return wrap;
 }
-/* the strength and extraction chart with one dot per measured brew: filled for 4 to 5 stars, hollow for lower, small and faint when not rated */
-function tpBrewMap(group){
-  const kind = group.kind, W = 300, H = 170, L = 34, R = 8, T = 8, B = 26, x0 = 14, x1 = 26, y0 = kind === 'espresso' ? 4 : 0.9, y1 = kind === 'espresso' ? 16 : 1.7, lo = kind === 'espresso' ? 8 : 1.15, hi = kind === 'espresso' ? 12 : 1.35;
-  const X = v => L + (Math.min(x1, Math.max(x0, v)) - x0) / (x1 - x0) * (W - L - R), Y = v => T + (1 - (Math.min(y1, Math.max(y0, v)) - y0) / (y1 - y0)) * (H - T - B);
-  const liked = group.pts.filter(p => p.stars >= 4).length, rated = group.pts.filter(p => p.stars > 0).length;
-  let g = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + escHtml((kind === 'espresso' ? 'Espresso' : 'Filter') + ' brews on the strength and extraction chart: ' + group.pts.length + ' measured, ' + rated + ' rated, ' + liked + ' rated 4 or 5 stars') + '" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">';
-  g += '<rect x="' + X(14) + '" y="' + Y(y1) + '" width="' + (X(26) - X(14)) + '" height="' + (Y(y0) - Y(y1)) + '" rx="6" style="fill:var(--tint)"/>';
-  g += '<rect x="' + X(18) + '" y="' + Y(hi) + '" width="' + (X(22) - X(18)) + '" height="' + (Y(lo) - Y(hi)) + '" rx="3" style="fill:var(--leaf);opacity:.22"/>';
-  [14, 18, 22, 26].forEach(v => { g += '<text x="' + X(v) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" style="fill:var(--muted)">' + v + '%</text>'; });
-  [lo, hi].forEach(v => { g += '<text x="' + (L - 4) + '" y="' + (Y(v) + 4) + '" text-anchor="end" font-size="11" style="fill:var(--muted)">' + v + '</text>'; });
-  group.pts.forEach(p => {
-    const x = X(p.ey), y = Y(p.tds);
-    if (p.stars >= 4) g += '<circle cx="' + x + '" cy="' + y + '" r="6" style="fill:var(--accent);stroke:var(--surface);stroke-width:2;opacity:.9"/>';
-    else if (p.stars > 0) g += '<circle cx="' + x + '" cy="' + y + '" r="5" style="fill:none;stroke:var(--accent);stroke-width:2.2"/>';
-    else g += '<circle cx="' + x + '" cy="' + y + '" r="3" style="fill:none;stroke:var(--muted);stroke-width:1.5;opacity:.7"/>';
+/* ---------- Tendencies: flavors, enjoy, rate ---------- */
+const TP_SHORT = { 'Basic tastes':'Basic', 'Nutty and cocoa':'Nutty', 'Green and earthy':'Green', Fermented:'Ferment', 'Off-flavors':'Off' };
+const TP_PART_TEXT = { smell:'How it smelled before and during the first sip.', taste:'What you tasted while it was in your mouth.', aftertaste:'What stayed with you after you swallowed.', acidity:'The bright, lively part. Think of a squeeze of lemon.', sweetness:'How sweet it tasted, with no sugar added.', body:'How heavy or light it felt in your mouth.' };
+/* where each part of the cup is in the 300 by 240 picture: x, y, width, height */
+const TP_CUP_HITS = { body:[62, 122, 176, 84], taste:[60, 86, 180, 36], smell:[100, 22, 100, 70], acidity:[206, 58, 70, 62], sweetness:[28, 180, 56, 52], aftertaste:[232, 178, 50, 52] };
+function tpGlass(pct, big){ return h('span', { class:'tpglass' + (big ? ' big' : ''), 'aria-hidden':'true' }, h('i', { style:'height:' + Math.round(pct * 100) + '%' })); }
+/* one shelf of five flowers; per = height of a stem for each coffee; the chosen family has a halo and the others fade */
+function tpShelf(items, sel, per, pad, onPick){
+  const W = 354, top = Math.max(...items.map(f => 12 + f.tasted * per)), base = top + pad, H = Math.round(base + 74), box = h('div', { class:'tpshelf' });
+  let o = '';
+  items.forEach((f, k) => {
+    const cx = W / 10 + k * W / 5, hg = 12 + f.tasted * per, name = TP_SHORT[f.family] || f.family;
+    const on = sel === f.family;
+    o += (on ? '<rect x="' + tpFx(cx - 32) + '" y="' + tpFx(base - hg - 24) + '" width="64" height="' + tpFx(hg + 24 + 92) + '" rx="16" fill="#F7DDB6" stroke="#1D3E2F" stroke-width="2.4"/>' : '') + '<g opacity="' + (on ? 1 : 0.7) + '">' + tpFlowerG(cx, base, hg, f.hue, f.mood, 1, true) + '</g>'
+      + '<text x="' + tpFx(cx) + '" y="' + tpFx(base + 52) + '" text-anchor="middle" font-size="16" font-weight="700" style="fill:' + (on ? '#22120C' : 'var(--ink)') + '">' + escHtml(name) + '</text><text x="' + tpFx(cx) + '" y="' + tpFx(base + 68) + '" text-anchor="middle" font-size="14" style="fill:' + (on ? '#5C4A3E' : 'var(--muted)') + '">' + f.liked + ' of ' + f.tasted + '</text>';
   });
-  return g + '</svg>';
+  o = tpPlankG(4, base + 22, W - 8, 10) + o;
+  box.append(tpArt(tpSvg('100%', H, o, W, H)));
+  items.forEach((f, k) => box.append(h('button', { type:'button', class:'tphit', style:'left:' + ((W / 10 + k * W / 5 - 34) / W * 100).toFixed(2) + '%;width:' + (68 / W * 100).toFixed(2) + '%', 'aria-pressed':sel === f.family ? 'true' : 'false', 'aria-label':f.family + ': tasted in ' + f.tasted + (f.tasted === 1 ? ' coffee' : ' coffees') + ', liked in ' + f.liked, onclick:() => onPick(f.family) })));
+  return box;
+}
+function screenTpFlavors(m){
+  const d = tpNow(), g = d.garden, lvl = level();
+  tpHead(m, 'Your flavor garden', 'One flower for each flavor family you have written down. Taller means more coffees. The face shows how often you liked it.', g.ready ? 'Tap a flower to open it.' : 'Tick flavors in a few tastings and your garden starts to grow.');
+  tpLookRow(m);
+  if (!g.ready){ tpNeed(m, 'tpEmpty', 'The garden needs ' + d.need.flavors + '. You have ' + g.n + ' so far.'); m.append(tpFoot(''), tpDone()); return; }
+  const fams = g.flowers, per = 7.4 * Math.min(1, 12 / g.maxTasted), holder = h('div', { id:'tpGarden' });
+  if (!tpSel.fam || !fams.some(f => f.family === tpSel.fam)) tpSel.fam = (g.best || fams.find(f => f.tasted) || fams[0]).family;
+  const notesFor = fam => { const r = d.a.flavors.rows.find(x => x.family === fam), out = {}; if (r){ Object.keys(r.likedWords).forEach(w => { (out[w] = out[w] || { word:w, liked:0, not:0 }).liked = r.likedWords[w]; }); Object.keys(r.notWords).forEach(w => { (out[w] = out[w] || { word:w, liked:0, not:0 }).not = r.notWords[w]; }); } return Object.keys(out).map(k => out[k]).sort((a, b) => (b.liked + b.not) - (a.liked + a.not) || (a.word < b.word ? -1 : 1)).slice(0, 8); };
+  const legend = h('div', { class:'tpcard' }, h('div', { class:'tplegend' }, [['smile', 350, 'Smile: liked it in most coffees'], ['flat', 8, 'Straight: about half'], ['droop', 28, 'Droop: liked it in fewer']].map(x => h('div', null, tpArt(tpSvg(46, 52, tpFlowerG(23, 48, 22, x[1], x[0], 0.8, false))), x[2]))));
+  function paint(){
+    const f = fams.find(x => x.family === tpSel.fam), notes = notesFor(f.family), note = tpSel.note && notes.some(n => n.word === tpSel.note) ? tpSel.note : '';
+    const pick = fam => { tpSel.fam = fam; tpSel.note = ''; paint(); };
+    const card = h('div', { class:'tpcard paper', style:'padding:10px 4px 0' }, tpShelf(fams.slice(0, 5), f.family, per, 34, pick), h('div', { style:'height:6px' }), tpShelf(fams.slice(5), f.family, per, 30, pick));
+    const rows = f.coffees.filter(c => !note || c.liked.concat(c.not).some(w => w === note)).map(c => ({ name:c.name, stars:c.stars, sub:[c.liked.length ? 'Liked: ' + c.liked.join(', ') : '', c.not.length ? 'Not liked: ' + c.not.join(', ') : ''].filter(Boolean).join('. ') }));
+    const panel = h('div', { class:'tpcard', id:'tpPanel' }, tpPanelHead(h('span', { class:'tpsw', style:'background:' + (f.hue == null ? '#C9BFA8' : tpHsl(f.hue, 62, 66)) }), f.family, f.tasted ? 'Tasted in ' + f.tasted + ' of ' + g.n + ' coffees. Liked in ' + f.liked + '.' : 'Not tasted in any of your ' + g.n + ' coffees yet.', null));
+    if (notes.length) panel.append(h('span', { class:'tplab', text:'Notes you wrote' }), h('div', { class:'tprow2' }, notes.map(n => tpBtn({ label:n.word, sub:n.liked && n.not ? 'liked and not liked' : n.not ? 'not liked' : 'liked', n:n.liked + n.not, on:note === n.word, onclick:() => { tpSel.note = note === n.word ? '' : n.word; paint(); } }))));
+    const list = tpCoffeeRows(rows, note ? 'Coffees with ' + note.toLowerCase() : 'Coffees with ' + f.family.toLowerCase()); if (list) panel.append(list);
+    tpPaint(holder, card, legend, panel);
+  }
+  paint(); m.append(holder);
+  if (g.other) m.append(h('p', { class:'fine', text:g.other + (g.other === 1 ? ' coffee has' : ' coffees have') + ' words that match none of the families, so they are not drawn.' }));
+  m.append(tpWhy('Each flower counts coffees, not cups or words. A coffee counts once for a family, even if you ticked several words in it. Words are grouped into the families on the flavor wheels. The face shows how often the words in that family were on your liked side: a smile from 60 %, straight from 40 %.'),
+    tpNumbers(d.a.flavors.rows.filter(r => r.family !== TP_OTHER).map(r => r.family + ': tasted in ' + r.tasted + ', liked in ' + r.liked + ' of ' + r.total + ' coffees (95% range ' + Math.round(r.likedCI.lo * 100) + ' to ' + Math.round(r.likedCI.hi * 100) + ' %), not liked in ' + r.notLiked + '.')));
+  m.append(tpFoot('Flavors come from the newest cup that has them.'), tpDone());
+}
+function screenTpEnjoy(m){
+  const d = tpNow(), gl = d.glow;
+  tpHead(m, 'Your cup glow', 'Each part of the cup glows more the more often you marked it Good.', gl.ready && gl.best ? gl.best.label + ' glows brightest: Good in ' + gl.best.good + ' of ' + gl.best.answered + ' coffees.' + (gl.weak && gl.weak.key !== gl.best.key ? ' ' + gl.weak.label + ' got the most Not good.' : '') : 'Do a few Quick tastings and the cup starts to glow.');
+  tpLookRow(m);
+  if (!gl.ready){ tpNeed(m, 'tpEmpty', 'The cup needs ' + d.need.enjoy + '. You have ' + gl.n + ' so far.'); m.append(tpFoot(''), tpDone()); return; }
+  if (!tpSel.part || !gl.parts.some(p => p.key === tpSel.part)) tpSel.part = (gl.best || gl.parts[0]).key;
+  const holder = h('div', { id:'tpCup' }), share = {}; gl.parts.forEach(p => { share[p.key] = p.share; });
+  function paint(){
+    const p = gl.parts.find(x => x.key === tpSel.part), pick = k => { tpSel.part = k; paint(); }, cupBox = h('div', { class:'tpcupbox' }, tpArt(tpCupG(share, 354)));
+    const svg = cupBox.querySelector('svg'); svg.classList.add('has', 'sel-' + p.key);
+    Object.keys(TP_CUP_HITS).forEach(k => { const b = TP_CUP_HITS[k], part = gl.parts.find(x => x.key === k); cupBox.append(h('button', { type:'button', class:'tphit' + (k === p.key ? ' on' : ''), style:'left:' + (b[0] / 3).toFixed(2) + '%;top:' + (b[1] / 2.4).toFixed(2) + '%;width:' + (b[2] / 3).toFixed(2) + '%;height:' + (b[3] / 2.4).toFixed(2) + '%', 'aria-pressed':k === p.key ? 'true' : 'false', 'aria-label':part.label + ': Good in ' + part.good + ' of ' + part.answered + ' coffees', onclick:() => pick(k) })); });
+    const rows = d.cs.filter(c => c.hasAreas && c.areas[p.key]).sort((a, b) => ['good', 'okay', 'unsure', 'notgood'].indexOf(a.areas[p.key]) - ['good', 'okay', 'unsure', 'notgood'].indexOf(b.areas[p.key])).map(c => ({ name:c.name, stars:c.stars, sub:{ good:'Good', okay:'Okay', notgood:'Not good', unsure:'Could not tell' }[c.areas[p.key]] }));
+    const tiles = h('div', { class:'tprow2' }, gl.parts.map(q => tpBtn({ art:tpGlass(q.share), label:q.label, sub:q.good + ' of ' + q.answered + ' Good', on:q.key === p.key, cls:'tppt', onclick:() => pick(q.key) })));
+    const panel = h('div', { class:'tpcard', id:'tpPanel' }, tpPanelHead(tpGlass(p.share, true), p.label, 'Good in ' + p.good + ' of ' + p.answered + ' coffees', TP_PART_TEXT[p.key]), tpCoffeeRows(rows));
+    tpPaint(holder, h('div', { class:'tpcard paper' }, cupBox), h('span', { class:'tplab', text:'Tap a part' }), tiles, h('div', { style:'height:14px' }), panel);
+  }
+  paint(); m.append(holder);
+  m.append(tpWhy('Each part counts coffees where you answered it in a Quick tasting. Good, Okay, Not good and Could not tell all count as answered; the glow is the share that said Good. Each coffee uses the newest tasting that has answers.'),
+    tpNumbers(gl.parts.map(p => p.label + ': Good ' + p.good + ', Okay ' + p.okay + ', Not good ' + p.notgood + ', Could not tell ' + p.unsure + ' (' + p.answered + ' answered)')));
+  m.append(tpFoot('Quick answers come from the newest cup that has them, one set for each coffee.'), tpDone());
+}
+function screenTpRate(m){
+  const d = tpNow(), jar = d.jar, r = d.a.rating;
+  tpHead(m, 'Your bean jar', 'One bean for each coffee you rated. The best ones float to the top.', jar.ready && jar.top ? 'Most of your coffees sit at ' + jar.top.star + (jar.top.star === 1 ? ' bean' : ' beans') + ': ' + jar.top.n + ' of ' + jar.n + '.' + (jar.unit > 1 ? ' One big bean stands for ' + jar.unit + ' coffees, so the jar never overflows.' : '') + (jar.narrow ? ' Your ratings sit in a narrow band so far.' : '') : 'Rate a few coffees and the jar starts to fill.');
+  tpLookRow(m);
+  if (!jar.ready){ tpNeed(m, 'tpEmpty', 'The jar needs ' + d.need.rate + '. You have ' + jar.n + ' so far.'); m.append(tpFoot(''), tpDone()); return; }
+  if (!tpSel.star) tpSel.star = jar.top ? jar.top.star : 5;
+  const holder = h('div', { id:'tpJar' }), art = tpJarG(jar), bin = c => Math.min(5, Math.max(1, Math.ceil(c.stars - 1e-9)));
+  function paint(){
+    const L = jar.layers.find(x => x.star === tpSel.star), pick = s => { tpSel.star = s; paint(); }, box = h('div', { class:'tpjar' }), side = h('div', { class:'tpjarside' });
+    box.append(h('div', { class:'tpjarsvg has sel-' + L.star }, tpArt(art.svg)), side);
+    art.bands.forEach(b => side.append(h('button', { type:'button', class:'tpjl' + (b.star === L.star ? ' on' : ''), style:'top:' + (b.y0 / art.h * 100).toFixed(2) + '%;height:' + ((b.y1 - b.y0) / art.h * 100).toFixed(2) + '%', 'aria-pressed':b.star === L.star ? 'true' : 'false', 'aria-label':b.star + (b.star === 1 ? ' bean' : ' beans') + ', ' + b.n + (b.n === 1 ? ' coffee' : ' coffees'), onclick:() => pick(b.star) }, tpIcon('bean-' + b.star, 28), h('span', null, h('b', { text:b.star + (b.star === 1 ? ' bean' : ' beans') }), h('small', { text:b.n + (b.n === 1 ? ' coffee' : ' coffees') })))));
+    const legend = jar.unit === 1 ? [tpIcon('bean-3', 28), 'Each bean is one coffee.'] : [tpIcon('bean-3', 40), 'Big bean = ' + jar.unit + ' coffees. ', tpIcon('bean-3', 22), 'Small bean = 1 coffee.'];
+    const rows = d.cs.filter(c => c.stars != null && bin(c) === L.star).map(c => ({ name:c.name, stars:c.stars, sub:[c.roaster, c.cups + (c.cups === 1 ? ' cup' : ' cups')].filter(Boolean).join(', ') }));
+    tpPaint(holder, h('div', { class:'tpcard' }, box, h('div', { class:'tplegs' }, legend)), h('div', { class:'tpcard', id:'tpPanel' }, tpPanelHead(tpIcon('bean-' + L.star, 44), L.star + (L.star === 1 ? ' bean' : ' beans'), L.n + ' of ' + jar.n + ' coffees', null), tpCoffeeRows(rows)));
+  }
+  paint(); m.append(holder);
+  m.append(tpWhy('This counts coffees by their star rating. When a coffee has several tastings, its stars are averaged. A half star is counted with the whole star above it. Coffees without a rating stay out of the jar.'),
+    tpNumbers(r.bars.slice().reverse().map(b => b.star + (b.star === 1 ? ' star' : ' stars') + ': ' + b.n + (b.n === 1 ? ' coffee' : ' coffees'))));
+  m.append(tpFoot('Ratings are your own stars. Each bean is a coffee, not a cup.'), tpDone());
+}
+/* ---------- Tendencies: kinds and brews ---------- */
+/* one group: its picture, name, how many coffees, its middle, and a heap with a flag at the middle */
+function tpGroupCard(feat, row, unit, ghost, on, onPick){
+  const mid = row.heap.enough ? 'Middle ' + row.heap.median : row.n ? 'Too few (' + row.n + ')' : 'None yet';
+  const b = h('button', { type:'button', class:'tpgroup' + (on ? ' on' : ''), 'aria-pressed':on ? 'true' : 'false', 'aria-label':row.label + ': ' + row.n + (row.n === 1 ? ' coffee' : ' coffees') + ', ' + mid, onclick:onPick },
+    h('span', { class:'tpghead' }, tpGroupIcon(feat, row.value, 40), h('span', { class:'tpgname' }, h('b', { text:row.label }), h('small', { text:row.n + (row.n === 1 ? ' coffee' : ' coffees') })), h('span', { class:'tpgmid', text:mid })));
+  b.append(tpArt(tpHeapG(row.heap, unit, row.heap.enough ? ghost : null, row.label.length), 'tpheapart'));
+  return b;
+}
+function screenTpKinds(m){
+  const d = tpNow(), k = d.kinds;
+  tpHead(m, 'Your bean heaps', 'One heap for each kind. Beans pile up where you rated them. A flag marks the middle.', k.ready ? 'Pick how to group your coffees, then tap a heap.' : 'Rate a few coffees from different roasts, processes or elevations and the heaps appear.');
+  tpLookRow(m);
+  if (!k.ready){ tpNeed(m, 'tpEmpty', 'The heaps need ' + d.need.kinds + '. You have ' + k.n + ' rated so far.'); m.append(tpFoot(''), tpDone()); return; }
+  if (!tpSel.feat || !k.feats.some(f => f.key === tpSel.feat)) tpSel.feat = k.feats[0].key;
+  const holder = h('div', { id:'tpKinds' });
+  m.append(...tpSelect('Group by', 'tpFeat', k.feats.map(f => ({ v:f.key, label:f.label })), tpSel.feat, v => { tpSel.feat = v; tpSel.group = ''; paint(); }), holder);
+  function paint(){
+    const f = k.feats.find(x => x.key === tpSel.feat), sel = f.rows.find(r => r.value === tpSel.group) || f.rows[0], unit = f.unit;
+    const top = f.rows.filter(r => r.heap.enough).sort((a, b) => b.heap.median - a.heap.median || b.n - a.n)[0];
+    const legend = h('div', { class:'tpcard tplegs2' },
+      h('div', null, tpArt('<svg width="34" height="30" viewBox="0 0 34 30"><path d="M8 28 V3" stroke="#22120C" stroke-width="3.4" stroke-linecap="round"/><path d="M9.5 3 L31 10 L9.5 17 Z" fill="#F2A93B" stroke="#22120C" stroke-width="2.8" stroke-linejoin="round"/></svg>'), h('span', { text:'The flag stands at the middle rating.' })),
+      h('div', null, tpArt('<svg width="34" height="30" viewBox="0 0 34 30"><rect x="2" y="10" width="30" height="9" rx="4.5" fill="#3F7A57" stroke="#22120C" stroke-width="2.2"/></svg>'), h('span', { text:'The green bar holds the middle half of your coffees.' })),
+      h('div', null, tpIcon('bean-3', 30), h('span', { text:(unit === 1 ? 'One bean is one coffee.' : 'One bean stands for about ' + unit + ' coffees. Tap a heap for the exact count.') + (k.ghost != null ? ' The dashed flag is the middle of all your rated coffees.' : '') })));
+    const rows = d.cs.filter(c => c.stars != null && c[f.key] === sel.value).map(c => ({ name:c.name, stars:c.stars, sub:[c.roaster, c.origin].filter(Boolean).join(', ') }));
+    tpPaint(holder, top ? sayRow(top.label + ' sits highest: middle ' + top.heap.median + (top.heap.median === 1 ? ' bean' : ' beans') + ' across ' + top.n + ' coffees.') : sayRow('Each group needs 3 rated coffees to get a flag.'),
+      f.rows.map(r => tpGroupCard(f.key, r, unit, k.ghost, r.value === sel.value, () => { tpSel.group = r.value; paint(); })), f.hidden ? h('p', { class:'fine', text:f.hidden + ' smaller ' + (f.hidden === 1 ? 'group is' : 'groups are') + ' not shown.' }) : null, legend,
+      h('div', { class:'tpcard', id:'tpPanel' }, tpPanelHead(tpGroupIcon(f.key, sel.value, 44), sel.label, sel.n + (sel.n === 1 ? ' coffee. ' : ' coffees. ') + (sel.heap.enough ? 'Middle ' + sel.heap.median + ' beans.' : 'Too few for a middle.'), null), tpCoffeeRows(rows)));
+  }
+  paint();
+  m.append(tpWhy('Each heap counts coffees by their star rating, with the half stars counted with the whole star above. The flag is the middle rating (the median) and the green bar holds the middle half of the coffees. Both show from 3 coffees. Details overlap: a natural is often also a lighter roast or a higher elevation.'),
+    tpNumbers(k.feats.find(f => f.key === tpSel.feat).rows.map(r => r.label + ': ' + r.n + ' coffees, ratings ' + r.heap.counts.map((c, i) => (i + 1) + ' star ' + c).join(', ') + (r.heap.enough ? '; middle ' + r.heap.median + ', middle half ' + r.heap.band[0] + ' to ' + r.heap.band[1] : ''))));
+  m.append(tpFoot('Piles are rounded when one bean stands for more than one coffee.'), tpDone());
+}
+function screenTpBrews(m){
+  const d = tpNow(), rg = d.rings;
+  tpHead(m, 'Your cup rings', 'Every measured brew leaves a mark, like a cup on paper. Where marks pile up, the ring gets darker.', rg.ready ? rg.kinds.map(q => q.n + ' measured ' + (q.kind === 'espresso' ? 'espresso' : 'filter') + ' brews, ' + q.inBox + ' inside the common target').join('. ') + '. Tap a ring.' : 'Measure the strength of a few brews and the paper starts to fill.');
+  tpLookRow(m);
+  if (!rg.ready){ tpNeed(m, 'tpEmpty', 'The paper needs ' + d.need.brews + '. You have ' + rg.n + ' so far. A brew counts when it has both a TDS reading and an extraction.'); m.append(tpFoot(''), tpDone()); return; }
+  if (!tpSel.kind || !rg.kinds.some(q => q.kind === tpSel.kind)) tpSel.kind = rg.kinds[0].kind;
+  const holder = h('div', { id:'tpRings' });
+  if (rg.kinds.length > 1) m.append(h('div', { class:'tprow2', style:'margin-top:14px' }, rg.kinds.map(q => tpBtn({ art:tpIcon(q.kind === 'espresso' ? 'm-espresso' : 'm-v60', 40), label:q.kind === 'espresso' ? 'Espresso' : 'Filter', n:q.n, on:q.kind === tpSel.kind, onclick:() => { tpSel.kind = q.kind; tpSel.ring = 0; paint(); } }))));
+  m.append(holder);
+  function paint(){
+    const q = rg.kinds.find(x => x.kind === tpSel.kind), p = tpRingsG(q), cur = p.boxes[tpSel.ring] || p.boxes[0], R = cur.ring, one = R.count === 1;
+    const plot = h('div', { class:'tpplot' }, tpArt(p.svg));
+    p.boxes.forEach((b, i) => plot.append(h('button', { type:'button', class:'tphit round' + (b === cur ? ' on' : ''), style:'left:' + b.left.toFixed(2) + '%;top:' + b.top.toFixed(2) + '%;width:' + b.width.toFixed(2) + '%;height:' + b.height.toFixed(2) + '%', 'aria-pressed':b === cur ? 'true' : 'false', 'aria-label':b.ring.count + (b.ring.count === 1 ? ' brew' : ' brews') + ' near ' + tpFx(b.ring.ey) + ' % extraction and ' + (Math.round(b.ring.tds * 100) / 100) + ' % TDS', onclick:() => { tpSel.ring = i; paint(); } })));
+    const key = h('div', { class:'tpkey2' }, tpArt('<svg width="96" height="30" viewBox="0 0 96 30"><ellipse cx="16" cy="15" rx="12" ry="9" fill="#6B3E22" fill-opacity=".14" stroke="#6B3E22" stroke-opacity=".5" stroke-width="2.4"/><ellipse cx="48" cy="15" rx="13" ry="10" fill="#6B3E22" fill-opacity=".30" stroke="#6B3E22" stroke-opacity=".6" stroke-width="2.8"/><ellipse cx="80" cy="15" rx="14" ry="11" fill="#6B3E22" fill-opacity=".55" stroke="#6B3E22" stroke-opacity=".8" stroke-width="3.2"/></svg>'), h('span', { text:'A darker ring means more brews landed there. A drop is one brew; the tiny bean is your rating.' }));
+    const rows = R.names.map((nm, i) => ({ name:nm || 'Unnamed coffee', stars:R.stars[i] > 0 ? R.stars[i] : null, sub:R.stars[i] > 0 ? '' : 'Not rated' }));
+    tpPaint(holder, h('div', { class:'tpcard paper' }, plot, key),
+      h('div', { class:'tpcard', id:'tpPanel' }, tpPanelHead(tpIcon('art-water', 44), one ? 'One brew' : 'A ring of ' + R.count + ' brews', (R.mid != null ? 'Middle rating: ' + tpHalf(R.mid) + (R.mid === 1 ? ' bean.' : ' beans.') : 'Not rated.'), 'Strength ' + (Math.round(R.tds * 100) / 100) + ' % TDS, extraction about ' + tpFx(R.ey) + ' %.'), tpCoffeeRows(rows, 'The brews')),
+      h('div', { class:'tpnote' }, h('span', { text:'In the common target: ' + q.inBox + ' of ' + q.n + ' brews' + (q.inBox ? ', and ' + q.inBoxLiked + ' of those were rated 4 beans or more' : '') + '. The target is a convention, not a rule. People differ in where they like coffee.' })));
+  }
+  paint();
+  m.append(tpWhy('Each mark is one brew that has both a TDS reading (how strong) and an extraction (how much came out). Brews that land very close together share one ring. The dashed box is a common target for ' + (tpSel.kind === 'espresso' ? 'espresso' : 'filter coffee') + '. Brews without measurements stay off the paper.'),
+    tpNumbers(rg.kinds.map(q => (q.kind === 'espresso' ? 'Espresso' : 'Filter') + ': ' + q.n + ' brews, ' + q.rated + ' rated, ' + q.liked + ' rated 4 or more, ' + q.inBox + ' in the target')));
+  m.append(tpFoot('Strength and extraction are worked out from your measured brews only.'), tpDone());
+}
+/* ---------- Tendencies: brew rack and mix and match ---------- */
+let tpMixFrom = '';
+const TP_SPLIT_ART = { density:'art-elev', process:'art-proc', roast:'art-roaster', origin:'art-globe', variety:'art-var' };
+/* how you usually make it: four facts, each with its own picture. A fact with fewer than 3 brews saved says so. */
+function tpUsualBox(u){
+  const f = (art, label, v) => h('div', { class:'tpusual' }, tpIcon(art, 36), h('span', null, h('b', { text:v == null ? 'Not yet' : v }), h('small', { text:label })));
+  return h('div', { class:'tprow2', style:'margin-top:10px' }, f('art-ratio', 'Ratio', u.ratio != null ? fmtRatio(u.ratio) : null), f('art-temp', 'Water', u.tempF != null ? Math.round(u.tempF) + '°F / ' + Math.round(fToC(u.tempF)) + '°C' : null),
+    f('a-grind', 'Grind', u.grind != null ? grindName(u.grind).name : null), f('art-timer', 'Time', u.time != null ? fmtTime(u.time) : null));
+}
+function screenTpBrewers(m){
+  const d = tpNow(), rk = d.rack;
+  tpHead(m, 'Your brew rack', 'Every way you have made coffee, with how many times you used it and how it did.', rk.ready && rk.top ? 'You reach for the ' + rk.top.label + ' most: ' + rk.top.n + ' of ' + rk.n + ' coffees.' : 'Tell the app how you brewed a few coffees and the rack fills in.');
+  tpLookRow(m);
+  if (!rk.ready){ tpNeed(m, 'tpEmpty', 'The rack needs ' + d.need.brewers + '. You have ' + rk.n + ' so far.'); m.append(tpFoot(''), tpDone()); return; }
+  if (!tpSel.method || !rk.tiles.some(t => t.key === tpSel.method)) tpSel.method = rk.top.key;
+  const holder = h('div', { id:'tpRack' }), all = tpHeap(d.units.filter(u => u.stars != null).map(u => u.stars));
+  function paint(){
+    const t = rk.tiles.find(x => x.key === tpSel.method), pick = k => { tpSel.method = k; paint(); };
+    const tiles = h('div', { class:'tprow4' }, rk.tiles.map(x => tpBtn({ art:tpIcon('m-' + x.key, 46), label:x.label, n:x.n, on:x.key === t.key, onclick:() => pick(x.key) })));
+    const card = h('div', { class:'tpcard', id:'tpPanel' }, tpPanelHead(tpIcon('m-' + t.key, 60), t.label, 'Used for ' + t.n + ' of ' + rk.n + ' coffees.', t.heap.enough ? 'Middle rating: ' + t.heap.median + ' beans.' : t.heap.n ? 'Too few rated coffees for a middle yet.' : 'None of these coffees is rated yet.'));
+    if (t.heap.n) card.append(tpArt(tpHeapG(t.heap, rk.unit, t.heap.enough ? all.median : null, 3), 'tpheapart'), h('p', { class:'fine', style:'margin:2px 0 0', text:(rk.unit === 1 ? 'One bean is one coffee.' : 'One bean stands for about ' + rk.unit + ' coffees.') + (all.median != null && t.heap.enough ? ' The dashed flag is the middle of all your coffees.' : '') }));
+    card.append(h('span', { class:'tplab', text:'How you usually make it' }), tpUsualBox(t.usual), h('p', { class:'fine', style:'margin:8px 2px 0', text:'The middle of your brews with this brewer. Each needs 3 brews with the detail saved.' }),
+      h('button', { type:'button', class:'btn block', style:'margin-top:12px', id:'tpToMix', text:'Mix and match with ' + t.label, onclick:() => { tpMixFrom = 'tpbrewers'; tpSel.look = t.key; go('tpmix'); } }));
+    tpPaint(holder, h('span', { class:'tplab', text:'What you brew with' }), tiles, h('div', { style:'height:14px' }), card);
+  }
+  paint(); m.append(holder);
+  m.append(tpWhy('Each count is a coffee brewed with that brewer; a coffee made on two brewers counts for both. The stars are the average of the cups of that coffee made with that brewer. The flag needs 3 rated coffees.'),
+    tpNumbers(rk.tiles.map(x => x.label + ': ' + x.n + ' coffees, ' + x.cups + ' cups, ' + x.rated + ' rated')));
+  m.append(tpFoot('Counts are coffees, not cups.'), tpDone());
+}
+function screenTpMix(m){
+  const d = tpNow(), mxAll = d.mix;
+  if (!tpSel.look || !mxAll.looks.some(l => l.key === tpSel.look)) tpSel.look = 'all';
+  tpHead(m, 'Ask your coffees', 'Pick what to look at, then how to split it. Your own coffees answer.', mxAll.ready && mxAll.splits.length ? 'Try the ' + (mxAll.looks[1] ? mxAll.looks[1].label : 'brewer of your choice') + ' split by elevation.' : 'With only a few rated coffees most groups are too small for a flag. Brew more and it fills in.');
+  tpLookRow(m);
+  if (!(mxAll.ready && mxAll.splits.length)){ tpNeed(m, 'tpEmpty', 'Mix and match needs ' + d.need.mix + '. You have ' + mxAll.looks[0].n + ' rated so far.'); m.append(tpFoot(''), tpDone()); return; }
+  const holder = h('div', { id:'tpMix' });
+  function paint(){
+    const mx = tpMix(d.units, tpSel.look, tpSel.split), pickLook = k => { tpSel.look = k; paint(); }, pickSplit = k => { tpSel.split = k; paint(); };
+    const looks = h('div', { class:'tprow3' }, mx.looks.map(l => tpBtn({ art:tpIcon(l.key === 'all' ? 'art-beans' : 'm-' + l.key, 44), label:l.label, n:l.n, on:l.key === mx.look, onclick:() => pickLook(l.key) })));
+    const splits = h('div', { class:'tprow3' }, mx.splits.map(s => tpBtn({ art:tpIcon(TP_SPLIT_ART[s.key], 44), label:s.label, on:s.key === mx.split, onclick:() => pickSplit(s.key) })));
+    const join = h('div', { class:'tpjoin' }, tpArt('<svg width="150" height="34" viewBox="0 0 150 34"><path d="M10 17 H62" stroke="#22120C" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 7"/>' + tpBeanG(75, 17, 70, 3, 0.8) + '<path d="M88 17 H140" stroke="#22120C" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 7"/></svg>'));
+    const res = h('div', { class:'tpcard', id:'tpPanel' });
+    if (!mx.split) res.append(h('p', { style:'margin:0;font-size:17px', text:'This brewer has no two groups to compare yet.' }));
+    else {
+      const lookLabel = mx.looks.find(l => l.key === mx.look).label;
+      res.append(h('div', { style:'font:700 22px/1.1 var(--display)', text:lookLabel + ', split by ' + mx.splitLabel.toLowerCase() }), h('div', { class:'fine', style:'margin:2px 0 0', text:mx.n + ' of ' + mx.looks[0].n + ' rated coffees' }));
+      mx.groups.forEach(g => res.append(h('div', { class:'tpgroup static' }, h('span', { class:'tpghead' }, tpGroupIcon(mx.split, g.value, 40), h('span', { class:'tpgname' }, h('b', { text:g.label }), h('small', { text:g.n + (g.n === 1 ? ' coffee' : ' coffees') })), h('span', { class:'tpgmid', text:g.heap.enough ? 'Middle ' + g.heap.median : 'Too few (' + g.n + ')' })), tpArt(tpHeapG(g.heap, mx.unit, g.heap.enough ? mx.ghost : null, g.label.length), 'tpheapart'))));
+      res.append(h('p', { class:'fine', style:'margin:10px 0 0', text:(mx.unit === 1 ? 'One bean is one coffee.' : 'One bean stands for about ' + mx.unit + ' coffees.') + (mx.ghost != null ? ' The dashed flag is the middle of all of them.' : '') }), h('p', { style:'font:700 18px/1.3 var(--ui);margin:10px 0 0', id:'tpVerdict', text:mx.say }));
+    }
+    tpPaint(holder, h('span', { class:'tplab', text:'Brewer' }), looks, join, h('span', { class:'tplab', style:'margin-top:4px', text:'Split by' }), splits, h('div', { style:'height:14px' }), res, h('div', { class:'tpnote' }, tpIcon('mi-info', 26), h('span', { text:TP_MIX_CAUTION })));
+  }
+  paint(); m.append(holder);
+  m.append(tpWhy('Each coffee made with a brewer is one unit, and its stars are the average of those cups. The flag is the middle rating of the group (the median); it needs 3 units. This describes your own coffees. It does not show what caused the pattern.'));
+  m.append(tpFoot('Origin and varietal split the same way when you have saved them.'), tpDone());
+}
+/* ---------- Tendencies: coffee street ---------- */
+/* a count with a picture; it is a fact to read, not something to tap */
+function tpTally(art, label, n){ return h('div', { class:'tpbtn tally', role:'group', 'aria-label':label + ': ' + n }, art, h('span', { text:label }), h('span', { class:'tpn', text:String(n), 'aria-hidden':'true' })); }
+const tpMoney = (sym, v) => sym + (Math.round(v * 100) / 100).toFixed(2);
+function screenTpShops(m){
+  const d = tpNow(), s = d.shops, sym = s.sym;
+  const mids = (s.home.mid != null ? 'Your home coffees sit at ' + tpHalf(s.home.mid) + (s.home.mid === 1 ? ' bean' : ' beans') + ' in the middle' : '') + (s.shop.mid != null ? (s.home.mid != null ? ', your shop drinks at ' : 'Your shop drinks sit at ') + tpHalf(s.shop.mid) + (s.shop.mid === 1 ? ' bean' : ' beans') : '');
+  tpHead(m, 'Home against the street', 'Your cups at home on one side, your cups in shops on the other. Only you can say what a cup is worth.', s.ready ? s.home.n + (s.home.n === 1 ? ' coffee' : ' coffees') + ' at home, ' + s.n + (s.n === 1 ? ' drink' : ' drinks') + ' in shops. ' + (mids ? mids + '.' : '') : 'Save a drink from a coffee shop and your street starts to build.');
+  tpLookRow(m);
+  if (!s.ready){ tpNeed(m, 'tpEmpty', 'Coffee street needs ' + d.need.shops + '. Save one from the first screen with "I\'m at a coffee shop".'); m.append(tpFoot(''), tpDone()); return; }
+  const coin = v => v == null ? 0 : Math.max(1, Math.round(v));
+  m.append(h('div', { class:'tpcard', id:'tpTwin' }, tpArt(tpTwinG([s.home.mid, s.shop.mid], [coin(s.home.cup), coin(s.shop.cup)], [s.home.cup != null ? 'about ' + tpMoney(sym, s.home.cup) + ' a cup' : 'no cost saved', s.shop.cup != null ? 'about ' + tpMoney(sym, s.shop.cup) + ' a cup' : 'no price saved'])),
+    h('div', { class:'tptwo' }, h('div', null, h('b', { text:String(s.home.n) }), s.home.n === 1 ? ' coffee' : ' coffees'), h('div', null, h('b', { text:String(s.n) }), s.n === 1 ? ' drink' : ' drinks')),
+    h('p', { class:'fine', style:'margin:10px 4px 2px', text:'Each coin is about ' + sym + '1 for one cup. Beans are your middle rating.' + (s.home.cup == null ? ' To see your home cost, add a bag with its price and dose in Coffee prices.' : '') })));
+  if (s.kinds.length) m.append(h('h2', { class:'tph2', text:'What you order out' }), h('div', { class:'tprow4' }, s.kinds.slice(0, 4).map(k => tpTally(tpIcon(KIND_ART[k.kind] || 'bean-q', 44), k.label, k.n))));
+  if (s.worths.some(w => w.n)) m.append(h('h2', { class:'tph2', text:'Worth the price?' }), h('div', { class:'tprow3' }, s.worths.map(w => tpTally(tpIcon(WORTH_ART[w.worth][0], 44), w.label, w.n))));
+  m.append(h('h2', { class:'tph2', text:'Your coffee street' }));
+  const holder = h('div', { id:'tpStreet' });
+  if (tpSel.shop == null) tpSel.shop = 0;
+  m.append(holder);
+  function paint(){
+    const st = tpStreetG(s.street, s.more, s.moreVisits), cur = st.boxes[tpSel.shop] || st.boxes[0], sh1 = cur.shop;
+    const wrap = h('div', { class:'tpplot', style:'width:' + st.W + 'px' }, tpArt(st.svg));
+    st.boxes.forEach((b, i) => wrap.append(h('button', { type:'button', class:'tphit' + (b === cur ? ' on' : ''), style:'left:' + b.x + 'px;top:' + b.y + 'px;width:' + b.w + 'px;height:' + b.h + 'px', 'aria-pressed':b === cur ? 'true' : 'false', 'aria-label':b.more ? s.more + ' more shops, ' + s.moreVisits + ' visits' : b.shop.name + ', ' + b.shop.visits + (b.shop.visits === 1 ? ' visit' : ' visits'), onclick:() => { tpSel.shop = i; paint(); } })));
+    const panel = h('div', { class:'tpcard', id:'tpPanel' });
+    if (cur.more) panel.append(tpPanelHead(tpIcon('s-shop', 44), s.more + ' more ' + (s.more === 1 ? 'shop' : 'shops'), s.moreVisits + ' visits between them.', 'Each has fewer visits than your top five.'), tpCoffeeRows(s.rest.map(x => ({ name:x.name, sub:[shopPlaceText(x), x.visits + (x.visits === 1 ? ' visit' : ' visits')].filter(Boolean).join(', '), stars:x.mid })), 'The other shops'));
+    else panel.append(tpPanelHead(tpIcon(sh1.fav ? 'a-fav' : 's-shop', 44), sh1.name, sh1.visits + (sh1.visits === 1 ? ' visit' : ' visits') + (sh1.mid != null ? '. Middle rating: ' + tpHalf(sh1.mid) + (sh1.mid === 1 ? ' bean.' : ' beans.') : '. Not enough rated visits for a middle yet.'),
+      [shopPlaceText(sh1), sh1.kind ? 'You order: ' + (SHOP_KINDS.find(k => k.v === sh1.kind) || {}).label.toLowerCase() + (sh1.price != null ? ', about ' + tpMoney(sym, sh1.price) : '') + '.' : ''].filter(Boolean).join('. ')));
+    panel.append(h('button', { type:'button', class:'btn block', style:'margin-top:12px', id:'tpOpenShops', text:'See your shop drinks', onclick:() => goShops() }));
+    tpPaint(holder, h('div', { class:'tpcard', style:'padding:10px 0 4px' }, h('div', { class:'tpscroll', tabindex:'0', role:'region', 'aria-label':'Your coffee street. Swipe sideways for more shops.' }, wrap),
+      h('p', { class:'fine', style:'margin:6px 14px 8px' }, 'A heart is a favorite. Wider and taller means more visits.' + (st.W > 340 ? ' Swipe the street for the rest.' : ''))), panel);
+  }
+  paint();
+  if (s.places.length) m.append(h('h2', { class:'tph2', text:'Where you go' }), h('div', { class:'tpcard', style:'padding:0 12px' }, s.places.slice(0, 6).map((p, i) => h('div', { style:'display:flex;align-items:center;gap:10px;min-height:52px;' + (i ? 'border-top:2px solid var(--line)' : '') }, tpIcon('art-pin', 32), h('div', { style:'flex:1;min-width:0' }, h('b', { text:p.place }), h('span', { class:'fine', style:'display:block;margin:0', text:p.shops + (p.shops === 1 ? ' shop, ' : ' shops, ') + p.visits + (p.visits === 1 ? ' visit' : ' visits') }))))));
+  m.append(tpWhy('Home is the middle of the stars you gave your coffees. The shop side is the middle of the beans you gave your shop drinks. Cost at home comes from the bags in Coffee prices that have a dose; the shop price is the middle of the prices you saved. A shop needs 3 rated visits before it gets a middle.'),
+    tpNumbers(['Shop drinks: ' + s.n + ', rated ' + s.shop.n + ', favorites ' + s.favs, 'Home coffees rated: ' + s.home.n, 'Shops: ' + s.shops]));
+  m.append(tpFoot('Costs and worth answers are only what you wrote down.'), tpDone());
 }
 /* ---------- screens: wheels ----------
    The wheels themselves are in engine/38-wheels-data.js and engine/39-wheels-extra.js; the drawing is ui/22-wheel-svg.js and the interactive view is ui/23-wheel-view.js.
@@ -10727,6 +11118,346 @@ function screenWheel(m){
     searchHint:w.flat ? 'Search the wheel' : (w.key === 'kit' ? 'Search for a vial' : 'Search for a word'), detail:w.key === 'fix' ? fixDetail : null });
   m.append(h('div', { class:'card wscreen', id:'wheelCard' }, view));
   if (w.note) m.append(h('p', { class:'fine', id:'wheelNote', text:w.note }));
+}
+/* ---------- Tendencies art, part one ----------
+   Every picture here is drawn in the same hand as the rest of the app (thick ink outline, flat color, a small face). Strings of SVG go into a span, so one word of text describes each picture (aria-label) and the shapes inside are hidden from a screen reader. */
+const TP_INK = '#22120C';
+const TP_BEANS = ['#C9A468', '#A97B4B', '#865730', '#643C22', '#3E2516'];   /* bean shades for 1 to 5 stars */
+let tpSeq = 0;
+const tpFx = n => (Math.round(n * 10) / 10).toString();
+/* a small steady random number maker, so a heap draws the same way every time */
+function tpRnd(seed){ let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const tpHsl = (hue, s, l) => 'hsl(' + hue + ' ' + s + '% ' + l + '%)';
+/* a picture span: svg markup in, an element out. label gives the picture its spoken description; without one it is decoration. */
+function tpArt(svg, cls, label){ const s = h('span', { class:'tpart' + (cls ? ' ' + cls : ''), role:label ? 'img' : null, 'aria-label':label || null, 'aria-hidden':label ? null : 'true' }); s.innerHTML = svg; return s; }
+function tpSvg(w, hh, inner, vw, vh){
+  const fluid = typeof w === 'string';   /* a percent width: the picture scales and keeps its shape */
+  return '<svg width="' + w + '"' + (fluid ? '' : ' height="' + hh + '"') + ' viewBox="0 0 ' + (vw || w) + ' ' + (vh || hh) + '" aria-hidden="true" focusable="false" style="display:block;flex:none' + (fluid ? ';height:auto' : '') + '">' + inner + '</svg>';
+}
+/* one bean at a place, turned and scaled; r = its rating 1 to 5 picks the shade */
+function tpBeanG(x, y, rot, r, s){
+  const crease = r === 5 ? '#E9D2B4' : TP_INK;
+  return '<g transform="translate(' + tpFx(x) + ' ' + tpFx(y) + ') rotate(' + rot + ') scale(' + (s || 1) + ')"><ellipse rx="12.5" ry="18" fill="' + TP_BEANS[r - 1] + '" stroke="' + TP_INK + '" stroke-width="2.6"/>'
+    + '<path d="M0 -17 C-6 -9 6 -4 0 2 C-5 8 5 12 0 17" fill="none" stroke="' + crease + '" stroke-width="2.4" stroke-linecap="round" opacity="' + (r === 5 ? .5 : .7) + '"/>'
+    + '<path d="M-7 -8 C-9 -3 -9 3 -7 7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".35"/></g>';
+}
+/* two eyes and a mouth: smile, flat or droop */
+function tpFaceG(cx, cy, kind, s){
+  s = s || 1;
+  let o = '<circle cx="' + tpFx(cx - 4.2 * s) + '" cy="' + tpFx(cy - 1.5 * s) + '" r="' + tpFx(1.5 * s) + '" fill="' + TP_INK + '"/><circle cx="' + tpFx(cx + 4.2 * s) + '" cy="' + tpFx(cy - 1.5 * s) + '" r="' + tpFx(1.5 * s) + '" fill="' + TP_INK + '"/>';
+  const path = d => '<path d="' + d + '" fill="none" stroke="' + TP_INK + '" stroke-width="' + tpFx(1.7 * s) + '" stroke-linecap="round"/>', P = (a, b) => tpFx(cx + a * s) + ' ' + tpFx(cy + b * s);
+  if (kind === 'smile') o += path('M' + P(-4, 2.2) + ' Q' + P(0, 6.4) + ' ' + P(4, 2.2));
+  else if (kind === 'flat') o += path('M' + P(-3.4, 4) + ' L' + P(3.4, 4));
+  else o += path('M' + P(-3.6, 5.4) + ' Q' + P(0, 1.8) + ' ' + P(3.6, 5.4));
+  return o;
+}
+/* A flavor-family flower. h = stem height (more coffees, taller); mood = smile, flat or droop (how often you liked the family); 'none' draws a small closed bud with no face. */
+function tpFlowerG(cx, base, hgt, hue, mood, s, pot){
+  s = s || 1;
+  const droop = mood === 'droop', bud = mood === 'none', top = base - hgt, hx = cx + (droop ? 7 * s : 0), hy = top + (droop ? 8 * s : 0), col = hue == null ? '#C9BFA8' : tpHsl(hue, 62, 66);
+  let o = '';
+  const stem = droop ? 'M' + cx + ' ' + base + ' C' + cx + ' ' + tpFx(base - hgt * .5) + ' ' + tpFx(cx + 2 * s) + ' ' + tpFx(top + 10 * s) + ' ' + tpFx(hx) + ' ' + tpFx(hy) : 'M' + cx + ' ' + base + ' L' + cx + ' ' + tpFx(top);
+  o += '<path d="' + stem + '" fill="none" stroke="' + TP_INK + '" stroke-width="' + tpFx(7 * s) + '" stroke-linecap="round"/><path d="' + stem + '" fill="none" stroke="#5FA06E" stroke-width="' + tpFx(3.2 * s) + '" stroke-linecap="round"/>';
+  const leaf = (y, sg) => '<path d="M' + cx + ' ' + tpFx(y) + ' q' + tpFx(sg * 12 * s) + ' ' + tpFx(-3 * s) + ' ' + tpFx(sg * 14 * s) + ' ' + tpFx(-13 * s) + ' q' + tpFx(-sg * 12 * s) + ' ' + tpFx(1 * s) + ' ' + tpFx(-sg * 14 * s) + ' ' + tpFx(13 * s) + ' z" fill="#7DBB86" stroke="' + TP_INK + '" stroke-width="' + tpFx(2 * s) + '" stroke-linejoin="round"/>';
+  if (hgt > 26) o += leaf(base - hgt * .38, 1) + leaf(base - hgt * .62, -1);
+  if (bud) o += '<ellipse cx="' + cx + '" cy="' + tpFx(top) + '" rx="' + tpFx(7 * s) + '" ry="' + tpFx(9 * s) + '" fill="' + col + '" stroke="' + TP_INK + '" stroke-width="' + tpFx(2.1 * s) + '"/>';
+  else {
+    for (let k = 0; k < 6; k++){ const a = (k * 60 + (droop ? 10 : 0)) * Math.PI / 180; o += '<circle cx="' + tpFx(hx + Math.cos(a) * 11.5 * s) + '" cy="' + tpFx(hy + Math.sin(a) * 11.5 * s) + '" r="' + tpFx(8.6 * s) + '" fill="' + (droop ? tpHsl(hue, 30, 62) : col) + '" stroke="' + TP_INK + '" stroke-width="' + tpFx(2.1 * s) + '"/>'; }
+    o += '<circle cx="' + tpFx(hx) + '" cy="' + tpFx(hy) + '" r="' + tpFx(9.4 * s) + '" fill="#FFF8EA" stroke="' + TP_INK + '" stroke-width="' + tpFx(2.1 * s) + '"/>' + tpFaceG(hx, hy, mood, 1.12 * s);
+  }
+  if (pot) o += '<path d="M' + tpFx(cx - 15 * s) + ' ' + base + ' h' + tpFx(30 * s) + ' l' + tpFx(-4 * s) + ' ' + tpFx(20 * s) + ' h' + tpFx(-22 * s) + ' z" fill="#B0703A" stroke="' + TP_INK + '" stroke-width="' + tpFx(2.3 * s) + '" stroke-linejoin="round"/>'
+    + '<rect x="' + tpFx(cx - 17 * s) + '" y="' + tpFx(base - 3 * s) + '" width="' + tpFx(34 * s) + '" height="' + tpFx(8 * s) + '" rx="' + tpFx(3 * s) + '" fill="#C98A52" stroke="' + TP_INK + '" stroke-width="' + tpFx(2.3 * s) + '"/>' + tpBeanG(cx, base + 12 * s, 90, 3, .42 * s);
+  return o;
+}
+/* a wooden shelf */
+function tpPlankG(x, y, w, hh){ hh = hh || 10; return '<rect x="' + tpFx(x) + '" y="' + tpFx(y) + '" width="' + tpFx(w) + '" height="' + hh + '" rx="4" fill="#C79A66" stroke="' + TP_INK + '" stroke-width="2.6"/><path d="M' + tpFx(x + 8) + ' ' + tpFx(y + 3.5) + ' h' + tpFx(w - 16) + '" stroke="#E6C493" stroke-width="2" stroke-linecap="round" opacity=".8"/>'; }
+/* Your bean. freckles = [{ hue, size 0..1 }] biggest first: each family you taste is a freckle, and the more often, the bigger. */
+const TP_FRECKLE_SPOTS = [[67, 150], [136, 146], [143, 92], [58, 96], [88, 166], [100, 68], [116, 168]];
+function tpYourBean(w, freckles){
+  const id = 'tpyb' + (++tpSeq);
+  let o = '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9A5C38"/><stop offset="1" stop-color="#6A3C24"/></linearGradient></defs>';
+  o += '<ellipse cx="100" cy="188" rx="46" ry="6" fill="#22120C" opacity=".18"/>';
+  o += '<path d="M100 52 C 138 52 158 86 158 120 C 158 156 134 178 100 178 C 66 178 42 156 42 120 C 42 86 62 52 100 52 Z" fill="url(#' + id + ')" stroke="' + TP_INK + '" stroke-width="5" stroke-linejoin="round"/>';
+  o += '<path d="M100 58 C 91 70 108 79 100 90" fill="none" stroke="#3A2013" stroke-width="4" stroke-linecap="round" opacity=".6"/><path d="M60 104 C 60 90 66 80 74 72" fill="none" stroke="#C99872" stroke-width="5" stroke-linecap="round" opacity=".6"/>';
+  (freckles || []).slice(0, 7).forEach((f, i) => { const sp = TP_FRECKLE_SPOTS[i], r = 5 + 11 * f.size; o += '<circle cx="' + sp[0] + '" cy="' + sp[1] + '" r="' + tpFx(r) + '" fill="' + (f.hue == null ? '#C9BFA8' : tpHsl(f.hue, 62, 66)) + '" stroke="' + TP_INK + '" stroke-width="3"/><circle cx="' + tpFx(sp[0] - r * .35) + '" cy="' + tpFx(sp[1] - r * .38) + '" r="' + tpFx(Math.max(1.6, r * .2)) + '" fill="#fff" opacity=".55"/>'; });
+  [80, 120].forEach(ex => { o += '<circle cx="' + ex + '" cy="108" r="14" fill="#FFF8EA" stroke="' + TP_INK + '" stroke-width="4"/><circle cx="' + (ex + 1) + '" cy="110" r="6.5" fill="' + TP_INK + '"/><circle cx="' + (ex + 3) + '" cy="107.5" r="2.2" fill="#fff"/>'; });
+  o += '<path d="M88 132 Q100 143 112 132" fill="none" stroke="' + TP_INK + '" stroke-width="4.5" stroke-linecap="round"/><ellipse cx="64" cy="126" rx="8" ry="5" fill="#E58F7A" opacity=".55"/><ellipse cx="136" cy="126" rx="8" ry="5" fill="#E58F7A" opacity=".55"/>';
+  o += '<ellipse cx="80" cy="182" rx="12" ry="7" fill="#7A4A2D" stroke="' + TP_INK + '" stroke-width="4.5"/><ellipse cx="120" cy="182" rx="12" ry="7" fill="#7A4A2D" stroke="' + TP_INK + '" stroke-width="4.5"/>';
+  return tpSvg(w, w, o, 200, 200);
+}
+/* ---------- Tendencies art, part two ---------- */
+/* the six Quick answers and the part of the cup each one glows on: [Quick key, glow name, color] */
+const TP_CUP_GLOWS = [['smell', 'aroma', '#FFE08A'], ['acidity', 'acid', '#FFF1A0'], ['taste', 'flavor', '#FFB454'], ['body', 'body', '#FFCB7A'], ['sweetness', 'sweet', '#FFD0A0'], ['aftertaste', 'after', '#FFB454']];
+/* The cup. share = { smell: 0..1, ... } is the share of Good for each part. Brighter means more Good. Each part has a class so a chosen part can stand out (see the CSS). */
+function tpCupG(share, w){
+  const id = ++tpSeq, g = {}; TP_CUP_GLOWS.forEach(x => { g[x[1]] = share[x[0]] || 0; });
+  let o = '<defs>' + TP_CUP_GLOWS.map(x => '<radialGradient id="tpgl' + x[1] + id + '"><stop offset="0" stop-color="' + x[2] + '" stop-opacity=".95"/><stop offset="1" stop-color="' + x[2] + '" stop-opacity="0"/></radialGradient>').join('') + '</defs>';
+  const G = (k, cx, cy, rx, ry) => '<ellipse class="tpG tpg-' + k + '" cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '" fill="url(#tpgl' + k + id + ')" style="--o:' + (0.25 + 0.75 * g[k]).toFixed(2) + '"/>';
+  o += G('aroma', 150, 52, 76, 60) + G('acid', 238, 88, 44, 44) + G('sweet', 54, 206, 46, 36) + G('after', 252, 206, 44, 34);
+  o += '<ellipse cx="150" cy="214" rx="118" ry="19" fill="#F2A93B" stroke="' + TP_INK + '" stroke-width="3.5"/><ellipse cx="150" cy="210" rx="82" ry="10" fill="#FFD27A" stroke="' + TP_INK + '" stroke-width="2.2"/>';
+  const hd = 'M238 120 h18 a24 24 0 0 1 0 48 h-28', body = 'M62 104 H238 V140 A66 66 0 0 1 172 206 H128 A66 66 0 0 1 62 140 Z';
+  o += '<path d="' + hd + '" fill="none" stroke="' + TP_INK + '" stroke-width="12" stroke-linecap="round"/><path d="' + hd + '" fill="none" stroke="#FDFBF7" stroke-width="5.5" stroke-linecap="round"/>';
+  o += '<path d="' + body + '" fill="#FDFBF7" stroke="' + TP_INK + '" stroke-width="3.8" stroke-linejoin="round"/><path d="M76 130 C76 160 92 186 120 196" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".8"/><path d="M222 150 C220 170 210 186 196 194" fill="none" stroke="#E6D9BE" stroke-width="5" stroke-linecap="round" opacity=".8"/>';
+  o += '<path class="tpG tpg-body" d="' + body + '" fill="#FFB43A" style="--o:1" fill-opacity="' + (0.12 + 0.5 * g.body).toFixed(2) + '"/>';
+  o += '<ellipse cx="150" cy="104" rx="88" ry="15" fill="#8A5230" stroke="' + TP_INK + '" stroke-width="3.8"/><ellipse cx="150" cy="106" rx="70" ry="9" fill="#6B3E22" opacity=".6"/><path d="M104 100 Q130 94 158 98" fill="none" stroke="#C99872" stroke-width="3" stroke-linecap="round" opacity=".8"/>';
+  o += '<ellipse class="tpg-flavor" cx="150" cy="104" rx="88" ry="15" fill="none" stroke="#FFC15A" stroke-width="7" stroke-opacity="' + (0.1 + 0.85 * g.flavor).toFixed(2) + '"/>';
+  o += '<circle cx="124" cy="150" r="9" fill="#fff" stroke="' + TP_INK + '" stroke-width="3"/><circle cx="176" cy="150" r="9" fill="#fff" stroke="' + TP_INK + '" stroke-width="3"/><circle cx="125.5" cy="152" r="4" fill="' + TP_INK + '"/><circle cx="177.5" cy="152" r="4" fill="' + TP_INK + '"/>';
+  o += '<path d="M138 166 Q150 177 162 166" fill="none" stroke="' + TP_INK + '" stroke-width="3.4" stroke-linecap="round"/><ellipse cx="106" cy="166" rx="7" ry="4.5" fill="#E58F7A" opacity=".55"/><ellipse cx="194" cy="166" rx="7" ry="4.5" fill="#E58F7A" opacity=".55"/>';
+  [-22, 0, 22].forEach(dx => { const d = 'M' + (150 + dx) + ' 92 c-12 -10 12 -20 0 -32 c-11 -10 11 -20 0 -30'; o += '<path d="' + d + '" fill="none" stroke="' + TP_INK + '" stroke-width="9" stroke-linecap="round"/><path d="' + d + '" fill="none" stroke="#FDFBF7" stroke-width="3.6" stroke-linecap="round"/>'; });
+  o += '<path d="M236 64 L242 82 L260 88 L242 94 L236 112 L230 94 L212 88 L230 82 Z" fill="#FFE96B" stroke="' + TP_INK + '" stroke-width="3" stroke-linejoin="round"/><path d="M264 62 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" fill="#FFE96B" stroke="' + TP_INK + '" stroke-width="2.2" stroke-linejoin="round"/>';
+  o += '<path d="M34 196 L64 196 L64 224 L34 224 Z" fill="#FFF8EA" stroke="' + TP_INK + '" stroke-width="3" stroke-linejoin="round"/><path d="M34 196 L44 188 L74 188 L64 196 Z" fill="#fff" stroke="' + TP_INK + '" stroke-width="3" stroke-linejoin="round"/><path d="M64 196 L74 188 L74 216 L64 224 Z" fill="#E6D9BE" stroke="' + TP_INK + '" stroke-width="3" stroke-linejoin="round"/><circle cx="42" cy="204" r="1.8" fill="#BDA77E"/><circle cx="54" cy="214" r="1.8" fill="#BDA77E"/>';
+  o += '<ellipse cx="252" cy="218" rx="22" ry="5" fill="none" stroke="#8A5230" stroke-width="2.6" opacity=".75"/><ellipse cx="252" cy="218" rx="11" ry="3" fill="none" stroke="#8A5230" stroke-width="2.6" opacity=".9"/>';
+  o += '<path d="M252 186 C 262 200 266 207 266 212 A14 14 0 0 1 238 212 C 238 207 242 200 252 186 Z" fill="#6B3E22" stroke="' + TP_INK + '" stroke-width="3" stroke-linejoin="round"/><path d="M246 208 C246 212 248 215 251 216" fill="none" stroke="#C99872" stroke-width="3" stroke-linecap="round"/>';
+  return '<svg class="tpcup" width="' + w + '" height="' + Math.round(w * 0.8) + '" viewBox="0 0 300 240" aria-hidden="true" focusable="false" style="display:block;max-width:100%;height:auto">' + o + '</svg>';
+}
+/* The jar: layers from 5 stars at the top to 1 star at the bottom. unit 1 = one bean is one coffee; a bigger unit = a big bean is that many coffees and a small bean is one. Returns { svg, bands:[{ star, y0, y1, n }], h } so labels can sit level with each layer. */
+function tpJarG(jar){
+  const rnd = tpRnd(5), u = jar.unit, bigS = u === 1 ? 0.8 : 1, smallS = u === 1 ? 0.8 : 0.62, bigW = u === 1 ? 28 : 34, bigH = u === 1 ? 22 : 28, per = u === 1 ? 5 : 4, smW = 22, smH = 18, minH = 58, cx = 100, shades = [62, 78, 96, 112, 70, 104];
+  let y = 30, body = '', seps = '';
+  const bands = jar.layers.map(L => {
+    const rows = L.big ? Math.ceil(L.big / per) : 0, ch = rows * bigH + (L.small ? smH : 0), band = Math.max(minH, ch + 12);
+    let yy = y + (band - ch) / 2, grp = '<g class="tpL tpl' + L.star + '">';
+    for (let r = 0; r < rows; r++){ const k = Math.min(per, L.big - r * per), x0 = cx - (k - 1) * bigW / 2; for (let j = 0; j < k; j++) grp += tpBeanG(x0 + j * bigW + (rnd() * 4 - 2), yy + bigH / 2 + (rnd() * 3 - 1.5), shades[Math.floor(rnd() * 6)], L.star, bigS); yy += bigH; }
+    if (L.small){ const x0 = cx - (L.small - 1) * smW / 2; for (let j = 0; j < L.small; j++) grp += tpBeanG(x0 + j * smW + (rnd() * 4 - 2), yy + smH / 2, shades[Math.floor(rnd() * 4)], L.star, smallS); }
+    body += grp + '</g>';
+    const out = { star:L.star, y0:y, y1:y + band, n:L.n };
+    y += band; if (L.star !== 1) seps += '<path d="M16 ' + y + ' H184" stroke="' + TP_INK + '" stroke-width="2" stroke-dasharray="2 6" stroke-linecap="round" opacity=".35"/>';
+    return out;
+  });
+  const hj = y + 14, H = hj + 4;
+  let o = '<path d="M24 22 H176 Q192 22 192 40 V' + (hj - 18) + ' Q192 ' + hj + ' 174 ' + hj + ' H26 Q8 ' + hj + ' 8 ' + (hj - 18) + ' V40 Q8 22 24 22 Z" fill="#DDF1F7" fill-opacity=".55" stroke="' + TP_INK + '" stroke-width="4" stroke-linejoin="round"/>' + seps + body;
+  o += '<path d="M19 44 V' + Math.max(60, hj - 40) + '" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".7"/>';
+  o += '<rect x="22" y="6" width="156" height="22" rx="7" fill="#F2A93B" stroke="' + TP_INK + '" stroke-width="4"/><path d="M34 12 H166" stroke="#FFD27A" stroke-width="3" stroke-linecap="round"/>';
+  return { svg:'<svg class="tpjarart" width="100%" viewBox="0 0 200 ' + H + '" aria-hidden="true" focusable="false" style="display:block">' + o + '</svg>', bands, h:H };
+}
+/* One pile of beans for each whole star (1 to 5). Each bean is `unit` coffees. The flag stands at the middle (heap.median, from 3 coffees) and the green bar is the middle half of the coffees. ghost = the middle of everything, drawn as a dashed flag to compare. */
+function tpHeapG(heap, unit, ghost, uid){
+  const W = 330, colW = 62, x0 = (W - 5 * colW) / 2, ground = 112, X = v => x0 + (v - 1) * colW + colW / 2;
+  let o = '<path d="M6 ' + ground + ' H' + (W - 6) + '" stroke="' + TP_INK + '" stroke-width="3.2" stroke-linecap="round"/>';
+  if (heap.enough && heap.band) o += '<rect x="' + tpFx(X(heap.band[0]) - 22) + '" y="' + (ground + 6) + '" width="' + tpFx(X(heap.band[1]) - X(heap.band[0]) + 44) + '" height="9" rx="4.5" fill="#3F7A57" stroke="' + TP_INK + '" stroke-width="2.2"/>';
+  heap.counts.forEach((c, i) => {
+    const cx = X(i + 1), nb = c ? Math.max(1, Math.round(c / unit)) : 0, rnd = tpRnd(i * 31 + 7 + (uid || 0)), shades = [76, 92, 104, 84];
+    let placed = 0, row = 0;
+    while (placed < nb){ const per = row % 2 === 0 ? 3 : 2, k = Math.min(per, nb - placed); for (let j = 0; j < k; j++) o += tpBeanG(cx + (j - (k - 1) / 2) * 17 + (rnd() * 2 - 1), ground - 9 - row * 12, shades[Math.floor(rnd() * 4)], i + 1, 0.62); placed += k; row++; }
+    o += '<text x="' + tpFx(cx) + '" y="' + (ground + 34) + '" text-anchor="middle" font-size="16" font-weight="700" fill="#5C4A3E">' + (i + 1) + '</text>';
+  });
+  if (ghost != null && heap.enough){ const gx = X(ghost); o += '<path d="M' + tpFx(gx) + ' ' + ground + ' V8" stroke="#5C4A3E" stroke-width="2.6" stroke-dasharray="4 5" stroke-linecap="round"/><path d="M' + tpFx(gx + 1.5) + ' 8 L' + tpFx(gx + 24) + ' 17 L' + tpFx(gx + 1.5) + ' 26 Z" fill="none" stroke="#5C4A3E" stroke-width="2.4" stroke-dasharray="4 4" stroke-linejoin="round"/>'; }
+  if (heap.enough && heap.median != null){ const fx = X(heap.median); o += '<path d="M' + tpFx(fx) + ' ' + ground + ' V8" stroke="' + TP_INK + '" stroke-width="3.4" stroke-linecap="round"/><path d="M' + tpFx(fx + 1.5) + ' 8 L' + tpFx(fx + 30) + ' 19 L' + tpFx(fx + 1.5) + ' 30 Z" fill="#F2A93B" stroke="' + TP_INK + '" stroke-width="2.8" stroke-linejoin="round"/>'; }
+  return '<svg class="tpheap" width="100%" viewBox="0 0 ' + W + ' 150" aria-hidden="true" focusable="false" style="display:block">' + o + '</svg>';
+}
+/* ---------- Tendencies art, part three ---------- */
+const TP_AWN = ['#D9503B', '#4A8FB8', '#3F7A57', '#F2A93B', '#7A5BA8'], TP_DOOR = ['#4A8FB8', '#D9503B', '#3F7A57', '#8A5230', '#F2A93B'];
+/* a soft round blob, a little uneven, like a stain */
+function tpBlob(cx, cy, rx, ry, seed, wob){
+  wob = wob == null ? 0.09 : wob;
+  const rnd = tpRnd(seed * 977 + 13), ph = [rnd() * 6.28, rnd() * 6.28, rnd() * 6.28], N = 14, pts = [];
+  for (let k = 0; k < N; k++){ const t = 2 * Math.PI * k / N, f = 1 + wob * Math.sin(2 * t + ph[0]) + wob * 0.7 * Math.sin(3 * t + ph[1]) + wob * 0.5 * Math.sin(5 * t + ph[2]); pts.push([cx + rx * f * Math.cos(t), cy + ry * f * Math.sin(t)]); }
+  let d = 'M' + tpFx(pts[0][0]) + ' ' + tpFx(pts[0][1]) + ' ';
+  for (let k = 0; k < N; k++){
+    const p0 = pts[(k + N - 1) % N], p1 = pts[k], p2 = pts[(k + 1) % N], p3 = pts[(k + 2) % N];
+    d += 'C' + tpFx(p1[0] + (p2[0] - p0[0]) / 6) + ' ' + tpFx(p1[1] + (p2[1] - p0[1]) / 6) + ' ' + tpFx(p2[0] - (p3[0] - p1[0]) / 6) + ' ' + tpFx(p2[1] - (p3[1] - p1[1]) / 6) + ' ' + tpFx(p2[0]) + ' ' + tpFx(p2[1]) + ' ';
+  }
+  return d + 'Z';
+}
+/* a cup ring: layers get darker toward the middle, and the outer edge has a dark rim like a real coffee ring */
+function tpStainG(cx, cy, rx, ry, seed, layers){
+  const tone = '#6B3E22'; let o = '';
+  for (let k = 0; k < layers; k++){
+    const f = 1 - k * (0.62 / Math.max(1, layers - 1)), a = 0.15 + k * 0.15;
+    o += '<path d="' + tpBlob(cx, cy, rx * f, ry * f, seed + k, 0.08 + k * 0.01) + '" fill="' + tone + '" fill-opacity="' + a.toFixed(2) + '"/>';
+    if (k === 0) o += '<path d="' + tpBlob(cx, cy, rx * f, ry * f, seed, 0.08) + '" fill="none" stroke="' + tone + '" stroke-opacity=".7" stroke-width="3.6"/><path d="' + tpBlob(cx, cy, rx * f * 0.93, ry * f * 0.93, seed + 7, 0.08) + '" fill="none" stroke="' + tone + '" stroke-opacity=".28" stroke-width="1.4"/>';
+    else o += '<path d="' + tpBlob(cx, cy, rx * f, ry * f, seed + k, 0.08 + k * 0.01) + '" fill="none" stroke="' + tone + '" stroke-opacity=".30" stroke-width="1.6"/>';
+  }
+  return o;
+}
+/* one brew: a single drop with a tiny bean on it when it was rated */
+function tpDropG(cx, cy, r, seed, rating){
+  const tone = '#6B3E22';
+  return '<path d="' + tpBlob(cx, cy, r, r, seed, 0.07) + '" fill="' + tone + '" fill-opacity=".22"/><path d="' + tpBlob(cx, cy, r, r, seed, 0.07) + '" fill="none" stroke="' + tone + '" stroke-opacity=".7" stroke-width="2.4"/>' + (rating ? tpBeanG(cx, cy, 70, Math.min(5, Math.max(1, Math.ceil(rating - 1e-9))), 0.34) : '');
+}
+/* The cup-ring paper. k = one entry of tpRings(...).kinds. x is how much comes out (extraction), y is how strong (TDS). Returns the svg plus a box for each ring, in percent of the picture, so a real button can sit on it. */
+function tpRingsG(k){
+  const W = 334, H = 318, px = 30, py = 6, pw = 298, ph = 268, bx = k.box, esp = k.kind === 'espresso';
+  const x0 = 14, x1 = 26, y0 = esp ? 4 : 0.9, y1 = esp ? 16 : 1.7, X = v => px + (Math.min(x1, Math.max(x0, v)) - x0) / (x1 - x0) * pw, Y = v => py + (1 - (Math.min(y1, Math.max(y0, v)) - y0) / (y1 - y0)) * ph;
+  let o = '<rect x="' + px + '" y="' + py + '" width="' + pw + '" height="' + ph + '" rx="14" style="fill:var(--tp-paper)" stroke="#D3C59C" stroke-width="2.4"/>';
+  const bxx = X(bx.x0), byy = Y(bx.y1), bw = X(bx.x1) - X(bx.x0), bh = Y(bx.y0) - Y(bx.y1);
+  o += '<rect x="' + tpFx(bxx) + '" y="' + tpFx(byy) + '" width="' + tpFx(bw) + '" height="' + tpFx(bh) + '" rx="16" fill="#F2A93B" fill-opacity=".10" stroke="' + TP_INK + '" stroke-width="2.8" stroke-dasharray="7 6"/>';
+  o += '<g transform="translate(' + tpFx(bxx + 1) + ' ' + tpFx(byy + bh + 16) + ')"><rect x="0" y="-12" width="120" height="24" rx="8" fill="#F2A93B" stroke="' + TP_INK + '" stroke-width="2.4"/><text x="60" y="5" text-anchor="middle" font-size="14" font-weight="700" fill="#22120C">Common target</text></g>';
+  const boxes = [];
+  k.rings.slice().sort((a, b) => b.count - a.count).forEach((r, i) => {
+    const cx = X(r.ey), cy = Y(r.tds), seed = 11 + i * 17;
+    if (r.count === 1){ o += tpDropG(cx, cy, 13, seed, r.mid); boxes.push({ x:cx - 17, y:cy - 17, w:34, h:34, ring:r }); }
+    else { const rad = Math.min(46, 12 + 6 * Math.sqrt(r.count)); o += tpStainG(cx, cy, rad, rad * 0.78, seed, r.count > 10 ? 3 : 2); boxes.push({ x:cx - rad, y:cy - rad * 0.78, w:2 * rad, h:1.56 * rad, ring:r }); }
+  });
+  o += '<text x="' + px + '" y="302" font-size="15" font-weight="700" style="fill:var(--muted)">Less comes out</text><text x="328" y="302" text-anchor="end" font-size="15" font-weight="700" style="fill:var(--muted)">More comes out</text>';
+  o += '<text transform="translate(18 274) rotate(-90)" font-size="15" font-weight="700" style="fill:var(--muted)">Weaker</text><text transform="translate(18 8) rotate(90)" font-size="15" font-weight="700" style="fill:var(--muted)">Stronger</text>';
+  return { svg:'<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true" focusable="false" style="display:block">' + o + '</svg>', boxes:boxes.map(b => ({ left:b.x / W * 100, top:b.y / H * 100, width:b.w / W * 100, height:b.h / H * 100, ring:b.ring })), W, H };
+}
+/* a shop front: an awning, a door, windows. Taller and wider means more visits. */
+function tpFrontG(x, y, wd, ht, awn, door){
+  let o = '<rect x="' + tpFx(x) + '" y="' + tpFx(y + 14) + '" width="' + tpFx(wd) + '" height="' + tpFx(ht - 14) + '" fill="#FFF8EA" stroke="' + TP_INK + '" stroke-width="3.2" stroke-linejoin="round"/>';
+  const n = Math.max(3, Math.floor(wd / 12)), sw = wd / n;
+  for (let k = 0; k < n; k++){ const c = k % 2 === 0 ? awn : '#FDFBF7'; o += '<path d="M' + tpFx(x + k * sw) + ' ' + tpFx(y) + ' h' + tpFx(sw) + ' l2 16 h-4 z" fill="' + c + '" stroke="' + TP_INK + '" stroke-width="2.6" stroke-linejoin="round"/>'; }
+  for (let k = 0; k < n; k++){ const c = k % 2 === 0 ? awn : '#FDFBF7'; o += '<path d="M' + tpFx(x + k * sw) + ' ' + tpFx(y + 16) + ' q' + tpFx(sw / 2) + ' 7 ' + tpFx(sw) + ' 0z" fill="' + c + '" stroke="' + TP_INK + '" stroke-width="2.4" stroke-linejoin="round"/>'; }
+  const dh = Math.min(30, ht - 34);
+  o += '<rect x="' + tpFx(x + wd / 2 - 8) + '" y="' + tpFx(y + ht - dh) + '" width="16" height="' + tpFx(dh) + '" fill="' + door + '" stroke="' + TP_INK + '" stroke-width="2.8"/><circle cx="' + tpFx(x + wd / 2 + 4) + '" cy="' + tpFx(y + ht - dh / 2) + '" r="1.6" fill="#FFF8EA"/>';
+  if (wd >= 52) o += '<rect x="' + tpFx(x + 7) + '" y="' + tpFx(y + 28) + '" width="12" height="14" fill="#DDF1F7" stroke="' + TP_INK + '" stroke-width="2.2"/><rect x="' + tpFx(x + wd - 19) + '" y="' + tpFx(y + 28) + '" width="12" height="14" fill="#DDF1F7" stroke="' + TP_INK + '" stroke-width="2.2"/>';
+  return o;
+}
+/* The street: your top shops (width and height follow the visits), then a block for the rest or an empty lot. shops come from tpShops. Returns the svg, its width and a box for each shop to put a button on. */
+function tpStreetG(shops, more, moreVisits){
+  const BASE = 176, mx = Math.max(1, ...shops.map(s => s.visits)), boxes = [];
+  let x = 14, o = '';
+  const txt = (cx, y, s, bold, size) => '<text x="' + tpFx(cx) + '" y="' + y + '" text-anchor="middle" font-size="' + (size || 14) + '"' + (bold ? ' font-weight="700"' : '') + ' style="fill:var(--' + (bold ? 'ink' : 'muted') + ')">' + escHtml(s) + '</text>';
+  shops.forEach((s, i) => {
+    const w = 46 + 30 * s.visits / mx, hh = 70 + 72 * s.visits / mx, y = BASE - hh;
+    o += tpFrontG(x, y, w, hh, TP_AWN[i % 5], TP_DOOR[(i + 1) % 5]);
+    if (s.fav) o += '<g transform="translate(' + tpFx(x + w - 20) + ' ' + tpFx(y - 24) + ')"><svg width="30" height="30" viewBox="0 0 48 48"><use href="#a-fav"/></svg></g>';
+    const nm = s.name.length > 9 && s.name.indexOf(' ') > 0 ? [s.name.slice(0, s.name.indexOf(' ')), s.name.slice(s.name.indexOf(' ') + 1)] : [s.name];
+    nm.forEach((t, li) => { o += txt(x + w / 2, BASE + 20 + li * 15, t.length > 12 ? t.slice(0, 11) + '…' : t, true); });
+    o += txt(x + w / 2, BASE + 52, s.visits + (s.visits === 1 ? ' visit' : ' visits'));
+    boxes.push({ x:x - 2, y:y - 6, w:w + 4, h:hh + 6, shop:s }); x += w + 12;
+  });
+  if (more > 0){
+    o += tpFrontG(x, BASE - 50, 34, 50, '#C9B88E', '#A98F5E') + tpFrontG(x + 30, BASE - 62, 34, 62, '#B7A47A', '#A98F5E') + txt(x + 32, BASE + 20, '+' + more + ' more', true) + txt(x + 32, BASE + 35, moreVisits + (moreVisits === 1 ? ' visit' : ' visits'));
+    boxes.push({ x:x - 2, y:BASE - 66, w:70, h:76, more:true }); x += 80;
+  } else { o += '<rect x="' + tpFx(x) + '" y="' + (BASE - 70) + '" width="62" height="70" rx="10" fill="none" stroke="' + TP_INK + '" stroke-width="2.6" stroke-dasharray="6 6" opacity=".55"/>' + txt(x + 31, BASE - 30, '?', true, 26) + txt(x + 31, BASE + 20, 'next shop'); x += 70; }
+  const W = Math.max(334, x + 10);
+  o = '<path d="M4 ' + BASE + ' H' + (W - 4) + '" stroke="' + TP_INK + '" stroke-width="3.4" stroke-linecap="round"/><path d="M4 ' + (BASE + 6) + ' H' + (W - 4) + '" stroke="#D3C59C" stroke-width="3" stroke-dasharray="3 7" stroke-linecap="round"/>' + o;
+  return { svg:'<svg width="' + W + '" height="228" viewBox="0 0 ' + W + ' 228" aria-hidden="true" focusable="false" style="display:block;max-width:none">' + o + '</svg>', W, boxes };
+}
+/* a stack of coins: about one coin for each unit of money */
+function tpCoinsG(cx, base, n){
+  let o = ''; n = Math.max(1, Math.min(8, n));
+  for (let k = 0; k < n; k++) o += '<path d="M' + (cx - 14) + ' ' + (base - k * 7) + ' v-5 a14 6 0 0 1 28 0 v5 a14 6 0 0 1 -28 0 z" fill="#E08E1B" stroke="' + TP_INK + '" stroke-width="2.4" stroke-linejoin="round"/>';
+  const y = base - (n - 1) * 7 - 5;
+  return o + '<ellipse cx="' + cx + '" cy="' + y + '" rx="14" ry="6" fill="#F2A93B" stroke="' + TP_INK + '" stroke-width="2.4"/><ellipse cx="' + cx + '" cy="' + y + '" rx="8" ry="3" fill="none" stroke="#C47A12" stroke-width="2"/>';
+}
+/* five bean places: filled for the middle rating, dashed for the rest (a half bean is not drawn, the number is printed) */
+function tpSlotsG(cx, filled, shade){
+  let o = '';
+  for (let i = 0; i < 5; i++){ const x = cx + (i - 2) * 27; o += i < filled ? tpBeanG(x, 150, 70, shade, 0.8) : '<g transform="translate(' + x + ' 150) rotate(70) scale(.8)"><ellipse rx="12.5" ry="18" fill="none" stroke="' + TP_INK + '" stroke-width="2.4" stroke-dasharray="4 4" opacity=".45"/></g>'; }
+  return o;
+}
+/* the home mug beside the shop's paper cup. Each side has its middle rating in beans and its coins. coins = [home, shop], mids = [home, shop] (null when unknown). */
+function tpTwinG(mids, coins, lines){
+  const sh = v => Math.min(5, Math.max(1, Math.ceil((v || 1) - 1e-9))), say = (v, i) => v == null ? 'No rating yet' : 'Middle ' + v + (v === 1 ? ' bean' : ' beans');
+  let o = '<path d="M167 14 V210" stroke="#D3C59C" stroke-width="3" stroke-dasharray="3 7" stroke-linecap="round"/>';
+  o += '<text x="83" y="26" text-anchor="middle" font-family="Lora" font-weight="700" font-size="21" style="fill:var(--ink)">At home</text><text x="251" y="26" text-anchor="middle" font-family="Lora" font-weight="700" font-size="21" style="fill:var(--ink)">At shops</text>';
+  o += '<g transform="translate(-2 0)"><path d="M104 74 h12 a14 14 0 0 1 0 28 h-10" fill="none" stroke="' + TP_INK + '" stroke-width="11" stroke-linecap="round"/><path d="M104 74 h12 a14 14 0 0 1 0 28 h-10" fill="none" stroke="#FDFBF7" stroke-width="4.5" stroke-linecap="round"/>';
+  o += '<path d="M48 62 H108 V96 A22 22 0 0 1 86 118 H70 A22 22 0 0 1 48 96 Z" fill="#FDFBF7" stroke="' + TP_INK + '" stroke-width="3.6" stroke-linejoin="round"/><ellipse cx="78" cy="62" rx="30" ry="8" fill="#8A5230" stroke="' + TP_INK + '" stroke-width="3.6"/>';
+  o += '<path d="M66 48 c-6 -6 6 -10 0 -17 M80 48 c-6 -6 6 -10 0 -17" fill="none" stroke="' + TP_INK + '" stroke-width="3.2" stroke-linecap="round"/>' + tpFaceG(78, 88, 'smile', 1.5) + '</g>';
+  o += '<path d="M222 70 L286 70 L276 118 L232 118 Z" fill="#FDFBF7" stroke="' + TP_INK + '" stroke-width="3.6" stroke-linejoin="round"/><path d="M226 90 L282 90 L279 106 L229 106 Z" fill="#B0703A" stroke="' + TP_INK + '" stroke-width="2.8" stroke-linejoin="round"/>';
+  o += '<rect x="217" y="58" width="74" height="14" rx="6" fill="#D9503B" stroke="' + TP_INK + '" stroke-width="3.4"/><rect x="226" y="50" width="56" height="10" rx="4" fill="#D9503B" stroke="' + TP_INK + '" stroke-width="3.2"/>' + tpFaceG(254, 82, 'smile', 1.3);
+  o += (coins[0] ? tpCoinsG(134, 116, coins[0]) : '') + (coins[1] ? tpCoinsG(310, 116, coins[1]) : '');
+  o += tpSlotsG(83, mids[0] == null ? 0 : sh(mids[0]), mids[0] == null ? 3 : sh(mids[0])) + tpSlotsG(251, mids[1] == null ? 0 : sh(mids[1]), mids[1] == null ? 3 : sh(mids[1]));
+  o += '<text x="83" y="190" text-anchor="middle" font-size="17" font-weight="700" style="fill:var(--ink)">' + say(mids[0]) + '</text><text x="251" y="190" text-anchor="middle" font-size="17" font-weight="700" style="fill:var(--ink)">' + say(mids[1]) + '</text>';
+  o += '<text x="83" y="209" text-anchor="middle" font-size="15" style="fill:var(--muted)">' + escHtml(lines[0]) + '</text><text x="251" y="209" text-anchor="middle" font-size="15" style="fill:var(--muted)">' + escHtml(lines[1]) + '</text>';
+  return '<svg width="100%" viewBox="0 0 334 226" aria-hidden="true" focusable="false" style="display:block">' + o + '</svg>';
+}
+/* a small picture for a group: process, elevation, roast; anything else uses the app's own sprite */
+function tpGroupIcon(feat, value, size){
+  size = size || 40; const st = 'width:' + size + 'px;height:' + size + 'px';
+  let o = '';
+  if (feat === 'process' && value === 'washed') o = '<path d="M24 5 C33 17 38 24 38 31 A14 14 0 0 1 10 31 C10 24 15 17 24 5 Z" fill="#7FB8D8" stroke="' + TP_INK + '" stroke-width="2.8" stroke-linejoin="round"/><path d="M17 31 C17 36 20 39 24 40" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>';
+  else if (feat === 'process' && value === 'natural'){ for (let a = 0; a < 360; a += 45) o += '<path d="M24 4 V10" transform="rotate(' + a + ' 24 24)" stroke="' + TP_INK + '" stroke-width="3" stroke-linecap="round"/>'; o += '<circle cx="24" cy="24" r="10" fill="#F2A93B" stroke="' + TP_INK + '" stroke-width="2.8"/><circle cx="21" cy="21" r="3" fill="#FFD27A"/>'; }
+  else if (feat === 'process' && value === 'honey') o = '<path d="M24 4 C32 15 37 22 37 29 A13 13 0 0 1 11 29 C11 22 16 15 24 4 Z" fill="#E5A02A" stroke="' + TP_INK + '" stroke-width="2.8" stroke-linejoin="round"/><path d="M24 22 l5 3 v6 l-5 3 -5 -3 v-6 z" fill="#FFD27A" stroke="' + TP_INK + '" stroke-width="2.2" stroke-linejoin="round"/>';
+  else if (feat === 'density'){ const n = value === 'high' ? 3 : value === 'mid' ? 2 : 1; o = '<path d="M3 40 L17 14 L26 30 L33 20 L45 40 Z" fill="' + (n > 1 ? '#8FB08A' : '#B9CDA6') + '" stroke="' + TP_INK + '" stroke-width="2.8" stroke-linejoin="round"/>' + (n > 2 ? '<path d="M12 24 L17 14 L22 23 L17 21 Z" fill="#fff" stroke="' + TP_INK + '" stroke-width="2" stroke-linejoin="round"/>' : '') + (n > 1 ? '<path d="M-1 40 H49" stroke="' + TP_INK + '" stroke-width="2.8" stroke-linecap="round"/>' : ''); }
+  else if (feat === 'roast'){ const i = Math.max(0, ROASTS.findIndex(r => r.v === value)); o = tpBeanG(24, 24, 40, Math.min(5, i + 1), 1.15); }
+  if (o) return tpArt(tpSvg(size, size, o, 48, 48), 'tpgi');
+  const id = feat === 'origin' ? 'art-globe' : feat === 'variety' ? 'art-var' : 'art-proc';
+  const sp = h('span', { class:'tpart tpgi', 'aria-hidden':'true', style:st }); sp.innerHTML = '<svg viewBox="0 0 48 48" width="' + size + '" height="' + size + '" focusable="false"><use href="#' + id + '"/></svg>'; return sp;
+}
+/* ---------- Tendencies tiles: small pictures ---------- */
+function tpMiniGarden(g){
+  const fl = g.flowers.filter(f => f.tasted > 0).sort((a, b) => b.tasted - a.tasted).slice(0, 4), use = fl.length ? fl : [{ hue:350, tasted:4, mood:'smile' }, { hue:35, tasted:3, mood:'smile' }, { hue:315, tasted:2, mood:'flat' }, { hue:28, tasted:1, mood:'droop' }];
+  const mx = Math.max(1, ...use.map(f => f.tasted));
+  let o = tpPlankG(6, 70, 138, 9);
+  use.forEach((f, i) => { o += tpFlowerG(26 + i * 31, 69, 14 + 32 * f.tasted / mx, f.hue, f.mood === 'none' ? 'flat' : f.mood, 0.52, false); });
+  return tpArt(tpSvg(150, 82, o));
+}
+function tpMiniCup(gl){ const sh = {}; gl.parts.forEach(p => { sh[p.key] = p.answered ? p.share : 0.5; }); return tpArt(tpCupG(sh, 112)); }
+function tpMiniJar(jar){
+  const j = tpJarG(jar.n ? jar : tpJar({ n:12, ready:false, narrow:false, bars:[1, 2, 3, 4, 5].map((s, i) => ({ star:s, n:[1, 1, 3, 5, 2][i] })) }));
+  return tpArt(j.svg.replace('width="100%"', 'height="84"'));
+}
+function tpMiniHeaps(k){
+  const row = k.feats.length ? k.feats[0].rows[0].heap : tpHeap([2, 3, 3, 4, 4, 4, 5, 5]);
+  return tpArt(tpHeapG(row, tpUnit(row.max), null, 3).replace('width="100%"', 'width="150"'));
+}
+function tpMiniRings(){
+  const o = '<rect x="30" y="12" width="76" height="58" rx="12" fill="none" stroke="' + TP_INK + '" stroke-width="2.6" stroke-dasharray="6 5"/>' + tpStainG(66, 42, 30, 22, 11, 3) + tpStainG(104, 30, 16, 12, 23, 2) + tpDropG(22, 58, 7, 5) + tpDropG(128, 62, 6, 6) + tpDropG(120, 12, 5, 7) + tpDropG(14, 24, 5, 8);
+  return tpArt(tpSvg(150, 82, o));
+}
+function tpMiniStreet(){ return tpArt(tpSvg(150, 82, '<path d="M4 76 H146" stroke="' + TP_INK + '" stroke-width="3" stroke-linecap="round"/>' + tpFrontG(8, 22, 38, 54, TP_AWN[0], TP_DOOR[1]) + tpFrontG(52, 6, 46, 70, TP_AWN[1], TP_DOOR[0]) + tpFrontG(104, 32, 38, 44, TP_AWN[2], TP_DOOR[2]))); }
+/* ---------- Tendencies pages: shared pieces ---------- */
+const TP_CAUTION = 'These pictures describe what you rated and wrote. They are not rules about coffee. A few coffees is a small sample, and details overlap.';
+const TP_TITLES = { tend:'Your tendencies', tpflavors:'Flavors', tpenjoy:'What you enjoy', tprate:'How you rate', tpkinds:'Kinds of coffee', tpbrews:'Your brews', tpshops:'Coffee street', tpbrewers:'Your brew rack', tpmix:'Mix and match' };
+let tpLook = 'all';   /* which coffees the pictures look at: all, the last 12 months or the last 3 months. Not saved. */
+function tpIso(look){ if (look === 'all') return ''; const d = new Date(); d.setMonth(d.getMonth() - (look === '3m' ? 3 : 12)); const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+const tpObjs = () => tpSince(history && history.objs ? history.objs : [], tpIso(tpLook));
+const tpNow = () => tpHub(tpObjs(), sh.store, pr.list);
+/* a sprite picture at a size (the sprite's own pictures are 48 or 64 wide inside) */
+function tpIcon(id, size){ const s = h('span', { class:'tpart', 'aria-hidden':'true', style:'width:' + size + 'px;height:' + size + 'px' }); s.innerHTML = '<svg viewBox="0 0 48 48" width="' + size + '" height="' + size + '" focusable="false"><use href="#' + id + '"/></svg>'; return s; }
+/* the "Look at" choice, at the top of the home and of each picture page */
+function tpLookRow(m){
+  const all = history && history.objs ? history.objs : [], n = tpCoffees(all).length, opts = [{ v:'all', label:'All ' + n + (n === 1 ? ' coffee' : ' coffees') }];
+  [['12m', 'The last 12 months'], ['3m', 'The last 3 months']].forEach(([v, label]) => { const c = tpCoffees(tpSince(all, tpIso(v))).length; if (c > 0 && c < n) opts.push({ v, label:label + ' (' + c + (c === 1 ? ' coffee)' : ' coffees)') }); });
+  if (!opts.some(o => o.v === tpLook)) tpLook = 'all';
+  m.append(...tpSelect('Look at', 'tpLook', opts, tpLook, v => { tpLook = v; render(); }));
+}
+let tpSel = {};   /* the choice made on each page (a flower, a part of the cup, a layer); not saved */
+/* repaint one region of a page in place, so a tap does not scroll the page to the top */
+function tpPaint(holder, ...kids){ holder.textContent = ''; holder.append(...kept(...kids.flat())); }
+/* the heading, one line about the picture, and the mascot's line */
+function tpHead(m, title, intro, say){ m.append(h('h1', { class:'tph1', text:title }), h('p', { class:'tpintro', text:intro }), sayRow(say)); }
+const tpHalf = x => (Math.round(x * 2) / 2).toString();
+/* a tap tile (a real button) with a picture, a label, an optional count badge and an optional second line */
+function tpBtn(o){
+  const b = h('button', { type:'button', class:'tpbtn' + (o.on ? ' on' : '') + (o.zero ? ' zero' : '') + (o.cls ? ' ' + o.cls : ''), 'aria-pressed':o.on ? 'true' : 'false', id:o.id, onclick:o.onclick });
+  if (o.art) b.append(o.art);
+  b.append(h('span', { class:'tptx' }, h('span', { text:o.label }), o.sub ? h('small', { text:o.sub }) : null));
+  if (o.n != null) b.append(h('span', { class:'tpn', text:String(o.n), 'aria-hidden':'true' }));
+  b.setAttribute('aria-label', o.label + (o.n != null ? ', ' + o.n : '') + (o.sub ? ', ' + o.sub : ''));
+  return b;
+}
+function tpSelect(label, id, opts, value, onchange){
+  const sel = h('select', { id, class:'tpsel' }, opts.map(o => h('option', { value:o.v, text:o.label })));
+  sel.value = value; sel.addEventListener('change', () => onchange(sel.value));
+  return [h('label', { class:'tplab', for:id, text:label }), sel];
+}
+/* the top of the panel under a picture: a small picture, the name, a line and a short explanation */
+function tpPanelHead(art, title, line, blurb){
+  return h('div', { style:'display:flex;align-items:center;gap:12px' }, art, h('div', { style:'flex:1;min-width:0' }, h('div', { style:'font:700 25px/1.05 var(--display)', text:title }), line ? h('div', { style:'font-size:17px;margin-top:4px', class:'tpline' }, h('b', { text:line })) : null, blurb ? h('div', { class:'fine', style:'margin:4px 0 0', text:blurb }) : null));
+}
+/* some of the coffees: name, a line, and the rating as a bean. Four show first; a button shows the rest in place. */
+function tpCoffeeRows(items, title){
+  if (!items.length) return null;
+  const box = h('div', { class:'tpcard', style:'box-shadow:none;border-color:var(--line);padding:0;margin:0' }), btn = h('button', { type:'button', class:'btn block', style:'margin-top:10px', onclick:() => { all = !all; paint(); } });
+  let all = false;
+  const row = c => h('div', { style:'display:flex;align-items:center;gap:10px;padding:10px 12px;min-height:56px;border-top:2px solid var(--line)' },
+    h('div', { style:'flex:1;min-width:0' }, h('b', { style:'display:block;font-size:17px;line-height:1.15', text:c.name || 'Unnamed coffee' }), c.sub ? h('span', { class:'fine', style:'margin:0', text:c.sub }) : null),
+    c.stars != null ? h('span', { style:'display:flex;align-items:center;gap:4px;font:700 18px var(--ui)', 'aria-label':tpHalf(c.stars) + ' beans' }, tpIcon('bean-3', 26), tpHalf(c.stars)) : null);
+  const list = h('div'), wrap = h('div');
+  function paint(){
+    list.textContent = ''; items.slice(0, all ? items.length : 4).forEach((c, i) => { const r = row(c); if (!i) r.style.borderTop = '0'; list.append(r); });
+    btn.textContent = all ? 'Show fewer' : 'Show all ' + items.length; btn.hidden = items.length <= 4;
+  }
+  paint(); box.append(list); wrap.append(h('span', { class:'tplab', text:title || 'Some of the coffees' }), box, btn);
+  return wrap;
+}
+/* Why? for Comfortable, How this is counted for Expert, nothing for New */
+function tpWhy(text){ return level() === 'new' ? document.createDocumentFragment() : h('details', { class:'tpfold' }, h('summary', { text:level() === 'expert' ? 'How this is counted' : 'Why?' }), h('p', { class:'serif gp', style:'margin:4px 0 0', text })); }
+function tpNumbers(lines){ return !(level() === 'expert' && lines.length) ? document.createDocumentFragment() : h('details', { class:'tpfold', open:true }, h('summary', { text:'The numbers' }), lines.map(t => h('p', { class:'fine', style:'margin:2px 0 0', text:t }))); }
+/* a picture that does not have enough yet: the mascot says what it needs */
+function tpNeed(m, id, line){ m.append(h('div', { class:'tpcard', id }, h('p', { style:'margin:0;font-size:17px;line-height:1.35', text:line }))); }
+function tpFoot(text){ return h('p', { class:'fine', id:'tpCaution', text:(text ? text + ' ' : '') + TP_CAUTION }); }
+function tpDone(){ return h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary block', id:'tpDoneBtn', text:'Done', onclick:() => navBack(typeof PARENT[app.screen] === 'function' ? PARENT[app.screen]() : PARENT[app.screen]) }))); }
+/* a tile on the home: picture, name, one line, chevron. Not-ready tiles are dimmed and say what they need. */
+function tpTile(o){
+  const b = h('button', { type:'button', class:'tpt' + (o.ready ? '' : ' off'), id:o.id, onclick:() => go(o.go) });
+  b.append(h('div', { class:'pic' }, o.pic), h('b', { text:o.title }), h('span', { class:'ts', text:o.ready ? o.line : 'Needs ' + o.need + '.' }), h('span', { class:'go', 'aria-hidden':'true' }, h('i')));
+  return b;
 }
 /* ---------- screen: brew (choose method) ---------- */
 function chooseMethod(key){
@@ -13280,7 +14011,7 @@ function renderSheetBody(){
     sheetEl.append(band, h('div', { class:'menubody' }, hero, tile('', 'Coffee shops', () => { closeSheet(); goShops(); }, { cls:'mshops', art:'s-shop', sub:'Drinks you bought, and where' }),
       lab('Tools'), h('div', { class:'mgrid g3 gt' }, tile('scale', 'Planners', () => { closeSheet(); goTools(); }), tile('tag', 'Coffee prices', () => { closeSheet(); goPrices(); }), tile('spoon', 'SCA cupping', () => { closeSheet(); goSca(); })),
       lab('Learn'), h('div', { class:'mgrid g2 gl' }, tile('book', 'Understanding coffee', () => { closeSheet(); goLearn(); }), tile('flask', 'Solid or folklore?', () => { closeSheet(); goFolk(); }), tile('wheel', 'Wheels', () => { closeSheet(); goWheels(); }), tile('drop', 'Taste your tastes', () => { closeSheet(); goTastes(); })),
-      lab('About me'), h('div', { class:'mgrid g3 gm' }, tile('cup', 'Your tastings', tastings), tile('bars', 'Your tendencies', () => { closeSheet(); goTend(); }), tile('save', 'My files', () => { closeSheet(); goFiles(); })),
+      lab('About me'), h('div', { class:'mgrid g3 gm' }, tile('cup', 'Your tastings', tastings), tile('', 'Your tendencies', () => { closeSheet(); goTend(); }, { art:'tp-bean' }), tile('save', 'My files', () => { closeSheet(); goFiles(); })),
       h('button', { type:'button', class:'menuitem mabout', onclick:() => { closeSheet(); goAbout(); } }, mark.cloneNode(true), h('span', { class:'mtx' }, h('span', { class:'mi-t', text:'About BeanTelligence' }), h('span', { class:'mi-s', text:'How it works, what it is for, glossary, what changed' })))));
     return;
   }
@@ -15661,7 +16392,7 @@ function shopsFilesRows(){
     h('button', { type:'button', class:'btn', id:'shPasteBtn', style:'margin-top:8px', text:'Use pasted text', onclick:() => { if (paste.value.trim()){ shLoadText(paste.value); say(sh.msg); save.querySelector('.hs').textContent = subText(); } else say('Paste the file contents first.'); } }));
   return [save, load, file, fold, msg, h('p', { class:'fine hubnote', style:'margin:0', text:'The coffee shops file is a file of its own. It is not your tasting history, and your history is never changed by it.' })];
 }
-const SCREENS = { door:screenDoor, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, files:screenFiles };
+const SCREENS = { door:screenDoor, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, tpflavors:screenTpFlavors, tpenjoy:screenTpEnjoy, tprate:screenTpRate, tpkinds:screenTpKinds, tpbrews:screenTpBrews, tpshops:screenTpShops, tpbrewers:screenTpBrewers, tpmix:screenTpMix, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, files:screenFiles };
 
 syncMenuBtn();
 $('homeBtn').addEventListener('click', () => { if (menuIsOpen()) closeSheet(); else openMenu(); });

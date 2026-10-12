@@ -2,6 +2,24 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 64: Brew rack and brew map fix
+
+2026-10-12 04:59:26 UTC
+
+- Your brew rack and Your brews now find the brewer in your saved coffees. They were counting every coffee as having no brewer, because the app saves the brewer by name and the pictures were looking for a short code.
+- The Compare screen's Across methods card reads your saved brewers the same way.
+- When the brew rack needs more coffees it now says how many, instead of showing NaN.
+
+## Release 63: Your tendencies, redrawn
+
+2026-10-12 04:11:31 UTC
+
+- Your tendencies is now its own tile in the Menu, under About me, and opens on your bean: a drawing that grows a freckle for every flavor family you taste.
+- Six new pictures, each drawn for BeanTelligence: a flavor garden, a cup that glows for what you enjoy, a bean jar for your ratings, bean heaps for roast, process, elevation, origin and varietal, cup rings for your measured brews, and a coffee street that sets home against the shops.
+- Your brew rack counts how often you used each brewer, and Mix and match lets you pick two things, such as a brewer and an elevation, and see how your own coffees did.
+- Every flower, part of the cup, bean, ring and shop can be tapped to see the coffees behind it. Each page says what it still needs, and a flag at the middle shows from three coffees.
+- Look at lets you read all your coffees or only the newest. Just Starting keeps each page short, Comfy Brewer adds a Why? note, and Bean Scientist adds the exact numbers and a table you can save.
+
 ## Release 62: Coffee shops, part 1
 
 2026-10-12 01:21:29 UTC
