@@ -2,6 +2,64 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 70: Cuppings of 2 to 5, TDS under the rating, Train your palate
+
+2026-10-12 20:54:39 UTC
+
+- The Your tendencies chart now shows every scored tasting. Round dots are the newest scoring form; diamonds came from an older form, so read those as a rough guide.
+- SCA cupping now allows 2 to 5 cups. With fewer than the standard 3 or 5, a short note says so and the score still counts.
+- The TDS (strength) box now sits under the bean rating on Quick and Cupping, and folds away.
+- TDS and extraction are judged by brew type. Moka pot, Turkish coffee and phin show your numbers without calling them weak or strong, because there is no agreed target range.
+- Taste your tastes is now Train your palate, with tips for noticing more in a cup. Each tip says whether a study, common practice or how tasting works backs it.
+- The pale cup icon in Your tastings is dark again, and a check now catches icons that blend into the skin.
+- Paste the file instead is back on the coffee shops screen at every level.
+- Type-to-search lists for grinders and filters now stay above the phone keyboard, and the page holds its place after you pick.
+
+## Release 69: Understanding, wheels, chart, files and the Taste step, in our own pictures
+
+2026-10-12 16:49:40 UTC
+
+- Solid or folklore? now shows a bean face for each verdict, and the details open with one tap. The Brew control chart is redrawn in the app's own style, with a ringed bean for your brew.
+- Understanding coffee, Wheels, Taste your tastes and SCA cupping have our own pictures and a clear difference between Just Starting, Comfy Brewer and Bean Scientist. Wheels can start as a list, and the new what-to-change wheel has four groups.
+- How to use has numbered steps. About has its own pictures. My files has one title, a Your history part and a Coffee shops part, and Just Starting folds the extra backup options away. My setup has a picture on every part and one Done button.
+- On the Taste step, Yes, Maybe and No and the six part faces are bean faces. The beans sit right under the face question. Just Starting sees one More about this cup fold. Comfy Brewer and Bean Scientist see flavors, parts and the brew in order, and Bean Scientist opens the brew.
+
+## Release 68: TDS card on the Taste screen
+
+2026-10-12 15:14:33 UTC
+
+- The TDS reading now has its own card under Your brew on the Taste screen, for both Quick and Cupping. It used to sit two folds deep inside Your brew.
+- The card opens with the finished-coffee weight, the TDS box, the Brix fold and the sour, balanced or bitter choice. The measuring tips sit in a fold below them.
+- Just Starting still has no TDS card. Bean Scientist opens it by default.
+
+## Release 67: Kettle number up front
+
+2026-10-12 14:43:41 UTC
+
+- Brew now shows Fill your kettle to, with the number in large type, in a card right under the three amount tiles. It used to sit inside the closed Before you start card.
+- The rinse checkbox and the kettle settings moved into the same card, so you can see the fill change when you tick or untick it.
+
+## Release 66: Timer to Perfect, polished at all three levels
+
+2026-10-12 14:05:36 UTC
+
+- Timer, Menu, Planners, Cup yield, Ratio planner, Your tastings, Tasting details and Perfect your brew now read differently at Just Starting, Comfy Brewer and Bean Scientist.
+- The Tools page is now called Planners everywhere. Just Starting sees one plain sentence per timer step, and the Ratio planner drops its number boxes.
+- Brew asks whether you rinse the paper filter. A rinsed paper adds rinse water to the kettle; an unrinsed one makes the cup about 3 g lighter.
+- The kettle fill now rounds up to the next 5 g, because spare water is harmless and a short kettle cannot be fixed. Comfy and Bean Scientist can set the rinse water and an extra margin.
+- The Cup screen asks how the cup tasted next to the TDS box and reads the two together. A Brix box turns a Brix reading into an estimated TDS, and a short list says how to measure well.
+
+## Release 65: Start to Change, polished at all three levels
+
+2026-10-12 12:21:39 UTC
+
+- Coffee, Facts, Method, Gear, Brew and Change now look and read differently at Just Starting, Comfy Brewer and Bean Scientist, and every picture is drawn in the app's own style.
+- Facts says what to expect in plain words (soft to very bright, light to heavy), with the rule behind each one at Bean Scientist.
+- Method shows three top picks to a beginner, with one tap to go on. The other levels show every method with Good and Trade-off notes, and Bean Scientist adds ratio, time and grind.
+- Brew has three amount tiles, a How sure are we? key with beans, and one plain line per setting. Bean Scientist adds the usual grind range, the water the grounds keep, and the SCA target zone.
+- Brew now says how much water to heat: a little more than you pour, scaled to the batch size, so the last pour does not come up short.
+- Change says what each Lighter, Standard or Stronger tap does, explains strength versus extraction with a Glossary button, and folds pour style for beginners.
+
 ## Release 64: Brew rack and brew map fix
 
 2026-10-12 04:59:26 UTC
