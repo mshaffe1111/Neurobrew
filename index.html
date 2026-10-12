@@ -1619,6 +1619,7 @@ body:has(.overlay.menupanel.open) .dock{ opacity:.5; }
 .menuhead h3, .sheet.menusheet h3{ margin:0; font-family:var(--display); font-weight:700; font-size:30px; line-height:1; color:#FDFBF7; letter-spacing:-.3px; }
 .menuhead p{ margin:2px 0 0; font-size:16px; line-height:1.2; color:#E0EDE6; }
 .menuhome{ flex:none; display:flex; align-items:center; gap:6px; min-height:44px; padding:0 12px; border:3px solid #22120C; border-radius:12px; background:#F2A93B; color:#22120C; box-shadow:0 3px 0 #22120C; font:700 17px/1 var(--ui); cursor:pointer; }
+.menuhome .spic{ width:30px; height:30px; }
 .menuhome:active{ transform:translateY(2px); box-shadow:0 1px 0 #22120C; }
 .menubody{ padding:10px 14px 14px; display:flex; flex-direction:column; gap:8px; }
 .menulabel{ margin:2px 0 -4px 2px; font-weight:700; font-size:16px; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink); }
@@ -1627,7 +1628,7 @@ body:has(.overlay.menupanel.open) .dock{ opacity:.5; }
 .menuitem.mtile::after{ content:none; }
 .menuitem.mtile:hover{ background:var(--surface); filter:brightness(1.03); }
 .mtile:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--frame); }
-.mtile .mdisc{ flex:none; display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:50%; border:2.5px solid #22120C; background:#E8D7A8; color:#22120C; }
+.mtile .mdisc{ flex:none; display:flex; align-items:center; justify-content:center; width:46px; height:46px; border-radius:50%; border:2.5px solid #22120C; background:#FDFBF7; color:#22120C; }   /* Release 71: every Menu picture sits in the same cream disc */
 .mtile .mdisc .mico{ width:21px; height:21px; }
 .mtile .mtx{ display:flex; flex-direction:column; min-width:0; }
 .mtile .mi-t{ font-weight:700; font-size:16px; line-height:1.05; }
@@ -1635,11 +1636,8 @@ body:has(.overlay.menupanel.open) .dock{ opacity:.5; }
 .mgrid{ display:grid; gap:10px; }
 .mgrid.g3{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
 .mgrid.g2{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
-.mgrid.g3 .mtile{ flex-direction:column; justify-content:center; gap:5px; min-height:80px; padding:6px 4px 5px; text-align:center; }
+.mgrid.g3 .mtile{ flex-direction:column; justify-content:flex-start; gap:5px; min-height:96px; padding:8px 4px 6px; text-align:center; }   /* the pictures line up along the top whatever the name's length */
 .mgrid.g3 .mtx{ align-items:center; }
-.gt .mdisc{ background:#F2A93B; }
-.gl .mdisc{ background:#1D3E2F; color:#FDFBF7; }
-.gm .mdisc{ background:#E8D7A8; }
 .mhero{ display:grid; grid-template-columns:1.7fr 1fr; gap:10px; }
 .mhero .mtile{ min-height:72px; border:3px solid var(--btn-edge); box-shadow:0 4px 0 var(--btn-edge); border-radius:16px; }
 .mhero .mgo{ gap:10px; padding:0 12px; background:#1D3E2F; color:#FDFBF7; border-color:#22120C; box-shadow:0 4px 0 #22120C; }
@@ -1647,9 +1645,9 @@ body:has(.overlay.menupanel.open) .dock{ opacity:.5; }
 .mhero .mgo .mdisc .mico{ width:27px; height:27px; }
 .mhero .mgo .mi-t{ font-size:21px; }
 .mhero .mgo .mi-s{ color:#E0EDE6; }
-.mhero .mset{ flex-direction:column; justify-content:center; gap:3px; padding:0 6px; background:#F2A93B; color:#22120C; border-color:#22120C; box-shadow:0 4px 0 #22120C; text-align:center; }
-.mhero .mset .mdisc{ width:auto; height:auto; border:0; background:transparent; }
-.mhero .mset .mdisc .mico{ width:30px; height:30px; }
+.mhero .mset{ flex-direction:column; justify-content:center; gap:2px; padding:4px 6px; background:#F2A93B; color:#22120C; border-color:#22120C; box-shadow:0 4px 0 #22120C; text-align:center; }
+.mhero .mset .mdisc{ width:40px; height:40px; }
+.mhero .mset .mdisc .spic{ width:28px; height:28px; }
 .mhero .mset .mi-t{ font-size:19px; line-height:1; }
 .mhero .mset .mtx{ align-items:center; }
 .mhero .mtile:active{ box-shadow:0 1px 0 #22120C; }
@@ -1702,7 +1700,7 @@ body:has(.overlay.menupanel.open) .dock{ opacity:.5; }
 .gl-item{ padding:12px 0; }
 .gl-term b{ font-size:17px; }
 @media (max-width:359px){ .hubhero h1{ font-size:26px; } .hubhero .hhmark{ width:52px; height:52px; } .hubhero .hhmark svg{ width:46px; height:46px; } }
-@media (max-width:359px){ .mgrid.g2 .mtile{ padding:0 6px; gap:5px; } .mgrid.g2 .mtile .mdisc{ width:32px; height:32px; } .mgrid.g2 .mtile .mdisc .mico{ width:18px; height:18px; } .mgrid.g2 .mtile .mi-t{ font-size:15px; } }
+@media (max-width:359px){ .mgrid.g2 .mtile{ padding:0 6px; gap:5px; } .mgrid.g2 .mtile .mdisc{ width:38px; height:38px; } .mgrid.g2 .mtile .mdisc .spic{ width:28px; height:28px; } .mgrid.g2 .mtile .mi-t{ font-size:14px; } }
 
 /* Release 66: Menu at Just Starting, one spot to a row with its line */
 .mgrid.g1{ grid-template-columns:1fr; gap:6px; }
@@ -2190,7 +2188,7 @@ body[data-screen="shop"] .pstep .pl{ font-size:16px; }
 .sdetail .row{ display:flex; gap:8px; flex-wrap:wrap; }
 
 /* the Menu: the baby-blue fresh tile and the wide Coffee shops tile */
-.mtile .mdisc .spic{ width:30px; height:30px; }
+.mtile .mdisc .spic{ width:34px; height:34px; }
 .mhero .mgo{ background:var(--fresh); color:#22120C; } .mhero .mgo .mi-s{ color:#22120C; } .mhero .mgo .mdisc{ background:var(--fresh-disc); } .mhero .mgo.sure{ background:var(--fresh-sure); }
 .menuitem.mtile.mshops{ margin:10px 0 0; min-height:72px; gap:12px; padding:0 12px; background:var(--door-shop); color:var(--ink); border:3px solid var(--btn-edge); box-shadow:0 4px 0 var(--btn-edge); border-radius:16px; }
 .mshops .mdisc{ width:52px; height:52px; background:#FFF6E6; } .mshops .mdisc .spic{ width:40px; height:40px; } .mshops .mi-t{ font-size:21px; } .mshops .mi-s{ color:var(--ink); }
@@ -2696,7 +2694,50 @@ details.mfold > .mrows{ margin-top:14px; }
 <symbol id="ts-salt" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M13 21h22l2 18a4 4 0 0 1-4 4H15a4 4 0 0 1-4-4z" fill="#FFF8EA"/><path d="M15.5 21C15.5 12 19.5 6 24 6s8.500 6 8.500 15z" fill="#B9C6CF"/><circle cx="20.500" cy="13.500" r="1.300" fill="#22120C" stroke="none"/><circle cx="27.500" cy="13.500" r="1.300" fill="#22120C" stroke="none"/><circle cx="24" cy="10.500" r="1.300" fill="#22120C" stroke="none"/><circle cx="24" cy="16" r="1.300" fill="#22120C" stroke="none"/><path d="M18 30h12" fill="none"/><path d="M19 35h10" fill="none" stroke-width="2"/></g></symbol>
 <symbol id="ab-book" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M3 15 Q13 11 24 16 Q35 11 45 15 V40 Q35 36 24 41 Q13 36 3 40Z" fill="#1D3E2F"/><path d="M6 11 Q15 8 24 12.500 V37 Q15 33 6 36Z" fill="#FFF8EA"/><path d="M42 11 Q33 8 24 12.500 V37 Q33 33 42 36Z" fill="#FFF8EA"/><path d="M10 17 Q15 15.500 20 18 M10 23 Q15 21.500 20 24 M10 29 Q15 27.500 20 30" fill="none" stroke-width="2"/><path d="M28 18 Q33 15.500 38 17 M28 24 Q33 21.500 38 23" fill="none" stroke-width="2"/><path d="M33 12 V22 L35.500 19.500 L38 22 V11" fill="#F2A93B" stroke-width="2"/></g></symbol>
 <symbol id="ab-owl" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M8 28 C8 17 14 12 21 12 C28 12 34 17 34 28 V37 C34 41 29 44 21 44 C13 44 8 41 8 37Z" fill="#8A5230"/><path d="M11 17 L11 9 L18 14Z M31 17 L31 9 L24 14Z" fill="#8A5230"/><circle cx="15.500" cy="25" r="5.500" fill="#FFF8EA"/><circle cx="26.500" cy="25" r="5.500" fill="#FFF8EA"/><circle cx="16" cy="25.500" r="2" fill="#22120C" stroke="none"/><circle cx="26" cy="25.500" r="2" fill="#22120C" stroke="none"/><path d="M21 29 L18.500 33.500 H23.500Z" fill="#F2A93B" stroke-width="2"/><path d="M14 39 H28" fill="none" stroke-width="2"/><path d="M26 4 H42 a3 3 0 0 1 3 3 V13 a3 3 0 0 1 -3 3 H37 L33 20 V16 H29 a3 3 0 0 1 -3 -3Z" fill="#FDFBF7"/><circle cx="31" cy="10" r="1.200" fill="#22120C" stroke="none"/><circle cx="35.500" cy="10" r="1.200" fill="#22120C" stroke="none"/><circle cx="40" cy="10" r="1.200" fill="#22120C" stroke="none"/></g></symbol>
-<symbol id="fl-save" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M10 5 H29 L38 14 V41 a2 2 0 0 1-2 2 H12 a2 2 0 0 1-2-2Z" fill="#FFF8EA"/><path d="M29 5 V14 H38" fill="#E8D7A8"/><path d="M24 19 V32 M18 27 L24 33 L30 27" fill="none" stroke="#1D3E2F" stroke-width="3.4"/><path d="M16 38.500 H32" stroke-width="2.200"/></g></symbol><symbol id="fl-folder" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M4 13 a3 3 0 0 1 3-3 H19 L23 15 H41 a3 3 0 0 1 3 3 V37 a3 3 0 0 1-3 3 H7 a3 3 0 0 1-3-3Z" fill="#C79A66"/><rect x="9" y="18" width="30" height="12" rx="1.500" fill="#FFF8EA" stroke-width="2"/><path d="M13 23 H29 M13 27 H23" stroke-width="2"/><path d="M4 24 H44 L41 40 H7Z" fill="#F2A93B"/></g></symbol><symbol id="fl-text" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><rect x="8" y="6" width="32" height="36" rx="4" fill="#FFF8EA"/><path d="M14 15 H34 M14 21 H34 M14 27 H26" stroke-width="2.200" fill="none"/><path d="M28 38 L40 26 L44 30 L32 42 L27 43Z" fill="#F2A93B" stroke-width="2.200"/></g></symbol><symbol id="fl-cols" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><rect x="5" y="9" width="38" height="30" rx="3" fill="#FFF8EA"/><path d="M5 12 a3 3 0 0 1 3-3 H40 a3 3 0 0 1 3 3 V18 H5Z" fill="#1D3E2F"/><path d="M5 26 H43 M18 18 V39 M31 18 V39" fill="none" stroke-width="2.200"/><circle cx="11.500" cy="13.500" r="1.400" fill="#F2A93B" stroke="none"/><circle cx="24.500" cy="13.500" r="1.400" fill="#F2A93B" stroke="none"/><circle cx="37.500" cy="13.500" r="1.400" fill="#F2A93B" stroke="none"/></g></symbol><symbol id="fl-trash" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M11 14 H37 L35 41 a3 3 0 0 1-3 3 H16 a3 3 0 0 1-3-3Z" fill="#D9503B"/><path d="M7 14 H41" fill="none" stroke-width="3"/><path d="M18 14 V9 a2 2 0 0 1 2-2 H28 a2 2 0 0 1 2 2 V14" fill="#E8D7A8"/><path d="M19 21 V37 M24 21 V37 M29 21 V37" fill="none" stroke="#FDFBF7" stroke-width="2.200"/></g></symbol><symbol id="fl-gear" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M21 4 H27 L28 9 L32 11 L36.500 8 L40 12 L37 16.500 L39 20.500 L44 21.500 V27.500 L39 28.500 L37 32.500 L40 37 L36.500 41 L32 38 L28 40 L27 44 H21 L20 40 L16 38 L11.500 41 L8 37 L11 32.500 L9 28.500 L4 27.500 V21.500 L9 20.500 L11 16.500 L8 12 L11.500 8 L16 11 L20 9Z" fill="#F2A93B"/><circle cx="24" cy="24.500" r="7" fill="#FFF8EA"/><circle cx="24" cy="24.500" r="2.400" fill="#22120C" stroke="none"/></g></symbol><symbol id="ab-gloss" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><rect x="8" y="5" width="30" height="38" rx="3" fill="#4B5BA6"/><rect x="12" y="5" width="26" height="38" rx="3" fill="#FFF8EA"/><path d="M8 9 V39" fill="none" stroke-width="3"/><path d="M17 31 L23 14 L29 31 M19 26 H27" fill="none" stroke-width="2.600"/><path d="M33 12 V20 L35.500 18 L38 20 V12" fill="#F2A93B" stroke-width="2"/><path d="M18 37 H32" stroke-width="2"/></g></symbol><symbol id="ab-news" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M6 10 H34 V40 H10 a4 4 0 0 1-4-4Z" fill="#FFF8EA"/><path d="M34 16 H42 V36 a4 4 0 0 1-4 4 H34" fill="#E8D7A8"/><rect x="10" y="14" width="10" height="9" fill="#F2A93B" stroke-width="2"/><path d="M24 15 H30 M24 20 H30 M10 28 H30 M10 33 H26" fill="none" stroke-width="2.200"/></g></symbol></defs></svg>
+<symbol id="fl-save" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M10 5 H29 L38 14 V41 a2 2 0 0 1-2 2 H12 a2 2 0 0 1-2-2Z" fill="#FFF8EA"/><path d="M29 5 V14 H38" fill="#E8D7A8"/><path d="M24 19 V32 M18 27 L24 33 L30 27" fill="none" stroke="#1D3E2F" stroke-width="3.4"/><path d="M16 38.500 H32" stroke-width="2.200"/></g></symbol><symbol id="fl-folder" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M4 13 a3 3 0 0 1 3-3 H19 L23 15 H41 a3 3 0 0 1 3 3 V37 a3 3 0 0 1-3 3 H7 a3 3 0 0 1-3-3Z" fill="#C79A66"/><rect x="9" y="18" width="30" height="12" rx="1.500" fill="#FFF8EA" stroke-width="2"/><path d="M13 23 H29 M13 27 H23" stroke-width="2"/><path d="M4 24 H44 L41 40 H7Z" fill="#F2A93B"/></g></symbol><symbol id="fl-text" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><rect x="8" y="6" width="32" height="36" rx="4" fill="#FFF8EA"/><path d="M14 15 H34 M14 21 H34 M14 27 H26" stroke-width="2.200" fill="none"/><path d="M28 38 L40 26 L44 30 L32 42 L27 43Z" fill="#F2A93B" stroke-width="2.200"/></g></symbol><symbol id="fl-cols" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><rect x="5" y="9" width="38" height="30" rx="3" fill="#FFF8EA"/><path d="M5 12 a3 3 0 0 1 3-3 H40 a3 3 0 0 1 3 3 V18 H5Z" fill="#1D3E2F"/><path d="M5 26 H43 M18 18 V39 M31 18 V39" fill="none" stroke-width="2.200"/><circle cx="11.500" cy="13.500" r="1.400" fill="#F2A93B" stroke="none"/><circle cx="24.500" cy="13.500" r="1.400" fill="#F2A93B" stroke="none"/><circle cx="37.500" cy="13.500" r="1.400" fill="#F2A93B" stroke="none"/></g></symbol><symbol id="fl-trash" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M11 14 H37 L35 41 a3 3 0 0 1-3 3 H16 a3 3 0 0 1-3-3Z" fill="#D9503B"/><path d="M7 14 H41" fill="none" stroke-width="3"/><path d="M18 14 V9 a2 2 0 0 1 2-2 H28 a2 2 0 0 1 2 2 V14" fill="#E8D7A8"/><path d="M19 21 V37 M24 21 V37 M29 21 V37" fill="none" stroke="#FDFBF7" stroke-width="2.200"/></g></symbol><symbol id="fl-gear" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M21 4 H27 L28 9 L32 11 L36.500 8 L40 12 L37 16.500 L39 20.500 L44 21.500 V27.500 L39 28.500 L37 32.500 L40 37 L36.500 41 L32 38 L28 40 L27 44 H21 L20 40 L16 38 L11.500 41 L8 37 L11 32.500 L9 28.500 L4 27.500 V21.500 L9 20.500 L11 16.500 L8 12 L11.500 8 L16 11 L20 9Z" fill="#F2A93B"/><circle cx="24" cy="24.500" r="7" fill="#FFF8EA"/><circle cx="24" cy="24.500" r="2.400" fill="#22120C" stroke="none"/></g></symbol><symbol id="ab-gloss" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><rect x="8" y="5" width="30" height="38" rx="3" fill="#4B5BA6"/><rect x="12" y="5" width="26" height="38" rx="3" fill="#FFF8EA"/><path d="M8 9 V39" fill="none" stroke-width="3"/><path d="M17 31 L23 14 L29 31 M19 26 H27" fill="none" stroke-width="2.600"/><path d="M33 12 V20 L35.500 18 L38 20 V12" fill="#F2A93B" stroke-width="2"/><path d="M18 37 H32" stroke-width="2"/></g></symbol><symbol id="ab-news" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M6 10 H34 V40 H10 a4 4 0 0 1-4-4Z" fill="#FFF8EA"/><path d="M34 16 H42 V36 a4 4 0 0 1-4 4 H34" fill="#E8D7A8"/><rect x="10" y="14" width="10" height="9" fill="#F2A93B" stroke-width="2"/><path d="M24 15 H30 M24 20 H30 M10 28 H30 M10 33 H26" fill="none" stroke-width="2.200"/></g></symbol></defs><symbol id="mn-home" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M34 7 q-2.2-2 0-4 M38 7 q-2.2-2 0-4" fill="none" stroke-width="1.8"/>
+<rect x="31.5" y="9" width="7" height="11" fill="#8A5230"/>
+<rect x="8" y="22" width="32" height="21" fill="#FFF8EA"/>
+<polygon points="4,23.500 24,7 44,23.500" fill="#D9503B"/>
+<rect x="19.500" y="29" width="10" height="14" rx="1.500" fill="#4A8FB8"/><circle cx="26.700" cy="36.500" r="1.100" fill="#FFF8EA" stroke="none"/>
+<rect x="11" y="28" width="6" height="6" fill="#DDF1F7" stroke-width="2"/><rect x="32" y="28" width="6" height="6" fill="#DDF1F7" stroke-width="2"/>
+<path d="M13.500 28 v6 M11 31 h6" stroke-width="1.200"/><path d="M35 28 v6 M32 31 h6" stroke-width="1.200"/></g></symbol>
+<symbol id="mn-setup" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M8 31 H34 V37 a8 8 0 0 1-8 8 H16 a8 8 0 0 1-8-8Z" fill="#FFF8EA"/><path d="M34 33.500 h3.500 a3.800 3.800 0 0 1 0 7.600 h-4.500" fill="none"/>
+<ellipse cx="21" cy="31" rx="13" ry="2.600" fill="#8A5230"/>
+<polygon points="7,12 35,12 27.500,28 14.500,28" fill="#D9503B"/><rect x="5" y="9.500" width="32" height="4.500" rx="2" fill="#FFF8EA"/>
+<path d="M14 18 L18.500 26 M28 18 L23.500 26" fill="none" stroke="#FFF8EA" stroke-width="1.600" opacity=".7"/>
+<path d="M21 29 q-2 2.600 0 3.800 q2-1.200 0-3.800Z" fill="#8A5230" stroke-width="1.400"/>
+<path d="M41.500 4 l1.600 3.800 3.800 1.600 -3.800 1.600 -1.600 3.800 -1.600 -3.800 -3.800 -1.600 3.800 -1.600z" fill="#FFD76A" stroke-width="1.600"/></g></symbol>
+<symbol id="mn-cupping" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M3 41 H45" />
+<path d="M4 25 H16 V30 a6 6 0 0 1-12 0Z" fill="#FFF8EA"/><ellipse cx="10" cy="25" rx="6" ry="1.900" fill="#8A5230"/><path d="M18 25 H30 V30 a6 6 0 0 1-12 0Z" fill="#FFF8EA"/><ellipse cx="24" cy="25" rx="6" ry="1.900" fill="#8A5230"/><path d="M32 25 H44 V30 a6 6 0 0 1-12 0Z" fill="#FFF8EA"/><ellipse cx="38" cy="25" rx="6" ry="1.900" fill="#8A5230"/>
+<path d="M30 17 L43 5" stroke-width="5.400"/><path d="M30 17 L43 5" stroke="#D8D2C4" stroke-width="2"/>
+<ellipse cx="25.500" cy="21" rx="6.200" ry="3.800" transform="rotate(-42 25.500 21)" fill="#D8D2C4"/><ellipse cx="25.500" cy="21" rx="3.600" ry="1.900" transform="rotate(-42 25.500 21)" fill="#A8703F" stroke="none"/></g></symbol>
+<symbol id="mn-wheel" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M24 24 L24.00 5.00 A19 19 0 0 1 37.44 10.56Z" fill="#D9503B" stroke-width="2"/><path d="M24 24 L37.44 10.56 A19 19 0 0 1 43.00 24.00Z" fill="#F2A93B" stroke-width="2"/><path d="M24 24 L43.00 24.00 A19 19 0 0 1 37.44 37.44Z" fill="#FFD76A" stroke-width="2"/><path d="M24 24 L37.44 37.44 A19 19 0 0 1 24.00 43.00Z" fill="#6FB98A" stroke-width="2"/><path d="M24 24 L24.00 43.00 A19 19 0 0 1 10.56 37.44Z" fill="#4A8FB8" stroke-width="2"/><path d="M24 24 L10.56 37.44 A19 19 0 0 1 5.00 24.00Z" fill="#C79AE0" stroke-width="2"/><path d="M24 24 L5.00 24.00 A19 19 0 0 1 10.56 10.56Z" fill="#F27D9B" stroke-width="2"/><path d="M24 24 L10.56 10.56 A19 19 0 0 1 24.00 5.00Z" fill="#A8703F" stroke-width="2"/><circle cx="24" cy="24" r="19" fill="none"/><circle cx="24" cy="24" r="7" fill="#FFF8EA"/><ellipse cx="24" cy="24" rx="3.300" ry="4.600" fill="#8A5230" stroke-width="1.600"/><path d="M24 19.700 C22 22 26 23 24 24.500 C22.500 26 25 27 24 28.300" fill="none" stroke="#FFF8EA" stroke-width="1.200"/></g></symbol>
+<symbol id="mn-folk" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M19 6 H29 M20 6 V18 L9 38 a3 3 0 0 0 2.600 4.500 H36.400 a3 3 0 0 0 2.600-4.500 L28 18 V6" fill="#DDF1F7"/>
+<path d="M13.400 30 H34.600 L39 38 a3 3 0 0 1-2.600 4.500 H11.600 a3 3 0 0 1-2.600-4.500Z" fill="#6FB98A"/>
+<circle cx="20" cy="37" r="2" fill="#FFF8EA" stroke-width="1.600"/><circle cx="28" cy="35" r="1.400" fill="#FFF8EA" stroke-width="1.400"/><circle cx="25" cy="39.500" r="1.100" fill="#FFF8EA" stroke-width="1.200"/>
+<path d="M12 16 h4 M12 22 h3" stroke-width="1.600" opacity=".6"/>
+<circle cx="37" cy="12" r="8" fill="#4C9A6A"/><path d="M33 12 l3 3 5-6" fill="none" stroke="#FFF8EA" stroke-width="2.800"/></g></symbol>
+<symbol id="mn-calc" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><rect x="8" y="4" width="30" height="40" rx="4.500" fill="#1D3E2F"/>
+<rect x="12" y="8.500" width="22" height="13" rx="2" fill="#FFF8EA" stroke-width="2"/>
+<path d="M16 17.500 V12.500 L14.200 13.800" fill="none" stroke-width="1.800"/><circle cx="20.400" cy="13.600" r=".9" fill="#22120C" stroke="none"/><circle cx="20.400" cy="17" r=".9" fill="#22120C" stroke="none"/>
+<path d="M24 12.500 V17.500 L22.800 16.500" fill="none" stroke="none"/>
+<path d="M24.500 17.500 V12.500 L23 13.800 M28 13 h4.500 M28 16 h3" fill="none" stroke-width="1.800"/><rect x="13.0" y="27.0" width="6" height="4" rx="1.200" fill="#FFF8EA" stroke-width="1.600"/><rect x="21.2" y="27.0" width="6" height="4" rx="1.200" fill="#FFF8EA" stroke-width="1.600"/><rect x="29.4" y="27.0" width="6" height="4" rx="1.200" fill="#FFF8EA" stroke-width="1.600"/><rect x="13.0" y="32.6" width="6" height="4" rx="1.200" fill="#FFF8EA" stroke-width="1.600"/><rect x="21.2" y="32.6" width="6" height="4" rx="1.200" fill="#FFF8EA" stroke-width="1.600"/><rect x="29.4" y="32.6" width="6" height="4" rx="1.200" fill="#FFF8EA" stroke-width="1.600"/><rect x="13.0" y="38.2" width="6" height="4" rx="1.200" fill="#FFF8EA" stroke-width="1.600"/><rect x="21.2" y="38.2" width="6" height="4" rx="1.200" fill="#FFF8EA" stroke-width="1.600"/><rect x="29.4" y="38.2" width="6" height="4" rx="1.200" fill="#F2A93B" stroke-width="1.600"/>
+<path d="M45 22 L35 42 L33.500 46 L37.500 44.500 L47 25Z" fill="#F2A93B" stroke-width="2"/><path d="M33.500 46 L35 42 L37.500 44.500Z" fill="#FFF8EA" stroke-width="1.600"/><path d="M42 21 L47 25" stroke-width="2"/></g></symbol>
+<symbol id="mn-tastings" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M31 38 V47 L35 43.500 L39 47 V38Z" fill="#F2A93B"/>
+<rect x="8" y="5" width="32" height="38" rx="3.500" fill="#1D3E2F"/>
+<path d="M13 5 V43" stroke-width="2"/>
+<rect x="17" y="10" width="19" height="14" rx="2" fill="#FFF8EA" stroke-width="2"/>
+<path d="M21 15.500 H29 V18.500 a4 4 0 0 1-8 0Z" fill="#E4D3A8" stroke-width="1.800"/><path d="M29 16 h1.800 a2 2 0 0 1 0 4 h-2" fill="none" stroke-width="1.800"/><path d="M23.500 13 q-1 1.200 0 2 M26.500 13 q-1 1.200 0 2" fill="none" stroke-width="1.400"/>
+<ellipse cx="21" cy="32" rx="2.800" ry="3.800" transform="rotate(-20 21 32)" fill="#A8703F" stroke="#22120C" stroke-width="1.600"/>
+<ellipse cx="27" cy="32" rx="2.800" ry="3.800" transform="rotate(-20 27 32)" fill="#A8703F" stroke="#22120C" stroke-width="1.600"/>
+<ellipse cx="33" cy="32" rx="2.800" ry="3.800" transform="rotate(-20 33 32)" fill="#FFF8EA" stroke="#22120C" stroke-width="1.600"/></g></symbol>
+<symbol id="mn-palate" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M6 24 H34 V31 a12 12 0 0 1-12 12 H18 a12 12 0 0 1-12-12Z" fill="#FFF8EA"/><path d="M34 27 h3.500 a4.500 4.500 0 0 1 0 9 h-5" fill="none"/>
+<ellipse cx="20" cy="24" rx="14" ry="3.200" fill="#8A5230"/>
+<path d="M13 17 q-2.400-3 0-6 q2.400-3 0-6 M21 17 q-2.400-3 0-6 q2.400-3 0-6" fill="none" stroke-width="1.800"/>
+<g transform="translate(35 13)"><circle r="7.500" fill="#FFD76A"/><circle r="4.800" fill="#FFF3A8" stroke-width="1.400"/><path d="M0 -4.800 V4.800 M-4.800 0 H4.800 M-3.400 -3.400 L3.400 3.400 M3.400 -3.400 L-3.400 3.400" fill="none" stroke-width="1.100"/></g>
+<circle cx="40.500" cy="31" r="3.600" fill="#C0364F"/><path d="M40.500 27.400 q1.800-2.600 3.400-2.800" fill="none" stroke-width="1.600"/>
+<path d="M5 5 v5 M2.500 7.500 h5" fill="none" stroke-width="2"/></g></symbol>
+</svg>
 
 <a class="skiplink" href="#app" id="skipLink">Skip to main content</a>
 <span class="sr-only" id="termHint">Tap for the meaning.</span>
@@ -6777,7 +6818,7 @@ const GUIDE_SECTIONS = [
     paras:['Just Starting keeps things short, Comfy Brewer explains the reasons, and Bean Scientist shows every number. Change it any time from the start screen or the menu.',
       'My setup in the menu keeps your units, level, timer sound, taste card view and gear (your grinder, water and filter) in one place. New brews start with your gear filled in. The setup is saved inside your history file each time you save, so uploading the file on another device brings it back.',
       'Words with a dotted underline are tappable and give a short definition. The Glossary in the menu lists every term and can be searched.',
-      'Planners in the menu holds small helpers. Cup yield shows how much ends up in your cup. The Ratio and strength planner gives the ratio for the strength you want, and how much water to add to a strong brew. The strengths and extractions it starts from are common targets, not rules. The Cost of coffee tool works out what a cup costs from the price and size of a bag, in grams, ounces or pounds. It shows the cost per cup, day, week and month, and can compare two bags. It counts the coffee only. Nothing is kept unless you press Add to my coffee prices.',
+      'Calculators in the menu holds small helpers. Cup yield shows how much ends up in your cup. The Ratio and strength calculator gives the ratio for the strength you want, and how much water to add to a strong brew. The strengths and extractions it starts from are common targets, not rules. The Cost of coffee tool works out what a cup costs from the price and size of a bag, in grams, ounces or pounds. It shows the cost per cup, day, week and month, and can compare two bags. It counts the coffee only. Nothing is kept unless you press Add to my coffee prices.',
       'Coffee prices in the menu is your own list of the bags you have bought. Add a bag there, or from the Cost of coffee tool. The list is kept in this browser. Save it as a file called beantelligence-prices.csv, and load it again later. It is a separate file from your tasting history, and it never changes your history. Loading a file only adds bags that are not in the list yet.',
       'SCA cupping in the menu is a guided table session with timers. You choose to describe the coffees or to judge them, then the same coffee or different ones, and how many cups of each. The steps follow the SCA\'s standard 102-2024, in our own words, and the SCA has not reviewed them. Circles at the top stand for your coffees. Tap one to see that coffee. Timers tell you when each crust is ready to break. The session gives no scores and nothing is saved. Your Taste step is a separate, personal way to record a cup.'] },
   { id:'trust', title:'What to trust', lead:'Starting points, not rules.',
@@ -7269,7 +7310,7 @@ const PLAN_PRESETS = {
   espresso:[['Lighter', 8, 18], ['Usual', 9.5, 20], ['Stronger', 10.5, 21]]
 };
 const PLAN_SRC = 'The sum is a mass balance, so the arithmetic is exact. The water your grounds keep is a band, not a number (see Cup yield). The strength and extraction you aim for are conventions that people disagree on, so treat the answer as a starting point to taste and adjust.';
-/* methods the planner covers: the filter-type ones in Cup yield, and espresso. Cold brew is left out (its extraction is not on the usual scale). */
+/* methods the calculator covers: the filter-type ones in Cup yield, and espresso. Cold brew is left out (its extraction is not on the usual scale). */
 const planMethods = () => yieldMethods().filter(k => YIELD_TABLE[k].kind === 'filter' && k !== 'cold');
 /* the ratio for a strength and an extraction. tds and ey are percent, r is water kept per g of coffee. Returns the water ratio and the cup ratio, with the band from the water-kept band. */
 function planRatio(p){
@@ -8280,6 +8321,18 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 71,
+  "at": "2026-10-12T22:16:34Z",
+  "date": "2026-10-12",
+  "title": "A new Menu, in our own pictures",
+  "notes": [
+   "The Menu has a picture for every spot, all drawn in the same style and set in the same round frame. The plain line icons and the mixed colors are gone.",
+   "Eight new pictures: My setup, Calculators, SCA cupping, Solid or folklore?, Wheels, Train your palate, Your tastings and Home.",
+   "Planners is now called Calculators, and the Ratio and strength planner is now the Ratio and strength calculator.",
+   "On a small phone the Learn pictures are no longer squashed, and the pictures in each row line up."
+  ]
+ },
  {
   "release": 70,
   "at": "2026-10-12T20:54:39Z",
@@ -9658,7 +9711,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Planners', yield:'Cup yield', ratio:'Ratio planner', cost:'Cost of coffee', prices:'Coffee prices', tastes:'Train your palate', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', about:'About', files:'My files' };
+  const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Calculators', yield:'Cup yield', ratio:'Ratio calculator', cost:'Cost of coffee', prices:'Coffee prices', tastes:'Train your palate', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', about:'About', files:'My files' };
   Object.assign(titles, TP_TITLES);
   $('topTitle').textContent = sc === 'start' || sc === 'door' || sc === 'shop' ? '' : (titles[sc] || 'BeanTelligence');
   SCREENS[sc](m);
@@ -13268,12 +13321,12 @@ function goTools(){ if (app.screen !== 'tools' && app.screen !== 'yield' && app.
 /* One row per tool. Add a tool here and it shows up in the list; the Menu stays one row long. */
 const TOOLS = [
   { id:'yield', icon:'cupyield', tone:'a', name:'Cup yield', text:'How much ends up in your cup, and how much water to pour for the cup you want', open:() => goYield() },
-  { id:'ratio', icon:'ratio', tone:'g', name:'Ratio and strength planner', text:'The ratio for the strength you want, and how much water to add to a strong brew', open:() => goRatio() },
+  { id:'ratio', icon:'ratio', tone:'g', name:'Ratio and strength calculator', text:'The ratio for the strength you want, and how much water to add to a strong brew', open:() => goRatio() },
   { id:'cost', icon:'cost', tone:'t', name:'Cost of coffee', text:'What a cup costs from the price of a bag, and what you spend a month', open:() => goCost() }
 ];
 function screenTools(m){
-  /* the tile, the page and the top bar all say Planners; the name shows once, in the bar */
-  m.append(h('h1', { class:'sr-only', text:'Planners' }), h('div', { class:'hubhero' }, h('div', { class:'hhtx' }, h('p', { text:'Small helpers for the numbers behind a good cup.' }))),
+  /* the tile, the page and the top bar all say Calculators; the name shows once, in the bar */
+  m.append(h('h1', { class:'sr-only', text:'Calculators' }), h('div', { class:'hubhero' }, h('div', { class:'hhtx' }, h('p', { text:'Small helpers for the numbers behind a good cup.' }))),
     h('p', { class:'lede', style:'margin:0 0 10px', text:'Pick a helper. Each one does a single sum for you.' }),
     h('div', { class:'hublist' }, TOOLS.map(t => hubRow(t.icon, t.name, t.text, t.open, { tone:t.tone, id:'tool-' + t.id }))));
 }
@@ -13506,7 +13559,7 @@ function prPaint(){
 }
 function goPrices(){ if (app.screen !== 'prices') pricesFrom = app.screen === 'timer' ? 'ready' : app.screen; if (!pr.add){ pr.add = prNewBag(); if (app.coffee) { pr.add.coffee = app.coffee.name || ''; pr.add.roaster = app.coffee.roaster || ''; } } go('prices'); }
 function screenPrices(m){ prHost = h('div', { id:'prHost' }); m.append(prHost); if (!pr.add) pr.add = prNewBag(); prPaint(); }
-/* ---------- screen: ratio and strength planner ----------
+/* ---------- screen: ratio and strength calculator ----------
    Nothing here is saved. The water your grounds keep comes from Cup yield (its band, or your own saved figure). */
 let rp = null, rpHost = null;
 function goRatio(){ if (!rp) rpStart(); go('ratio'); }
@@ -13576,7 +13629,7 @@ function rpDilNodes(){
 function rpPaint(){
   const host = rpHost, lvl = level(), isNew = lvl === 'new', t = YIELD_TABLE[rp.key];
   host.textContent = '';
-  host.append(toolHero('Ratio and strength planner', 'Work out how much water to use for the cup you want to drink.', 'ratio'));
+  host.append(toolHero('Ratio and strength calculator', 'Work out how much water to use for the cup you want to drink.', 'ratio'));
   const sel = h('select', { id:'rpMethod', class:'plain yc-pick' });
   YIELD_GROUPS.forEach(g => { const ks = g[1].filter(k => planMethods().includes(k)); if (ks.length) sel.append(h('optgroup', { label:g[0] }, ks.map(k => h('option', { value:k, text:METHODS.find(x => x.key === k).label, selected:k === rp.key })))); });
   sel.addEventListener('change', () => { rp.key = sel.value; rp.dose = rpEsp() ? 18 : 20; rpPreset('Usual'); rpPaint(); });
@@ -13754,7 +13807,7 @@ function screenYield(m){
 const ycG = x => !isFinite(x) ? '–' : (Math.abs(x) < 100 ? (Math.round(x * 10) / 10).toFixed(1) : String(Math.round(x)));
 const ycOz = g => fmtNum(g / ML_PER_FLOZ, 1);
 const YC_TIPS = { stop:'Stop the scale at the same point each time, for example when the drip slows to single drops.', drain:'Let it drain the same way each time.', press:'Press at the same speed each time.', espresso:'Weigh the cup when the shot ends. The water in is worked out from it.', concentrate:'For a concentrate, add its strength under Fine-tune for a closer answer.' };
-/* The look every planner screen shares: a green hero with a picture, green-band cards for what you type, and folds with a picture for the rest. */
+/* The look every calculator screen shares: a green hero with a picture, green-band cards for what you type, and folds with a picture for the rest. */
 const toolHero = (title, lede, icon) => hubHero(title, lede, false, icon);
 function toolCard(id, title, sub, ...kids){
   const c = tband(title, 'Start here', sub, { icon:'pen', text:'Type a number' }, ...kids); if (id) c.id = id; return c;
@@ -14656,7 +14709,7 @@ function renderSheetBody(){
     const here = app.screen, mark = h('span', { class:'menumark' });
     mark.innerHTML = '<svg viewBox="14 10 172 186" aria-hidden="true" focusable="false"><use href="#bt-mark"/></svg>';
     const band = h('div', { class:'menuband' }, mark, h('div', { class:'menuhead' }, title, h('p', { text:'Pick a spot. Your coffee waits.' })),
-      here !== 'door' ? h('button', { type:'button', class:'menuhome', onclick:() => { closeSheet(); go('door'); } }, lineIcon('home'), 'Home') : null);
+      here !== 'door' ? h('button', { type:'button', class:'menuhome', onclick:() => { closeSheet(); go('door'); } }, spic('mn-home'), 'Home') : null);
     /* a tile: a round picture, then the name; the class menuitem and the span mi-t keep it findable like every other menu row */
     const tile = (icon, label, fn, o) => { o = o || {};
       return h('button', { type:'button', class:'menuitem mtile ' + (o.cls || ''), onclick:fn }, h('span', { class:'mdisc' }, o.art ? spic(o.art) : lineIcon(icon)), h('span', { class:'mtx' }, h('span', { class:'mi-t', text:label }), o.sub ? h('span', { class:'mi-s', text:o.sub }) : null)); };
@@ -14666,12 +14719,12 @@ function renderSheetBody(){
     const hero = h('div', { class:'mhero' },
       tile('cup', menuFreshSure ? 'Tap again to tip it out' : 'Start a fresh coffee', () => { if (freshNeeds() && !menuFreshSure){ menuFreshSure = true; renderSheet(); return; } menuFreshSure = false; closeSheet(); freshAll(); },
         { cls:'mgo' + (menuFreshSure ? ' sure' : ''), art:'a-fresh', sub:menuFreshSure ? freshWhat() + (freshWhat() === 'Both' ? ' are' : ' is') + ' not saved yet. Your history stays.' : plain ? 'Clears the coffee on screen. Your history stays.' : 'Keeps your history' }),
-      tile('gear', 'My setup', () => { sheet = { step:'setup' }; renderSheet(); }, Object.assign({ cls:'mset' }, say('Your grinder, kettle and brewer.'))));
+      tile('', 'My setup', () => { sheet = { step:'setup' }; renderSheet(); }, Object.assign({ cls:'mset', art:'mn-setup' }, say('Your grinder, kettle and brewer.'))));
     const tastings = () => { if (history){ closeSheet(); go('history'); } else { sheet = { step:'histUpload', existing:null, csv:'', error:'', info:'' }; renderSheet(); } };
     sheetEl.append(band, h('div', { class:'menubody' }, hero, tile('', 'Coffee shops', () => { closeSheet(); goShops(); }, { cls:'mshops', art:'s-shop', sub:'Drinks you bought, and where' }),
-      lab('Tools'), h('div', { class:grid('g3', 'gt') }, tile('scale', 'Planners', () => { closeSheet(); goTools(); }, say('How much coffee, and how strong.')), tile('tag', 'Coffee prices', () => { closeSheet(); goPrices(); }, say('What a cup of your coffee costs.')), tile('spoon', 'SCA cupping', () => { closeSheet(); goSca(); }, say('The pros\u2019 way to taste side by side.'))),
-      lab('Learn'), h('div', { class:grid('g2', 'gl') }, tile('book', 'Understanding coffee', () => { closeSheet(); goLearn(); }, say('How coffee works, in plain words.')), tile('flask', 'Solid or folklore?', () => { closeSheet(); goFolk(); }, say('Which coffee tips hold up.')), tile('wheel', 'Wheels', () => { closeSheet(); goWheels(); }, say('Flavor words, and what to change.')), tile('drop', 'Train your palate', () => { closeSheet(); goTastes(); }, say('Tips to taste more in a cup.'))),
-      lab('About me'), h('div', { class:grid('g3', 'gm') }, tile('cup', 'Your tastings', tastings, say('Every cup you have rated.')), tile('', 'Your tendencies', () => { closeSheet(); goTend(); }, Object.assign({ art:'tp-bean' }, say('Patterns in what you like.'))), tile('save', 'My files', () => { closeSheet(); goFiles(); }, say('Save or load your history.'))),
+      lab('Tools'), h('div', { class:grid('g3', 'gt') }, tile('', 'Calculators', () => { closeSheet(); goTools(); }, Object.assign({ art:'mn-calc' }, say('How much coffee, and how strong.'))), tile('', 'Coffee prices', () => { closeSheet(); goPrices(); }, Object.assign({ art:'s-tag' }, say('What a cup of your coffee costs.'))), tile('', 'SCA cupping', () => { closeSheet(); goSca(); }, Object.assign({ art:'mn-cupping' }, say('The pros\u2019 way to taste side by side.')))),
+      lab('Learn'), h('div', { class:grid('g2', 'gl') }, tile('', 'Understanding coffee', () => { closeSheet(); goLearn(); }, Object.assign({ art:'ab-book' }, say('How coffee works, in plain words.'))), tile('', 'Solid or folklore?', () => { closeSheet(); goFolk(); }, Object.assign({ art:'mn-folk' }, say('Which coffee tips hold up.'))), tile('', 'Wheels', () => { closeSheet(); goWheels(); }, Object.assign({ art:'mn-wheel' }, say('Flavor words, and what to change.'))), tile('', 'Train your palate', () => { closeSheet(); goTastes(); }, Object.assign({ art:'mn-palate' }, say('Tips to taste more in a cup.')))),
+      lab('About me'), h('div', { class:grid('g3', 'gm') }, tile('', 'Your tastings', tastings, Object.assign({ art:'mn-tastings' }, say('Every cup you have rated.'))), tile('', 'Your tendencies', () => { closeSheet(); goTend(); }, Object.assign({ art:'tp-bean' }, say('Patterns in what you like.'))), tile('', 'My files', () => { closeSheet(); goFiles(); }, Object.assign({ art:'fl-folder' }, say('Save or load your history.')))),
       h('button', { type:'button', class:'menuitem mabout', onclick:() => { closeSheet(); goAbout(); } }, mark.cloneNode(true), h('span', { class:'mtx' }, h('span', { class:'mi-t', text:'About BeanTelligence' }), h('span', { class:'mi-s', text:'How it works, what it is for, glossary, what changed' })))));
     return;
   }

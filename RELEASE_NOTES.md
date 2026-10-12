@@ -2,6 +2,15 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 71: A new Menu, in our own pictures
+
+2026-10-12 22:16:34 UTC
+
+- The Menu has a picture for every spot, all drawn in the same style and set in the same round frame. The plain line icons and the mixed colors are gone.
+- Eight new pictures: My setup, Calculators, SCA cupping, Solid or folklore?, Wheels, Train your palate, Your tastings and Home.
+- Planners is now called Calculators, and the Ratio and strength planner is now the Ratio and strength calculator.
+- On a small phone the Learn pictures are no longer squashed, and the pictures in each row line up.
+
 ## Release 70: Cuppings of 2 to 5, TDS under the rating, Train your palate
 
 2026-10-12 20:54:39 UTC
