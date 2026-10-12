@@ -2,6 +2,18 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
+## Release 62: Coffee shops, part 1
+
+2026-10-12 01:21:29 UTC
+
+- A new first screen asks where you are having coffee: At home or At a coffee shop.
+- A shop drink has four steps of its own (Shop, Drink, Taste, Perfect) and remembers the city and state.
+- A coffee in progress waits for you. The baby-blue Start a fresh coffee asks twice before it tips anything out. Your history stays.
+- A draft you have not touched for 3 hours opens on the first screen. Nothing is deleted.
+- New Coffee shops in the Menu: drinks, shops with your visits, Favorites and search.
+- My setup has a Home town, so new shops start in the right place.
+- My files saves and loads a coffee shops file of its own. It never changes your tasting history.
+
 ## Release 61: Taste: faces, steps and sixteen next-brew answers
 
 2026-10-11 22:05:56 UTC

@@ -2050,6 +2050,105 @@ button.hrow:active, .hrow.sel:active{ transform:translateY(3px); box-shadow:0 1p
 @media (max-width:359px){ .dpair .btn{ padding:8px 6px; font-size:17px; } .fcoffee.hhead h1{ font-size:30px; } .dock .btn{ font-size:18px; } .dock .btn .sub{ font-size:14px; } .dwhen{ font-size:15px; } }
 .nw{ white-space:nowrap; }
 .notice[hidden]{ display:none; }
+:root{ --door-home:#E4F0E4; --door-shop:#F7DDB6; --door-pic:#FFF1C9; --fresh:#CFE8F0; --fresh-sure:#7DBBD8; --fresh-disc:#F4FAFD; --tg:#2E7D4F; --ta:#C98A00; --tr:#B8322A; --tg-ink:#1F5C38; --ta-ink:#7A5200; --tr-ink:#8E2019; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --door-home:#1F3A2E; --door-shop:#4A3720; --tg:#6FBF8E; --ta:#E0A93B; --tr:#F08A82; --tg-ink:#8FD6AE; --ta-ink:#F2C27A; --tr-ink:#FFB4AB; } }
+:root[data-theme="dark"]{ --door-home:#1F3A2E; --door-shop:#4A3720; --tg:#6FBF8E; --ta:#E0A93B; --tr:#F08A82; --tg-ink:#8FD6AE; --ta-ink:#F2C27A; --tr-ink:#FFB4AB; }
+
+/* the first screen and the Shop step have no top bar: the name block sits there, as on the Coffee step */
+body[data-screen="door"] .stick, body[data-screen="shop"] .stick{ position:static; border-bottom:0; }
+body[data-screen="door"] .topbar, body[data-screen="shop"] .topbar{ display:none; }
+body[data-screen="door"] .wrap, body[data-screen="shop"] .wrap, body[data-screen="sdrink"] .wrap, body[data-screen="staste"] .wrap, body[data-screen="sperfect"] .wrap, body[data-screen="shops"] .wrap{ padding-bottom:110px; }
+:root:has(body[data-screen="door"]), :root:has(body[data-screen="shop"]), :root:has(body[data-screen="sdrink"]), :root:has(body[data-screen="staste"]), :root:has(body[data-screen="sperfect"]), :root:has(body[data-screen="shops"]){ scroll-padding-bottom:96px; }
+/* four cups on the dashed line, not six; big on the Shop step like the Coffee step */
+.progress.shopbar::before{ left:calc(14px + (100% - 28px) / 8); right:calc(14px + (100% - 28px) / 8); }
+body[data-screen="shop"] .progress{ --pcs:44px; padding:8px 14px 8px; }
+body[data-screen="shop"] .progress::before{ top:calc(8px + var(--pcs) / 2 - 1px); }
+body[data-screen="shop"] .pstep .pl{ font-size:16px; }
+
+/* the two doors */
+.door{ position:relative; width:100%; min-height:150px; display:flex; align-items:center; gap:14px; text-align:left; background:var(--surface); color:var(--ink); border:3px solid var(--btn-edge); border-radius:20px; box-shadow:0 5px 0 var(--btn-edge); padding:12px 14px; margin:0 0 14px; cursor:pointer; }
+.door:active{ transform:translateY(4px); box-shadow:0 1px 0 var(--btn-edge); }
+.door:focus-visible{ outline:3px solid var(--focus); outline-offset:3px; }
+.door.home{ background:var(--door-home); } .door.shop{ background:var(--door-shop); }
+.door.live{ border-color:var(--frame); box-shadow:0 5px 0 var(--frame); }
+.door .dpic{ flex:none; width:96px; height:96px; border-radius:18px; background:var(--door-pic); border:2px solid #22120C; display:flex; align-items:center; justify-content:center; }
+.door .dpic .spic{ width:80px; height:80px; display:block; }
+.door .dtx{ min-width:0; }
+.door .dnm{ display:block; font:700 28px/1.05 var(--display); }
+.door .ddo{ display:block; margin-top:4px; font:700 20px/1.15 var(--ui); }
+.door .deg{ display:block; margin-top:4px; font:400 16px/1.2 var(--ui); color:var(--muted); }
+.door .dbadge{ display:inline-block; margin-bottom:6px; padding:2px 10px; border:2px solid #22120C; border-radius:8px; background:var(--gold); color:#22120C; font:700 14px/1.3 var(--ui); letter-spacing:.08em; text-transform:uppercase; }
+
+/* baby blue means "begin again", and nothing else */
+.fresh{ position:relative; width:100%; min-height:92px; display:flex; align-items:center; gap:14px; text-align:left; background:var(--fresh); color:#22120C; border:3px solid #22120C; border-radius:18px; box-shadow:0 5px 0 #22120C; padding:10px 14px; margin:0 0 14px; cursor:pointer; }
+.fresh:active{ transform:translateY(4px); box-shadow:0 1px 0 #22120C; }
+.fresh:focus-visible{ outline:3px solid var(--focus); outline-offset:3px; }
+.fresh .fpic{ flex:none; width:64px; height:64px; border-radius:50%; background:var(--fresh-disc); border:2px solid #22120C; display:flex; align-items:center; justify-content:center; }
+.fresh .fpic .spic{ width:48px; height:48px; display:block; }
+.fresh b{ display:block; font:700 22px/1.1 var(--display); }
+.fresh .sub{ display:block; margin-top:3px; font:400 16px/1.2 var(--ui); }
+.fresh.sure{ background:var(--fresh-sure); }
+.spic{ display:inline-flex; flex:none; line-height:0; } .spic svg{ width:100%; height:100%; display:block; }
+
+/* cards with a green band: the picture sits in the round disc, the same as the Coffee step */
+.sband .picdisc .spic{ width:34px; height:34px; }
+.sband .fieldmeta .opt::after{ content:" \00b7"; margin:0 5px 0 4px; font-weight:400; }
+.sband .fieldmeta .opt:last-child::after, .sband .fieldmeta .req:last-child::after{ content:none; }
+.sband .fieldmeta .opt{ font-weight:700; color:var(--band-ink); }
+.sband .fieldmeta .chg:first-child{ margin-left:0; }
+.sbody{ display:flex; flex-direction:column; gap:12px; }
+.sbody > .field{ margin:0; }
+.sband .lbl{ font:700 17px var(--ui); }
+.srow2{ display:grid; grid-template-columns:minmax(0, 2fr) minmax(0, 1fr); gap:10px; }
+.splace{ display:flex; flex-direction:column; gap:12px; }
+.splace .field{ margin:0; }
+
+/* picture tiles: outlined when not chosen, filled and checked when chosen */
+.stiles{ display:grid; gap:10px; }
+#mount > .stile{ width:100%; margin:0 0 12px; }
+.stiles.c1{ grid-template-columns:minmax(0, 1fr); } .stiles.c2{ grid-template-columns:repeat(2, minmax(0, 1fr)); } .stiles.c3{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+.stile{ position:relative; display:flex; align-items:center; justify-content:center; gap:8px; min-height:52px; padding:6px; text-align:center; background:var(--surface); color:var(--ink); border:3px solid var(--btn-edge); border-radius:14px; box-shadow:0 3px 0 var(--btn-edge); font:700 18px/1.1 var(--ui); cursor:pointer; }
+.stile:active{ transform:translateY(3px); box-shadow:0 0 0 var(--btn-edge); }
+.stile:focus-visible{ outline:3px solid var(--focus); outline-offset:3px; }
+.stile[aria-pressed="true"]{ background:var(--pick); color:var(--pick-ink); border-color:var(--frame); box-shadow:0 3px 0 var(--frame); }
+.stile[aria-disabled="true"]{ opacity:.6; cursor:default; }
+.stile .schk{ position:absolute; top:-10px; right:-10px; width:26px; height:26px; display:none; } .stile[aria-pressed="true"] .schk{ display:block; } .schk svg{ width:100%; height:100%; display:block; }
+.stile .spic{ width:44px; height:44px; }
+.stile.sart{ flex-direction:column; min-height:112px; padding:8px 4px; gap:4px; } .stile.sart .spic{ width:60px; height:60px; }
+.stile.srow{ justify-content:flex-start; text-align:left; padding:8px 12px; min-height:68px; } .stile.srow .spic{ width:48px; height:48px; }
+.stile .stx{ display:flex; flex-direction:column; min-width:0; } .stile .stx small{ font:400 16px/1.15 var(--ui); color:var(--muted); } .stile[aria-pressed="true"] .stx small{ color:var(--pick-ink); }
+.stile.sface{ flex-direction:column; min-height:98px; gap:6px; font-size:19px; } .stile.sface .spic{ width:46px; height:46px; }
+.stile.tone-g{ border-color:var(--tg); color:var(--tg-ink); box-shadow:0 3px 0 var(--tg); } .stile.tone-a{ border-color:var(--ta); color:var(--ta-ink); box-shadow:0 3px 0 var(--ta); } .stile.tone-r{ border-color:var(--tr); color:var(--tr-ink); box-shadow:0 3px 0 var(--tr); }
+.stile.tone-g[aria-pressed="true"]{ background:#2E7D4F; color:#fff; border-color:#2E7D4F; } .stile.tone-a[aria-pressed="true"]{ background:#F2B33D; color:#22120C; border-color:#C98A00; } .stile.tone-r[aria-pressed="true"]{ background:#B8322A; color:#fff; border-color:#B8322A; }
+
+/* the saved drink, the face dot and the home-against-shop pair */
+.skv{ display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:18px; } .skvv{ display:flex; align-items:center; gap:8px; text-align:right; min-width:0; } .skvv b{ font-weight:700; }
+.srule{ height:2px; background:var(--line); border:0; margin:0; }
+.fdot{ flex:none; width:34px; height:34px; border-radius:50%; border:2px solid #22120C; display:inline-flex; align-items:center; justify-content:center; color:#fff; } .fdot .spic{ width:24px; height:24px; }
+.fdot.tone-g{ background:#2E7D4F; } .fdot.tone-a{ background:#F2B33D; color:#22120C; } .fdot.tone-r{ background:#B8322A; }
+.tone-t-g{ color:var(--tg-ink); } .tone-t-a{ color:var(--ta-ink); } .tone-t-r{ color:var(--tr-ink); }
+.scmp{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
+.scmp > div{ display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; padding:10px; border:2px solid var(--btn-edge); border-radius:14px; background:var(--field); }
+.scmp .spic{ width:56px; height:56px; } .scmp .big{ font:700 26px/1 var(--display); }
+.stx[data-fav]{ font-weight:700; }
+
+/* the Coffee shops screen */
+.sfind{ width:100%; min-height:52px; padding:0 12px; font-size:18px; border:2px solid var(--frame); border-radius:12px; background:var(--field); color:var(--ink); box-shadow:inset 0 2px 0 var(--dent); }
+.slist{ display:flex; flex-direction:column; gap:12px; }
+.lrow{ display:flex; gap:12px; align-items:center; width:100%; text-align:left; background:var(--surface); color:var(--ink); border:3px solid var(--frame); border-radius:16px; box-shadow:0 4px 0 var(--frame); padding:10px 12px; font:400 17px/1.25 var(--ui); cursor:pointer; }
+.lrow:focus-visible{ outline:3px solid var(--focus); outline-offset:3px; }
+.lrow b{ display:block; font:700 19px/1.1 var(--ui); } .lrow .sub{ display:block; margin-top:2px; font-size:16px; color:var(--muted); }
+.lrow .lmid{ flex:1; min-width:0; } .lrow .r{ margin-left:auto; text-align:right; flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:2px; } .lrow .price{ font:700 19px var(--ui); }
+.lrow .thumb{ flex:none; width:60px; height:60px; border-radius:14px; border:2px solid #22120C; background:var(--door-pic); display:flex; align-items:center; justify-content:center; } .lrow .thumb .spic{ width:48px; height:48px; }
+.sdetail{ display:flex; flex-direction:column; gap:8px; padding:12px 14px; margin:-4px 8px 0; border:2px solid var(--frame); border-top:0; border-radius:0 0 14px 14px; background:var(--field); }
+.sdetail .row{ display:flex; gap:8px; flex-wrap:wrap; }
+
+/* the Menu: the baby-blue fresh tile and the wide Coffee shops tile */
+.mtile .mdisc .spic{ width:30px; height:30px; }
+.mhero .mgo{ background:var(--fresh); color:#22120C; } .mhero .mgo .mi-s{ color:#22120C; } .mhero .mgo .mdisc{ background:var(--fresh-disc); } .mhero .mgo.sure{ background:var(--fresh-sure); }
+.menuitem.mtile.mshops{ margin:10px 0 0; min-height:72px; gap:12px; padding:0 12px; background:var(--door-shop); color:#22120C; border:3px solid var(--btn-edge); box-shadow:0 4px 0 var(--btn-edge); border-radius:16px; }
+.mshops .mdisc{ width:52px; height:52px; background:#FFF6E6; } .mshops .mdisc .spic{ width:40px; height:40px; } .mshops .mi-t{ font-size:21px; } .mshops .mi-s{ color:#22120C; }
+@media (max-width:359px){ .door .dpic{ width:72px; height:72px; } .door .dpic .spic{ width:60px; height:60px; } .door .dnm{ font-size:24px; } .stile.sart .spic{ width:48px; height:48px; } .stile{ font-size:16px; } }
 @media (forced-colors: active){
   /* a chosen button: the system's Highlight colours, so it differs from the others even with no colour of ours */
   button[aria-pressed="true"]:not(.starhit), button[aria-checked="true"]:not(.starhit), .way[aria-pressed="true"], .levelopt[aria-pressed="true"], .gpick-opt[aria-selected="true"]{
@@ -2348,6 +2447,26 @@ button.hrow:active, .hrow.sel:active{ transform:translateY(3px); box-shadow:0 1p
 <symbol id="a-grind" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14h24l-4 18H16z" fill="#C79A66"/><path d="M10 14h28" fill="none" stroke-width="3"/><path d="M36 14l6-6M42 8v6" fill="none"/><rect x="14" y="34" width="20" height="8" rx="2" fill="#8A5230"/><circle cx="20" cy="38" r="1.2" fill="#22120C" stroke="none"/><circle cx="25" cy="39" r="1.2" fill="#22120C" stroke="none"/><circle cx="29" cy="37.5" r="1.2" fill="#22120C" stroke="none"/></g></symbol>
 <!-- r61-art:end -->
 <!-- bt-art:end -->
+<symbol id="s-shop" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><rect x="7" y="22" width="34" height="20" fill="#FFF8EA"/><rect x="19" y="28" width="10" height="14" fill="#4A8FB8"/><circle cx="26.5" cy="35.5" r="1" fill="#FFF8EA" stroke="none"/><rect x="9.5" y="28" width="7" height="8" fill="#DDF1F7" stroke-width="2"/><rect x="31.5" y="28" width="7" height="8" fill="#DDF1F7" stroke-width="2"/><polygon points="6,12 12,12 10,22 3,22" fill="#D9503B"/><polygon points="12,12 18,12 17,22 10,22" fill="#FDFBF7"/><polygon points="18,12 24,12 24,22 17,22" fill="#D9503B"/><polygon points="24,12 30,12 31,22 24,22" fill="#FDFBF7"/><polygon points="30,12 36,12 38,22 31,22" fill="#D9503B"/><polygon points="36,12 42,12 45,22 38,22" fill="#FDFBF7"/><path d="M3 22q3.5 4 7 0z" fill="#D9503B"/><path d="M10 22q3.5 4 7 0z" fill="#FDFBF7"/><path d="M17 22q3.5 4 7 0z" fill="#D9503B"/><path d="M24 22q3.5 4 7 0z" fill="#FDFBF7"/><path d="M31 22q3.5 4 7 0z" fill="#D9503B"/><path d="M38 22q3.5 4 7 0z" fill="#FDFBF7"/><path d="M3 43h42" fill="none"/></g></symbol>
+<symbol id="a-fresh" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 28 H34 V34 a11 11 0 0 1-11 11 H19 a11 11 0 0 1-11-11Z" fill="#FFF8EA"/><path d="M34 31 h3.5 a4 4 0 0 1 0 8 h-4.5" fill="none"/><ellipse cx="21" cy="28" rx="13" ry="3" fill="#E4D3A8"/><path d="M21 27 V17" fill="none"/><path d="M21 22 C21 15 15 12 9 13 C9 19 14 23 21 22Z" fill="#6FB98A"/><path d="M21 19 C21 12 27 8 34 9 C34 15 29 19 21 19Z" fill="#4C9A6A"/><path d="M20 21 C17 18 14 16 11 15 M22 18 C25 15 28 12 31 11" fill="none" stroke-width="1.5" opacity=".45"/><path d="M41 5 l1.6 3.8 3.8 1.6 -3.8 1.6 -1.6 3.8 -1.6 -3.8 -3.8 -1.6 3.8 -1.6z" fill="#FFD76A" stroke-width="1.6"/><path d="M6 5 v5 M3.5 7.5 h5" fill="none" stroke-width="2"/></g></symbol>
+<symbol id="a-fav" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 27 H35 V33 a11 11 0 0 1-11 11 H20 a11 11 0 0 1-11-11Z" fill="#FFF8EA"/><path d="M35 30 h3 a4 4 0 0 1 0 8 h-4" fill="none"/><ellipse cx="22" cy="27" rx="13" ry="3" fill="#8A5230"/><path d="M22 22 c-6-4-8-7-8-10 a4.3 4.3 0 0 1 8-1.8 4.3 4.3 0 0 1 8 1.8 c0 3-2 6-8 10z" fill="#D9503B"/></g></symbol>
+<symbol id="a-sleeve" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M11 14h26l-3.5 29a2 2 0 0 1-2 1.7H16.5a2 2 0 0 1-2-1.7z" fill="#FDFBF7"/><path d="M12.4 25h23.2l-1.2 10H13.6z" fill="#C79A66"/><path d="M9 9h30v5H9z" fill="#FDFBF7"/><path d="M17 30h14" fill="none" stroke-width="2"/></g></symbol>
+<symbol id="d-latte" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#F2A93B"/><path d="M10 24h38v10a16 16 0 0 1-16 16H26a16 16 0 0 1-16-16z" fill="#FDFBF7"/><ellipse cx="29" cy="24" rx="19" ry="5.5" fill="#B98C5A"/><path d="M29 27.5c-4-2.5-6-4.2-6-6.2a3 3 0 0 1 6-.8 3 3 0 0 1 6 .8c0 2-2 3.7-6 6.2z" fill="#FDFBF7" stroke-width="1.8"/><path d="M48 28h3a5 5 0 0 1 0 10h-4" fill="none"/></g></symbol>
+<symbol id="d-americano" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#6FB5D9"/><path d="M12 22h34v14a15 15 0 0 1-15 15H27a15 15 0 0 1-15-15z" fill="#FDFBF7"/><ellipse cx="29" cy="22" rx="17" ry="3.5" fill="#4A2A18"/><path d="M46 26h3.5a5.5 5.5 0 0 1 0 11H44" fill="none"/><path d="M21 8c-2 3 2 5 0 8M29 6c-2 3 2 5 0 9M37 8c-2 3 2 5 0 8" fill="none" stroke-width="2"/><path d="M55 10s-4 4.5-4 7a4 4 0 0 0 8 0c0-2.5-4-7-4-7z" fill="#6FB5D9" stroke-width="2"/></g></symbol>
+<symbol id="d-cappuccino" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#D9503B"/><path d="M12 28h34v8a14 14 0 0 1-14 14H26a14 14 0 0 1-14-14z" fill="#FDFBF7"/><path d="M13 28c0-8 7-12 16-12s16 4 16 12c0 2-4 3.5-16 3.5S13 30 13 28z" fill="#F7EBD2"/><circle cx="24" cy="21" r="1.5" fill="#6B3E22" stroke="none"/><circle cx="31" cy="19" r="1.5" fill="#6B3E22" stroke="none"/><circle cx="36" cy="23" r="1.5" fill="#6B3E22" stroke="none"/><circle cx="28" cy="25" r="1.5" fill="#6B3E22" stroke="none"/><path d="M46 31h3a5 5 0 0 1 0 10h-4" fill="none"/></g></symbol>
+<symbol id="d-iced-latte" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M16 12h32l-3 44a3 3 0 0 1-3 3H22a3 3 0 0 1-3-3z" fill="#DDF1F7"/><path d="M17 28h30l-2 28a3 3 0 0 1-3 3H22a3 3 0 0 1-3-3z" fill="#F3E3C3"/><path d="M16.4 18h31.2L47 28H17z" fill="#7A4A2D"/><path d="M22 19h9v9h-9z" fill="#EAF6F8" transform="rotate(-8 26 23)"/><path d="M33 22h8v8h-8z" fill="#EAF6F8" transform="rotate(10 37 26)"/><path d="M38 20l8-17" fill="none" stroke="#F2A93B" stroke-width="4"/></g></symbol>
+<symbol id="d-special" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M16 20h32l-4 38a3 3 0 0 1-3 3H23a3 3 0 0 1-3-3z" fill="#F2A93B"/><path d="M18.5 31h27l-1.3 14H19.8z" fill="#C79A66"/><polygon points="32,33 33.8,37 38,37.3 34.8,40 35.8,44.2 32,42 28.2,44.2 29.2,40 26,37.3 30.2,37" fill="#FDFBF7" stroke-width="1.6"/><path d="M13 14h38v6H13z" fill="#FDFBF7"/><path d="M18 14c0-4 6-6 14-6s14 2 14 6" fill="#FDFBF7"/><path d="M55 7v8M51 11h8M9 26v5M6.5 28.5h5" fill="none" stroke-width="2.2"/></g></symbol>
+<symbol id="z-s" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M10 32h28l-3 12a2 2 0 0 1-2 2H15a2 2 0 0 1-2-2z" fill="#C79A66"/><path d="M8 28h32v4H8z" fill="#FDFBF7"/><path d="M11 37h26" fill="none" stroke-width="2"/></g></symbol>
+<symbol id="z-m" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M10 24h28l-3 20a2 2 0 0 1-2 2H15a2 2 0 0 1-2-2z" fill="#C79A66"/><path d="M8 20h32v4H8z" fill="#FDFBF7"/><path d="M11 32h26" fill="none" stroke-width="2"/></g></symbol>
+<symbol id="z-l" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M10 16h28l-3 28a2 2 0 0 1-2 2H15a2 2 0 0 1-2-2z" fill="#C79A66"/><path d="M8 12h32v4H8z" fill="#FDFBF7"/><path d="M11 26h26" fill="none" stroke-width="2"/></g></symbol>
+<symbol id="ag-y" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21 H31 V28 a10 10 0 0 1-10 10 H17 a10 10 0 0 1-10-10Z" fill="#FFF8EA"/><path d="M31 24 h3 a3.5 3.5 0 0 1 0 7 h-3.5" fill="none"/><ellipse cx="19" cy="21" rx="12" ry="2.6" fill="#8A5230"/><circle cx="37" cy="11" r="8.5" fill="#2E7D4F"/><path d="M33 11.5 l3 3 5-6" fill="none" stroke="#fff" stroke-width="2.6"/></g></symbol>
+<symbol id="ag-m" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21 H31 V28 a10 10 0 0 1-10 10 H17 a10 10 0 0 1-10-10Z" fill="#FFF8EA"/><path d="M31 24 h3 a3.5 3.5 0 0 1 0 7 h-3.5" fill="none"/><ellipse cx="19" cy="21" rx="12" ry="2.6" fill="#8A5230"/><circle cx="37" cy="11" r="8.5" fill="#F2B33D"/><path d="M34 8.5 c0-3 6-3 6 0 c0 2.2-3 2.2-3 4.6" fill="none" stroke-width="2.2"/><circle cx="37" cy="16.2" r="1" fill="#22120C" stroke="none"/></g></symbol>
+<symbol id="ag-n" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21 H31 V28 a10 10 0 0 1-10 10 H17 a10 10 0 0 1-10-10Z" fill="#FFF8EA"/><path d="M31 24 h3 a3.5 3.5 0 0 1 0 7 h-3.5" fill="none"/><ellipse cx="19" cy="21" rx="12" ry="2.6" fill="#8A5230"/><circle cx="37" cy="11" r="8.5" fill="#B8322A"/><path d="M33.5 7.5 l7 7 M40.5 7.5 l-7 7" fill="none" stroke="#fff" stroke-width="2.6"/></g></symbol>
+<symbol id="wp-y" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18 h14 l18 18 -13 12 L5 30z" fill="#F2A93B"/><circle cx="12" cy="24" r="2.6" fill="#FFF8EA"/><circle cx="37" cy="11" r="8.5" fill="#2E7D4F"/><path d="M33 11.5 l3 3 5-6" fill="none" stroke="#fff" stroke-width="2.6"/></g></symbol>
+<symbol id="wp-m" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18 h14 l18 18 -13 12 L5 30z" fill="#F2A93B"/><circle cx="12" cy="24" r="2.6" fill="#FFF8EA"/><circle cx="37" cy="11" r="8.5" fill="#F2B33D"/><path d="M33.5 9 h7 M33.5 13.5 h7" fill="none" stroke-width="2.4"/></g></symbol>
+<symbol id="wp-n" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18 h14 l18 18 -13 12 L5 30z" fill="#F2A93B"/><circle cx="12" cy="24" r="2.6" fill="#FFF8EA"/><circle cx="37" cy="11" r="8.5" fill="#B8322A"/><path d="M37 6.5 v6" fill="none" stroke="#fff" stroke-width="2.6"/><circle cx="37" cy="16" r="1.1" fill="#fff" stroke="none"/></g></symbol>
+<symbol id="s-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></g></symbol>
+<symbol id="s-tag" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M6 6h17l19 19-17 17L6 23z" fill="#F2A93B"/><circle cx="14" cy="14" r="3" fill="#FFF8EA"/><text x="26" y="31" font-family="Lora, serif" font-weight="700" font-size="16" fill="#22120C" stroke="none" text-anchor="middle" transform="rotate(45 26 26)">$</text></g></symbol>
 </defs></svg>
 
 <a class="skiplink" href="#app" id="skipLink">Skip to main content</a>
@@ -6112,7 +6231,7 @@ const GUIDE_SECTIONS = [
   { id:'quick', title:'The short version', lead:'Six steps, in a loop.',
     paras:['BeanTelligence works as a loop. Tell it about your coffee. Brew with settings made for that coffee. Taste and score it. Then use what you tasted to make the next brew better. The bar at the top shows the six steps: ' + [STEP_NAME.coffee, STEP_NAME.facts, STEP_NAME.method, STEP_NAME.brew, STEP_NAME.taste].join(', ') + ' and ' + STEP_NAME.perfect + '. Tap a step to jump back to it. A step you have not reached yet is locked, and it tells you what it needs.',
       'The more tastings you save, the more BeanTelligence can show you. It shows how each coffee got better, what you tend to like, and what to look for when you buy.'],
-    tips:['Five answers are needed up front: name, roast, process, elevation and roast date. Not sure counts, and everything else is optional.', 'Change one thing at a time on the ' + STEP_NAME.perfect + ' step, so you know what helped.'] },
+    tips:['Five answers are needed up front: name, roast, process, elevation and roast date. Not sure counts, and everything else is optional.', 'Change one thing at a time on the ' + STEP_NAME.perfect + ' step, so you know what helped.', 'The first screen also has At a coffee shop: a shorter trail for a drink you bought, with no brewing. See Coffee shops below.'] },
   { id:'coffee', title:'1. Coffee: tell it what you are brewing', lead:'Start with the bag.',
     paras:['Type the coffee name, then add what the bag says: roaster, origin, process, roast level, elevation, roast date and tasting notes. Each field says what it changes: your brew settings, your guide, your advice, or only your saved record. Origin and varietal are pickers, so there is no spelling to worry about. Not on the list? Choose Other and type it.',
       'If you are unsure about something, choose Not sure and BeanTelligence tells you what it assumed. If you leave out the process or the elevation, it makes a labelled guess from the origin, except for a blend.',
@@ -6150,6 +6269,11 @@ const GUIDE_SECTIONS = [
       'In Chrome and Edge you can save into a file of your own choosing. Save as opens your computer\'s Save box, where you can change the name or pick the file to replace. BeanTelligence remembers that file in this browser, so the next tasting offers to be added straight into it. Your browser asks your permission again after it has been closed. Forget my save file in the menu makes it stop remembering; the file itself is never touched. Other browsers download a fresh copy each time.',
       'What each column means in the menu explains every column of your history file, so you can read it in a spreadsheet or a script. You can save that guide as a small file.',
       'If your view cannot save files, use Back up my history as text in the menu. It makes a code you can paste into Notes or an email and paste back to restore. Clear everything on this device removes the copy in this browser, but not files you downloaded.'] },
+  { id:'shops', title:'Coffee shops: a drink you bought', lead:'Shop, Drink, Taste, Perfect. No brewing.',
+    paras:['The first screen asks where you are having coffee. Choose At a coffee shop to log a drink you bought. It has steps of its own: Shop, Drink, Taste and Perfect.',
+      'Shop: pick one of your spots, or add a new one with its city and state. A new shop starts from your home town or your last shop, so you rarely retype a place. Set your home town under Menu, My setup. Drink: choose what you ordered, hot or iced, the size and what it cost. Taste: pick a face, rate the beans if you like, and say whether you would order it again and whether it was worth the price. Perfect: see what was saved, next to your home tastings.',
+      'The Coffee shops screen in the Menu lists every drink, your shops with how many times you went, and your Favorites, with a search. Your drinks are kept in this browser and in a small file of their own under Menu, My files. It is not your tasting history, and loading it only adds drinks.'],
+    tips:['Your home coffee waits while you log a shop drink. Starting a fresh coffee is what throws it away, and it asks twice.', 'A draft left alone for 3 hours opens on the first screen next time. It is not deleted.'] },
   { id:'learn', title:'Your tendencies and understanding coffee', lead:'What you like, and how to shop for it.',
     paras:['Your tendencies is also its own row in the menu, so you can open it any time. It draws pictures from your saved history. They show the flavors you liked and did not like, what you enjoy about a cup, and how you use the stars. They also show how you rate kinds of coffee and where your measured brews landed.',
       'Each bar counts coffees, and each dot is one coffee, so you can check every one. A picture appears when there is enough to draw. New shows one picture and folds the rest. Comfortable folds each card with a Why? note. Expert shows everything open, with ranges and a table you can save.',
@@ -7628,6 +7752,21 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 62,
+  "at": "2026-10-12T01:21:29Z",
+  "date": "2026-10-12",
+  "title": "Coffee shops, part 1",
+  "notes": [
+   "A new first screen asks where you are having coffee: At home or At a coffee shop.",
+   "A shop drink has four steps of its own (Shop, Drink, Taste, Perfect) and remembers the city and state.",
+   "A coffee in progress waits for you. The baby-blue Start a fresh coffee asks twice before it tips anything out. Your history stays.",
+   "A draft you have not touched for 3 hours opens on the first screen. Nothing is deleted.",
+   "New Coffee shops in the Menu: drinks, shops with your visits, Favorites and search.",
+   "My setup has a Home town, so new shops start in the right place.",
+   "My files saves and loads a coffee shops file of its own. It never changes your tasting history."
+  ]
+ },
+ {
   "release": 61,
   "at": "2026-10-11T22:05:56Z",
   "date": "2026-10-11",
@@ -8344,6 +8483,125 @@ function folkProblems(list){
   });
   return out;
 }
+/* ---------- coffee shops ----------
+   A store is { home, shops, drinks }. home is { country, region, city } (the default place for a new shop), shops are places the person added, drinks are what they bought.
+   A shop is named by its name plus its city, region and country, so two branches of one chain are two shops. A shop that has a drink is a shop even if it was never added by itself.
+   The file is separate from the tasting history and never touches it. One row is one thing: row = home, shop or drink. Columns are found by name, in any order. */
+/* the four steps of a shop drink, in order: the screen name and the step name (the same word) */
+const STEP_SHOP = { shop:'Shop', drink:'Drink', taste:'Taste', perfect:'Perfect' };
+const SHOP_STEPS = [['shop', STEP_SHOP.shop], ['sdrink', STEP_SHOP.drink], ['staste', STEP_SHOP.taste], ['sperfect', STEP_SHOP.perfect]];
+const SHOP_KINDS = [
+  { v:'pour', label:'Pour over', hot:true }, { v:'espresso', label:'Espresso', hot:true }, { v:'americano', label:'Americano', hot:true }, { v:'latte', label:'Latte', hot:true },
+  { v:'cappuccino', label:'Cappuccino', hot:true }, { v:'cold', label:'Cold brew', hot:false }, { v:'icedlatte', label:'Iced latte', hot:false }, { v:'special', label:'Seasonal special', hot:true }, { v:'other', label:'Something else', hot:true }
+];
+const SHOP_SIZES = [{ v:'small', label:'Small' }, { v:'medium', label:'Medium' }, { v:'large', label:'Large' }];
+const SHOP_FACES = [{ v:'good', label:'Good' }, { v:'okay', label:'Okay' }, { v:'notgood', label:'Not good' }];
+const SHOP_AGAINS = [{ v:'yes', label:'Yes, again' }, { v:'maybe', label:'Maybe' }, { v:'no', label:'Never again' }];
+const SHOP_WORTHS = [{ v:'worth', label:'Worth it' }, { v:'fair', label:'Fair' }, { v:'over', label:'Overpriced' }];
+const US_STATES = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'District of Columbia', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
+const SHOP_COUNTRIES = ['United States', 'Canada', 'Mexico', 'United Kingdom', 'Ireland', 'France', 'Germany', 'Italy', 'Spain', 'Portugal', 'Netherlands', 'Belgium', 'Switzerland', 'Austria', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Poland', 'Czechia', 'Greece', 'Turkey', 'Ethiopia', 'Kenya', 'Rwanda', 'Brazil', 'Colombia', 'Costa Rica', 'Guatemala', 'Panama', 'Peru', 'Argentina', 'Chile', 'Japan', 'South Korea', 'China', 'Taiwan', 'Thailand', 'Vietnam', 'Indonesia', 'Philippines', 'India', 'Australia', 'New Zealand', 'United Arab Emirates', 'South Africa', 'Israel'];
+const SHOP_COLUMNS = ['row', 'date', 'shop', 'city', 'region', 'country', 'drink', 'menu name', 'hot or iced', 'size', 'amount', 'unit', 'currency', 'price', 'overall', 'beans', 'order again', 'worth the price', 'favorite', 'notes'];
+const SHOP_MAX_DRINKS = 5000, SHOP_MAX_TEXT = 2000000;
+const shopPick = (list, v) => { v = String(v == null ? '' : v).trim().toLowerCase(); const f = list.find(x => x.v === v); return f ? f.v : ''; };
+const shopTxt = (v, n) => priceText(v, n);
+/* a place: country, region (a US state, or any typed region elsewhere) and city. Blank country means the United States only when a US state is given. */
+function shopPlace(o){
+  o = o || {}; let country = shopTxt(o.country, 40), region = shopTxt(o.region, 40);
+  const st = US_STATES.find(s => s.toLowerCase() === region.toLowerCase()); if (st) region = st;
+  const known = SHOP_COUNTRIES.find(c => c.toLowerCase() === country.toLowerCase()); if (known) country = known;
+  if (!country && st) country = 'United States';
+  return { country, region, city:shopTxt(o.city, 60) };
+}
+function shopStore(){ return { home:{ country:'', region:'', city:'' }, shops:[], drinks:[] }; }
+function csKey(s){ return [s.name, s.city, s.region, s.country].map(x => String(x == null ? '' : x).toLowerCase()).join('|'); }
+function shopPlaceText(p){ p = p || {}; const abbr = p.country === 'United States' || (!p.country && US_STATES.includes(p.region)) ? (p.region || '') : [p.region, p.country].filter(Boolean).join(', '); return [p.city, abbr].filter(Boolean).join(', '); }
+/* one shop from loose values, or null (a shop needs a name) */
+function shopEntry(o){
+  o = o || {}; const name = shopTxt(o.name != null ? o.name : o.shop, 80); if (!name) return null;
+  return Object.assign({ name }, shopPlace(o));
+}
+/* one drink from loose values, or null. Needs a shop name and a kind of drink. Everything else is kept when sensible and dropped when not. */
+function drinkEntry(o){
+  o = o || {}; const sh = shopEntry({ name:o.shop, country:o.country, region:o.region, city:o.city }), kind = shopPick(SHOP_KINDS, o.kind);
+  if (!sh || !kind) return null;
+  const price = priceNum(o.price, 2), amount = priceNum(o.amount, 1), unit = shopPick([{ v:'oz' }, { v:'ml' }], o.unit), beans = priceNum(o.beans, 1);
+  const temp = shopPick([{ v:'hot' }, { v:'iced' }], o.temp);
+  return { date:/^\d{4}-\d{2}-\d{2}$/.test(String(o.date || '').trim()) ? String(o.date).trim() : '', shop:sh.name, city:sh.city, region:sh.region, country:sh.country, kind, name:shopTxt(o.name, 80), temp,
+    size:shopPick(SHOP_SIZES, o.size), amount:amount > 0 && amount <= 3000 && unit ? amount : null, unit:amount > 0 && amount <= 3000 ? unit : '', sym:shopTxt(o.sym, 3) || '$', price:price > 0 && price <= 1000 ? price : null,
+    face:shopPick(SHOP_FACES, o.face), beans:beans != null && beans >= 0.5 && beans <= 5 ? Math.round(beans * 2) / 2 : null, again:shopPick(SHOP_AGAINS, o.again), worth:shopPick(SHOP_WORTHS, o.worth), fav:o.fav === true || String(o.fav).toLowerCase() === 'yes', notes:shopTxt(o.notes, 400) };
+}
+function drinkKey(d){ return [d.date, d.shop, d.city, d.region, d.country, d.kind, d.name, d.size, d.price].map(x => String(x == null ? '' : x).toLowerCase()).join('|'); }
+/* put a drink on the store. Returns { store (a new store), added, why }. The same drink (date, shop, place, kind, name, size, price) is not added twice. */
+function shopAddDrink(store, o){
+  const st = store || shopStore(), d = drinkEntry(o);
+  if (!d) return { store:st, added:false, why:'unusable' };
+  if (st.drinks.length >= SHOP_MAX_DRINKS) return { store:st, added:false, why:'full' };
+  const k = drinkKey(d); if (st.drinks.some(x => drinkKey(x) === k)) return { store:st, added:false, why:'same' };
+  return { store:Object.assign({}, st, { drinks:st.drinks.concat([d]) }), added:true, why:'' };
+}
+function shopAddShop(store, o){
+  const st = store || shopStore(), s = shopEntry(o);
+  if (!s) return { store:st, added:false, why:'unusable' };
+  if (shopList(st).some(x => csKey(x) === csKey(s))) return { store:st, added:false, why:'same' };
+  return { store:Object.assign({}, st, { shops:st.shops.concat([s]) }), added:true, why:'' };
+}
+function shopSetHome(store, o){ const st = store || shopStore(); return Object.assign({}, st, { home:shopPlace(o) }); }
+function shopSetFavorite(store, key, on){ const st = store || shopStore(); return Object.assign({}, st, { drinks:st.drinks.map(d => drinkKey(d) === key ? Object.assign({}, d, { fav:!!on }) : d) }); }
+function shopRemoveDrink(store, key){ const st = store || shopStore(); return Object.assign({}, st, { drinks:st.drinks.filter(d => drinkKey(d) !== key) }); }
+/* every shop, most visited first: the added shops plus any shop only a drink names. Each carries visits, average beans (null with no beans), the last date and how many it was ordered again. */
+function shopList(store){
+  const st = store || shopStore(), map = new Map();
+  const put = s => { const k = csKey(s); if (!map.has(k)) map.set(k, { name:s.name, city:s.city, region:s.region, country:s.country, visits:0, beanSum:0, beanN:0, last:'', again:0, i:map.size }); return map.get(k); };
+  st.shops.forEach(put);
+  st.drinks.forEach(d => { const s = put({ name:d.shop, city:d.city, region:d.region, country:d.country }); s.visits++; if (d.beans != null){ s.beanSum += d.beans; s.beanN++; } if (d.date > s.last) s.last = d.date; if (d.again === 'yes') s.again++; });
+  return Array.from(map.values()).map(s => ({ name:s.name, city:s.city, region:s.region, country:s.country, visits:s.visits, avgBeans:s.beanN ? Math.round(s.beanSum / s.beanN * 10) / 10 : null, last:s.last, again:s.again, i:s.i }))
+    .sort((a, b) => b.visits - a.visits || (b.last || '').localeCompare(a.last || '') || a.i - b.i);
+}
+/* drinks newest first (undated last, then the later ones added), each keeping its place as `i` */
+function shopDrinksSorted(store, mode){
+  const a = ((store && store.drinks) || []).map((d, i) => Object.assign({ i, key:drinkKey(d) }, d));
+  if (mode === 'fav') return a.filter(d => d.fav).sort((x, y) => (y.date || '').localeCompare(x.date || '') || y.i - x.i);
+  return a.sort((x, y) => (y.date || '').localeCompare(x.date || '') || y.i - x.i);
+}
+function shopFilter(list, q){ q = String(q || '').trim().toLowerCase(); if (!q) return list; return list.filter(d => [d.name, d.shop, d.city, d.region, (SHOP_KINDS.find(k => k.v === d.kind) || {}).label].join(' ').toLowerCase().includes(q)); }
+/* the file text: the home row, a row for each added shop that has no drink yet, then each drink */
+function shopCsv(store){
+  const st = store || shopStore(), lines = [SHOP_COLUMNS], blank = n => new Array(n).fill('');
+  const place = p => [neutralize(p.city), neutralize(p.region), neutralize(p.country)];
+  const has = new Set(st.drinks.map(d => csKey({ name:d.shop, city:d.city, region:d.region, country:d.country })));
+  if (st.home.city || st.home.region || st.home.country) lines.push(['home', '', ''].concat(place(st.home), blank(14)));
+  st.shops.forEach(s => { if (!has.has(csKey(s))) lines.push(['shop', '', neutralize(s.name)].concat(place(s), blank(14))); });
+  st.drinks.forEach(d => lines.push(['drink', d.date, neutralize(d.shop)].concat(place(d), [d.kind, neutralize(d.name), d.temp, d.size, d.amount == null ? '' : String(d.amount), d.unit, neutralize(d.sym), d.price == null ? '' : String(d.price), d.face, d.beans == null ? '' : String(d.beans), d.again, d.worth, d.fav ? 'yes' : '', neutralize(d.notes)])));
+  return toCSV(lines);
+}
+/* read a file. Returns { error } or { store, skipped (rows that were not a home, shop or drink), repeats }. Loading a file into a store is done by the caller with shopAddDrink and shopAddShop. */
+function shopRead(text){
+  text = String(text == null ? '' : text);
+  if (text.length > SHOP_MAX_TEXT) return { error:'That file is too big to be a coffee shops file. Nothing was changed.' };
+  const p = parseCSV(text); if (p.error) return { error:p.error };
+  const col = {}; p.header.forEach((h0, i) => { const k = String(h0).toLowerCase().replace(/\s+/g, ' ').trim(); if (!(k in col)) col[k] = i; });
+  const need = ['row', 'shop', 'drink'].filter(k => !(k in col));
+  if (need.length) return { error:"This doesn't look like a coffee shops file from this app (missing: " + need.join(', ') + '). Nothing was changed.' };
+  const get = (r, k) => (k in col && r[col[k]] != null) ? r[col[k]] : '', un = (r, k) => unneutralize(get(r, k));
+  let st = shopStore(), skipped = 0, repeats = 0;
+  p.rows.forEach(r => {
+    const kind = String(get(r, 'row')).trim().toLowerCase(), pl = { city:un(r, 'city'), region:un(r, 'region'), country:un(r, 'country') };
+    if (kind === 'home') st = shopSetHome(st, pl);
+    else if (kind === 'shop'){ const a = shopAddShop(st, Object.assign({ name:un(r, 'shop') }, pl)); if (a.added) st = a.store; else if (a.why === 'same') repeats++; else skipped++; }
+    else if (kind === 'drink'){
+      const a = shopAddDrink(st, Object.assign({ date:get(r, 'date'), shop:un(r, 'shop'), kind:get(r, 'drink'), name:un(r, 'menu name'), temp:get(r, 'hot or iced'), size:get(r, 'size'), amount:get(r, 'amount'), unit:get(r, 'unit'), sym:un(r, 'currency'), price:get(r, 'price'), face:get(r, 'overall'), beans:get(r, 'beans'), again:get(r, 'order again'), worth:get(r, 'worth the price'), fav:get(r, 'favorite'), notes:un(r, 'notes') }, pl));
+      if (a.added) st = a.store; else if (a.why === 'same') repeats++; else skipped++;
+    } else skipped++;
+  });
+  return { store:st, skipped, repeats };
+}
+/* Home against the shop. homeStars: the person's own stars for tastings at home (numbers, 0 or missing = not rated). bags: the prices list (with a dose to give a cost per cup). Gives { homeBeans, homeN, homeCup, shopCup, times } with null for what is not known. The cost of a cup is compared only for bags in the same currency symbol as the drink. */
+function shopVsHome(d, homeStars, bags){
+  const st = (homeStars || []).filter(x => x > 0), sym = (d && d.sym) || '$';
+  const cups = (bags || []).filter(b => b && b.dose && (b.sym || '$') === sym).map(b => costOne({ price:b.price, size:b.size, unit:b.unit, dose:b.dose })).filter(c => c.ok).map(c => c.perCup);
+  const homeBeans = st.length ? Math.round(st.reduce((a, b) => a + b, 0) / st.length * 10) / 10 : null, homeCup = cups.length ? cups.reduce((a, b) => a + b, 0) / cups.length : null, shopCup = d && d.price > 0 ? d.price : null;
+  return { homeBeans, homeN:st.length, homeCup, shopCup, times:homeCup && shopCup ? Math.max(1, Math.round(shopCup / homeCup)) : null };
+}
 /*ENGINE_END*/
 (function(){
 'use strict';
@@ -8595,7 +8853,7 @@ function newCoffee(){
   return { id:newId(), name:'', roaster:'', origin:'', varietal:'', roast:'', process:'', decaf:'', density:'', elevText:'', roast_date:'', bag_notes:'', scanned:'', scannedFrom:'', roastUnsure:'', dateUnsure:'', answered:'', blend:'', varietalUnsure:'' };
 }
 function newApp(){
-  return { screen:'start', cupFor:'', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', taste:'', sound:'off', coach:'guide', level:'', calib:{}, yieldCal:{}, roasterSites:{}, gear:setupDefaults().gear }, adjust:{ grind:0, ratio:0, agit:'' }, gearOk:false, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
+  return { screen:'door', resume:'', cupFor:'', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', taste:'', sound:'off', coach:'guide', level:'', calib:{}, yieldCal:{}, roasterSites:{}, gear:setupDefaults().gear }, adjust:{ grind:0, ratio:0, agit:'' }, gearOk:false, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
 }
 function newCup(){
   return {
@@ -8609,6 +8867,9 @@ let app = newApp();
 let state = newCup();     // the cupping form
 const refreshers = [];
 
+/* The first screen shows again when the saved draft was last touched more than 3 hours ago. draftAt is the time of the person's last change (not of the last save), so opening the app does not renew it. TRAIL_HOME: the screens of the home trail, where "Keep brewing" can return. */
+const DRAFT_STALE_MS = 3 * 3600000, TRAIL_HOME = ['start', 'coffee', 'brew', 'gear', 'recipe', 'cup', 'dial'];
+let draftAt = Date.now();
 function loadDraft(){
   try {
     const raw = localStorage.getItem(DRAFT_KEY); if (!raw) return;
@@ -8654,8 +8915,10 @@ function loadDraft(){
     a.lastTotal = typeof src.lastTotal === 'number' ? src.lastTotal : null;
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
-    const ok = ['start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','tend','guide','tools','yield','ratio','cost','prices','tastes','wheels','chart','folk'];
-    a.screen = ok.includes(src.screen) ? src.screen : 'start';
+    const ok = ['door','shop','sdrink','staste','sperfect','shops','start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','tend','guide','tools','yield','ratio','cost','prices','tastes','wheels','chart','folk'];
+    a.screen = ok.includes(src.screen) ? src.screen : 'door';
+    a.resume = TRAIL_HOME.includes(src.resume) ? src.resume : (TRAIL_HOME.includes(src.screen) ? src.screen : ['change', 'ready', 'timer'].includes(src.screen) ? 'recipe' : '');   /* where Keep brewing returns to */
+    if (isFinite(d.at) && d.at > 0 && d.at <= Date.now() + 60000){ draftAt = d.at; if (Date.now() - d.at > DRAFT_STALE_MS) a.screen = 'door'; }   /* untouched for 3 hours: open on the first screen, the draft stays */
     /* a saved timer comes back only if it is recent: running for under 45 minutes in all, or paused within the last 30 minutes */
     { const ts = src.timerSave, now = Date.now();
       if (ts && typeof ts === 'object' && isFinite(ts.base) && ts.base >= 0 && ts.base < 3600 && isFinite(ts.at) && ts.at <= now + 60000 && ts.at > now - 6 * 3600000){
@@ -8664,7 +8927,7 @@ function loadDraft(){
         if (run ? total <= 45 * 60 : (now - ts.at <= 30 * 60000 && ts.base > 0)) a.timerSave = { running:run, startMs:run ? ts.startMs : 0, base:+ts.base, done:!run && ts.done === true, at:ts.at };
       } }
     if (a.screen === 'timer' && (!a.timerSave || isMachine(a.brew.method))){ a.screen = 'recipe'; a.timerSave = null; }   /* a timer that is not running goes back to the last look, where Brew it is */
-    if (!a.coffee.name && a.screen !== 'history' && a.screen !== 'detail' && a.screen !== 'tend') a.screen = 'start';
+    if (!a.coffee.name && !['history', 'detail', 'tend', 'door', 'start', 'shops'].includes(a.screen) && !SHOP_TRAIL.includes(a.screen)) a.screen = 'door';
     if (a.screen === 'change' || (a.screen === 'ready' && isMachine(a.brew.method))) a.screen = 'recipe';   /* a half-made change is not worth coming back to; the machine has no summary page */
     if ((a.screen === 'recipe' || a.screen === 'ready' || a.screen === 'timer' || a.screen === 'gear') && !a.brew.method){ a.screen = 'brew'; a.timerSave = null; }
     if (a.screen === 'gear' && isMachine(a.brew.method)) a.screen = 'recipe';   /* the machine has no gear page */
@@ -8691,12 +8954,12 @@ function loadDraft(){
 }
 let saveTimer = null;
 function scheduleDraft(){
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ app, cup:state })); } catch(e){ storageFailed = true; } }, 250);
+  draftAt = Date.now(); clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ app, cup:state, at:draftAt })); } catch(e){ storageFailed = true; } }, 250);
 }
 function flushDraft(){
   clearTimeout(saveTimer);
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ app, cup:state })); } catch(e){ storageFailed = true; }
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ app, cup:state, at:draftAt })); } catch(e){ storageFailed = true; }
 }
 function refreshAll(){ refreshers.forEach(f => f()); paintProgress(); }
 function changed(){ refreshAll(); scheduleDraft(); }
@@ -8705,20 +8968,20 @@ function changed(){ refreshAll(); scheduleDraft(); }
 /* gearFrom: where Back goes from Gear ('brew' = the method list, 'recipe' = the Brew page). recipeVia: 'gear' when the Brew page was reached from Gear, so Back returns there. Neither is saved: after a reload Back means the method list. */
 let gearFrom = 'brew', recipeVia = '';
 const PARENT = {
-  start:null, coffee:'start', brew:'coffee', gear:() => gearFrom === 'recipe' ? 'recipe' : 'brew', recipe:() => recipeVia === 'gear' ? 'gear' : 'brew', change:'recipe', ready:'recipe', timer:'recipe',
+  door:null, start:'door', shop:'door', sdrink:'shop', staste:'sdrink', sperfect:'staste', shops:() => (shopsFrom && shopsFrom !== 'shops' && shopsFrom !== 'timer') ? shopsFrom : 'door', coffee:'start', brew:'coffee', gear:() => gearFrom === 'recipe' ? 'recipe' : 'brew', recipe:() => recipeVia === 'gear' ? 'gear' : 'brew', change:'recipe', ready:'recipe', timer:'recipe',
   cup:() => app.cupBrew ? 'recipe' : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', detail:'history',
-  learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'start'),
-  prices:() => (pricesFrom && pricesFrom !== 'prices' && pricesFrom !== 'timer') ? pricesFrom : (app.coffee.name ? 'coffee' : 'start'),
-  wheels:() => (wheelsFrom && wheelsFrom !== 'wheels' && wheelsFrom !== 'wheel' && wheelsFrom !== 'chart' && wheelsFrom !== 'timer') ? wheelsFrom : (app.coffee.name ? 'coffee' : 'start'), wheel:'wheels', chart:'wheels',
-  sca:() => (scaFrom && scaFrom !== 'sca' && scaFrom !== 'timer') ? scaFrom : (app.coffee.name ? 'coffee' : 'start'),
-  tastes:() => (tastesFrom && tastesFrom !== 'tastes' && tastesFrom !== 'timer') ? tastesFrom : (app.coffee.name ? 'coffee' : 'start'),
-  folk:() => (folkFrom && folkFrom !== 'folk' && folkFrom !== 'timer') ? folkFrom : (app.coffee.name ? 'coffee' : 'start'),
-  tend:() => (tendFrom && tendFrom !== 'tend' && tendFrom !== 'timer') ? tendFrom : (app.coffee.name ? 'coffee' : 'start'),
-  guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'start'),
-  compare:() => (cmpFrom && cmpFrom !== 'compare' && cmpFrom !== 'timer') ? cmpFrom : (app.coffee.name ? 'coffee' : 'start'),
-  tools:() => (toolsFrom && toolsFrom !== 'tools' && toolsFrom !== 'yield' && toolsFrom !== 'ratio' && toolsFrom !== 'cost' && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'start'), yield:'tools', ratio:'tools', cost:'tools',
-  about:() => (aboutFrom && aboutFrom !== 'about' && aboutFrom !== 'timer') ? aboutFrom : (app.coffee.name ? 'coffee' : 'start'),
-  files:() => (filesFrom && filesFrom !== 'files' && filesFrom !== 'timer') ? filesFrom : (app.coffee.name ? 'coffee' : 'start')
+  learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'door'),
+  prices:() => (pricesFrom && pricesFrom !== 'prices' && pricesFrom !== 'timer') ? pricesFrom : (app.coffee.name ? 'coffee' : 'door'),
+  wheels:() => (wheelsFrom && wheelsFrom !== 'wheels' && wheelsFrom !== 'wheel' && wheelsFrom !== 'chart' && wheelsFrom !== 'timer') ? wheelsFrom : (app.coffee.name ? 'coffee' : 'door'), wheel:'wheels', chart:'wheels',
+  sca:() => (scaFrom && scaFrom !== 'sca' && scaFrom !== 'timer') ? scaFrom : (app.coffee.name ? 'coffee' : 'door'),
+  tastes:() => (tastesFrom && tastesFrom !== 'tastes' && tastesFrom !== 'timer') ? tastesFrom : (app.coffee.name ? 'coffee' : 'door'),
+  folk:() => (folkFrom && folkFrom !== 'folk' && folkFrom !== 'timer') ? folkFrom : (app.coffee.name ? 'coffee' : 'door'),
+  tend:() => (tendFrom && tendFrom !== 'tend' && tendFrom !== 'timer') ? tendFrom : (app.coffee.name ? 'coffee' : 'door'),
+  guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'door'),
+  compare:() => (cmpFrom && cmpFrom !== 'compare' && cmpFrom !== 'timer') ? cmpFrom : (app.coffee.name ? 'coffee' : 'door'),
+  tools:() => (toolsFrom && toolsFrom !== 'tools' && toolsFrom !== 'yield' && toolsFrom !== 'ratio' && toolsFrom !== 'cost' && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'door'), yield:'tools', ratio:'tools', cost:'tools',
+  about:() => (aboutFrom && aboutFrom !== 'about' && aboutFrom !== 'timer') ? aboutFrom : (app.coffee.name ? 'coffee' : 'door'),
+  files:() => (filesFrom && filesFrom !== 'files' && filesFrom !== 'timer') ? filesFrom : (app.coffee.name ? 'coffee' : 'door')
 };
 /* ---------- the phone's Back button ----------
    Every screen change adds one browser-history entry, so Back goes to the previous screen instead of leaving the app, and a Back press with a menu or dialog open closes it first.
@@ -8750,25 +9013,30 @@ window.addEventListener('popstate', e => {
   stopTimer(); if (target !== 'history'){ selectMode = false; selected.clear(); }
   app.screen = target; render();
 });
-function go(screen){ stopTimer(); if (screen !== 'history'){ selectMode = false; selected.clear(); } const changed = screen !== app.screen; app.screen = screen; if (changed) navNote(true); render(); }
+function go(screen){ draftAt = Date.now(); stopTimer(); if (screen !== 'history'){ selectMode = false; selected.clear(); } const changed = screen !== app.screen; app.screen = screen; if (changed) navNote(true); render(); }
 function render(){
   wakeOff(); scaStop(); refreshers.length = 0;
   const m = $('mount'); m.textContent = '';
   if ((app.screen === 'history' || app.screen === 'detail') && !history) app.screen = 'start';
   if (app.screen === 'detail' && !history.objs.some(x => x._i === detailIdx)) app.screen = 'history';
+  if (SHOP_TRAIL.includes(app.screen) && !sd.on) app.screen = 'door';   /* a shop screen with no drink being logged is not a place to be */
   const sc = app.screen;
+  if (TRAIL_HOME.includes(sc)) app.resume = sc; else if (sc === 'change' || sc === 'ready' || sc === 'timer') app.resume = 'recipe';   /* where Keep brewing returns to */
+  if (SHOP_TRAIL.includes(sc) && sd.step !== sc){ sd.step = sc; persistShopDraft(); }
   document.body.setAttribute('data-screen', sc);
   $('progressMsg').hidden = true; PROGRESS_FOR = null; paintBrand(); paintProgress();
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { start:'', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Tools', yield:'Cup yield', ratio:'Ratio planner', cost:'Cost of coffee', prices:'Coffee prices', tastes:'Taste your tastes', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', about:'About', files:'My files' };
-  $('topTitle').textContent = sc === 'start' ? '' : (titles[sc] || 'BeanTelligence');
+  const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Tools', yield:'Cup yield', ratio:'Ratio planner', cost:'Cost of coffee', prices:'Coffee prices', tastes:'Taste your tastes', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', about:'About', files:'My files' };
+  $('topTitle').textContent = sc === 'start' || sc === 'door' || sc === 'shop' ? '' : (titles[sc] || 'BeanTelligence');
   SCREENS[sc](m);
   refreshAll();
   window.scrollTo({ top:0 });
   flushDraft();
 }
+/* Start a fresh coffee: the coffee in progress and the drink being logged are tipped out. The history and the coffee shops list stay. */
+function freshAll(){ sd = sdBlank(); persistShopDraft(); draftAt = Date.now(); resetAll(); }
 function resetAll(){
   const prefs = app.prefs;
   app = newApp(); app.prefs = prefs; applyGearDefaults(); state = newCup(); recipeVia = '';
@@ -9052,7 +9320,8 @@ function wheelView(o){
 let PROGRESS_FOR = null;
 function paintProgress(){
   const sc = app.screen, stp = progressStep(sc), PG = $('progress');
-  PG.classList.toggle('sca', sc === 'sca');
+  PG.classList.toggle('sca', sc === 'sca'); PG.classList.toggle('shopbar', SHOP_TRAIL.includes(sc));
+  if (SHOP_TRAIL.includes(sc)){ paintShopBar(PG); return; }
   if (sc === 'sca'){ paintScaBar(PG); return; }
   PG.hidden = stp < 0;
   if (stp < 0){ PG.textContent = ''; PROGRESS_FOR = null; return; }
@@ -9190,7 +9459,7 @@ function standaloneNote(){
   return h('p', { class:'fine', id:'homeScreenNote', style:'margin:8px 0 0', text:'Tip: add BeanTelligence to your Home Screen (in Safari use Share, then Add to Home Screen; in Chrome use the menu, then Add to Home screen). It opens like an app. Your history stays with this browser, so keep a saved file too.' });
 }
 function clearEverything(){
-  forgetHistory(); forgetPicked(); forgetPrices(); histUI = { q:'', sort:'new', way:'all' };
+  forgetHistory(); forgetPicked(); forgetPrices(); forgetShops(); sd = sdBlank(); persistShopDraft(); histUI = { q:'', sort:'new', way:'all' };
   try { localStorage.removeItem(DRAFT_KEY); localStorage.removeItem(LASTBACKUP_KEY); } catch(e){}
   lastBackup = 0; app = newApp(); state = newCup(); dialSym = ''; render();
 }
@@ -10536,7 +10805,7 @@ function screenBrew(m){
 /* ---------- screen: how to use BeanTelligence ---------- */
 let guideFrom = '';
 function goGuide(){ if (app.screen !== 'guide') guideFrom = app.screen === 'timer' ? 'ready' : app.screen; go('guide'); }
-const GUIDE_ICON = { quick:'cup', coffee:'tag', facts:'globe', method:'gear', recipe:'scale', cup:'spoon', dial:'peak', history:'save', learn:'book', helpers:'aa', trust:'info' };
+const GUIDE_ICON = { quick:'cup', coffee:'tag', facts:'globe', method:'gear', recipe:'scale', cup:'spoon', dial:'peak', history:'save', shops:'cupheart', learn:'book', helpers:'aa', trust:'info' };
 function screenGuide(m){
   m.append(hubHero('How to use BeanTelligence', 'The six steps, what each screen does, and how your history helps. Tap a section to open it.', false, 'ask'));
   const cards = GUIDE_SECTIONS.map((s, i) => {
@@ -12847,7 +13116,7 @@ function useExisting(ex, cups){
 function adoptSaved(){
   try { if (sheet.csv){ const ex = readExisting(sheet.csv); if (!ex.error) setHistory(ex, sheet.csv); } } catch(e){}
 }
-function openMenu(){ sheet = { step:'menu' }; openSheet(); }
+function openMenu(){ menuFreshSure = false; sheet = { step:'menu' }; openSheet(); }
 function openGlossary(){ sheet = { step:'glossary', q:'', group:'All' }; openSheet(); }
 function wheelIconBg(data){
   const n = data.length, span = 360 / n, stops = data.map((f, i) => { const c = whPalette(f).fill; return c + ' ' + (i * span).toFixed(1) + 'deg ' + ((i + 1) * span).toFixed(1) + 'deg'; });
@@ -12998,16 +13267,17 @@ function renderSheetBody(){
     const here = app.screen, mark = h('span', { class:'menumark' });
     mark.innerHTML = '<svg viewBox="14 10 172 186" aria-hidden="true" focusable="false"><use href="#bt-mark"/></svg>';
     const band = h('div', { class:'menuband' }, mark, h('div', { class:'menuhead' }, title, h('p', { text:'Pick a spot. Your coffee waits.' })),
-      here !== 'start' ? h('button', { type:'button', class:'menuhome', onclick:() => { closeSheet(); go('start'); } }, lineIcon('home'), 'Home') : null);
+      here !== 'door' ? h('button', { type:'button', class:'menuhome', onclick:() => { closeSheet(); go('door'); } }, lineIcon('home'), 'Home') : null);
     /* a tile: a round picture, then the name; the class menuitem and the span mi-t keep it findable like every other menu row */
     const tile = (icon, label, fn, o) => { o = o || {};
-      return h('button', { type:'button', class:'menuitem mtile ' + (o.cls || ''), onclick:fn }, h('span', { class:'mdisc' }, lineIcon(icon)), h('span', { class:'mtx' }, h('span', { class:'mi-t', text:label }), o.sub ? h('span', { class:'mi-s', text:o.sub }) : null)); };
+      return h('button', { type:'button', class:'menuitem mtile ' + (o.cls || ''), onclick:fn }, h('span', { class:'mdisc' }, o.art ? spic(o.art) : lineIcon(icon)), h('span', { class:'mtx' }, h('span', { class:'mi-t', text:label }), o.sub ? h('span', { class:'mi-s', text:o.sub }) : null)); };
     const lab = t => h('div', { class:'menulabel', text:t });
     const hero = h('div', { class:'mhero' },
-      tile('cup', 'Start a fresh coffee', () => { closeSheet(); resetAll(); }, { cls:'mgo', sub:'Keeps your history' }),
+      tile('cup', menuFreshSure ? 'Tap again to tip it out' : 'Start a fresh coffee', () => { if (freshNeeds() && !menuFreshSure){ menuFreshSure = true; renderSheet(); return; } menuFreshSure = false; closeSheet(); freshAll(); },
+        { cls:'mgo' + (menuFreshSure ? ' sure' : ''), art:'a-fresh', sub:menuFreshSure ? freshWhat() + (freshWhat() === 'Both' ? ' are' : ' is') + ' not saved yet. Your history stays.' : 'Keeps your history' }),
       tile('gear', 'My setup', () => { sheet = { step:'setup' }; renderSheet(); }, { cls:'mset' }));
     const tastings = () => { if (history){ closeSheet(); go('history'); } else { sheet = { step:'histUpload', existing:null, csv:'', error:'', info:'' }; renderSheet(); } };
-    sheetEl.append(band, h('div', { class:'menubody' }, hero,
+    sheetEl.append(band, h('div', { class:'menubody' }, hero, tile('', 'Coffee shops', () => { closeSheet(); goShops(); }, { cls:'mshops', art:'s-shop', sub:'Drinks you bought, and where' }),
       lab('Tools'), h('div', { class:'mgrid g3 gt' }, tile('scale', 'Planners', () => { closeSheet(); goTools(); }), tile('tag', 'Coffee prices', () => { closeSheet(); goPrices(); }), tile('spoon', 'SCA cupping', () => { closeSheet(); goSca(); })),
       lab('Learn'), h('div', { class:'mgrid g2 gl' }, tile('book', 'Understanding coffee', () => { closeSheet(); goLearn(); }), tile('flask', 'Solid or folklore?', () => { closeSheet(); goFolk(); }), tile('wheel', 'Wheels', () => { closeSheet(); goWheels(); }), tile('drop', 'Taste your tastes', () => { closeSheet(); goTastes(); })),
       lab('About me'), h('div', { class:'mgrid g3 gm' }, tile('cup', 'Your tastings', tastings), tile('bars', 'Your tendencies', () => { closeSheet(); goTend(); }), tile('save', 'My files', () => { closeSheet(); goFiles(); })),
@@ -13548,6 +13818,12 @@ function renderSetupSheet(title){
   if (g.waterType) gearKids.push(h('div', { class:'setuppair' }, field('Alkalinity (mg/L)', txt('Water alkalinity', () => g.waterAlk || '', v => { g.waterAlk = /^\d{0,4}(\.\d{0,2})?$/.test(v) ? v : g.waterAlk; applyGearDefaults(); }, { inputmode:'decimal', placeholder:'optional', pattern:/^\d{0,4}(\.\d{0,2})?$/ })),
     field('Hardness (mg/L)', txt('Water hardness', () => g.waterGH || '', v => { g.waterGH = /^\d{0,4}(\.\d{0,2})?$/.test(v) ? v : g.waterGH; applyGearDefaults(); }, { inputmode:'decimal', placeholder:'optional', pattern:/^\d{0,4}(\.\d{0,2})?$/ }))));
   gearKids.push(field('Filter', txt('Filter', () => g.filter || '', v => { g.filter = v.slice(0, 80); applyGearDefaults(); }, { placeholder:'e.g. Hario bleached paper' })));
+  /* the home town is kept with the coffee shops (their own file), not in the preferences or the history file */
+  const hm = sh.store.home, setHome = (k, v) => { const o = Object.assign({}, sh.store.home); o[k] = v; if (k === 'country') o.region = ''; shSetHome(o); };
+  const homeKids = kept(field('Country', sel('Country', [{ v:'', label:'Not set' }].concat(SHOP_COUNTRIES.map(c => ({ v:c, label:c }))), () => sh.store.home.country, v => setHome('country', v))),
+    hm.country === 'United States' ? field('State', sel('State', [{ v:'', label:'Choose a state' }].concat(US_STATES.map(c => ({ v:c, label:c }))), () => sh.store.home.region, v => setHome('region', v))) : hm.country ? field('Region', txt('Region', () => sh.store.home.region, v => setHome('region', v), { placeholder:'Province, county or region' })) : null,
+    hm.country ? field('City', txt('City', () => sh.store.home.city, v => setHome('city', v), { placeholder:'e.g. Knoxville' })) : null,
+    h('p', { class:'fine', style:'margin:0', text:'New coffee shops start here, so you never retype it. It is kept with your coffee shops, not in your history file.' }));
   sheetEl.append(h('p', { class:'fine', style:'margin-top:0', text:'Your choices in one place. They are saved inside your history file each time you save, so a restored file or a new device brings them back.' }),
     band('Experience level', 'Level', 'how much help you see', h('div', { class:'levelopts' }, LEVELS.map(l => levelTile(l, () => { p.level = l.v; scheduleDraft(); renderSheet(); redraw(); })))),
     band('Units', 'Units', null, field('Water', sel('Water unit', WATER_UNITS, () => p.waterUnit, v => { p.waterUnit = v; redraw(); })), field('Coffee', sel('Coffee unit', COFFEE_UNITS, () => p.coffeeUnit, v => { p.coffeeUnit = v; redraw(); }))),
@@ -13558,6 +13834,7 @@ function renderSetupSheet(title){
       setupSeg('Tasting', TASTE_CHOICES.map(t => ({ text:t.label, value:t.v })), () => p.taste || '', v => { p.taste = v; }),
       h('p', { class:'fine', style:'margin:4px 0 0', text:({ quickonly:'Cupping is hidden. Cups you already scored still show.', '':'Quick opens first. Cupping is one tap away.', cuppingfirst:'Cupping opens first. Quick is one tap away.' })[p.taste || ''] })),
     band('My gear', 'Gear', 'fills in each new brew for you', ...gearKids),
+    band('Home town', 'Place', 'new coffee shops start here', ...homeKids),
     h('p', { class:'fine', style:'margin:-4px 0 0', text:'You can still change your gear for one brew.' }));
   sheetEl.append(
     h('p', { class:'fine', id:'setupWhere', style:'margin:12px 0 0', text:(history && history.ex && history.ex.count) ? 'This goes into your file the next time you save a tasting or a copy of your file.' : 'This goes into your file with the first tasting you save.' }),
@@ -14365,9 +14642,9 @@ function brandBadge(){
   box.innerHTML = '<svg class="badge" viewBox="0 0 400 356" role="img" aria-label="' + escHtml(BRAND_NAME + '. ' + BRAND_SLOGAN) + '" focusable="false"><use href="#bt-badge"/></svg>';
   return box;
 }
-/* the name block sits in the header on the first screen only, and scrolls away with it */
+/* the name block sits in the header on the first screen of each trail (the door, the Coffee step and the Shop step), and scrolls away with it */
 function paintBrand(){
-  const slot = $('brandSlot'), on = app.screen === 'start';
+  const slot = $('brandSlot'), on = app.screen === 'start' || app.screen === 'door' || app.screen === 'shop';
   slot.hidden = !on;
   if (!on){ slot.textContent = ''; return; }
   if (!slot.firstChild) slot.append(brandHero());
@@ -14892,6 +15169,7 @@ function screenFiles(m){
     hubRow('text', 'Back up as text', 'A code you can paste into Notes or an email', () => { if (!hasHist){ sheet = { step:'noBackup' }; openSheet(); return; } sheet = { step:'backup', csv:history.text, back:'menu', bk:null, mode:'menu' }; openSheet(); }, { tone:'a', id:'backupTextBtn' }),
     hubRow('restore', 'Restore from a backup code', 'Paste a code you saved earlier', () => { sheet = { step:'histUpload', existing:null, csv:'', error:'', info:'', openBackup:true }; openSheet(); }, { tone:'t', id:'restoreBtn' }),
     hubRow('cols', 'What each column means', 'A guide to your history file, for a spreadsheet or a script', () => { sheet = { step:'tableGuide', back:'menu' }; openSheet(); }, { tone:'t' }));
+  list.append(...shopsFilesRows());   /* the coffee shops file (79-shops-files.js) */
   /* the two-tap rows: the first tap asks, the second does it */
   const twoRow = (icon, name, text, armed, fn, o) => {
     const row = hubRow(icon, name, text, () => {
@@ -14905,7 +15183,485 @@ function screenFiles(m){
   m.append(list, h('p', { class:'fine hubnote', text:'Clearing everything removes your saved history copy, in-progress work, and choices from this browser. Files you downloaded are not touched.' }));
   { const sn = standaloneNote(); if (sn) m.append(sn); }
 }
-const SCREENS = { history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, files:screenFiles };
+/* ---------- coffee shops: what is kept ----------
+   The list is one CSV text under SHOPS_KEY, the same way the prices file is kept, and it can be saved to and loaded from a file. It is never part of the tasting history file or of My setup.
+   Loading a file only adds: nothing already here is lost or doubled. The drink being logged lives under SHOP_DRAFT_KEY, separate from the home coffee's draft, so a person can switch between the two.
+   sd.step is the screen the person is on in the shop trail: shop, sdrink, staste, sperfect. */
+const SHOPS_KEY = 'brew-and-cup-shops-v1', SHOPS_CHANGES_KEY = 'brew-and-cup-shops-changes-v1', SHOP_DRAFT_KEY = 'brew-and-cup-shopdraft-v1';
+const SHOP_TRAIL = SHOP_STEPS.map(x => x[0]);
+let sh = { store:shopStore(), changes:0, failed:false, msg:'', q:'', tab:'drinks' };
+const sdBlank = () => ({ on:false, step:'shop', mode:'pick', pickKey:'', name:'', country:'United States', region:'', city:'', from:'',
+  kind:'', menu:'', temp:'', size:'', amount:'', unit:'oz', price:'', sym:'$', face:'', beans:0, again:'', worth:'', notes:'', date:'', saved:'', at:0 });
+let sd = sdBlank();
+const shEmpty = () => !sh.store.drinks.length && !sh.store.shops.length && !(sh.store.home.city || sh.store.home.region || sh.store.home.country);
+function persistShops(){
+  try {
+    if (!shEmpty()) localStorage.setItem(SHOPS_KEY, shopCsv(sh.store)); else localStorage.removeItem(SHOPS_KEY);
+    if (sh.changes > 0) localStorage.setItem(SHOPS_CHANGES_KEY, String(sh.changes)); else localStorage.removeItem(SHOPS_CHANGES_KEY);
+    sh.failed = false;
+  } catch(e){ sh.failed = true; }
+}
+function loadShops(){
+  try {
+    const t = localStorage.getItem(SHOPS_KEY), r = t ? shopRead(t) : null;
+    if (r && !r.error) sh.store = r.store;
+    sh.changes = Math.max(0, parseInt(localStorage.getItem(SHOPS_CHANGES_KEY), 10) || 0);
+  } catch(e){}
+}
+function forgetShops(){
+  sh = { store:shopStore(), changes:0, failed:false, msg:'', q:'', tab:'drinks' };
+  try { localStorage.removeItem(SHOPS_KEY); localStorage.removeItem(SHOPS_CHANGES_KEY); } catch(e){}
+}
+/* put a drink on the list. Returns { added, why } where why is '', 'same', 'full' or 'unusable'. */
+function shAddDrink(o){
+  if (sh.store.drinks.length >= SHOP_MAX_DRINKS) return { added:false, why:'full' };
+  const r = shopAddDrink(sh.store, o);
+  if (r.added){ sh.store = r.store; sh.changes++; persistShops(); }
+  return { added:r.added, why:r.why };
+}
+function shAddShop(o){ const r = shopAddShop(sh.store, o); if (r.added){ sh.store = r.store; sh.changes++; persistShops(); } return r; }
+function shSetHome(pl){ sh.store = shopSetHome(sh.store, pl); sh.changes = Math.max(1, sh.changes); persistShops(); }
+/* a file's text onto the list: only what is new is added, and the home town is taken only when none is set yet */
+function shLoadText(text){
+  const r = shopRead(String(text));
+  if (r.error){ sh.msg = r.error; return; }
+  const before = sh.store.drinks.length + sh.store.shops.length;
+  let st = sh.store;
+  r.store.shops.forEach(s => { const a = shopAddShop(st, s); if (a.added) st = a.store; });
+  r.store.drinks.forEach(d => { if (st.drinks.length < SHOP_MAX_DRINKS){ const a = shopAddDrink(st, d); if (a.added) st = a.store; } });
+  const h0 = r.store.home, noHome = !(st.home.city || st.home.region || st.home.country);
+  if (noHome && (h0.city || h0.region || h0.country)) st = shopSetHome(st, h0);
+  const added = st.drinks.length + st.shops.length - before;
+  sh.store = st; sh.changes = 0; persistShops();
+  const have = new Set(sh.store.drinks.map(drinkKey)), lack = r.store.drinks.filter(d => !have.has(drinkKey(d))).length;   /* a drink the file has that is not here (the list was full) */
+  sh.msg = added ? 'Loaded ' + added + (added === 1 ? ' item' : ' items') + ' from the file' + (r.repeats ? ' (' + r.repeats + ' already here)' : '') + (r.skipped ? '. ' + r.skipped + (r.skipped === 1 ? ' row was' : ' rows were') + ' not usable and was left out' : '') + (lack ? '. The list is full, so ' + lack + ' did not fit' : '') + '.'
+    : 'Nothing new in that file. Everything in it was already here.';
+}
+async function shSave(){
+  if (shEmpty()){ sh.msg = 'Log a drink first, then save the file.'; return false; }
+  const text = shopCsv(sh.store), name = 'beantelligence-coffee-shops.csv';
+  try {
+    if (inClaude()){ const dl = await getDownloads(); if (!dl) throw new Error('no downloads'); await dl.save({ filename:name, data:text }); }
+    else plainDownload(text, name);
+    sh.changes = 0; persistShops(); sh.msg = 'Saved ' + name + ' with ' + sh.store.drinks.length + (sh.store.drinks.length === 1 ? ' drink.' : ' drinks.') + ' Keep it somewhere you can find it.';
+    return true;
+  } catch(e){ sh.msg = 'This view could not save the file. Open BeanTelligence in your browser and try again.'; return false; }
+}
+/* the drink being logged: kept as it is typed, and cleaned when it is read back */
+function persistShopDraft(){
+  try { if (sd.on) localStorage.setItem(SHOP_DRAFT_KEY, JSON.stringify(sd)); else localStorage.removeItem(SHOP_DRAFT_KEY); } catch(e){}
+}
+function sdTouch(){ sd.at = Date.now(); persistShopDraft(); scheduleDraft(); }
+function loadShopDraft(){
+  try {
+    const raw = localStorage.getItem(SHOP_DRAFT_KEY), s = raw ? JSON.parse(raw) : null; if (!s || typeof s !== 'object' || s.on !== true) return;
+    const d = sdBlank(), t = (v, n) => typeof v === 'string' ? v.slice(0, n) : '';
+    d.on = true; d.step = SHOP_TRAIL.includes(s.step) ? s.step : 'shop'; d.mode = s.mode === 'new' ? 'new' : 'pick';
+    d.pickKey = t(s.pickKey, 300); d.name = t(s.name, 80); d.country = t(s.country, 40); d.region = t(s.region, 40); d.city = t(s.city, 60); d.from = s.from === 'home' || s.from === 'last' ? s.from : '';
+    d.kind = shopPick(SHOP_KINDS, s.kind); d.menu = t(s.menu, 80); d.temp = s.temp === 'hot' || s.temp === 'iced' ? s.temp : ''; d.size = shopPick(SHOP_SIZES, s.size);
+    d.amount = t(s.amount, 8); d.unit = s.unit === 'ml' ? 'ml' : 'oz'; d.price = t(s.price, 10); d.sym = t(s.sym, 3) || '$'; d.face = shopPick(SHOP_FACES, s.face);
+    d.beans = +s.beans >= 0.5 && +s.beans <= 5 ? Math.round(+s.beans * 2) / 2 : 0; d.again = shopPick(SHOP_AGAINS, s.again); d.worth = shopPick(SHOP_WORTHS, s.worth);
+    d.notes = t(s.notes, 400); d.date = /^\d{4}-\d{2}-\d{2}$/.test(s.date) ? s.date : ''; d.saved = t(s.saved, 400); d.at = isFinite(s.at) ? +s.at : 0;
+    sd = d;
+  } catch(e){}
+}
+/* something has been chosen or typed in the drink being logged */
+function sdStarted(){ return sd.on && !!(sd.pickKey || sd.name.trim() || sd.city.trim() || sd.kind || sd.menu.trim() || sd.temp || sd.size || sd.price.trim() || sd.face || sd.beans || sd.notes.trim()); }
+/* ---------- coffee shops: shared pieces ---------- */
+const KIND_ART = { pour:'m-v60', espresso:'m-espresso', americano:'d-americano', latte:'d-latte', cappuccino:'d-cappuccino', cold:'m-cold', icedlatte:'d-iced-latte', special:'d-special', other:'bean-q' };
+const SIZE_ART = { small:'z-s', medium:'z-m', large:'z-l' };
+const FACE_ART = { good:['mi-smile', 'g'], okay:['mi-meh', 'a'], notgood:['mi-frown', 'r'] };
+const AGAIN_ART = { yes:['ag-y', 'g'], maybe:['ag-m', 'a'], no:['ag-n', 'r'] };
+const WORTH_ART = { worth:['wp-y', 'g'], fair:['wp-m', 'a'], over:['wp-n', 'r'] };
+let shopsFrom = '';
+/* a small coloured picture from the sprite, by its full symbol name */
+function spic(id, cls){ const s = h('span', { class:'spic' + (cls ? ' ' + cls : '') }); s.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><use href="#' + id + '"/></svg>'; return s; }
+/* a card with a green band: a round picture, the name, and a "Required · why" or "Optional · why" line */
+function sBand(icon, title, tag, ...kids){
+  const meta = h('div', { class:'fieldmeta' }, tag[0] ? h('span', { class:tag[0] === 'Required' ? 'req' : 'opt', text:tag[0] }) : null, tag[1] ? h('span', { class:'chg', text:tag[1] }) : null);
+  return h('div', { class:'card bandcard sband' }, h('div', { class:'fhead haspic' }, h('span', { class:'picdisc' }, spic(icon)), h('h2', { text:title }), meta), h('div', { class:'fbody sbody' }, ...kept(...kids)));
+}
+/* picture tiles: opts = [{ v, label, icon, sub, tone }]; o = { cols, art, face, row, toggle, label, after }. A chosen tile is filled and shows a check. */
+function sTiles(opts, get, set, o){
+  o = o || {};
+  const btns = opts.map(x => {
+    const b = h('button', { type:'button', class:'stile' + (o.art ? ' sart' : '') + (o.face ? ' sface' : '') + (o.row ? ' srow' : '') + (x.tone ? ' tone-' + x.tone : ''), 'aria-pressed':'false',
+      onclick:() => { if (x.off) return; const cur = get(); set(o.toggle && cur === x.v ? '' : x.v); if (o.after) o.after(); refreshAll(); sdTouch(); } },
+      h('span', { class:'schk', 'aria-hidden':'true' }), x.icon ? spic(x.icon) : null, x.sub ? h('span', { class:'stx' }, h('b', { text:x.label }), h('small', { text:x.sub })) : x.label);
+    if (x.off) b.setAttribute('aria-disabled', 'true');
+    b.querySelector('.schk').innerHTML = '<svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="11" fill="#1D3E2F"/><path d="M6.5 12.5l4 4 7-8.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    return b;
+  });
+  refreshers.push(() => btns.forEach((b, i) => b.setAttribute('aria-pressed', String(get() === opts[i].v))));
+  return h('div', { class:'stiles c' + (o.cols || 2), role:'group', 'aria-label':o.label || '' }, ...btns);
+}
+/* a labelled box to type in; o = { area, placeholder, inputmode, max, hint } */
+function sInput(label, get, set, o){
+  o = o || {};
+  const id = 'si_' + Math.random().toString(36).slice(2, 8);
+  const el = o.area ? h('textarea', { id, placeholder:o.placeholder || '', maxlength:String(o.max || 400) }) : h('input', { id, type:'text', autocomplete:'off', placeholder:o.placeholder || '', maxlength:String(o.max || 80) });
+  if (o.inputmode) el.setAttribute('inputmode', o.inputmode);
+  el.addEventListener('input', () => { set(el.value); sdTouch(); refreshAll(); });
+  refreshers.push(() => { if (document.activeElement !== el) el.value = get() || ''; });
+  return h('div', { class:'field' + (o.inl ? ' inl' : '') }, h('label', { for:id, text:label }), el, o.hint ? h('span', { class:'hint', text:o.hint }) : null);
+}
+/* country, state (a list in the United States, typed elsewhere) and city, for the place in `p` ({ country, region, city }). `changed` is told after any edit. */
+function sPlace(p, changed){
+  const host = h('div', { class:'splace' });
+  const fill = () => {
+    const us = p.country === 'United States';
+    host.textContent = '';
+    host.append(
+      selectField('Country', SHOP_COUNTRIES.map(c => ({ v:c, text:c })), () => p.country, v => { if (v && v !== p.country){ p.country = v; p.region = ''; fill(); } changed(); }, { blank:'Choose a country' }),
+      us ? selectField('State', US_STATES.map(c => ({ v:c, text:c })), () => p.region, v => { p.region = v; changed(); }, { blank:'Choose a state' })
+         : sInput('Region', () => p.region, v => { p.region = v; changed(); }, { placeholder:'Province, county or region', max:40, inl:true }),
+      sInput('City', () => p.city, v => { p.city = v; changed(); }, { placeholder:'e.g. Asheville', max:60, inl:true }));
+  };
+  fill(); host.refill = fill; return host;
+}
+/* the shop for this drink: the picked one from the list, or the new one typed in. Null until it is complete. */
+function sdShop(){
+  if (sd.mode === 'pick' && shopList(sh.store).length){ const s = shopList(sh.store).find(x => csKey(x) === sd.pickKey); return s ? { name:s.name, city:s.city, region:s.region, country:s.country } : null; }
+  const s = shopEntry({ name:sd.name, country:sd.country, region:sd.region, city:sd.city });
+  return s && s.city && (s.country !== 'United States' || s.region) ? s : null;
+}
+function sdShopMissing(){
+  if (sd.mode === 'pick' && shopList(sh.store).length) return sdShop() ? [] : ['a shop'];
+  const m = [];
+  if (!shopTxt(sd.name, 80)) m.push('the shop name');
+  if (!sd.country) m.push('the country');
+  if (sd.country === 'United States' && !sd.region) m.push('the state');
+  if (!shopTxt(sd.city, 60)) m.push('the city');
+  return m;
+}
+function sdDrinkMissing(){
+  const m = [];
+  if (!sd.kind) m.push('the drink'); if (!sd.temp) m.push('hot or iced'); if (!sd.size) m.push('the size');
+  if (!(priceNum(sd.price, 2) > 0)) m.push('the price');
+  return m;
+}
+const sdTasteMissing = () => sd.face ? [] : ['how it was'];
+function sdDrinkObj(){
+  const p = sdShop() || {};
+  return { shop:p.name, city:p.city, region:p.region, country:p.country, date:sd.date || today(), kind:sd.kind, name:sd.menu, temp:sd.temp, size:sd.size, amount:sd.amount, unit:sd.unit, sym:sd.sym || '$', price:sd.price, face:sd.face, beans:sd.beans || '', again:sd.again, worth:sd.worth, notes:sd.notes, fav:false };
+}
+const sdKindLabel = () => { const k = SHOP_KINDS.find(x => x.v === sd.kind); return k ? k.label : ''; };
+const sdStepName = step => { const s = SHOP_STEPS.find(x => x[0] === step); return s ? s[1] : STEP_SHOP.shop; };
+function shopStepLock(i){
+  if (i === 0) return '';
+  if (sdShopMissing().length) return 'Choose a coffee shop first.';
+  if (i === 1) return '';
+  if (sdDrinkMissing().length) return 'Tell me about the drink first: ' + sdDrinkMissing().join(', ') + '.';
+  if (i === 2) return '';
+  return sdTasteMissing().length ? 'Pick how it was first.' : '';
+}
+/* the four cups of a shop drink, drawn in the same bar as the home trail */
+function paintShopBar(PG){
+  const cur = SHOP_TRAIL.indexOf(app.screen); PROGRESS_FOR = null; PG.hidden = false; PG.textContent = '';
+  PG.setAttribute('aria-label', 'Step ' + (cur + 1) + ' of ' + SHOP_STEPS.length + ': ' + SHOP_STEPS[cur][1]);
+  SHOP_STEPS.forEach((x, i) => {
+    const lock = i === cur ? '' : shopStepLock(i);
+    const b = h('button', { type:'button', class:'pstep ' + (i < cur ? 'pdone' : i === cur ? 'pnow' : 'ptodo') + (lock ? ' plocked' : ''), onclick:() => gotoShopStep(i),
+      'aria-label':'Step ' + (i + 1) + ': ' + x[1] + (i === cur ? ' (you are here)' : lock ? ' (locked: ' + lock + ')' : '') }, h('span', { class:'pn', text:i < cur ? '✓' : String(i + 1) }), h('span', { class:'pl', text:x[1] }));
+    if (i === cur) b.setAttribute('aria-current', 'step'); if (lock) b.setAttribute('aria-disabled', 'true');
+    PG.append(b);
+  });
+}
+function gotoShopStep(i){
+  const cur = SHOP_TRAIL.indexOf(app.screen); if (i === cur) return;
+  const lock = shopStepLock(i); if (lock){ showStepMsg(lock); return; }
+  showStepMsg('');
+  if (i === 3) return sdFinish();
+  go(SHOP_TRAIL[i]);
+}
+/* open the shop trail where the person left it (or at the Shop step with a new drink) */
+function sdOpen(){
+  if (!sd.on){
+    const last = shopDrinksSorted(sh.store)[0];
+    sd = sdBlank(); sd.on = true; sd.date = today(); sd.mode = shopList(sh.store).length ? 'pick' : 'new'; if (last && last.sym) sd.sym = last.sym;
+    sdTouch();
+  }
+  go(sd.step);
+}
+/* ---------- coffee shops: Shop, Drink, Taste ----------
+   Everything typed is kept in `sd` (the shop draft) as it is typed, so a person can leave for the home coffee and come back. Next is held until the step has what it needs, and says what is missing. */
+/* the main button in the bottom bar: it says what is still needed, and tapping it early shows that in words */
+function sdDock(m, label, missing, go2){
+  const err = h('p', { class:'msg', role:'alert', id:'sdErr' });
+  const btn = h('button', { type:'button', class:'btn primary', id:'sdNext', onclick:() => {
+    const miss = missing();
+    if (miss.length){ err.textContent = 'Still needed: ' + miss.join(', ') + '.'; btn.setAttribute('aria-describedby', 'sdErr'); return; }
+    err.textContent = ''; go2();
+  } }, h('span', { text:label }));
+  const sub = h('span', { class:'sub' }); btn.append(sub);
+  refreshers.push(() => { const n = missing().length; sub.textContent = n ? n + ' more ' + (n === 1 ? 'answer' : 'answers') + ' needed' : ''; sub.hidden = !n; btn.classList.toggle('notready', n > 0); if (!n){ err.textContent = ''; btn.removeAttribute('aria-describedby'); } });
+  m.append(err, h('div', { class:'dock' }, h('div', { class:'dock-inner' }, btn)));
+}
+/* the mascot's line changes as answers come in */
+function sdLine(m, text){
+  const row = sayRow(text()), bub = row.querySelector('.saybub');
+  refreshers.push(() => { bub.textContent = text(); });
+  m.append(row);
+}
+const SD_HOME = () => shopPlaceText(sh.store.home), SD_LAST = () => { const d = shopDrinksSorted(sh.store)[0]; return d ? shopPlaceText(d) : ''; };
+function sdFromHere(v){
+  const src = v === 'home' ? sh.store.home : shopDrinksSorted(sh.store)[0];
+  if (src) Object.assign(sd, { from:v, country:src.country || 'United States', region:src.region || '', city:src.city || '' });
+}
+/* ---- step 1: Shop ---- */
+function screenShop(m){
+  const shops = shopList(sh.store), top = shops[0];
+  if (!shops.length) sd.mode = 'new';
+  m.append(h('h1', { style:'margin-top:14px', text:'Which coffee shop?' }), h('p', { class:'lede', text:shops.length ? 'Pick one of your spots, or add a new one.' : 'Add your first spot. It stays on your list.' }));
+  if (sd.mode === 'new' && !sd.from && !sd.name.trim() && !sd.city.trim()){ if (SD_HOME()) sdFromHere('home'); else if (SD_LAST()) sdFromHere('last'); }
+  if (shops.length){
+    const opts = shops.slice(0, 8).map(s => ({ v:csKey(s), label:s.name, icon:'s-shop', sub:[shopPlaceText(s), s.visits ? s.visits + (s.visits === 1 ? ' visit' : ' visits') : 'No drinks yet'].filter(Boolean).join(' · ') }))
+      .concat([{ v:'__new', label:'Add a new shop', icon:'s-shop' }]);
+    m.append(sBand('s-shop', 'Your spots', ['Required', 'Saved with your drink'], sTiles(opts, () => sd.mode === 'new' ? '__new' : sd.pickKey, v => { if (v === '__new'){ sd.mode = 'new'; } else { sd.mode = 'pick'; sd.pickKey = v; } },
+      { cols:1, row:true, label:'Your coffee shops', after:() => { newCard.hidden = sd.mode !== 'new'; } })));
+  }
+  const homeText = SD_HOME(), lastText = SD_LAST(), placeHost = sPlace(sd, sdTouch);
+  const newCard = sBand('art-pin', 'New shop', ['Required', 'Name, city and state'], sInput('Shop name', () => sd.name, v => { sd.name = v; }, { placeholder:'e.g. Summit Roasters', max:80 }),
+    h('div', { class:'lbl', text:'Place starts from' }),
+    sTiles([{ v:'home', label:'Home town', icon:'art-pin', sub:homeText || 'Not set', off:!homeText }, { v:'last', label:'Last shop', icon:'s-shop', sub:lastText || 'None yet', off:!lastText }], () => sd.from, v => { sdFromHere(v); placeHost.refill(); }, { cols:2, art:true, label:'Place starts from' }),
+    placeHost, h('span', { class:'hint', text:'Pick where the place starts, then change anything that is different. ' + (homeText ? '' : 'Set your home town in Menu, My setup. ') + 'Outside the United States, State becomes Region and you type it.' }));
+  newCard.hidden = sd.mode !== 'new'; newCard.id = 'sdNew';
+  m.append(newCard);
+  sdLine(m, () => {
+    if (sd.mode === 'new'){ const r = sd.region, hr = sh.store.home.region; return r && hr && r !== hr ? 'A new spot in a new state. Welcome to the list.' : 'A new spot. Welcome to the list.'; }
+    return top && top.visits > 1 ? top.name + ' again? It is your most visited spot.' : 'Pick a spot, or add a new one.';
+  });
+  sdDock(m, 'Next: ' + STEP_SHOP.drink, sdShopMissing, () => go('sdrink'));
+}
+/* ---- step 2: Drink ---- */
+const SD_SAY = { other:'Something different. Tell me everything.', special:'A seasonal special. Tell me everything.' };
+function screenSdrink(m){
+  const kindDef = k => k ? (k.hot ? 'hot' : 'iced') : '';
+  m.append(h('h1', { style:'margin-top:14px', text:'What did you order?' }));
+  m.append(sBand('ic-cup-steam', 'Drink', ['Required', 'Pick the closest one'], sTiles(SHOP_KINDS.map(k => ({ v:k.v, label:k.label, icon:KIND_ART[k.v] })), () => sd.kind,
+    v => { const was = SHOP_KINDS.find(k => k.v === sd.kind); if (!sd.temp || sd.temp === kindDef(was)) sd.temp = kindDef(SHOP_KINDS.find(k => k.v === v)); sd.kind = v; }, { cols:3, art:true, label:'Kind of drink' })));
+  sdLine(m, () => { const l = sdKindLabel(); return !l ? 'Pick the closest one and I will ask the rest.' : SD_SAY[sd.kind] || (/^[aeiou]/i.test(l) ? 'An ' : 'A ') + l.toLowerCase() + '. Nice. Tell me everything.'; });
+  m.append(sBand('d-special', 'Name on the menu', ['Optional', 'Saved with your drink'], sInput('Name', () => sd.menu, v => { sd.menu = v; }, { placeholder:'e.g. Ethiopia Guji, washed', max:80 })));
+  m.append(sBand('ic-cup-steam', 'Hot or iced', ['Required', ''], sTiles([{ v:'hot', label:'Hot', icon:'ic-cup-steam' }, { v:'iced', label:'Iced', icon:'m-cold' }], () => sd.temp, v => { sd.temp = v; }, { cols:2, row:true, label:'Hot or iced' })));
+  m.append(sBand('z-m', 'Size', ['Required', 'Exact size is optional'], sTiles(SHOP_SIZES.map(s => ({ v:s.v, label:s.label, icon:SIZE_ART[s.v] })), () => sd.size, v => { sd.size = v; }, { cols:3, art:true, label:'Size' }),
+    sInput('Exact size, if you know it', () => sd.amount, v => { sd.amount = v; }, { placeholder:'e.g. 12', inputmode:'decimal', max:8 }),
+    sTiles([{ v:'oz', label:'oz' }, { v:'ml', label:'ml' }], () => sd.unit, v => { sd.unit = v; }, { cols:2, label:'Unit of the exact size' })));
+  m.append(sBand('d-americano', 'What did it cost?', ['Required', 'The price before tip'], h('div', { class:'srow2' },
+    sInput('Price', () => sd.price, v => { sd.price = v; }, { placeholder:'e.g. 6.50', inputmode:'decimal', max:10 }), sInput('Currency', () => sd.sym, v => { sd.sym = v.slice(0, 3); }, { placeholder:'$', max:3 }))));
+  sdDock(m, 'Next: ' + STEP_SHOP.taste, sdDrinkMissing, () => go('staste'));
+}
+/* ---- step 3: Taste ---- */
+function screenStaste(m){
+  m.append(h('h1', { style:'margin-top:14px', text:'How was it?' }));
+  m.append(sBand('ic-cup-steam', 'Overall', ['Required', 'Pick a face'], sTiles(SHOP_FACES.map(f => ({ v:f.v, label:f.label, icon:FACE_ART[f.v][0], tone:FACE_ART[f.v][1] })), () => sd.face, v => { sd.face = v; }, { cols:3, face:true, label:'Overall' })));
+  m.append(sBand('bn-on', 'Beans', ['', 'Same beans as your home tastings'], starRating(() => sd.beans, v => { sd.beans = v; sdTouch(); refreshAll(); }, { label:'Beans for this drink' })));
+  sdLine(m, () => {
+    const p = sdShop(), n = p ? p.name : 'This shop';
+    if (sd.face === 'good' && sd.beans >= 4 && sd.again === 'yes') return (sd.beans >= 5 ? 'Five beans' : 'Four beans') + ' and a yes. ' + n + ' is turning into your spot.';
+    if (sd.face === 'notgood') return 'Not every cup wins. Good to know before the next order.';
+    return sd.face ? 'Noted. ' + n + ' goes on your list.' : 'Tell me how it tasted.';
+  });
+  m.append(sBand('art-cf-again', 'Would you order it again?', ['Optional', ''], sTiles(SHOP_AGAINS.map(a => ({ v:a.v, label:a.label, icon:AGAIN_ART[a.v][0], tone:AGAIN_ART[a.v][1] })), () => sd.again, v => { sd.again = v; }, { cols:3, face:true, toggle:true, label:'Order it again' })));
+  const sz = SHOP_SIZES.find(s => s.v === sd.size), cost = priceNum(sd.price, 2) > 0 ? (sd.sym || '$') + fmt2(priceNum(sd.price, 2)) + (sz ? ' for a ' + sz.label.toLowerCase() : '') : '';
+  m.append(sBand('s-tag', 'Worth the price?', ['Optional', cost], sTiles(SHOP_WORTHS.map(w => ({ v:w.v, label:w.label, icon:WORTH_ART[w.v][0], tone:WORTH_ART[w.v][1] })), () => sd.worth, v => { sd.worth = v; }, { cols:3, face:true, toggle:true, label:'Worth the price' })));
+  m.append(sBand('a-sleeve', 'Scribble on the cup sleeve', ['Optional', 'Notes for next time'], sInput('Notes', () => sd.notes, v => { sd.notes = v; }, { area:true, placeholder:'What did it taste like? What did the barista say?', max:400 })));
+  sdDock(m, 'Next: ' + STEP_SHOP.perfect, sdTasteMissing, sdFinish);
+}
+/* save the drink (replacing the one saved from this draft if the person came back to change it) and show the Perfect step */
+function sdFinish(){
+  const miss = sdShopMissing().concat(sdDrinkMissing(), sdTasteMissing());
+  if (miss.length){ showStepMsg('Still needed: ' + miss.join(', ') + '.'); return false; }
+  const obj = sdDrinkObj(), e = drinkEntry(obj); if (!e){ showStepMsg('That drink could not be saved. Check the shop and the drink.'); return false; }
+  const prev = sh.store, old = sd.saved ? prev.drinks.find(d => drinkKey(d) === sd.saved) : null;
+  if (old) sh.store = shopRemoveDrink(sh.store, sd.saved);
+  obj.fav = !!(old && old.fav);
+  const r = shAddDrink(obj);
+  if (!r.added && r.why !== 'same'){ sh.store = prev; showStepMsg(r.why === 'full' ? 'Your coffee shops list is full (' + SHOP_MAX_DRINKS + ' drinks). Delete some first.' : 'That drink could not be saved.'); return false; }
+  sd.saved = drinkKey(e); sd.pickKey = csKey({ name:e.shop, city:e.city, region:e.region, country:e.country }); sd.mode = 'pick'; sdTouch();
+  go('sperfect'); return true;
+}
+/* ---------- coffee shops: Perfect ---------- */
+const SD_TONE = { good:'g', yes:'g', worth:'g', okay:'a', maybe:'a', fair:'a', notgood:'r', no:'r', over:'r' };
+function sdRow(k, ...v){ return h('div', { class:'skv' }, h('span', { text:k }), h('span', { class:'skvv' }, ...v)); }
+const labelIn = (list, v) => { const f = list.find(x => x.v === v); return f ? f.label : ''; };
+/* another drink at the same shop: the shop stays, the drink starts blank */
+function sdAnother(){
+  const p = sdShop(), n = sdBlank();
+  n.on = true; n.date = today(); n.sym = sd.sym; n.step = 'sdrink';
+  if (p){ n.mode = 'pick'; n.pickKey = csKey(p); }
+  sd = n; sdTouch(); go('sdrink');
+}
+function sdDone(){ sd = sdBlank(); persistShopDraft(); shopsFrom = 'door'; sh.tab = 'drinks'; sh.q = ''; go('shops'); }
+function screenSperfect(m){
+  const d = sh.store.drinks.find(x => drinkKey(x) === sd.saved);
+  if (!d){
+    m.append(h('h1', { style:'margin-top:14px', text:'Not saved yet' }), h('p', { class:'lede', text:'This drink is not on your list yet. Go back to the Taste step and tap Next.' }),
+      h('button', { type:'button', class:'btn primary', id:'sdBackTaste', text:'Back to Taste', onclick:() => go('staste') }));
+    return;
+  }
+  const key = drinkKey(d), kind = SHOP_KINDS.find(k => k.v === d.kind);
+  m.append(h('h1', { style:'margin-top:14px', text:'Saved to your coffee shops' }));
+  m.append(sayRow(d.face === 'good' ? 'Saved. Another ' + d.shop + ' win.' : d.face === 'notgood' ? 'Saved. Now you know what to skip at ' + d.shop + '.' : 'Saved. ' + d.shop + ' is on your map.'));
+  const size = [labelIn(SHOP_SIZES, d.size), d.temp, d.amount ? d.amount + ' ' + d.unit : ''].filter(Boolean).join(', ');
+  const rows = [sdRow('Shop', h('b', { text:d.shop })), sdRow('Place', h('b', { text:shopPlaceText(d) || 'Not set' })), size ? sdRow('Size', h('b', { text:size })) : null, d.price ? sdRow('Price', h('b', { text:d.sym + fmt2(d.price) })) : null,
+    d.face ? sdRow('Overall', h('b', { text:labelIn(SHOP_FACES, d.face) }), h('span', { class:'fdot tone-' + SD_TONE[d.face], role:'img', 'aria-label':labelIn(SHOP_FACES, d.face) }, spic(FACE_ART[d.face][0]))) : null,
+    d.beans ? sdRow('Beans', beanMini(d.beans), h('b', { text:d.beans + ' of 5' })) : null,
+    d.again ? sdRow('Order it again', h('b', { class:'tone-t-' + SD_TONE[d.again], text:labelIn(SHOP_AGAINS, d.again) })) : null,
+    d.worth ? sdRow('Worth the price', h('b', { class:'tone-t-' + SD_TONE[d.worth], text:labelIn(SHOP_WORTHS, d.worth) })) : null,
+    d.notes ? sdRow('Notes', h('b', { text:d.notes })) : null].filter(Boolean);
+  const body = []; rows.forEach((r, i) => { if (i) body.push(h('hr', { class:'srule' })); body.push(r); });
+  m.append(sBand(KIND_ART[d.kind], kind ? kind.label : 'Drink', ['', d.name || 'Your coffee shop drink'], ...body));
+  /* home against the shop: only what is known is shown */
+  const home = shopVsHome(d, history && history.objs ? history.objs.map(o => validStars(o.my_rating_stars)) : [], pr.list);
+  const cmp = [];
+  if (home.homeBeans != null || home.homeCup != null){
+    cmp.push(h('div', { class:'scmp' },
+      h('div', null, spic('art-kettle'), h('span', { class:'lbl', text:'At home' }), h('span', { class:'big', text:home.homeBeans != null ? home.homeBeans + ' beans' : 'No rating' }), h('span', { class:'hint', text:home.homeCup != null ? 'about ' + d.sym + fmt2(home.homeCup) + ' a cup' : 'no cost yet' })),
+      h('div', null, spic('s-shop'), h('span', { class:'lbl', text:'This shop drink' }), h('span', { class:'big', text:d.beans ? d.beans + ' beans' : 'No rating' }), h('span', { class:'hint', text:home.shopCup != null ? d.sym + fmt2(home.shopCup) + ' a cup' : 'no price' }))));
+    cmp.push(h('span', { class:'hint', text:home.times && home.times > 1 ? 'The shop cup costs about ' + home.times + ' times a home cup. Is it worth it? Only you can say.' : 'Your home tastings, lined up next to this one.' }));
+  } else cmp.push(h('span', { class:'hint', text:'Taste a few cups at home, and add a bag with a dose in Coffee prices, and I will line them up next to your shop drinks.' }));
+  m.append(sBand('art-scale', 'Home against the shop', ['', 'Your tastings and bags so far'], ...cmp));
+  const fav = h('button', { type:'button', class:'stile srow sfav', id:'sdFav', 'aria-pressed':String(!!d.fav), onclick:() => { const cur = sh.store.drinks.find(x => drinkKey(x) === key); sh.store = shopSetFavorite(sh.store, key, !(cur && cur.fav)); sh.changes++; persistShops(); refreshAll(); } },
+    h('span', { class:'schk', 'aria-hidden':'true' }), spic('a-fav'), h('span', { class:'stx', 'data-fav':'' }));
+  fav.querySelector('.schk').innerHTML = '<svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="11" fill="#1D3E2F"/><path d="M6.5 12.5l4 4 7-8.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  refreshers.push(() => { const cur = sh.store.drinks.find(x => drinkKey(x) === key), on = !!(cur && cur.fav); fav.setAttribute('aria-pressed', String(on)); fav.querySelector('.stx').textContent = on ? 'In your Favorites' : 'Add to Favorites'; });
+  m.append(fav, h('button', { type:'button', class:'stile srow', id:'sdAnother', onclick:sdAnother }, spic(KIND_ART[d.kind]), h('span', { class:'stx', text:'Log another drink' })));
+  m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary', id:'sdDone', text:'Done', onclick:sdDone }))));
+}
+/* ---------- the first screen ----------
+   It shows whenever nothing is in progress, and when the person comes back to it from the Menu. A coffee is "in progress" once anything has been typed or chosen for it; a shop drink once a shop or anything about the drink is chosen.
+   Start a fresh coffee tips both out and keeps the history and the coffee shops list. When something is in progress it takes a second tap, so a stray tap cannot throw a half-made coffee away. */
+let menuFreshSure = false;
+const homeTyped = () => Object.keys(app.coffee).some(k => k !== 'id' && app.coffee[k]) || !!app.brew.method;
+const freshNeeds = () => homeTyped() || sdStarted();
+const homeStepName = () => { const i = progressStep(app.resume || 'start'); return PROGRESS[i < 0 ? 0 : i][1]; };
+/* what the second tap throws away, in the person's own words */
+function freshWhat(){
+  const hs = homeTyped(), ss = sdStarted(), name = app.coffee.name.trim();
+  return hs && ss ? 'Both' : hs ? (name || 'This coffee') : 'The shop drink';
+}
+/* the baby-blue button; the first tap arms it, the second tips the coffee out. It disarms itself after a few seconds. */
+function doorFreshButton(){
+  let sure = false, tm = null;
+  const title = h('b'), sub = h('span', { class:'sub' });
+  const btn = h('button', { type:'button', class:'fresh', id:'doorFresh' }, h('span', { class:'fpic' }, spic('a-fresh')), h('span', null, title, sub));
+  const paint = () => {
+    const what = freshWhat();
+    btn.classList.toggle('sure', sure);
+    title.textContent = sure ? 'Tap again to tip it out' : 'Start a fresh coffee';
+    sub.textContent = sure ? what + (what === 'Both' ? ' are' : ' is') + ' not saved yet. Your history stays.' : 'Tip out ' + (homeTyped() && sdStarted() ? 'both' : homeTyped() ? (app.coffee.name.trim() || 'this coffee') : 'the shop drink') + ' and begin again';
+    btn.setAttribute('aria-label', title.textContent + '. ' + sub.textContent);
+  };
+  btn.addEventListener('click', () => { if (!sure){ sure = true; paint(); clearTimeout(tm); tm = setTimeout(() => { sure = false; paint(); }, 6000); } else { clearTimeout(tm); freshAll(); } });
+  paint(); return btn;
+}
+function doorOf(cls, id, art, name, doLine, egLine, badge, onclick){
+  return h('button', { type:'button', class:'door ' + cls + (badge ? ' live' : ''), id, onclick },
+    h('span', { class:'dpic' }, spic(art)), h('span', { class:'dtx' }, badge ? h('span', { class:'dbadge', text:badge }) : null, h('span', { class:'dnm', text:name }), h('span', { class:'ddo', text:doLine }), h('span', { class:'deg', text:egLine })));
+}
+function screenDoor(m){
+  const hs = homeTyped(), ss = sdStarted(), name = app.coffee.name.trim();
+  const shopName = (() => { const p = sdShop(); return p ? p.name : (sd.mode === 'new' ? sd.name.trim() : ''); })();
+  m.append(h('h1', { style:'margin-top:14px', text:'Where are you having coffee?' }), h('p', { class:'lede', text:'Pick one to start.' }));
+  m.append(doorOf('home', 'doorHome', 'art-kettle', 'At home', hs ? 'Keep brewing ' + (name || 'your coffee') : 'You brew it yourself',
+    hs ? 'You are on the ' + homeStepName() + ' step' : 'Pour-over, press, espresso machine', hs ? 'Coffee in progress' : '', () => go(hs ? (app.resume || 'start') : 'start')));
+  m.append(doorOf('shop', 'doorShop', 's-shop', 'At a coffee shop', ss ? 'Finish your ' + (sdKindLabel().toLowerCase() || 'drink') + (shopName ? ' at ' + shopName : '') : 'You bought a drink',
+    ss ? 'You are on the ' + sdStepName(sd.step) + ' step' : hs ? 'Your brew waits for you' : 'Latte, cold brew, a cup to go', ss ? 'Drink in progress' : '', sdOpen));
+  m.append(sayRow(hs && ss ? 'Both are safe. Pick the one you want to finish.' : hs ? 'Your ' + (name || 'coffee') + ' is safe. Log the shop drink first.' : ss ? 'Your drink is safe. Finish it whenever you like.' : 'Pick one and I will ask the right questions.'));
+  if (hs || ss) m.append(doorFreshButton());
+  m.append(levelCard());
+  const one = hs !== ss, label = hs && !ss ? 'Back to ' + homeStepName() : ss && !hs ? 'Finish your drink' : 'Pick one above';
+  m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary' + (one ? '' : ' notready'), id:'doorNext', text:label,
+    onclick:() => { if (hs && !ss) go(app.resume || 'start'); else if (ss && !hs) sdOpen(); else $('doorHome').focus(); } }))));
+}
+/* ---------- the Coffee shops screen ---------- */
+let shopsUndo = null;   /* the drink just deleted, kept for Undo until the person leaves or deletes another */
+function goShops(){ if (app.screen !== 'shops') shopsFrom = app.screen === 'timer' ? 'ready' : app.screen; go('shops'); }
+function shDate(iso){
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(iso || '') ? new Date(iso + 'T00:00:00') : null; if (!d || isNaN(d)) return '';
+  return d.toLocaleDateString('en-US', d.getFullYear() === new Date().getFullYear() ? { month:'short', day:'numeric' } : { month:'short', day:'numeric', year:'numeric' });
+}
+const SH_WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+const shCount = n => n < SH_WORDS.length ? SH_WORDS[n] : String(n);
+/* the mascot's line: which shop gave you most of your good drinks */
+function shLine(){
+  const ds = sh.store.drinks; if (!ds.length) return 'No shop drinks yet. Log your first one and I will keep it.';
+  const good = ds.filter(d => d.face === 'good'); if (!good.length) return shCount(ds.length) + (ds.length === 1 ? ' drink' : ' drinks') + ' saved. Find a good one and I will remember where.';
+  const by = {}; good.forEach(d => { const k = csKey({ name:d.shop, city:d.city, region:d.region, country:d.country }); by[k] = by[k] || { n:0, name:d.shop }; by[k].n++; });
+  const top = Object.values(by).sort((a, b) => b.n - a.n)[0];
+  return top.n === good.length && good.length === 1 ? 'Your one good drink so far came from ' + top.name + '.' : shCount(top.n) + ' of your ' + good.length + ' good drinks came from ' + top.name + '.';
+}
+function shDrinkRow(d, open, toggle){
+  const kind = SHOP_KINDS.find(k => k.v === d.kind), key = drinkKey(d), tone = d.face ? SD_TONE[d.face] : '';
+  const row = h('button', { type:'button', class:'lrow sdrow', 'aria-expanded':String(open), 'data-key':key, onclick:toggle },
+    h('span', { class:'thumb' }, spic(KIND_ART[d.kind])),
+    h('span', { class:'lmid' }, h('b', { text:d.name || (kind ? kind.label : 'Drink') }), h('span', { class:'sub', text:[kind ? kind.label : '', d.shop, shDate(d.date)].filter(Boolean).join(' · ') }), d.beans ? beanMini(d.beans) : null),
+    h('span', { class:'r' }, d.price ? h('span', { class:'price', text:d.sym + fmt2(d.price) }) : null, d.amount ? h('span', { class:'sub', text:d.amount + ' ' + d.unit }) : null,
+      tone ? h('span', { class:'fdot tone-' + tone, role:'img', 'aria-label':labelIn(SHOP_FACES, d.face) }, spic(FACE_ART[d.face][0])) : null));
+  if (!open) return row;
+  const info = [shopPlaceText(d), labelIn(SHOP_SIZES, d.size), d.temp].filter(Boolean).join(' · ');
+  const del = h('button', { type:'button', class:'btn small sdel', 'aria-label':'Delete ' + (d.name || (kind ? kind.label : 'drink')), text:'Delete this drink', onclick:() => {
+    shopsUndo = { d, at:sh.store.drinks.findIndex(x => drinkKey(x) === key) }; sh.store = shopRemoveDrink(sh.store, key); sh.changes++; persistShops(); toggle(true); } });
+  const fav = h('button', { type:'button', class:'btn small sfavbtn', 'aria-pressed':String(!!d.fav), text:d.fav ? 'Remove from Favorites' : 'Add to Favorites', onclick:() => { sh.store = shopSetFavorite(sh.store, key, !d.fav); sh.changes++; persistShops(); toggle('keep'); } });
+  return h('div', { class:'sdopen' }, row, h('div', { class:'sdetail' }, info ? h('p', { class:'fine', style:'margin:0', text:info }) : null,
+    d.again ? h('p', { class:'fine', style:'margin:0', text:'Order it again: ' + labelIn(SHOP_AGAINS, d.again) }) : null, d.worth ? h('p', { class:'fine', style:'margin:0', text:'Worth the price: ' + labelIn(SHOP_WORTHS, d.worth) }) : null,
+    d.notes ? h('p', { class:'serif', style:'margin:0', text:d.notes }) : null, h('div', { class:'row' }, fav, del)));
+}
+function shShopRow(s){
+  return h('button', { type:'button', class:'lrow', 'data-shop':s.name, onclick:() => { sh.tab = 'drinks'; sh.q = s.name; render(); } },
+    h('span', { class:'thumb' }, spic('s-shop')),
+    h('span', { class:'lmid' }, h('b', { text:s.name }), h('span', { class:'sub', text:[shopPlaceText(s), s.last ? 'last ' + shDate(s.last) : ''].filter(Boolean).join(' · ') }), s.avgBeans ? beanMini(Math.round(s.avgBeans * 2) / 2) : null),
+    h('span', { class:'r' }, h('span', { class:'price', text:s.visits }), h('span', { class:'sub', text:s.visits === 1 ? 'visit' : 'visits' }), s.again ? h('span', { class:'sub', text:s.again + ' again' }) : null));
+}
+function screenShops(m){
+  const open = new Set();
+  const tabs = sTiles([{ v:'drinks', label:'Drinks', icon:'ic-cup-steam' }, { v:'shops', label:'Shops', icon:'s-shop' }, { v:'favs', label:'Favorites', icon:'a-fav' }], () => sh.tab, v => { sh.tab = v; }, { cols:3, art:true, label:'Show', after:() => paint() });
+  const find = h('input', { type:'search', id:'shQ', class:'sfind', placeholder:'Search a drink or a shop', 'aria-label':'Search your coffee shop drinks and shops', value:sh.q, autocomplete:'off' });
+  find.addEventListener('input', () => { sh.q = find.value; paint(); });
+  const host = h('div', { class:'slist', id:'shList' }), undo = h('div', { id:'shUndo' });
+  function paint(){
+    host.textContent = ''; undo.textContent = '';
+    if (shopsUndo) undo.append(h('div', { class:'notice row2', id:'shUndoRow' }, h('span', { text:'Removed ' + (shopsUndo.d.name || labelIn(SHOP_KINDS, shopsUndo.d.kind) || 'the drink') + '.' }),
+      h('button', { type:'button', class:'btn small', style:'margin:0', text:'Undo', onclick:() => { const l = sh.store.drinks.slice(); l.splice(Math.min(shopsUndo.at, l.length), 0, shopsUndo.d); sh.store = Object.assign({}, sh.store, { drinks:l }); sh.changes = Math.max(0, sh.changes - 1); shopsUndo = null; persistShops(); paint(); } })));
+    if (sh.tab === 'shops'){
+      const rows = shopList(sh.store).filter(s => !sh.q.trim() || [s.name, s.city, s.region].join(' ').toLowerCase().includes(sh.q.trim().toLowerCase()));
+      if (!rows.length) host.append(h('p', { class:'fine', text:sh.store.drinks.length || sh.store.shops.length ? 'No shop matches "' + sh.q + '".' : 'No shops yet. Log a drink and its shop will be here.' }));
+      rows.forEach(s => host.append(shShopRow(s)));
+      return;
+    }
+    const all = shopDrinksSorted(sh.store, sh.tab === 'favs' ? 'fav' : ''), rows = shopFilter(all, sh.q);
+    if (!rows.length) host.append(h('p', { class:'fine', id:'shEmpty', text:sh.q.trim() ? 'No drink or shop matches "' + sh.q + '".' : sh.tab === 'favs' ? 'No favorites yet. Open a drink and tap Add to Favorites.' : 'No drinks yet. Tap Log a drink to add your first.' }));
+    rows.forEach(d => { const k = d.key, node = () => shDrinkRow(d, open.has(k), force => { if (force === true) open.delete(k); else if (force !== 'keep'){ if (open.has(k)) open.delete(k); else open.add(k); } paint(); }); host.append(node()); });
+  }
+  m.append(tabs, find);
+  const bub = sayRow(shLine()); m.append(bub, undo, host);
+  refreshers.push(() => { bub.querySelector('.saybub').textContent = shLine(); });
+  paint();
+  m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary', id:'shLog', text:'Log a drink', onclick:sdOpen }))));
+}
+/* ---------- My files: the coffee shops file ---------- */
+function shopsFilesRows(){
+  const msg = h('p', { class:'fine', id:'shFileMsg', role:'status', style:'margin:6px 0 0', text:sh.msg });
+  const say = t => { sh.msg = t; msg.textContent = t; };
+  const subText = () => {
+    const d = sh.store.drinks.length, n = shopList(sh.store).length;
+    return d ? d + (d === 1 ? ' drink' : ' drinks') + ' from ' + n + (n === 1 ? ' shop' : ' shops') + (sh.changes ? '. ' + sh.changes + (sh.changes === 1 ? ' change is' : ' changes are') + ' not in a file yet' : '. All saved to a file') : 'Log a drink at a coffee shop first';
+  };
+  const save = hubRow('save', 'Save my coffee shops file', subText(), async () => { await shSave(); msg.textContent = sh.msg; save.querySelector('.hs').textContent = subText(); }, { tone:'a', id:'shSaveBtn' });
+  const file = h('input', { type:'file', id:'shFile', accept:'.csv,text/csv,text/plain', 'aria-label':'Coffee shops file (CSV)', hidden:true });
+  file.addEventListener('change', async () => {
+    const f = file.files && file.files[0]; if (!f) return;
+    try { shLoadText(f.text ? await f.text() : await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsText(f); })); say(sh.msg); }
+    catch(e){ say("Couldn't read that file. Try pasting its contents instead."); }
+    save.querySelector('.hs').textContent = subText(); file.value = '';
+  });
+  const load = hubRow('restore', 'Load a coffee shops file', 'Adds the drinks in a file you saved before. Nothing here is lost', () => file.click(), { tone:'t', id:'shLoadBtn' });
+  const paste = h('textarea', { id:'shPaste', placeholder:'Paste the file contents here', 'aria-label':'Pasted coffee shops file text' });
+  const fold = plainFold('shPasteD', 'Load not working?', 'Paste the file instead', 'text', paste,
+    h('button', { type:'button', class:'btn', id:'shPasteBtn', style:'margin-top:8px', text:'Use pasted text', onclick:() => { if (paste.value.trim()){ shLoadText(paste.value); say(sh.msg); save.querySelector('.hs').textContent = subText(); } else say('Paste the file contents first.'); } }));
+  return [save, load, file, fold, msg, h('p', { class:'fine hubnote', style:'margin:0', text:'The coffee shops file is a file of its own. It is not your tasting history, and your history is never changed by it.' })];
+}
+const SCREENS = { door:screenDoor, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, files:screenFiles };
 
 syncMenuBtn();
 $('homeBtn').addEventListener('click', () => { if (menuIsOpen()) closeSheet(); else openMenu(); });
@@ -14914,6 +15670,8 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 window.addEventListener('pagehide', flushDraft);
 loadHistory();
 loadPrices();
+loadShops();
+loadShopDraft();
 loadDraft();
 loadPickedFile();
 render();
