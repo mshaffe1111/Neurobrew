@@ -4,6 +4,17 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.027.0075: Philips 5500: a screen with all 20 drinks
+
+2026-10-13 18:24:21 UTC
+
+- The Philips 5500 LatteGo has its own screen now: a picture for each of its 20 drinks, grouped as black coffee, milk, iced and other.
+- It shows the three best drinks for your coffee, with a reason for each, and you can filter them by Black, Milk or Iced.
+- Tap a drink to see what to expect and the settings to try for your coffee: aroma strength, ExtraShot, coffee and milk amounts, the grinder, and how the roast and the bean change them. Each note says whether it comes from Philips, from common practice, or is our own starting guess.
+- A cup picture shows which size to use (small to extra large) and the layers in the order the machine pours them, with ice for iced drinks and an extra layer if ExtraShot is on.
+- Machine temperature is set once for the whole machine, as on the real machine. The grinder card turns left for finer and right for coarser, and reads your last recorded step from your tastings.
+- Brew it again lists the Philips cups you already rated for this coffee. It only reads your history and saves nothing new. The mascot reacts to each drink with a different pose.
+
 ## Version 4.026.0074: Save everything, with a thumbs up
 
 2026-10-13 15:53:43 UTC

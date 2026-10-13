@@ -2137,6 +2137,104 @@ button.hrow:active, .hrow.sel:active{ transform:translateY(3px); box-shadow:0 1p
 .notice[hidden]{ display:none; }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .saymark svg, :root:not([data-theme="light"]) .evmasc svg, :root:not([data-theme="light"]) .fmark svg, :root:not([data-theme="light"]) .topmark, :root:not([data-theme="light"]) .brandmark svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); } }
 :root[data-theme="dark"] .saymark svg, :root[data-theme="dark"] .evmasc svg, :root[data-theme="dark"] .fmark svg, :root[data-theme="dark"] .topmark, :root[data-theme="dark"] .brandmark svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); }
+/* the drink pictures sit on a light plate, as the app's other pictures do in dark mode (--icon-bg is clear in light mode) */
+.phpic{ display:block; flex:none; }
+.phpic svg{ display:block; width:62px; height:62px; background:var(--icon-bg); border-radius:14px; }
+.phpic.pbig svg{ width:84px; height:84px; }
+.phmasc{ display:block; flex:none; }
+.phmasc svg{ display:block; width:100%; height:auto; }
+:root[data-theme="dark"] .phmasc svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .phmasc svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); } }
+.phhero .phmasc{ width:84px; padding:4px 6px; background:#FDFBF7; border:3px solid #22120C; border-radius:16px; }
+.phhero .phmasc svg{ filter:none; }
+/* the coffee and the temperature */
+.phscreen .beancard{ background:var(--surface); border:2px solid var(--frame); border-radius:16px; box-shadow:0 4px 0 var(--frame); padding:10px 12px; margin:0 0 10px; }
+.phscreen .blab{ font:700 12px/1 var(--ui); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.phscreen .bnm{ font:700 18px/1.2 var(--ui); margin:3px 0 2px; overflow-wrap:anywhere; }
+.phscreen .bsub{ font-size:15px; color:var(--muted); }
+.phtemp{ margin:0 0 6px; }
+.phtemp .meter{ margin:6px 0 0; }
+.nudge.phn{ width:44px; height:44px; font-size:22px; font-weight:700; }
+.nudge.phn:disabled{ opacity:.4; }
+.phtemp .defect-row .what{ display:flex; flex-direction:column; gap:2px; font-weight:700; }
+.phtemp .defect-row .what small{ font-weight:400; color:var(--muted); font-size:14px; }
+/* section heads, chips */
+.phscreen h2.grp{ display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 8px; margin:20px 0 8px; font:700 20px/1.1 var(--display); }
+.phscreen h2.grp small{ font:400 14px/1.2 var(--ui); color:var(--muted); }
+.pickrow{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
+.chipb{ min-height:44px; padding:6px 12px; font:600 15px/1.1 var(--ui); border:2px solid var(--edge); border-radius:12px; background:var(--surface); color:var(--ink); cursor:pointer; }
+.chipb[aria-pressed="true"]{ background:var(--gold); border-color:#22120C; color:#22120C; }
+.chipb.pwide{ width:100%; margin-top:8px; }
+/* the best three and brew-it-again rows */
+.recs{ display:flex; flex-direction:column; gap:10px; }
+.rec{ display:flex; align-items:center; gap:10px; width:100%; min-height:64px; text-align:left; padding:8px 10px 8px 8px; background:var(--surface); color:var(--ink); border:2px solid var(--frame); border-radius:16px; box-shadow:0 4px 0 var(--frame); font:inherit; cursor:pointer; }
+.rec:active, .phtile:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--frame); }
+.rec .phpic svg{ width:58px; height:58px; }
+.rec .rn{ flex:none; width:26px; height:26px; border-radius:50%; background:var(--gold); border:2px solid #22120C; font:700 14px/22px var(--ui); text-align:center; color:#22120C; }
+.rec .rt{ display:flex; flex-direction:column; gap:3px; min-width:0; font-size:14.5px; line-height:1.3; }
+.rec .rt b{ font:700 17px/1.2 var(--ui); }
+/* the 20 drinks */
+.phscreen .grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+.phtile{ display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 4px; min-height:112px; text-align:center; background:var(--surface); color:var(--ink); border:2px solid var(--frame); border-radius:16px; box-shadow:0 4px 0 var(--frame); font:700 14.5px/1.1 var(--ui); cursor:pointer; }
+.phtile .tn{ padding:0 2px; overflow-wrap:anywhere; }
+.phscreen .note{ margin:18px 0 0; font-size:14.5px; color:var(--muted); }
+/* the tags: where a statement comes from */
+.tg{ display:inline-block; font:700 11px/1 var(--ui); letter-spacing:.04em; text-transform:uppercase; padding:3px 6px; border-radius:7px; border:1.5px solid var(--ink); margin-right:6px; vertical-align:1px; white-space:nowrap; }
+.tg.p{ background:#CFE6D8; color:#14301F; }
+.tg.c{ background:#F7DDB6; color:#22120C; }
+.tg.o, .tg.y{ background:#EADFC6; color:#22120C; }
+.tgs{ margin-top:6px; display:flex; flex-wrap:wrap; gap:4px 0; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .tg.p{ background:#245B41; color:#E0EDE6; } :root:not([data-theme="light"]) .tg.c{ background:#3B2E1E; color:#F2EADD; } :root:not([data-theme="light"]) .tg.o, :root:not([data-theme="light"]) .tg.y{ background:#33291F; color:#F2EADD; } }
+:root[data-theme="dark"] .tg.p{ background:#245B41; color:#E0EDE6; } :root[data-theme="dark"] .tg.c{ background:#3B2E1E; color:#F2EADD; } :root[data-theme="dark"] .tg.o, :root[data-theme="dark"] .tg.y{ background:#33291F; color:#F2EADD; }
+/* the sheet */
+.phhead{ display:flex; gap:12px; align-items:center; margin-bottom:4px; }
+.phhead .phht{ flex:1; min-width:0; }
+.phhead h3{ margin:0; font:700 24px/1.1 var(--display); }
+.phhead .fam{ font-size:14px; color:var(--muted); margin-top:3px; }
+.phhead .x{ align-self:flex-start; min-width:44px; min-height:44px; font:700 22px/1 var(--ui); border:2px solid var(--edge); border-radius:12px; background:var(--surface); color:var(--ink); cursor:pointer; }
+.expect{ font-size:17px; margin:8px 0 4px; }
+.phsay{ display:flex; gap:10px; align-items:center; margin:8px 0 4px; padding:8px 10px; background:var(--surface); border:2px solid var(--line); border-radius:14px; }
+.phsay .phmasc{ width:62px; }
+.phbub{ display:flex; flex-direction:column; gap:6px; align-items:flex-start; font-size:15.5px; line-height:1.35; }
+.beanline{ font-size:14.5px; color:var(--muted); margin:6px 0 4px; }
+.phhead ~ h4{ margin:16px 0 8px; font:700 13px/1 var(--ui); letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+.set{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.pst{ min-width:0; background:var(--surface); border:2px solid var(--frame); border-radius:14px; box-shadow:0 3px 0 var(--frame); padding:9px 10px 10px; }
+.pst.pfull{ grid-column:1 / -1; }
+.pst .pk{ font:700 13px/1.1 var(--ui); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+.pst .pv{ font:700 24px/1.1 var(--display); margin:4px 0 2px; }
+.pst .pv.pvs{ font-size:19px; }
+.pst .pv small{ font:600 14px/1 var(--ui); color:var(--muted); }
+.pst .pw{ font-size:14px; line-height:1.3; margin-top:4px; }
+.pst .stepper{ margin-top:6px; justify-content:center; }
+.pst .btn.link{ min-height:44px; padding:0; font-size:14px; text-align:left; }
+.meter{ display:flex; gap:4px; margin:4px 0; }
+.meter i{ flex:1; height:10px; border-radius:5px; border:2px solid var(--ink); background:transparent; }
+.meter i.f{ background:var(--accent); }
+.cupwrap{ background:var(--icon-bg); border-radius:14px; margin:6px 0 4px; }
+.cupgfx{ display:block; width:100%; max-width:340px; margin:0 auto; font-family:var(--ui); }
+.legend2{ display:flex; flex-direction:column; gap:3px; margin:4px 0 8px; font-size:14.5px; }
+.legend2 .plg i{ display:inline-block; width:14px; height:14px; border-radius:4px; border:2px solid var(--ink); vertical-align:-2px; margin-right:6px; }
+.rows{ display:flex; flex-direction:column; gap:8px; }
+.rw{ background:var(--surface); border:2px solid var(--line); border-radius:12px; padding:8px 10px; font-size:15px; line-height:1.4; }
+.rw.warn{ border-color:var(--warn); background:#FFF3DC; }
+:root[data-theme="dark"] .rw.warn{ background:#3A2A12; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .rw.warn{ background:#3A2A12; } }
+.rw .ladhead{ margin-top:6px; font-weight:600; }
+.ladder{ margin:4px 0 0; padding-left:22px; }
+.ladder li{ margin:2px 0; }
+.legend{ font-size:13.5px; color:var(--muted); margin:12px 0; line-height:1.9; }
+.machrow{ margin:0 0 6px; }
+.machlab{ margin-bottom:4px; }
+/* the buttons stay at the bottom of the sheet while you read */
+.phdock{ position:sticky; bottom:0; display:flex; flex-direction:column; gap:8px; margin:14px -16px -16px; padding:10px 16px 14px; background:var(--bg); border-top:2px solid var(--line); }
+.phdock .btn{ width:100%; min-height:48px; margin:0; }
+@media (max-width:360px){ .set{ grid-template-columns:1fr; } .phscreen .grid{ gap:8px; } .phtile{ font-size:13.5px; } .phpic svg{ width:54px; height:54px; } }
+@media (forced-colors: active){
+  .phpic svg, .phmasc svg, .cupwrap{ forced-color-adjust:none; }
+  .rec, .phtile, .pst, .rw, .phsay, .chipb, .tg{ border:2px solid ButtonText; box-shadow:none; }
+  .meter i{ border-color:CanvasText; } .meter i.f{ background:Highlight; }
+}
 :root{ --door-home:#E4F0E4; --door-shop:#F7DDB6; --door-pic:#FFF1C9; --fresh:#CFE8F0; --fresh-sure:#7DBBD8; --fresh-disc:#F4FAFD; --tg:#2E7D4F; --ta:#C98A00; --tr:#B8322A; --tg-ink:#1F5C38; --ta-ink:#7A5200; --tr-ink:#8E2019; }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --door-home:#1F3A2E; --door-shop:#4A3720; --tg:#6FBF8E; --ta:#E0A93B; --tr:#F08A82; --tg-ink:#8FD6AE; --ta-ink:#F2C27A; --tr-ink:#FFB4AB; } }
 :root[data-theme="dark"]{ --door-home:#1F3A2E; --door-shop:#4A3720; --tg:#6FBF8E; --ta:#E0A93B; --tr:#F08A82; --tg-ink:#8FD6AE; --ta-ink:#F2C27A; --tr-ink:#FFB4AB; }
@@ -2767,6 +2865,26 @@ details.mfold > .mrows{ margin-top:14px; }
 <path d="M22 36.500 C13 30.500 14.500 24 18.500 24 q3.500 0 3.500 3.200 q0-3.200 3.500-3.200 c4 0 5.500 6.500-3.500 12.500Z" fill="#D9503B" stroke-width="2"/>
 <path d="M4 44 H40" stroke-width="2.400"/>
 <path d="M41 3 l1.400 3.200 3.200 1.400 -3.200 1.400 -1.400 3.200 -1.400 -3.200 -3.200 -1.400 3.200 -1.400z" fill="#FFD76A" stroke-width="1.500"/></g></symbol>
+<symbol id="ph-espresso" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#F2A93B"/><clipPath id="phc-espresso-1"><path d="M17 26H47V33A15 15 0 0 1 32 48A15 15 0 0 1 17 33Z"/></clipPath><path d="M17 26H47V33A15 15 0 0 1 32 48A15 15 0 0 1 17 33Z" fill="#FDFBF7"/><g clip-path="url(#phc-espresso-1)" stroke="none"></g><path d="M17 26H47V33A15 15 0 0 1 32 48A15 15 0 0 1 17 33Z" fill="none"/><ellipse cx="32" cy="26" rx="15" ry="3.4" fill="#B98C5A"/><path d="M47 29h3a4.5 4.5 0 0 1 0 9h-4" fill="none"/><path d="M24 8c-2 3 2 5 0 8M32 8c-2 3 2 5 0 8M40 8c-2 3 2 5 0 8" fill="none" stroke-width="2"/></g></symbol>
+<symbol id="ph-ristretto" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#F2A93B"/><clipPath id="phc-ristretto-1"><path d="M21 32H43V36A11 11 0 0 1 32 47A11 11 0 0 1 21 36Z"/></clipPath><path d="M21 32H43V36A11 11 0 0 1 32 47A11 11 0 0 1 21 36Z" fill="#FDFBF7"/><g clip-path="url(#phc-ristretto-1)" stroke="none"></g><path d="M21 32H43V36A11 11 0 0 1 32 47A11 11 0 0 1 21 36Z" fill="none"/><ellipse cx="32" cy="32" rx="11" ry="2.8" fill="#4A2A18"/><path d="M43 35h2.5a3.5 3.5 0 0 1 0 7H42" fill="none"/><path d="M28 14c-2 3 2 5 0 8M36 14c-2 3 2 5 0 8" fill="none" stroke-width="2"/></g></symbol>
+<symbol id="ph-lungo" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#F2A93B"/><clipPath id="phc-lungo-1"><path d="M18 18H46V34A14 14 0 0 1 32 48A14 14 0 0 1 18 34Z"/></clipPath><path d="M18 18H46V34A14 14 0 0 1 32 48A14 14 0 0 1 18 34Z" fill="#FDFBF7"/><g clip-path="url(#phc-lungo-1)" stroke="none"></g><path d="M18 18H46V34A14 14 0 0 1 32 48A14 14 0 0 1 18 34Z" fill="none"/><ellipse cx="32" cy="18" rx="14" ry="3.2" fill="#7A4A2D"/><path d="M46 22h3a4.5 4.5 0 0 1 0 9h-4" fill="none"/><path d="M25 3c-2 3 2 5 0 8M32 3c-2 3 2 5 0 8M39 3c-2 3 2 5 0 8" fill="none" stroke-width="2"/></g></symbol>
+<symbol id="ph-coffee" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#F2A93B"/><clipPath id="phc-coffee-1"><path d="M15 20H43V40A9 9 0 0 1 34 49H24A9 9 0 0 1 15 40Z"/></clipPath><path d="M15 20H43V40A9 9 0 0 1 34 49H24A9 9 0 0 1 15 40Z" fill="#FDFBF7"/><g clip-path="url(#phc-coffee-1)" stroke="none"></g><path d="M15 20H43V40A9 9 0 0 1 34 49H24A9 9 0 0 1 15 40Z" fill="none"/><ellipse cx="29" cy="20" rx="14" ry="3.2" fill="#7A4A2D"/><path d="M43 24h4a5 5 0 0 1 0 11h-4" fill="none"/><path d="M22 5c-2 3 2 5 0 8M29 5c-2 3 2 5 0 8M36 5c-2 3 2 5 0 8" fill="none" stroke-width="2"/></g></symbol>
+<symbol id="ph-crema" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#F2A93B"/><clipPath id="phc-crema-1"><path d="M16 22H46V36A14 14 0 0 1 32 50A14 14 0 0 1 16 36Z"/></clipPath><path d="M16 22H46V36A14 14 0 0 1 32 50A14 14 0 0 1 16 36Z" fill="#FDFBF7"/><g clip-path="url(#phc-crema-1)" stroke="none"></g><path d="M16 22H46V36A14 14 0 0 1 32 50A14 14 0 0 1 16 36Z" fill="none"/><ellipse cx="31" cy="22" rx="15" ry="4.6" fill="#B98C5A"/><path d="M26 22c2-2 5-2 7 0s4 1 5 0" fill="none" stroke="#7A4A2D" stroke-width="1.8"/><path d="M46 26h3a4.5 4.5 0 0 1 0 9h-4" fill="none"/><path d="M24 5c-2 3 2 5 0 8M31 5c-2 3 2 5 0 8M38 5c-2 3 2 5 0 8" fill="none" stroke-width="2"/></g></symbol>
+<symbol id="ph-americano" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#F2A93B"/><path d="M12 22h34v14a15 15 0 0 1-15 15H27a15 15 0 0 1-15-15z" fill="#FDFBF7"/><ellipse cx="29" cy="22" rx="17" ry="3.5" fill="#4A2A18"/><path d="M46 26h3.5a5.5 5.5 0 0 1 0 11H44" fill="none"/><path d="M21 6c-2 3 2 5 0 8M29 6c-2 3 2 5 0 8M37 6c-2 3 2 5 0 8" fill="none" stroke-width="2"/><path d="M56 12s-4 4.5-4 7a4 4 0 0 0 8 0c0-2.5-4-7-4-7z" fill="#6FB5D9" stroke-width="2"/></g></symbol>
+<symbol id="ph-cappuccino" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#D9503B"/><path d="M12 28h34v8a14 14 0 0 1-14 14H26a14 14 0 0 1-14-14z" fill="#FDFBF7"/><path d="M13 28c0-8 7-12 16-12s16 4 16 12c0 2-4 3.5-16 3.5S13 30 13 28z" fill="#F7EBD2"/><circle cx="24" cy="21" r="1.5" fill="#6B3E22" stroke="none"/><circle cx="31" cy="19" r="1.5" fill="#6B3E22" stroke="none"/><circle cx="36" cy="23" r="1.5" fill="#6B3E22" stroke="none"/><circle cx="28" cy="25" r="1.5" fill="#6B3E22" stroke="none"/><path d="M46 31h3a5 5 0 0 1 0 10h-4" fill="none"/></g></symbol>
+<symbol id="ph-latte" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#D9503B"/><clipPath id="phc-latte-1"><path d="M20 8H44L42 51A3 3 0 0 1 39 54H25A3 3 0 0 1 22 51Z"/></clipPath><path d="M20 8H44L42 51A3 3 0 0 1 39 54H25A3 3 0 0 1 22 51Z" fill="#EAF6F8"/><g clip-path="url(#phc-latte-1)" stroke="none"><rect x="0" y="8" width="64" height="17" fill="#F7EBD2"/><rect x="0" y="25" width="64" height="8" fill="#7A4A2D"/><rect x="0" y="33" width="64" height="23" fill="#F3E3C3"/></g><path d="M20 8H44L42 51A3 3 0 0 1 39 54H25A3 3 0 0 1 22 51Z" fill="none"/><circle cx="29" cy="15" r="1.4" fill="#C9B79A" stroke="none"/><circle cx="36" cy="19" r="1.4" fill="#C9B79A" stroke="none"/></g></symbol>
+<symbol id="ph-caffelatte" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#D9503B"/><path d="M10 24h38v10a16 16 0 0 1-16 16H26a16 16 0 0 1-16-16z" fill="#FDFBF7"/><ellipse cx="29" cy="24" rx="19" ry="5.5" fill="#B98C5A"/><path d="M29 27.5c-4-2.5-6-4.2-6-6.2a3 3 0 0 1 6-.8 3 3 0 0 1 6 .8c0 2-2 3.7-6 6.2z" fill="#FDFBF7" stroke-width="1.8"/><path d="M48 28h3a5 5 0 0 1 0 10h-4" fill="none"/></g></symbol>
+<symbol id="ph-flatwhite" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#D9503B"/><clipPath id="phc-flatwhite-1"><path d="M12 30h36v5a14 14 0 0 1-14 14H26a14 14 0 0 1-14-14z"/></clipPath><path d="M12 30h36v5a14 14 0 0 1-14 14H26a14 14 0 0 1-14-14z" fill="#FDFBF7"/><g clip-path="url(#phc-flatwhite-1)" stroke="none"></g><path d="M12 30h36v5a14 14 0 0 1-14 14H26a14 14 0 0 1-14-14z" fill="none"/><ellipse cx="30" cy="30" rx="18" ry="4.6" fill="#7A4A2D"/><ellipse cx="30" cy="30" rx="12.5" ry="2.8" fill="#F7EBD2"/><circle cx="30" cy="30" r="1.6" fill="#7A4A2D" stroke="none"/><path d="M48 33h2.5a4.5 4.5 0 0 1 0 9H46" fill="none"/></g></symbol>
+<symbol id="ph-aulait" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#D9503B"/><clipPath id="phc-aulait-1"><path d="M9 24H51V29A21 21 0 0 1 30 50A21 21 0 0 1 9 29Z"/></clipPath><path d="M9 24H51V29A21 21 0 0 1 30 50A21 21 0 0 1 9 29Z" fill="#FDFBF7"/><g clip-path="url(#phc-aulait-1)" stroke="none"></g><path d="M9 24H51V29A21 21 0 0 1 30 50A21 21 0 0 1 9 29Z" fill="none"/><ellipse cx="30" cy="24" rx="21" ry="4.8" fill="#7A4A2D"/><path d="M30 19.2A21 4.8 0 0 1 30 28.8Z" fill="#F7EBD2" stroke="none"/><path d="M9 24a21 4.8 0 0 0 42 0a21 4.8 0 0 0-42 0" fill="none"/></g></symbol>
+<symbol id="ph-froth" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#D9503B"/><path d="M12 31h34v6a13 13 0 0 1-13 13H25A13 13 0 0 1 12 37z" fill="#FDFBF7"/><path d="M13 31c-2-5 1-9 6-9 1-5 7-7 11-4 4-2 10 0 10 5 4 0 6 4 4 8-3 2-8 3-16 3S16 33 13 31z" fill="#F7EBD2"/><path d="M46 34h3a4.5 4.5 0 0 1 0 9h-4" fill="none"/></g></symbol>
+<symbol id="ph-hotwater" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#2E7D5B"/><clipPath id="phc-hotwater-1"><path d="M15 20H43V40A9 9 0 0 1 34 49H24A9 9 0 0 1 15 40Z"/></clipPath><path d="M15 20H43V40A9 9 0 0 1 34 49H24A9 9 0 0 1 15 40Z" fill="#FDFBF7"/><g clip-path="url(#phc-hotwater-1)" stroke="none"></g><path d="M15 20H43V40A9 9 0 0 1 34 49H24A9 9 0 0 1 15 40Z" fill="none"/><ellipse cx="29" cy="20" rx="14" ry="3.2" fill="#8CCBE6"/><path d="M43 24h4a5 5 0 0 1 0 11h-4" fill="none"/><path d="M22 4c-2 3 2 5 0 8M29 4c-2 3 2 5 0 8M36 4c-2 3 2 5 0 8" fill="none" stroke-width="2"/><path d="M29 31s-3.5 4-3.5 6.3a3.5 3.5 0 0 0 7 0c0-2.3-3.5-6.3-3.5-6.3z" fill="#6FB5D9" stroke-width="1.8"/></g></symbol>
+<symbol id="ph-icedespresso" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#6FB5D9"/><clipPath id="phc-icedespresso-1"><path d="M18 24H46L43.5 52A3 3 0 0 1 40.5 55H23.5A3 3 0 0 1 20.5 52Z"/></clipPath><path d="M18 24H46L43.5 52A3 3 0 0 1 40.5 55H23.5A3 3 0 0 1 20.5 52Z" fill="#DDF1F7"/><g clip-path="url(#phc-icedespresso-1)" stroke="none"><rect x="0" y="30" width="64" height="26" fill="#4A2A18"/></g><path d="M18 24H46L43.5 52A3 3 0 0 1 40.5 55H23.5A3 3 0 0 1 20.5 52Z" fill="none"/><rect x="22" y="17" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(-10 26.5 21.5)"/><rect x="31" y="21" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(12 35.5 25.5)"/></g></symbol>
+<symbol id="ph-icedcoffee" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#6FB5D9"/><clipPath id="phc-icedcoffee-1"><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z"/></clipPath><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z" fill="#DDF1F7"/><g clip-path="url(#phc-icedcoffee-1)" stroke="none"><rect x="0" y="24" width="64" height="32" fill="#7A4A2D"/></g><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z" fill="none"/><rect x="21" y="14" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(-8 25.5 18.5)"/><rect x="31" y="18" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(14 35.5 22.5)"/><rect x="24" y="28" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(6 28.5 32.5)"/><path d="M38 16L47 2" fill="none" stroke="#F2A93B" stroke-width="4.4"/><path d="M38 16L47 2" fill="none" stroke="#22120C" stroke-width="1" opacity=".0"/></g></symbol>
+<symbol id="ph-icedamericano" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#6FB5D9"/><clipPath id="phc-icedamericano-1"><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z"/></clipPath><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z" fill="#DDF1F7"/><g clip-path="url(#phc-icedamericano-1)" stroke="none"><rect x="0" y="16" width="64" height="12" fill="#CFE8F1"/><rect x="0" y="28" width="64" height="28" fill="#4A2A18"/></g><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z" fill="none"/><rect x="21" y="14" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(-8 25.5 18.5)"/><rect x="31" y="19" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(12 35.5 23.5)"/><path d="M38 16L47 2" fill="none" stroke="#F2A93B" stroke-width="4.4"/><path d="M38 16L47 2" fill="none" stroke="#22120C" stroke-width="1" opacity=".0"/></g></symbol>
+<symbol id="ph-icedcrema" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#6FB5D9"/><clipPath id="phc-icedcrema-1"><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z"/></clipPath><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z" fill="#DDF1F7"/><g clip-path="url(#phc-icedcrema-1)" stroke="none"><rect x="0" y="20" width="64" height="9" fill="#B98C5A"/><rect x="0" y="29" width="64" height="27" fill="#7A4A2D"/></g><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z" fill="none"/><rect x="21" y="12" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(-8 25.5 16.5)"/><rect x="32" y="15" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(12 36.5 19.5)"/><path d="M38 14L47 1" fill="none" stroke="#F2A93B" stroke-width="4.4"/><path d="M38 14L47 1" fill="none" stroke="#22120C" stroke-width="1" opacity=".0"/></g></symbol>
+<symbol id="ph-icedlatte" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#6FB5D9"/><clipPath id="phc-icedlatte-1"><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z"/></clipPath><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z" fill="#DDF1F7"/><g clip-path="url(#phc-icedlatte-1)" stroke="none"><rect x="0" y="18" width="64" height="10" fill="#7A4A2D"/><rect x="0" y="28" width="64" height="28" fill="#F3E3C3"/></g><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z" fill="none"/><rect x="22" y="13" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(-8 26.5 17.5)"/><rect x="33" y="17" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(12 37.5 21.5)"/><rect x="26" y="31" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(6 30.5 35.5)"/><path d="M38 14L47 1" fill="none" stroke="#F2A93B" stroke-width="4.4"/><path d="M38 14L47 1" fill="none" stroke="#22120C" stroke-width="1" opacity=".0"/></g></symbol>
+<symbol id="ph-icedcappuccino" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#6FB5D9"/><clipPath id="phc-icedcappuccino-1"><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z"/></clipPath><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z" fill="#DDF1F7"/><g clip-path="url(#phc-icedcappuccino-1)" stroke="none"><rect x="0" y="9" width="64" height="15" fill="#F7EBD2"/><rect x="0" y="24" width="64" height="7" fill="#7A4A2D"/><rect x="0" y="31" width="64" height="25" fill="#F3E3C3"/></g><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z" fill="none"/><rect x="24" y="40" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(-10 28.5 44.5)"/><rect x="32" y="44" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(10 36.5 48.5)"/></g></symbol>
+<symbol id="ph-icedaulait" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#6FB5D9"/><clipPath id="phc-icedaulait-1"><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z"/></clipPath><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z" fill="#DDF1F7"/><g clip-path="url(#phc-icedaulait-1)" stroke="none"><rect x="0" y="18" width="64" height="18" fill="#7A4A2D"/><rect x="0" y="36" width="64" height="20" fill="#F3E3C3"/></g><path d="M17 9H47L44 52A3 3 0 0 1 41 55H23A3 3 0 0 1 20 52Z" fill="none"/><rect x="21" y="13" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(-8 25.5 17.5)"/><rect x="32" y="17" width="9" height="9" rx="1.6" fill="#EAF6F8" stroke-width="1.8" transform="rotate(12 36.5 21.5)"/><path d="M38 14L47 1" fill="none" stroke="#F2A93B" stroke-width="4.4"/><path d="M38 14L47 1" fill="none" stroke="#22120C" stroke-width="1" opacity=".0"/></g></symbol>
 </svg>
 
 <a class="skiplink" href="#app" id="skipLink">Skip to main content</a>
@@ -5172,6 +5290,92 @@ function methodAdvice(coffee, now){
 function methodFit(coffee, now){
   return methodAdvice(coffee, now).filter(x => x.tier === 'best').map(x => ({ key:x.key, why:x.why, score:x.score }));
 }
+/* ---------- Philips 5500: picks, cup, ExtraShot, history ---------- */
+/* How well each drink suits a roast, 0 to 10. This is our own judgment (common practice for bean-to-cup machines), not a Philips rule, and the screen says so.
+   Light roasts: brightness tastes cleaner cold, and hot water softens a sharp short shot, so iced and long drinks lead; the milk drink with the least milk (flat white) is the best of those.
+   Dark roasts have the body for milk, and milk softens bitterness. Medium roasts suit short, bold drinks and milk drinks. */
+const PHILIPS_SCORES = {
+  light:{ espresso:3, ristretto:2, lungo:5, coffee:6, crema:5, americano:7, cappuccino:3, latte:2, caffelatte:2, flatwhite:5, aulait:4, icedespresso:5, icedcoffee:8, icedamericano:8, icedcrema:6, icedlatte:3, icedcappuccino:3, icedaulait:4 },
+  medium:{ espresso:7, ristretto:5, lungo:6, coffee:6, crema:6, americano:6, cappuccino:8, latte:6, caffelatte:6, flatwhite:8, aulait:6, icedespresso:6, icedcoffee:6, icedamericano:6, icedcrema:5, icedlatte:6, icedcappuccino:6, icedaulait:5 },
+  dark:{ espresso:6, ristretto:6, lungo:3, coffee:4, crema:4, americano:5, cappuccino:9, latte:8, caffelatte:8, flatwhite:7, aulait:7, icedespresso:4, icedcoffee:4, icedamericano:4, icedcrema:3, icedlatte:7, icedcappuccino:7, icedaulait:6 }
+};
+const philipsRoastClass = r => (r === 'light' || r === 'medium-light') ? 'light' : (r === 'dark' || r === 'medium-dark') ? 'dark' : 'medium';
+const PHILIPS_WHY = {
+  light:{ iced:'Brightness tends to taste cleaner cold, and Philips sets iced drinks to strength 3 over ice, which suits a bean that can taste sharp hot.', americano:'Hot water softens the sharpness of a short shot, so a bright bean tastes rounder.', coffee:'A mug-sized cup is the easiest way to drink a bean that tastes sharp as espresso.', flatwhite:'The least milk of the milk drinks, so more of the coffee shows. ExtraShot helps here.', other:'One of the gentler ways to serve a light roast from this machine.' },
+  medium:{ milk:'A medium roast has the body to stand up to milk.', black:'A medium roast does well as a short, bold black drink.', iced:'Works well over ice at strength 3.', other:'A good fit for a medium roast.' },
+  dark:{ milk:'A dark roast has the body to hold up in milk, and milk softens any bitterness.', black:'A short drink keeps a dark roast from turning bitter.', iced:'Cold and milk soften a dark roast.', other:'A good fit for a dark roast.' }
+};
+/* the three best drinks for this bean. pref: 'any', or a group ('Black', 'Milk', 'Iced') to look inside. Returns [{ drink, score, why }]. */
+function philipsRecs(coffee, pref, now){
+  const p = profileOf(coffee || {}, now), rc = philipsRoastClass(p.roast), tab = PHILIPS_SCORES[rc], W = PHILIPS_WHY[rc];
+  const ferm = p.process === 'natural' || p.process === 'honey' || isFerment(p.process), delicate = /gei?sha|gesha/i.test(String(coffee && ((coffee.name || '') + ' ' + (coffee.varietal || '')))), fw = freshWindowFor('espresso', p.roast);
+  const out = [];
+  PHILIPS_DRINKS.forEach(d => {
+    if (!d.coffee) return;
+    if (pref && pref !== 'any' && d.group !== pref) return;
+    let sc = tab[d.v] == null ? 5 : tab[d.v];
+    if (delicate){ if (!d.milk && !d.iced) sc += 2; if (d.milk) sc -= 2; }
+    else if (ferm && rc === 'light'){ if (d.iced) sc += 1; if (d.milk) sc -= 1; }
+    if (p.days != null && p.days > fw.fade && (d.milk || d.iced)) sc += 1;   /* milk and ice hide an aged bean */
+    if (p.decaf && d.milk) sc += 1;
+    const why = rc === 'light' ? (d.iced ? W.iced : d.v === 'americano' ? W.americano : d.v === 'coffee' ? W.coffee : d.v === 'flatwhite' ? W.flatwhite : W.other) : (d.milk ? W.milk : d.iced ? W.iced : d.group === 'Black' ? W.black : W.other);
+    out.push({ drink:d, score:sc, why });
+  });
+  out.sort((a, b) => b.score - a.score);
+  return out.slice(0, 3);
+}
+/* ExtraShot: Philips says it adds a Ristretto shot to coffee and milk drinks, and that it needs the top strength level. Whether to use it is our judgment: level 'try', 'maybe' or 'skip'. */
+function philipsExtraAdvice(d, p, rawStrength){
+  const r = p.roast, light = r === 'light' || r === 'medium-light', dark = r === 'dark' || r === 'medium-dark';
+  if (dark) return { level:'skip', text:'A dark roast is already strong, and a second shot is likely to push it bitter. Skip it.' };
+  if (rawStrength > 5 || (light && d.milk)) return { level:'try', text:(rawStrength > 5 ? 'Strength is already at the top level, so ExtraShot is the next step up. ' : '') + 'A light roast gets lost in milk, so an extra shot is worth trying.' };
+  if (d.milk) return { level:'maybe', text:'Worth a try if the milk is covering the coffee. Otherwise leave it off.' };
+  return { level:'maybe', text:'Try the strength level first. ExtraShot is for when the top strength level is still too weak.' };
+}
+/* Which cup: four sizes, and the layers in the order the machine pours them. All the millilitre figures are common café proportions (Philips publishes none), and an extra shot is taken as about 25 mL. */
+const PHILIPS_EXTRA_ML = 25;
+const PHILIPS_CUPS = [{ k:'S', cap:120, name:'Small', eg:'espresso cup' }, { k:'M', cap:220, name:'Medium', eg:'cappuccino cup' }, { k:'L', cap:350, name:'Large', eg:'mug or latte glass' }, { k:'XL', cap:450, name:'Extra large', eg:'tall glass' }];
+function philipsCup(d, extra){
+  const mid = r => (r[0] + r[1]) / 2, parts = [];
+  const coffee = d.coffee ? { kind:'coffee', n:'Coffee', lo:d.coffee[0], hi:d.coffee[1], mid:mid(d.coffee) } : null;
+  const shot = (extra && d.coffee) ? { kind:'extra', n:'Extra shot', lo:PHILIPS_EXTRA_ML, hi:PHILIPS_EXTRA_ML, mid:PHILIPS_EXTRA_ML } : null;
+  const milk = d.milk ? { kind:'milk', n:'Milk', lo:d.milk[0], hi:d.milk[1], mid:mid(d.milk) } : null;
+  const water = (d.water && d.coffee) ? { kind:'water', n:'Hot water', lo:d.water[0], hi:d.water[1], mid:mid(d.water) } : null;
+  /* bottom to top: what goes in first is at the bottom */
+  if (d.order === 'milk'){ [milk, coffee, shot].forEach(x => x && parts.push(x)); }
+  else if (d.order === 'coffee'){ [coffee, shot, milk].forEach(x => x && parts.push(x)); }
+  else { [coffee, shot, water, milk].forEach(x => x && parts.push(x)); }
+  const total = parts.reduce((a, x) => a + x.hi, 0), need = d.iced ? total * 2.2 : total / 0.85;
+  let i = PHILIPS_CUPS.findIndex(c => c.cap >= need); if (i < 0) i = PHILIPS_CUPS.length - 1;
+  if (d.iced) i = Math.max(i, 1);   /* an iced drink goes in a glass that holds ice, so never the smallest */
+  return { i, size:PHILIPS_CUPS[i], total, parts, iced:d.iced, foam:!!d.milk && !d.iced };
+}
+/* the drink, strength, temperature, milk and ExtraShot written into the saved tasting's brew detail, read back. null when the text is not in that form. */
+function philipsParseDetail(text){
+  const t = String(text || ''), head = t.split(',')[0].trim().toLowerCase(), d = PHILIPS_DRINKS.find(x => x.label.toLowerCase() === head);
+  if (!d) return null;
+  const sm = t.match(/strength (\d)/), tm = t.match(/temperature (\d)/), mm = t.match(/\(([^()]*(?:\([^()]*\))?[^()]*)\)\s*$/), mk = mm ? PHILIPS_MILKS.find(x => x.label.toLowerCase() === mm[1].trim().toLowerCase()) : null;
+  return { drink:d.v, strength:sm ? +sm[1] : null, temp:tm ? +tm[1] : null, milk:mk ? mk.v : '', extra:/extra ?shot/i.test(t) };
+}
+/* a saved row made on the Philips: its brew method is the machine's name (the trail's method keys cover only the brew methods) */
+const isPhilipsRow = o => unneutralize(o.brew_method || '').trim() === MACHINES[0].label;
+/* the Philips tastings of this coffee, best-rated first, then newest. Read from the history you already have; nothing is saved for this. */
+function philipsTastings(objs, coffee){
+  const rows = historyForCoffee(objs, coffee).filter(o => isPhilipsRow(o));
+  const list = [];
+  rows.forEach(o => {
+    const x = philipsParseDetail(unneutralize(o.brew_technique_detail || '')); if (!x) return;
+    list.push(Object.assign(x, { id:o.id || '', date:o.cupping_date || '', stars:validStars(o.my_rating_stars) || 0, total:trailNum(o.total_score), kind:String(o.score_kind || ''), setting:unneutralize(o.brew_grind_setting || '').trim(), at:(o.cupping_date || '') + (o.saved_at || '') }));
+  });
+  list.sort((a, b) => (b.stars - a.stars) || b.at.localeCompare(a.at));
+  return list;
+}
+/* the last grinder step (1 to 12) you recorded on any Philips tasting: { step, date } or null */
+function philipsGrindStep(objs){
+  const rows = (objs || []).filter(o => isPhilipsRow(o)).sort((a, b) => ((b.cupping_date || '') + (b.saved_at || '')).localeCompare((a.cupping_date || '') + (a.saved_at || '')));
+  for (const o of rows){ const m = unneutralize(o.brew_grind_setting || '').match(/\d{1,2}/); if (m){ const n = +m[0]; if (n >= 1 && n <= 12) return { step:n, date:o.cupping_date || '' }; } }
+  return null;
+}
 /* ---------- Philips 5500 LatteGo ----------
    What Philips publishes for this machine (user manual and product leaflet): 5 aroma strength levels, 5 levels each for coffee and milk
    volume, 3 brewing temperatures (about 90 to 98 °C), 12 grinder settings, 275 g bean hopper, 0.26 L milk carafe, up to 20 drinks
@@ -5184,20 +5388,31 @@ const MACHINES = [
 ];
 const PHILIPS_FACTS = 'Philips publishes 5 strength levels, 5 coffee and milk volume levels, 3 temperatures and 12 grinder settings. It does not publish how many millilitres each volume level pours, so the amounts here are common café proportions: measure once and adjust.';
 const isMachine = key => MACHINES.some(x => x.key === key);
-/* coffee, water and milk are targets in mL; sb is the usual strength before the roast moves it; iced drinks use Philips' own advice of strength 3 */
+/* The 20 drinks on Philips' product page. coffee, water and milk are targets in mL (common café proportions: Philips publishes none); sb is the usual strength before the roast moves it; iced drinks use Philips' own advice of strength 3.
+   order: which goes in the cup first, as the 4400/5500 manual says ('milk' for cappuccino, flat white, latte macchiato, iced cappuccino and iced latte; 'coffee' for caffe latte, cafe au lait and iced cafe au lait). none: a drink with no coffee in it ('milk' = frothed milk, 'water' = hot water).
+   The first twelve ids are the ones older saved tastings use, so they keep their meaning ('latte' is the latte macchiato). blurb: what to expect, in a sentence or two. */
+const PHILIPS_GROUPS = [{ v:'Black', label:'Black coffee' }, { v:'Milk', label:'Milk drinks' }, { v:'Iced', label:'Iced' }, { v:'Other', label:'Other' }];
 const PHILIPS_DRINKS = [
-  { v:'espresso', label:'Espresso', group:'Black', coffee:[30, 40], water:null, milk:null, sb:3, iced:false, blurb:'A short, concentrated shot.' },
-  { v:'ristretto', label:'Ristretto', group:'Black', coffee:[20, 25], water:null, milk:null, sb:4, iced:false, blurb:'A shorter, sweeter, more concentrated shot.' },
-  { v:'coffee', label:'Coffee', group:'Black', coffee:[120, 180], water:null, milk:null, sb:3, iced:false, blurb:'A mug-sized black coffee.' },
-  { v:'americano', label:'Americano', group:'Black', coffee:[30, 40], water:[100, 140], milk:null, sb:3, iced:false, blurb:'An espresso with hot water added.' },
-  { v:'cappuccino', label:'Cappuccino', group:'Milk', coffee:[30, 40], water:null, milk:[100, 120], sb:4, iced:false, blurb:'Espresso with milk and plenty of froth.' },
-  { v:'latte', label:'Latte macchiato', group:'Milk', coffee:[30, 40], water:null, milk:[180, 220], sb:4, iced:false, blurb:'A tall glass of milk with a shot poured in.' },
-  { v:'flatwhite', label:'Flat white', group:'Milk', coffee:[50, 60], water:null, milk:[90, 110], sb:4, iced:false, blurb:'A strong, small milk drink with thin froth.' },
-  { v:'aulait', label:'Café au lait', group:'Milk', coffee:[100, 120], water:null, milk:[100, 120], sb:4, iced:false, blurb:'Half coffee, half milk.' },
-  { v:'icedcoffee', label:'Iced coffee', group:'Iced', coffee:[120, 150], water:null, milk:null, sb:3, iced:true, blurb:'Black coffee brewed over ice.' },
-  { v:'icedamericano', label:'Iced americano', group:'Iced', coffee:[30, 40], water:[100, 140], milk:null, sb:3, iced:true, blurb:'Espresso and water over ice.' },
-  { v:'icedlatte', label:'Iced latte', group:'Iced', coffee:[30, 40], water:null, milk:[120, 160], sb:3, iced:true, blurb:'Espresso and cold milk over ice.' },
-  { v:'icedcappuccino', label:'Iced cappuccino', group:'Iced', coffee:[30, 40], water:null, milk:[80, 100], sb:3, iced:true, blurb:'Espresso and cold froth over ice.' }
+  { v:'espresso', label:'Espresso', group:'Black', coffee:[30, 40], water:null, milk:null, sb:3, iced:false, order:'', none:'', blurb:'A small, intense shot with a tan crema on top. Bold and syrupy, and the base of the milk drinks.' },
+  { v:'ristretto', label:'Ristretto', group:'Black', coffee:[20, 25], water:null, milk:null, sb:4, iced:false, order:'', none:'', blurb:'A shorter, denser shot than espresso. Usually sweeter and less sharp, with a thick body.' },
+  { v:'lungo', label:'Espresso Lungo', group:'Black', coffee:[60, 90], water:null, milk:null, sb:3, iced:false, order:'', none:'', blurb:'A longer espresso. Lighter in body, with more bitterness if the roast is dark or the grind too fine.' },
+  { v:'coffee', label:'Coffee', group:'Black', coffee:[120, 180], water:null, milk:null, sb:3, iced:false, order:'', none:'', blurb:'A mug-sized black coffee, milder than espresso. An easy everyday cup.' },
+  { v:'crema', label:'Caffè Crema', group:'Black', coffee:[90, 130], water:null, milk:null, sb:3, iced:false, order:'', none:'', blurb:'A long, smooth coffee with a layer of crema. Between an espresso and a mug of coffee.' },
+  { v:'americano', label:'Americano', group:'Black', coffee:[30, 40], water:[100, 140], milk:null, sb:3, iced:false, order:'', none:'', blurb:'An espresso with hot water added. Lighter than espresso but still bold.' },
+  { v:'cappuccino', label:'Cappuccino', group:'Milk', coffee:[30, 40], water:null, milk:[100, 120], sb:4, iced:false, order:'milk', none:'', blurb:'A strong coffee taste under a thick cap of milk foam. Philips pours the milk first, then the coffee.' },
+  { v:'latte', label:'Latte macchiato', group:'Milk', coffee:[30, 40], water:null, milk:[180, 220], sb:4, iced:false, order:'milk', none:'', blurb:'A tall glass of warm milk with coffee poured through the foam, so it forms layers. Mild and milky.' },
+  { v:'caffelatte', label:'Caffè latte', group:'Milk', coffee:[30, 40], water:null, milk:[160, 200], sb:4, iced:false, order:'coffee', none:'', blurb:'Plenty of warm milk with a thin cap of foam. Smooth and mild. Philips pours the coffee first, then the milk.' },
+  { v:'flatwhite', label:'Flat white', group:'Milk', coffee:[50, 60], water:null, milk:[90, 110], sb:4, iced:false, order:'milk', none:'', blurb:'A small, strong milk drink with a thin, smooth foam. More coffee taste than a cappuccino.' },
+  { v:'aulait', label:'Café au lait', group:'Milk', coffee:[100, 120], water:null, milk:[100, 120], sb:4, iced:false, order:'coffee', none:'', blurb:'A long coffee and hot milk in about equal parts. Gentle and creamy, in a big cup. Philips pours the coffee first, then the milk.' },
+  { v:'froth', label:'Frothed milk', group:'Milk', coffee:null, water:null, milk:[100, 150], sb:null, iced:false, order:'', none:'milk', blurb:'Warm milk foam only, with no coffee. Your beans do not matter for this one.' },
+  { v:'icedespresso', label:'Iced espresso', group:'Iced', coffee:[30, 40], water:null, milk:null, sb:3, iced:true, order:'', none:'', blurb:'A short shot brewed over ice. Cold and punchy, and it softens as the ice melts.' },
+  { v:'icedcoffee', label:'Iced coffee', group:'Iced', coffee:[120, 150], water:null, milk:null, sb:3, iced:true, order:'', none:'', blurb:'A long coffee brewed over ice. Lighter and brighter than the hot version. Philips brews iced drinks with warm water over ice cubes, and advises strength 3.' },
+  { v:'icedamericano', label:'Iced americano', group:'Iced', coffee:[30, 40], water:[100, 140], milk:null, sb:3, iced:true, order:'', none:'', blurb:'Espresso and water over ice. Crisp and refreshing, with a clean finish.' },
+  { v:'icedcrema', label:'Iced caffè crema', group:'Iced', coffee:[90, 130], water:null, milk:null, sb:3, iced:true, order:'', none:'', blurb:'A long, smooth coffee over ice, with some of the body of a crema.' },
+  { v:'icedlatte', label:'Iced latte', group:'Iced', coffee:[30, 40], water:null, milk:[120, 160], sb:3, iced:true, order:'milk', none:'', blurb:'Cold milk over ice with espresso on top. Milky and cool. Philips pours the milk first.' },
+  { v:'icedcappuccino', label:'Iced cappuccino', group:'Iced', coffee:[30, 40], water:null, milk:[80, 100], sb:3, iced:true, order:'milk', none:'', blurb:'Cold milk foam over ice with espresso. Lighter and frothier than the iced latte.' },
+  { v:'icedaulait', label:'Iced café au lait', group:'Iced', coffee:[100, 120], water:null, milk:[100, 120], sb:3, iced:true, order:'coffee', none:'', blurb:'A long coffee and cold milk over ice, in about equal parts. Gentle and creamy. Philips pours the coffee first, then the milk.' },
+  { v:'hotwater', label:'Hot water', group:'Other', coffee:null, water:[150, 250], milk:null, sb:null, iced:false, order:'', none:'water', blurb:'Hot water from the spout, for tea or to top up. No coffee, so your beans do not matter.' }
 ];
 /* tested: named in Philips' manual as giving good froth. Nothing else is claimed to be tested. */
 const PHILIPS_MILKS = [
@@ -5213,62 +5428,83 @@ const PHILIPS_MILKS = [
 function cleanMachine(x){
   x = (x && typeof x === 'object') ? x : {};
   const n = (v, lo, hi) => (Number.isInteger(v) && v >= lo && v <= hi) ? v : null;
-  return { drink:PHILIPS_DRINKS.some(d => d.v === x.drink) ? x.drink : 'cappuccino', milk:PHILIPS_MILKS.some(k => k.v === x.milk) ? x.milk : 'whole', strength:n(x.strength, 1, 5), temp:n(x.temp, 1, 3) };
+  const dk = PHILIPS_DRINKS.some(d => d.v === x.drink) ? x.drink : 'cappuccino', cd = PHILIPS_DRINKS.find(d => d.v === dk);
+  return { drink:dk, milk:PHILIPS_MILKS.some(k => k.v === x.milk) ? x.milk : 'whole', strength:n(x.strength, 1, 5), temp:n(x.temp, 1, 3), extra:x.extra === true && !!cd.coffee };
 }
 function philipsDrink(v){ return PHILIPS_DRINKS.find(x => x.v === v) || null; }
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
-/* sel = { drink, milk, strength, temp } where strength and temp are null until the person changes them */
+/* sel = { drink, milk, strength, temp, extra } where strength and temp are null until the person changes them, and extra is ExtraShot.
+   Temperature is one setting for the whole machine (in its Settings menu), not per drink, so rec.temp depends only on the roast. */
 function philipsSetup(coffee, sel, now){
   sel = sel || {};
   const d = philipsDrink(sel.drink) || philipsDrink('cappuccino'), p = profileOf(coffee || {}, now);
   const mk = PHILIPS_MILKS.find(x => x.v === sel.milk) || PHILIPS_MILKS[0];
   const roast = p.roast, light = roast === 'light' || roast === 'medium-light', dark = roast === 'dark' || roast === 'medium-dark', rl = labelOf(ROASTS, roast).toLowerCase();
-  const out = { drink:d, milkType:d.milk ? mk : null, roast, roastAssumed:!(coffee && coffee.roast) };
+  const out = { drink:d, milkType:d.milk ? mk : null, roast, roastAssumed:!(coffee && coffee.roast), noCoffee:!d.coffee, extraOn:!!(sel.extra && d.coffee) };
   /* strength: the drink's usual level, then a roast nudge */
-  let sr = d.sb, sWhy = [d.iced ? 'Philips advises strength 3 for iced coffee, so that is the starting point.' : d.milk ? 'Milk drinks start one level stronger than black coffee, because the milk dilutes the coffee.' : 'Strength 3 is the middle of the five levels.'];
-  if (!d.iced && light){ sr += 1; sWhy.push('A light roast tastes thin from a machine, so one level stronger.'); }
+  let sr = d.sb || 3, sWhy = [d.iced ? 'Philips advises strength 3 for iced coffee, so that is the starting point.' : d.milk ? 'Milk drinks start one level stronger than black coffee, because the milk dilutes the coffee.' : 'Strength 3 is the middle of the five levels.'];
+  if (!d.iced && light){ sr += 1; sWhy.push(roast === 'light' ? 'A light roast tastes thin from a machine, so one level stronger.' : 'A medium-light roast can taste a little thin from a machine, so one level stronger.'); }
   else if (!d.iced && roast === 'dark'){ sr -= 1; sWhy.push('A dark roast is already intense, so one level lower.'); }
-  sr = clamp(sr, 1, 5);
+  const rawStrength = sr; sr = clamp(sr, 1, 5);
   /* temperature: three levels; hotter for lighter roasts, cooler for darker ones (common roaster advice, not a Philips rule) */
   const tr = light ? 3 : (roast === 'medium' ? 2 : (roast === 'medium-dark' ? 2 : 1));
-  const tWhy = light ? 'The hottest of the three settings (about 98°C at most) is what many brewers use for a light roast. This is common advice, not a Philips rule.' : roast === 'dark' ? 'The lowest setting keeps a dark roast from tasting burnt and bitter. This is common advice, not a Philips rule.' : 'A middle setting suits ' + (roast === 'medium' ? 'a medium' : 'a medium-dark') + ' roast.';
+  const tWhy = light ? 'The hottest of the three settings is what many brewers use for a light roast. This is common advice, not a Philips rule.' : roast === 'dark' ? 'The lowest setting keeps a dark roast from tasting burnt and bitter. This is common advice, not a Philips rule.' : 'A middle setting suits ' + (roast === 'medium' ? 'a medium' : 'a medium-dark') + ' roast.';
   out.rec = { strength:sr, temp:tr };
-  out.use = { strength:Number.isInteger(sel.strength) ? clamp(sel.strength, 1, 5) : sr, temp:Number.isInteger(sel.temp) ? clamp(sel.temp, 1, 3) : tr };
+  /* ExtraShot needs the top strength level (Philips), so turning it on sets strength to 5 */
+  out.use = { strength:out.extraOn ? 5 : (Number.isInteger(sel.strength) ? clamp(sel.strength, 1, 5) : sr), temp:Number.isInteger(sel.temp) ? clamp(sel.temp, 1, 3) : tr };
   out.manual = { strength:out.use.strength !== sr, temp:out.use.temp !== tr };
   out.why = { strength:sWhy.join(' '), temp:tWhy };
+  out.rawStrength = rawStrength;
   out.targets = { coffee:d.coffee, water:d.water, milk:d.milk };
   out.levelsNote = 'Start every volume at the middle level (3), pour one into a cup, and measure it. Philips does not say how many millilitres each level pours.';
   out.grind = { note:'Leave the grinder where it is. Philips says not to change it in the first 100 to 150 cups, and never more than one notch at a time, with the grinder running. Taste after two or three drinks before moving again.',
     dir:light ? 'If a light roast tastes sour or thin, move one notch finer.' : dark ? 'If a dark roast tastes bitter or harsh, move one notch coarser.' : 'If it tastes sour or thin, move one notch finer. If it tastes bitter, one notch coarser.' };
+  out.extra = d.coffee ? philipsExtraAdvice(d, p, rawStrength) : null;
+  out.cup = d.none === 'water' ? null : philipsCup(d, out.extraOn);
   out.steps = [];
-  out.steps.push('Fill the bean hopper with whole beans (no flavored or caramelized beans) and the water tank with fresh water.');
-  if (d.iced) out.steps.push('Fill a glass about two thirds with ice cubes and set it under the spout. The machine brews hot coffee onto the ice.');
+  out.steps.push(d.none ? 'Fill the water tank with fresh water' + (d.none === 'milk' ? '.' : ' and put a cup under the spout.') : 'Fill the bean hopper with whole beans (no flavored or caramelized beans) and the water tank with fresh water.');
+  if (d.iced) out.steps.push('Fill a glass about two thirds with ice cubes and set it under the spout. The machine brews the coffee over the ice.');
   if (d.milk) out.steps.push('Fill the LatteGo carafe with cold milk from the fridge (it holds 0.26 L), and attach it. ' + (d.iced ? 'Use cold milk for the iced drink.' : ''));
-  out.steps.push('Pick ' + d.label + ' on the screen. Set the aroma strength to ' + out.use.strength + ' and the temperature to ' + out.use.temp + '.');
-  out.steps.push('Set the coffee volume' + (d.milk ? ' and the milk volume' : '') + ' (' + d.coffee[0] + ' to ' + d.coffee[1] + ' mL of coffee' + (d.water ? ', ' + d.water[0] + ' to ' + d.water[1] + ' mL of hot water' : '') + (d.milk ? ', ' + d.milk[0] + ' to ' + d.milk[1] + ' mL of milk' : '') + '). Start at level 3 and measure.');
+  out.steps.push('Pick ' + d.label + ' on the screen.' + (d.coffee ? ' Set the aroma strength to ' + out.use.strength + (out.extraOn ? ' and select ExtraShot' : '') + '. Set the temperature to ' + out.use.temp + ' in the machine’s Settings, once, for all coffees.' : ''));
+  { const parts = []; if (d.coffee) parts.push(d.coffee[0] + ' to ' + d.coffee[1] + ' mL of coffee'); if (d.water) parts.push(d.water[0] + ' to ' + d.water[1] + ' mL of hot water'); if (d.milk) parts.push(d.milk[0] + ' to ' + d.milk[1] + ' mL of milk');
+    out.steps.push('Set the amount' + (d.milk && d.coffee ? 's' : '') + (d.coffee || d.milk ? ' (' + parts.join(', ') + '). Start at level 3 and measure.' : ': use the arrows to set the quantity.')); }
   out.warnings = philipsWarnings(coffee, out, p, now);
   return out;
 }
+/* The notes for this drink and bean. Each has: level ('warn' or 'tip'), head (a short label), tag ('p' Philips says, 'c' common practice, 'o' our start), text, and sometimes list (steps to try in order). */
 function philipsWarnings(coffee, S, p, now){
-  const w = [], d = S.drink, roast = S.roast, light = roast === 'light' || roast === 'medium-light', notes = String(coffee && coffee.bag_notes || '');
-  if (light) w.push({ level:'warn', text:'Light roasts often come out thin, sour or sharp from a bean-to-cup machine' + (d.milk ? ', and the milk will bury its fruit and florals' : '') + '. A medium to dark roast is a better fit. If you use it anyway: temperature 3, one level stronger, and a grind one notch finer.' });
-  else if (d.milk && (roast === 'medium')) w.push({ level:'tip', text:'A medium roast works in milk drinks. A medium-dark roast gives more body that stands up to the milk.' });
-  if (roast === 'dark') w.push({ level:'warn', text:'Very dark beans with an oily shine can gum up the grinder and the brew group. Choose a dark roast with a dry surface, and clean the machine on schedule. (This is general advice for bean-to-cup machines, not from the Philips manual.)' });
-  if (/flavou?red|vanilla|hazelnut cream|caramelized|caramelised/i.test(notes)) w.push({ level:'warn', text:'The Philips manual says not to use flavored or caramelized beans. They can coat and damage the grinder.' });
-  const fw = freshWindowFor('espresso', roast);
-  if (p.days != null && p.days < fw.ready) w.push({ level:'warn', text:'Roasted ' + p.days + ' day' + (p.days === 1 ? '' : 's') + ' ago: still full of gas, so the drink may come out foamy and uneven. Wait until about day ' + fw.ready + '.' });
-  if (p.days != null && p.days > fw.fade) w.push({ level:'tip', text:'These beans are well past their best. Expect a flat cup; a higher strength level helps a little.' });
-  if (d.iced) w.push({ level:'tip', text:'For iced drinks, fill the glass two thirds with ice and use strength 3, as Philips advises. The ice melts, so a stronger setting does not help much.' });
-  if (d.milk && S.milkType){
-    if (!S.milkType.tested) w.push({ level:'warn', text:S.milkType.note });
-    else w.push({ level:'tip', text:S.milkType.note });
+  const w = [], d = S.drink, roast = S.roast, light = roast === 'light' || roast === 'medium-light', notes = String(coffee && coffee.bag_notes || ''), add = (level, head, tag, text, list) => w.push(list ? { level, head, tag, text, list } : { level, head, tag, text });
+  if (d.none === 'water') return w;
+  if (d.none === 'milk'){ if (S.milkType) add(S.milkType.tested ? 'tip' : 'warn', 'Milk', 'p', S.milkType.note); return w; }
+  const wordsOf = String((coffee && (coffee.name || '')) + ' ' + (coffee && (coffee.varietal || '')) + ' ' + notes), fw = freshWindowFor('espresso', roast);
+  if (S.roastAssumed) add('tip', 'No roast level saved', 'o', 'These are middle-of-the-road settings for a medium roast. Save the roast level on the Bag screen and they adjust to it.');
+  if (p.days == null) add('tip', 'Roast date', 'o', 'No roast date is saved for this bean, so we cannot check freshness. Add it on the Bag screen. A ' + labelOf(ROASTS, roast).toLowerCase() + ' roast usually needs about ' + fw.ready + ' days off roast before espresso tastes its best.');
+  else if (p.days < fw.ready) add('warn', 'Freshness', 'o', 'Roasted ' + p.days + ' day' + (p.days === 1 ? '' : 's') + ' ago: still full of gas, so the drink may come out foamy and uneven. Wait until about day ' + fw.ready + '.');
+  else if (p.days > fw.fade) add('tip', 'Freshness', 'o', 'These beans are well past their best (roasted ' + p.days + ' days ago). Expect a flat cup; a higher strength level helps a little.');
+  else add('tip', 'Freshness', 'o', 'Roasted ' + p.days + ' day' + (p.days === 1 ? '' : 's') + ' ago, inside the usual window for ' + labelOf(ROASTS, roast).toLowerCase() + ' espresso (about day ' + fw.ready + ' to ' + fw.best + ').');
+  if (light){
+    add('warn', roast === 'light' ? 'Light roast' : 'Medium-light roast', 'c', (roast === 'light' ? 'Light roasts are often roasted for filter brewing, and they are the hardest to get right in a bean-to-cup machine. Light roasts often come out thin, sour or sharp from a bean-to-cup machine' : 'Medium-light roasts are a gentler case, but can still come out a little sharp or thin') + (d.milk ? ', and the milk will bury its fruit and florals' : '') + '. A medium to dark roast is a better fit.',
+      ['Temperature at level 3, the top (set once in the machine’s Settings).', 'A level more strength' + (d.milk ? ', or ExtraShot' : '') + '.', 'Coffee amount one level lower.', 'Grinder one notch finer, once past 100 to 150 cups.']);
+    w[w.length - 1].listHead = 'If a cup tastes sour or thin, change one thing at a time, in this order:';
   }
-  if (d.milk && d.milk[1] > 200) w.push({ level:'tip', text:'This drink uses a lot of milk. The carafe holds 0.26 L, so it will fit, but check the level before you start.' });
+  else if (d.milk && roast === 'medium') add('tip', 'Medium roast', 'c', 'A medium roast works in milk drinks. A medium-dark roast gives more body that stands up to the milk.');
+  if (/gei?sha|gesha/i.test(wordsOf)) add('tip', 'Delicate coffee', 'c', (d.milk ? 'A geisha is the first kind of coffee that milk hides. If you want to taste it, choose a black drink.' : 'Delicate, floral coffees like this show best in black drinks. A machine is a harsh test, so judge it against your filter cup, not against espresso.') + ' Philips says to brew about five coffees after changing beans, which is a lot of an expensive bag. Dial in on a cheaper bean first.');
+  if (roast === 'dark') add('warn', 'Oily dark roast', 'c', 'Very dark beans with an oily shine can gum up the grinder and the brew group. Choose a dark roast with a dry surface, and clean the machine on schedule. (This is general advice for bean-to-cup machines, not from the Philips manual.)');
+  if (p.process === 'natural' || isFerment(p.process)) add('tip', 'Natural or fermented', 'c', 'Naturals and fermented coffees taste fruity, sometimes winey. If a cup tastes boozy or sharp, lower the temperature one level before you touch the grinder.');
+  if (p.density === 'high' && light) add('tip', 'High-grown beans', 'c', 'Dense, high-grown beans are harder to extract. If the cup stays sour after the temperature is up, a grinder step finer is the next move.');
+  if (/flavou?red|vanilla|hazelnut cream|caramelized|caramelised/i.test(notes)) add('warn', 'Flavored beans', 'p', 'The Philips manual says not to use flavored or caramelized beans. They can coat and damage the grinder.');
+  if (p.decaf) add('tip', 'Decaf', 'p', 'The pre-ground chute takes one level scoop, and the strength cannot be changed there. If you fill the hopper instead, brew about five coffees first so the machine adapts.');
+  else add('tip', 'New beans', 'p', 'After changing to a different bean, Philips says the machine needs about five coffees to adjust itself. Judge the taste after that.');
+  if (d.iced) add('tip', 'Ice', 'p', 'For iced drinks, fill the glass two thirds with ice and use strength 3, as Philips advises. The ice melts, so a stronger setting does not help much.');
+  if (d.milk && S.milkType) add(S.milkType.tested ? 'tip' : 'warn', 'Milk', 'p', S.milkType.note);
+  if (d.milk && d.milk[1] > 200) add('tip', 'Milk amount', 'o', 'This drink uses a lot of milk. The carafe holds 0.26 L, so it will fit, but check the level before you start.');
+  if (S.extraOn) add('tip', 'ExtraShot', 'p', 'ExtraShot adds a Ristretto shot to the drink, needs the top strength level, and lets you brew one cup at a time.');
   const u = S.use;
-  if (u.strength >= 5 && (roast === 'dark' || roast === 'medium-dark')) w.push({ level:'warn', text:'Strength 5 with a dark roast is likely to taste bitter and harsh.' });
-  if (u.strength <= 2 && d.milk) w.push({ level:'warn', text:'Strength ' + u.strength + ' in a milk drink is likely to taste weak, because the milk covers the coffee.' });
-  if (u.temp === 3 && (roast === 'dark' || roast === 'medium-dark')) w.push({ level:'warn', text:'The hottest temperature with a dark roast is likely to taste burnt and bitter.' });
-  if (u.temp === 1 && light) w.push({ level:'warn', text:'The lowest temperature with a light roast is likely to taste sour and thin.' });
+  if (u.strength >= 5 && !S.extraOn && (roast === 'dark' || roast === 'medium-dark')) add('warn', 'Check this setting', 'c', 'Strength 5 with a dark roast is likely to taste bitter and harsh.');
+  if (S.extraOn && (roast === 'dark' || roast === 'medium-dark')) add('warn', 'Check this setting', 'c', 'ExtraShot with a dark roast is likely to taste bitter and harsh.');
+  if (u.strength <= 2 && d.milk) add('warn', 'Check this setting', 'c', 'Strength ' + u.strength + ' in a milk drink is likely to taste weak, because the milk covers the coffee.');
+  if (u.temp === 3 && (roast === 'dark' || roast === 'medium-dark')) add('warn', 'Check this setting', 'c', 'The hottest temperature with a dark roast is likely to taste burnt and bitter.');
+  if (u.temp === 1 && light) add('warn', 'Check this setting', 'c', 'The lowest temperature with a light roast is likely to taste sour and thin.');
   return w;
 }
 /* the person poured one drink into a cup and measured it: say what to do with the volume level */
@@ -7703,7 +7939,7 @@ const GUIDE_SECTIONS = [
   { id:'method', title:'3. Method: choose how you brew', lead:'Pick from the list.',
     paras:['Choose how you are brewing. Pour-over covers the V60, Kalita Wave and Chemex. The other choices are Hario Switch, Clever Dripper, siphon, AeroPress, French press, moka pot, Turkish coffee, Vietnamese phin, espresso, a drip machine and cold brew. Methods marked Top pick or Also good suit your roast, process and bag notes best. Nothing is blocked: a Less common pairing is only less often done.',
       'The first time you pick a method for a coffee, the next page is Gear. It shows what you brew with: your grinder and, if you want, your water and filter. If you saved your gear in My setup, it is already filled in. Tap Change to use other gear for one brew, or Make this my usual to keep it. Gear comes first so we can suggest a grinder setting.',
-      'If you have a Philips 5500 LatteGo, it has its own simple setup that suggests the drink settings for your beans. It skips the Gear page.'] },
+      'If you have a Philips 5500 LatteGo, it has its own screen. It shows the three best drinks for your coffee, a picture for each of its 20 drinks, and the settings to try for each one. It skips the Gear page.'] },
   { id:'recipe', title:'4. ' + STEP_NAME.brew + ': settings, a last look and the guided timer', lead:'Settings for this coffee, with the reasons.',
     paras:['The ' + STEP_NAME.brew + ' page opens on your settings for this coffee. You get the amount of coffee and water, the grind in plain words, the water temperature, the ratio and the bloom. Pick a cup size above the numbers. Each line has a reason behind it: tap Why? where you see it, or read the line under it. Amounts show in one unit, grams unless you chose another. Tap Other units to see the rest.',
       'Under the numbers, a card says Fill your kettle to. It adds up the water you pour, a little the kettle keeps back, and water to rinse a paper filter. Running short is worse than going over, so a little extra is fine. Comfy Brewer and Bean Scientist can change the rinse water and add a margin.',
@@ -9253,6 +9489,22 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 75,
+  "version": "4.027.0075",
+  "tier": "medium",
+  "at": "2026-10-13T18:24:21Z",
+  "date": "2026-10-13",
+  "title": "Philips 5500: a screen with all 20 drinks",
+  "notes": [
+   "The Philips 5500 LatteGo has its own screen now: a picture for each of its 20 drinks, grouped as black coffee, milk, iced and other.",
+   "It shows the three best drinks for your coffee, with a reason for each, and you can filter them by Black, Milk or Iced.",
+   "Tap a drink to see what to expect and the settings to try for your coffee: aroma strength, ExtraShot, coffee and milk amounts, the grinder, and how the roast and the bean change them. Each note says whether it comes from Philips, from common practice, or is our own starting guess.",
+   "A cup picture shows which size to use (small to extra large) and the layers in the order the machine pours them, with ice for iced drinks and an extra layer if ExtraShot is on.",
+   "Machine temperature is set once for the whole machine, as on the real machine. The grinder card turns left for finer and right for coarser, and reads your last recorded step from your tastings.",
+   "Brew it again lists the Philips cups you already rated for this coffee. It only reads your history and saves nothing new. The mascot reacts to each drink with a different pose."
+  ]
+ },
  {
   "release": 74,
   "version": "4.026.0074",
@@ -13926,7 +14178,7 @@ function snapshotBrew(){
 function snapshotMachine(){
   const S = philipsSetup(app.coffee, machineSelection(), new Date()), mach = MACHINES[0], summary = machineSummary(S);
   const snap = {
-    method:mach.label, key:mach.key, machine:true, mach:{ drink:S.drink.v, milk:S.milkType ? S.milkType.v : '', strength:S.use.strength, temp:S.use.temp }, dose:'', water:'', ratio:'', ratio_rec:'', temp_f:'', temp_c:'', temp_rec_f:'', grind_um:'', grind_setting:app.brew.grind_setting || '',
+    method:mach.label, key:mach.key, machine:true, mach:{ drink:S.drink.v, milk:S.milkType ? S.milkType.v : '', strength:S.use.strength, temp:S.use.temp, extra:S.extraOn }, dose:'', water:'', ratio:'', ratio_rec:'', temp_f:'', temp_c:'', temp_rec_f:'', grind_um:'', grind_setting:app.brew.grind_setting || '',
     time_s:'', adjustment:'', agit:'', guessed:'', water_type:app.brew.waterType || '', water_alk:app.brew.waterAlk || '', water_gh:app.brew.waterGH || '', filter:'', grinder_type:'', grinder_name:'',
     pour_notes:app.brew.pourNotes || '', actual_s:'', actual_timer:false, tech:'standard', tech_label:'', tech_taste:'', tech_strength:'', tech_ice:0.4, tech_detail:summary, hot_g:'', ice_g:''
   };
@@ -13937,81 +14189,231 @@ function snapshotMachine(){
   app.cupBrew = snap; app.dialMethod = '';
 }
 /* ---------- screen: the Philips machine ---------- */
-const machineSelection = () => { app.brew.machine = cleanMachine(app.brew.machine); return app.brew.machine; };
+let machPref = 'any';      /* which kind of drink the "best three" looks inside: any, Black, Milk or Iced */
+let machOpen = '';         /* a drink to open as soon as the screen is drawn (Perfect's "Brew again" sets it) */
+let machMeas = { coffee:'', milk:'', water:'' };   /* what the person typed in "Measure what it pours": kept while the sheet redraws, never saved */
+/* the saved choices, checked in place: the screen and its sheet hold the same object, so a change in one is seen by the other */
+const machineSelection = () => { const c = cleanMachine(app.brew.machine); if (app.brew.machine && typeof app.brew.machine === 'object') Object.assign(app.brew.machine, c); else app.brew.machine = c; return app.brew.machine; };
 const rangeText = r => r ? r[0] + ' to ' + r[1] + ' mL' : '';
-/* one line for the cup screen and the saved record */
+/* one line for the cup screen and the saved record. philipsParseDetail (engine) reads it back, so keep the order and the words */
 function machineSummary(S){
-  const d = S.drink, bits = [d.label, 'strength ' + S.use.strength, 'temperature ' + S.use.temp, 'coffee ' + rangeText(d.coffee)];
+  const d = S.drink, bits = [d.label];
+  if (d.coffee){ bits.push('strength ' + S.use.strength, 'temperature ' + S.use.temp, 'coffee ' + rangeText(d.coffee)); if (S.extraOn) bits.push('ExtraShot'); }
   if (d.water) bits.push('water ' + rangeText(d.water));
   if (d.milk) bits.push('milk ' + rangeText(d.milk) + ' (' + S.milkType.label.toLowerCase() + ')');
   return bits.join(', ');
 }
+/* a drink's picture from the icon sheet, on the light plate the app's other pictures sit on in dark mode */
+function phIcon(id, cls){ const s = h('span', { class:'phpic' + (cls ? ' ' + cls : ''), 'aria-hidden':'true' }); s.innerHTML = '<svg viewBox="0 0 64 64" focusable="false"><use href="#ph-' + id + '"/></svg>'; return s; }
+/* the mascot in a pose, full length; each pose goes with the face that suits it */
+const PH_FACES = { stand:'normal', wave:'happy', pointUp:'informing', present:'happy', thumbs:'happy', shrug:'worried', cheer:'excited', think:'thinking', crossed:'unimpressed', hips:'normal', cheeks:'surprised', mug:'happy' };
+function phMascot(pose, cls){ const s = h('span', { class:'phmasc' + (cls ? ' ' + cls : ''), 'aria-hidden':'true' }); s.innerHTML = mascotSvg({ view:'full', pose, face:PH_FACES[pose] || 'happy' }); return s; }
+function phDate(iso){
+  const d = new Date(String(iso || '').slice(0, 10) + 'T12:00:00'); if (isNaN(d)) return '';
+  return d.toLocaleDateString('en-US', d.getFullYear() === new Date().getFullYear() ? { month:'short', day:'numeric' } : { month:'short', day:'numeric', year:'numeric' });
+}
+/* a row of boxes, n of max filled */
+function phMeter(n, max){ const m = h('div', { class:'meter', 'aria-hidden':'true' }); for (let i = 1; i <= (max || 5); i++) m.append(h('i', { class:i <= n ? 'f' : '' })); return m; }
+const PH_TAGS = { p:'Philips says', c:'Common practice', o:'Our start', y:'From your machine' };
+function phTag(k){ return h('span', { class:'tg ' + k, text:PH_TAGS[k] }); }
 function screenMachine(m){
-  const mach = MACHINES[0], sel = machineSelection(), meas = { coffee:'', milk:'', water:'' };
+  const mach = MACHINES[0], sel = machineSelection(), c = app.coffee, p = profileOf(c, new Date());
   recipeRepaint = null;
-  m.append(hubHero(mach.label, 'Pick the drink and we will suggest the settings for this coffee. You can change any of them, and we will tell you if a change is likely to taste worse.', false, 'cup'));
-  const setup = () => philipsSetup(app.coffee, sel, new Date());
-  const save = () => { scheduleDraft(); paint(); };
-  /* drink */
-  const dsel = h('select', { id:'machDrink', class:'plain', 'aria-label':'Which drink' }, ['Black', 'Milk', 'Iced'].map(g => h('optgroup', { label:g === 'Black' ? 'Black coffee' : g === 'Milk' ? 'With milk' : 'Iced' },
-    PHILIPS_DRINKS.filter(d => d.group === g).map(d => h('option', { value:d.v, text:d.label })))));
-  dsel.addEventListener('change', () => { sel.drink = dsel.value; sel.strength = null; sel.temp = null; save(); });
-  const dblurb = h('p', { class:'fine', style:'margin:10px 0 0' });
-  const drinkBox = tband('Which drink?', true, 'we suggest settings for it', { icon:'tap', text:'Pick one' }, h('div', { class:'field inl' }, h('label', { for:'machDrink', text:'Drink' }), dsel), dblurb);
-  /* milk */
-  const milkSel = h('select', { id:'machMilk', class:'plain', 'aria-label':'Milk type' }, PHILIPS_MILKS.map(k => h('option', { value:k.v, text:k.label + (k.tested ? '' : ' (not on Philips list)') })));
-  milkSel.addEventListener('change', () => { sel.milk = milkSel.value; save(); });
-  const milkBox = tband('Milk', { tan:'Milk drinks' }, null, null, h('div', { class:'field inl' }, h('label', { for:'machMilk', text:'Type of milk' }), milkSel)); milkBox.id = 'machMilkCard';
-  /* strength and temperature */
-  const mk = (id, title, lo, hi, label) => {
-    const n = h('span', { class:'n', id:id + 'N', 'aria-live':'polite' }), tag = h('small', { id:id + 'Tag' });
-    const minus = h('button', { type:'button', class:'nudge', id:id + 'Minus', text:'−', 'aria-label':'Lower ' + title.toLowerCase() }), plus = h('button', { type:'button', class:'nudge', id:id + 'Plus', text:'+', 'aria-label':'Raise ' + title.toLowerCase() });
-    const why = h('p', { class:'fine', style:'margin:2px 0 8px' }), reset = h('button', { type:'button', class:'btn link', id:id + 'Reset', text:'Use the suggestion', hidden:true });
-    const row = h('div', { class:'defect-row' }, h('div', { class:'what' }, title, tag), h('div', { class:'stepper' }, minus, n, plus));
-    return { el:h('div', null, row, why, reset), n, tag, why, minus, plus, reset, lo, hi, label };
+  m.classList.add('phscreen');
+  m.append(h('div', { class:'hubhero phhero' }, h('div', { class:'hhtx' }, h('h1', { text:mach.label }), h('p', { text:'Pick a drink. We suggest the settings for your coffee, and how to change them.' })), phMascot('present')));
+  /* the coffee from the normal entry screen */
+  const bits = [c.roast ? labelOf(ROASTS, p.roast) + ' roast' : 'Roast level not saved', (c.process && p.process !== 'unknown') ? labelOf(PROCESSES, p.process) : '', p.days != null ? p.days + (p.days === 1 ? ' day' : ' days') + ' off roast' : ''].filter(Boolean);
+  m.append(h('div', { class:'beancard', id:'machBean' }, h('div', { class:'blab', text:'Your coffee' }), h('div', { class:'bnm', text:c.name || 'Coffee not named yet' }), h('div', { class:'bsub', text:[c.roaster || '', ...bits].filter(Boolean).join(' · ') })));
+  const setup = () => philipsSetup(c, sel, new Date());
+  /* the machine's temperature: one setting for every drink */
+  const tN = h('span', { class:'n', id:'machTempN', 'aria-live':'polite' }), tTag = h('small', { id:'machTempTag' }), tWhy = h('p', { class:'fine', style:'margin:4px 0 0' });
+  const tMinus = h('button', { type:'button', class:'nudge phn', id:'machTempMinus', text:'−', 'aria-label':'Lower the machine temperature' }), tPlus = h('button', { type:'button', class:'nudge phn', id:'machTempPlus', text:'+', 'aria-label':'Raise the machine temperature' });
+  const tReset = h('button', { type:'button', class:'btn link', id:'machTempReset', text:'Use the suggestion', hidden:true });
+  const tMeter = h('div');
+  const tempCard = h('div', { class:'card phtemp', id:'machTempCard' }, h('div', { class:'defect-row' }, h('div', { class:'what' }, 'Machine temperature', tTag), h('div', { class:'stepper' }, tMinus, tN, tPlus)), tMeter, tWhy,
+    h('p', { class:'fine', style:'margin:6px 0 0', text:'Philips sets the brewing temperature once for the whole machine, in its Settings menu, not for each drink.' }), tReset);
+  const paintTemp = () => {
+    const S = setup(), t = S.use.temp; tN.textContent = String(t);
+    tTag.textContent = (t === 1 ? 'lowest' : t === 3 ? 'highest' : 'middle') + ' of 3 · we suggest ' + S.rec.temp;
+    tWhy.textContent = (S.manual.temp ? 'You changed this. ' : '') + S.why.temp; tReset.hidden = !S.manual.temp;
+    tMinus.disabled = t <= 1; tPlus.disabled = t >= 3; tMeter.textContent = ''; tMeter.append(phMeter(t, 3));
   };
-  const sS = mk('machStr', 'Aroma strength', 1, 5, v => v === 1 ? 'mild' : v === 5 ? 'extra strong' : ''), sT = mk('machTemp', 'Temperature', 1, 3, v => v === 1 ? 'lowest' : v === 3 ? 'highest' : 'middle');
-  const bind = (c, key) => {
-    c.minus.addEventListener('click', () => { const S = setup(); sel[key] = clamp(S.use[key] - 1, c.lo, c.hi); save(); });
-    c.plus.addEventListener('click', () => { const S = setup(); sel[key] = clamp(S.use[key] + 1, c.lo, c.hi); save(); });
-    c.reset.addEventListener('click', () => { sel[key] = null; save(); });
+  const move = d => { const S = setup(); sel.temp = clamp(S.use.temp + d, 1, 3); paintTemp(); scheduleDraft(); };
+  tMinus.addEventListener('click', () => move(-1)); tPlus.addEventListener('click', () => move(1));
+  tReset.addEventListener('click', () => { sel.temp = null; paintTemp(); scheduleDraft(); });
+  m.append(tempCard); paintTemp();
+  /* open a drink: it starts from the suggestion unless it is the one already chosen */
+  const open = (v, keepSettings) => { if (!keepSettings && sel.drink !== v){ sel.drink = v; sel.strength = null; sel.extra = false; } openMachineSheet(v, !!keepSettings); };
+  /* the three best drinks for this coffee */
+  const recBox = h('div', { class:'recs', id:'machRecs' }), chips = h('div', { class:'pickrow', role:'group', 'aria-label':'Kind of drink' });
+  const paintRecs = () => {
+    chips.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === machPref)));
+    recBox.textContent = '';
+    philipsRecs(c, machPref, new Date()).forEach((r, i) => recBox.append(h('button', { type:'button', class:'rec', 'data-k':r.drink.v, onclick:() => open(r.drink.v) }, h('span', { class:'rn', text:String(i + 1) }), phIcon(r.drink.v), h('span', { class:'rt' }, h('b', { text:r.drink.label }), h('span', { text:r.why }), h('span', null, phTag('o'))))));
   };
-  bind(sS, 'strength'); bind(sT, 'temp');
-  const setBox = tband('Settings for this coffee', { tan:'Adjustable' }, null, null, sS.el, sT.el);
-  /* amounts and the measure-once helper */
-  const amtBox = tband('How much to pour', { tan:'Optional' }, 'measure once if you like', null); amtBox.id = 'machAmounts';
-  const amtOut = h('div'), measOut = {};
-  const amtRow = (k, label, range) => {
-    const res = h('p', { class:'fine', style:'margin:2px 0 8px', role:'status' }), id = 'machMeas_' + k;
-    const inp = h('input', { id, class:'plain', type:'text', inputmode:'decimal', autocomplete:'off', placeholder:'mL', 'aria-label':'Measured ' + label.toLowerCase() + ' in millilitres' });
-    inp.addEventListener('input', () => { meas[k] = inp.value; const r = philipsMeasure(range, inp.value); res.textContent = r ? r.text : ''; });
-    inp.value = meas[k]; const r0 = philipsMeasure(range, meas[k]); res.textContent = r0 ? r0.text : '';
-    return h('div', { class:'machrow' }, h('div', { class:'machlab' }, h('b', { text:label }), h('span', { text:' ' + rangeText(range) })), h('div', { class:'field inl' }, h('label', { for:id, text:'Measured at level 3' }), inp), res);
-  };
-  amtBox.querySelector('.tbody').append(amtOut);
-  const infoOut = h('div', { id:'machInfo' });
-  function paint(){
-    const S = setup(), d = S.drink;
-    dsel.value = d.v;
-    dblurb.textContent = d.blurb;
-    milkBox.hidden = !d.milk; milkSel.value = S.milkType ? S.milkType.v : sel.milk;
-    [[sS, 'strength'], [sT, 'temp']].forEach(([c, k]) => {
-      c.n.textContent = String(S.use[k]); c.tag.textContent = (c.label(S.use[k]) ? c.label(S.use[k]) + ' · ' : '') + 'we suggest ' + S.rec[k];
-      c.why.textContent = S.manual[k] ? 'You changed this. ' + S.why[k] : S.why[k]; c.reset.hidden = !S.manual[k];
-      c.minus.disabled = S.use[k] <= c.lo; c.plus.disabled = S.use[k] >= c.hi;
+  [['any', 'Anything'], ['Black', 'Black'], ['Milk', 'Milk'], ['Iced', 'Iced']].forEach(([k, label]) => chips.append(h('button', { type:'button', class:'chipb', id:'machPref_' + k, 'data-k':k, text:label, onclick:() => { machPref = k; paintRecs(); } })));
+  m.append(h('h2', { class:'grp', id:'machBestHead' }, 'Best three for this coffee', h('small', { text:'our judgment' })), chips, recBox, h('p', { class:'fine', style:'margin:8px 0 0', text:'We rank the drinks by how well each suits the roast, the process and the age of the beans. This is our own judgment from common practice, not a Philips rule.' }));
+  paintRecs();
+  /* the Philips cups of this coffee you already rated, read from your history. Nothing is saved for this. */
+  const tast = history && history.objs ? philipsTastings(history.objs, c) : [];
+  const againBox = h('div', { class:'recs', id:'machAgain' });
+  if (tast.length){
+    tast.slice(0, 3).forEach(t => {
+      const d = philipsDrink(t.drink), mk = PHILIPS_MILKS.find(x => x.v === t.milk), bits2 = [t.strength ? 'strength ' + t.strength : '', t.temp ? 'temperature ' + t.temp : '', t.extra ? 'ExtraShot' : '', d.milk && mk ? mk.label.toLowerCase() : ''].filter(Boolean);
+      againBox.append(h('button', { type:'button', class:'rec again', 'data-k':t.drink, onclick:() => { Object.assign(sel, cleanMachine({ drink:t.drink, milk:t.milk || sel.milk, strength:t.strength, temp:t.temp, extra:t.extra })); paintTemp(); open(t.drink, true); } },
+        phIcon(t.drink), h('span', { class:'rt' }, h('b', { text:d.label + (t.stars ? ' · ' + t.stars + ' of 5 beans' : '') }), h('span', { text:(t.date ? phDate(t.date) + '. ' : '') + bits2.join(', ') }))));
     });
-    amtOut.textContent = '';
-    amtOut.append(h('p', { class:'serif', style:'margin:4px 0 8px', text:S.levelsNote }),
-      ...[amtRow('coffee', 'Coffee', d.coffee), d.water ? amtRow('water', 'Hot water', d.water) : null, d.milk ? amtRow('milk', 'Milk', d.milk) : null].filter(Boolean));
-    infoOut.textContent = '';
-    S.warnings.forEach(w => infoOut.append(w.level === 'warn' ? h('div', { class:'watch' }, h('b', { text:'Watch for: ' }), w.text) : h('div', { class:'card', style:'padding:10px 14px;margin:0 0 10px' }, h('span', { class:'serif', text:w.text }))));
-    infoOut.append(plainFold(null, 'Grinder', 'What to do with the grind', 'gear', h('p', { class:'serif', style:'margin:0', text:S.grind.note }), h('p', { class:'serif', style:'margin:8px 0 0', text:S.grind.dir })));
-    const ol = h('ol', { class:'steps' }); S.steps.forEach(t => ol.append(h('li', null, h('span', { class:'serif', text:t }))));
-    infoOut.append(tband('Step by step', { tan:'Brew' }, null, null, ol), h('p', { class:'fine', text:PHILIPS_FACTS }));
+  } else againBox.append(h('p', { class:'fine', style:'margin:0', text:history ? 'You have not rated a Philips cup of this coffee yet. After you brew one and taste it, it shows up here.' : 'Load your tastings file (Menu, Your tastings) and the Philips cups you rated for this coffee show up here.' }));
+  m.append(h('h2', { class:'grp', id:'machAgainHead' }, 'Brew it again', h('small', { text:'from cups you rated' })), againBox, h('p', { class:'fine', style:'margin:8px 0 0', text:'This only reads your history. Nothing extra is saved.' }));
+  /* every drink */
+  PHILIPS_GROUPS.forEach(g => {
+    const list = PHILIPS_DRINKS.filter(d => d.group === g.v); if (!list.length) return;
+    const grid = h('div', { class:'grid', role:'group', 'aria-label':g.label });
+    list.forEach(d => grid.append(h('button', { type:'button', class:'phtile', id:'machTile_' + d.v, 'data-k':d.v, 'aria-label':d.label, onclick:() => open(d.v) }, phIcon(d.v), h('span', { class:'tn', text:d.label }))));
+    m.append(h('h2', { class:'grp' }, g.label, h('small', { text:list.length + (list.length === 1 ? ' drink' : ' drinks') })), grid);
+  });
+  m.append(h('p', { class:'note', text:PHILIPS_FACTS }));
+  scheduleDraft();
+  if (machOpen){ const v = machOpen; machOpen = ''; setTimeout(() => { if (app.screen === 'recipe') openMachineSheet(v, true); }, 0); }
+}
+/* ---------- the Philips drink sheet ---------- */
+const PH_COL = { coffee:'#7A4A2D', extra:'#4A2A18', milk:'#F3E3C3', water:'#CFE8F1' }, PH_INK = '#22120C', PH_CREAM = '#FDFBF7', PH_FOAM = '#F7EBD2', PH_GLASS = '#DDF1F7', PH_ICE = '#EAF6F8';
+const PH_CUPDIM = [{ h:44, w:34 }, { h:62, w:44 }, { h:80, w:54 }, { h:100, w:56 }];
+let phUid = 0;
+/* the four cup sizes as outlines, the chosen one filled with the layers in the order the machine pours them (first poured is at the bottom) */
+function phCupSvg(cup){
+  const W = 300, base = 118, gap = 14, total = PH_CUPDIM.reduce((a, c) => a + c.w, 0) + gap * 3; let x = (W - total) / 2, out = '';
+  PH_CUPDIM.forEach((c, i) => {
+    const top = base - c.h, inset = c.w * 0.14, path = 'M' + x + ' ' + top + 'H' + (x + c.w) + 'L' + (x + c.w - inset) + ' ' + (base - 5) + 'Q' + (x + c.w - inset) + ' ' + base + ' ' + (x + c.w - inset - 5) + ' ' + base + 'H' + (x + inset + 5) + 'Q' + (x + inset) + ' ' + base + ' ' + (x + inset) + ' ' + (base - 5) + 'Z', on = i === cup.i, k = PHILIPS_CUPS[i].k;
+    if (on){
+      const cid = 'phcz' + (++phUid), full = c.h - 4, tm = cup.parts.reduce((a, q) => a + q.mid, 0), scale = Math.min(full * 0.9, (tm / PHILIPS_CUPS[i].cap) * full); let y = base;
+      out += '<clipPath id="' + cid + '"><path d="' + path + '"/></clipPath><path d="' + path + '" fill="' + (cup.iced ? PH_GLASS : PH_CREAM) + '"/><g clip-path="url(#' + cid + ')" stroke="none">';
+      cup.parts.forEach(q => { const hh = Math.max(3, scale * q.mid / tm); y -= hh; out += '<rect x="' + x + '" y="' + y + '" width="' + c.w + '" height="' + hh + '" fill="' + PH_COL[q.kind] + '"/>'; });
+      if (cup.foam) out += '<rect x="' + x + '" y="' + (y - 9) + '" width="' + c.w + '" height="9" fill="' + PH_FOAM + '"/>';
+      if (cup.iced){ const n = Math.floor(c.w / 14); for (let j = 0; j < n; j++){ const cx = x + 3 + j * 13 + (j % 2) * 2, cy = base - c.h * 0.62 + (j % 2) * 9; out += '<rect x="' + cx + '" y="' + cy + '" width="10" height="10" rx="2" fill="' + PH_ICE + '" fill-opacity=".85" stroke="' + PH_INK + '" stroke-width="1" transform="rotate(' + (j % 2 ? 10 : -8) + ' ' + (cx + 5) + ' ' + (cy + 5) + ')"/>'; } }
+      out += '</g><path d="' + path + '" fill="none" stroke="' + PH_INK + '" stroke-width="2.6" stroke-linejoin="round"/>';
+      out += '<text x="' + (x + c.w / 2) + '" y="' + (top - 6) + '" text-anchor="middle" font-size="11" font-weight="700" fill="' + PH_INK + '">Use this</text>';
+    } else out += '<path d="' + path + '" fill="none" stroke="' + PH_INK + '" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="4 3" opacity=".45"/>';
+    out += '<text x="' + (x + c.w / 2) + '" y="' + (base + 16) + '" text-anchor="middle" font-size="12" font-weight="' + (on ? 700 : 500) + '" fill="' + PH_INK + '" opacity="' + (on ? 1 : 0.6) + '">' + k + '</text>';
+    x += c.w + gap;
+  });
+  return '<svg class="cupgfx" viewBox="0 0 ' + W + ' 140" role="img" aria-label="' + PHILIPS_CUPS[cup.i].name + ' size: ' + PHILIPS_CUPS[cup.i].eg + '">' + out + '<line x1="6" y1="' + base + '" x2="' + (W - 6) + '" y2="' + base + '" stroke="' + PH_INK + '" stroke-width="2" stroke-linecap="round" opacity=".5"/></svg>';
+}
+/* the mascot's one-line verdict for this drink and bean: { pose, text, use } where use is a rated tasting whose settings can be reloaded */
+function phVerdict(S, tast, recs){
+  const d = S.drink, roast = S.roast, light = roast === 'light' || roast === 'medium-light';
+  if (S.warnings.some(w => w.head === 'Check this setting')) return { pose:'cheeks', text:'Careful: one of these settings is likely to taste worse. See the note below.' };
+  if (d.none === 'milk') return { pose:'mug', text:'No coffee in this one, so your beans do not matter.' };
+  if (d.none === 'water') return { pose:'wave', text:'Hot water only, so your beans do not matter.' };
+  const liked = tast.find(t => t.drink === d.v && t.stars >= 4);
+  if (liked) return { pose:'cheer', text:'You rated this ' + liked.stars + ' of 5 beans' + (liked.date ? ' on ' + phDate(liked.date) : '') + '. Same settings again?', use:liked };
+  if (S.roastAssumed) return { pose:'shrug', text:'No roast level is saved, so these are middle-of-the-road settings.' };
+  if (recs.some(r => r.drink.v === d.v)) return { pose:'thumbs', text:'One of the three best for this coffee.' };
+  if (S.extra && S.extra.level === 'skip' && !S.extraOn) return { pose:'crossed', text:'A dark roast does not need the extra shot.' };
+  if (light) return { pose:'think', text:'Tricky with this coffee. The notes below help.' };
+  return { pose:'pointUp', text:'Start here, taste it, then change one thing at a time.' };
+}
+function openMachineSheet(v, keep){
+  const sel = machineSelection();
+  if (v && !keep && sel.drink !== v){ sel.drink = v; sel.strength = null; sel.extra = false; }
+  else if (v && sel.drink !== v){ sel.drink = v; }
+  sheet = { step:'machine' }; openSheet();
+  if (!keep) sheetEl.scrollTop = 0;
+}
+function renderMachineSheet(title){
+  const sel = machineSelection(), c = app.coffee, now = new Date(), S = philipsSetup(c, sel, now), d = S.drink, roastWords = labelOf(ROASTS, S.roast).toLowerCase();
+  const redraw = () => { const y = sheetEl.scrollTop; scheduleDraft(); renderSheet(); sheetEl.scrollTop = y; };
+  const tast = history && history.objs ? philipsTastings(history.objs, c) : [], recs = philipsRecs(c, 'any', now);
+  const rowTags = (...ks) => h('div', { class:'tgs' }, ...ks.map(phTag));
+  const tile = (k, v, full, ...kids) => h('div', { class:'pst' + (full ? ' pfull' : '') }, h('div', { class:'pk', text:k }), v, ...kept(...kids));
+  const val = (text, small, big) => h('div', { class:'pv' + (big ? '' : ' pvs') }, text, small ? h('small', { text:' ' + small }) : null);
+  /* header: picture, name, kind of drink, close */
+  title.textContent = d.label;
+  const grp = PHILIPS_GROUPS.find(g => g.v === d.group);
+  const head = h('div', { class:'shhead phhead' }, phIcon(d.v, 'pbig'), h('div', { class:'phht' }, title, h('div', { class:'fam', text:grp ? grp.label : '' })), h('button', { type:'button', class:'x', id:'machClose', text:'×', 'aria-label':'Close', onclick:closeSheet }));
+  sheetEl.append(head);
+  sheetEl.append(h('p', { class:'expect', text:d.blurb }));
+  /* the mascot's verdict */
+  const vd = phVerdict(S, tast, recs), says = h('div', { class:'phsay', id:'machVerdict', 'data-pose':vd.pose }, phMascot(vd.pose), h('div', { class:'phbub' }, h('span', { text:vd.text }),
+    vd.use ? h('button', { type:'button', class:'chipb', id:'machUseBtn', text:'Use those settings', onclick:() => { Object.assign(sel, cleanMachine({ drink:d.v, milk:vd.use.milk || sel.milk, strength:vd.use.strength, temp:vd.use.temp, extra:vd.use.extra })); redraw(); } }) : null));
+  sheetEl.append(says);
+  const grid = h('div', { class:'set' });
+  if (d.coffee) sheetEl.append(h('p', { class:'beanline', id:'machBeanLine' }, 'Settings for ', h('b', { text:c.name || 'your coffee' }), ' (' + (S.roastAssumed ? 'roast not saved' : roastWords) + ')'));
+  sheetEl.append(h('h4', { text:d.coffee ? 'Best settings' : d.none === 'milk' ? 'Milk' : 'Water' }), grid);
+  if (d.coffee){
+    /* aroma strength, with − and + */
+    const sv = S.use.strength, n = h('span', { class:'n', id:'machStrN', 'aria-live':'polite', text:String(sv) });
+    const minus = h('button', { type:'button', class:'nudge phn', id:'machStrMinus', text:'−', 'aria-label':'Lower the aroma strength', disabled:S.extraOn || sv <= 1, onclick:() => { sel.strength = clamp(sv - 1, 1, 5); redraw(); } });
+    const plus = h('button', { type:'button', class:'nudge phn', id:'machStrPlus', text:'+', 'aria-label':'Raise the aroma strength', disabled:S.extraOn || sv >= 5, onclick:() => { sel.strength = clamp(sv + 1, 1, 5); redraw(); } });
+    const reset = (S.manual.strength && !S.extraOn) ? h('button', { type:'button', class:'btn link', id:'machStrReset', text:'Use the suggestion (' + S.rec.strength + ')', onclick:() => { sel.strength = null; redraw(); } }) : null;
+    grid.append(tile('Aroma strength', val(S.extraOn ? '5' : String(sv), S.extraOn ? 'of 5 + ExtraShot' : 'of 5', true), false, phMeter(sv, 5), h('div', { class:'stepper' }, minus, n, plus),
+      h('div', { class:'pw', text:S.extraOn ? 'ExtraShot needs the top strength level, so it is set to 5 for you.' : (S.manual.strength ? 'You changed this. ' : '') + S.why.strength }), reset, rowTags(...(d.iced ? ['p'] : ['o']), ...(S.extraOn ? ['p'] : []))));
+    /* ExtraShot */
+    const lbl = { try:'Worth trying', maybe:'Optional', skip:'Skip it' }[S.extra.level];
+    grid.append(tile('ExtraShot', val(S.extraOn ? 'On' : lbl, '', false), false, h('div', { class:'pw', text:S.extraOn ? 'Adds an extra shot of Ristretto to the drink. The cup holds a little more, and you can only brew one cup at a time.' : S.extra.text }),
+      h('button', { type:'button', class:'chipb pwide', id:'machExtraBtn', 'aria-pressed':String(S.extraOn), text:S.extraOn ? 'Turn ExtraShot off' : 'Turn ExtraShot on (sets strength 5)', onclick:() => { sel.extra = !S.extraOn; redraw(); } }), rowTags('o', ...(S.extraOn ? ['p'] : []))));
+    grid.append(tile('Coffee amount', val('Start at 3', 'of 5', true), false, phMeter(3, 5), h('div', { class:'pw', text:'Aim for about ' + rangeText(d.coffee) + ' in the cup' + (S.extraOn ? ', plus the extra shot' : '') + '. Measure once, then move a level.' }), rowTags('o')));
   }
-  m.append(drinkBox, milkBox, setBox, amtBox, infoOut);
-  m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary block', id:'brewedBtn', text:'I brewed it: taste it', onclick:() => { snapshotBrew(); prepCupEntry(); go('cup'); } }))));
-  paint(); scheduleDraft();
+  if (d.milk){
+    const ms = h('select', { id:'machMilk', class:'plain', 'aria-label':'Type of milk', onchange:e => { sel.milk = e.target.value; redraw(); } }, PHILIPS_MILKS.map(k => h('option', { value:k.v, text:k.label + (k.tested ? '' : ' (not on Philips list)') })));
+    ms.value = S.milkType.v;
+    grid.append(tile('Milk amount', val('Start at 3', 'of 5', true), false, phMeter(3, 5), h('div', { class:'pw', text:'Aim for about ' + rangeText(d.milk) + '. Measure once, then move a level.' + (d.order === 'milk' ? ' The milk comes first.' : d.order === 'coffee' ? ' The coffee comes first.' : '') }), h('div', { class:'field inl', style:'margin-top:8px' }, h('label', { for:'machMilk', text:'Type of milk' }), ms), rowTags('o')));
+  }
+  if (d.water && d.coffee) grid.append(tile('Water', val('The machine adds it', '', false), false, h('div', { class:'pw', text:'Philips’ manual shows no water setting for this drink. The machine adds about ' + rangeText(d.water) + '. If your screen shows a water amount, set it there and measure once.' }), rowTags('o')));
+  if (d.none === 'water'){
+    grid.append(tile('Water amount', val('Set with the arrows', '', false), false, h('div', { class:'pw', text:'Philips lets you set the hot water amount before you start. Its manual does not say how many levels there are. A cup of tea or a top-up is usually about ' + rangeText(d.water) + '.' }), rowTags('p', 'o')));
+    grid.append(tile('Water temperature', val('Set with the arrows', '', false), false, h('div', { class:'pw', text:'Philips lets you set the hot water temperature before you start. Pick the one that suits what you are making.' }), rowTags('p')));
+  }
+  if (d.coffee){
+    /* the machine-wide temperature; changed on the Philips screen */
+    grid.append(tile('Temperature (machine setting)', val('Level ' + S.use.temp, 'of 3, set once', false), true, phMeter(S.use.temp, 3), h('div', { class:'pw', text:'Brewing temperature is not set per drink. It is one setting for the whole machine, in the Settings menu, and it applies to every coffee. ' + S.why.temp + ' Change it on the Philips screen.' }), rowTags('p', 'c')));
+    /* grinder */
+    const gs = history && history.objs ? philipsGrindStep(history.objs) : null, rc = philipsRoastClass(S.roast);
+    const hint = rc === 'light' ? 'For this coffee, one notch finer is the first move if it tastes sour or thin.' : rc === 'dark' ? 'For this coffee, one notch coarser is the first move if it tastes bitter.' : 'If it tastes sour or thin, one notch finer. If it tastes bitter, one notch coarser.';
+    const gl = gs ? [h('b', { text:'From your tasting history: ' }), 'your last Philips tasting recorded grinder step ', h('b', { text:String(gs.step) }), gs.date ? ' (' + phDate(gs.date) + ')' : '', '. ',
+      gs.step > 1 ? 'One notch finer (left) is step ' + (gs.step - 1) + '. ' : 'That is the finest step already. ', gs.step < 12 ? 'One notch coarser (right) is step ' + (gs.step + 1) + '. ' : 'That is the coarsest step already. ', hint]
+      : [h('b', { text:'From your tasting history: ' }), 'no grinder step is recorded for the Philips yet. If you move the grinder, write the step (1 to 12) in the “Grinder setting (1 to 12)” box on the tasting form, and it shows here next time. ', hint];
+    grid.append(tile('Grinder', val('Leave it where it is', '', false), true, h('div', { class:'pw', text:'Philips says not to change the grinder in the first 100 to 150 cups, and never more than one notch at a time. Press the knob down while it grinds, then turn it. Taste two or three drinks before moving again.' }),
+      h('div', { class:'pw', style:'margin-top:8px' }, 'The knob has dots, not numbers. Turn it ', h('b', { text:'left' }), ' toward the smaller dots for a finer grind (step 1 is the finest), or ', h('b', { text:'right' }), ' toward the bigger dots for a coarser grind (step 12 is the coarsest). Lower is finer. ', phTag('y')),
+      h('div', { class:'pw', style:'margin-top:8px', id:'machGrindLine' }, ...gl), rowTags('p', 'c')));
+    if (d.group === 'Black' && !d.water) grid.append(tile('Two cups', null, true, h('div', { class:'pw', text:'Tap the drink icon twice (or pick the 2x icon) to brew two cups at once. It cannot be combined with ExtraShot.' }), rowTags('p')));
+  }
+  /* the cup */
+  if (S.cup){
+    const cp = S.cup, z = cp.size;
+    const leg = h('div', { class:'legend2' }, ...cp.parts.map(q => h('span', { class:'plg' }, h('i', { style:'background:' + PH_COL[q.kind] }), q.n + ' ' + (q.lo === q.hi ? 'about ' + q.lo : q.lo + ' to ' + q.hi) + ' mL')));
+    const gfx = h('div', { class:'cupwrap', id:'machCupGfx' }); gfx.innerHTML = phCupSvg(cp);
+    grid.append(tile('Cup to use', h('div', { class:'pv pvs', id:'machCupName', text:z.name + ': a ' + z.eg }), true, gfx, leg,
+      h('div', { class:'pw', text:'Together that is up to about ' + cp.total + ' mL' + (cp.iced ? ', plus the ice. Fill the glass about two thirds with ice first.' : cp.foam ? ', with a little room left for foam.' : ', with a little room left at the top.') + (S.extraOn ? ' The extra shot adds about ' + PHILIPS_EXTRA_ML + ' mL.' : '') + ' Slide the spout down until it sits just above the rim (it moves between 88 and 145 mm).' }),
+      h('div', { class:'pw', style:'margin-top:4px', text:'Philips publishes no cup sizes or millilitre figures. The sizes here are our rule of thumb.' }), rowTags('p', 'o')));
+  }
+  /* how the bean changes it */
+  const notes = S.warnings;
+  if (notes.length){
+    const rows = h('div', { class:'rows', id:'machNotes' });
+    notes.forEach(w => rows.append(h('div', { class:'rw' + (w.level === 'warn' ? ' warn' : '') }, h('div', null, phTag(w.tag), h('b', { text:w.head + '. ' }), w.text), w.list ? h('div', { class:'ladhead', text:w.listHead || '' }) : null, w.list ? h('ol', { class:'ladder' }, w.list.map(t => h('li', { text:t }))) : null)));
+    sheetEl.append(h('h4', { text:d.coffee ? 'How your coffee changes it' : 'Notes' }), rows);
+  }
+  sheetEl.append(h('p', { class:'legend' }, phTag('p'), ' in Philips’ manual or product page', h('br'), phTag('c'), ' what many brewers do; not from Philips', h('br'), phTag('o'), ' our best starting guess; change it to taste', h('br'), phTag('y'), ' what your machine’s knob shows'));
+  /* measure once */
+  const meas = [['coffee', 'Coffee', d.coffee], ['water', 'Hot water', d.water && d.coffee ? d.water : null], ['milk', 'Milk', d.milk]].filter(x => x[2]);
+  if (meas.length){
+    const body = [h('p', { class:'serif', style:'margin:0 0 8px', text:S.levelsNote })];
+    meas.forEach(([k, label, range]) => {
+      const res = h('p', { class:'fine', style:'margin:2px 0 8px', role:'status' }), id = 'machMeas_' + k;
+      const inp = h('input', { id, class:'plain', type:'text', inputmode:'decimal', autocomplete:'off', placeholder:'mL', 'aria-label':'Measured ' + label.toLowerCase() + ' in millilitres' });
+      inp.addEventListener('input', () => { machMeas[k] = inp.value; const r = philipsMeasure(range, inp.value); res.textContent = r ? r.text : ''; });
+      inp.value = machMeas[k]; const r0 = philipsMeasure(range, machMeas[k]); res.textContent = r0 ? r0.text : '';
+      body.push(h('div', { class:'machrow' }, h('div', { class:'machlab' }, h('b', { text:label }), h('span', { text:' ' + rangeText(range) })), h('div', { class:'field inl' }, h('label', { for:id, text:'Measured at level 3' }), inp), res));
+    });
+    sheetEl.append(plainFold('machMeasure', 'Measure what it pours', 'once, then move a level', 'scale', ...body));
+  }
+  const ol = h('ol', { class:'steps' }); S.steps.forEach(t => ol.append(h('li', null, h('span', { class:'serif', text:t }))));
+  sheetEl.append(plainFold('machSteps', 'Step by step', 'the whole drink', 'notes', ol), h('p', { class:'fine', text:PHILIPS_FACTS }));
+  /* the button: only a coffee drink can be tasted */
+  const dock = h('div', { class:'phdock' });
+  dock.append(d.coffee ? h('button', { type:'button', class:'btn primary block', id:'brewedBtn', text:'I brewed it: taste it', onclick:() => { closeSheet(); snapshotBrew(); prepCupEntry(); go('cup'); } }) : h('button', { type:'button', class:'btn block', id:'machDone', text:'Close', onclick:closeSheet }));
+  sheetEl.append(dock);
 }
 /* ---------- screen: guided timer ---------- */
 let audioCtx = null;
@@ -15768,6 +16170,7 @@ function renderSheetBody(){
   overlay.classList.toggle('menupanel', sheet.step === 'menu');   /* on a wide screen the menu opens under the Menu button, not from the bottom */
   const title = h('h3', { id:'sheetTitle' }); sheetEl.append(title);
   const closeRow = label => h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:label || 'Cancel', onclick:closeSheet }));
+  if (sheet.step === 'machine'){ renderMachineSheet(title); return; }   /* a Philips drink (43-sheet-machine.js) */
   if (sheet.step === 'setup'){ renderSetupSheet(title); return; }   /* My setup (63-sheet-setup.js) */
   if (sheet.step === 'setupFound'){ renderSetupFoundSheet(title); return; }
   if (sheet.step === 'everyUpload'){ renderEveryUploadSheet(title); return; }   /* Load a backup (78-every-load.js) */
@@ -16900,7 +17303,7 @@ function screenDialBasic(m){
     out.append(dialTryCard(fx));
     dialDock(dock, 'brewAgainBtn', dialSym === 'great' ? 'Brew again' : 'Brew again', dialSym === 'great' ? '' : 'with this change', () => {
       const mc = cleanMachine(app.brew.machine); mc.strength = clamp(used.strength + fx.change.strength, 1, 5); mc.temp = clamp(used.temp + fx.change.temp, 1, 3);
-      mc.drink = b.mach.drink; if (b.mach.milk) mc.milk = b.mach.milk; app.brew.machine = mc;
+      mc.drink = b.mach.drink; if (b.mach.milk) mc.milk = b.mach.milk; mc.extra = !!b.mach.extra && !!philipsDrink(mc.drink).coffee; app.brew.machine = mc; machOpen = mc.drink;   /* Brew again opens that drink's sheet */
       state = newCup(); dialSym = ''; app.lastSymptom = ''; app.lastReasons = []; go('recipe');
     });
     out.append(dialLinks(h('button', { type:'button', class:'flink', text:'Start a new coffee', onclick:resetAll })));
