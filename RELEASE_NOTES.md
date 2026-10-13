@@ -4,14 +4,24 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
-## Version 3.026.0073: The new mascot: The Graduate
+## Version 4.026.0074: Save everything, with a thumbs up
+
+2026-10-13 15:53:43 UTC
+
+- Save everything, on My files, puts your tasting history, coffee shops and prices into one backup file. In Edge and Chrome it saves over the same file each time and says so; in other browsers it downloads a copy with the date in its name.
+- Load a backup brings each part back on its own. A damaged part is named and left out while the others still load, and older history files and backup codes still open there.
+- Clear file names: BeanTelligence Taste History.csv, BeanTelligence Coffee Shops.csv, BeanTelligence Prices.csv and BeanTelligence Backup - Everything.txt.
+- The mascot gives a thumbs up when everything is saved.
+- Coffee shops (release 62) now counts as a major release, so version numbers start with 4.
+
+## Version 4.025.0073: The new mascot: The Graduate
 
 2026-10-13 04:55:03 UTC
 
 - BeanTelligence has a new mascot, The Graduate: a medium-light bean in teal glasses and a graduation cap. He replaces the old owl-and-book mark everywhere it appeared: the top bar, the home screen, the About page, the badge, and every place the mascot speaks.
 - He changes outfit by part of the app: a lab coat for tasting and cupping, a little suit for tendencies and numbers, a sweater vest for learning, and tweed for history. His face changes with the moment too, and he gets a thin light rim in dark mode so he never fades into the background.
 
-## Version 3.025.0072: Glossary: over 600 words and a forgiving search
+## Version 4.024.0072: Glossary: over 600 words and a forgiving search
 
 2026-10-13 00:18:05 UTC
 
@@ -21,7 +31,7 @@ Version numbers read major.medium.change, for example 3.025.0072. The first coun
 - About BeanTelligence is rewritten: what it is, what it is not, where its numbers come from, and its limits.
 - Releases now have a version number in three parts, such as 3.025.0072. The first counts major releases, the second medium ones, and the last counts every release.
 
-## Version 3.024.0071: A new Menu, in our own pictures
+## Version 4.023.0071: A new Menu, in our own pictures
 
 2026-10-12 22:16:34 UTC
 
@@ -30,7 +40,7 @@ Version numbers read major.medium.change, for example 3.025.0072. The first coun
 - Planners is now called Calculators, and the Ratio and strength planner is now the Ratio and strength calculator.
 - On a small phone the Learn pictures are no longer squashed, and the pictures in each row line up.
 
-## Version 3.023.0070: Cuppings of 2 to 5, TDS under the rating, Train your palate
+## Version 4.022.0070: Cuppings of 2 to 5, TDS under the rating, Train your palate
 
 2026-10-12 20:54:39 UTC
 
@@ -43,7 +53,7 @@ Version numbers read major.medium.change, for example 3.025.0072. The first coun
 - Paste the file instead is back on the coffee shops screen at every level.
 - Type-to-search lists for grinders and filters now stay above the phone keyboard, and the page holds its place after you pick.
 
-## Version 3.022.0069: Understanding, wheels, chart, files and the Taste step, in our own pictures
+## Version 4.021.0069: Understanding, wheels, chart, files and the Taste step, in our own pictures
 
 2026-10-12 16:49:40 UTC
 
@@ -52,7 +62,7 @@ Version numbers read major.medium.change, for example 3.025.0072. The first coun
 - How to use has numbered steps. About has its own pictures. My files has one title, a Your history part and a Coffee shops part, and Just Starting folds the extra backup options away. My setup has a picture on every part and one Done button.
 - On the Taste step, Yes, Maybe and No and the six part faces are bean faces. The beans sit right under the face question. Just Starting sees one More about this cup fold. Comfy Brewer and Bean Scientist see flavors, parts and the brew in order, and Bean Scientist opens the brew.
 
-## Version 3.021.0068: TDS card on the Taste screen
+## Version 4.020.0068: TDS card on the Taste screen
 
 2026-10-12 15:14:33 UTC
 
@@ -60,14 +70,14 @@ Version numbers read major.medium.change, for example 3.025.0072. The first coun
 - The card opens with the finished-coffee weight, the TDS box, the Brix fold and the sour, balanced or bitter choice. The measuring tips sit in a fold below them.
 - Just Starting still has no TDS card. Bean Scientist opens it by default.
 
-## Version 3.021.0067: Kettle number up front
+## Version 4.020.0067: Kettle number up front
 
 2026-10-12 14:43:41 UTC
 
 - Brew now shows Fill your kettle to, with the number in large type, in a card right under the three amount tiles. It used to sit inside the closed Before you start card.
 - The rinse checkbox and the kettle settings moved into the same card, so you can see the fill change when you tick or untick it.
 
-## Version 3.021.0066: Timer to Perfect, polished at all three levels
+## Version 4.020.0066: Timer to Perfect, polished at all three levels
 
 2026-10-12 14:05:36 UTC
 
@@ -77,7 +87,7 @@ Version numbers read major.medium.change, for example 3.025.0072. The first coun
 - The kettle fill now rounds up to the next 5 g, because spare water is harmless and a short kettle cannot be fixed. Comfy and Bean Scientist can set the rinse water and an extra margin.
 - The Cup screen asks how the cup tasted next to the TDS box and reads the two together. A Brix box turns a Brix reading into an estimated TDS, and a short list says how to measure well.
 
-## Version 3.020.0065: Start to Change, polished at all three levels
+## Version 4.019.0065: Start to Change, polished at all three levels
 
 2026-10-12 12:21:39 UTC
 
@@ -88,7 +98,7 @@ Version numbers read major.medium.change, for example 3.025.0072. The first coun
 - Brew now says how much water to heat: a little more than you pour, scaled to the batch size, so the last pour does not come up short.
 - Change says what each Lighter, Standard or Stronger tap does, explains strength versus extraction with a Glossary button, and folds pour style for beginners.
 
-## Version 3.019.0064: Brew rack and brew map fix
+## Version 4.018.0064: Brew rack and brew map fix
 
 2026-10-12 04:59:26 UTC
 
@@ -96,7 +106,7 @@ Version numbers read major.medium.change, for example 3.025.0072. The first coun
 - The Compare screen's Across methods card reads your saved brewers the same way.
 - When the brew rack needs more coffees it now says how many, instead of showing NaN.
 
-## Version 3.019.0063: Your tendencies, redrawn
+## Version 4.018.0063: Your tendencies, redrawn
 
 2026-10-12 04:11:31 UTC
 
@@ -106,7 +116,7 @@ Version numbers read major.medium.change, for example 3.025.0072. The first coun
 - Every flower, part of the cup, bean, ring and shop can be tapped to see the coffees behind it. Each page says what it still needs, and a flag at the middle shows from three coffees.
 - Look at lets you read all your coffees or only the newest. Just Starting keeps each page short, Comfy Brewer adds a Why? note, and Bean Scientist adds the exact numbers and a table you can save.
 
-## Version 3.019.0062: Coffee shops, part 1
+## Version 4.018.0062: Coffee shops, part 1
 
 2026-10-12 01:21:29 UTC
 

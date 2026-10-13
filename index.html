@@ -2014,6 +2014,17 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .yc-mh{ font-size:17px; margin:16px 0 6px; }
 .kettlebox .moreinfo > summary, .tdscard .moreinfo > summary{ min-height:44px; display:flex; align-items:center; }
 .yc-sl input[type=range]{ min-height:44px; }
+.evcard{ margin:0 0 12px; padding:10px 14px; border:3px solid var(--btn-edge); border-radius:18px; background:var(--surface); color:var(--ink); box-shadow:0 4px 0 var(--btn-edge); font-size:16px; line-height:1.3; }
+.evcard p{ margin:0; }
+.evcard.ok{ display:flex; align-items:center; gap:12px; background:var(--pick); color:var(--pick-ink); }
+.evcard.ok b{ display:block; font-size:18px; line-height:1.25; }
+.evcard .evmasc{ flex:0 0 88px; width:88px; }
+.evcard .evmasc svg{ display:block; width:100%; height:auto; }
+.evlinks{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; margin:4px 0 8px; }
+.evlinks:empty{ display:none; }
+.evlist{ margin:8px 0; }
+.evitem{ padding:8px 0; border-top:1px solid var(--line); }
+.evitem p{ margin:2px 0 0; }
 /* notices: an amber card with a hard shadow, like the other cards */
 .notice{ margin:0 0 12px; padding:12px 14px; border:2px solid var(--frame); border-radius:16px; background:var(--pick); color:var(--pick-ink); box-shadow:0 3px 0 var(--frame); font-size:16px; line-height:1.35; }
 .notice .btn.small{ margin:10px 0 0; }
@@ -2124,8 +2135,8 @@ button.hrow:active, .hrow.sel:active{ transform:translateY(3px); box-shadow:0 1p
 @media (max-width:359px){ .dpair .btn{ padding:8px 6px; font-size:17px; } .fcoffee.hhead h1{ font-size:30px; } .dock .btn{ font-size:18px; } .dock .btn .sub{ font-size:14px; } .dwhen{ font-size:15px; } }
 .nw{ white-space:nowrap; }
 .notice[hidden]{ display:none; }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .saymark svg, :root:not([data-theme="light"]) .fmark svg, :root:not([data-theme="light"]) .topmark, :root:not([data-theme="light"]) .brandmark svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); } }
-:root[data-theme="dark"] .saymark svg, :root[data-theme="dark"] .fmark svg, :root[data-theme="dark"] .topmark, :root[data-theme="dark"] .brandmark svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .saymark svg, :root:not([data-theme="light"]) .evmasc svg, :root:not([data-theme="light"]) .fmark svg, :root:not([data-theme="light"]) .topmark, :root:not([data-theme="light"]) .brandmark svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); } }
+:root[data-theme="dark"] .saymark svg, :root[data-theme="dark"] .evmasc svg, :root[data-theme="dark"] .fmark svg, :root[data-theme="dark"] .topmark, :root[data-theme="dark"] .brandmark svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); }
 :root{ --door-home:#E4F0E4; --door-shop:#F7DDB6; --door-pic:#FFF1C9; --fresh:#CFE8F0; --fresh-sure:#7DBBD8; --fresh-disc:#F4FAFD; --tg:#2E7D4F; --ta:#C98A00; --tr:#B8322A; --tg-ink:#1F5C38; --ta-ink:#7A5200; --tr-ink:#8E2019; }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --door-home:#1F3A2E; --door-shop:#4A3720; --tg:#6FBF8E; --ta:#E0A93B; --tr:#F08A82; --tg-ink:#8FD6AE; --ta-ink:#F2C27A; --tr-ink:#FFB4AB; } }
 :root[data-theme="dark"]{ --door-home:#1F3A2E; --door-shop:#4A3720; --tg:#6FBF8E; --ta:#E0A93B; --tr:#F08A82; --tg-ink:#8FD6AE; --ta-ink:#F2C27A; --tr-ink:#FFB4AB; }
@@ -7588,7 +7599,9 @@ async function readBackupCode(text){
   }
   if (bytes.length !== len) return { error:'The backup is the wrong length (' + bytes.length + ' of ' + len + ' bytes), so part of it is missing. Copy it again from the original.' };
   if (bkCrc32(bytes) !== crc) return { error:'The backup does not pass its check, so something was changed. Copy it again from the original.' };
-  return { csv:new TextDecoder('utf-8').decode(bytes) };
+  const body = new TextDecoder('utf-8').decode(bytes), pk = bkpUnpack(body);
+  if (pk){ const hp = pk.parts.history; return { csv:hp && hp.ok ? hp.text : '', parts:pk }; }   /* the "everything" backup (61-backup-parts.js): csv is its history part, for a screen that only knows histories */
+  return { csv:body };
 }
 function csvToSheetText(csv){
   const ex = readExisting(csv); if (ex.error) return '';
@@ -7605,6 +7618,71 @@ function backupAge(last, now){
   if (days === 1) return 'yesterday';
   if (days < 30) return days + ' days ago';
   return 'over a month ago';
+}
+/* ---------- the parts container ----------
+   Inside the usual backup code (60-backup.js) the text is no longer one CSV but this:
+     #BEANTELLIGENCE-PARTS 1
+     #MADE 2026-10-13T15:04:05Z          (when; optional)
+     #APP 4.026.0074                      (which version made it; optional)
+     #PART history 12345 1a2b3c4d         (a part's name, its length in bytes, its check)
+     <that part's own text, exactly that many bytes>
+     #PART shops ...
+   A part is whatever its feature saves on its own (a CSV), so a part can also be opened as the plain file it is. Lines this reader does not know are skipped, so a later release can add a part or a header line.
+   An old backup code (a plain history CSV, with no first line like this) is not a container: readBackupCode gives it back as before. */
+const BKP_MAGIC = '#BEANTELLIGENCE-PARTS 1', BKP_ID = /^[a-z][a-z0-9-]{0,24}$/;
+/* parts: [{ id, text }]. info: { made (ISO time), app (version) }, both optional. Returns the container text. */
+function bkpPack(parts, info){
+  const enc = new TextEncoder(), chunks = [];
+  const add = s => chunks.push(typeof s === 'string' ? enc.encode(s) : s);
+  const safe = s => String(s == null ? '' : s).replace(/[^0-9A-Za-z:.+\-]/g, '').slice(0, 40);
+  add(BKP_MAGIC + '\n');
+  if (info && safe(info.made)) add('#MADE ' + safe(info.made) + '\n');
+  if (info && safe(info.app)) add('#APP ' + safe(info.app) + '\n');
+  (parts || []).forEach(p => {
+    if (!p || !BKP_ID.test(String(p.id))) return;
+    const body = enc.encode(String(p.text == null ? '' : p.text).replace(/^﻿/, ''));
+    add('#PART ' + p.id + ' ' + body.length + ' ' + bkCrc32(body) + '\n'); add(body); add('\n');
+  });
+  let n = 0; chunks.forEach(c => { n += c.length; });
+  const all = new Uint8Array(n); let o = 0; chunks.forEach(c => { all.set(c, o); o += c.length; });
+  return new TextDecoder('utf-8').decode(all);
+}
+/* The container text back into parts, or null when the text is not a container (an old plain backup).
+   { made, app, order:[ids], parts:{ id:{ ok, text, why } }, damaged:[ids] }: a part that is cut off or fails its check has ok false and why 'cut' or 'check', and its text is empty. */
+function bkpUnpack(text){
+  const t = String(text == null ? '' : text).replace(/^﻿/, '');
+  if (t.slice(0, BKP_MAGIC.length) !== BKP_MAGIC) return null;
+  const b = new TextEncoder().encode(t), dec = new TextDecoder('utf-8'), out = { made:'', app:'', order:[], parts:{}, damaged:[] };
+  let i = 0;
+  const line = () => { let j = i; while (j < b.length && b[j] !== 10) j++; const s = dec.decode(b.subarray(i, j)).replace(/\r$/, ''); i = j < b.length ? j + 1 : j; return s; };
+  line();   /* the first line, already checked */
+  while (i < b.length){
+    const l = line(); let m;
+    if ((m = /^#MADE (\S+)$/.exec(l))) out.made = m[1];
+    else if ((m = /^#APP (\S+)$/.exec(l))) out.app = m[1];
+    else if ((m = /^#PART ([a-z][a-z0-9-]{0,24}) (\d+) ([0-9a-f]{1,8})$/.exec(l))){
+      const id = m[1], len = parseInt(m[2], 10), seen = !!out.parts[id];
+      if (i + len > b.length){ if (!seen){ out.parts[id] = { ok:false, text:'', why:'cut' }; out.order.push(id); out.damaged.push(id); } break; }
+      const body = b.subarray(i, i + len); i += len; if (b[i] === 10) i++;
+      if (seen) continue;   /* the first of a repeated name is the one kept */
+      const good = bkCrc32(body) === m[3];
+      out.parts[id] = good ? { ok:true, text:dec.decode(body), why:'' } : { ok:false, text:'', why:'check' };
+      out.order.push(id); if (!good) out.damaged.push(id);
+    }
+  }
+  return out;
+}
+/* The plain note above the BEGIN line, so a person who opens the saved file knows what it is. It never contains the words that mark the start of the code. */
+function bkpNote(info){
+  const day = info && /^\d{4}-\d{2}-\d{2}/.test(String(info.made || '')) ? String(info.made).slice(0, 10) : '';
+  return 'BeanTelligence backup of everything: your tasting history, coffee shops and prices' + (day ? ', made ' + day : '') + '.\n'
+    + 'Keep this whole file somewhere safe. To bring it back: BeanTelligence, Menu, My files, Load a backup.\n'
+    + 'If you paste it somewhere, copy everything from the BEGIN line to the END line.';
+}
+/* The finished text to save: the note, then the backup code. */
+async function makeEverythingCode(parts, info){
+  const r = await makeBackupCode(bkpPack(parts, info));
+  return { text:bkpNote(info) + '\n\n' + r.code + '\n', code:r.code, bytes:r.bytes, packed:r.packed, mode:r.mode };
 }
 /* ---------- the instruction guide ----------
    Each section: id, title, lead (one line shown when the section is closed), paras (plain paragraphs), and optional tips (short do-this lines).
@@ -7636,7 +7714,7 @@ const GUIDE_SECTIONS = [
     paras:['There are two ways to taste, and ' + STEP_NAME.taste + ' opens on Quick. Give the coffee stars, which are your own. Say whether you would make it again. Pick the flavors from the bag that you liked, and the ones you did not. Bag notes can nudge what you notice, so try tasting first and read the bag\'s flavors afterward. Nothing else changes your stars. Under How did each part taste?, rate the smell, taste, aftertaste, acidity, sweetness and body, each as Good, Okay or Not good. Smell, taste and aftertaste also have a word wheel to pick from.',
       'If you brewed in the app and have a refractometer, open Measured it? Add your TDS (optional). Comfy Brewer and Bean Scientist see it as its own card. Type the strength as TDS or Brix and the weight of your drink, and BeanTelligence works out the extraction. You can also say whether the cup tasted sour, balanced or bitter, and it reads that along with the numbers. The numbers are saved with your tasting.',
       'Tap Cupping at the top to score step by step, the way a cupper does, on a form based on the SCA affective form (SCA-104). Each section asks one question and takes a number from 1 to 9. That number is your impression of quality, how well the coffee delivers that part, and it is not how much you like it. The next section opens when you score the one before it. After Overall you retaste as the cup cools, then say whether it has a defect, and you get a total out of 100. You can skip the retaste, but coffee changes as it cools, so the score may be off. Cupping help sets how much each section explains. You can switch between Quick and Cupping at any time. In My setup you can choose Quick only, Quick first, or Cupping first. If you have a refractometer, you can add your TDS to see the extraction.',
-      'When you save, BeanTelligence first asks once whether you want to do the other way too. Tap No to save as it is. With Quick only, it does not ask. Then you choose whether you already have a history file. Saving downloads a file called cuppings.csv with your whole history. If you are tasting several coffees in one sitting, keep each one in this browser and save one file at the end. After a save, the page is cleared and you are back at the start, ready for the next coffee. To work on the coffee you just saved, tap ' + STEP_NAME.perfect + ' the next brew on the Saved sheet, or open it later from Your tastings.'] },
+      'When you save, BeanTelligence first asks once whether you want to do the other way too. Tap No to save as it is. With Quick only, it does not ask. Then you choose whether you already have a history file. Saving downloads a file called BeanTelligence Taste History.csv with your whole history. If you are tasting several coffees in one sitting, keep each one in this browser and save one file at the end. After a save, the page is cleared and you are back at the start, ready for the next coffee. To work on the coffee you just saved, tap ' + STEP_NAME.perfect + ' the next brew on the Saved sheet, or open it later from Your tastings.'] },
   { id:'dial', title:'6. ' + STEP_NAME.perfect + ': make the next brew better', lead:'Your scores point to one change.',
     paras:['After you taste, ' + STEP_NAME.perfect + ' starts from what you said needs fixing (one tap after your cupping score). It also uses your TDS and brew time if you added them. It suggests one change: grind, ratio, water temperature or pour style. Say what you tasted if you disagree. Then brew again with that one change. It works from cupping scores. A quick tasting gets a list of tries instead, so you can see what changed.',
       'It keeps every try of a coffee on a method in order. Each try shows what changed and whether the total went up or down. A change counts as helped or hurt only when the total moves by at least a point. That is BeanTelligence\'s own rule of thumb, because one cup scored by one person is noisy. Repeat the same brew and it measures your own variation, and uses that instead if it is bigger.',
@@ -7648,10 +7726,11 @@ const GUIDE_SECTIONS = [
       'When a coffee has two or more brews, its page and its tasting page offer Compare these cups. It lines up your cups of one method, best first, and shows only what changed between them. Different bags of the same coffee are kept together, and different methods are never mixed. Only your own star ratings order the cups. Just Starting sees the best cup against the lowest. Comfy Brewer sees the best three and the lowest three, with a Show all button. Bean Scientist sees every cup and the numbers.',
       'It suggests one thing to try only when the evidence is clear. That takes at least six rated cups and a spread of a star or more. Exactly one change must line up strongly with your ratings. It says suggests and never caused, because home brews change many things at once. If two things moved together, it says it cannot tell which.'] },
   { id:'history', title:'Your tastings, files and backups', lead:'Everything stays with you.',
-    paras:['Everything stays in your browser until you save a file. Your history is the cuppings.csv file you download: upload it when you come back and each new tasting is added to it. Replace your old file with the newest copy, because it holds everything.',
+    paras:['Everything stays in your browser until you save a file. Your history is the BeanTelligence Taste History.csv file you download: upload it when you come back and each new tasting is added to it. Replace your old file with the newest copy, because it holds everything.',
       'Your tastings list lets you search, sort, and open a tasting. You can fix a mistake in a coffee\'s name or details (the scores never change). You can brew or taste that coffee again, perfect it, and delete tastings you do not want.',
       'In Chrome and Edge you can save into a file of your own choosing. Save as opens your computer\'s Save box, where you can change the name or pick the file to replace. BeanTelligence remembers that file in this browser, so the next tasting offers to be added straight into it. Your browser asks your permission again after it has been closed. Forget my save file under My files makes it stop remembering; the file itself is never touched. Other browsers download a fresh copy each time.',
       'What each column means, under My files, explains every column of your history file, so you can read it in a spreadsheet or a script. You can save that guide as a small file.',
+      'Save everything, under Menu, My files, puts your tasting history, coffee shops and prices into one backup file. In Chrome and Edge it saves over the same file every time and tells you so. In other browsers it downloads a copy with the date in its name. Load a backup brings it back part by part. A damaged part is named and left out, and the others still load. Older history files and backup codes still open there.',
       'If your view cannot save files, use Back up as text under My files. It makes a code you can paste into Notes or an email and paste back to restore. Clear everything on this device removes the copy in this browser, but not files you downloaded.'] },
   { id:'shops', title:'Coffee shops: a drink you bought', lead:'Shop, Drink, Taste, Perfect. No brewing.',
     paras:['The first screen asks where you are having coffee. Choose At a coffee shop to log a drink you bought. It has steps of its own: Shop, Drink, Taste and Perfect.',
@@ -9175,8 +9254,23 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 74,
+  "version": "4.026.0074",
+  "tier": "medium",
+  "at": "2026-10-13T15:53:43Z",
+  "date": "2026-10-13",
+  "title": "Save everything, with a thumbs up",
+  "notes": [
+   "Save everything, on My files, puts your tasting history, coffee shops and prices into one backup file. In Edge and Chrome it saves over the same file each time and says so; in other browsers it downloads a copy with the date in its name.",
+   "Load a backup brings each part back on its own. A damaged part is named and left out while the others still load, and older history files and backup codes still open there.",
+   "Clear file names: BeanTelligence Taste History.csv, BeanTelligence Coffee Shops.csv, BeanTelligence Prices.csv and BeanTelligence Backup - Everything.txt.",
+   "The mascot gives a thumbs up when everything is saved.",
+   "Coffee shops (release 62) now counts as a major release, so version numbers start with 4."
+  ]
+ },
+ {
   "release": 73,
-  "version": "3.026.0073",
+  "version": "4.025.0073",
   "tier": "medium",
   "at": "2026-10-13T04:55:03Z",
   "date": "2026-10-13",
@@ -9188,7 +9282,7 @@ const RELEASES = [
  },
  {
   "release": 72,
-  "version": "3.025.0072",
+  "version": "4.024.0072",
   "tier": "medium",
   "at": "2026-10-13T00:18:05Z",
   "date": "2026-10-13",
@@ -9203,7 +9297,7 @@ const RELEASES = [
  },
  {
   "release": 71,
-  "version": "3.024.0071",
+  "version": "4.023.0071",
   "tier": "medium",
   "at": "2026-10-12T22:16:34Z",
   "date": "2026-10-12",
@@ -9217,7 +9311,7 @@ const RELEASES = [
  },
  {
   "release": 70,
-  "version": "3.023.0070",
+  "version": "4.022.0070",
   "tier": "medium",
   "at": "2026-10-12T20:54:39Z",
   "date": "2026-10-12",
@@ -9235,7 +9329,7 @@ const RELEASES = [
  },
  {
   "release": 69,
-  "version": "3.022.0069",
+  "version": "4.021.0069",
   "tier": "medium",
   "at": "2026-10-12T16:49:40Z",
   "date": "2026-10-12",
@@ -9249,7 +9343,7 @@ const RELEASES = [
  },
  {
   "release": 68,
-  "version": "3.021.0068",
+  "version": "4.020.0068",
   "tier": "small",
   "at": "2026-10-12T15:14:33Z",
   "date": "2026-10-12",
@@ -9262,7 +9356,7 @@ const RELEASES = [
  },
  {
   "release": 67,
-  "version": "3.021.0067",
+  "version": "4.020.0067",
   "tier": "small",
   "at": "2026-10-12T14:43:41Z",
   "date": "2026-10-12",
@@ -9274,7 +9368,7 @@ const RELEASES = [
  },
  {
   "release": 66,
-  "version": "3.021.0066",
+  "version": "4.020.0066",
   "tier": "medium",
   "at": "2026-10-12T14:05:36Z",
   "date": "2026-10-12",
@@ -9289,7 +9383,7 @@ const RELEASES = [
  },
  {
   "release": 65,
-  "version": "3.020.0065",
+  "version": "4.019.0065",
   "tier": "medium",
   "at": "2026-10-12T12:21:39Z",
   "date": "2026-10-12",
@@ -9305,7 +9399,7 @@ const RELEASES = [
  },
  {
   "release": 64,
-  "version": "3.019.0064",
+  "version": "4.018.0064",
   "tier": "small",
   "at": "2026-10-12T04:59:26Z",
   "date": "2026-10-12",
@@ -9318,7 +9412,7 @@ const RELEASES = [
  },
  {
   "release": 63,
-  "version": "3.019.0063",
+  "version": "4.018.0063",
   "tier": "small",
   "at": "2026-10-12T04:11:31Z",
   "date": "2026-10-12",
@@ -9333,8 +9427,8 @@ const RELEASES = [
  },
  {
   "release": 62,
-  "version": "3.019.0062",
-  "tier": "medium",
+  "version": "4.018.0062",
+  "tier": "major",
   "at": "2026-10-12T01:21:29Z",
   "date": "2026-10-12",
   "title": "Coffee shops, part 1",
@@ -10289,7 +10383,7 @@ function parseMmSs(t){
   let m = /^(\d{1,2}):(\d{2})$/.exec(t); if (m) return +m[1] * 60 + +m[2];
   m = /^(\d{1,4})$/.exec(t); return m ? +m[1] : null;
 }
-const FILENAME = 'cuppings.csv';
+const FILENAME = 'BeanTelligence Taste History.csv';
 const DRAFT_KEY = 'brew-and-cup-draft-v1';
 const HISTORY_KEY = 'brew-and-cup-history-v1';
 const LASTBACKUP_KEY = 'brew-and-cup-last-backup-v1';
@@ -11133,7 +11227,7 @@ function standaloneNote(){
   return h('p', { class:'fine', id:'homeScreenNote', style:'margin:8px 0 0', text:'Tip: add BeanTelligence to your Home Screen (in Safari use Share, then Add to Home Screen; in Chrome use the menu, then Add to Home screen). It opens like an app. Your history stays with this browser, so keep a saved file too.' });
 }
 function clearEverything(){
-  forgetHistory(); forgetPicked(); forgetPrices(); forgetShops(); sd = sdBlank(); persistShopDraft(); histUI = { q:'', sort:'new', way:'all' };
+  forgetHistory(); forgetPicked(); forgetPrices(); forgetShops(); forgetEvery(); everyNote = null; sd = sdBlank(); persistShopDraft(); histUI = { q:'', sort:'new', way:'all' };
   try { localStorage.removeItem(DRAFT_KEY); localStorage.removeItem(LASTBACKUP_KEY); } catch(e){}
   lastBackup = 0; app = newApp(); state = newCup(); dialSym = ''; render();
 }
@@ -14453,7 +14547,7 @@ function prLoadText(text){
 }
 async function prSave(){
   if (!pr.list.length){ pr.msg = 'Add a bag first, then save the file.'; prPaint(); return; }
-  const text = priceCsv(pr.list), name = 'beantelligence-prices.csv';
+  const text = priceCsv(pr.list), name = EVERY_FILES.prices;
   try {
     if (inClaude()){ const dl = await getDownloads(); if (!dl) throw new Error('no downloads'); await dl.save({ filename:name, data:text }); }
     else plainDownload(text, name);
@@ -15676,6 +15770,8 @@ function renderSheetBody(){
   const closeRow = label => h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:label || 'Cancel', onclick:closeSheet }));
   if (sheet.step === 'setup'){ renderSetupSheet(title); return; }   /* My setup (63-sheet-setup.js) */
   if (sheet.step === 'setupFound'){ renderSetupFoundSheet(title); return; }
+  if (sheet.step === 'everyUpload'){ renderEveryUploadSheet(title); return; }   /* Load a backup (78-every-load.js) */
+  if (sheet.step === 'everyLoad'){ renderEveryLoadSheet(title); return; }
   if (sheet.step === 'otherWay'){ renderOtherWaySheet(title); return; }   /* Cup this one too? / Rate it too?, before saving (69-sheet-other-way.js) */
   if (sheet.step === 'bagtile'){ renderBagTileSheet(title); return; }   /* what one part of the bag means (69-sheet-bag-tile.js) */
   if (sheet.step === 'bagcompare'){ renderBagCompareSheet(title); return; }
@@ -15960,6 +16056,7 @@ function renderSheetBody(){
     async function restore(text){
       const r = await readBackupCode(text);
       if (r.error){ err.textContent = r.error; return; }
+      if (r.parts){ sheet = { step:'everyLoad', load:everyBuild(r.parts, 'everything'), handle:null, error:'' }; renderSheet(); return; }   /* a backup of everything: shown part by part */
       load(r.csv);
     }
     function load(text){
@@ -16246,7 +16343,7 @@ function renderSetupSheet(title){
 /* a loaded file has a setup that differs from this browser's */
 function renderSetupFoundSheet(title){
   title.textContent = 'This file has its own setup';
-  const mine = setupFromPrefs(app.prefs, setupCtx()), done = () => { closeSheet(); if (sheet.then === 'history') go('history'); else render(); };
+  const mine = setupFromPrefs(app.prefs, setupCtx()), done = () => { const then = sheet.then; closeSheet(); if (then === 'history') go('history'); else if (then === 'every') everyFinish(); else render(); };
   sheetEl.append(h('p', { style:'margin-top:0', text:'The file you loaded carries a setup that is not the same as the one in this browser. Which should be used?' }),
     h('div', { class:'howto' }, h('div', { class:'howto-t', text:"The file's setup" }), h('ul', { class:'prep', style:'margin:4px 0 0' }, setupSummary(sheet.setup).map(t => h('li', { text:t })))),
     h('div', { class:'howto' }, h('div', { class:'howto-t', text:'The setup in this browser' }), h('ul', { class:'prep', style:'margin:4px 0 0' }, setupSummary(mine).map(t => h('li', { text:t })))),
@@ -16263,8 +16360,8 @@ async function getPermissions(){
   try { if (inClaude()) return await window.claude.use('permissions'); } catch(e){}
   return null;
 }
-function plainDownload(text, filename){
-  const blob = new Blob([text], { type:'text/csv;charset=utf-8' });
+function plainDownload(text, filename, type){
+  const blob = new Blob([text], { type:type || 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename; a.style.display = 'none';
@@ -17360,7 +17457,8 @@ function loadFileIntoHistory(ex, text, cups){
     ex = mex;
   } else setHistory(ex, text);
   const ts = takeFileSetup(ex);
-  if (ts.how === 'ask'){ sheet = { step:'setupFound', setup:ts.setup, then:'history' }; renderSheet(); return; }
+  if (ts.how === 'ask'){ sheet = { step:'setupFound', setup:ts.setup, then:everyPending ? 'every' : 'history' }; if (everyPending) everyPending.hist = true; renderSheet(); return; }
+  if (everyPending){ everyPending.hist = true; if (ts.how === 'applied') everyPending.notes.push('Your setup came back from the backup.'); everyFinish(); return; }   /* part of Load a backup: carry on with the other parts (78-every-load.js) */
   if (ts.how === 'applied') setupCameBack = setupSummary(ts.setup);
   closeSheet(); go('history');
 }
@@ -17384,7 +17482,7 @@ function renderKeepFirstSheet(title){
     h('button', { type:'button', class:'btn', id:'keepFirstLeave', text:save ? 'Leave ' + (one ? 'it' : 'them') + ' out' : 'Load the file without ' + (one ? 'it' : 'them'),
       onclick:() => { if (save) useExisting(k.ex, []); else loadFileIntoHistory(k.ex, k.text); } }),
     h('button', { type:'button', class:'btn link', id:'keepFirstBack', text:save ? 'Back' : 'Cancel',
-      onclick:() => { if (!save){ closeSheet(); return; } delete sheet.target; sheet.keep = null; sheet.step = 'ask'; renderSheet(); } }));
+      onclick:() => { if (!save){ everyPending = null; closeSheet(); return; } delete sheet.target; sheet.keep = null; sheet.step = 'ask'; renderSheet(); } }));
 }
 /* Which way, if any, to offer before saving. Quick is saved with no cupping: ask about cupping, unless cupping is switched off (My setup > Tasting > Quick only). Cupping is saved with no quick answer
    (no stars and no "make it again"): ask about Quick. Nothing is asked after a No, or when cupping scores are being added to a tasting that is already saved. */
@@ -17953,6 +18051,8 @@ function screenFiles(m){
   tail.append(twoRow('fl-trash', 'Clear everything on this device', histAdded > 0 ? 'Tap twice. ' + histAdded + ' unsaved will be lost' : 'Tap twice. Files you downloaded are not touched', histAdded > 0 ? 'Tap again. ' + histAdded + ' unsaved will be lost' : 'Tap again to clear everything', () => { clearEverything(); }, { tone:'d', id:'clearAllBtn' }));
   m.append(status);
   if (storageFailed) m.append(h('p', { class:'fine warnline', role:'status', text:'This browser could not keep a copy of your work (its storage may be full or blocked). Your downloaded files are not affected. Save your history file now to be safe.' }));
+  { const nb = everyNoteBox(); if (nb) m.append(nb); }
+  m.append(hubSec('fl-save', 'Everything'), ...everyRows());
   m.append(hubSec('art-clip', 'Your history'), hist, hubSec('s-shop', 'Coffee shops'), shops, tail);
   if (!plain) m.append(h('p', { class:'fine hubnote', text:'Clearing everything removes your saved history copy, in-progress work, and choices from this browser. Files you downloaded are not touched.' }));
   { const sn = standaloneNote(); if (sn) m.append(sn); }
@@ -18013,7 +18113,7 @@ function shLoadText(text){
 }
 async function shSave(){
   if (shEmpty()){ sh.msg = 'Log a drink first, then save the file.'; return false; }
-  const text = shopCsv(sh.store), name = 'beantelligence-coffee-shops.csv';
+  const text = shopCsv(sh.store), name = EVERY_FILES.shops;
   try {
     if (inClaude()){ const dl = await getDownloads(); if (!dl) throw new Error('no downloads'); await dl.save({ filename:name, data:text }); }
     else plainDownload(text, name);
@@ -18302,6 +18402,269 @@ function screenSperfect(m){
   m.append(fav, h('button', { type:'button', class:'stile srow', id:'sdAnother', onclick:sdAnother }, spic(KIND_ART[d.kind]), h('span', { class:'stx', text:'Log another drink' })));
   m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary', id:'sdDone', text:'Done', onclick:sdDone }))));
 }
+/* ---------- Save everything: loading ----------
+   Load a backup is a sheet: choose the file (or paste its code) -> a list of what is in it and the rule for each part -> Load.
+   Each part is checked on its own (its own check number inside the file, then its own reader), and a part that fails is named and left out; the others load.
+   The history keeps its own loading steps (it replaces the history in this browser, after asking about tastings kept only here: 69-sheet-keep-first.js), so it is done first; the other parts only add what is new.
+   everyPending holds the other parts while the history steps run; everyFinish loads them and shows the result at the top of My files (everyNote).
+   A plain history file, a history backup code made before this release, or a plain coffee shops or prices file also opens here, as a backup with one part. */
+let everyNote = null, everyPending = null;   /* everyNote: lines about the last load, shown once on My files */
+async function everyReadFile(f){
+  return f.text ? await f.text() : await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsText(f); });
+}
+/* a container read from a backup code, as the list the sheet shows: { kind, made, app, items:[{ id, name, text, line, rule }], problems:[words] } */
+function everyBuild(pk, kind, raw){
+  const src = pk ? pk.parts : raw, ids = pk ? pk.order : Object.keys(raw), items = [], problems = [];
+  ids.forEach(id => {
+    const p = everyPart(id), x = src[id];
+    if (!p){ problems.push('A part called "' + id + '" comes from a newer version of the app, so it was left out.'); return; }
+    if (!x.ok){ problems.push(p.name + ': this part is ' + (x.why === 'cut' ? 'cut off' : 'damaged (it failed its check)') + ', so it was left out.'); return; }
+    const lk = p.look(x.text);
+    if (lk.error){ problems.push(p.name + ': ' + lk.error + ' It was left out.'); return; }
+    items.push({ id, name:p.name, text:x.text, line:lk.line, rule:p.rule });
+  });
+  return { kind:kind || 'everything', made:pk ? pk.made : '', app:pk ? pk.app : '', items, problems };
+}
+/* any text a person might give: an "everything" backup code, an older backup code, or a plain file. Returns the list, or { error }. */
+async function everyClassify(text){
+  let t = String(text == null ? '' : text).replace(/^﻿/, '');
+  if (/BEGIN (?:BEANTELLIGENCE|NEUROBREW) BACKUP/i.test(t)){
+    const r = await readBackupCode(t); if (r.error) return { error:r.error };
+    if (r.parts) return everyBuild(r.parts, 'everything');
+    t = r.csv;
+  }
+  const hit = EVERY_PARTS.find(p => !p.look(t).error);   /* the first kind of file that opens it */
+  if (!hit) return { error:'That does not look like a BeanTelligence file. Choose the backup you saved from here, or an older history file.' };
+  return everyBuild(null, 'file', { [hit.id]:{ ok:true, text:t } });
+}
+async function everyOpenText(text, handle){
+  const sh0 = sheet; let c;
+  try { c = await everyClassify(text); } catch(e){ c = { error:"That could not be read. Try pasting the backup's contents instead." }; }
+  if (sheet !== sh0) return;
+  if (c.error){ sheet.error = c.error; renderSheet(); return; }
+  sheet = { step:'everyLoad', load:c, handle:handle || null, error:'' }; renderSheet();
+}
+async function everyPickOpen(){
+  try { const hs = await window.showOpenFilePicker({ types:EVERY_OPEN_TYPES, multiple:false }); return hs && hs[0] ? hs[0] : null; }
+  catch(e){ if (e && e.name === 'AbortError') return null; throw e; }
+}
+function renderEveryUploadSheet(title){
+  title.textContent = 'Load a backup';
+  const file = h('input', { type:'file', id:'everyFile', accept:'.txt,.csv,text/plain,text/csv', 'aria-label':'Backup file' });
+  const paste = h('textarea', { id:'everyPaste', placeholder:'Paste the backup code or the file contents here', 'aria-label':'Pasted backup', rows:'5' });
+  const err = h('p', { class:'err', role:'alert', id:'everyErr' }, sheet.error || '');
+  file.addEventListener('change', async () => {
+    const f = file.files && file.files[0]; if (!f) return;
+    try { await everyOpenText(String(await everyReadFile(f))); } catch(e){ sheet.error = "Couldn't read that file. Try pasting its contents instead."; renderSheet(); }
+  });
+  const open = async () => {
+    const sh0 = sheet;
+    try { const hd = await everyPickOpen(); if (!hd) return; if (!(await pickPermission(hd))) throw { code:'denied' }; await everyOpenText(await (await hd.getFile()).text(), hd); }
+    catch(e){ if (sheet === sh0){ sheet.error = (e && e.code === 'denied') || (e && e.name === 'NotAllowedError') ? 'The browser did not allow reading that file.' : "Couldn't read that file. Try pasting its contents instead."; renderSheet(); } }
+  };
+  sheetEl.append(...kept(h('p', { text:'Choose the backup you saved, ' + EVERY_NAME + '. A history file or backup code from before also works. Nothing leaves your device.' }),
+    canPickFiles() ? h('button', { type:'button', class:'btn primary block', id:'everyOpenBtn', text:'Open my backup file...', onclick:open }) : null,
+    h('p', { class:'fine', style:'margin:10px 0 4px', text:canPickFiles() ? 'Or choose a file the usual way:' : 'Choose the file:' }), file, err,
+    h('details', { class:'more' }, h('summary', { text:'Upload not working? Paste instead' }), paste,
+      h('div', { class:'row' }, h('button', { type:'button', class:'btn', id:'everyPasteBtn', text:'Use pasted text', onclick:() => { if (paste.value.trim()) everyOpenText(paste.value); else { sheet.error = 'Paste the backup first.'; renderSheet(); } } }))),
+    h('div', { class:'row' }, h('button', { type:'button', class:'btn', id:'everyCancel', text:'Cancel', onclick:closeSheet }))));
+}
+function renderEveryLoadSheet(title){
+  const L = sheet.load, n = L.items.length;
+  title.textContent = n ? 'Load this backup?' : 'Nothing to load';
+  const list = h('div', { class:'evlist', id:'everyList' });
+  L.items.forEach(x => list.append(h('div', { class:'evitem' }, h('b', { text:x.name + ': ' + x.line }), h('p', { class:'fine', text:x.rule }))));
+  const made = /^\d{4}-\d{2}-\d{2}/.test(L.made) ? 'Made ' + L.made.slice(0, 10) + '. ' : '';
+  sheetEl.append(h('p', { style:'margin-top:0', text:n ? made + (L.kind === 'everything' ? 'This backup holds:' : 'This file holds:') : 'There is nothing in this file that can be loaded.' }), list,
+    ...L.problems.map(t => h('p', { class:'err', role:'alert', text:t })),
+    h('p', { class:'err', role:'alert', text:sheet.error || '' }),
+    h('div', { class:'row', style:'margin-top:12px' },
+      h('button', { type:'button', class:'btn', id:'everyCancel', text:'Cancel', onclick:closeSheet }),
+      ...kept(n ? h('button', { type:'button', class:'btn primary', id:'everyGo', text:'Load', onclick:everyApply }) : null)));
+}
+/* the person said Load: the history first (its own steps), then the rest */
+function everyApply(){
+  const L = sheet.load, hist = L.items.find(x => x.id === 'history');
+  everyPending = { rest:L.items.filter(x => x.id !== 'history'), notes:[], hist:false, kind:L.kind, handle:sheet.handle || null, load:L };
+  if (!hist){ everyFinish(); return; }
+  const ex = readExisting(hist.text);
+  if (ex.error){ everyPending = null; sheet.error = ex.error; renderSheet(); return; }
+  const gone = browserOnlyMissingFrom(ex);   /* loading replaces this browser's history, so tastings only kept here are asked about first */
+  if (gone.length){ sheet = { step:'keepFirst', keep:{ mode:'load', ex, text:hist.text, cups:gone } }; renderSheet(); return; }
+  loadFileIntoHistory(ex, hist.text);   /* ends in everyFinish */
+}
+function everyFinish(){
+  const P = everyPending; everyPending = null; if (!P) return;
+  const notes = P.notes.slice();
+  if (P.hist) notes.unshift('Tasting history: ' + history.ex.count + (history.ex.count === 1 ? ' tasting' : ' tastings') + ' now in this browser.');
+  P.rest.forEach(x => { const p = everyPart(x.id); if (p && p.apply) notes.push(p.apply(x.text)); });
+  if (P.load.problems.length) notes.push('Left out: ' + P.load.problems.length + (P.load.problems.length === 1 ? ' part' : ' parts') + ' that could not be read.');
+  everyNote = notes;
+  if (P.kind === 'everything'){
+    if (P.handle) rememberEvery(P.handle);   /* the file just opened is where the next Save everything goes */
+    const cur = everyGather();   /* if this browser now holds exactly what the backup holds, that backup is its saved copy */
+    if (cur.length && cur.every(c => P.load.items.some(x => x.id === c.id && everyStamp(x.text) === everyStamp(c.text)))) everyMarkSaved(cur, P.handle ? P.handle.name : '', Date.parse(P.load.made) || Date.now());
+  }
+  closeSheet(); if (app.screen === 'files') render(); else go('files');
+}
+/* ---------- Save everything: the parts ----------
+   One backup file holds every saved part. A feature that keeps data of its own registers ONE part here (everyRegister, at the bottom of this file), and then it is saved, checked, loaded and counted with the others:
+     id        a short lowercase name, kept inside the file (history, shops, prices; later the Pour and Explore progress)
+     name      what the person sees
+     has()     is there anything to save
+     text()    the part as the plain file it already is (a CSV)
+     look(t)   what a part's text holds, in words ({ line }), or { error } when it is not that kind of file
+     rule      the plain-words rule for loading it
+     keysIn(t) / keysHere()   the items in a text / here, so saving over a backup that holds more than this browser can be stopped; allow() is how many removed here on purpose
+     unsaved(), markSaved()   the counts that say "not in a file yet", and the way to clear them once a file has the part
+     apply(t)  loads the text and returns one plain line saying what happened (the history goes through its own steps, 69-sheet-keep-first.js, so it has none)
+   Whether a part changed since the last save is worked out from a check number of its text, not from counters, so it is right however the part was changed or saved.
+   The old files and codes still load: the single files are not changed by any of this. */
+const EVERY_KEY = 'brew-and-cup-every-v1';
+const EVERY_NAME = 'BeanTelligence Backup - Everything.txt';
+const EVERY_FILES = { history:'BeanTelligence Taste History.csv', shops:'BeanTelligence Coffee Shops.csv', prices:'BeanTelligence Prices.csv' };
+const EVERY_PARTS = [];
+let every = { msg:'', saved:null };   /* saved: { at (ms), name, crcs:{ id: check } } for the last "everything" file, or null */
+try {
+  const s = JSON.parse(localStorage.getItem(EVERY_KEY));
+  if (s && typeof s === 'object' && isFinite(s.at) && s.crcs && typeof s.crcs === 'object') every.saved = { at:+s.at, name:String(s.name || '').slice(0, 120), crcs:s.crcs };
+} catch(e){}
+function everyRegister(p){ if (p && p.id && !EVERY_PARTS.some(x => x.id === p.id)) EVERY_PARTS.push(p); }
+function everyPart(id){ return EVERY_PARTS.find(p => p.id === id) || null; }
+function everyStamp(text){ return bkCrc32(new TextEncoder().encode(String(text || '').replace(/^﻿/, ''))); }
+/* the parts that have something to save, as the container takes them */
+function everyGather(){ return EVERY_PARTS.filter(p => p.has()).map(p => ({ id:p.id, text:p.text() })); }
+/* the parts whose text is not what the last "everything" file holds (new, changed, or emptied since) */
+function everyChanged(){
+  const now = {}, was = every.saved && every.saved.crcs ? every.saved.crcs : {};
+  everyGather().forEach(p => { now[p.id] = everyStamp(p.text); });
+  return EVERY_PARTS.filter(p => (now[p.id] || '') !== (was[p.id] || ''));
+}
+/* an "everything" file now holds these parts: remember how they were, and clear each part's own "not in a file yet" count */
+function everyMarkSaved(parts, name, at){
+  const crcs = {}; parts.forEach(p => { crcs[p.id] = everyStamp(p.text); });
+  every.saved = { at:at || Date.now(), name:String(name || '').slice(0, 120), crcs };
+  try { localStorage.setItem(EVERY_KEY, JSON.stringify(every.saved)); } catch(e){}
+  parts.forEach(p => { const d = everyPart(p.id); if (d && d.markSaved) d.markSaved(); });
+  if (parts.some(p => p.id === 'history')) noteBackup();
+}
+function everySavedLine(){
+  if (!EVERY_PARTS.some(p => p.has())) return 'Nothing to save yet.';
+  const s = every.saved, ch = everyChanged();
+  if (!s) return 'Not saved yet.';
+  return 'Last saved ' + backupAge(s.at, new Date()) + (s.name ? ' to ' + s.name : '') + (ch.length ? '. Changed since: ' + ch.map(p => p.name.toLowerCase()).join(', ') : '') + '.';
+}
+function forgetEvery(){
+  every = { msg:'', saved:null };
+  try { localStorage.removeItem(EVERY_KEY); } catch(e){}
+  forgetEveryFile();
+}
+
+/* ---- the parts that exist today ---- */
+everyRegister({ id:'history', name:'Tasting history',
+  has:() => !!(history && history.ex && history.ex.count), text:() => history.text,
+  look:t => { const ex = readExisting(t); return ex.error ? { error:ex.error } : { line:ex.count + (ex.count === 1 ? ' tasting' : ' tastings') }; },
+  rule:'Replaces the history in this browser. Tastings kept only here are offered to you first.',
+  keysIn:t => { const ex = readExisting(t); return ex.error ? null : Array.from(ex.ids); },
+  keysHere:() => history && history.ex ? Array.from(history.ex.ids) : [],
+  allow:() => histDirty + histEdited, unsaved:() => histAdded + histDirty + histEdited,
+  markSaved:() => { histDirty = 0; persistDirty(); histEdited = 0; editUndo = null; persistEdited(); histAdded = 0; persistAdded(); } });
+everyRegister({ id:'shops', name:'Coffee shops',
+  has:() => !shEmpty(), text:() => shopCsv(sh.store),
+  look:t => { const r = shopRead(t); if (r.error) return { error:r.error }; const d = r.store.drinks.length, n = shopList(r.store).length; return { line:d ? d + (d === 1 ? ' drink' : ' drinks') + ' from ' + n + (n === 1 ? ' shop' : ' shops') : 'a home town' }; },
+  rule:'Adds what is new. Nothing here is lost.',
+  keysIn:t => { const r = shopRead(t); return r.error ? null : r.store.drinks.map(drinkKey); },
+  keysHere:() => sh.store.drinks.map(drinkKey),
+  allow:() => sh.changes, unsaved:() => sh.changes,
+  markSaved:() => { sh.changes = 0; persistShops(); },
+  apply:t => { shLoadText(t); return 'Coffee shops: ' + sh.msg; } });
+everyRegister({ id:'prices', name:'Coffee prices',
+  has:() => pr.list.length > 0, text:() => priceCsv(pr.list),
+  look:t => { const r = priceRead(t); return r.error ? { error:r.error } : { line:r.list.length + (r.list.length === 1 ? ' bag' : ' bags') }; },
+  rule:'Adds what is new. Nothing here is lost.',
+  keysIn:t => { const r = priceRead(t); return r.error ? null : r.list.map(priceKey); },
+  keysHere:() => pr.list.map(priceKey),
+  allow:() => pr.changes, unsaved:() => pr.changes,
+  markSaved:() => { pr.changes = 0; persistPrices(); },
+  apply:t => { prLoadText(t); return 'Coffee prices: ' + pr.msg; } });
+/* ---------- Save everything: the file ----------
+   The backup file is its own file with its own remembered handle (EVERY_PICK_KEY in the same browser database as the history file, 67-file-picker.js), so saving everything never moves or replaces the history file.
+   With the file picker: the first save asks where (the Save box, with the name already filled in); after that Save everything goes straight over that file, and the page says "Saved over <name>". After the browser was closed the browser asks once to allow it.
+   Without it (Firefox, Safari, Chrome on a phone, the Claude view): a copy is downloaded with the date in its name, so a second download never clashes with the first.
+   Nothing is written over a backup file that holds more than this browser has, unless the difference is what was removed here on purpose (see `allow` in 78-every-parts.js). */
+const EVERY_PICK_KEY = 'everything-file';
+const EVERY_SAVE_TYPES = [{ description:'BeanTelligence backup (text)', accept:{ 'text/plain':['.txt'] } }];
+const EVERY_OPEN_TYPES = [{ description:'BeanTelligence backup or history file', accept:{ 'text/plain':['.txt'], 'text/csv':['.csv'] } }];
+let everyFile = null;   /* { handle, name } for the backup file saves go to, or null */
+async function loadEveryFile(){
+  if (!canPickFiles()) return;
+  try { const hd = await fhRun('readonly', st => st.get(EVERY_PICK_KEY)); if (hd && typeof hd.getFile === 'function' && typeof hd.name === 'string') everyFile = { handle:hd, name:hd.name.slice(0, 120) }; } catch(e){}
+}
+async function rememberEvery(handle){
+  everyFile = { handle, name:String(handle.name || 'your backup').slice(0, 120) };
+  try { await fhRun('readwrite', st => st.put(handle, EVERY_PICK_KEY)); } catch(e){}   /* not kept for next time if the browser will not store it; saving still works */
+}
+async function forgetEveryFile(){
+  everyFile = null;
+  try { await fhRun('readwrite', st => st.delete(EVERY_PICK_KEY)); } catch(e){}
+}
+async function everyWrite(handle, text){
+  const w = await handle.createWritable();
+  try { await w.write(text); await w.close(); } catch(e){ try { await w.abort(); } catch(e2){} throw e; }
+}
+/* the file is about to be written over: stop if it holds things this browser does not (a newer backup from another device, say) */
+async function everyGuard(handle){
+  let text = '';
+  try { const f = await handle.getFile(); if (!f.size) return; text = await f.text(); } catch(e){ return; }   /* new, empty or unreadable: nothing to protect */
+  if (!/BEGIN (?:BEANTELLIGENCE|NEUROBREW) BACKUP/i.test(text)) return;
+  const r = await readBackupCode(text); if (r.error) return;
+  const theirs = r.parts ? r.parts.parts : (r.csv ? { history:{ ok:true, text:r.csv } } : {});
+  let n = 0; const what = [];
+  EVERY_PARTS.forEach(p => {
+    const x = theirs[p.id]; if (!x || !x.ok) return;
+    const keys = p.keysIn(x.text); if (!keys) return;
+    const mine = new Set(p.keysHere()), gone = keys.filter(k => !mine.has(k)).length - p.allow();
+    if (gone > 0){ n += gone; what.push(gone + ' in ' + p.name.toLowerCase()); }
+  });
+  if (n > 0) throw { code:'dropped', n, what:what.join(', ') };
+}
+function everyErrorCopy(e){
+  const n = e && e.name;
+  if (e && e.code === 'dropped') return 'That backup has ' + e.n + (e.n === 1 ? ' item' : ' items') + ' (' + e.what + ') that are not here, and saving over it would remove ' + (e.n === 1 ? 'it' : 'them') + '. Nothing was written. Load that backup first to add them, or choose Save under a new name.';
+  if ((e && e.code === 'denied') || n === 'NotAllowedError') return 'The browser did not allow writing to that file, so nothing was saved. Tap again and allow it, or choose Save under a new name.';
+  if (n === 'NotFoundError') return 'That file could not be found. It may have been moved or deleted. Choose Save under a new name.';
+  if (n === 'SecurityError') return "This page can't open the Save box here. A copy will download instead the next time you tap Save everything.";
+  return 'The backup could not be saved. Nothing was changed. Try again, or tap Save everything once more to choose a new file.';
+}
+const everyDay = () => new Date().toISOString().slice(0, 10);
+/* Save every part into the one file. asNew: ask for a file again instead of using the remembered one.
+   Returns { ok, msg } (msg is the one line to show), or { quiet:true } when the person closed the Save box. */
+async function everySave(asNew){
+  const parts = everyGather();
+  if (!parts.length) return { ok:false, msg:'Nothing to save yet. Save a tasting, log a drink or add a bag first.' };
+  const info = { made:new Date().toISOString().replace(/\.\d+Z$/, 'Z'), app:releaseLatest().version };
+  try {
+    let handle = null, over = false, name = '';
+    if (canPickFiles()){
+      if (!asNew && everyFile){ handle = everyFile.handle; over = true; if (!(await pickPermission(handle))) throw { code:'denied' }; }   /* asked now, while the tap still counts */
+      else { try { handle = await window.showSaveFilePicker({ suggestedName:EVERY_NAME, types:EVERY_SAVE_TYPES }); } catch(e){ if (e && e.name === 'AbortError') return { quiet:true }; throw e; } }
+      await everyGuard(handle);
+    }
+    const made = await makeEverythingCode(parts, info);
+    if (handle){
+      await everyWrite(handle, made.text); await rememberEvery(handle); name = everyFile.name;
+    } else {
+      name = EVERY_NAME.replace('.txt', ' ' + everyDay() + '.txt');
+      if (inClaude()){ const dl = await getDownloads(); if (!dl) throw new Error('no downloads'); await dl.save({ filename:name, data:made.text }); }
+      else plainDownload(made.text, name, 'text/plain;charset=utf-8');
+    }
+    everyMarkSaved(parts, name);
+    return { ok:true, name, over, msg:handle ? (over ? 'Saved over ' + name + '.' : 'Saved to ' + name + '. Next time, Save everything goes straight over it.') : 'Saved ' + name + ' to your downloads. Keep it somewhere you can find it.' };
+  } catch(e){
+    if (e && e.name === 'NotFoundError') await forgetEveryFile();
+    return { ok:false, msg:everyErrorCopy(e) };
+  }
+}
 /* ---------- the first screen ----------
    It shows whenever nothing is in progress, and when the person comes back to it from the Menu. A coffee is "in progress" once anything has been typed or chosen for it; a shop drink once a shop or anything about the drink is chosen.
    Start a fresh coffee tips both out and keeps the history and the coffee shops list. When something is in progress it takes a second tap, so a stray tap cannot throw a half-made coffee away. */
@@ -18347,6 +18710,37 @@ function screenDoor(m){
   const one = hs !== ss, label = hs && !ss ? 'Back to ' + homeStepName() : ss && !hs ? 'Finish your drink' : 'Pick one above';
   m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary' + (one ? '' : ' notready'), id:'doorNext', text:label,
     onclick:() => { if (hs && !ss) go(app.resume || 'start'); else if (ss && !hs) sdOpen(); else $('doorHome').focus(); } }))));
+}
+/* ---------- My files: Everything ---------- */
+/* what the last load did, shown once at the top of My files */
+function everyNoteBox(){
+  if (!everyNote || !everyNote.length) return null;
+  const box = h('div', { class:'notice', id:'everyNote', role:'status' });
+  box.append(h('div', null, h('b', { text:'Backup loaded. ' }), everyNote.join(' ')),
+    h('div', { style:'display:flex;gap:8px;margin-top:8px' }, h('button', { type:'button', class:'btn small', style:'margin:0', id:'everyNoteOk', text:'OK', onclick:() => { everyNote = null; box.remove(); } })));
+  return box;
+}
+/* the nodes of the Everything section, in order: the status card, the two rows, the file links, the last message */
+function everyRows(){
+  const has = EVERY_PARTS.filter(p => p.has()), ch = everyChanged(), allSaved = has.length > 0 && !!every.saved && !ch.length, picking = canPickFiles();
+  const card = h('div', { class:'evcard' + (allSaved ? ' ok' : ''), id:'everyCard' });
+  if (allSaved){
+    const mk = h('span', { class:'evmasc', 'aria-hidden':'true' }); mk.innerHTML = mascotSvg({ view:'full', pose:'thumbs', face:'happy' });
+    card.append(mk, h('div', null, h('b', { text:'Everything is saved.' }), h('p', { id:'everyLine', text:everySavedLine() })));
+  } else card.append(h('p', { id:'everyLine', text:everySavedLine() }));
+  const sub = !has.length ? 'Save a tasting, log a drink or add a bag first'
+    : picking && everyFile ? 'Saves straight over ' + everyFile.name
+    : has.map(p => p.name).join(', ') + ' in one file';
+  const msg = h('p', { class:'fine', id:'everyMsg', role:'status', style:'margin:6px 0 0', text:every.msg });
+  const save = hubRow('fl-save', 'Save everything', sub, async () => {
+    const r = await everySave(false); if (r.quiet) return;
+    every.msg = r.msg; if (app.screen === 'files') render();
+  }, { tone:'a', id:'everySaveBtn' });
+  const load = hubRow('fl-folder', 'Load a backup', 'Bring back what you saved, or an older file', () => { sheet = { step:'everyUpload', error:'' }; openSheet(); }, { tone:'t', id:'everyLoadBtn' });
+  const links = h('div', { class:'evlinks' });
+  if (picking && has.length) links.append(h('button', { type:'button', class:'btn link', id:'everyNew', style:'margin:0', text:'Save under a new name...', onclick:async () => { const r = await everySave(true); if (r.quiet) return; every.msg = r.msg; if (app.screen === 'files') render(); } }));
+  if (picking && everyFile) links.append(h('button', { type:'button', class:'btn link', id:'everyForget', style:'margin:0', text:'Stop saving to ' + everyFile.name, onclick:() => { forgetEveryFile().then(() => { every.msg = 'Saving to that file stopped. The file itself is not touched.'; if (app.screen === 'files') render(); }); } }));
+  return [card, h('div', { class:'hublist' }, save, load), links, msg, h('p', { class:'fine hubnote', text:'One file holds your tasting history, coffee shops and prices. Each part is checked on its own when you load it. You can still save each part by itself below.' })];
 }
 /* ---------- the Coffee shops screen ---------- */
 let shopsUndo = null;   /* the drink just deleted, kept for Undo until the person leaves or deletes another */
@@ -18447,7 +18841,7 @@ loadPrices();
 loadShops();
 loadShopDraft();
 loadDraft();
-loadPickedFile();
+loadPickedFile(); loadEveryFile();
 render();
 navNote(false);
 startTerms();
