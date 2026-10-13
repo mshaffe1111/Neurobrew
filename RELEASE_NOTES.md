@@ -4,6 +4,17 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.028.0076: Philips tweaks and a Facts screen that teaches
+
+2026-10-13 20:46:05 UTC
+
+- The Philips 5500 screen now has iced caffè latte (21 drinks), and Americano has water, strength and ExtraShot.
+- The roaster now sits above the coffee name on the Coffee and Facts screens.
+- The Facts screen now teaches. A card says how your coffee fits together (where it grew, how high, how it was processed and roasted), and six stops take you from seed to cup. Tap a stop to learn it.
+- What is in your cup: about 99% water, caffeine in a cup, and how much is okay, with the sources.
+- Coffee school has six short lessons (seed, species, roasting, taste, freshness, water), each with a box about your coffee. A Did you know? fact closes the page.
+- The mascot now stands beside the notes, and the cards are tighter and fit their words.
+
 ## Version 4.027.0075: Philips 5500: a screen with all 20 drinks
 
 2026-10-13 18:24:21 UTC
