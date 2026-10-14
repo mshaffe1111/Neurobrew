@@ -1033,8 +1033,6 @@ details.folk > summary::-webkit-details-marker{ display:none; }
 .folk-more{ margin-top:8px; }
 .folk-more > summary{ cursor:pointer; font-weight:600; min-height:44px; display:flex; align-items:center; }
 /* Coffee prices */
-.pr-row{ padding:12px 0; border-top:2px solid var(--line); }
-.pr-list .pr-row:first-child{ border-top:0; padding-top:2px; }
 .pr-name{ font-size:19px; line-height:1.3; overflow-wrap:anywhere; }
 .pr-acts{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
 .pr-acts .btn{ margin:0; }
@@ -1053,6 +1051,120 @@ details.folk > summary::-webkit-details-marker{ display:none; }
 .tt-amt{ font-size:.95rem; }
 .tt-cups{ margin:10px 0 0; padding-left:1.4em; }
 .tt-cups li{ padding:3px 0; }
+/* kind tiles: bag of beans or pods */
+.mk-kind{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 12px; }
+.mk-kind button{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 6px 9px; text-align:center; background:var(--surface); color:var(--ink); border:2px solid var(--frame); border-radius:16px; box-shadow:0 3px 0 var(--frame); font:inherit; min-height:44px; }
+.mk-kind button[aria-pressed="true"]{ background:var(--leaf); color:var(--leaf-ink); }
+.mk-kind .pic{ width:44px; height:44px; border-radius:12px; display:grid; place-items:center; background:var(--icon-bg); }
+.mk-kind .pic svg{ width:38px; height:38px; }
+.mk-kind b{ font-size:17px; }
+.mk-kind small{ font-size:13.5px; opacity:.9; }
+/* groups inside the form */
+.fm-grp{ border:2px dashed var(--line); border-radius:14px; padding:8px 10px 10px; margin-top:12px; }
+.fm-grp .gt{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:16.5px; margin-bottom:4px; }
+.fm-grp .gt .pic{ width:30px; height:30px; flex:none; }
+.fm-grp .gt .pic svg{ width:100%; height:100%; }
+.fm-opt{ font-weight:400; color:var(--muted); font-size:14px; }
+.fm-two{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.fm-sel{ width:100%; min-height:48px; border:2px solid var(--frame); border-radius:12px; background:var(--field); color:var(--ink); font:inherit; font-size:17px; padding:0 8px; }
+.fm-note{ font-size:14.5px; line-height:1.35; color:var(--muted); margin:6px 0 0; }
+.podtiles{ flex-wrap:wrap; }
+.yc-lrow.stack{ flex-direction:column; align-items:stretch; gap:4px; margin-bottom:8px; }
+.yc-lrow.stack .yc-mini{ display:flex; }
+.yc-lrow.stack .yc-mini button{ flex:1; white-space:nowrap; padding-left:4px; padding-right:4px; }
+.prform .yc-text, .prform .fm-sel{ box-sizing:border-box; }
+/* the purchase rows: one box each */
+.pr-list{ display:flex; flex-direction:column; gap:10px; }
+.pr-row{ border:2px solid var(--frame); border-radius:16px; background:var(--surface); padding:10px 12px; box-shadow:0 3px 0 var(--frame); }
+.pr-row.done{ opacity:.78; border-style:dashed; box-shadow:none; }
+.pr-row.editing{ border-color:var(--leaf); }
+.pr-row .yc-line{ margin-top:3px; }
+.pr-row .eh{ display:grid; grid-template-columns:62px 1fr; gap:10px; align-items:center; margin-bottom:8px; }
+.pr-row .eh .mm svg{ width:100%; height:auto; display:block; overflow:visible; }
+.pr-row .eh h3{ margin:0; font-size:20px; }
+.pr-row .eh p{ margin:2px 0 0; font-size:15px; line-height:1.3; color:var(--muted); }
+.tag2{ display:inline-block; font-size:12px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; border:1.5px solid var(--ink); border-radius:8px; padding:2px 6px; margin-left:6px; vertical-align:2px; color:var(--ink); background:transparent; }
+.tag2.fade{ background:#F6D9A0; color:#22120C; border-color:#22120C; }
+.tag2.good{ background:#CFE3B0; color:#22120C; border-color:#22120C; }
+.tag2.rest{ background:#DCE7F2; color:#22120C; border-color:#22120C; }
+.tag2.first{ background:#22120C; color:#FFF8EA; border-color:#22120C; }
+/* the row of cups in the answer */
+.cupbar{ display:flex; gap:3px; margin:10px 0 4px; }
+.cupbar i{ flex:1; height:22px; min-width:0; border:2px dashed var(--band-ink); border-radius:6px; background:transparent; }
+.cupbar i.f{ background:#C79A6B; border:2px solid #FFF8EA; }
+.cupbar.solid i{ border-radius:6px; }
+.cupcap{ display:flex; justify-content:space-between; gap:8px; font-size:14px; color:#FFFFFF; }
+/* Home or shop? */
+#spCard .m-split{ margin:8px 0; }
+#spCard .m-split .lab{ display:flex; justify-content:space-between; gap:8px; font-size:13px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--muted); margin:8px 0 3px; }
+.m-bar{ display:flex; height:32px; border:2px solid var(--ink); border-radius:10px; overflow:hidden; }
+.m-bar i{ min-width:0; text-overflow:clip; display:flex; align-items:center; padding:0 8px; font-style:normal; font-weight:700; font-size:14px; white-space:nowrap; color:#22120C; overflow:hidden; }
+.m-bar .h{ background:#8DB45A; }
+.m-bar .s{ background:#F0A43A; }
+#spCard .m-two{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:10px 0; }
+#spCard .m-two > div{ border:2px solid var(--frame); border-radius:14px; padding:8px 10px; background:var(--surface); min-width:0; }
+#spCard .m-two .top{ display:flex; gap:8px; align-items:center; }
+#spCard .m-two .pic{ width:34px; height:34px; flex:none; }
+#spCard .m-two .pic svg{ width:100%; height:100%; }
+#spCard .m-two small{ display:block; font-size:12px; letter-spacing:.8px; text-transform:uppercase; color:var(--muted); font-weight:700; }
+#spCard .m-two b{ font-size:21px; line-height:1.1; overflow-wrap:anywhere; }
+#spCard .m-two .ln{ font-size:14.5px; line-height:1.3; margin-top:4px; }
+#spCard .m-sec{ display:flex; align-items:center; gap:8px; margin:16px 0 6px; flex-wrap:wrap; }
+#spCard .m-sec .pic{ width:34px; height:34px; flex:none; }
+#spCard .m-sec .pic svg{ width:100%; height:100%; }
+#spCard .m-sec b{ font-size:18px; }
+#spCard .m-sec .fhint{ margin-left:auto; font-size:13.5px; color:var(--muted); }
+#spCard .g-list{ display:flex; flex-direction:column; gap:6px; margin:8px 0; }
+.g-row{ border:2px solid var(--frame); border-radius:14px; background:var(--surface); box-shadow:0 3px 0 var(--frame); }
+.g-row summary{ list-style:none; display:grid; grid-template-columns:1fr auto auto; column-gap:10px; align-items:center; padding:8px 10px; min-height:44px; cursor:pointer; }
+.g-row summary::-webkit-details-marker{ display:none; }
+.g-row summary b{ font-size:17px; overflow-wrap:anywhere; }
+.nw{ white-space:nowrap; }
+.g-row summary small{ display:block; font-size:13.5px; color:var(--muted); font-weight:400; }
+.g-row summary .avg{ font-size:20px; font-weight:700; }
+.g-row summary .chev{ font-size:26px; font-weight:700; color:var(--leaf); transition:transform .15s; }
+.g-row[open] summary .chev{ transform:rotate(90deg); }
+.g-row .gd{ padding:0 10px 10px; border-top:2px solid var(--line); font-size:15px; line-height:1.35; }
+.g-row .gd .kv{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:8px 0; }
+.g-row .gd .kv div{ border:2px solid var(--line); border-radius:10px; padding:5px 8px; min-width:0; overflow-wrap:anywhere; }
+.g-row .gd .kv b{ display:block; font-size:12.5px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+.g-row .gd ul{ margin:4px 0; padding:0; list-style:none; }
+.g-row .gd li{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:3px 0; border-bottom:1px dotted var(--line); flex-wrap:wrap; }
+.g-row .gd li .flink{ margin:0; min-height:44px; }
+.g-row.on{ border-color:var(--leaf); box-shadow:0 3px 0 var(--leaf); }
+.g-tag{ display:inline-block; font-size:12px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; background:var(--pick); color:var(--pick-ink); border-radius:8px; padding:2px 6px; margin-left:6px; vertical-align:2px; }
+.g-more{ width:100%; min-height:44px; border:2px dashed var(--frame); border-radius:14px; background:transparent; color:var(--leaf); font:inherit; font-weight:700; }
+.mk-step{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin:12px 0 6px; }
+.mk-step .stp{ display:flex; align-items:center; gap:8px; }
+.mk-step button{ width:44px; height:44px; border:2px solid var(--frame); border-radius:12px; background:var(--surface); font-size:24px; font-weight:700; color:var(--ink); }
+.mk-step .n{ min-width:28px; text-align:center; font-size:22px; font-weight:700; }
+.mk-save{ background:var(--pick); color:var(--pick-ink); border-radius:12px; padding:8px 10px; font-size:16px; line-height:1.3; margin:8px 0 0; }
+/* a year, month by month */
+#spCard .yr{ margin:10px 0 4px; border:2px solid var(--line); border-radius:14px; padding:8px 8px 6px; background:var(--surface); }
+#spCard .yr .cols{ display:grid; grid-template-columns:repeat(12, 1fr); gap:4px; height:130px; }
+#spCard .yr .col{ display:flex; flex-direction:column; justify-content:flex-end; height:100%; padding:0; border:0; background:none; border-radius:6px; min-width:0; }
+#spCard .yr .col i{ display:block; border-radius:3px 3px 0 0; }
+#spCard .yr .col .hh{ background:#8DB45A; }
+#spCard .yr .col .ss{ background:#F0A43A; }
+#spCard .yr .col .nope{ height:12px; border:1.5px dashed var(--line); background:transparent; }
+#spCard .yr .col.sel{ background:rgba(127,127,127,.18); }
+#spCard .yr .lab{ display:grid; grid-template-columns:repeat(12, 1fr); gap:4px; margin-top:3px; font-size:11.5px; text-align:center; color:var(--muted); font-weight:700; }
+#spCard .yr .lab .sel{ color:var(--ink); }
+#spCard .yr .key{ display:flex; flex-wrap:wrap; gap:4px 12px; font-size:13px; margin-top:6px; color:var(--muted); }
+#spCard .yr .key i{ display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:4px; vertical-align:-1px; }
+#spCard .mo{ border:2px solid var(--leaf); border-radius:12px; background:var(--pick); color:var(--pick-ink); padding:4px 6px; margin:6px 0; font-size:15.5px; line-height:1.3; display:flex; justify-content:space-between; align-items:center; gap:6px; }
+#spCard .mo .mt{ flex:1; text-align:center; }
+#spCard .mo .spstep{ margin:0; flex:none; width:44px; padding:0; font-size:24px; }
+#spCard .tops{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin:8px 0; }
+#spCard .tops div{ border:2px solid var(--frame); border-radius:12px; padding:6px 8px; background:var(--surface); min-width:0; }
+#spCard .tops small{ display:block; font-size:11.5px; letter-spacing:.8px; text-transform:uppercase; color:var(--muted); font-weight:700; }
+#spCard .tops b{ font-size:16px; line-height:1.15; display:block; overflow-wrap:anywhere; }
+#spCard .tops span{ font-size:13px; color:var(--muted); }
+#spCard .trip{ display:flex; gap:10px; align-items:center; border:2px dashed var(--leaf); border-radius:14px; padding:8px 10px; margin:8px 0; }
+#spCard .trip .pic{ width:34px; height:34px; flex:none; }
+#spCard .trip .pic svg{ width:100%; height:100%; }
+#spCard .trip .sub{ font-size:14px; color:var(--muted); }
+@media (max-width:359px){ #spCard .tops{ grid-template-columns:1fr; } #spCard .m-two b{ font-size:19px; white-space:nowrap; } #spCard .m-two .top{ flex-wrap:wrap; gap:2px 8px; } }
 .wview .wtop{ display:flex; flex-direction:column; gap:10px; }
 .wview .wtop .seg{ width:100%; }
 .wview .wtop input[type=search]{ width:100%; }
@@ -2054,6 +2166,25 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .fgrid{ align-items:start; gap:8px; }
 .ftile{ min-height:0; padding:8px 10px 9px; }
 /* what is in your cup */
+/* the Freshness clock */
+.fclock{ padding:12px; }
+.fclock .fch{ display:flex; gap:12px; align-items:flex-start; }
+.fclock .fch .ip{ flex:none; display:grid; place-items:center; width:52px; height:52px; }
+.fclock .fch .ip .pic{ width:48px; height:48px; background:transparent; }
+.fclock .fct{ display:block; font:700 21px/1.15 var(--display); }
+.fclock .fcs{ margin:3px 0 0; font-size:16px; line-height:1.3; }
+.fcbar{ position:relative; display:flex; height:28px; border:2px solid var(--ink); border-radius:10px; overflow:hidden; margin:12px 0 4px; }
+.fcbar i{ display:block; height:100%; }
+.fcbar .r{ background:#E8DBAE; } .fcbar .s{ background:#8DB45A; } .fcbar .p{ background:#E8C26A; }
+.fcbar .fcat{ position:absolute; top:0; bottom:0; width:4px; margin-left:-2px; background:#22120C; }
+.fclab{ display:flex; font-size:14px; color:var(--muted); }
+.fclab span{ text-align:center; white-space:nowrap; min-width:0; }
+.fcd{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:10px; }
+.fcd div{ border:2px solid var(--line); border-radius:12px; padding:6px 8px; min-width:0; }
+.fcd b{ display:block; font:700 12.5px/1.2 var(--ui); letter-spacing:.9px; text-transform:uppercase; color:var(--muted); }
+.fcd span{ font-size:17px; }
+.fcl{ display:flex; flex-wrap:wrap; gap:0 18px; margin-top:4px; }
+.fcl .flink{ min-height:44px; margin:0; }
 .fcup{ padding:10px 12px; }
 .fcupl{ margin:0; font-size:17px; line-height:1.3; }
 .cupbar{ display:flex; height:30px; border:2px solid var(--ink); border-radius:10px; overflow:hidden; margin:8px 0 6px; }
@@ -2112,7 +2243,7 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .lssrc li{ margin:4px 0; }
 @media (max-width:359px){ .lgrid{ grid-template-columns:1fr; } .nj .nb strong{ font-size:17px; } .fnote.withm{ grid-template-columns:58px 1fr; } .fnote.withm .fmasc{ width:58px; } }
 @media (forced-colors: active){
-  .nj .nb, .lt, .dyk, .fstory, .fcup{ border:2px solid ButtonText; box-shadow:none; }
+  .nj .nb, .lt, .dyk, .fstory, .fcup, .fclock{ border:2px solid ButtonText; box-shadow:none; }
   .cupbar{ border-color:CanvasText; } .cupbar .cw{ background:Highlight; } .cupbar .cc{ background:CanvasText; }
   .pic svg, .fmasc svg, .fm svg{ forced-color-adjust:none; }
 }
@@ -2676,12 +2807,6 @@ details.mfold > .mrows{ margin-top:14px; }
   <path d="M11 25 H32" stroke="var(--ic-coffee,#7A4A2D)" stroke-width="3" stroke-linecap="round"/>
   <path d="M16 15 C14 12 18 10 16 6 M22 15 C20 12 24 10 22 6 M28 15 C26 12 30 10 28 6" fill="none" stroke="var(--ic-ink,#22120C)" stroke-width="2.2" stroke-linecap="round" opacity=".75"/>
 </symbol>
-<symbol id="ic-sprout" viewBox="0 0 48 48">
-  <path d="M8 40 C8 35 14 33 24 33 C34 33 40 35 40 40 Z" fill="var(--ic-soil,#7A4A2D)" stroke="var(--ic-ink,#22120C)" stroke-width="2.6" stroke-linejoin="round"/>
-  <path d="M24 33 V21" stroke="var(--ic-ink,#22120C)" stroke-width="2.6" stroke-linecap="round"/>
-  <path d="M24 24 C24 14 17 9 8 10 C8 19 14 24 24 24 Z" fill="var(--ic-leaf,#4C9A6A)" stroke="var(--ic-ink,#22120C)" stroke-width="2.6" stroke-linejoin="round"/>
-  <path d="M24 20 C24 11 30 6 40 7 C40 16 34 21 24 20 Z" fill="var(--ic-leaf2,#6FB98A)" stroke="var(--ic-ink,#22120C)" stroke-width="2.6" stroke-linejoin="round"/>
-</symbol>
 <symbol id="ic-check" viewBox="0 0 24 24"><path d="M5 12.5 L10 17.5 L19.5 7" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 
 <symbol id="bean-1" viewBox="0 0 48 48"><g transform="rotate(-28 24 24)"><ellipse cx="24" cy="24" rx="12.5" ry="18" fill="var(--r1,#C9A468)" stroke="var(--ic-ink,#22120C)" stroke-width="2.6"/><path d="M24 7 C18 15 30 20 24 26 C19 32 29 36 24 41" fill="none" stroke="var(--ic-ink,#22120C)" stroke-width="2.4" stroke-linecap="round" opacity=".7"/></g></symbol>
@@ -2718,6 +2843,7 @@ details.mfold > .mrows{ margin-top:14px; }
 <symbol id="ic-chev" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></g></symbol>
 <!-- bt-art:start -->
 <symbol id="art-bag" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13 H36 L38 40 C38 43 36 44 34 44 H14 C12 44 10 43 10 40 Z" fill="#C79A66"/><path d="M12 13 L14 6 H34 L36 13 Z" fill="#8A5230"/><path d="M16 20 H32 V34 H16Z" fill="#FFF8EA" stroke-width="2"/><g transform="translate(24 27) rotate(-28) scale(0.6)"><ellipse cx="0" cy="0" rx="7" ry="10" fill="#8A5230"/><path d="M0 -9 C-4 -4 4 -1 0 3 C-3 6 3 8 0 9.500" fill="none" stroke-width="2"/></g></g></symbol>
+<symbol id="art-pod" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 H39 L35 38 C34 41 29 43 24 43 C19 43 14 41 13 38Z" fill="#C79A66"/><ellipse cx="24" cy="14" rx="15" ry="5" fill="#F1E6C8"/><path d="M14 25 H34"/><path d="M24 9 V6"/></g></symbol>
 <symbol id="art-cal" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="9" width="34" height="32" rx="5" fill="#FFF8EA"/><path d="M7 20 V14 a5 5 0 0 1 5-5 H36 a5 5 0 0 1 5 5 V20Z" fill="#D9503B"/><path d="M16 5 V12 M32 5 V12" stroke-width="3"/><path d="M24 25 C26 28 29 29 29 33 C29 36 27 38 24 38 C21 38 19 36 19 33 C19 31 21 30 21.500 28 C22.500 29 23 29 23 29 C23.500 27 23.500 26 24 25Z" fill="#F2A93B" stroke-width="2"/></g></symbol>
 <symbol id="art-proc" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="30" cy="17" r="7" fill="#F2A93B"/><path d="M30 5 V7 M30 27 V29 M18 17 H20 M40 17 H42 M21.500 8.500 L23 10 M37 24 L38.500 25.500 M38.500 8.500 L37 10 M21.500 25.500 L23 24" stroke-width="2.600"/><path d="M17 22 C21 28 25 32 25 37 C25 41 21.500 44 17 44 C12.500 44 9 41 9 37 C9 32 13 28 17 22Z" fill="#7FB7CF"/><path d="M13 36 C13 38.500 14.500 40 16.500 40.500" fill="none" stroke="#fff" stroke-width="2" opacity=".8"/></g></symbol>
 <symbol id="art-elev" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 42 L18 14 L25 26 L31 17 L45 42Z" fill="#4C9A6A"/><path d="M18 14 L13.500 22.500 L18 20 L22 23Z M31 17 L27.500 22.500 L31 21 L34.500 23Z" fill="#FFF8EA" stroke-width="1.800"/><path d="M18 14 V6" stroke-width="2.200"/><path d="M18 6 L27 8.500 L18 11Z" fill="#D9503B" stroke-width="1.800"/><path d="M2 43 H46" stroke-width="2.600"/></g></symbol>
@@ -2786,19 +2912,14 @@ details.mfold > .mrows{ margin-top:14px; }
 <symbol id="mi-cupyield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14l-2 16H7z"/><path d="M6 10h12"/></g></symbol>
 <symbol id="mi-cost" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.500 9c-.6-1.200-4.500-1.400-4.500 1 0 3 5 1.500 5 4.200 0 2.400-4.200 2.200-5 .6M12 6.500v1.500M12 16v1.500"/></g></symbol>
 <symbol id="mi-ratio" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M5 8h14M7 8l-3 7h6zM17 8l-3 7h6z"/></g></symbol>
-<symbol id="mi-trash" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13"/></g></symbol>
 <symbol id="mi-file" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M12 11v6M9.500 14.500L12 17l2.500-2.500"/></g></symbol>
 <symbol id="mi-text" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h14M5 11h14M5 16h9"/></g></symbol>
-<symbol id="mi-restore" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V8M7 13l5-5 5 5M5 4h14"/></g></symbol>
 <symbol id="mi-cols" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M10 4v16M4 10h16"/></g></symbol>
 <symbol id="mi-cam" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13.5" r="3.5"/></g></symbol>
 <symbol id="mi-home" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H4zM10 20v-6h4v6"/></g></symbol>
 <symbol id="mi-plus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></g></symbol>
-<symbol id="mi-minus" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></g></symbol>
-<symbol id="mi-aa" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19l4.5-12L12 19M4.8 15h5.4"/><path d="M14.5 12.5a3 3 0 0 1 5.5 1.7V19M14.5 17.2c0-2 5.5-2 5.5 0"/></g></symbol>
 <symbol id="pf-sour" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="9" ry="6.5" transform="rotate(-30 12 12)"/><path d="M7.500 15l9-6M4.500 13.500l-1.200.8M19.500 10.500l1.200-.8"/></g></symbol>
 <symbol id="pf-bitter" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="5.500" ry="8.500" transform="rotate(-30 12 12)"/><path d="M9.500 5.500c-2 3.500 3.500 5 .5 7.500s2 4 0 6"/></g></symbol>
-<symbol id="pf-dry" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8c2.500-2.500 4.500 2 7 0s4.500 2 7 0 2.500 1 4 0M3 16c2.500-2.500 4.500 2 7 0s4.500 2 7 0 2.500 1 4 0"/></g></symbol>
 <symbol id="pf-both" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="8" cy="9" rx="5" ry="3.500" transform="rotate(-30 8 9)"/><ellipse cx="16" cy="15.500" rx="3" ry="5" transform="rotate(-30 16 15.500)"/></g></symbol>
 <symbol id="pf-flat" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18M8 16l4 3.500 4-3.500"/></g></symbol>
 <symbol id="pf-muddy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14l-1.500 11a2 2 0 0 1-2 1.500H8.500a2 2 0 0 1-2-1.500z"/><path d="M9 15h.01M12 17h.01M15 15h.01M11 12.500h.01M14 12.500h.01"/></g></symbol>
@@ -2825,11 +2946,7 @@ details.mfold > .mrows{ margin-top:14px; }
 <symbol id="mi-globe" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3.5 3 3.5 15 0 18M12 3c-3.5 3-3.5 15 0 18"/></g></symbol>
 <symbol id="mi-peak" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 19.5l6.5-11 4 6.5 3-4.5 5.5 9z"/></g></symbol>
 <symbol id="mi-bean" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="5.5" ry="8.5" transform="rotate(35 12 12)"/><path d="M8.5 16.5c3.5-2 5-5 7-9"/></g></symbol>
-<symbol id="mi-leaf" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19C5 10 10 5 20 4c0 10-5 15-14 15zM5 19l8-8"/></g></symbol>
 <symbol id="mi-blend" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></g></symbol>
-<symbol id="mi-nodecaf" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/></g></symbol>
-<symbol id="mi-thermo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z"/><path d="M12 9v7"/></g></symbol>
-<symbol id="mi-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></g></symbol>
 <symbol id="mi-speaker" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></g></symbol>
 <symbol id="mi-ice" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 9l2 2"/></g></symbol>
 <symbol id="mi-smile" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14.500q4 3.800 8 0"/><path d="M9 9.500v.01M15 9.500v.01" stroke-width="3"/></g></symbol>
@@ -2859,7 +2976,6 @@ details.mfold > .mrows{ margin-top:14px; }
 <symbol id="p-great" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="24,6 29.5,18.5 43,19.5 33,28.5 36,42 24,35 12,42 15,28.5 5,19.5 18.5,18.5" fill="#F2B33D"/><path d="M41 4v7M37.5 7.5h7M8 34v5M5.5 36.5h5" fill="none" stroke-width="2.2"/></g></symbol>
 <symbol id="p-notme" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 24h26v6a12 12 0 0 1-12 12h-2A12 12 0 0 1 8 30z" fill="#FFF8EA"/><path d="M34 27h3a4 4 0 0 1 0 8h-4" fill="none"/><path d="M6 44h32" fill="none"/><path d="M24 24V13" fill="none" stroke-width="1.8"/><path d="M20 5h9v8h-9z" fill="#6FB98A" stroke-width="2"/><path d="M10 28h22" fill="none" stroke="#C9AE86" stroke-width="2.5"/></g></symbol>
 <symbol id="a-cal" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="9" width="34" height="32" rx="5" fill="#FFF8EA"/><path d="M7 20V14a5 5 0 0 1 5-5h24a5 5 0 0 1 5 5v6z" fill="#D9503B"/><path d="M16 5v8M32 5v8" fill="none"/><path d="M14 27h4M22 27h4M30 27h4M14 34h4M22 34h4" fill="none" stroke-width="2.2"/></g></symbol>
-<symbol id="a-thermo" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 28V10a4 4 0 0 1 8 0v18a8 8 0 1 1-8 0z" fill="#FFF8EA"/><circle cx="24" cy="35" r="4.5" fill="#E0432A" stroke-width="2"/><path d="M24 14v20" fill="none" stroke="#E0432A" stroke-width="3"/><path d="M33 12h6M33 18h4M33 24h6" fill="none" stroke-width="2"/></g></symbol>
 <symbol id="a-grind" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14h24l-4 18H16z" fill="#C79A66"/><path d="M10 14h28" fill="none" stroke-width="3"/><path d="M36 14l6-6M42 8v6" fill="none"/><rect x="14" y="34" width="20" height="8" rx="2" fill="#8A5230"/><circle cx="20" cy="38" r="1.2" fill="#22120C" stroke="none"/><circle cx="25" cy="39" r="1.2" fill="#22120C" stroke="none"/><circle cx="29" cy="37.5" r="1.2" fill="#22120C" stroke="none"/></g></symbol>
 <!-- r61-art:end -->
 <!-- bt-art:end -->
@@ -8090,7 +8206,7 @@ const GUIDE_SECTIONS = [
       'My setup in the menu keeps your units, level, timer sound, taste card view and gear (your grinder, water and filter) in one place. New brews start with your gear filled in. The setup is saved inside your history file each time you save, so uploading the file on another device brings it back.',
       'Words with a dotted underline are tappable and give a short definition. The Glossary in the menu lists every term and can be searched.',
       'Calculators in the menu holds small helpers. Cup yield shows how much ends up in your cup. The Ratio and strength calculator gives the ratio for the strength you want, and how much water to add to a strong brew. The strengths and extractions it starts from are common targets, not rules. The Cost of coffee tool works out what a cup costs from the price and size of a bag, in grams, ounces or pounds. It shows the cost per cup, day, week and month, and can compare two bags. It counts the coffee only. Nothing is kept unless you press Add to my coffee prices.',
-      'Coffee prices in the menu is your own list of the bags you have bought. Add a bag there, or from the Cost of coffee tool. The list is kept in this browser. Save it as a file called beantelligence-prices.csv, and load it again later. It is a separate file from your tasting history, and it never changes your history. Loading a file only adds bags that are not in the list yet.',
+      'Coffee prices in the menu is your own list of the bags you have bought. Add a bag there, or from the Cost of coffee tool. The list is kept in this browser. Save it as a file called BeanTelligence Prices.csv, and load it again later. It is a separate file from your tasting history, and it never changes your history. Loading a file only adds bags that are not in the list yet.',
       'SCA cupping in the menu is a guided table session with timers. You choose to describe the coffees or to judge them, then the same coffee or different ones, and how many cups of each. The steps follow the SCA\'s standard 102-2024, in our own words, and the SCA has not reviewed them. Circles at the top stand for your coffees. Tap one to see that coffee. Timers tell you when each crust is ready to break. The session gives no scores and nothing is saved. Your Taste step is a separate, personal way to record a cup.'] },
   { id:'trust', title:'What to trust', lead:'Starting points, not rules.',
     paras:['Brew settings are starting points. The roast changes to temperature and grind come from brewer experience, not lab results. The app says so wherever they appear. The cupping score is based on the SCA affective form (SCA-104), scored for one cup by you. Use it to compare your own cups. It is not an official grade.',
@@ -8178,7 +8294,16 @@ const LESSONS = {
     rate:'C',
     src:[{ cite:'Hendon CH, Colonna-Dashwood L, Colonna-Dashwood M (2014). The role of dissolved cations in coffee extraction. Journal of Agricultural and Food Chemistry 62(21):4947-4950.', link:'https://doi.org/10.1021/jf501687c', short:'Hendon and others (2014), J Agric Food Chem' },
       { cite:'Wellinger M, Specialty Coffee Association, 25 Magazine issue 9, "Water and Coffee Acidity: How to Adapt Your Water for Different Extraction Methods".', link:'https://sca.coffee/sca-news/25/issue-9/english/water-and-coffee-acidity-how-to-adapt-your-water-for-different-extraction-methods-25-magazine-issue-9-pxjby', short:'SCA 25 Magazine issue 9, water and acidity' }],
-    limits:'We could not open the SCA water standard itself, so its figures are quoted from the Science Audit. We found little controlled taste testing, and no single ideal.' }
+    limits:'We could not open the SCA water standard itself, so its figures are quoted from the Science Audit. We found little controlled taste testing, and no single ideal.' },
+  freeze:{ key:'freeze', title:'Freezing tips', hook:'Keeping beans past their window', art:'rested',
+    plain:'Freezing whole beans can slow the loss of aroma. In one study, beans frozen for nine weeks smelled closer to fresh than beans left on the counter, most of all dark roasts. Light roasts changed less either way.',
+    why:'The smell of coffee comes from many small molecules that escape or break down as beans sit. In the study, the freezer kept more of them, most clearly in the dark roast. One roaster advises splitting a bag into small portions, so you thaw only what you will use, keeping it sealed until it is back to room temperature, and not refreezing. The same roaster warns that cold beans can pick up water as they warm. The study did not test that. The lead researcher\'s supervisor said he could not find evidence of that harm in the scientific literature. That is not settled, so letting the sealed bag warm first costs nothing.',
+    nums:'The study kept whole beans of one lot in a freezer or at room temperature for 9 weeks, roasted light and dark, with a fresh sample as the control. 48 coffee consumers smelled freshly ground samples, and a lab measured 48 aroma compounds. Both agreed. Lighter roasts changed less than darker ones. Consumers placed the frozen dark roast closer to the fresh sample than the dark roast kept at room temperature.',
+    rate:'B',
+    src:[{ cite:'Cotter AR, Hopfer H (2018). The effects of storage temperature on the aroma of whole bean arabica coffee evaluated by coffee consumers and HS-SPME-GC-MS. Beverages 4(3):68.', link:'https://doi.org/10.3390/beverages4030068', short:'Cotter and Hopfer (2018), Beverages' },
+      { cite:'Penn State News (2019), "Wake and smell the coffee: research shows freezing beans can preserve aroma". It reports the same study and a comment from the research supervisor on condensation.', link:'https://www.psu.edu/news/research/story/wake-and-smell-coffee-research-shows-freezing-beans-can-preserve-aroma', short:'Penn State News (2019), freezing beans' },
+      { cite:'Klatch Coffee, "Should you freeze your coffee?". A roaster\'s advice on portions, thawing and not refreezing. It is not tested.', link:'https://klatchcoffee.com/blogs/knowledgebase/should-you-freeze-your-coffee', short:'Klatch Coffee, "Should you freeze your coffee?"' }],
+    limits:'One study, one lot of beans, nine weeks, and a smell test, not a taste test. It did not test ground coffee, longer freezing, containers, or how to thaw. The portion, thaw and refreeze advice is a roaster\'s practice, not a finding.' }
 };
 const LESSON_ORDER = ['seed', 'species', 'roasting', 'taste', 'fresh', 'water'];
 const lessonFor = k => LESSONS[k] || null;
@@ -8211,6 +8336,9 @@ function lessonYours(key, c, now, water){
   if (key === 'fresh'){
     const f = ex.freshness;
     return f ? f.tip + ' (' + f.label.toLowerCase() + ')' : 'No roast date is saved. Add it on the Coffee screen and this lesson shows where your bag is.';
+  }
+  if (key === 'freeze'){
+    return { light:'Your coffee is a light roast. In the study, light roasts changed the least in storage, so freezing matters less for it.', 'medium-light':'Your coffee is a medium-light roast. In the study, lighter roasts changed less in storage, so freezing matters less for it.', medium:'Your coffee is a medium roast. The study tested light and dark roasts, so it does not say how a medium roast does.', 'medium-dark':'Your coffee is a medium-dark roast. The study tested light and dark roasts. Darker roasts changed more in storage, so they gain more from freezing.', dark:'Your coffee is a dark roast. In the study, dark roasts gained the most from freezing.' }[p.roast] + (c.roast ? '' : ' (We assumed medium, because no roast level is saved.)');
   }
   if (key === 'water'){
     const w = water && (water.waterAlk || water.waterGH) ? waterProfile(water.waterType, water.waterAlk, water.waterGH) : null;
@@ -8403,7 +8531,17 @@ function freshnessFor(p, m){
   const f = line(freshWindowFor('filter', p.roast), 'filter coffee'), e = line(freshWindowFor('espresso', p.roast), 'espresso');
   return { label:FRESH_LABEL[f.st], tip:'Roasted ' + ds + ' ago. For filter coffee, ' + f.short + '. For espresso, ' + e.short + '.', tone:(f.st === 'resting' || f.st === 'fading') ? 'warn' : 'good', state:f.st, filter:f, espresso:e, note:FRESH_NOTE };
 }
-
+/* The Freshness clock on the Facts screen: where a bag's roast date puts it today, as filter coffee, for its real roast level (medium when none is saved; assumed says so).
+   The bar runs from roast day to the day flavor starts to fade; at, rest, sweet and past are percentages of it. Null with no roast date, or a roast date in the future.
+   p is profileOf(coffee, now) (days, roast); roastDate is the coffee's roast date as YYYY-MM-DD. */
+function freshClock(p, roastDate, assumed){
+  const d = p && p.days; if (d == null || d < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(String(roastDate || ''))) return null;
+  const w = freshWindowFor('filter', p.roast), st = freshState(d, w);
+  const add = n => { const t = new Date(roastDate + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+  const pct = x => Math.round(x / w.fade * 1000) / 10;
+  return { days:d, state:st, label:FRESH_LABEL[st], title:'Day ' + d + ': ' + FRESH_LABEL[st].charAt(0).toLowerCase() + FRESH_LABEL[st].slice(1), roast:p.roast, assumed:!!assumed, window:w, roastDate,
+    ready:add(w.ready), best:add(w.best), fade:add(w.fade), rest:pct(w.ready), sweet:pct(w.best - w.ready), past:pct(w.fade - w.best), at:Math.min(100, pct(d)), beyond:d > w.fade, note:FRESH_NOTE };
+}
 /* ---------- bag or brew? ----------
    A cup that tastes sour, flat, thin or uneven is not always the settings. A very fresh bag and an old bag both taste off, and a grind change may not fix either. Before the app suggests a
    change it says where the bag is against the usual freshness window for this method and roast (the same windows the Coffee page uses, from roaster and barista guides), in plain words.
@@ -8475,21 +8613,32 @@ function applyWaterFirst(fx, symptom, w){
    Coffee only: water, filters, milk and power are not counted. Nothing here is saved; the bags a person wants to keep go into their coffee prices (engine/67-coffee-prices.js). */
 const COST_UNITS = [['g', 1], ['oz', 28.349523125], ['lb', 453.59237]];
 const COST_DAYS_PER_MONTH = 365.25 / 12;
+const COST_MAX_PODS = 1000;   /* most pods or capsules in one box that is accepted */
 /* a bag size in grams, or 0 when the size or unit is not usable */
 function costGrams(size, unit){
   const u = COST_UNITS.find(x => x[0] === unit), s = parseFloat(size);
   return u && isFinite(s) && s > 0 && s <= 100000 ? s * u[1] : 0;
 }
-/* one bag. in: { price, size, unit, dose, cups }. out: { ok, why, grams, perGram, perCup, perDay, perWeek, perMonth, cupsInBag, daysInBag } */
+/* one bag, or one box of pods. in: { kind ('bag' by default, or 'pods'), price, size, unit, dose, cups }. A bag is priced by weight; a box of pods is priced by how many pods it holds (size is the count, unit and dose are not used).
+   out: { ok, why, grams (null for pods), perGram (null for pods), perCup, cupsInBag, daysInBag, perDay, perWeek, perMonth } */
 function costOne(o){
-  const price = parseFloat(o.price), dose = parseFloat(o.dose), cups = parseFloat(o.cups), grams = costGrams(o.size, o.unit);
+  const price = parseFloat(o.price), cups = parseFloat(o.cups);
   if (!(price > 0 && price <= 10000)) return { ok:false, why:'price' };
-  if (!(grams > 0)) return { ok:false, why:'size' };
-  if (!(dose > 0 && dose <= 200)) return { ok:false, why:'dose' };
-  if (dose > grams) return { ok:false, why:'dose-over-bag' };
-  const perGram = price / grams, perCup = perGram * dose, cupsInBag = grams / dose;
-  const r = { ok:true, grams, perGram, perCup, cupsInBag, perDay:null, perWeek:null, perMonth:null, daysInBag:null };
-  if (cups > 0 && cups <= 100){ r.perDay = perCup * cups; r.perWeek = r.perDay * 7; r.perMonth = r.perDay * COST_DAYS_PER_MONTH; r.daysInBag = cupsInBag / cups; }
+  let r;
+  if (o.kind === 'pods'){
+    const n = parseFloat(o.size);
+    if (!(n >= 1 && n <= COST_MAX_PODS)) return { ok:false, why:'size' };
+    const perCup = price / n;
+    r = { ok:true, kind:'pods', grams:null, perGram:null, perCup, cupsInBag:n, perDay:null, perWeek:null, perMonth:null, daysInBag:null };
+  } else {
+    const dose = parseFloat(o.dose), grams = costGrams(o.size, o.unit);
+    if (!(grams > 0)) return { ok:false, why:'size' };
+    if (!(dose > 0 && dose <= 200)) return { ok:false, why:'dose' };
+    if (dose > grams) return { ok:false, why:'dose-over-bag' };
+    const perGram = price / grams, perCup = perGram * dose;
+    r = { ok:true, kind:'bag', grams, perGram, perCup, cupsInBag:grams / dose, perDay:null, perWeek:null, perMonth:null, daysInBag:null };
+  }
+  if (cups > 0 && cups <= 100){ r.perDay = r.perCup * cups; r.perWeek = r.perDay * 7; r.perMonth = r.perDay * COST_DAYS_PER_MONTH; r.daysInBag = r.cupsInBag / cups; }
   return r;
 }
 /* two bags at the same dose and cups per day. out: { ok, cheaper: 'a' | 'b' | 'same', perCup (a gap, always >= 0), perMonth (or null), pct (how much less the cheaper one costs, % of the dearer) } */
@@ -8500,38 +8649,75 @@ function costCompare(a, b){
   return { ok:true, cheaper:same ? 'same' : (lo === a ? 'a' : 'b'), perCup:gap, perMonth:a.perMonth != null && b.perMonth != null ? Math.abs(a.perMonth - b.perMonth) : null, pct:hi.perCup > 0 ? (hi.perCup - lo.perCup) / hi.perCup * 100 : 0 };
 }
 /* ---------- coffee prices ----------
-   One row is one bag bought: coffee, roaster, currency symbol, price, size and its unit, and the date. The file is separate from the tasting history and never touches it.
-   The columns are the same as the Release 49 "Save costs" file, so a file saved then still loads. The last four of those columns (dose, cost per cup, cups per day, cost per month)
-   describe how the person drinks, not the bag, so they are kept when a file has them and left empty when a bag is added here.
-   Plain arithmetic: price per gram = price / bag grams; per 100 g is that times 100. Nothing is estimated. A coffee is "the same coffee" when its name and roaster match, ignoring capitals and spaces. */
-const PRICE_COLUMNS = ['coffee', 'roaster', 'currency', 'bag price', 'bag size', 'size unit', 'dose (g)', 'cost per cup', 'cups per day', 'cost per month', 'date'];
+   One row is one purchase for home brewing: a bag of beans (priced by its weight) or a box of pods (priced by how many are in it). It keeps the coffee, roaster, currency symbol, price, size and its unit,
+   and when it was bought (a day, or just a month and year). Optional: the roast date, the day it was marked finished, and the city and state it was bought in. The file is separate from the tasting history and never touches it.
+   The first eleven columns are the same as the Release 49 "Save costs" file, so a file saved then still loads. The dose, cost per cup, cups per day and cost per month columns describe how the person drinks, not the purchase,
+   so they are kept when a file has them and left empty when a purchase is added here. Buying the same coffee again is a new row, so a file keeps every row it has.
+   Plain arithmetic: price per gram = price / bag grams; per 100 g is that times 100; a pod costs price / count. Nothing is estimated. A coffee is "the same coffee" when its name and roaster match, ignoring capitals and spaces. */
+const PRICE_COLUMNS = ['coffee', 'roaster', 'currency', 'bag price', 'bag size', 'size unit', 'dose (g)', 'cost per cup', 'cups per day', 'cost per month', 'date', 'kind', 'roast date', 'finished', 'city', 'state'];
 const PRICE_MAX_ROWS = 2000;
 const PRICE_MAX_TEXT = 2000000;   /* characters of a file read; a bigger file is refused */
+const PRICE_POD_COUNTS = [10, 12, 16, 24, 36, 50];   /* the box sizes offered as tiles; any whole number up to COST_MAX_PODS can be typed */
 const priceNum = (v, dp) => { const x = parseFloat(v); return isFinite(x) ? Math.round(x * Math.pow(10, dp)) / Math.pow(10, dp) : null; };
 const priceText = (v, n) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, n);
-/* one bag from loose values, or null when it is not a usable bag. in: { coffee, roaster, sym, price, size, unit, dose, cups, date }.
-   A bag needs a coffee name, a price above 0 (up to 10,000), and a size that gives grams. A date that is not YYYY-MM-DD is dropped, the bag is kept. */
+/* a date as YYYY-MM-DD, or YYYY-MM when only the month is known (a real month, and a day from 01 to 31); anything else gives '' */
+function priceDate(v, monthOk){
+  const t = String(v || '').trim(), m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(t);
+  if (!m || +m[2] < 1 || +m[2] > 12) return '';
+  if (m[3] === undefined) return monthOk ? t : '';
+  return +m[3] >= 1 && +m[3] <= 31 ? t : '';
+}
+/* the month a purchase counts in, as YYYY-MM, or '' when it has no date */
+const priceMonth = e => e && e.date ? e.date.slice(0, 7) : '';
+/* one purchase from loose values, or null when it is not a usable one. in: { kind ('bag' or 'pods'), coffee, roaster, sym, price, size, unit, dose, cups, date, roast, finished, city, state }.
+   It needs a coffee name and a price above 0 (up to 10,000). A bag needs a size that gives grams; a box of pods needs a whole number of pods (its unit is always 'pods'). The date may be a day or a month (YYYY-MM);
+   a date that is not valid is dropped and the purchase is kept. The roast date must be a day. */
 function priceEntry(o){
   o = o || {};
-  const coffee = priceText(o.coffee, 80), price = priceNum(o.price, 2), size = priceNum(o.size, 2), unit = String(o.unit || '').trim().toLowerCase();
-  if (!coffee || !(price > 0 && price <= 10000) || !(costGrams(size, unit) > 0)) return null;
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(o.date || '').trim()) ? String(o.date).trim() : '';
-  const dose = priceNum(o.dose, 1), cups = priceNum(o.cups, 1);
-  return { coffee, roaster:priceText(o.roaster, 80), sym:priceText(o.sym, 3) || '$', price, size, unit, date, dose:dose > 0 && dose <= 200 ? dose : null, cups:cups > 0 && cups <= 100 ? cups : null };
+  const coffee = priceText(o.coffee, 80), price = priceNum(o.price, 2), size = priceNum(o.size, 2), unit0 = String(o.unit || '').trim().toLowerCase();
+  const pods = o.kind === 'pods' || (o.kind !== 'bag' && unit0 === 'pods');
+  if (!coffee || !(price > 0 && price <= 10000)) return null;
+  if (pods){ if (!(size >= 1 && size <= COST_MAX_PODS && size === Math.round(size))) return null; }
+  else if (!(costGrams(size, unit0) > 0)) return null;
+  const dose = pods ? null : priceNum(o.dose, 1), cups = pods ? null : priceNum(o.cups, 1);
+  return { kind:pods ? 'pods' : 'bag', coffee, roaster:priceText(o.roaster, 80), sym:priceText(o.sym, 3) || '$', price, size, unit:pods ? 'pods' : unit0, date:priceDate(o.date, true),
+    dose:dose > 0 && dose <= 200 ? dose : null, cups:cups > 0 && cups <= 100 ? cups : null,
+    roast:priceDate(o.roast, false), finished:priceDate(o.finished, false), city:priceText(o.city, 60), state:priceText(o.state, 60) };
 }
-/* two bags are the same row when coffee, roaster, price, size, unit and date all match (capitals and spaces ignored in the names) */
+/* two purchases are the same row when coffee, roaster, price, size, unit and date all match (capitals and spaces ignored in the names). The roast date, finished day and place are not part of it, so they can be added later. */
 function priceKey(e){ return [e.coffee, e.roaster].map(s => String(s).toLowerCase()).concat([e.price, e.size, e.unit, e.date]).join('|'); }
-/* put a bag on a list. Returns { list (a new list), added }; a bag already on the list, or one that is not usable, changes nothing. The list is capped. */
-function priceAdd(list, o){
+/* put a purchase on a list. Returns { list (a new list), added }. By default a purchase already on the list changes nothing (why 'same'); with again = true it is added anyway, because buying the same coffee at the same price in the same month is a real second purchase.
+   One that is not usable changes nothing (why 'unusable'). The list is capped. */
+function priceAdd(list, o, again){
   const e = priceEntry(o), cur = Array.isArray(list) ? list : [];
   if (!e) return { list:cur, added:false, why:'unusable' };
   if (cur.length >= PRICE_MAX_ROWS) return { list:cur, added:false, why:'full' };
-  const k = priceKey(e);
-  if (cur.some(x => priceKey(x) === k)) return { list:cur, added:false, why:'same' };
+  if (!again){ const k = priceKey(e); if (cur.some(x => priceKey(x) === k)) return { list:cur, added:false, why:'same' }; }
   return { list:cur.concat([e]), added:true, why:'' };
 }
-/* read a prices file. Columns are found by name (capitals and spaces ignored), in any order, so a file edited in a spreadsheet still loads. Needs coffee, bag price, bag size and size unit.
-   Returns { error } or { list, skipped (rows that were not usable bags), repeats (rows already in the file above them) }. Text cells have the formula guard removed. */
+/* add what a loaded file has that the list lacks. A row counts once per time it appears: a list with one of a row and a file with two gets one more. Returns { list, added (how many rows were added), full (how many did not fit) }. */
+function priceMerge(list, more){
+  let cur = Array.isArray(list) ? list.slice() : [], added = 0, full = 0;
+  const have = {}; cur.forEach(x => { const k = priceKey(x); have[k] = (have[k] || 0) + 1; });
+  (more || []).forEach(e0 => {
+    const e = priceEntry(e0); if (!e) return;
+    const k = priceKey(e);
+    if (have[k] > 0){ have[k]--; return; }
+    if (cur.length >= PRICE_MAX_ROWS){ full++; return; }
+    cur.push(e); added++;
+  });
+  return { list:cur, added, full };
+}
+/* change one purchase in place (a typo, a roast date, finished). patch holds the loose values to change, in the same shape priceEntry takes. Returns { list (a new list), ok }; a patch that leaves it unusable, or a place that is not on the list, changes nothing. */
+function priceSet(list, i, patch){
+  const cur = Array.isArray(list) ? list : [];
+  if (!(i >= 0 && i < cur.length)) return { list:cur, ok:false };
+  const e = priceEntry(Object.assign({}, cur[i], patch || {}));
+  if (!e) return { list:cur, ok:false };
+  const next = cur.slice(); next[i] = e; return { list:next, ok:true };
+}
+/* read a prices file. Columns are found by name (capitals and spaces ignored), in any order, so a file edited in a spreadsheet still loads. Needs coffee, bag price, bag size and size unit; the kind column is optional (a file without it has bags, and pods where the unit is 'pods').
+   Returns { error } or { list, skipped (rows that were not usable) }. Every usable row is kept, even two that look the same, because they are two purchases. Text cells have the formula guard removed. */
 function priceRead(text){
   text = String(text == null ? '' : text);
   if (text.length > PRICE_MAX_TEXT) return { error:'That file is too big to be a prices file. Nothing was changed.' };
@@ -8541,32 +8727,39 @@ function priceRead(text){
   const need = ['coffee', 'bag price', 'bag size', 'size unit'].filter(k => !(k in col));
   if (need.length) return { error:"This doesn't look like a coffee prices file from this app (missing: " + need.join(', ') + '). Nothing was changed.' };
   const get = (r, k) => (k in col && r[col[k]] != null) ? r[col[k]] : '';
-  let list = [], skipped = 0, repeats = 0;
+  const list = []; let skipped = 0;
   p.rows.forEach(r => {
-    const r2 = priceAdd(list, { coffee:unneutralize(get(r, 'coffee')), roaster:unneutralize(get(r, 'roaster')), sym:get(r, 'currency'), price:get(r, 'bag price'), size:get(r, 'bag size'), unit:get(r, 'size unit'), dose:get(r, 'dose (g)'), cups:get(r, 'cups per day'), date:get(r, 'date') });
-    if (r2.added) list = r2.list; else if (r2.why === 'same') repeats++; else skipped++;
+    const e = priceEntry({ kind:String(get(r, 'kind')).trim().toLowerCase(), coffee:unneutralize(get(r, 'coffee')), roaster:unneutralize(get(r, 'roaster')), sym:get(r, 'currency'), price:get(r, 'bag price'), size:get(r, 'bag size'), unit:get(r, 'size unit'),
+      dose:get(r, 'dose (g)'), cups:get(r, 'cups per day'), date:get(r, 'date'), roast:get(r, 'roast date'), finished:get(r, 'finished'), city:unneutralize(get(r, 'city')), state:unneutralize(get(r, 'state')) });
+    if (e && list.length < PRICE_MAX_ROWS) list.push(e); else skipped++;
   });
-  return { list, skipped, repeats };
+  return { list, skipped };
 }
 /* the per-gram price of a bag, or null */
 function pricePerGram(e){ const g = e ? costGrams(e.size, e.unit) : 0; return g > 0 && e.price > 0 ? e.price / g : null; }
 function pricePer100g(e){ const x = pricePerGram(e); return x == null ? null : x * 100; }
+/* what one unit costs, so a bag and a box of pods can each be compared with their own kind: { per:'100 g', value } for a bag, { per:'pod', value } for pods, or null */
+function priceUnitCost(e){
+  if (!e) return null;
+  if (e.kind === 'pods') return e.size > 0 && e.price > 0 ? { per:'pod', value:e.price / e.size } : null;
+  const x = pricePer100g(e); return x == null ? null : { per:'100 g', value:x };
+}
 /* the file text for a list. The cup columns are filled only for a bag that has a dose; text cells get the formula guard like the history file. */
 function priceCsv(list){
   const lines = [PRICE_COLUMNS];
   (Array.isArray(list) ? list : []).forEach(e => {
-    const c = e.dose ? costOne({ price:e.price, size:e.size, unit:e.unit, dose:e.dose, cups:e.cups }) : { ok:false };
+    const c = e.dose && e.kind !== 'pods' ? costOne({ price:e.price, size:e.size, unit:e.unit, dose:e.dose, cups:e.cups }) : { ok:false };
     const n = (x, dp) => x == null ? '' : String(Math.round(x * Math.pow(10, dp)) / Math.pow(10, dp));
-    lines.push([neutralize(e.coffee), neutralize(e.roaster), neutralize(e.sym), n(e.price, 2), n(e.size, 2), e.unit, c.ok ? n(e.dose, 1) : '', c.ok ? n(c.perCup, 2) : '', c.ok && c.perDay != null ? n(e.cups, 1) : '', c.ok && c.perMonth != null ? n(c.perMonth, 2) : '', e.date || '']);
+    lines.push([neutralize(e.coffee), neutralize(e.roaster), neutralize(e.sym), n(e.price, 2), n(e.size, 2), e.unit, c.ok ? n(e.dose, 1) : '', c.ok ? n(c.perCup, 2) : '', c.ok && c.perDay != null ? n(e.cups, 1) : '', c.ok && c.perMonth != null ? n(c.perMonth, 2) : '', e.date || '', e.kind || 'bag', e.roast || '', e.finished || '', neutralize(e.city || ''), neutralize(e.state || '')]);
   });
   return toCSV(lines);
 }
-/* Each entry keeps its place in the list as `i`, so a row can be named for deleting. mode: 'new' (newest date first; undated last, then the later ones added), 'name' (A to Z), 'cheap' (lowest price per 100 g first; bags in different currencies are not compared, so they go by currency, then price). */
+/* Each entry keeps its place in the list as `i`, so a row can be named for deleting. mode: 'new' (newest date first; undated last, then the later ones added), 'name' (A to Z), 'cheap' (lowest price per 100 g first, then pods by price per pod; different currencies are not compared, so they go by currency, then kind, then price). */
 function priceSort(list, mode){
   const a = (list || []).map((e, i) => Object.assign({ i }, e));
   const nm = e => (e.coffee + ' ' + e.roaster).toLowerCase();
   if (mode === 'name') a.sort((x, y) => nm(x).localeCompare(nm(y)) || (y.date || '').localeCompare(x.date || '') || y.i - x.i);
-  else if (mode === 'cheap') a.sort((x, y) => x.sym.localeCompare(y.sym) || (pricePer100g(x) - pricePer100g(y)) || y.i - x.i);
+  else if (mode === 'cheap') a.sort((x, y) => x.sym.localeCompare(y.sym) || (x.kind === 'pods') - (y.kind === 'pods') || (priceUnitCost(x).value - priceUnitCost(y).value) || y.i - x.i);
   else a.sort((x, y) => (y.date || '').localeCompare(x.date || '') || y.i - x.i);
   return a;
 }
@@ -8574,21 +8767,127 @@ function priceFilter(list, q){
   q = String(q || '').trim().toLowerCase(); if (!q) return list;
   return list.filter(e => (e.coffee + ' ' + e.roaster).toLowerCase().includes(q));
 }
-/* every bag of one coffee (same name and roaster), oldest first by date then by the order added */
+/* every purchase of one coffee (same name and roaster), oldest first by date then by the order added */
 function priceHistoryOf(list, e){
   const k = [e.coffee, e.roaster].map(s => String(s).toLowerCase()).join('|');
   return (list || []).map((x, i) => Object.assign({ i }, x)).filter(x => [x.coffee, x.roaster].map(s => String(s).toLowerCase()).join('|') === k)
     .sort((x, y) => (x.date || '').localeCompare(y.date || '') || x.i - y.i);
 }
-/* How the price of one coffee moved between its last two bags, per gram so a bigger or smaller bag is fair. Needs the same currency symbol.
+/* How the price of one coffee moved between its last two purchases of the same kind, per gram (or per pod) so a bigger or smaller one is fair. Needs the same currency symbol.
    Returns { ok:false } with fewer than two bags in one currency, else { ok, now, before (the two entries), pct (percent change of the price per 100 g, rounded to 0.1), dir: 'up' | 'down' | 'same' }. Under 1 percent counts as the same. */
 function priceChange(list, e){
-  const h0 = priceHistoryOf(list, e).filter(x => x.sym === e.sym);
+  const h0 = priceHistoryOf(list, e).filter(x => x.sym === e.sym && x.kind === e.kind);
   if (h0.length < 2) return { ok:false };
-  const now = h0[h0.length - 1], before = h0[h0.length - 2], a = pricePerGram(before), b = pricePerGram(now);
+  const now = h0[h0.length - 1], before = h0[h0.length - 2], u0 = priceUnitCost(before), u1 = priceUnitCost(now), a = u0 && u0.value, b = u1 && u1.value;
   if (!(a > 0) || !(b > 0)) return { ok:false };
   const pct = Math.round((b - a) / a * 1000) / 10;
   return { ok:true, now, before, pct, dir:Math.abs(pct) < 1 ? 'same' : (pct > 0 ? 'up' : 'down') };
+}
+/* whole days from a day (YYYY-MM-DD) to another, or null when either is not a real day or the first is after the second. Used for days since roast; the caller gives today so this stays pure. */
+function priceDaysSince(from, to){
+  const f = priceDate(from, false), t = priceDate(to, false); if (!f || !t) return null;
+  const a = Date.UTC(+f.slice(0, 4), +f.slice(5, 7) - 1, +f.slice(8, 10)), b = Date.UTC(+t.slice(0, 4), +t.slice(5, 7) - 1, +t.slice(8, 10));
+  const d = Math.round((b - a) / 86400000); return d >= 0 ? d : null;
+}
+/* the purchases not marked finished, each with its place in the list as `i` and `days` since its roast date (null when it has none). Oldest roast first, so the one to drink first is on top; those with no roast date follow, newest purchase first. */
+function priceOpenBags(list, today){
+  const a = (list || []).map((e, i) => Object.assign({ i, days:priceDaysSince(e.roast, today) }, e)).filter(e => !e.finished);
+  a.sort((x, y) => (x.days == null) - (y.days == null) || (y.days || 0) - (x.days || 0) || (y.date || '').localeCompare(x.date || '') || y.i - x.i);
+  return a;
+}
+/* ---------- coffee spending ----------
+   Home money is what was bought, counted in the month of the purchase date (a purchase with no date is left out and counted apart). It is not what was brewed: nothing here guesses how much of a bag was used.
+   Shop money is what was logged: each shop drink is a purchase on its own date. A month is YYYY-MM and a range is { from, to } in months, both included. Money in another currency than the one asked for is left out and counted apart.
+   `today` is always given by the caller (YYYY-MM-DD), so these stay pure. */
+const SPEND_RANGES = [{ v:'month', label:'This month' }, { v:'last', label:'Last month' }, { v:'three', label:'Last 3 months' }, { v:'year', label:'This year' }];
+const SPEND_MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+/* a range from its name ('month', 'last', 'three', 'year') or a year ('2025'). Returns { v, from, to, label, year (when it is a whole year) } or null. */
+function spendRange(v, today){
+  const t = priceDate(today, false); if (!t) return null;
+  const y = +t.slice(0, 4), m = +t.slice(5, 7);
+  const ym = (yy, mm) => { while (mm < 1){ mm += 12; yy--; } while (mm > 12){ mm -= 12; yy++; } return yy + '-' + String(mm).padStart(2, '0'); };
+  const nm = s => SPEND_MONTH_NAMES[+s.slice(5, 7) - 1];
+  if (v === 'month'){ const a = ym(y, m); return { v, from:a, to:a, label:'This month (' + nm(a) + ')' }; }
+  if (v === 'last'){ const a = ym(y, m - 1); return { v, from:a, to:a, label:'Last month (' + nm(a) + ')' }; }
+  if (v === 'three'){ const a = ym(y, m - 2), b = ym(y, m); return { v, from:a, to:b, label:'Last 3 months (' + nm(a) + ' to ' + nm(b) + ')' }; }
+  const yr = v === 'year' ? y : /^\d{4}$/.test(String(v)) ? +v : 0;
+  if (!yr) return null;
+  return { v:String(v), from:yr + '-01', to:yr + '-12', year:yr, label:(yr === y ? 'This year (' + yr + ')' : String(yr)) };
+}
+/* the currency symbol most of the money is in (prices and priced shop drinks), '$' when there is none */
+function spendSym(prices, drinks){
+  const n = {}; (prices || []).forEach(e => { n[e.sym] = (n[e.sym] || 0) + 1; }); (drinks || []).forEach(d => { if (d.price > 0) n[d.sym] = (n[d.sym] || 0) + 1; });
+  let best = '$', c = 0; Object.keys(n).forEach(k => { if (n[k] > c){ best = k; c = n[k]; } }); return best;
+}
+/* the most common value of a list (ties go to the first seen), or '' */
+function spendMode(a){ const n = new Map(); a.forEach(v => { if (v) n.set(v, (n.get(v) || 0) + 1); }); let best = '', c = 0; n.forEach((k, v) => { if (k > c){ best = v; c = k; } }); return best; }
+const spendIn = (ym, r) => !!ym && ym >= r.from && ym <= r.to;
+const spendRound = x => Math.round(x * 100) / 100;
+/* what was bought for home in a range. Returns { total, bags (bags of beans bought), boxes (boxes of pods bought), rows, undated, otherSym }.
+   rows is one per coffee and kind, biggest spend first: { coffee, roaster, kind, n (purchases), total, amount (grams of beans, or pods), per ('100 g' or 'pod'), unit (the price of one), purchases (newest first, each with its place in the list as `i`) }. */
+function spendHome(list, range, sym){
+  const all = Array.isArray(list) ? list : [], g = new Map(); let total = 0, bags = 0, boxes = 0, other = 0;
+  all.forEach((e, i) => {
+    if (!spendIn(priceMonth(e), range)) return;
+    if (e.sym !== sym){ other++; return; }
+    total += e.price; if (e.kind === 'pods') boxes++; else bags++;
+    const k = [e.coffee, e.roaster, e.kind].map(s => String(s).toLowerCase()).join('|');
+    if (!g.has(k)) g.set(k, { coffee:e.coffee, roaster:e.roaster, kind:e.kind, n:0, total:0, amount:0, purchases:[] });
+    const r = g.get(k); r.n++; r.total += e.price; r.amount += e.kind === 'pods' ? e.size : costGrams(e.size, e.unit); r.purchases.push(Object.assign({ i }, e));
+  });
+  const rows = Array.from(g.values()).map(r => {
+    r.purchases.sort((x, y) => (y.date || '').localeCompare(x.date || '') || y.i - x.i);
+    return Object.assign(r, { total:spendRound(r.total), per:r.kind === 'pods' ? 'pod' : '100 g', unit:r.amount > 0 ? (r.kind === 'pods' ? r.total / r.amount : r.total / r.amount * 100) : null });
+  }).sort((a, b) => b.total - a.total || a.coffee.localeCompare(b.coffee));
+  return { total:spendRound(total), bags, boxes, rows, undated:all.filter(e => !priceMonth(e)).length, otherSym:other };
+}
+/* what was logged at shops in a range. Returns { total, count (drinks logged), pricedN (drinks that have a price), avg (total over pricedN, or null), byDrink, byShop, undated, otherSym }.
+   byDrink is one per kind of drink, most logged first: { kind, label, n, pricedN, total, avg, min, max, size (the usual one), shop (where most were logged), last, items (newest first) }.
+   byShop is one per shop and place, most logged first: { shop, city, region, country, n, total, label (the drink logged most), last, items }. Drinks with no date are left out and counted apart. */
+function spendShop(drinks, range, sym){
+  const all = Array.isArray(drinks) ? drinks : [], inR = [];
+  let other = 0;
+  all.forEach(d => { if (!spendIn((d.date || '').slice(0, 7), range)) return; if (d.price > 0 && d.sym !== sym){ other++; return; } inR.push(d); });
+  const priced = inR.filter(d => d.price > 0), total = priced.reduce((a, d) => a + d.price, 0);
+  const label = k => (SHOP_KINDS.find(x => x.v === k) || { label:'Something else' }).label;
+  const grp = (keyOf, make) => { const m = new Map(); inR.forEach(d => { const k = keyOf(d); if (!m.has(k)) m.set(k, []); m.get(k).push(d); }); return Array.from(m.values()).map(make); };
+  const sum = a => { const p = a.filter(d => d.price > 0), t = p.reduce((s, d) => s + d.price, 0); return { n:a.length, pricedN:p.length, total:spendRound(t), avg:p.length ? t / p.length : null, last:a.reduce((m, d) => d.date > m ? d.date : m, ''), items:a.slice().sort((x, y) => (y.date || '').localeCompare(x.date || '')) }; };
+  const byDrink = grp(d => d.kind, a => Object.assign({ kind:a[0].kind, label:label(a[0].kind) }, sum(a),
+    { min:a.some(d => d.price > 0) ? Math.min(...a.filter(d => d.price > 0).map(d => d.price)) : null, max:a.some(d => d.price > 0) ? Math.max(...a.filter(d => d.price > 0).map(d => d.price)) : null,
+      size:spendMode(a.map(d => d.size)), shop:spendMode(a.map(d => d.shop)) })).sort((x, y) => y.n - x.n || y.total - x.total || x.label.localeCompare(y.label));
+  const byShop = grp(d => csKey({ name:d.shop, city:d.city, region:d.region, country:d.country }), a => Object.assign({ shop:a[0].shop, city:a[0].city, region:a[0].region, country:a[0].country, label:label(spendMode(a.map(d => d.kind))) }, sum(a)))
+    .sort((x, y) => y.n - x.n || y.total - x.total || x.shop.localeCompare(y.shop));
+  return { total:spendRound(total), count:inR.length, pricedN:priced.length, avg:priced.length ? total / priced.length : null, byDrink, byShop, undated:all.filter(d => !d.date).length, otherSym:other };
+}
+/* twelve months of one year: [{ m ('YYYY-MM'), home (money bought), shop (money logged), drinks (logged), purchases (bags and boxes bought) }] */
+function spendMonthly(list, drinks, year, sym){
+  const out = [];
+  for (let i = 1; i <= 12; i++){
+    const m = year + '-' + String(i).padStart(2, '0'), r = { v:m, from:m, to:m }, h = spendHome(list, r, sym), s = spendShop(drinks, r, sym);
+    out.push({ m, home:h.total, shop:s.total, drinks:s.count, purchases:h.bags + h.boxes });
+  }
+  return out;
+}
+/* a whole year: { year, months (spendMonthly), home, shop (spendHome and spendShop for the year), total, topCoffee (the coffee bought for most money, or null), topDrink, topShop, places (the states or regions where coffee was bought, from purchases and shop drinks), placeCount } */
+function spendYear(list, drinks, year, sym){
+  const range = spendRange(String(year), year + '-06-15'), home = spendHome(list, range, sym), shop = spendShop(drinks, range, sym);
+  const seen = new Map(), put = (region, country) => {
+    const p = shopPlace({ region, country }), k = p.region.toLowerCase(); if (!p.region || seen.has(k)) return; seen.set(k, p.region);
+  };
+  home.rows.forEach(r => r.purchases.forEach(e => put(e.state, ''))); shop.byShop.forEach(s => put(s.region, s.country));
+  const places = Array.from(seen.values()).sort((a, b) => a.localeCompare(b));
+  return { year:+year, months:spendMonthly(list, drinks, year, sym), home, shop, total:spendRound(home.total + shop.total), topCoffee:home.rows[0] || null, topDrink:shop.byDrink[0] || null, topShop:shop.byShop[0] || null, places, placeCount:places.length };
+}
+/* the years that have any dated purchase or shop drink, newest first */
+function spendYears(list, drinks){
+  const s = new Set(); (list || []).forEach(e => { if (priceMonth(e)) s.add(+priceMonth(e).slice(0, 4)); }); (drinks || []).forEach(d => { if (d.date) s.add(+d.date.slice(0, 4)); });
+  return Array.from(s).sort((a, b) => b - a);
+}
+/* making some shop drinks at home: shopAvg (the average shop drink), homeCup (the cost of a home cup, from the calculator), perWeek (how many swapped). Returns null when any is missing; else { keepWeek, keepMonth, keepYear }, which is 0 or less when a home cup is not cheaper. */
+function spendSwap(shopAvg, homeCup, perWeek){
+  if (!(shopAvg > 0 && homeCup > 0 && perWeek > 0)) return null;
+  const keepWeek = perWeek * (shopAvg - homeCup);
+  return { keepWeek, keepMonth:keepWeek * COST_DAYS_PER_MONTH / 7, keepYear:keepWeek * 52 };
 }
 /* ---------- cup yield ----------
    The sum (exact, one conservation of mass):  cup = (water in − water the coffee keeps) ÷ (1 − TDS of the cup),  where TDS is the dissolved coffee as a fraction of the cup.
@@ -8782,6 +9081,52 @@ function planDiluteTo(p){
   if (!(c > 0 && t > 0 && g > 0)) return o;
   if (g >= t){ o.why = 'The target is as strong as the brew or stronger, so there is nothing to add. Dilution only makes it weaker.'; return o; }
   o.ok = true; o.water = c * (t / g - 1); o.total = c + o.water; return o;
+}
+/* ---------- known coffees and did you mean ----------
+   Only the person's own coffees and roasters are used, never a list of the world's. A suggestion is only ever offered, never applied. Capitals, extra spaces and punctuation are ignored when matching. */
+const knownNorm = s => String(s == null ? '' : s).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+/* the coffees to match against, from tasting history rows (coffee_name, roaster, cupping_date, already without the formula guard) and prices (coffee, roaster, date).
+   One entry per coffee and roaster, with how many times it appears (n) and its latest date: [{ coffee, roaster, n, last }], most used first. */
+function knownCoffees(hist, prices){
+  const m = new Map();
+  const put = (coffee, roaster, date) => {
+    coffee = priceText(coffee, 80); roaster = priceText(roaster, 80); if (!coffee) return;
+    const k = knownNorm(coffee) + '|' + knownNorm(roaster);
+    if (!m.has(k)) m.set(k, { coffee, roaster, n:0, last:'' });
+    const e = m.get(k); e.n++; if (String(date || '') > e.last) e.last = String(date || '');
+  };
+  (hist || []).forEach(o => put(o.coffee_name, o.roaster, o.cupping_date));
+  (prices || []).forEach(e => put(e.coffee, e.roaster, e.date));
+  return Array.from(m.values()).sort((a, b) => b.n - a.n || b.last.localeCompare(a.last) || a.coffee.localeCompare(b.coffee));
+}
+/* how many letters may differ and still count as a typo, by length: none up to 3, one up to 5, two up to 9, three beyond */
+const knownTol = n => n <= 3 ? 0 : n <= 5 ? 1 : n <= 9 ? 2 : 3;
+/* What to offer for what was typed. typed: { coffee, roaster }. known: knownCoffees(). Returns null when there is nothing to offer, else { kind, coffee, roaster, fixCoffee, fixRoaster }:
+   'roaster'    the coffee is one they have, the roaster was left blank: offers the roaster they used most for it;
+   'fixRoaster' the roaster is not one they have but is a letter or two away from one: offers that one;
+   'fixCoffee'  the coffee is not one they have but is close to one (and the roaster is blank or matches): offers that coffee and its roaster.
+   coffee and roaster are what to fill in; fixCoffee and fixRoaster say which of the two changes. Nothing is offered when what was typed already matches, or is simply new. */
+function didYouMean(typed, known){
+  const c = knownNorm(typed && typed.coffee), r = knownNorm(typed && typed.roaster), list = Array.isArray(known) ? known : [];
+  if ((!c && !r) || !list.length) return null;
+  const near = (a, b) => { const t = knownTol(Math.max(a.length, b.length)); return a !== b && t > 0 && levWithin(a, b, t) <= t; };
+  const same = list.filter(k => knownNorm(k.coffee) === c);
+  if (c && same.length){
+    if (!r){ const top = same.find(k => k.roaster); return top ? { kind:'roaster', coffee:top.coffee, roaster:top.roaster, fixCoffee:false, fixRoaster:true } : null; }
+    if (same.some(k => knownNorm(k.roaster) === r)) return null;
+    const cand = same.filter(k => k.roaster && near(knownNorm(k.roaster), r));
+    return cand.length ? { kind:'fixRoaster', coffee:cand[0].coffee, roaster:cand[0].roaster, fixCoffee:false, fixRoaster:true } : null;
+  }
+  if (c){
+    const cand = list.filter(k => near(knownNorm(k.coffee), c) && (!r || knownNorm(k.roaster) === r || near(knownNorm(k.roaster), r)))
+      .map(k => ({ k, d:levWithin(knownNorm(k.coffee), c, 9) })).sort((a, b) => a.d - b.d || b.k.n - a.k.n);
+    if (cand.length){ const k = cand[0].k; return { kind:'fixCoffee', coffee:k.coffee, roaster:k.roaster, fixCoffee:true, fixRoaster:!!k.roaster && knownNorm(k.roaster) !== r }; }
+  }
+  if (r){
+    const cand = list.filter(k => k.roaster && near(knownNorm(k.roaster), r)).sort((a, b) => b.n - a.n);
+    if (cand.length && !list.some(k => knownNorm(k.roaster) === r)) return { kind:'fixRoaster', coffee:c ? priceText(typed.coffee, 80) : '', roaster:cand[0].roaster, fixCoffee:false, fixRoaster:true };
+  }
+  return null;
 }
 /* ---------- recognizing what people type for an origin ---------- */
 /* More regions, towns, and districts for the origins that have a full guide. Names that two countries share are left out on purpose. */
@@ -9761,6 +10106,22 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 77,
+  "version": "4.029.0077",
+  "tier": "medium",
+  "at": "2026-10-14T00:11:39Z",
+  "date": "2026-10-14",
+  "title": "Coffee prices becomes a purchase log, plus a Freshness clock",
+  "notes": [
+   "Coffee prices is now a log of what you bought for home brewing: a bag or a box of pods, the price, the size or pod count, the month and year, an optional roast date, an optional finished day and an optional city and state.",
+   "The Cost of coffee screen understands pods, shows a row of cups in the answer, and has a Home or shop? card that compares what you spent at home with what you spent in shops, by month or year and by drink or by shop.",
+   "A Did you mean box on the Coffee screen catches a typo in a coffee or roaster you already have, and only changes anything when you tap Yes.",
+   "With a roast date saved, the Facts screen shows a Freshness clock for filter coffee (ready, best through, fading after), and a new Freezing tips lesson covers keeping beans past their window.",
+   "Counts say logged, entered or bought, never drank or brewed.",
+   "The Tendencies and Column Guide files are now named BeanTelligence Tendencies and BeanTelligence Column Guide, long lists keep their place when you change a choice, and 11 unused pictures were removed."
+  ]
+ },
  {
   "release": 76,
   "version": "4.028.0076",
@@ -11907,6 +12268,7 @@ function originPicker(get, set, isBlend){
     if (mm){ warn.hidden = false; warn.append(mm.region + ' is a region of ' + mm.country + '. ', h('button', { type:'button', class:'btn link', text:'Switch to ' + mm.country, onclick:() => { set(composeOrigin([mm.country], mm.region, false)); refresh(); } })); }
   };
   sel.addEventListener('change', () => {
+    holdScroll();
     const v = sel.value, P = parseOrigin(get());
     if (v === '__other'){ st.other = true; set(''); } else if (v === ''){ st.other = false; set(''); } else { st.other = false; set(composeOrigin([v], P.countries.length ? P.rest : '', false)); }
     refresh();
@@ -11955,6 +12317,33 @@ function varietalPicker(get, set, getUnsure, setUnsure){
 }
 let startMoreOpen = false;   /* More details stays open once opened */
 const startReopen = new Set();   /* answered cards the person opened again with Edit */
+const startDymNo = new Set();   /* typed coffee and roaster pairs the person said No to, so the question is not asked again for the same words */
+let startDymKnown = { hist:null, prices:null, list:[] };   /* the coffees they already have, worked out again only when their history or prices change */
+/* "Did you mean": a mascot box under the coffee name. When the coffee or roaster typed is a typo of one the person already has, or is one they have but the roaster is blank, it asks. Only their own coffees are used. Nothing changes unless they tap Yes, and it never touches price or size. It waits until they leave the box, and goes away while they type. */
+function startDym(c, nameIn, roasterIn){
+  const box = h('div', { id:'dymBox', 'aria-live':'polite' }); let shown = '';
+  const nameBox = nameIn.querySelector('input'), roasterBox = roasterIn.querySelector('input');
+  const known = () => { const hs = history ? history.objs : null; if (startDymKnown.hist !== hs || startDymKnown.prices !== pr.list) startDymKnown = { hist:hs, prices:pr.list, list:knownCoffees(hs || [], pr.list) }; return startDymKnown.list; };
+  const sync = () => {
+    const typing = document.activeElement === nameBox || document.activeElement === roasterBox;
+    const d = typing ? null : didYouMean({ coffee:c.name, roaster:c.roaster }, known()), pair = knownNorm(c.name) + '|' + knownNorm(c.roaster);
+    const key = d && !startDymNo.has(pair) ? pair + '>' + d.kind + '|' + d.coffee + '|' + d.roaster : '';
+    if (key === shown) return;
+    shown = key; box.textContent = ''; if (!key) return;
+    const q = d.kind === 'roaster' ? 'You have "' + d.coffee + '" from ' + d.roaster + '. Is this the same one?'
+      : d.kind === 'fixRoaster' ? 'Did you mean the roaster "' + d.roaster + '"?'
+      : 'Did you mean "' + d.coffee + '"' + (d.roaster ? ' from ' + d.roaster : '') + '?';
+    const yes = h('button', { type:'button', class:'btn small primary', id:'dymYes', text:d.kind === 'roaster' ? 'Yes, add ' + d.roaster : d.kind === 'fixRoaster' ? 'Yes, use ' + d.roaster : 'Yes, use that', onclick:() => {
+      if (d.fixCoffee) c.name = d.coffee; if (d.fixRoaster) c.roaster = d.roaster;
+      shown = ''; box.textContent = ''; refreshAll(); scheduleDraft(); } });
+    const no = h('button', { type:'button', class:'btn small', id:'dymNo', text:d.kind === 'roaster' ? 'No, it is different' : 'No, keep what I typed', onclick:() => { startDymNo.add(pair); shown = ''; box.textContent = ''; } });
+    box.append(moneyNote('cheeks', 'surprised', 'dymText', h('b', { text:q }), h('div', { class:'pr-acts', style:'margin-top:8px' }, yes, no), h('p', { class:'fine', style:'margin:8px 0 0', text:'Only your own coffees are checked. Nothing changes unless you tap Yes.' })));
+  };
+  /* leaving a box redraws only this box, never the whole page (a full redraw would fold the answered cards again) */
+  [nameBox, roasterBox].forEach(i => i.addEventListener('focusout', () => setTimeout(sync, 80)));
+  refreshers.push(sync);
+  return box;
+}
 function screenStart(m){
   const c = app.coffee, lv = level();
   { const dc = dialingCard(3, 'start'); if (dc) m.append(dc); }
@@ -12050,7 +12439,7 @@ function screenStart(m){
     h('div', { class:'xgroup' }, xl(varPick.el, 'var')),
     h('div', { class:'xgroup' }, decaf, decafNote),
     h('div', { class:'xgroup' }, xl(textInput('Tasting notes on the bag', () => c.bag_notes, v => { c.bag_notes = v; }, { area:true, placeholder:'e.g. blueberry, jasmine, honey', meta:'bag_notes', inl:true }), 'note'))];
-  m.append(meterEl(), bandCard(roasterIn, ['type', 'Type it', 'roaster']), need('name', bandCard(nameIn, ['type', 'Type it', 'bag'])), need('roast_date', bandCard(dateIn, ['type', 'Pick a date', 'cal'], dateUnsure, dateNote)),
+  m.append(meterEl(), bandCard(roasterIn, ['type', 'Type it', 'roaster']), need('name', bandCard(nameIn, ['type', 'Type it', 'bag'])), startDym(c, nameIn, roasterIn), need('roast_date', bandCard(dateIn, ['type', 'Pick a date', 'cal'], dateUnsure, dateNote)),
     need('roast', bandCard(roastSec[0], ['tap', 'Tap one', 'beans'], roastSec[1], roastSec[2])), need('process', bandCard(processSel, ['tap', 'Tap one', 'proc'], processNote)),
     need('elevation', bandCard(elevSel, ['tap', 'Tap one', 'elev'], elevTyped, elevNote)));
   const more = h('details', { class:'card gcard moredetails' },
@@ -12110,6 +12499,29 @@ function storyCard(c, now, lv){
   if (S.missing.length) card.append(h('p', { class:'fine', style:'margin:4px 0 0', text:'Add ' + S.missing.join(', ') + ' to sharpen this.' }));
   return card;
 }
+/* the Freshness clock for this coffee, or null with no roast date saved */
+function freshClockOf(c, now){
+  const p = profileOf(c, now); return freshClock(p, c.roast_date, p.assumed.some(x => /^roast level/.test(x)));
+}
+/* the card: where the roast date puts the bag today (filter coffee, this bag's roast level), a bar from roast day to the fading day with a marker, and the three dates. inSheet leaves out the "Why fresh matters" link, because the sheet is that lesson. */
+function freshClockCard(k, inSheet){
+  const seg = (cls, w) => h('i', { class:cls, style:'width:' + w + '%' });
+  const bar = h('div', { class:'fcbar', role:'img', 'aria-label':'Day ' + k.days + ' on a bar from roast day to day ' + k.window.fade + '. Resting to day ' + k.window.ready + ', the sweet spot to day ' + k.window.best + ', past the peak to day ' + k.window.fade + '.' },
+    seg('r', k.rest), seg('s', k.sweet), seg('p', k.past), h('span', { class:'fcat', style:'left:' + k.at + '%' }));
+  const lab = h('div', { class:'fclab', 'aria-hidden':'true' }, h('span', { style:'width:' + k.rest + '%', text:'rest' }), h('span', { style:'width:' + k.sweet + '%', text:'sweet spot' }), h('span', { style:'width:' + k.past + '%', text:'past peak' }));
+  const box = (t, d) => h('div', null, h('b', { text:t }), h('span', { text:phDate(d) }));
+  return h('div', { class:'card fclock', id:inSheet ? null : 'factsClock' },
+    h('div', { class:'fch' }, h('span', { class:'ip' }, symPic('ln-rested')), h('div', null, h('b', { class:'fct', text:k.title }), h('p', { class:'fcs', text:'Roasted ' + phDate(k.roastDate) + '. Best from about day ' + k.window.ready + ' to day ' + k.window.best + '.' }))),
+    bar, lab, h('div', { class:'fcd' }, box('Ready', k.ready), box('Best through', k.best), box('Fading after', k.fade)),
+    h('p', { class:'fine', style:'margin:8px 0 0', text:k.note }),
+    h('div', { class:'fcl' }, h('button', { type:'button', class:'flink', id:'freezeBtn', text:'Freezing tips', onclick:() => { sheet = { step:'lesson', key:'freeze' }; openSheet(); } }),
+      inSheet ? null : h('button', { type:'button', class:'flink', id:'whyFreshBtn', text:'Why fresh matters', onclick:() => { sheet = { step:'lesson', key:'fresh' }; openSheet(); } })));
+}
+/* the Facts section around it: only when a roast date is saved */
+function freshClockSection(c, now){
+  const k = freshClockOf(c, now); if (!k) return null;
+  return h('div', { class:'fsec', id:'factsClockSec' }, h('div', { class:'flabel' }, h('span', { text:'Freshness clock' }), h('span', { class:'fhint', text:'filter coffee, ' + labelOf(ROASTS, k.roast).toLowerCase() + ' roast' + (k.assumed ? ' (assumed)' : '') })), freshClockCard(k, false));
+}
 /* the six stops: tap one to learn it. guide is bagGuide(...), so a tap can open the matching bag tile. */
 function journeySection(c, now, guide){
   const stops = journeyFor(c, now), list = h('ul', { class:'nj', id:'factsJourney' });
@@ -12168,6 +12580,7 @@ function renderLessonSheet(title){
   sheetEl.append(h('div', { class:'lshead' }, pic, h('div', { class:'lsht' }, h('div', { class:'lsk', text:'Coffee school' }), title)));
   sheetEl.append(h('p', { class:'serif gp', text:L.plain }));
   if (yours) sheetEl.append(h('div', { class:'card lsyours' }, h('b', { text:'Your coffee' }), h('span', { text:yours })));
+  if (L.key === 'fresh'){ const k = freshClockOf(c, now); if (k) sheetEl.append(freshClockCard(k, true)); }
   if (lv !== 'new'){
     sheetEl.append(h('h4', { class:'lsh', text:'Why it matters' }), h('p', { class:'serif gp', text:L.why }));
     sheetEl.append(h('h4', { class:'lsh' }, 'The numbers ', rateChip(L.rate), h('span', { class:'lsrw', text:' ' + capFirst(RATE_WORDS[L.rate]) })), h('p', { class:'serif gp', text:L.nums }));
@@ -12343,7 +12756,7 @@ function screenCoffee(m){
     h('p', { class:'fine', style:'margin:6px 0 0', text:'Built from general rules about roast, process and elevation. It is not lab data on this bag.' })));
   /* the bag explained: how its answers fit together, then the six stops from seed to cup */
   const guide = bagGuide(c, g);
-  m.append(h('div', { class:'fsec' }, storyCard(c, now, lv)), journeySection(c, now, guide));
+  { const fcs = freshClockSection(c, now); m.append(h('div', { class:'fsec' }, storyCard(c, now, lv)), ...kept(fcs), journeySection(c, now, guide)); }
   /* what we assumed or guessed, and where to change it */
   { const typedM = originMatch(c.origin), nameM = originMatch(c.name, { fuzzy:false }), tn = typedM.origin ? typedM.origin.name : (typedM.country ? typedM.country.name : ''), nn = nameM.origin ? nameM.origin.name : (nameM.country ? nameM.country.name : '');
     const same = tn && nn && (tn === nn || (typedM.origin && typedM.origin.key === 'africa') || (nameM.origin && nameM.origin.key === 'africa'));
@@ -13003,7 +13416,7 @@ function screenTastes(m){
 let tendFrom = '';
 function goTend(){ if (app.screen !== 'tend') tendFrom = app.screen === 'timer' ? 'ready' : app.screen; go('tend'); }
 async function tpDownload(status){
-  const text = tpCsv(tpObjs()), name = 'beantelligence-tendencies.csv';
+  const text = tpCsv(tpObjs()), name = 'BeanTelligence Tendencies.csv';
   try {
     if (inClaude()){ const dl = await getDownloads(); if (!dl) throw new Error('no downloads'); await dl.save({ filename:name, data:text }); }
     else plainDownload(text, name);
@@ -15189,23 +15602,128 @@ function screenTools(m){
     h('p', { class:'lede', style:'margin:0 0 10px', text:'Pick a helper. Each one does a single sum for you.' }),
     h('div', { class:'hublist' }, TOOLS.map(t => hubRow(t.icon, t.name, t.text, t.open, { tone:t.tone, id:'tool-' + t.id }))));
 }
+/* ---------- the purchase form and the words around it ----------
+   One form serves Add a bag and Edit a purchase. It works on a plain object `a` (see prNewBag) and redraws itself when the kind changes; typing never redraws it.
+   A purchase's date is a month and a year (YYYY-MM). A purchase that already has a day keeps it while its month and year are left alone. */
+const PR_FRESH_TAGS = { resting:['rest', 'Still resting'], sweet:['good', 'Sweet spot'], past:['fade', 'Past the peak'], fading:['fade', 'Fading'] };
+/* a note with the mascot beside it. pose and face say how it feels: thumbs and happy for a save, cheer and happy for a finished bag, think and thinking for a pause, shrug and worried for a problem. */
+function moneyNote(pose, face, id, ...kids){
+  const mk = h('span', { class:'phmasc fmasc', 'aria-hidden':'true' }); mk.innerHTML = mascotSvg({ view:'full', pose, face });
+  return h('div', { class:'fnote withm' + (face === 'worried' || face === 'surprised' ? '' : ' green'), role:'status' }, mk, h('div', { class:'fnt', id:id || null }, ...kids));
+}
+const prMoney = (sym, x) => sym + (Math.round(x * 100) / 100).toFixed(2);
+/* a purchase date in words: "September 2026" for a month, "Sep 14, 2026" for a day */
+function prWhen(d){
+  if (!d) return '';
+  const m = SPEND_MONTH_NAMES[+d.slice(5, 7) - 1] || '';
+  return d.length > 7 ? m.slice(0, 3) + ' ' + (+d.slice(8, 10)) + ', ' + d.slice(0, 4) : m + ' ' + d.slice(0, 4);
+}
+const prAgo = n => n == null ? '' : n === 0 ? 'today' : n === 1 ? '1 day ago' : n + ' days ago';
+/* the freshness tag for a roast that is `days` old: the usual window for a medium roast made as filter coffee. { cls, text }, or null with no roast date. */
+function prRoastTag(days){
+  if (days == null) return null;
+  const t = PR_FRESH_TAGS[freshState(days, freshWindowFor('filter', 'medium'))]; return { cls:t[0], text:t[1] };
+}
+/* a blank purchase for the form: this month and year, a bag in grams, nothing else */
+function prNewBag(){
+  const t = today();
+  return { kind:'bag', coffee:'', roaster:'', price:'', size:'', unit:'g', sym:'$', month:String(+t.slice(5, 7)), year:t.slice(0, 4), dateFull:'', roast:'', finished:'', city:'', state:'', dose:null, cups:null };
+}
+/* the form's object for a purchase on the list, to edit it */
+function prFormFrom(e){
+  return { kind:e.kind, coffee:e.coffee, roaster:e.roaster, price:String(e.price), size:String(e.size), unit:e.kind === 'pods' ? 'g' : e.unit, sym:e.sym, month:e.date ? String(+e.date.slice(5, 7)) : '', year:e.date ? e.date.slice(0, 4) : '',
+    dateFull:e.date.length > 7 ? e.date : '', roast:e.roast, finished:e.finished, city:e.city, state:e.state, dose:e.dose, cups:e.cups };
+}
+/* loose values for priceEntry from the form's object */
+function prObj(a){
+  const ym = a.year && a.month ? a.year + '-' + String(a.month).padStart(2, '0') : '';
+  return { kind:a.kind, coffee:a.coffee, roaster:a.roaster, sym:String(a.sym || '').trim() || '$', price:a.price, size:a.size, unit:a.kind === 'pods' ? 'pods' : a.unit,
+    date:ym && a.dateFull && a.dateFull.slice(0, 7) === ym ? a.dateFull : ym, roast:a.roast, finished:a.finished, city:a.city, state:a.state, dose:a.dose, cups:a.cups };
+}
+/* what is missing from a purchase that cannot be added, in plain words */
+function prWhy(o){
+  const pods = o.kind === 'pods';
+  if (!priceText(o.coffee, 80)) return "Type the coffee's name first, so you can find it later.";
+  if (!(priceNum(o.price, 2) > 0)) return pods ? 'Enter the price of the box.' : 'Enter the price of the bag.';
+  return pods ? 'Enter how many pods are in the box, as a whole number.' : 'Enter the size of the bag.';
+}
+/* the years to choose from: this year back ten, and the purchase's own year when it is outside that */
+function prYears(own){
+  const y = +today().slice(0, 4), out = []; for (let i = 0; i <= 10; i++) out.push(String(y - i));
+  if (own && out.indexOf(own) < 0){ out.push(own); out.sort((p, q) => q - p); }
+  return out;
+}
+/* The form. a: the object (prNewBag or prFormFrom). p: a prefix for the ids, so two forms never share one. o.actions(): the buttons and notes at the bottom, made again each time the form is drawn. */
+function prForm(a, p, o){
+  o = o || {};
+  const box = h('div', { class:'prform', id:p + 'Form' });
+  const ink = (id, label, key, ph, max) => { const i = h('input', { id, class:'yc-text', type:'text', maxlength:String(max), value:a[key], placeholder:ph }); i.addEventListener('input', () => { a[key] = i.value; }); return h('div', { class:'yc-f wide' }, h('label', { for:id, text:label }), i); };
+  const grp = (icon, title, opt, ...kids) => h('div', { class:'fm-grp' }, h('div', { class:'gt' }, symPic(icon), title, opt ? h('span', { class:'fm-opt', text:' (optional)' }) : null), ...kids);
+  const sel = (id, label, opts, get, set) => { const s = h('select', { id, class:'fm-sel' }, opts.map(x => h('option', { value:x[0], text:x[1], selected:get() === x[0] ? true : null }))); s.addEventListener('change', () => { holdScroll(); set(s.value); }); return h('div', { class:'yc-f' }, h('label', { for:id, text:label }), s); };
+  function draw(){
+    box.textContent = '';
+    const pods = a.kind === 'pods';
+    const tiles = h('div', { class:'mk-kind', role:'group', 'aria-label':'What you bought' }, [['bag', 'art-bag', 'Bag of beans', 'priced by weight'], ['pods', 'art-pod', 'Pods or capsules', 'priced each']].map(k =>
+      h('button', { type:'button', 'data-k':k[0], 'aria-pressed':String(a.kind === k[0]), onclick:() => { if (a.kind !== k[0]){ a.kind = k[0]; a.size = ''; draw(); } } }, symPic(k[1]), h('b', { text:k[2] }), h('small', { text:k[3] }))));
+    const price = ycNum(p + 'Price', pods ? 'Price of the box' : 'Price of the bag', a.sym, a.price, 0.01, v => { a.price = v; });
+    let sizeNodes;
+    if (pods){
+      const num = ycNum(p + 'Size', 'Or type how many', '', a.size, 1, v => { a.size = v; Array.from(box.querySelectorAll('.podtiles button')).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.n === String(a.size)))); }, '60');
+      sizeNodes = [h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:'Pods in the box' }), h('div', { class:'yc-mini podtiles', role:'group', 'aria-label':'Pods in the box' }, PRICE_POD_COUNTS.map(n => h('button', { type:'button', 'data-n':String(n), 'aria-pressed':String(String(a.size) === String(n)), text:String(n), onclick:() => { a.size = String(n); draw(); } })))), num];
+    } else {
+      const unit = h('div', { class:'yc-mini', role:'group', 'aria-label':'Bag size unit' }, COST_UNITS.map(u => h('button', { type:'button', 'data-u':u[0], 'aria-pressed':String(a.unit === u[0]), text:u[0], onclick:e => { a.unit = u[0]; Array.from(e.currentTarget.parentNode.children).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.u === a.unit))); } })));
+      sizeNodes = [ycNum(p + 'Size', 'Size of the bag', '', a.size, 1, v => { a.size = v; }, '340'), h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:'Size in' }), unit)];
+    }
+    const mo = (a.month === '' ? [['', 'Not set']] : []).concat(SPEND_MONTH_NAMES.map((n, i) => [String(i + 1), n])), yrs = (a.year === '' ? [['', 'Not set']] : []).concat(prYears(a.year).map(y => [y, y]));
+    const stOther = a.state && US_STATES.indexOf(a.state) < 0 ? '__other' : a.state;
+    const stSel = h('select', { id:p + 'State', class:'fm-sel' }, [['', 'Choose a state']].concat(US_STATES.map(s => [s, s]), [['__other', 'Somewhere else']]).map(x => h('option', { value:x[0], text:x[1], selected:stOther === x[0] ? true : null })));
+    const region = h('input', { id:p + 'Region', class:'yc-text', type:'text', maxlength:'60', value:stOther === '__other' ? a.state : '', placeholder:'State, province or region', 'aria-label':'State, province or region' }); region.addEventListener('input', () => { a.state = region.value; });
+    const regionWrap = h('div', { class:'yc-f wide', style:stOther === '__other' ? null : 'display:none' }, region);
+    stSel.addEventListener('change', () => { holdScroll(); if (stSel.value === '__other'){ a.state = ''; region.value = ''; regionWrap.style.display = ''; region.focus(); } else { a.state = stSel.value; regionWrap.style.display = 'none'; } });
+    const roast = h('input', { id:p + 'Roast', class:'yc-text', type:'date', value:a.roast }); roast.addEventListener('input', () => { a.roast = roast.value; });
+    const fin = h('div', { class:'yc-mini', role:'group', 'aria-label':'Is it finished?' }, [['', 'No, still open'], ['y', 'Yes, finished']].map(x => h('button', { type:'button', 'data-f':x[0], 'aria-pressed':String((x[0] === 'y') === !!a.finished), text:x[1],
+      onclick:e => { a.finished = x[0] === 'y' ? (a.finished || today()) : ''; Array.from(e.currentTarget.parentNode.children).forEach(b => b.setAttribute('aria-pressed', String((b.dataset.f === 'y') === !!a.finished))); } })));
+    const sym = h('input', { id:p + 'Sym', class:'yc-text', type:'text', maxlength:'3', value:a.sym, style:'width:6em' }); sym.addEventListener('input', () => { a.sym = sym.value; });
+    box.append(tiles, ink(p + 'Name', 'Coffee', 'coffee', 'e.g. Kenya AA', 80), ink(p + 'Roaster', 'Roaster (optional)', 'roaster', '', 80),
+      h('div', { class:'yc-row' }, price, h('div', { class:'yc-f' }, h('label', { for:p + 'Sym', text:'Currency symbol' }), sym)), ...sizeNodes,
+      grp('art-cal', 'Bought in', false, h('div', { class:'fm-two' }, sel(p + 'Month', 'Month', mo, () => a.month, v => { a.month = v; }), sel(p + 'Year', 'Year', yrs, () => a.year, v => { a.year = v; })), h('p', { class:'fm-note', text:'Pick an earlier month to add a purchase you forgot.' })),
+      grp('art-pin', 'Bought from', true, h('div', { class:'fm-two' }, ink(p + 'City', 'City', 'city', '', 60), h('div', { class:'yc-f' }, h('label', { for:p + 'State', text:'State' }), stSel)), regionWrap, h('p', { class:'fm-note', text:'Leave it blank for coffee from your home town. Add it when you buy while traveling.' })),
+      grp('ln-rested', 'Roasted on', true, h('div', { class:'yc-f wide' }, roast), h('p', { class:'fm-note', text:'It is on most bags, near the bag date or best-by date. With it, your list shows how old the coffee is.' })),
+      grp('art-bag', pods ? 'Already all gone?' : 'Already finished?', true, fin, h('p', { class:'fm-note', text:'Finished only tidies your list. It never changes what you bought.' })),
+      ...(o.actions ? o.actions().filter(Boolean) : []));
+  }
+  draw();
+  box.redraw = draw;
+  return box;
+}
 /* ---------- screen: cost of coffee ----------
-   Nothing here is kept in your saved work or your history file. A bag is kept only when the person presses Add to my coffee prices, which puts it in the separate prices list (49-screen-prices.js). */
+   This is a what-if: nothing here is kept in your saved work or your history file. A bag or box is kept only when the person presses Add to my coffee prices, which records a purchase in the separate prices list (49-screen-prices.js). */
 let cs = null, csHost = null;
 function goCost(){ if (!cs) csStart(); go('cost'); }
-const csBag = (name, roaster) => ({ name:name || '', roaster:roaster || '', price:'', size:'', unit:'g' });
+const csBag = (name, roaster) => ({ name:name || '', roaster:roaster || '', price:'', size:'', unit:'g', kind:'bag' });
 function csStart(){
   const b = app.brew, dose = b.method && b.water > 0 && b.ratio >= 1.5 && b.ratio <= 20 ? Math.round(b.water / b.ratio * 2) / 2 : 20;
   cs = { sym:'$', dose, cups:'2', compare:false, a:csBag(app.coffee.name, app.coffee.roaster), b:csBag('', ''), open:{ sym:false, work:false } };
 }
-const csLabel = (i) => { const x = i ? cs.b : cs.a; return x.name.trim() || (i ? 'Bag B' : (cs.compare ? 'Bag A' : 'Your coffee')); };
+const csLabel = (i) => { const x = i ? cs.b : cs.a; return x.name.trim() || (i ? (x.kind === 'pods' ? 'Box B' : 'Bag B') : (cs.compare ? (x.kind === 'pods' ? 'Box A' : 'Bag A') : 'Your coffee')); };
 const csMoney = x => cs.sym + (Math.round(x * 100) / 100).toFixed(2);
-const csNote = { price:'Enter the price of the bag.', size:'Enter the size of the bag.', dose:'Enter your dose in grams, between 1 and 200.', 'dose-over-bag':'Your dose is bigger than the bag.' };
-const csCalc = x => costOne({ price:x.price, size:x.size, unit:x.unit, dose:cs.dose, cups:cs.cups });
+const csNote = { price:'Enter the price.', size:'Enter the size of the bag, or how many pods are in the box.', dose:'Enter your dose in grams, between 1 and 200.', 'dose-over-bag':'Your dose is bigger than the bag.' };
+const csCalc = x => costOne({ kind:x.kind, price:x.price, size:x.size, unit:x.unit, dose:cs.dose, cups:cs.cups });
+/* the day a bag or box runs out, in words, counting from today */
+function csEmptyOn(days){ const d = new Date(); d.setDate(d.getDate() + Math.round(days)); const p = n => String(n).padStart(2, '0'); return phDate(d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())); }
+/* a row of cups: how many a bag makes, with the first few (a day's worth) filled in. More than 30 cups is drawn as a bar. */
+function csCupRow(c){
+  const n = Math.floor(c.cupsInBag), day = +cs.cups > 0 ? Math.min(n, Math.round(+cs.cups)) : 0;
+  const row = h('div', { class:'cupbar', 'aria-hidden':'true' });
+  if (n <= 30) for (let i = 1; i <= n; i++) row.append(h('i', { class:i <= day ? 'f' : '' }));
+  else { const f = h('i', { class:'f', style:'flex:0 0 ' + Math.max(2, Math.min(100, day / n * 100)) + '%' }); row.classList.add('solid'); row.append(f, h('i', { style:'flex:1' })); }
+  return [row, h('div', { class:'cupcap' }, h('span', { text:day ? 'Today' : '' }), h('span', { text:c.daysInBag != null ? 'Empty about ' + csEmptyOn(c.daysInBag) : '' }))];
+}
 function csOneNodes(x, c){
-  const out = [h('div', { class:'yc-rlab', text:csLabel(x === cs.b ? 1 : 0) + ' costs' }), h('div', { class:'yc-big', 'data-cup':'1' }, csMoney(c.perCup), h('small', { text:' a cup' }))];
-  if (c.perDay != null) out.push(h('div', { class:'yc-line' }, h('b', { text:csMoney(c.perDay) + ' a day, ' + csMoney(c.perWeek) + ' a week, ' + csMoney(c.perMonth) + ' a month' }), ' at ' + (+cs.cups) + ' cup' + (+cs.cups === 1 ? '' : 's') + ' a day.'));
-  out.push(h('div', { class:'yc-line mute', text:'The bag makes about ' + Math.floor(c.cupsInBag) + ' cups' + (c.daysInBag != null ? ' and lasts about ' + (Math.round(c.daysInBag * 10) / 10) + ' days.' : '.') }));
+  const pods = c.kind === 'pods', out = [h('div', { class:'yc-rlab', text:csLabel(x === cs.b ? 1 : 0) + ' costs' }), h('div', { class:'yc-big', 'data-cup':'1' }, csMoney(c.perCup), h('small', { text:pods ? ' a pod' : ' a cup' }))];
+  if (c.perDay != null) out.push(h('div', { class:'yc-line' }, h('b', { text:csMoney(c.perDay) + ' a day, ' + csMoney(c.perWeek) + ' a week, ' + csMoney(c.perMonth) + ' a month' }), ' at ' + (+cs.cups) + (pods ? ' pod' : ' cup') + (+cs.cups === 1 ? '' : 's') + ' a day.'));
+  out.push(h('div', { class:'yc-line mute', text:pods ? 'The box has ' + Math.floor(c.cupsInBag) + ' pods' + (c.daysInBag != null ? ' and lasts about ' + (Math.round(c.daysInBag * 10) / 10) + ' days.' : '.') : 'The bag makes about ' + Math.floor(c.cupsInBag) + ' cups' + (c.daysInBag != null ? ' and lasts about ' + (Math.round(c.daysInBag * 10) / 10) + ' days.' : '.') }));
+  if (c.daysInBag != null) out.push(...csCupRow(c));
   return out;
 }
 function csResultNodes(){
@@ -15219,7 +15737,7 @@ function csResultNodes(){
   const d = costCompare(calc[0], calc[1]);
   if (d.ok){
     const w = d.cheaper === 'a' ? 0 : 1;
-    out.push(h('div', { class:'yc-line', id:'csDiff', 'data-cheaper':d.cheaper }, h('b', { text:d.cheaper === 'same' ? 'The two bags cost about the same a cup.' : csLabel(w) + ' costs ' + csMoney(d.perCup) + ' less a cup, about ' + Math.round(d.pct) + ' % less' + (d.perMonth != null ? ', and ' + csMoney(d.perMonth) + ' less a month.' : '.') }),
+    out.push(h('div', { class:'yc-line', id:'csDiff', 'data-cheaper':d.cheaper }, h('b', { text:d.cheaper === 'same' ? 'The two cost about the same a cup.' : csLabel(w) + ' costs ' + csMoney(d.perCup) + ' less a cup, about ' + Math.round(d.pct) + ' % less' + (d.perMonth != null ? ', and ' + csMoney(d.perMonth) + ' less a month.' : '.') }),
       h('div', { class:'fine', style:'margin-top:4px', text:'This counts cost only. It says nothing about which coffee tastes better.' })));
   }
   return out;
@@ -15227,55 +15745,78 @@ function csResultNodes(){
 function csLive(){
   const r = $('csResult'); if (r){ r.textContent = ''; r.append(...csResultNodes()); }
   const w = $('csWork'); if (w) w.textContent = csWorkText();
+  spLive();
 }
 function csWorkText(){
-  const c = csCalc(cs.a); if (!c.ok) return 'Enter a price, a size and a dose to see the working.';
+  const c = csCalc(cs.a); if (!c.ok) return cs.a.kind === 'pods' ? 'Enter a price and the number of pods to see the working.' : 'Enter a price, a size and a dose to see the working.';
   const f = x => String(Math.round(x * 1000) / 1000);
-  return 'The bag is ' + f(c.grams) + ' g (' + cs.a.size + ' ' + cs.a.unit + (cs.a.unit === 'oz' ? ', at 28.35 g to the ounce' : cs.a.unit === 'lb' ? ', at 453.6 g to the pound' : '') + '). ' + cs.sym + cs.a.price + ' ÷ ' + f(c.grams) + ' g = ' + cs.sym + f(c.perGram) + ' a gram. A ' + cs.dose + ' g dose costs ' + cs.sym + f(c.perGram) + ' × ' + cs.dose + ' = ' + csMoney(c.perCup) + '.'
-    + (c.perDay != null ? ' A day is ' + cs.cups + ' cups × ' + csMoney(c.perCup) + ' = ' + csMoney(c.perDay) + '; a week is 7 days; a month is 30.44 days (a year divided by 12).' : '');
+  const tail = c.perDay != null ? ' A day is ' + cs.cups + (c.kind === 'pods' ? ' pods' : ' cups') + ' × ' + csMoney(c.perCup) + ' = ' + csMoney(c.perDay) + '; a week is 7 days; a month is 30.44 days (a year divided by 12).' : '';
+  if (c.kind === 'pods') return 'The box holds ' + cs.a.size + ' pods. ' + cs.sym + cs.a.price + ' ÷ ' + cs.a.size + ' = ' + cs.sym + f(c.perCup) + ' a pod, and a pod makes one cup.' + tail;
+  return 'The bag is ' + f(c.grams) + ' g (' + cs.a.size + ' ' + cs.a.unit + (cs.a.unit === 'oz' ? ', at 28.35 g to the ounce' : cs.a.unit === 'lb' ? ', at 453.6 g to the pound' : '') + '). ' + cs.sym + cs.a.price + ' ÷ ' + f(c.grams) + ' g = ' + cs.sym + f(c.perGram) + ' a gram. A ' + cs.dose + ' g dose costs ' + cs.sym + f(c.perGram) + ' × ' + cs.dose + ' = ' + csMoney(c.perCup) + '.' + tail;
+}
+/* the two big tiles that say what is being priced: a bag of beans, or pods */
+function csKindTiles(x, i){
+  return h('div', { class:'mk-kind', role:'group', 'aria-label':'What you are pricing', 'data-bag':i ? 'b' : 'a' }, [['bag', 'art-bag', 'Bag of beans', 'priced by weight'], ['pods', 'art-pod', 'Pods or capsules', 'priced each']].map(k =>
+    h('button', { type:'button', 'data-k':k[0], 'aria-pressed':String(x.kind === k[0]), onclick:() => { if (x.kind !== k[0]){ x.kind = k[0]; x.size = ''; x.unit = 'g'; csPaint(); } } }, symPic(k[1]), h('b', { text:k[2] }), h('small', { text:k[3] }))));
 }
 function csBagCard(x, i){
-  const id = i ? 'csB' : 'csA', unit = h('div', { class:'yc-mini', role:'group', 'aria-label':'Bag size unit' }, COST_UNITS.map(u => h('button', { type:'button', 'data-u':u[0], 'aria-pressed':String(x.unit === u[0]), text:u[0], onclick:e => { x.unit = u[0]; Array.from(e.currentTarget.parentNode.children).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.u === x.unit))); csLive(); } })));
-  const name = h('input', { id:id + 'Name', class:'yc-text', type:'text', maxlength:'80', value:x.name, placeholder:i ? 'Bag B' : 'e.g. Kenya AA' }); name.addEventListener('input', () => { x.name = name.value; csLive(); });
-  return toolCard(id, cs.compare ? (i ? 'Bag B' : 'Bag A') : 'The bag', 'price and size from the bag',
+  const id = i ? 'csB' : 'csA', pods = x.kind === 'pods';
+  const name = h('input', { id:id + 'Name', class:'yc-text', type:'text', maxlength:'80', value:x.name, placeholder:i ? (pods ? 'Box B' : 'Bag B') : 'e.g. Kenya AA' }); name.addEventListener('input', () => { x.name = name.value; csLive(); });
+  let sizeNodes;
+  if (pods){
+    sizeNodes = [h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:'Pods in the box' }), h('div', { class:'yc-mini podtiles', role:'group', 'aria-label':'Pods in the box' }, PRICE_POD_COUNTS.map(n => h('button', { type:'button', 'data-n':String(n), 'aria-pressed':String(String(x.size) === String(n)), text:String(n),
+      onclick:() => { x.size = String(n); csPaint(); } })))), ycNum(id + 'Size', 'Or type how many', '', x.size, 1, v => { x.size = v; Array.from(document.querySelectorAll('#' + id + ' .podtiles button')).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.n === String(x.size)))); csLive(); }, '60')];
+  } else {
+    const unit = h('div', { class:'yc-mini', role:'group', 'aria-label':'Bag size unit' }, COST_UNITS.map(u => h('button', { type:'button', 'data-u':u[0], 'aria-pressed':String(x.unit === u[0]), text:u[0], onclick:e => { x.unit = u[0]; Array.from(e.currentTarget.parentNode.children).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.u === x.unit))); csLive(); } })));
+    sizeNodes = [null, ycNum(id + 'Size', 'Size of the bag', '', x.size, 1, v => { x.size = v; csLive(); }, x.unit === 'g' ? '340' : x.unit === 'oz' ? '12' : '1'), h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:'Size in' }), unit)];
+  }
+  return toolCard(id, pods ? (cs.compare ? (i ? 'Box B' : 'Box A') : 'The box') : (cs.compare ? (i ? 'Bag B' : 'Bag A') : 'The bag'), pods ? 'price and pods from the box' : 'price and size from the bag',
     csPick(x, id),
     h('div', { class:'yc-f wide' }, h('label', { for:id + 'Name', text:'Coffee' }), name),
-    h('div', { class:'yc-row' }, ycNum(id + 'Price', 'Price of the bag', cs.sym, x.price, 0.01, v => { x.price = v; csLive(); }), ycNum(id + 'Size', 'Size of the bag', '', x.size, 1, v => { x.size = v; csLive(); }, x.unit === 'g' ? '340' : x.unit === 'oz' ? '12' : '1')),
-    h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:'Size in' }), unit));
+    h('div', { class:'yc-row' }, ycNum(id + 'Price', pods ? 'Price of the box' : 'Price of the bag', cs.sym, x.price, 0.01, v => { x.price = v; csLive(); }), pods ? null : sizeNodes[1]),
+    pods ? sizeNodes : sizeNodes[2]);
 }
-/* A choice of the coffees already in the prices list (the newest bag of each), to fill this bag from. Nothing is shown while the list is empty. */
+/* A choice of the coffees already in the prices list (the newest purchase of each, of this kind), to fill this one from. Nothing is shown while there are none. */
 function csPick(x, id){
-  if (!pr.list.length) return null;
-  const seen = new Set(), list = priceSort(pr.list, 'new').filter(e => { const k = (e.coffee + '|' + e.roaster).toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+  const mine = pr.list.filter(e => e.kind === x.kind); if (!mine.length) return null;
+  const seen = new Set(), list = priceSort(pr.list, 'new').filter(e => { if (e.kind !== x.kind) return false; const k = (e.coffee + '|' + e.roaster).toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
   const sel = h('select', { id:id + 'Pick', class:'yc-pick', 'aria-label':'Fill from my coffee prices' }, h('option', { value:'', text:'Fill from my coffee prices' }),
     list.map(e => h('option', { value:String(e.i), text:e.coffee + (e.roaster ? ' · ' + e.roaster : '') + ' · ' + prMoney(e.sym, e.price) + ' for ' + e.size + ' ' + e.unit })));
   sel.addEventListener('change', () => {
     const e = pr.list[parseInt(sel.value, 10)]; if (!e) return;
-    cs.sym = e.sym; Object.assign(x, { name:e.coffee, roaster:e.roaster, price:String(e.price), size:String(e.size), unit:e.unit }); csPaint();
+    cs.sym = e.sym; Object.assign(x, { name:e.coffee, roaster:e.roaster, price:String(e.price), size:String(e.size), unit:e.kind === 'pods' ? 'g' : e.unit, kind:e.kind }); csPaint();
   });
   return h('div', { class:'yc-f wide' }, sel);
 }
+/* what the Add button says, with the mascot: tone 'ok', 'warn' or 'info' */
+function csSay(status, tone, text){
+  status.textContent = '';
+  status.append(moneyNote(tone === 'warn' ? 'shrug' : tone === 'info' ? 'think' : 'thumbs', tone === 'warn' ? 'worried' : tone === 'info' ? 'thinking' : 'happy', null, text));
+}
 function csAdd(status){
-  const objs = (cs.compare ? [cs.a, cs.b] : [cs.a]).map(x => ({ coffee:x.name, roaster:x.roaster, sym:cs.sym, price:x.price, size:x.size, unit:x.unit, dose:cs.dose, cups:cs.cups, date:today() }));
+  const objs = (cs.compare ? [cs.a, cs.b] : [cs.a]).map(x => ({ kind:x.kind, coffee:x.name, roaster:x.roaster, sym:cs.sym, price:x.price, size:x.size, unit:x.kind === 'pods' ? 'pods' : x.unit, dose:x.kind === 'pods' ? null : cs.dose, cups:x.kind === 'pods' ? null : cs.cups, date:today() }));
   const usable = objs.filter(o => priceEntry(o));
-  if (!usable.length){ status.textContent = prWhy(objs[0]); return; }
-  const n = prAddBags(usable), word = n.added === 1 ? 'bag' : 'bags';
-  status.textContent = (n.added ? 'Added ' + n.added + ' ' + word + ' to your coffee prices.' : n.full ? 'Your coffee prices list is full. Delete some bags first.' : 'That is already in your coffee prices.') + (usable.length < objs.length ? ' The other bag is missing something, so it was left out.' : '');
+  if (!usable.length){ csSay(status, 'warn', prWhy(objs[0])); return; }
+  const n = prAddBags(usable), word = n.added === 1 ? 'purchase' : 'purchases';
+  csSay(status, n.added ? 'ok' : n.full ? 'warn' : 'info', (n.added ? 'Added ' + n.added + ' ' + word + ' to your coffee prices, bought today.' : n.full ? 'Your coffee prices list is full. Delete some first.' : 'That is already in your coffee prices. To add the same coffee again, use Open my coffee prices.') + (usable.length < objs.length ? ' The other one is missing something, so it was left out.' : ''));
 }
 function csPaint(){
   const host = csHost; host.textContent = '';
-  host.append(toolHero('Cost of coffee', 'Work out what a cup costs from the price of a bag.', 'cost'));
-  host.append(csBagCard(cs.a, 0));
-  if (cs.compare) host.append(csBagCard(cs.b, 1));
-  host.append(toolCard('csUse', 'How you brew', 'your dose and cups a day',
-    h('div', { class:'yc-row' }, ycNum('csDose', 'Coffee per cup', 'g', cs.dose, 0.5, v => { cs.dose = parseFloat(v) || 0; csLive(); }), ycNum('csCups', 'Cups a day', '', cs.cups, 1, v => { cs.cups = v; csLive(); }, '2'))));
-  host.append(h('button', { type:'button', class:'btn', id:'csCompareBtn', 'aria-pressed':String(cs.compare), style:'margin:4px 0 12px', text:cs.compare ? 'Compare with one bag only' : 'Compare with a second bag', onclick:() => { cs.compare = !cs.compare; csPaint(); } }));
-  const status = h('p', { class:'fine', id:'csStatus', role:'status', style:'margin:8px 0 0' });
+  host.append(toolHero('Cost of coffee', 'What a cup costs, at home and at the shop.', 'cost'));
+  host.append(csKindTiles(cs.a, 0), csBagCard(cs.a, 0));
+  if (cs.compare) host.append(csKindTiles(cs.b, 1), csBagCard(cs.b, 1));
+  const anyBag = (cs.compare ? [cs.a, cs.b] : [cs.a]).some(x => x.kind !== 'pods');
+  host.append(toolCard('csUse', 'How you brew', anyBag ? 'your dose and cups a day' : 'pods a day',
+    h('div', { class:'yc-row' }, anyBag ? ycNum('csDose', 'Coffee per cup', 'g', cs.dose, 0.5, v => { cs.dose = parseFloat(v) || 0; csLive(); }) : null, ycNum('csCups', anyBag ? 'Cups a day' : 'Pods a day', '', cs.cups, 1, v => { cs.cups = v; csLive(); }, '2'))));
+  host.append(h('button', { type:'button', class:'btn', id:'csCompareBtn', 'aria-pressed':String(cs.compare), style:'margin:4px 0 12px', text:cs.compare ? 'Compare with one only' : 'Compare with a second one', onclick:() => { cs.compare = !cs.compare; csPaint(); } }));
+  const status = h('div', { id:'csStatus', role:'status', style:'margin:8px 0 0' });
+  const pods = cs.a.kind === 'pods' && (!cs.compare || cs.b.kind === 'pods');
   const outCard = tband('What it costs', { tan:'Your answer' }, 'changes as you type', { pic:'beans' }, h('div', { class:'yc-result', id:'csResult', 'aria-live':'polite' }),
-    h('button', { type:'button', class:'btn block', id:'csAdd', style:'margin-top:12px', text:'Add to my coffee prices', onclick:() => csAdd(status) }), status,
+    h('button', { type:'button', class:'btn block', id:'csAdd', style:'margin-top:12px', text:cs.compare ? 'Add these to my coffee prices' : pods ? 'Add this box to my coffee prices' : 'Add this bag to my coffee prices', onclick:() => csAdd(status) }), status,
     h('button', { type:'button', class:'flink', id:'csPrices', style:'margin:6px 0 0', text:'Open my coffee prices', onclick:goPrices }),
-    h('p', { class:'fine', style:'margin:10px 0 0', text:'This counts the coffee only, not water, filters, milk or power. Nothing here is kept unless you press Add to my coffee prices. That goes in your own prices file and does not touch your history.' }));
+    h('p', { class:'fine', style:'margin:10px 0 0', text:'This counts the coffee only, not water, filters, milk or power. Nothing here is kept unless you press Add to my coffee prices. That records a purchase, dated today, in your own prices file. It does not touch your history.' }));
   outCard.id = 'csOut'; host.append(outCard);
+  host.append(spendCard());
   const sym = h('input', { id:'csSym', class:'yc-text', type:'text', maxlength:'3', value:cs.sym, style:'width:6em' }); sym.addEventListener('change', () => { cs.sym = sym.value.trim().slice(0, 3) || '$'; csPaint(); });
   host.append(toolFold(cs.open, 'work', 'csWorkd', 'How this is worked out', 'The sums, with your numbers', 'flask', h('p', { class:'fine', id:'csWork', style:'margin:0' })));
   host.append(toolFold(cs.open, 'sym', 'csSymd', 'Change the currency symbol', 'For example £ or €', 'tag', h('div', { class:'yc-f' }, h('label', { for:'csSym', text:'Symbol' }), sym)));
@@ -15287,9 +15828,10 @@ function screenCost(m){
 }
 /* ---------- screen: coffee prices ----------
    The list is kept in this browser (one CSV text under PRICES_KEY) so it is there next time, and it can be saved to and loaded from a file. It is never part of the tasting history file.
-   Loading a file only adds: a bag already in the list is skipped, so nothing is lost or doubled. A change made here is not in any file until the person saves one. */
+   Loading a file only adds: a row already in the list is skipped, so nothing is lost or doubled. A change made here is not in any file until the person saves one.
+   The order of the screen is: what you have (Your bags), then Add a bag, then Your file at the bottom. Every save, finish and problem is said by the mascot. */
 const PRICES_KEY = 'brew-and-cup-prices-v1', PRICES_CHANGES_KEY = 'brew-and-cup-prices-changes-v1';
-let pr = { list:[], changes:0, failed:false, q:'', sort:'new', msg:'', undo:null, add:null, open:{ add:false, paste:false } }, pricesFrom = '', prHost = null;
+let pr = { list:[], changes:0, failed:false, q:'', sort:'first', show:'open', msg:'', tone:'ok', note:null, undo:null, add:null, addMsg:null, edit:null, editA:null, editMsg:'', open:{ add:false, paste:false } }, pricesFrom = '', prHost = null;
 function persistPrices(){
   try {
     if (pr.list.length) localStorage.setItem(PRICES_KEY, priceCsv(pr.list)); else localStorage.removeItem(PRICES_KEY);
@@ -15305,116 +15847,163 @@ function loadPrices(){
   } catch(e){}
 }
 function forgetPrices(){
-  pr.list = []; pr.changes = 0; pr.undo = null; pr.msg = ''; pr.q = '';
+  pr.list = []; pr.changes = 0; pr.undo = null; pr.msg = ''; pr.q = ''; pr.note = null; pr.addMsg = null; pr.edit = null; pr.editA = null; pr.editMsg = ''; pr.show = 'open';
   try { localStorage.removeItem(PRICES_KEY); localStorage.removeItem(PRICES_CHANGES_KEY); } catch(e){}
 }
-/* put bags (loose values, as priceEntry takes them) on the list. Returns { added, same, bad, full } counts; the list and the browser's copy are updated once. */
-function prAddBags(objs){
+/* put purchases (loose values, as priceEntry takes them) on the list. again = true adds one even when the same row is already there (buying the same coffee again). Returns { added, same, bad, full } counts; the list and the browser's copy are updated once. */
+function prAddBags(objs, again){
   const n = { added:0, same:0, bad:0, full:0 };
-  objs.forEach(o => { const r = priceAdd(pr.list, o); if (r.added){ pr.list = r.list; n.added++; } else if (r.why === 'same') n.same++; else if (r.why === 'full') n.full++; else n.bad++; });
+  objs.forEach(o => { const r = priceAdd(pr.list, o, again); if (r.added){ pr.list = r.list; n.added++; } else if (r.why === 'same') n.same++; else if (r.why === 'full') n.full++; else n.bad++; });
   if (n.added){ pr.changes += n.added; pr.undo = null; persistPrices(); }
   return n;
 }
-/* what is missing from a bag that cannot be added, in plain words */
-function prWhy(o){
-  if (!priceText(o.coffee, 80)) return "Type the coffee's name first, so you can find it later.";
-  if (!(priceNum(o.price, 2) > 0)) return 'Enter the price of the bag.';
-  return 'Enter the size of the bag.';
-}
+/* what the file card says, with the mascot: tone 'ok' (thumbs, happy), 'warn' (shrug, worried) or 'info' (think, thinking) */
+function prSay(tone, text){ pr.msg = text; pr.tone = tone; }
 function prLoadText(text){
   const r = priceRead(String(text));
-  if (r.error){ pr.msg = r.error; return; }
-  const before = pr.list.length, keys = new Set(r.list.map(priceKey));
-  prAddBags(r.list.map(e => Object.assign({}, e)));
-  const added = pr.list.length - before, here = r.list.length - added;
-  pr.changes = pr.list.filter(e => !keys.has(priceKey(e))).length; persistPrices();   /* what the file lacks, so "not in a file yet" is exact right after loading */
-  pr.msg = added ? 'Loaded ' + added + (added === 1 ? ' bag' : ' bags') + ' from the file' + (here ? ' (' + here + ' already here)' : '') + (r.skipped ? '. ' + r.skipped + (r.skipped === 1 ? ' row was' : ' rows were') + ' not a bag and was left out' : '') + '.'
-    : (r.list.length ? 'Nothing new in that file. Every bag in it was already here.' : 'That file has no bags in it.');
+  if (r.error){ prSay('warn', r.error); return; }
+  const m = priceMerge(pr.list, r.list), added = m.added, here = r.list.length - added - m.full;
+  pr.list = m.list; pr.changes = priceMerge(r.list, pr.list).added; persistPrices();   /* what the file lacks, so "not in a file yet" is exact right after loading */
+  const w = n => n + (n === 1 ? ' purchase' : ' purchases');
+  prSay(added ? 'ok' : 'info', added ? 'Loaded ' + w(added) + ' from the file' + (here ? ' (' + here + ' already here)' : '') + (r.skipped ? '. ' + r.skipped + (r.skipped === 1 ? ' row was' : ' rows were') + ' not a purchase and was left out' : '') + (m.full ? '. ' + m.full + ' did not fit, because the list is full' : '') + '.'
+    : (r.list.length ? 'Nothing new in that file. Every purchase in it was already here.' : 'That file has no purchases in it.'));
 }
 async function prSave(){
-  if (!pr.list.length){ pr.msg = 'Add a bag first, then save the file.'; prPaint(); return; }
+  if (!pr.list.length){ prSay('info', 'Add a bag first, then save the file.'); prPaint(); return; }
   const text = priceCsv(pr.list), name = EVERY_FILES.prices;
   try {
     if (inClaude()){ const dl = await getDownloads(); if (!dl) throw new Error('no downloads'); await dl.save({ filename:name, data:text }); }
     else plainDownload(text, name);
-    pr.changes = 0; persistPrices(); pr.msg = 'Saved ' + name + ' with ' + pr.list.length + (pr.list.length === 1 ? ' bag.' : ' bags.') + ' Keep it somewhere you can find it.';
-  } catch(e){ pr.msg = 'This view could not save the file. Open BeanTelligence in your browser and try again.'; }
+    pr.changes = 0; persistPrices(); prSay('ok', 'Saved ' + name + ' with ' + pr.list.length + (pr.list.length === 1 ? ' purchase.' : ' purchases.') + ' Keep it somewhere you can find it.');
+  } catch(e){ prSay('warn', 'This view could not save the file. Open BeanTelligence in your browser and try again.'); }
   prPaint();
 }
-const prMoney = (sym, x) => sym + (Math.round(x * 100) / 100).toFixed(2);
+/* mark a purchase finished (on) or open again (off). Only the list's tidy changes: no money total does. */
+function prFinish(i, on){
+  const e = pr.list[i]; if (!e) return;
+  const r = priceSet(pr.list, i, { finished:on ? today() : '' }); if (!r.ok) return;
+  pr.list = r.list; pr.changes++; pr.undo = null; persistPrices();
+  pr.note = on ? { pose:'cheer', face:'happy', head:'Marked as finished.', text:e.coffee + ' is out of your open bags. Your spending does not change.' } : { pose:'thumbs', face:'happy', head:'Back in your open bags.', text:e.coffee + ' is open again.' };
+  prPaint();
+}
+function prDelete(i){
+  const e = pr.list[i]; if (!e) return;
+  pr.undo = { e, at:i }; pr.list = pr.list.filter((x, k) => k !== i); pr.changes++; persistPrices(); pr.note = null; pr.edit = null; pr.editA = null; prPaint();
+}
 function prUse(e){
   if (!cs) csStart();
   Object.assign(cs, { sym:e.sym, compare:false }); if (e.dose){ cs.dose = e.dose; if (e.cups) cs.cups = String(e.cups); }
-  cs.a = { name:e.coffee, roaster:e.roaster, price:String(e.price), size:String(e.size), unit:e.unit };
+  cs.a = { name:e.coffee, roaster:e.roaster, price:String(e.price), size:String(e.size), unit:e.kind === 'pods' ? 'g' : e.unit, kind:e.kind };
   go('cost');
 }
-function prRowNode(e){
-  const ch = priceChange(pr.list, e), line = [prMoney(e.sym, e.price) + ' for ' + e.size + ' ' + e.unit, prMoney(e.sym, pricePer100g(e)) + ' per 100 g'];
-  const move = ch.ok && ch.now.i === e.i ? (ch.dir === 'same' ? 'About the same per gram as the bag before' : Math.abs(ch.pct) + ' % ' + (ch.dir === 'up' ? 'more' : 'less') + ' per gram than the bag before') + (ch.before.date ? ' (' + ch.before.date + ')' : '') + '.' : '';
-  return h('div', { class:'pr-row', 'data-i':String(e.i) },
-    h('div', { class:'pr-name' }, h('b', { text:e.coffee }), e.roaster ? h('span', { text:' · ' + e.roaster }) : null),
-    h('div', { class:'yc-line', text:line.join(' · ') }),
-    h('div', { class:'yc-line mute', text:[e.date, move].filter(Boolean).join(' · ') || 'No date' }),
-    h('div', { class:'pr-acts' }, h('button', { type:'button', class:'btn small pr-use', text:'Use in Cost tool', onclick:() => prUse(e) }),
-      h('button', { type:'button', class:'btn small pr-del', text:'Delete', 'aria-label':'Delete ' + e.coffee, onclick:() => { pr.undo = { e:pr.list[e.i], at:e.i }; pr.list = pr.list.filter((x, k) => k !== e.i); pr.changes++; persistPrices(); pr.msg = ''; prPaint(); } })));
+/* the purchases to show, in the order to show them. Each keeps its place in the list as `i` and has `days` since its roast. 'first' puts the open ones oldest roast first, then the finished ones, latest finished first. */
+function prRows(){
+  const now = today(), all = pr.list.map((e, i) => Object.assign({ i, days:priceDaysSince(e.roast, now) }, e));
+  const keep = e => pr.show === 'all' || (pr.show === 'finished' ? !!e.finished : !e.finished);
+  let rows;
+  if (pr.sort === 'first') rows = priceOpenBags(pr.list, now).concat(all.filter(e => e.finished).sort((x, y) => y.finished.localeCompare(x.finished) || y.i - x.i)).filter(keep);
+  else rows = priceSort(pr.list, pr.sort).map(e => Object.assign({ days:priceDaysSince(e.roast, now) }, e)).filter(keep);
+  return priceFilter(rows, pr.q);
+}
+function prRowNode(e, useFirst){
+  const pods = e.kind === 'pods', ch = priceChange(pr.list, e), uc = priceUnitCost(e), tag = !pods && !e.finished ? prRoastTag(e.days) : null;
+  const line = [prMoney(e.sym, e.price) + ' for ' + e.size + ' ' + e.unit, uc ? prMoney(e.sym, uc.value) + (pods ? ' a pod' : ' per 100 g') : null].filter(Boolean).join(' · ');
+  const move = ch.ok && ch.now.i === e.i ? (ch.dir === 'same' ? 'About the same ' + (pods ? 'per pod' : 'per gram') + ' as the one before' : Math.abs(ch.pct) + ' % ' + (ch.dir === 'up' ? 'more' : 'less') + (pods ? ' per pod' : ' per gram') + ' than the one before') + (ch.before.date ? ' (' + prWhen(ch.before.date) + ')' : '') + '.' : '';
+  const bought = [e.date ? 'Bought ' + prWhen(e.date) : 'No date', [e.city, e.state].filter(Boolean).join(', '), move].filter(Boolean).join(' · ');
+  const nm = h('div', { class:'pr-name' }, h('b', { text:e.coffee }), e.roaster ? h('span', { text:' · ' + e.roaster }) : null, pods ? h('span', { class:'tag2', text:'Pods' }) : null,
+    e.finished ? h('span', { class:'tag2', text:'Finished ' + phDate(e.finished) }) : useFirst ? h('span', { class:'tag2 first', text:'Use first' }) : null);
+  const roast = e.roast && !e.finished ? h('div', { class:'yc-line' }, 'Roasted ' + phDate(e.roast) + ' · ', h('b', { text:prAgo(e.days) }), tag ? h('span', { class:'tag2 ' + tag.cls, text:tag.text }) : null)
+    : e.roast ? h('div', { class:'yc-line mute', text:'Roasted ' + phDate(e.roast) }) : !e.finished ? h('div', { class:'yc-line mute', text:'No roast date' }) : null;
+  const acts = e.finished
+    ? [h('button', { type:'button', class:'btn small pr-open', text:'Still have it', 'aria-label':'Still have ' + e.coffee, onclick:() => prFinish(e.i, false) })]
+    : [h('button', { type:'button', class:'btn small primary pr-fin', text:pods ? 'All gone' : 'Mark finished', 'aria-label':(pods ? 'All gone: ' : 'Mark finished: ') + e.coffee, onclick:() => prFinish(e.i, true) })];
+  acts.push(h('button', { type:'button', class:'btn small pr-edit', text:'Edit', 'aria-label':'Edit ' + e.coffee, onclick:() => { pr.edit = e.i; pr.editA = prFormFrom(pr.list[e.i]); pr.editMsg = ''; pr.note = null; prPaint(); } }));
+  if (!e.finished && !pods) acts.push(h('button', { type:'button', class:'btn small pr-use', text:'Use in Cost tool', onclick:() => prUse(e) }));
+  if (!e.finished) acts.push(h('button', { type:'button', class:'btn small pr-del', text:'Delete', 'aria-label':'Delete ' + e.coffee, onclick:() => prDelete(e.i) }));
+  return h('div', { class:'pr-row' + (e.finished ? ' done' : ''), 'data-i':String(e.i) }, nm, h('div', { class:'yc-line', text:line }), h('div', { class:'yc-line mute', text:bought }), roast, h('div', { class:'pr-acts' }, acts));
+}
+/* the row, opened as a form, to fix a typo or add what was left out */
+function prEditNode(e){
+  const a = pr.editA, mk = h('span', { class:'mm', 'aria-hidden':'true' }); mk.innerHTML = mascotSvg({ view:'full', pose:'think', face:'thinking' });
+  const form = prForm(a, 'prE', { actions:() => {
+    const save = h('button', { type:'button', class:'btn primary block', id:'prESave', style:'margin-top:14px', text:'Save changes', onclick:() => {
+      const r = priceSet(pr.list, e.i, prObj(a));
+      if (!r.ok){ pr.editMsg = prWhy(prObj(a)); prPaint(); return; }
+      pr.list = r.list; pr.changes++; pr.undo = null; persistPrices(); pr.edit = null; pr.editA = null; pr.editMsg = '';
+      pr.note = { pose:'thumbs', face:'happy', head:'Saved.', text:priceText(a.coffee, 80) + ' is updated.' }; prPaint();
+    } });
+    return [save, h('div', { class:'pr-acts', style:'margin-top:8px' }, h('button', { type:'button', class:'btn small', id:'prECancel', text:'Cancel', onclick:() => { pr.edit = null; pr.editA = null; pr.editMsg = ''; prPaint(); } }),
+      h('button', { type:'button', class:'btn small pr-del', id:'prEDelete', text:'Delete', onclick:() => prDelete(e.i) })), pr.editMsg ? moneyNote('shrug', 'worried', 'prEStatus', pr.editMsg) : null];
+  } });
+  return h('div', { class:'pr-row editing', 'data-i':String(e.i) }, h('div', { class:'eh' }, mk, h('div', null, h('h3', { text:'Edit a purchase' }), h('p', { text:e.coffee + (e.roaster ? ' · ' + e.roaster : '') }))), form);
 }
 function prListNodes(){
   if (!pr.list.length) return [h('p', { class:'fine', id:'prEmpty', style:'margin:0', text:'No bags yet. Add one below, or load a file you saved before. You can also add a bag from the Cost of coffee tool.' })];
-  const rows = priceFilter(priceSort(pr.list, pr.sort), pr.q);
-  return rows.length ? rows.map(prRowNode) : [h('p', { class:'fine', style:'margin:0', text:'No coffee or roaster matches "' + pr.q + '".' })];
+  const rows = prRows();
+  if (!rows.length){
+    return [h('p', { class:'fine', style:'margin:0', text:pr.q ? 'No coffee or roaster matches "' + pr.q + '".' : pr.show === 'finished' ? 'Nothing is marked finished yet.' : 'Nothing is open. Every purchase is marked finished. Choose Finished or All to see them.' })];
+  }
+  const dated = rows.filter(e => !e.finished && e.days != null).length, firstI = pr.sort === 'first' && dated > 1 ? rows.find(e => !e.finished && e.days != null).i : -1;
+  return rows.map(e => pr.edit === e.i && pr.editA ? prEditNode(e) : prRowNode(e, e.i === firstI));
 }
 function prFileCard(){
   const n = pr.list.length, file = h('input', { type:'file', id:'prFile', accept:'.csv,text/csv,text/plain', 'aria-label':'Coffee prices file (CSV)' });
   file.addEventListener('change', async () => {
     const f = file.files && file.files[0]; if (!f) return;
     try { prLoadText(f.text ? await f.text() : await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsText(f); })); }
-    catch(e){ pr.msg = "Couldn't read that file. Try pasting its contents instead."; }
+    catch(e){ prSay('warn', "Couldn't read that file. Try pasting its contents instead."); }
     prPaint();
   });
   const paste = h('textarea', { id:'prPaste', placeholder:'Paste the file contents here', 'aria-label':'Pasted prices file text' });
   const pd = plainFold('prPasteD', 'Load not working?', 'Paste the file instead', 'text', paste,
-    h('button', { type:'button', class:'btn', id:'prPasteBtn', style:'margin-top:8px', text:'Use pasted text', onclick:() => { if (paste.value.trim()) prLoadText(paste.value); else pr.msg = 'Paste the file contents first.'; prPaint(); } }));
+    h('button', { type:'button', class:'btn', id:'prPasteBtn', style:'margin-top:8px', text:'Use pasted text', onclick:() => { if (paste.value.trim()) prLoadText(paste.value); else prSay('info', 'Paste the file contents first.'); prPaint(); } }));
   pd.open = pr.open.paste; pd.addEventListener('toggle', () => { pr.open.paste = pd.open; });
-  const sub = n ? n + (n === 1 ? ' bag' : ' bags') + ' kept in this browser.' + (pr.changes ? ' ' + pr.changes + (pr.changes === 1 ? ' change is' : ' changes are') + ' not in a file yet.' : ' All saved to a file.') : 'Nothing kept yet.';
+  const sub = n ? n + (n === 1 ? ' purchase' : ' purchases') + ' kept in this browser.' + (pr.changes ? ' ' + pr.changes + (pr.changes === 1 ? ' change is' : ' changes are') + ' not in a file yet.' : ' All saved to a file.') : 'Nothing kept yet.';
+  const face = pr.tone === 'warn' ? ['shrug', 'worried'] : pr.tone === 'info' ? ['think', 'thinking'] : ['thumbs', 'happy'];
   const fc = tband('Your file', { tan:'Kept on this device' }, null, { pic:'clip' }, h('p', { class:'fine', id:'prCount', style:'margin:0 0 10px', text:sub }),
     h('button', { type:'button', class:'btn primary block', id:'prSaveBtn', text:'Save my prices file', onclick:prSave }),
     h('div', { class:'yc-f wide' }, h('label', { for:'prFile', text:'Load a prices file' }), file), pd,
-    h('p', { class:'fine', id:'prStatus', role:'status', style:'margin:10px 0 0', text:pr.msg }),
+    pr.msg ? moneyNote(face[0], face[1], 'prStatus', pr.msg) : h('p', { class:'fine', id:'prStatus', role:'status', style:'margin:0' }),
     pr.failed ? h('p', { class:'fine warnline', role:'status', style:'margin:8px 0 0', text:'This browser could not keep your prices. Save the file before you leave.' }) : null,
-    h('p', { class:'fine', style:'margin:10px 0 0', text:'This is a file of its own. It is not your tasting history, and your history is never changed by it. Loading a file only adds bags that are not here yet.' }));
+    h('p', { class:'fine', style:'margin:10px 0 0', text:'This is a file of its own. It is not your tasting history, and your history is never changed by it. Loading a file only adds purchases that are not here yet.' }));
   fc.id = 'prFileCard'; return fc;
 }
 function prAddCard(){
-  const a = pr.add, unit = h('div', { class:'yc-mini', role:'group', 'aria-label':'Bag size unit' }, COST_UNITS.map(u => h('button', { type:'button', 'data-u':u[0], 'aria-pressed':String(a.unit === u[0]), text:u[0], onclick:e => { a.unit = u[0]; Array.from(e.currentTarget.parentNode.children).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.u === a.unit))); } })));
-  const txt = (id, label, key, ph, max) => { const i = h('input', { id, class:'yc-text', type:'text', maxlength:String(max), value:a[key], placeholder:ph }); i.addEventListener('input', () => { a[key] = i.value; }); return h('div', { class:'yc-f wide' }, h('label', { for:id, text:label }), i); };
-  const date = h('input', { id:'prDate', class:'yc-text', type:'date', value:a.date }); date.addEventListener('input', () => { a.date = date.value; });
-  const sym = h('input', { id:'prSym', class:'yc-text', type:'text', maxlength:'3', value:a.sym, style:'width:6em' }); sym.addEventListener('input', () => { a.sym = sym.value; });
-  const d = plainFold('prAddD', 'Add a bag', 'Name, price and size', 'plus',
-    txt('prName', 'Coffee', 'coffee', 'e.g. Kenya AA', 80), txt('prRoaster', 'Roaster (optional)', 'roaster', '', 80),
-    h('div', { class:'yc-row' }, ycNum('prPrice', 'Price of the bag', '', a.price, 0.01, v => { a.price = v; }), ycNum('prSize', 'Size of the bag', '', a.size, 1, v => { a.size = v; }, '340')),
-    h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:'Size in' }), unit),
-    h('div', { class:'yc-row' }, h('div', { class:'yc-f' }, h('label', { for:'prDate', text:'Bought on' }), date), h('div', { class:'yc-f' }, h('label', { for:'prSym', text:'Currency symbol' }), sym)),
-    h('button', { type:'button', class:'btn primary block', id:'prAddBtn', style:'margin-top:14px', text:'Add to my coffee prices', onclick:() => {
-      const o = Object.assign({}, a, { sym:a.sym.trim() || '$' }), n = prAddBags([o]);
-      pr.msg = n.added ? 'Added ' + priceText(a.coffee, 80) + ' to your coffee prices.' : n.same ? 'That bag is already in your coffee prices.' : n.full ? 'Your list is full (' + PRICE_MAX_ROWS + ' bags). Delete some first.' : prWhy(a);
-      if (n.added){ pr.add = prNewBag(); pr.add.sym = o.sym; pr.add.unit = o.unit; pr.open.add = false; }
+  const a = pr.add;
+  const d = plainFold('prAddD', 'Add a bag', 'Price, size, month and place', 'plus', prForm(a, 'pr', { actions:() => {
+    const pods = a.kind === 'pods', btn = h('button', { type:'button', class:'btn primary block', id:'prAddBtn', style:'margin-top:14px', text:pods ? 'Add this box' : 'Add this bag', onclick:() => {
+      const o = prObj(a), n = prAddBags([o], true);
+      if (n.added){
+        const e = priceEntry(o), uc = priceUnitCost(e), place = [e.city, e.state].filter(Boolean).join(', ');
+        pr.addMsg = { tone:'ok', head:pods ? 'Pods added. ' : 'Bag added. ', text:e.coffee + (e.date ? ', bought in ' + prWhen(e.date) : '') + (place ? ' in ' + place : '') + '. That is ' + prMoney(e.sym, uc.value) + (pods ? ' a pod.' : ' per 100 g.') };
+        const keep = { kind:a.kind, sym:a.sym, unit:a.unit, month:a.month, year:a.year }; pr.add = Object.assign(prNewBag(), keep); pr.open.add = true;
+      } else pr.addMsg = { tone:'warn', head:'', text:n.full ? 'Your list is full (' + PRICE_MAX_ROWS + ' purchases). Delete some first.' : prWhy(o) };
       prPaint();
-    } }));
+    } });
+    const m = pr.addMsg; pr.addMsg = null;
+    return [btn, m ? moneyNote(m.tone === 'ok' ? 'thumbs' : 'shrug', m.tone === 'ok' ? 'happy' : 'worried', 'prAddStatus', m.head ? h('b', { text:m.head }) : null, m.text) : h('p', { class:'fine', id:'prAddStatus', role:'status', style:'margin:0' })];
+  } }));
   d.open = pr.open.add; d.addEventListener('toggle', () => { pr.open.add = d.open; });
   return d;
 }
-const prNewBag = () => ({ coffee:'', roaster:'', price:'', size:'', unit:'g', date:today(), sym:'$' });
 function prPaint(){
   const host = prHost; if (!host) return; host.textContent = '';
-  host.append(toolHero('Coffee prices', 'The bags you have bought, kept in a small file of their own.', 'tag'), prFileCard());
-  const head = h('div', { class:'yc-lrow' }, h('span', { class:'yc-lab', text:'Sort by' }),
-    pr.list.length > 1 ? h('div', { class:'yc-mini', role:'group', 'aria-label':'Sort bags', id:'prSort' }, [['new', 'Newest'], ['name', 'A to Z'], ['cheap', 'Per 100 g']].map(s => h('button', { type:'button', 'data-s':s[0], 'aria-pressed':String(pr.sort === s[0]), text:s[1], onclick:() => { pr.sort = s[0]; prPaint(); } }))) : null);
-  const q = pr.list.length > 4 ? h('input', { id:'prQ', class:'yc-text', type:'search', value:pr.q, placeholder:'Search coffee or roaster', 'aria-label':'Search your bags', style:'margin:10px 0' }) : null;
+  host.append(toolHero('Coffee prices', 'What you bought for home, bags and pods, kept in a small file of their own.', 'tag'));
+  const sorts = [['first', 'Use first'], ['new', 'Newest'], ['name', 'A to Z'], ['cheap', 'Cheapest']], shows = [['open', 'Open'], ['finished', 'Finished'], ['all', 'All']];
+  const head = pr.list.length > 1 ? h('div', null,
+    h('div', { class:'yc-lrow stack' }, h('span', { class:'yc-lab', text:'Show' }), h('div', { class:'yc-mini', role:'group', 'aria-label':'Show purchases', id:'prShow' }, shows.map(s => h('button', { type:'button', 'data-s':s[0], 'aria-pressed':String(pr.show === s[0]), text:s[1], onclick:() => { pr.show = s[0]; pr.note = null; prPaint(); } })))),
+    h('div', { class:'yc-lrow stack' }, h('span', { class:'yc-lab', text:'Sort by' }), h('div', { class:'yc-mini', role:'group', 'aria-label':'Sort purchases', id:'prSort' }, sorts.map(s => h('button', { type:'button', 'data-s':s[0], 'aria-pressed':String(pr.sort === s[0]), text:s[1], onclick:() => { pr.sort = s[0]; pr.note = null; prPaint(); } }))))) : null;
+  const q = pr.list.length > 4 ? h('input', { id:'prQ', class:'yc-text', type:'search', value:pr.q, placeholder:'Search coffee or roaster', 'aria-label':'Search your purchases', style:'margin:10px 0' }) : null;
   if (q) q.addEventListener('input', () => { pr.q = q.value; const l = $('prList'); l.textContent = ''; l.append(...prListNodes()); });
   const undo = pr.undo ? h('div', { class:'notice row2', id:'prUndo' }, h('span', { text:'Removed ' + pr.undo.e.coffee + '.' }),
     h('button', { type:'button', class:'btn small', style:'margin:0', text:'Undo', onclick:() => { const l = pr.list.slice(); l.splice(Math.min(pr.undo.at, l.length), 0, pr.undo.e); pr.list = l; pr.changes = Math.max(0, pr.changes - 1); pr.undo = null; persistPrices(); prPaint(); } })) : null;
-  const bags = tband('Your bags', { tan:pr.list.length + (pr.list.length === 1 ? ' bag' : ' bags') }, null, { pic:'beans' }, pr.list.length > 1 ? head : null, undo, q, h('div', { id:'prList', class:'pr-list', style:'margin-top:10px' }, prListNodes())); bags.id = 'prCard';
-  host.append(bags, prAddCard());
+  const note = pr.note ? moneyNote(pr.note.pose, pr.note.face, 'prNote', h('b', { text:pr.note.head + ' ' }), pr.note.text) : null;
+  const open = pr.list.filter(e => !e.finished).length, done = pr.list.length - open;
+  const bags = tband('Your bags', { tan:done ? open + ' open' : pr.list.length + (pr.list.length === 1 ? ' bag' : ' bags') }, done ? done + ' finished' : null, { pic:'beans' }, head,
+    pr.list.length > 1 && pr.show === 'open' && pr.sort === 'first' ? h('p', { class:'fine', style:'margin:6px 0 0', text:'Open bags, the oldest roast first, so you can see which to use up.' }) : null, undo, note, q, h('div', { id:'prList', class:'pr-list', style:'margin-top:10px' }, prListNodes()),
+    pr.list.some(e => e.roast) ? h('p', { class:'fine', style:'margin:10px 0 0', text:'Roast age uses the usual window for a medium roast made as filter coffee. Roasters differ, so follow the bag if it gives its own advice. Finished only tidies this list. It never changes what you bought.' }) : null);
+  bags.id = 'prCard';
+  host.append(bags, prAddCard(), prFileCard());
 }
 function goPrices(){ if (app.screen !== 'prices') pricesFrom = app.screen === 'timer' ? 'ready' : app.screen; if (!pr.add){ pr.add = prNewBag(); if (app.coffee) { pr.add.coffee = app.coffee.name || ''; pr.add.roaster = app.coffee.roaster || ''; } } go('prices'); }
 function screenPrices(m){ prHost = h('div', { id:'prHost' }); m.append(prHost); if (!pr.add) pr.add = prNewBag(); prPaint(); }
@@ -15512,6 +16101,120 @@ function rpPaint(){
 function screenRatio(m){
   if (!rp || !YIELD_TABLE[rp.key]) rpStart();
   rpHost = h('div', { id:'rpHost' }); m.append(rpHost); rpPaint();
+}
+/* ---------- the Home or shop? card ----------
+   Home money is what was bought, counted in the month it was bought. It is not what was brewed, and nothing here says how much of a bag was used. Shop money is what was logged.
+   Counts say "logged" or "bought", never "brewed" or "drank": a box of pods logged once is one row, however many pods were used. */
+let sp = { range:'month', by:'drink', swap:3, month:'', more:{ home:false, shop:false }, open:{} };
+const spSym = () => spendSym(pr.list, sh.store.drinks);
+const spMoney = x => spSym() + (Math.round(x * 100) / 100).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+const spPeriod = () => spendRange(sp.range, today()) || spendRange('month', today());
+/* one coffee bought for home: its total on the right, and each purchase when it is opened */
+function spHomeRow(r, first){
+  const pods = r.kind === 'pods', n = r.n, amount = pods ? r.amount + ' pods' : (r.amount >= 1000 ? Math.round(r.amount / 100) / 10 + ' kg' : Math.round(r.amount) + ' g');
+  const parts = [r.roaster || null, n + (pods ? (n === 1 ? ' box' : ' boxes') : (n === 1 ? ' bag' : ' bags')), amount, r.unit != null ? spMoney(r.unit) + (pods ? ' a pod' : ' per 100 g') : null].filter(Boolean), sub = [];
+  parts.forEach((t, i) => { if (i) sub.push(' · '); sub.push(h('span', { class:'nw', text:t })); });
+  const d = h('details', { class:'g-row' + (first ? ' on' : ''), 'data-k':'h:' + r.coffee + '|' + r.roaster + '|' + r.kind });
+  d.open = !!sp.open[d.dataset.k];
+  d.addEventListener('toggle', () => { sp.open[d.dataset.k] = d.open; });
+  d.append(h('summary', null, h('span', null, h('b', { text:r.coffee }), pods ? h('span', { class:'tag2', text:'Pods' }) : null, h('small', null, ...sub)), h('span', { class:'avg', text:spMoney(r.total) }), h('span', { class:'chev', 'aria-hidden':'true', text:'›' })),
+    h('div', { class:'gd' }, h('ul', null, r.purchases.map(e => h('li', null, h('span', { text:[e.date ? prWhen(e.date) : 'No date', pods ? e.size + ' pods' : e.size + ' ' + e.unit, [e.city, e.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ') }), h('b', { text:spMoney(e.price) }),
+      h('button', { type:'button', class:'flink spedit', text:'Edit', 'aria-label':'Edit this purchase of ' + r.coffee, onclick:() => { pr.edit = e.i; pr.editA = prFormFrom(pr.list[e.i]); pr.editMsg = ''; pr.note = null; pr.show = 'all'; goPrices(); } }))))));
+  return d;
+}
+/* one drink or one shop at shops: how many were logged, the total, and the details when it is opened */
+function spShopRow(r, by, first){
+  const d = h('details', { class:'g-row' + (first ? ' on' : ''), 'data-k':'s:' + by + ':' + (r.kind || r.shop + '|' + r.city + '|' + r.region) });
+  d.open = !!sp.open[d.dataset.k];
+  d.addEventListener('toggle', () => { sp.open[d.dataset.k] = d.open; });
+  const title = by === 'drink' ? r.label : r.shop, place = by === 'shop' ? shopPlaceText(r) : '';
+  const sub = by === 'drink' ? [r.n + ' logged', r.size ? 'usually ' + (SHOP_SIZES.find(s => s.v === r.size) || { label:r.size }).label.toLowerCase() : null, r.shop ? 'most at ' + r.shop : null].filter(Boolean).join(' · ')
+    : [place, r.n + ' logged', 'mostly ' + r.label.toLowerCase()].filter(Boolean).join(' · ');
+  const kv = by === 'drink' ? [['Range', r.min != null ? (r.min === r.max ? spMoney(r.min) : spMoney(r.min) + ' to ' + spMoney(r.max)) : 'No prices'], ['Average', r.avg != null ? spMoney(r.avg) : 'No prices'], ['Usual size', r.size ? (SHOP_SIZES.find(s => s.v === r.size) || { label:r.size }).label : 'Not set'], ['Last logged', r.last ? phDate(r.last) : 'No date']]
+    : [['Average', r.avg != null ? spMoney(r.avg) : 'No prices'], ['Priced drinks', String(r.pricedN)], ['Logged most', r.label], ['Last logged', r.last ? phDate(r.last) : 'No date']];
+  const kindOf = x => (SHOP_KINDS.find(k => k.v === x.kind) || { label:'' }).label, sizeOf = x => (SHOP_SIZES.find(s => s.v === x.size) || { label:'' }).label;
+  const items = h('ul', null, r.items.slice(0, 4).map(x => h('li', null, h('span', { text:[x.date ? phDate(x.date) : 'No date', by === 'drink' ? x.shop : kindOf(x), sizeOf(x)].filter(Boolean).join(' \u00b7 ') }), h('b', { text:x.price > 0 ? spMoney(x.price) : '\u2014' }))));
+  d.append(h('summary', null, h('span', null, h('b', { text:title }), first && r.n > 1 ? h('span', { class:'g-tag', text:'most logged' }) : null, h('small', { text:sub })), h('span', { class:'avg', text:r.pricedN ? spMoney(r.total) : '\u2014' }), h('span', { class:'chev', 'aria-hidden':'true', text:'\u203a' })),
+    h('div', { class:'gd' }, h('div', { class:'kv' }, kv.map(x => h('div', null, h('b', { text:x[0] }), x[1]))), items, r.n > 4 ? h('p', { class:'fm-note', text:'Showing the latest 4 of ' + r.n + ' logged.' }) : null));
+  return d;
+}
+/* the first rows of a list, and a button for the rest */
+function spRows(list, make, key, word){
+  const open = sp.more[key], shown = open ? list : list.slice(0, 3);
+  const out = [h('div', { class:'g-list' }, shown.map((r, i) => make(r, i === 0)))];
+  if (list.length > 3) out.push(h('button', { type:'button', class:'g-more', id:'spMore' + key, text:open ? 'Show fewer' : 'Show all ' + list.length + ' ' + word, onclick:() => { sp.more[key] = !open; spPaint(); } }));
+  return out;
+}
+/* twelve months of a year, home and shop stacked. Tap a month, or step with the arrows, to see its numbers. */
+function spChart(y){
+  const mx = Math.max(1, ...y.months.map(m => m.home + m.shop)), now = today().slice(0, 7);
+  if (!sp.month || sp.month.slice(0, 4) !== String(y.year)){ const live = y.months.filter(m => m.home + m.shop > 0); sp.month = (now.slice(0, 4) === String(y.year) && now) || (live.length ? live[live.length - 1].m : y.year + '-01'); }
+  const cur = y.months.find(m => m.m === sp.month) || y.months[0], idx = y.months.indexOf(cur), nm = SPEND_MONTH_NAMES;
+  const cols = h('div', { class:'cols' }, y.months.map(m => {
+    const fut = m.m > now, b = h('button', { type:'button', class:'col' + (m.m === cur.m ? ' sel' : '') + (fut ? ' fut' : ''), 'data-m':m.m, 'aria-pressed':String(m.m === cur.m), 'aria-label':nm[+m.m.slice(5) - 1] + ': home ' + spMoney(m.home) + ', shop ' + spMoney(m.shop), onclick:() => { sp.month = m.m; spPaint(); } });
+    if (fut && !m.home && !m.shop) b.append(h('i', { class:'nope' })); else b.append(h('i', { class:'ss', style:'height:' + (m.shop / mx * 100) + '%' }), h('i', { class:'hh', style:'height:' + (m.home / mx * 100) + '%' }));
+    return b;
+  }));
+  const step = (d, label) => h('button', { type:'button', class:'btn small spstep', 'aria-label':label, text:d < 0 ? '‹' : '›', disabled:y.months[idx + d] ? null : true, onclick:() => { sp.month = y.months[idx + d].m; spPaint(); } });
+  return [h('div', { class:'yr' }, cols, h('div', { class:'lab' }, y.months.map(m => h('span', { class:m.m === cur.m ? 'sel' : '', text:nm[+m.m.slice(5) - 1][0] }))), h('div', { class:'key' }, h('span', null, h('i', { style:'background:#8DB45A' }), 'Home'), h('span', null, h('i', { style:'background:#F0A43A' }), 'Shop'), h('span', { text:'Dashed: not yet' }))),
+    h('div', { class:'mo', id:'spMonth' }, step(-1, 'Previous month'), h('span', { class:'mt' }, h('b', { text:nm[idx] }), ' · Home ' + spMoney(cur.home) + ' · Shop ' + spMoney(cur.shop) + ' · ', h('b', { text:spMoney(cur.home + cur.shop) })), step(1, 'Next month'))];
+}
+/* what making some shop drinks at home would keep, from the shop average and the cost of a cup in the calculator above */
+function spSwapNodes(avg){
+  if (!(avg > 0)) return [h('p', { class:'fm-note', id:'spSwap', text:'Log a few shop drinks with prices to see what making some at home would keep.' })];
+  const c = csCalc(cs.a), cup = c.ok ? c.perCup : 0, s = spendSwap(avg, cup, sp.swap);
+  if (!s) return [h('p', { class:'fm-note', id:'spSwap', text:'Fill in the calculator above to see what a home cup costs, and what swapping some shop drinks would keep.' })];
+  const w = Math.abs(s.keepWeek);
+  return [h('p', { class:'mk-save', id:'spSwap' }, h('b', { text:'Your shop drink averages ' + spMoney(avg) + '. A home cup costs ' + spMoney(cup) + ' (from the calculator above). ' + (s.keepWeek > 0 ? sp.swap + (sp.swap === 1 ? ' swap keeps' : ' swaps keep') + ' you about ' + spMoney(s.keepWeek) + ' a week, ' + spMoney(s.keepMonth) + ' a month.' : 'A home cup is not cheaper than your shop drink, so swapping would not keep anything.') }))];
+}
+function spLive(){
+  const el = $('spSwap'); if (!el) return;
+  const per = spPeriod(), s = spendShop(sh.store.drinks, per, spSym()); el.replaceWith(...spSwapNodes(s.avg));
+}
+function spPaint(){ const old = $('spCard'); if (old) old.replaceWith(spendCard()); }
+function spendCard(){
+  const now = today(), sym = spSym(), per = spPeriod(), years = spendYears(pr.list, sh.store.drinks), yr = String(+now.slice(0, 4));
+  const isYear = !!per.year, home = spendHome(pr.list, per, sym), shop = spendShop(sh.store.drinks, per, sym), total = home.total + shop.total, ydata = isYear ? spendYear(pr.list, sh.store.drinks, per.year, sym) : null;
+  const opts = SPEND_RANGES.map(r => [r.v, (spendRange(r.v, now) || r).label]).concat(years.filter(y => String(y) !== yr).map(y => [String(y), String(y)]));
+  const sel = h('select', { id:'spRange', class:'yc-pick', 'aria-label':'Show this period' }, opts.map(o => h('option', { value:o[0], text:o[1], selected:sp.range === o[0] ? true : null })));
+  sel.addEventListener('change', () => { holdScroll(); sp.range = sel.value; sp.month = ''; sp.more = { home:false, shop:false }; spPaint(); });
+  const card = tband('Home or shop?', { tan:'What you spent' }, 'from what you bought and logged', { pic:'bag' }, h('div', { class:'yc-f wide' }, h('label', { for:'spRange', text:'Showing' }), sel));
+  const dd = card.querySelector('.picdisc'); if (dd){ dd.textContent = ''; dd.append(symPic('s-shop')); }
+  card.id = 'spCard';
+  const body = card.querySelector('.tbody') || card;
+  if (!total && !home.undated){
+    body.append(moneyNote('think', 'thinking', 'spEmpty', 'Nothing bought or logged in ' + per.label.toLowerCase().replace(/ \(.*/, '') + ' yet. Add what you bought for home in Coffee prices, and log shop drinks in Coffee shops.'));
+    return card;
+  }
+  const hp = total > 0 ? Math.round(home.total / total * 100) : 0;
+  body.append(h('div', { class:'m-split' }, h('div', { class:'lab' }, h('span', { text:isYear ? 'Money spent in ' + per.year : 'Money spent' }), h('span', { id:'spTotal', text:spMoney(total) + ' in all' })),
+    h('div', { class:'m-bar', role:'img', 'aria-label':hp + ' percent bought for home, ' + (100 - hp) + ' percent at shops' }, home.total > 0 ? h('i', { class:'h', style:'width:' + hp + '%', text:(hp < 28 ? '' : 'Home ') + spMoney(home.total) }) : null, shop.total > 0 ? h('i', { class:'s', style:'width:' + (100 - hp) + '%', text:(hp > 72 ? '' : 'Shop ') + spMoney(shop.total) }) : null)));
+  const boxes = home.boxes, bagsTxt = home.bags + (home.bags === 1 ? ' bag' : ' bags') + (boxes ? ' and ' + boxes + (boxes === 1 ? ' box of pods' : ' boxes of pods') : '');
+  body.append(h('div', { class:'m-two' },
+    h('div', { id:'spHome' }, h('div', { class:'top' }, symPic('mn-home'), h('span', null, h('small', { text:'Bought for home' }), h('b', { text:spMoney(home.total) }))), h('div', { class:'ln', text:home.bags || boxes ? bagsTxt : 'Nothing bought' })),
+    h('div', { id:'spShop' }, h('div', { class:'top' }, symPic('s-shop'), h('span', null, h('small', { text:'Shop drinks' }), h('b', { text:spMoney(shop.total) }))), h('div', { class:'ln', text:shop.count ? shop.count + (shop.count === 1 ? ' drink' : ' drinks') + ' logged' + (shop.avg != null ? ' · ' + spMoney(shop.avg) + ' each' : '') : 'Nothing logged' }))));
+  if (home.total > 0 && shop.total > 0) body.append(h('p', { style:'margin:6px 0 0;font-size:16px;line-height:1.3' }, h('b', { text:(100 - hp) + ' % of your coffee money went to shop drinks' + (isYear ? ' in ' + per.year : { month:' this month', last:' last month', three:' in the last 3 months' }[per.v]) + '.' })));
+  if (isYear){
+    body.append(h('div', { class:'m-sec' }, symPic('art-cal'), h('b', { text:'Month by month' }), h('span', { class:'fhint', text:'tap a month' })), ...spChart(ydata));
+    const tops = [ydata.topCoffee ? ['Top coffee', ydata.topCoffee.coffee, spMoney(ydata.topCoffee.total) + ' bought'] : null, ydata.topDrink ? ['Top drink', ydata.topDrink.label, ydata.topDrink.n + ' logged'] : null, ydata.topShop ? ['Top shop', ydata.topShop.shop, ydata.topShop.n + ' logged'] : null].filter(Boolean);
+    if (tops.length) body.append(h('div', { class:'tops', id:'spTops' }, tops.map(t => h('div', null, h('small', { text:t[0] }), h('b', { text:t[1] }), h('span', { text:t[2] })))));
+    if (ydata.placeCount) body.append(h('div', { class:'trip', id:'spPlaces' }, symPic('art-pin'), h('span', null, h('b', { text:ydata.placeCount === 1 ? 'Bought in ' + ydata.places[0] + ' this year.' : 'Bought in ' + ydata.placeCount + (ydata.places.every(p => US_STATES.indexOf(p) >= 0) ? ' states' : ' places') + ' this year.' }), ydata.placeCount > 1 ? h('br') : null, ydata.placeCount > 1 ? h('span', { class:'sub', text:ydata.places.join(', ') + '.' }) : null)));
+  }
+  if (home.rows.length) body.append(h('div', { class:'m-sec' }, symPic('mn-home'), h('b', { text:'Bought for home' }), h('span', { class:'fhint', text:'by coffee · tap to open' })), ...spRows(home.rows, spHomeRow, 'home', home.rows.length === 1 ? 'coffee' : 'coffees'));
+  if (shop.count >= 3){
+    const list = sp.by === 'drink' ? shop.byDrink : shop.byShop;
+    body.append(h('div', { class:'m-sec' }, symPic('s-shop'), h('b', { text:'At the shop' }), h('div', { class:'yc-mini', role:'group', 'aria-label':'Group shop drinks', id:'spBy', style:'margin-left:auto' }, [['drink', 'By drink'], ['shop', 'By shop']].map(b => h('button', { type:'button', 'data-b':b[0], 'aria-pressed':String(sp.by === b[0]), text:b[1], onclick:() => { sp.by = b[0]; sp.more.shop = false; spPaint(); } })))),
+      ...spRows(list, (r, f) => spShopRow(r, sp.by, f), 'shop', sp.by === 'drink' ? (list.length === 1 ? 'drink' : 'drinks') : (list.length === 1 ? 'shop' : 'shops')));
+  } else if (shop.count > 0 && shop.avg != null) body.append(h('p', { class:'fm-note', id:'spFew', text:'Your shop drinks average ' + spMoney(shop.avg) + ' so far. Log a few more and they are grouped by drink and by shop.' }));
+  if (shop.avg != null){
+    body.append(h('div', { class:'mk-step' }, h('span', { style:'font-weight:700', text:'Shop drinks you would make at home, a week' }), h('span', { class:'stp' },
+      h('button', { type:'button', id:'spLess', 'aria-label':'Fewer swaps a week', text:'−', onclick:() => { sp.swap = Math.max(1, sp.swap - 1); const n = $('spSwapN'); if (n) n.textContent = String(sp.swap); spLive(); } }),
+      h('span', { class:'n', id:'spSwapN', text:String(sp.swap) }), h('button', { type:'button', id:'spMoreSwaps', 'aria-label':'More swaps a week', text:'+', onclick:() => { sp.swap = Math.min(30, sp.swap + 1); const n = $('spSwapN'); if (n) n.textContent = String(sp.swap); spLive(); } }))),
+      ...spSwapNodes(shop.avg));
+  }
+  if (home.undated || home.otherSym || shop.undated || shop.otherSym) body.append(h('p', { class:'fm-note', id:'spLeft' }, [home.undated ? home.undated + (home.undated === 1 ? ' purchase has' : ' purchases have') + ' no date' : null, shop.undated ? shop.undated + (shop.undated === 1 ? ' shop drink has' : ' shop drinks have') + ' no date' : null].filter(Boolean).join(' and ') + (home.undated || shop.undated ? ', so they are left out. ' : '') + (home.otherSym || shop.otherSym ? 'Money in another currency is left out. ' : '')));
+  body.append(h('p', { class:'fm-note', text:'Home money is what you bought, counted in the month you bought it. It is not what you brewed. Shop money is what you logged. Coffee only: milk, syrup and a seat are extra.' }));
+  return card;
 }
 /* ---------- screen: cup yield ----------
    The sums are in engine/67-cup-yield.js. Nothing here is saved except a calibration you choose to keep (app.prefs.yieldCal, kept in this browser with your other settings). */
@@ -18292,7 +18995,7 @@ function renderOtherWaySheet(title){
       onclick:() => { state.otherNo = true; sheet = { step:'ask', existing:null, csv:'', error:'', info:'' }; renderSheet(); } }));
 }
 async function tableGuideSave(status){
-  const text = columnGuideCsv(), name = 'beantelligence-column-guide.csv';
+  const text = columnGuideCsv(), name = 'BeanTelligence Column Guide.csv';
   try {
     if (inClaude()){ const dl = await getDownloads(); if (!dl) throw new Error('no downloads'); await dl.save({ filename:name, data:text }); }
     else plainDownload(text, name);
@@ -19368,7 +20071,7 @@ everyRegister({ id:'shops', name:'Coffee shops',
   apply:t => { shLoadText(t); return 'Coffee shops: ' + sh.msg; } });
 everyRegister({ id:'prices', name:'Coffee prices',
   has:() => pr.list.length > 0, text:() => priceCsv(pr.list),
-  look:t => { const r = priceRead(t); return r.error ? { error:r.error } : { line:r.list.length + (r.list.length === 1 ? ' bag' : ' bags') }; },
+  look:t => { const r = priceRead(t); return r.error ? { error:r.error } : { line:r.list.length + (r.list.length === 1 ? ' purchase' : ' purchases') }; },
   rule:'Adds what is new. Nothing here is lost.',
   keysIn:t => { const r = priceRead(t); return r.error ? null : r.list.map(priceKey); },
   keysHere:() => pr.list.map(priceKey),

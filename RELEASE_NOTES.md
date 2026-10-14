@@ -4,6 +4,17 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.029.0077: Coffee prices becomes a purchase log, plus a Freshness clock
+
+2026-10-14 00:11:39 UTC
+
+- Coffee prices is now a log of what you bought for home brewing: a bag or a box of pods, the price, the size or pod count, the month and year, an optional roast date, an optional finished day and an optional city and state.
+- The Cost of coffee screen understands pods, shows a row of cups in the answer, and has a Home or shop? card that compares what you spent at home with what you spent in shops, by month or year and by drink or by shop.
+- A Did you mean box on the Coffee screen catches a typo in a coffee or roaster you already have, and only changes anything when you tap Yes.
+- With a roast date saved, the Facts screen shows a Freshness clock for filter coffee (ready, best through, fading after), and a new Freezing tips lesson covers keeping beans past their window.
+- Counts say logged, entered or bought, never drank or brewed.
+- The Tendencies and Column Guide files are now named BeanTelligence Tendencies and BeanTelligence Column Guide, long lists keep their place when you change a choice, and 11 unused pictures were removed.
+
 ## Version 4.028.0076: Philips tweaks and a Facts screen that teaches
 
 2026-10-13 20:46:05 UTC
