@@ -2677,6 +2677,46 @@ body[data-screen="shop"] .pstep .pl{ font-size:16px; }
 .sband .sgroup:first-child{ margin-top:2px; }
 .sshots{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .sshots .what{ font:700 17px/1.2 var(--ui); }
+.thead .infoi{ grid-column:3; grid-row:1 / span 2; align-self:center; flex:none; width:36px; height:36px; border-radius:50%; border:2px solid var(--frame); background:var(--leaf); color:var(--leaf-ink); font:italic 700 21px/1 var(--display); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 2px 0 var(--frame); padding:0; }
+.thead .infoi:active{ transform:translateY(1px); box-shadow:0 1px 0 var(--frame); }
+.thead.haspic .infoi{ grid-column:3; }
+.infobox{ position:relative; display:flex; align-items:flex-start; gap:10px; margin:0 0 12px; padding:10px 40px 10px 10px; border:2px dashed var(--frame); border-radius:14px; background:var(--tint); }
+.infobox[hidden]{ display:none; }
+.infobox .saymark{ width:48px; height:52px; }
+.infobox p{ margin:0; font:500 16px/1.3 var(--ui); color:var(--ink); }
+.infobox .infox{ position:absolute; right:6px; top:6px; width:32px; height:32px; border-radius:50%; border:2px solid var(--frame); background:var(--surface); color:var(--ink); font:700 20px/1 var(--ui); display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer; }
+.tdscard .tdsbody[hidden], .tdscard .tdsadd[hidden]{ display:none; }
+.tdsadd, .esbtn{ display:flex; align-items:center; gap:10px; width:100%; margin:2px 0 10px; padding:10px 12px; border:2px solid var(--frame); border-radius:14px; background:var(--surface); color:var(--ink); box-shadow:0 3px 0 var(--frame); font:700 18px/1.15 var(--ui); text-align:left; cursor:pointer; min-height:48px; }
+.esbtn{ margin:-2px 0 12px; padding:6px 12px; font-size:16.5px; }
+.tdsadd:active, .esbtn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--frame); }
+.tdsadd .estx small, .esbtn .estx small{ display:block; font:500 14.5px/1.2 var(--ui); color:var(--muted); }
+.espl{ flex:none; width:28px; height:28px; border-radius:50%; background:var(--gold); border:2px solid var(--frame); display:flex; align-items:center; justify-content:center; font:700 19px/1 var(--ui); color:#22120C; }
+.esbtn .espl{ width:24px; height:24px; font-size:16px; }
+/* ---- Edit tasting screen ---- */
+.tegrid{ display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+.tegrid .field{ margin-bottom:10px; min-width:0; }
+@media (max-width:360px){ .tegrid{ grid-template-columns:1fr; } }
+.teest:empty{ display:none; }
+.tex{ font-weight:600; color:var(--ink); }
+.tesec{ margin:0 0 8px; }
+.tesec > summary{ display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:48px; font:600 17px/1.2 var(--ui); }
+.tesec > summary b{ font-weight:700; }
+.tesec .tesum{ margin-left:auto; color:var(--muted); font:600 15px/1.2 var(--ui); text-align:right; }
+.tescale{ padding:6px 0 4px; }
+.tescale .cva-scale button[aria-checked="true"]{ background:var(--leaf); color:var(--leaf-ink, #FDFBF7); }
+.tescale .cva-ends{ display:flex; justify-content:space-between; font:500 14px/1.2 var(--ui); color:var(--muted); margin:6px 0 4px; }
+.tetotal{ font:700 18px/1.2 var(--ui); }
+.tesave{ margin-top:14px; }
+.tesave .btn[disabled]{ opacity:.5; }
+.err:empty{ display:none; }
+.err{ color:var(--danger, #9A2A1B); font-weight:600; }
+
+.tepart{ display:flex; flex-direction:column; gap:10px; margin-top:6px; }
+.terow{ padding:8px 0 10px; border-bottom:2px dashed var(--line, #D9CDB8); }
+.terow:last-child{ border-bottom:0; }
+.tename{ display:block; margin:0 0 6px; font:700 17px/1.2 var(--ui); }
+.tefaces{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)) minmax(0, 1.5fr); gap:8px; }
+.tefaces .ttile{ width:100%; min-width:0; padding-left:4px; padding-right:4px; }
 /* ---- Release 65: Start ---- */
 /* the "More about this coffee" title and line were dark brown on the green band */
 .moredetails > summary .gtx .gt{ color:#FFFFFF; }
@@ -2982,6 +3022,7 @@ details.mfold > .mrows{ margin-top:14px; }
 <symbol id="art-water" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 8 H37 L34 42 a2 2 0 0 1-2 2 H16 a2 2 0 0 1-2-2Z" fill="#E5F2F7"/><path d="M12.600 24 H35.400 L34 42 a2 2 0 0 1-2 2 H16 a2 2 0 0 1-2-2Z" fill="#6FB5D9"/><path d="M16 30 q2.500-2 5 0 t5 0 t5 0" fill="none" stroke-width="2" stroke="#FFF8EA"/><path d="M24 11 c0 0-3.500 4-3.500 6.500 a3.500 3.500 0 0 0 7 0 C27.500 15 24 11 24 11Z" fill="#6FB5D9" stroke-width="2"/></g></symbol>
 <symbol id="art-filter" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9 H41 L29 35 H19Z" fill="#FFF8EA"/><path d="M12.500 19 H35.500 L29 35 H19Z" fill="#8A5230"/><path d="M7 9 H41 L29 35 H19Z" fill="none"/><path d="M15 38 H33 V41 a3 3 0 0 1-3 3 H18 a3 3 0 0 1-3-3Z" fill="#C79A66"/><path d="M24 37 v.1" stroke-width="3"/></g></symbol>
 <symbol id="art-scale" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="27" width="36" height="16" rx="4" fill="#D9503B"/><rect x="13" y="31" width="22" height="8" rx="2" fill="#FFF8EA" stroke-width="2"/><path d="M17 35 h4 M24 35 h5" stroke-width="2"/><ellipse cx="24" cy="23" rx="15" ry="4" fill="#D8D2C4"/><g transform="translate(19 16.5) rotate(-28) scale(0.72)"><ellipse cx="0" cy="0" rx="7" ry="10" fill="#8A5230"/><path d="M0 -9 C-4 -4 4 -1 0 3 C-3 6 3 8 0 9.500" fill="none" stroke-width="2"/></g><g transform="translate(28 16) rotate(22) scale(0.72)"><ellipse cx="0" cy="0" rx="7" ry="10" fill="#A8703F"/><path d="M0 -9 C-4 -4 4 -1 0 3 C-3 6 3 8 0 9.500" fill="none" stroke-width="2"/></g></g></symbol>
+<symbol id="art-tds" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M24 2.500 C26.600 6 27.600 8 27.600 9.800 a3.600 3.600 0 0 1-7.200 0 C20.400 8 21.400 6 24 2.500Z" fill="#8A5230" stroke-width="2"/><path d="M15 17 a9 3.600 0 0 1 18 0 V40 a5 5 0 0 1-5 5 H20 a5 5 0 0 1-5-5Z" fill="#4B5BA6"/><ellipse cx="24" cy="17" rx="9" ry="3.600" fill="#D8D2C4"/><rect x="18" y="23" width="12" height="9" rx="2" fill="#1D3E2F" stroke-width="2"/><path d="M20.500 25.500 V29.500 M23 29.500 h.1 M25 25.500 h2.500 v2 h-2.500 v2 h2.500" fill="none" stroke="#F2A93B" stroke-width="1.600"/><circle cx="24" cy="38" r="2.800" fill="#F2A93B" stroke-width="2"/></g></symbol>
 <symbol id="art-ratio" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M24 8 V40 M13 43 H35" fill="none" stroke-width="3"/><path d="M7 14 H41" fill="none" stroke-width="3"/><circle cx="24" cy="7" r="2.600" fill="#F2A93B"/><path d="M7 14 L2 27 H12Z" fill="#8A5230"/><path d="M41 14 L36 27 H46Z" fill="#6FB5D9"/></g></symbol>
 <symbol id="art-kettle" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M30 30 C37 30 37 16 43 10" fill="none" stroke-width="6.400"/><path d="M30 30 C37 30 37 16 43 10" fill="none" stroke="#B9AE96" stroke-width="2.800"/><path d="M10 24 H30 V38 a4 4 0 0 1-4 4 H14 a4 4 0 0 1-4-4Z" fill="#B9AE96"/><path d="M10 28 C2 28 2 39 10 39" fill="none" stroke-width="3"/><path d="M12 24 a8 3 0 0 1 16 0" fill="#8A5230"/><circle cx="20" cy="19.500" r="2.600" fill="#F2A93B"/><path d="M45 19 v3 M43 25 v3" fill="none" stroke="#6FB5D9" stroke-width="2.800"/></g></symbol>
 <symbol id="n-jug" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M31 15 C42 15 42 31 31.500 31" fill="none" stroke-width="3"/><path d="M12 9 H32 L34 40 a3 3 0 0 1-3 3 H14 a3 3 0 0 1-3-3Z" fill="#E5F2F7"/><path d="M11.700 22 H33 L34 40 a3 3 0 0 1-3 3 H14 a3 3 0 0 1-3-3Z" fill="#6FB5D9"/><path d="M12 9 L6 7" fill="none" stroke-width="3"/><path d="M16 29 q2.500-2 5 0 t5 0" fill="none" stroke-width="2" stroke="#FFF8EA"/><path d="M5 15 v3.500 M7 22 v3.500" fill="none" stroke="#6FB5D9" stroke-width="2.800"/></g></symbol>
@@ -8079,6 +8120,125 @@ function coffeeEditFromRow(o){
     roast_date:validIsoDate(o.roast_date) ? o.roast_date : '' };
 }
 
+/* ---------- edit one tasting. Only the columns named here can change, and a column the file lacks is added only when you fill it in. ---------- */
+const TASTING_EDIT_COLUMNS = ['brew_dose_g', 'brew_water_g', 'brew_ratio', 'brew_temp_f', 'brew_temp_c', 'brew_actual_time_s', 'brew_out_g', 'brew_tds_pct', 'brew_ey_pct',
+  'general_notes', 'my_rating_stars', 'make_again'].concat(QUICK_AREAS.map(a => a.col), CVA_SECTIONS.map(s => s.col), ['total_score']);
+/* 'ok' when the cupping scores can be edited here, 'none' for a quick tasting with no cupping scores, 'older' for the older five-cup and home-score forms (their scores stay as saved). */
+function tastingScoreState(o){
+  const k = String((o && o.score_kind) || '');
+  if (k === CVA_KIND) return 'ok';
+  if (k === 'sca_5cup' || k === 'home_1cup') return 'older';
+  return hasCupping(o) ? 'older' : 'none';
+}
+/* What the Edit tasting screen starts from: the row's own numbers, answers and scores, as plain values. */
+function tastingEditFromRow(o){
+  o = o || {};
+  const num = k => { const x = parseFloat(o[k]); return isFinite(x) && x > 0 ? String(x) : ''; };
+  const q = quickAnswers(o), cv = cvaRead(o), scores = {};
+  cv.sections.forEach(s => { scores[s.key] = s.final == null ? '' : s.final; });
+  return {
+    brew:{ dose:num('brew_dose_g'), water:num('brew_water_g'), temp_f:num('brew_temp_f'), actual_s:num('brew_actual_time_s'), out_g:num('brew_out_g'), tds:num('brew_tds_pct') },
+    notes:unneutralize(o.general_notes || ''),
+    quick:{ stars:validStars(o.my_rating_stars) || '', makeAgain:q.makeAgain, areas:Object.assign({}, q.areas) },
+    cupping:scores, scoreState:tastingScoreState(o), total:cv.total
+  };
+}
+/* The grams in the cup a brew should give, from the method and the two weights (water minus about 2 g held back per gram of coffee; espresso and moka: the target output). null when it cannot be worked out. */
+function tastingEstimateOut(o, dose, water){
+  const m = METHODS.find(x => x.label === String((o && o.brew_method) || ''));
+  if (!m || m.type === 'cold') return null;
+  const e = expectedYield(m.type, +water, +dose);
+  return e == null ? null : aboutGrams(e, m.type);
+}
+/* The cupping total from the eight scores (by section key) and the defect type kept on the row; null while a required score is missing. */
+function tastingTotal(byKey, defectType){
+  const score = {}; CVA_SECTIONS.forEach(s => { const v = cvaScore(byKey[s.key]); if (v) score[s.key] = v; });
+  const dt = String(defectType || '').trim().toLowerCase();
+  return cvaTotal({ score:score, fin:{}, skip:{}, cool:{ done:false, skipped:false }, defect:CVA_DEFECT_TYPES.includes(dt), dtype:dt });
+}
+const TE_LIMITS = { dose:[0.5, 500, 'The coffee weight'], water:[1, 10000, 'The water weight'], temp_f:[32, 212, 'The temperature'], actual_s:[1, 86400, 'The brew time'], out_g:[1, 10000, 'The finished weight'], tds:[0.05, 25, 'The TDS'] };
+function applyTastingEdit(header, rows, idx, edit){
+  const row = rows[idx]; if (!row) return { error:'That tasting is not in the file.' };
+  edit = edit || {};
+  const cur = {}; header.forEach((k, i) => { cur[k] = row[i] == null ? '' : String(row[i]); });
+  const next = {};
+  const set = (k, v) => { if ((cur[k] || '') !== v) next[k] = v; };
+  const val = k => (k in next ? next[k] : (cur[k] || ''));
+  /* ----- brew numbers, finished weight, TDS ----- */
+  if (edit.brew){
+    const b = edit.brew, got = {};
+    for (const k of Object.keys(TE_LIMITS)){
+      if (!(k in b)) continue;
+      const raw = String(b[k] == null ? '' : b[k]).trim();
+      if (raw === ''){ got[k] = ''; continue; }
+      const x = parseFloat(raw), L = TE_LIMITS[k];
+      if (!isFinite(x) || !/^\d+(\.\d+)?$/.test(raw) || x < L[0] || x > L[1]) return { error:L[2] + ' needs a number from ' + L[0] + ' to ' + L[1] + '.' };
+      got[k] = String(x);
+    }
+    if ('dose' in got) set('brew_dose_g', got.dose);
+    if ('water' in got) set('brew_water_g', got.water);
+    if ('dose' in got || 'water' in got){ const d = parseFloat(val('brew_dose_g')), w = parseFloat(val('brew_water_g')); set('brew_ratio', d > 0 && w > 0 ? String(Math.round(w / d * 10) / 10) : ''); }
+    if ('temp_f' in got){ set('brew_temp_f', got.temp_f); set('brew_temp_c', got.temp_f === '' ? '' : String(Math.round(fToC(parseFloat(got.temp_f))))); }
+    if ('actual_s' in got) set('brew_actual_time_s', got.actual_s);
+    if ('out_g' in got) set('brew_out_g', got.out_g);
+    if ('tds' in got) set('brew_tds_pct', got.tds);
+    if ('dose' in got || 'out_g' in got || 'tds' in got){ const ey = extractionYield(parseFloat(val('brew_tds_pct')), parseFloat(val('brew_out_g')), parseFloat(val('brew_dose_g'))); set('brew_ey_pct', ey == null ? '' : String(ey)); }
+  }
+  /* ----- notes ----- */
+  if ('notes' in edit){
+    const t = String(edit.notes == null ? '' : edit.notes).replace(/\r\n?/g, '\n').trim();
+    if (t.length > 5000) return { error:'The notes are too long. Keep them under 5000 characters.' };
+    set('general_notes', neutralize(t));
+  }
+  /* ----- quick answers ----- */
+  if (edit.quick){
+    const q = edit.quick;
+    if ('stars' in q){ const s = q.stars === '' || q.stars == null ? 0 : validStars(q.stars); if (q.stars !== '' && q.stars != null && !s) return { error:'Stars go from half a star to five.' }; set('my_rating_stars', s ? String(s) : ''); }
+    if ('makeAgain' in q) set('make_again', quickMakeAgain(q.makeAgain));
+    if (q.areas) QUICK_AREAS.forEach(a => { if (a.key in q.areas) set(a.col, quickGrade(q.areas[a.key])); });
+  }
+  /* ----- cupping scores: only the one-cup form; the first impressions and retaste answers stay as they were ----- */
+  if (edit.cupping && Object.keys(edit.cupping).length){
+    const st = tastingScoreState(cur);
+    if (st !== 'ok') return { error:st === 'none' ? 'This tasting has no cupping scores. Use Add cupping scores on the tasting screen.' : 'This tasting used an older scoring form, so its scores stay as saved. Everything else can be edited.' };
+    for (const s of CVA_SECTIONS){
+      if (!(s.key in edit.cupping)) continue;
+      const raw = edit.cupping[s.key], v = cvaScore(raw);
+      if (v == null && !(raw === '' || raw == null)) return { error:s.name + ' needs a score from 1 to 9.' };
+      if (v == null && !s.skippable) return { error:s.name + ' needs a score from 1 to 9.' };
+      set(s.col, v == null ? '' : String(v));
+    }
+    if (CVA_SECTIONS.some(s => s.col in next)){
+      const by = {}; CVA_SECTIONS.forEach(s => { by[s.key] = val(s.col); });
+      const t = tastingTotal(by, val('defect_type'));
+      set('total_score', t == null ? '' : t.toFixed(2));
+    }
+  }
+  const cols = Object.keys(next);
+  if (!cols.length) return { rows, header, changed:0, before:[], summary:[], added:[] };
+  cols.forEach(k => { if (!TASTING_EDIT_COLUMNS.includes(k)) throw new Error('A locked column would change: ' + k); });
+  /* a file from an older build may lack a column you just filled in: add it (blank for every other tasting), never otherwise */
+  const hdr = header.slice();
+  cols.forEach(k => { if (!hdr.includes(k) && next[k] !== '') hdr.push(k); });
+  const pos = {}; hdr.forEach((k, i) => { pos[k] = i; });
+  const grew = hdr.length > header.length;
+  const out = rows.map((r, i) => {
+    if (i !== idx){ if (!grew) return r; const c = r.slice(); while (c.length < hdr.length) c.push(''); return c; }
+    const nr = r.slice(); while (nr.length < hdr.length) nr.push('');
+    cols.forEach(k => { if (pos[k] != null) nr[pos[k]] = next[k]; });
+    return nr;
+  });
+  const has = (...a) => a.some(k => k in next);
+  const summary = [];
+  if (has('brew_dose_g', 'brew_water_g', 'brew_ratio', 'brew_temp_f', 'brew_actual_time_s')) summary.push('brew numbers');
+  if (has('brew_out_g')) summary.push('finished weight');
+  if (has('brew_tds_pct')) summary.push('TDS');
+  if (has('general_notes')) summary.push('notes');
+  if (has('my_rating_stars', 'make_again') || QUICK_AREAS.some(a => a.col in next)) summary.push('quick answers');
+  if (CVA_SECTIONS.some(s => s.col in next)) summary.push('cupping scores');
+  return { rows:out, header:hdr, changed:1, before:[{ idx:idx, row:row }], summary:summary, added:hdr.slice(header.length), total:'total_score' in next ? next.total_score : null };
+}
+
 /* ---------- starting points from your other coffees ----------
    For every other coffee you have dialed in on this method, take the recipe you ended on (the one you locked, else your best try once you had made at least two)
    and measure how far it sits from the recipe BeanTelligence would have given that coffee: grind in dial-in steps, ratio, water temperature.
@@ -10521,6 +10681,21 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 82,
+  "version": "4.033.0082",
+  "tier": "medium",
+  "at": "2026-10-14T20:19:34Z",
+  "date": "2026-10-14",
+  "title": "Edit a saved tasting, and TDS everywhere",
+  "notes": [
+   "A new Edit tasting details row on every saved tasting. Fix anything you missed: the brew numbers (coffee, water, temperature, time), the finished weight and TDS, your beans and quick answers, the cupping scores and your notes. Nothing changes until you tap Save changes, and Undo is there for ten seconds.",
+   "Add TDS to a tasting at any time. The extraction is worked out again for you, and a Use about N g button estimates the coffee in the cup from the water and the grounds, marked clearly as an estimate.",
+   "The TDS box is now at the bottom of both Quick and Cupping, at every level, and for cold brew. It is optional and folded behind Add your numbers until you want it. A round i button explains what TDS is.",
+   "Cupping scores can be changed on tastings saved with the one-cup form, and the total is worked out again. Tastings saved with the older five-cup or home-score forms keep their scores as saved, and the screen says why; everything else on them can be edited.",
+   "The tasting page now shows the strength (TDS) and the finished weight, at every level."
+  ]
+ },
+ {
   "release": 81,
   "version": "4.032.0081",
   "tier": "medium",
@@ -12163,6 +12338,7 @@ function commitDialLock(o, on){
 function undoEdit(){
   if (!editUndo || Date.now() - editUndo.t >= 10000){ editUndo = null; return; }
   histEdited = Math.max(0, histEdited - editUndo.n); persistEdited();
+  if (editUndo.tasting && editUndo.n) tastedIds.delete(editUndo.id);
   history.ex.header = editUndo.prevHeader;
   applyHistoryRows(editUndo.prevRows); editUndo = null;
 }
@@ -12171,9 +12347,9 @@ function editNoticeBox(){
   function paint(){
     box.textContent = '';
     if (editUndo && Date.now() - editUndo.t < 10000){
-      const n = editUndo.n;
+      const n = editUndo.n, what = editUndo.what;
       box.append(h('div', { class:'notice row2' },
-        h('span', { text:'Updated the coffee details on ' + n + (n === 1 ? ' tasting.' : ' tastings.') + ' The scores did not change.' }),
+        h('span', { text:what ? 'Updated this tasting' + (what.length ? ': ' + what.join(', ') + '.' : '.') : 'Updated the coffee details on ' + n + (n === 1 ? ' tasting.' : ' tastings.') + ' The scores did not change.' }),
         h('button', { type:'button', class:'btn small', style:'margin:0', text:'Undo', onclick:() => { undoEdit(); render(); } })));
       const left = 10050 - (Date.now() - editUndo.t); if (left > 0) setTimeout(() => { if (box.isConnected) paint(); }, left);
     }
@@ -12308,7 +12484,7 @@ function loadDraft(){
     a.lastTotal = typeof src.lastTotal === 'number' ? src.lastTotal : null;
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
-    const ok = ['door','shop','sdrink','staste','sperfect','shops','start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','tend','guide','tools','yield','ratio','cost','caffeine','prices','tastes','wheels','chart','folk'];
+    const ok = ['door','shop','sdrink','staste','sperfect','shops','start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','tastedit','learn','tend','guide','tools','yield','ratio','cost','caffeine','prices','tastes','wheels','chart','folk'];
     a.screen = ok.includes(src.screen) ? src.screen : /^tp[a-z]+$/.test(String(src.screen)) ? 'tend' : /^caf[a-z]+$/.test(String(src.screen)) ? 'caffeine' : 'door';   /* a Tendencies page opens its home again */
     a.resume = TRAIL_HOME.includes(src.resume) ? src.resume : (TRAIL_HOME.includes(src.screen) ? src.screen : ['change', 'ready', 'timer'].includes(src.screen) ? 'recipe' : '');   /* where Keep brewing returns to */
     if (isFinite(d.at) && d.at > 0 && d.at <= Date.now() + 60000){ draftAt = d.at; if (Date.now() - d.at > DRAFT_STALE_MS) a.screen = 'door'; }   /* untouched for 3 hours: open on the first screen, the draft stays */
@@ -12320,12 +12496,12 @@ function loadDraft(){
         if (run ? total <= 45 * 60 : (now - ts.at <= 30 * 60000 && ts.base > 0)) a.timerSave = { running:run, startMs:run ? ts.startMs : 0, base:+ts.base, done:!run && ts.done === true, at:ts.at };
       } }
     if (a.screen === 'timer' && (!a.timerSave || isMachine(a.brew.method))){ a.screen = 'recipe'; a.timerSave = null; }   /* a timer that is not running goes back to the last look, where Brew it is */
-    if (!a.coffee.name && !['history', 'detail', 'tend', 'door', 'start', 'shops'].includes(a.screen) && !SHOP_TRAIL.includes(a.screen)) a.screen = 'door';
+    if (!a.coffee.name && !['history', 'detail', 'tastedit', 'tend', 'door', 'start', 'shops'].includes(a.screen) && !SHOP_TRAIL.includes(a.screen)) a.screen = 'door';
     if (a.screen === 'change' || (a.screen === 'ready' && isMachine(a.brew.method))) a.screen = 'recipe';   /* a half-made change is not worth coming back to; the machine has no summary page */
     if ((a.screen === 'recipe' || a.screen === 'ready' || a.screen === 'timer' || a.screen === 'gear') && !a.brew.method){ a.screen = 'brew'; a.timerSave = null; }
     if (a.screen === 'gear' && isMachine(a.brew.method)) a.screen = 'recipe';   /* the machine has no gear page */
     if (a.screen !== 'timer') a.timerSave = null;
-    if (a.screen === 'detail') a.screen = 'history';
+    if (a.screen === 'detail' || a.screen === 'tastedit') a.screen = 'history';
     app = a;
     if (d.cup){
       const c = newCup(), s = d.cup;
@@ -12362,7 +12538,7 @@ function changed(){ refreshAll(); scheduleDraft(); }
 let gearFrom = 'brew', recipeVia = '';
 const PARENT = {
   door:null, loadshared:'door', start:'door', shop:'door', sdrink:'shop', staste:'sdrink', sperfect:'staste', shops:() => (shopsFrom && shopsFrom !== 'shops' && shopsFrom !== 'timer') ? shopsFrom : 'door', coffee:'start', brew:'coffee', gear:() => gearFrom === 'recipe' ? 'recipe' : 'brew', recipe:() => recipeVia === 'gear' ? 'gear' : 'brew', change:'recipe', ready:'recipe', timer:'recipe',
-  cup:() => app.cupBrew ? 'recipe' : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', detail:'history',
+  cup:() => app.cupBrew ? 'recipe' : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', detail:'history', tastedit:'detail',
   learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'door'),
   prices:() => (pricesFrom && pricesFrom !== 'prices' && pricesFrom !== 'timer') ? pricesFrom : (app.coffee.name ? 'coffee' : 'door'),
   wheels:() => (wheelsFrom && wheelsFrom !== 'wheels' && wheelsFrom !== 'wheel' && wheelsFrom !== 'chart' && wheelsFrom !== 'timer') ? wheelsFrom : (app.coffee.name ? 'coffee' : 'door'), wheel:'wheels', chart:'wheels',
@@ -12412,7 +12588,8 @@ function go(screen){ draftAt = Date.now(); stopTimer(); if (screen !== 'history'
 function render(){
   wakeOff(); scaStop(); refreshers.length = 0;
   const m = $('mount'); m.textContent = '';
-  if ((app.screen === 'history' || app.screen === 'detail') && !history) app.screen = 'start';
+  if ((app.screen === 'history' || app.screen === 'detail' || app.screen === 'tastedit') && !history) app.screen = 'start';
+  if (app.screen === 'tastedit' && (!teDraft || !history.objs.some(x => x._i === teDraft.idx))) app.screen = history.objs.some(x => x._i === detailIdx) ? 'detail' : 'history';
   if (app.screen === 'detail' && !history.objs.some(x => x._i === detailIdx)) app.screen = 'history';
   if (SHOP_TRAIL.includes(app.screen) && !sd.on) app.screen = 'door';   /* a shop screen with no drink being logged is not a place to be */
   const sc = app.screen;
@@ -12423,7 +12600,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Calculators', yield:'Cup yield', ratio:'Ratio calculator', cost:'Cost of coffee', caffeine:'Caffeine', cafdrink:'Add a drink', cafresult:'Your caffeine day', cafcup:'Caffeine in a cup', prices:'Coffee prices', tastes:'Train your palate', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', about:'About', glossary:'Glossary', files:'My files' };
+  const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Calculators', yield:'Cup yield', ratio:'Ratio calculator', cost:'Cost of coffee', caffeine:'Caffeine', cafdrink:'Add a drink', cafresult:'Your caffeine day', cafcup:'Caffeine in a cup', prices:'Coffee prices', tastes:'Train your palate', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', tastedit:'Edit tasting', about:'About', glossary:'Glossary', files:'My files' };
   Object.assign(titles, TP_TITLES);
   $('topTitle').textContent = sc === 'start' || sc === 'door' || sc === 'shop' || sc === 'loadshared' ? '' : (titles[sc] || 'BeanTelligence');
   SCREENS[sc](m);
@@ -17767,6 +17944,18 @@ function doBox(steps){
   head.append(ic, h('b', { text:'What to do' }));
   return h('div', { class:'dobox' }, head, h('ol', { class:'dolist' }, ...steps.map(s => h('li', null, h('span', { text:s })))));
 }
+/* a round "i" button and the closable box it opens (the mascot and a few plain words). Put the button in a card's head and the box at the top of its body. */
+function infoI(text, label){
+  const box = h('div', { class:'infobox', role:'note', hidden:true }), m = h('span', { class:'saymark' });
+  m.innerHTML = mascotSvg({ face:'informing' });
+  const x = h('button', { type:'button', class:'infox', 'aria-label':'Close this explanation', text:'\u00d7' });
+  box.append(m, h('p', { text }), x);
+  const btn = h('button', { type:'button', class:'infoi', 'aria-label':label || 'What is this?', 'aria-expanded':'false', text:'i' });
+  const set = on => { box.hidden = !on; btn.setAttribute('aria-expanded', String(on)); };
+  btn.addEventListener('click', () => set(box.hidden));
+  x.addEventListener('click', () => { set(false); btn.focus(); });
+  return { btn, box };
+}
 /* The steps are: 0 to 7 the sections in the order of the SCA form, 8 the retaste as the cup cools, 9 defects, 10 the review. One step shows at a time. The next one opens only once this one is done; a finished
    section stays in the row of dots with a check and can be opened again to change it. state.cva (see pure/12-cva.js) holds where the person has got to: cur is the furthest step reached, open is the one on screen. */
 let cvaBox = null, cvaProg = null, cvaDockEl = null, cvaAct = null, cvaFocus = '', cvaFinishBox = null;
@@ -17933,8 +18122,9 @@ function ecChartSvg(kind, tds, ey){
   return g;
 }
 function measureBlock(b){
-  const mt = METHODS.find(x => x.key === b.key); if (!mt || mt.type === 'cold') return null;
-  const outIn = textInput('Finished coffee in your cup (g)', () => b.out_g ? String(b.out_g) : '', v => { b.out_g = parseFloat(v) > 0 ? parseFloat(v) : ''; refreshAll(); }, { type:'number', placeholder:'e.g. ' + (mt.type === 'espresso' ? '36' : '270') });
+  const mt = METHODS.find(x => x.key === b.key); if (!mt) return null;
+  const cold = mt.type === 'cold';
+  const outIn = textInput('Finished coffee in your cup (g)', () => b.out_g ? String(b.out_g) : '', v => { b.out_g = parseFloat(v) > 0 ? parseFloat(v) : ''; b.out_est = false; refreshAll(); }, { type:'number', placeholder:'e.g. ' + (mt.type === 'espresso' ? '36' : '270') });
   const tdsIn = textInput('TDS (%)', () => b.tds ? String(b.tds) : '', v => { b.tds = parseFloat(v) > 0 ? parseFloat(v) : ''; refreshAll(); }, { type:'number', placeholder:'e.g. ' + (mt.type === 'espresso' ? '9.5' : '1.35') });
   [outIn, tdsIn].forEach(f => { const i = f.querySelector('input'); i.setAttribute('inputmode', 'decimal'); i.setAttribute('step', 'any'); i.setAttribute('min', '0'); });
   const brixIn = textInput('Brix reading (\u00b0Bx)', () => tdsPick.brix, v => { tdsPick.brix = v; const t = brixToTds(parseFloat(v)); b.tds = t == null ? '' : t; refreshAll(); }, { type:'number', placeholder:'e.g. 1.6' });
@@ -17943,6 +18133,9 @@ function measureBlock(b){
     h('p', { class:'fine', style:'margin:-4px 0 0', text:'Brix is a sugar scale, but your meter reads everything dissolved in the coffee. TDS is about 0.85 times Brix. That is a rule of thumb, so treat it as an estimate. If your meter also shows TDS, use that number.' }));
   const expOut = expectedYield(mt.type, +b.water, +b.dose);
   const outHint = h('p', { class:'fine', style:'margin:-4px 0 8px', text:expOut == null ? '' : (mt.type === 'espresso' || mt.type === 'moka') ? 'Weigh the drink in the cup. These settings aim for about ' + expOut + ' g.' : 'Weigh what ended up in your cup, not the water you poured. For this brew that is usually about ' + aboutGrams(expOut, mt.type) + ' g: the ' + b.water + ' g you poured, minus the roughly 2 g of water each gram of coffee holds back.' });
+  const estG = cold || expOut == null ? null : aboutGrams(expOut, mt.type);
+  const estBtn = estG == null ? null : h('button', { type:'button', class:'esbtn', id:'useEstBtn', onclick:() => { b.out_g = estG; b.out_est = true; changed(); } },
+    h('span', { class:'espl', 'aria-hidden':'true', text:'\u2248' }), h('span', { class:'estx' }, 'Use about ' + estG + ' g', h('small', { text:mt.type === 'espresso' || mt.type === 'moka' ? 'Estimate: the output these settings aim for' : 'Estimate: ' + b.water + ' g water, minus about 2 g per gram of coffee' })));
   const warnLine = h('p', { class:'fine warnline', role:'status', style:'margin:6px 0 0' });
   const res = h('div', { class:'measure' }), chart = h('div', { class:'ecchart' });
   refreshers.push(() => {
@@ -17954,19 +18147,32 @@ function measureBlock(b){
     if (ey == null){ res.append(h('p', { class:'fine', style:'margin:0', text:'Enter both numbers to see your extraction. Weigh the finished coffee, then read the TDS with a refractometer.' })); return; }
     const j = judgeBrew(mt.type, +b.tds, ey, tdsPick.taste);
     res.append(h('p', { class:'serif', style:'margin:8px 0 4px;font-size:16.5px' }, h('b', { style:'font-family:var(--ui)', text:'Your extraction: ' + ey + '%' })));
+    if (cold) res.append(h('p', { class:'serif', style:'margin:4px 0;font-size:15.5px', text:'Saved with this cold brew. There is no agreed target range for cold brew, so we do not call it weak or strong.' }));
+    if (b.out_est) res.append(h('p', { class:'serif', style:'margin:4px 0;font-size:15.5px', text:'The finished weight is an estimate, so this extraction is an estimate too. Weigh your cup for a real number.' }));
     j.lines.forEach(t => res.append(h('p', { class:'serif', style:'margin:4px 0;font-size:15.5px', text:t })));
-    chart.innerHTML = j.kind === 'none' ? '' : ecChartSvg(j.kind, +b.tds, ey);
+    chart.innerHTML = cold || j.kind === 'none' ? '' : ecChartSvg(j.kind, +b.tds, ey);
   });
-  return h('details', { class:'moreinfo' }, h('summary', { text:'Measured it? Add your TDS (optional)' }),
-    h('p', { class:'fine', style:'margin:6px 0 8px', text:'Read your refractometer, then type the numbers below. Strength (TDS) and extraction are different things. A cup can be strong but under-extracted, or weak but well extracted. Measuring both tells you whether to change the grind or the ratio.' }),
+  const intro = 'Read your refractometer, then type the numbers. Strength (TDS) and extraction are different things. A cup can be strong but under-extracted, or weak but well extracted. Measuring both tells you whether to change the grind or the ratio. Nothing else needs it, so skip this if you did not measure.';
+  const tasteFold = cold ? null : h('details', { class:'moreinfo' }, h('summary', { text:'How did the cup taste? (optional)' }),
+    h('p', { class:'fine', style:'margin:6px 0 4px', id:'tasteAsk', text:'This only steers the advice on this screen. It is not saved.' }),
+    choiceGroup([{ v:'sour', label:'Sour or thin', sym:'p-sour' }, { v:'balanced', label:'Balanced', sym:'p-great' }, { v:'bitter', label:'Bitter or dry', sym:'p-bitter' }], () => tdsPick.taste, v => { tdsPick.taste = v; }, { label:'How did the cup taste?', ptiles:true, cls:'tdstaste' }));
+  const kids = [h('p', { class:'fine', style:'margin:0 0 8px', text:'Read your refractometer, then type the numbers. Leave it empty if you did not measure.' }),
     (() => { const bm = h('details', { class:'moreinfo', id:'beforeMeasure' }, h('summary', { text:'Before you measure' }), h('ul', { class:'prep', style:'margin:4px 0 0' }, [
       'Zero the meter on clean water first.', 'Filter the sample so no grounds are in it, and remove any bubbles.', 'Let a hot sample settle until the reading stops moving.',
       'Read the same cup twice. Your own readings compare better with each other than with someone else\u2019s meter.',
       'Some meters are only accurate to about \u00b10.2 % TDS (check yours). For 20 g of coffee and 300 g of brew, that moves extraction by about 3 points. Trust changes between your own readings.'].map(t => h('li', { text:t })))); bm.open = level() === 'expert'; return bm; })(),
-    outIn, outHint, tdsIn, brixBox, h('p', { class:'fine', style:'margin:6px 0 4px', id:'tasteAsk', text:'How did the cup taste? (optional)' }),
-    choiceGroup([{ v:'sour', label:'Sour or thin', sym:'p-sour' }, { v:'balanced', label:'Balanced', sym:'p-great' }, { v:'bitter', label:'Bitter or dry', sym:'p-bitter' }], () => tdsPick.taste, v => { tdsPick.taste = v; }, { label:'How did the cup taste?', ptiles:true, cls:'tdstaste' }),
-    warnLine, res, chart,
-    h('p', { class:'fine', text:'Extraction counts the coffee in your cup. Coffee left in the grounds is not counted. Extraction % = TDS % × finished coffee weight ÷ coffee dose (the cup basis). So it reads a few points lower than papers that work from the brew water weight; do not mix the two. The 18–22% extraction and 1.15–1.35% TDS zone for filter coffee is a convention from the 1950s (Lockhart), and 8–12% TDS is the common café target for espresso. Neither is a rule: tasters in a 2013 SCA study leaned toward 20–24%, and people differ.' }));
+    outIn, outHint, estBtn, tdsIn, brixBox, tasteFold, warnLine, res, chart,
+    h('p', { class:'fine', text:'Extraction counts the coffee in your cup. Coffee left in the grounds is not counted. Extraction % = TDS % × finished coffee weight ÷ coffee dose (the cup basis). So it reads a few points lower than papers that work from the brew water weight; do not mix the two. The 18–22% extraction and 1.15–1.35% TDS zone for filter coffee is a convention from the 1950s (Lockhart), and 8–12% TDS is the common café target for espresso. Neither is a rule: tasters in a 2013 SCA study leaned toward 20–24%, and people differ.' })
+  ];
+  const inner = h('div', { class:'tdsbody' }, ...kids);
+  const addBtn = h('button', { type:'button', class:'tdsadd', id:'tdsAddBtn' }, h('span', { class:'espl', 'aria-hidden':'true', text:'+' }), h('span', { class:'estx' }, 'Add your numbers', h('small', { text:'Strength and extraction from your meter' })));
+  const show = on => { inner.hidden = !on; addBtn.hidden = on; };
+  addBtn.addEventListener('click', () => { show(true); const f = inner.querySelector('input'); if (f) f.focus(); });
+  show(!!(b.out_g || b.tds) || level() === 'expert');
+  const info = infoI(intro, 'What is TDS?');
+  const card = tband('Measured it? Add your TDS', false, 'only if you use a refractometer', { pic:'tds' }, info.box, addBtn, inner);
+  card.classList.add('tdscard'); card.id = 'tdsCard'; card.querySelector('.thead').append(info.btn);
+  return card;
 }
 function screenCup(m){
   const c = app.coffee, b = app.cupBrew;
@@ -17976,7 +18182,7 @@ function screenCup(m){
   { const th = termHint(); if (th) m.append(th); }
   { const sw = tasteSwitch(); if (sw) m.append(sw); }
   const brewParts = [];   /* the brew card: above a cupping, below the Quick tasting */
-  let tdsCard = null;   /* the TDS card: right under the bean rating, on the Quick tab and on a cupping's review */
+  let tdsCard = null;   /* the TDS card: at the bottom of the Quick tab and of a cupping's review, under the notes */
   if (b){
     const temp = !b.temp_f ? (b.key === 'moka' ? 'hot start' : 'n/a') : b.temp_f + '°F / ' + b.temp_c + '°C' + (b.temp_rec_f && b.temp_rec_f !== b.temp_f ? ' (you set it; recommended ' + b.temp_rec_f + '°F)' : '');
     const brewLine = b.machine ? b.method + ': ' + b.tech_detail + '.' : b.method + ': ' + b.dose + ' g coffee, ' + (b.ice_g ? b.hot_g + ' g hot water + ' + b.ice_g + ' g ice' : b.water + ' g water') + ' (' + fmtRatio(b.ratio) + '), ' + temp + ', ' + (level() === 'new' ? 'grind as recommended' : b.grind_um + ' µm target grind') + '.' + (b.agit && level() !== 'new' ? ' Pour style: ' + b.agit + '.' : '') + (b.adjustment ? ' Dial-in: ' + b.adjustment + '.' : '');
@@ -17995,7 +18201,7 @@ function screenCup(m){
     dtl.open = !!(b.pour_notes || b.grind_setting || b.actual_s) || (state.way === 'quick' && level() === 'expert');
     brewParts.push(dtl);
     /* The TDS reading sits on its own card, not two folds deep inside Your brew, so a person with a meter finds it on both the Quick and the Cupping tab. */
-    if (level() !== 'new'){ const mb = measureBlock(b); if (mb){ mb.open = level() === 'expert'; tdsCard = h('div', { class:'card tdscard', id:'tdsCard' }, mb); } }
+    tdsCard = measureBlock(b);   /* every level, and cold brew too: it sits at the bottom of Quick and of a cupping, and is optional */
   }
   m.setAttribute('data-cupview', 'compact');   /* the Quick tab's detail cards fold by this (styles/68-menu-glossary-help.css); the setting that used to choose full is retired */
   if (state.way === 'quick'){ screenQuick(m, brewParts, tdsCard); return; }
@@ -18115,7 +18321,6 @@ function screenQuick(m, brewParts, tdsCard){
   m.append(tband('How much did you like it?', 'Required', 'this or "make again"', { icon:'tap', text:'Tap a bean' },
     starRating(() => state.stars, v => { state.stars = v; changed(); }, { label:'Your rating of this coffee' }),
     newLvl ? h('p', { class:'fine', text:'Either one is enough to save. Everything else is optional.' }) : null));
-  if (tdsCard) m.append(tdsCard);   /* a meter reading belongs right after the rating, and it folds away */
   const more = [];
   /* optional: the flavors */
   const fw = quickFlavorWords();
@@ -18132,6 +18337,7 @@ function screenQuick(m, brewParts, tdsCard){
   more.push(h('div', { class:'notesbox' }, notesField()));
   if (newLvl) m.append(plainFold('moreCup', 'More about this cup', 'Flavors, six parts, notes. All optional.', 'art-note', h('div', { class:'foldstack' }, ...more, ...brewParts)));
   else m.append(...more, ...brewParts);
+  if (tdsCard) m.append(tdsCard);   /* optional and last: a meter reading goes under everything else */
   const msg = h('p', { class:'msg', id:'msg', role:'status' });
   let armed = false, tmr = null;
   const clearBtn = h('button', { type:'button', class:'flink danger', text:'Clear answers' });
@@ -18249,8 +18455,8 @@ function cvaFinish(tdsCard){
   });
   const box = h('div', { id:'cvaFinish' },
     tband('How much did you like it?', false, 'different from the cupping score', { icon:'tap', text:'Tap a bean' }, starRating(() => state.stars, v => { state.stars = v; scheduleDraft(); }, { label:'Your rating of this coffee' })),
-    tdsCard || null,
     h('div', { class:'notesbox' }, notesField()),
+    tdsCard || null,
     h('div', { class:'flinks one' }, clearBtn), msg,
     h('p', { class:'fine tcenter', text:'Your in-progress form is kept in this browser until you save or clear it. Your saved history lives in the CSV file you download.' }));
   box.hidden = state.cva.open !== 10; cvaFinishBox = box;
@@ -20241,7 +20447,7 @@ const MK = (() => {
   MK.poses = POSES; MK.arms = arms;
 })();
 /* each part of the app has its own outfit: lab coat for tasting, little suit for numbers, vest for learning, tweed for history and origins */
-const MASCOT_OUTFITS = { lab:['cup', 'quick', 'sca', 'cva', 'staste', 'dial', 'wheels', 'tastes'], suit:['tend', 'tpmix', 'tpflavors', 'cost', 'prices', 'yield', 'ratio', 'compare', 'tools', 'files', 'caffeine', 'cafdrink', 'cafresult', 'cafcup'], vest:['learn', 'glossary', 'guide', 'help'], tweed:['history', 'detail', 'folk', 'facts'] };
+const MASCOT_OUTFITS = { lab:['cup', 'quick', 'sca', 'cva', 'staste', 'dial', 'wheels', 'tastes'], suit:['tend', 'tpmix', 'tpflavors', 'cost', 'prices', 'yield', 'ratio', 'compare', 'tools', 'files', 'caffeine', 'cafdrink', 'cafresult', 'cafcup'], vest:['learn', 'glossary', 'guide', 'help'], tweed:['history', 'detail', 'tastedit', 'folk', 'facts'] };
 function outfitForScreen(){
   const s = app.screen;
   for (const k of Object.keys(MASCOT_OUTFITS)) if (MASCOT_OUTFITS[k].includes(s)) return k;
@@ -20685,13 +20891,13 @@ function screenDetail(m){
     const lvD = level(), um = parseFloat(o.brew_grind_target_um), tdsV = parseFloat(o.brew_tds_pct);
     const tiles = (lvD === 'expert'
       ? [dtile('Brewer', g('brew_method')), dtile('Temp', f ? f + '\u00b0F' : ''), dtile('Ratio', o.brew_ratio ? '1:' + o.brew_ratio : ''), dtile('Grind', um > 0 ? grindName(um).name : ''), dtile('Strength', tdsV > 0 ? tdsV + ' % of the cup' : '')]
-      : [dtile('Brewer', g('brew_method')), dtile('Temp', f ? f + '\u00b0F' : '')]).filter(Boolean);
+      : [dtile('Brewer', g('brew_method')), dtile('Temp', f ? f + '\u00b0F' : ''), dtile('Strength', tdsV > 0 ? tdsV + ' % TDS' : '')]).filter(Boolean);
     const more = kvList([
       ['Method', g('brew_method') + (o.brew_attempt ? ' · try ' + o.brew_attempt : '')],
       [isCup ? 'Dose' : 'Coffee and water', o.brew_dose_g && o.brew_water_g ? o.brew_dose_g + ' g coffee, ' + o.brew_water_g + ' g water' : ''],
       ['Ratio', o.brew_ratio ? '1:' + o.brew_ratio + (o.brew_ratio_recommended && o.brew_ratio_recommended !== o.brew_ratio ? ' (recommended 1:' + o.brew_ratio_recommended + ')' : '') : ''],
       ['Temperature', tempTxt ? tempTxt + (o.brew_temp_recommended_f && o.brew_temp_recommended_f !== o.brew_temp_f ? ' (recommended ' + o.brew_temp_recommended_f + '°F)' : '') : ''],
-      ['Grind target', o.brew_grind_target_um ? 'about ' + o.brew_grind_target_um + ' µm' : ''], ['Strength (TDS)', o.brew_tds_pct ? o.brew_tds_pct + '%' : ''], ['Extraction', o.brew_ey_pct ? o.brew_ey_pct + '%' : ''], ['Guessed from the origin', g('details_guessed')], ['Pour style', g('brew_agitation')], ['Technique', [TECH_CSV_LABEL[g('brew_technique')], g('brew_technique_detail')].filter(Boolean).join(': ')], ['Water', g('brew_water_type')], ['Water minerals', [o.water_alkalinity_mgl ? 'alkalinity ' + o.water_alkalinity_mgl + ' mg/L' : '', o.water_hardness_mgl ? 'hardness ' + o.water_hardness_mgl + ' mg/L' : ''].filter(Boolean).join(', ')], ['Filter paper', g('brew_filter')], ['Grinder', [g('brew_grinder_name'), g('brew_grinder_type')].filter(Boolean).join(' · ')], ['Grinder setting', g('brew_grind_setting')], ['Your pour notes', g('brew_pour_notes')], ['What you tasted before', (() => { const dn = dialNoteOf(o), sl = dn && SYMPTOMS.find(x => x.v === dn.symptom); return sl ? sl.label : ''; })()], ['Suggested by Perfect', (() => { const dn = dialNoteOf(o); return dn && dn.change.length ? dn.change.map(c2 => c2.replace(':', ' ')).join(', ') : ''; })()], ['Your best brew', String(o.dial_locked || '').trim().toLowerCase() === 'yes' ? 'Yes' : ''], ['Actual brew time', o.brew_actual_time_s ? fmtTime(parseFloat(o.brew_actual_time_s)) : ''],
+      ['Grind target', o.brew_grind_target_um ? 'about ' + o.brew_grind_target_um + ' µm' : ''], ['Finished coffee in the cup', o.brew_out_g ? o.brew_out_g + ' g' : ''], ['Strength (TDS)', o.brew_tds_pct ? o.brew_tds_pct + '%' : ''], ['Extraction', o.brew_ey_pct ? o.brew_ey_pct + '%' : ''], ['Guessed from the origin', g('details_guessed')], ['Pour style', g('brew_agitation')], ['Technique', [TECH_CSV_LABEL[g('brew_technique')], g('brew_technique_detail')].filter(Boolean).join(': ')], ['Water', g('brew_water_type')], ['Water minerals', [o.water_alkalinity_mgl ? 'alkalinity ' + o.water_alkalinity_mgl + ' mg/L' : '', o.water_hardness_mgl ? 'hardness ' + o.water_hardness_mgl + ' mg/L' : ''].filter(Boolean).join(', ')], ['Filter paper', g('brew_filter')], ['Grinder', [g('brew_grinder_name'), g('brew_grinder_type')].filter(Boolean).join(' · ')], ['Grinder setting', g('brew_grind_setting')], ['Your pour notes', g('brew_pour_notes')], ['What you tasted before', (() => { const dn = dialNoteOf(o), sl = dn && SYMPTOMS.find(x => x.v === dn.symptom); return sl ? sl.label : ''; })()], ['Suggested by Perfect', (() => { const dn = dialNoteOf(o); return dn && dn.change.length ? dn.change.map(c2 => c2.replace(':', ' ')).join(', ') : ''; })()], ['Your best brew', String(o.dial_locked || '').trim().toLowerCase() === 'yes' ? 'Yes' : ''], ['Actual brew time', o.brew_actual_time_s ? fmtTime(parseFloat(o.brew_actual_time_s)) : ''],
       [isCup ? 'Steep' : 'Brew time', isNaN(secs) ? '' : fmtTime(secs)], ['Perfect', g('brew_adjustment')]]);
     m.append(dgroup('How it was made', tiles.length ? h('div', { class:'dtiles ' + (tiles.length <= 2 ? 'two' : 'three') }, ...tiles) : null,
       more ? plainFold('moreBrew', 'Every detail of the brew', 'Ratio, grind, water, notes and more', 'gear', more) : null));
@@ -20738,6 +20944,7 @@ function screenDetail(m){
   /* what you can do with it */
   const acts = [hubRow('bean', 'Use this coffee', 'Optional: copy it onto a new Coffee screen', () => useCoffeeFromRow(o), { tone:'g', id:'brewAgainBtn' })];   /* never automatic: backing out of History leaves the Coffee screen as it was */
   acts.push(hubRow('fl-text', 'Share this tasting', 'Send the coffee, brew settings and your score as text', () => openShare('Share this tasting', shareTastingText(o), 'This is what will go out. Your notes stay private.'), { tone:'g', id:'shareTastingBtn' }));
+  acts.push(hubRow('pen', 'Edit tasting details', 'Brew numbers, TDS, answers, scores and notes', () => openTastingEdit(o), { tone:'g', id:'editTastingBtn' }));
   if (canAddCupping(o)) acts.push(hubRow('spoon', 'Add cupping scores', 'Score this cup the careful way', () => startCupFor(o), { tone:'g', id:'addCuppingBtn' }));
   if (trailMethod(o) && way !== 'quick') acts.push(hubRow('peak', 'Perfect this coffee', 'Fix what you tasted, one change at a time', () => dialFromRow(o, 'detail'), { tone:'a', id:'dialThisBtn' }));
   if (acts.length) m.append(h('div', { class:'hublist dacts' }, ...acts));
@@ -20883,6 +21090,143 @@ function screenFiles(m){
   m.append(hubSec('art-clip', 'Your history'), hist, hubSec('s-shop', 'Coffee shops'), shops, tail);
   if (!plain) m.append(h('p', { class:'fine hubnote', text:'Clearing everything removes your saved history copy, in-progress work, and choices from this browser. Files you downloaded are not touched.' }));
   { const sn = standaloneNote(); if (sn) m.append(sn); }
+}
+let teDraft = null;
+const tastedIds = new Set();   // tastings changed here, so one tasting is counted once however often it is edited
+/* Apply the edit to the history, keep a ten-second Undo, and count the tasting once as "updated here". */
+function commitTastingEdit(rowIdx, edit){
+  if (!history || !history.ex.rows[rowIdx]) return { error:'That tasting is not in the file.' };
+  const res = applyTastingEdit(history.ex.header, history.ex.rows, rowIdx, edit);
+  if (res.error) return res;
+  if (!res.changed) return { changed:0 };
+  const idi = history.ex.header.indexOf('id'), id = (history.ex.rows[rowIdx][idi] || String(rowIdx));
+  if (histEdited === 0) tastedIds.clear();   /* nothing is waiting to be saved, so nothing is counted yet */
+  const first = !tastedIds.has(id);
+  editUndo = { prevHeader:history.ex.header.slice(), prevRows:history.ex.rows.slice(), n:first ? 1 : 0, t:Date.now(), what:res.summary.slice(), tasting:true, id:id };
+  history.ex.header = res.header;
+  applyHistoryRows(res.rows);
+  if (first){ tastedIds.add(id); histEdited += 1; persistEdited(); }
+  return { changed:1, summary:res.summary };
+}
+function openTastingEdit(o){
+  const edit = tastingEditFromRow(o);
+  teDraft = { idx:o._i, edit, orig:JSON.stringify(edit), timeBad:false, estimated:false, error:'', coffee:unneutralize(o.coffee_name || '') || 'Untitled coffee', date:o.cupping_date || '' };
+  go('tastedit');
+}
+function screenTastingEdit(m){
+  const d = teDraft, o = history.objs.find(x => x._i === d.idx);
+  const e = d.edit, b = e.brew;
+  const dirty = () => JSON.stringify(e) !== d.orig;
+  const touch = () => { d.error = ''; refreshAll(); };
+  m.append(h('div', { class:'hubhero dhero' }, h('div', { class:'hhtx' }, h('h1', { text:'Edit tasting' }), h('p', { text:d.coffee }), d.date ? h('p', { class:'dwhen' }, 'Tasted on ', h('span', { class:'nw', text:d.date })) : null)));
+  m.append(sayRow('Fix anything you missed. Nothing changes until you tap Save changes.'));
+
+  /* ---- the brew numbers ---- */
+  const num = (label, key, ph, step) => {
+    const f = textInput(label, () => b[key] || '', v => { b[key] = v.trim(); if (key === 'out_g') d.estimated = false; touch(); }, { type:'number', placeholder:ph });
+    const i = f.querySelector('input'); i.setAttribute('inputmode', 'decimal'); i.setAttribute('step', step || 'any'); i.setAttribute('min', '0'); i.id = 'te_' + key; f.querySelector('label').setAttribute('for', i.id);
+    return f;
+  };
+  const timeIn = textInput('Brew time (m:ss)', () => b.actual_s ? fmtTime(+b.actual_s) : '', v => {
+    const t = v.trim();
+    if (!t){ b.actual_s = ''; d.timeBad = false; } else { const s = parseMmSs(t); if (s == null || s < 1){ d.timeBad = true; } else { d.timeBad = false; b.actual_s = String(s); } }
+    touch();
+  }, { placeholder:'e.g. 3:30' });
+  { const i = timeIn.querySelector('input'); i.id = 'te_time'; timeIn.querySelector('label').setAttribute('for', 'te_time'); i.setAttribute('inputmode', 'numeric'); }
+  m.append(tband('The brew', { tan:'Optional' }, 'change any number', { pic:'kettle' },
+    h('div', { class:'tegrid' }, num('Coffee (g)', 'dose', 'e.g. 18'), num('Water (g)', 'water', 'e.g. 300'), num('Water temperature (°F)', 'temp_f', 'e.g. 200'), timeIn),
+    h('p', { class:'fine', style:'margin:0', text:'The ratio and the Celsius temperature are worked out again when you save.' })));
+
+  /* ---- the finished weight and TDS ---- */
+  const estBox = h('div', { class:'teest' }), exLine = h('p', { class:'fine tex', role:'status', style:'margin:6px 0 0' });
+  refreshers.push(() => {
+    estBox.textContent = '';
+    const est = tastingEstimateOut(o, b.dose, b.water);
+    if (est != null) estBox.append(h('button', { type:'button', class:'esbtn', id:'teUseEstBtn', onclick:() => { b.out_g = String(est); d.estimated = true; touch(); } },
+      h('span', { class:'espl', 'aria-hidden':'true', text:'≈' }), h('span', { class:'estx' }, 'Use about ' + est + ' g', h('small', { text:'Estimate: the water, minus about 2 g held back per gram of coffee' }))));
+    const ey = extractionYield(parseFloat(b.tds), parseFloat(b.out_g), parseFloat(b.dose));
+    exLine.textContent = ey == null ? 'Add the finished weight and the TDS to see the extraction.' : 'Your extraction: ' + ey + '%' + (d.estimated ? ' (an estimate, because the finished weight is an estimate)' : '');
+  });
+  const info = infoI('Weigh the coffee in your cup, then read the TDS with a refractometer. Extraction is worked out from the two and your coffee weight. Leave both empty if you did not measure.', 'What is TDS?');
+  const tdsCardEl = tband('TDS and finished weight', { tan:'Optional' }, 'only if you measured', { pic:'tds' }, info.box,
+    num('Finished coffee in the cup (g)', 'out_g', 'e.g. 270'), estBox, num('TDS (%)', 'tds', 'e.g. 1.35'), exLine);
+  tdsCardEl.classList.add('tdscard'); tdsCardEl.id = 'teTdsCard'; tdsCardEl.querySelector('.thead').append(info.btn);
+  m.append(tdsCardEl);
+
+  /* ---- the quick answers ---- */
+  const q = e.quick;
+  const makeBtns = MAKE_AGAIN.map(x => { const bt = ttile(MAKE_FACE[x.v], x.label, MAKE_TONE[x.v]); bt.addEventListener('click', () => { q.makeAgain = q.makeAgain === x.v ? '' : x.v; touch(); }); return bt; });
+  refreshers.push(() => makeBtns.forEach((bt, i) => bt.setAttribute('aria-pressed', String(q.makeAgain === MAKE_AGAIN[i].v))));
+  const partTe = a => {
+    const set = v => { if (q.areas[a.key] === v) q.areas[a.key] = ''; else q.areas[a.key] = v; touch(); };
+    const faces = PART_FACE.map(f => { const g = QUICK_GRADES.find(x => x.v === f.v), bt = ttile(f.icon, '', f.tone, a.label + ': ' + g.label.toLowerCase()); bt.addEventListener('click', () => set(f.v)); return bt; });
+    const unsure = ttile('', "Couldn't tell", 'wide'); unsure.addEventListener('click', () => set('unsure'));
+    const row = h('div', { class:'terow', 'data-card':'te:' + a.key }, h('b', { class:'tename', text:a.label }), h('div', { class:'tefaces', role:'group', 'aria-label':a.label }, faces, unsure));
+    refreshers.push(() => { const g = q.areas[a.key]; faces.forEach((bt, i) => bt.setAttribute('aria-pressed', String(g === PART_FACE[i].v))); unsure.setAttribute('aria-pressed', String(g === 'unsure')); row.classList.toggle('done', !!g); });
+    return row;
+  };
+  m.append(tband('Your rating and quick answers', { tan:'Optional' }, 'how you liked it', { pic:'cf-again' },
+    starRating(() => validStars(q.stars), v => { q.stars = v || ''; touch(); }, { label:'Your rating of this coffee' }),
+    h('p', { class:'cardlabel', style:'margin:12px 0 4px' }, h('span', { text:'Would you make it again?' })),
+    h('div', { class:'mkgrid', role:'group', 'aria-label':'Would you make this again' }, makeBtns),
+    h('p', { class:'cardlabel', style:'margin:12px 0 0' }, h('span', { text:'The parts of the cup' })),
+    h('div', { class:'tepart' }, QUICK_AREAS.map(partTe))));
+
+  /* ---- the cupping scores ---- */
+  if (e.scoreState === 'ok'){
+    const defTxt = String(o.defect_type || '').trim();
+    const totalEl = h('b', { id:'teTotal', class:'tetotal' }), totalNote = h('span', { class:'fine', text:defTxt ? ' (the defect deduction stays as saved)' : '' });
+    const secs = CVA_SECTIONS.map((s, i) => {
+      const sum = h('span', { class:'tesum' });
+      const body = h('div', { class:'tescale' });
+      const paint = () => {
+        const cur = cvaScore(e.cupping[s.key]);
+        sum.textContent = cur ? cur + ' · ' + CVA_WORDS[cur - 1] : 'not scored';
+        body.textContent = '';
+        const btns = []; for (let v = 1; v <= 9; v++) btns.push(h('button', { type:'button', role:'radio', id:'te-cva-' + i + '-' + v, 'aria-checked':String(cur === v), text:String(v), onclick:() => { e.cupping[s.key] = v; touch(); } }));
+        body.append(h('div', { class:'cva-scale', role:'radiogroup', 'aria-label':s.name + ', 1 to 9' }, btns),
+          h('div', { class:'cva-ends', 'aria-hidden':'true' }, h('span', { text:'1 extremely low' }), h('span', { text:'9 extremely high' })));
+        if (s.skippable) body.append(h('button', { type:'button', class:'btn link', id:'te-cva-skip-' + i, text:'Not scored', onclick:() => { e.cupping[s.key] = ''; touch(); } }));
+      };
+      refreshers.push(paint);
+      return h('details', { class:'moreinfo tesec', id:'te-sec-' + i }, h('summary', null, h('b', { text:s.name }), ' ', sum), body);
+    });
+    refreshers.push(() => {
+      const by = {}; CVA_SECTIONS.forEach(s => { by[s.key] = e.cupping[s.key]; });
+      const t = tastingTotal(by, o.defect_type);
+      totalEl.textContent = t == null ? 'Total: not complete yet' : 'Total: ' + t.toFixed(2) + ' of 100';
+    });
+    m.append(tband('Cupping scores', { tan:'Optional' }, 'tap a part to change it', { pic:'cf-review' },
+      h('p', { class:'fine', style:'margin:0 0 8px', text:'Score each part from 1 to 9. The total is worked out again when you save.' }), ...secs, h('p', { style:'margin:10px 0 0' }, totalEl, totalNote)));
+  } else if (e.scoreState === 'older'){
+    m.append(tband('Cupping scores', { tan:'Locked' }, 'saved with an older form', { pic:'cf-review' },
+      h('p', { class:'fine', id:'teLocked', style:'margin:0', text:'This tasting used an older scoring form (five cups, or a home score), so its scores stay as saved. Everything else on this screen can be changed.' })));
+  } else {
+    m.append(tband('Cupping scores', { tan:'None yet' }, 'this was a quick tasting', { pic:'cf-review' },
+      h('p', { class:'fine', id:'teNoCupping', style:'margin:0', text:'This tasting has no cupping scores. To add them, go back and tap Add cupping scores.' })));
+  }
+
+  /* ---- notes ---- */
+  m.append(tband('Notes', { tan:'Optional' }, 'in your words', { pic:'note' },
+    textInput('Notes', () => e.notes, v => { e.notes = v; d.error = ''; refreshAll(); }, { area:true, placeholder:'About this coffee or this session' })));
+
+  /* ---- save ---- */
+  const msg = h('p', { class:'fine err', id:'teError', role:'alert', style:'margin:8px 0 0' });
+  const save = h('button', { type:'button', class:'btn primary', id:'saveTastingEditBtn', text:'Save changes', onclick:() => {
+    if (d.timeBad){ d.error = 'The brew time looks like 3:30, or 210 for seconds.'; refreshAll(); return; }
+    const edit = { brew:Object.assign({}, b), notes:e.notes, quick:{ stars:q.stars, makeAgain:q.makeAgain, areas:Object.assign({}, q.areas) } };
+    if (e.scoreState === 'ok'){
+      const was = JSON.parse(d.orig).cupping, ch = {};
+      CVA_SECTIONS.forEach(s => { if (String(e.cupping[s.key]) !== String(was[s.key])) ch[s.key] = e.cupping[s.key]; });
+      edit.cupping = ch;
+    }
+    const res = commitTastingEdit(d.idx, edit);
+    if (res.error){ d.error = res.error; refreshAll(); return; }
+    teDraft = null; go('detail');
+  } });
+  const cancel = h('button', { type:'button', class:'btn', id:'cancelTastingEditBtn', text:'Cancel', onclick:() => { teDraft = null; go('detail'); } });
+  refreshers.push(() => { save.disabled = !dirty(); msg.textContent = d.error || (d.timeBad ? 'The brew time looks like 3:30, or 210 for seconds.' : ''); });
+  m.append(h('div', { class:'dpair tesave' }, cancel, save), msg);
 }
 /* ---------- coffee shops: what is kept ----------
    The list is one CSV text under SHOPS_KEY, the same way the prices file is kept, and it can be saved to and loaded from a file. It is never part of the tasting history file or of My setup.
@@ -21711,7 +22055,7 @@ function shopsFilesRows(){
     h('button', { type:'button', class:'btn', id:'shPasteBtn', style:'margin-top:8px', text:'Use pasted text', onclick:() => { if (paste.value.trim()){ shLoadText(paste.value); say(sh.msg); save.querySelector('.hs').textContent = subText(); } else say('Paste the file contents first.'); } }));
   return [save, load, file, fold, msg, h('p', { class:'fine hubnote', style:'margin:0', text:'The coffee shops file is a file of its own. It is not your tasting history, and your history is never changed by it.' })];
 }
-const SCREENS = { door:screenDoor, loadshared:screenLoadShared, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, tpflavors:screenTpFlavors, tpenjoy:screenTpEnjoy, tprate:screenTpRate, tpkinds:screenTpKinds, tpbrews:screenTpBrews, tpshops:screenTpShops, tpbrewers:screenTpBrewers, tpmix:screenTpMix, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, caffeine:screenCaffeine, cafdrink:screenCafDrink, cafresult:screenCafResult, cafcup:screenCafCup, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, glossary:screenGlossary, files:screenFiles };
+const SCREENS = { door:screenDoor, loadshared:screenLoadShared, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, detail:screenDetail, tastedit:screenTastingEdit, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, tpflavors:screenTpFlavors, tpenjoy:screenTpEnjoy, tprate:screenTpRate, tpkinds:screenTpKinds, tpbrews:screenTpBrews, tpshops:screenTpShops, tpbrewers:screenTpBrewers, tpmix:screenTpMix, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, caffeine:screenCaffeine, cafdrink:screenCafDrink, cafresult:screenCafResult, cafcup:screenCafCup, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, glossary:screenGlossary, files:screenFiles };
 
 syncMenuBtn();
 $('homeBtn').addEventListener('click', () => { if (menuIsOpen()) closeSheet(); else openMenu(); });

@@ -4,6 +4,16 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.033.0082: Edit a saved tasting, and TDS everywhere
+
+2026-10-14 20:19:34 UTC
+
+- A new Edit tasting details row on every saved tasting. Fix anything you missed: the brew numbers (coffee, water, temperature, time), the finished weight and TDS, your beans and quick answers, the cupping scores and your notes. Nothing changes until you tap Save changes, and Undo is there for ten seconds.
+- Add TDS to a tasting at any time. The extraction is worked out again for you, and a Use about N g button estimates the coffee in the cup from the water and the grounds, marked clearly as an estimate.
+- The TDS box is now at the bottom of both Quick and Cupping, at every level, and for cold brew. It is optional and folded behind Add your numbers until you want it. A round i button explains what TDS is.
+- Cupping scores can be changed on tastings saved with the one-cup form, and the total is worked out again. Tastings saved with the older five-cup or home-score forms keep their scores as saved, and the screen says why; everything else on them can be edited.
+- The tasting page now shows the strength (TDS) and the finished weight, at every level.
+
 ## Version 4.032.0081: Load a shared coffee, and many more shop drinks
 
 2026-10-14 16:44:34 UTC
