@@ -2126,6 +2126,89 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .yc-mh{ font-size:17px; margin:16px 0 6px; }
 .kettlebox .moreinfo > summary, .tdscard .moreinfo > summary{ min-height:44px; display:flex; align-items:center; }
 .yc-sl input[type=range]{ min-height:44px; }
+.cf-grid{ display:grid; gap:10px; margin:0 0 12px; }
+.cf-grid.c2{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+.cf-grid.c3{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+.cf-grid.c4{ grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; }
+.cf-grid.c5{ grid-template-columns:repeat(5, minmax(0, 1fr)); gap:6px; }
+.cf-tile{ position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:3px; padding:8px 4px 9px; text-align:center; background:var(--surface); color:var(--ink); border:2px solid var(--frame); border-radius:16px; box-shadow:0 3px 0 var(--frame); font:inherit; min-height:44px; cursor:pointer; }
+.cf-tile .pic{ width:48px; height:48px; display:grid; place-items:center; border-radius:12px; background:var(--icon-bg); }
+.cf-tile .pic svg{ width:100%; height:100%; display:block; }
+.cf-tile b{ font-size:17px; line-height:1.1; }
+.cf-tile small{ font-size:13.5px; line-height:1.15; color:var(--muted); }
+.cf-tile.sm{ padding:6px 2px 7px; gap:2px; }
+.cf-tile.sm .pic{ width:38px; height:38px; }
+.cf-tile.sm b{ font-size:15px; }
+.cf-tile.sm small{ font-size:13px; }
+.cf-tile:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--frame); }
+.cf-tile[aria-pressed="true"]{ background:var(--pick); color:var(--pick-ink); outline:3px solid var(--frame); outline-offset:2px; }
+.cf-tile[aria-pressed="true"] small{ color:var(--pick-ink); }
+.cf-tile[aria-pressed="true"]::after{ content:""; position:absolute; top:-11px; right:-9px; width:24px; height:24px; border-radius:50%; background:#2E7D4F url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 12.5l3.5 3.5L17 9' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% 100% no-repeat; border:2px solid var(--frame); }
+.cf-tile:focus-visible, .cf-row:focus-visible, .cf-sbtn:focus-visible, .cf-cuprow:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
+.cf-q{ margin:14px 0 6px; font-family:var(--display); font-size:21px; line-height:1.15; color:var(--ink); }
+.cf-fine{ margin:0 0 10px; font-size:15px; line-height:1.3; color:var(--muted); }
+.cf-fine.center{ text-align:center; }
+.cf-stepper{ display:flex; align-items:center; justify-content:center; gap:18px; margin:6px 0 12px; }
+.cf-sbtn{ width:76px; min-height:56px; border:2px solid var(--frame); border-radius:16px; background:var(--surface); color:var(--ink); box-shadow:0 3px 0 var(--frame); font:700 32px/1 var(--ui); cursor:pointer; }
+.cf-sbtn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--frame); }
+.cf-sval{ min-width:2ch; text-align:center; font:700 44px/1 var(--display); color:var(--ink); font-variant-numeric:tabular-nums; }
+.cf-timetile{ position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 8px 10px; background:var(--surface); color:var(--ink); border:2px solid var(--frame); border-radius:16px; box-shadow:0 3px 0 var(--frame); cursor:pointer; text-align:center; }
+.cf-timetile .pic{ width:40px; height:40px; display:grid; place-items:center; border-radius:12px; background:var(--icon-bg); }
+.cf-timetile .pic svg{ width:100%; height:100%; display:block; }
+.cf-tlab{ font-size:15px; color:var(--muted); }
+.cf-tval{ font:700 clamp(22px, 7vw, 29px)/1.1 var(--display); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.cf-timein{ position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; border:0; padding:0; }
+.cf-timetile:focus-within{ outline:3px solid var(--focus); outline-offset:2px; }
+.cf-res{ margin:12px 0; }
+.cf-rows{ display:flex; flex-direction:column; gap:10px; margin:0 0 12px; }
+.cf-row, .cf-cuprow{ display:flex; align-items:center; gap:8px; width:100%; padding:8px 10px 8px 8px; background:var(--surface); color:var(--ink); border:2px solid var(--frame); border-radius:16px; box-shadow:0 3px 0 var(--frame); font:inherit; text-align:left; cursor:pointer; }
+.cf-row:active, .cf-cuprow:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--frame); }
+.cf-row .pic, .cf-cuprow .pic{ flex:none; width:44px; height:44px; display:grid; place-items:center; border-radius:12px; background:var(--icon-bg); }
+.cf-row .pic svg, .cf-cuprow .pic svg{ width:100%; height:100%; display:block; }
+.cf-row.empty{ border-style:dashed; box-shadow:none; background:transparent; }
+.cf-chip{ flex:none; display:flex; flex-direction:column; align-items:center; justify-content:center; width:66px; height:56px; border:2px solid #22120C; border-radius:14px; background:#F2A93B; color:#22120C; font:700 22px/1 var(--display); }
+.cf-chip small{ font:700 12px/1 var(--ui); margin-top:2px; }
+.cf-chip.none{ background:transparent; border-style:dashed; color:var(--ink); border-color:var(--frame); font-size:26px; }
+.cf-rt{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.cf-rt b{ font-size:17px; line-height:1.15; }
+.cf-rt small{ font-size:14px; line-height:1.2; color:var(--muted); }
+.cf-rmg{ flex:none; text-align:right; display:flex; flex-direction:column; max-width:34%; }
+.cf-rmg b{ font:700 22px/1.05 var(--ui); font-variant-numeric:tabular-nums; }
+.cf-rmg small{ font-size:12.5px; line-height:1.15; color:var(--muted); }
+.cf-cuprow{ margin:0 0 10px; }
+.cf-chart{ margin:0 0 6px; }
+.cf-chart > svg, .cf-mug > svg{ display:block; height:auto; }
+.cf-legend{ display:flex; flex-wrap:wrap; gap:6px 16px; margin:8px 0 0; font:700 14px/1.2 var(--ui); }
+.cf-legend .k{ display:inline-block; vertical-align:middle; width:28px; height:0; }
+.cf-legend .k.hill{ height:9px; border:2px solid #22120C; border-radius:4px; background:#C79A66; }
+.cf-legend .k.sug{ border-top:4px dashed #2E7D4F; }
+.cf-legend .k.slp{ border-top:2.5px dashed var(--alert); }
+.cf-legend .bad{ color:var(--alert); }
+.cf-gold{ background:#F2A93B; color:#22120C; border-color:#22120C; }
+.cf-why{ display:flex; gap:10px; align-items:flex-start; padding:10px; margin:0 0 10px; border:2px solid var(--frame); border-radius:16px; background:var(--surface); box-shadow:0 3px 0 var(--frame); }
+.cf-wi{ flex:none; width:44px; }
+.cf-wi .pic{ width:44px; height:44px; display:grid; place-items:center; border-radius:12px; background:var(--icon-bg); }
+.cf-wi .pic svg{ width:100%; height:100%; display:block; }
+.cf-wt{ min-width:0; }
+.cf-wt b{ display:block; font-size:17px; line-height:1.15; }
+.cf-wt p{ margin:3px 0 0; font-size:15.5px; line-height:1.3; }
+.cf-wt small{ display:block; margin-top:4px; font-size:13.5px; line-height:1.2; color:var(--muted); }
+.cf-mugrow{ display:flex; align-items:center; gap:10px; margin:0 0 12px; }
+.cf-mug{ flex:none; width:44%; max-width:170px; }
+.cf-mugtx{ min-width:0; }
+.cf-mbig{ font:700 44px/1 var(--display); font-variant-numeric:tabular-nums; }
+.cf-mbig small{ font:700 18px/1 var(--ui); color:var(--muted); }
+.cf-mrng{ margin-top:4px; font-size:16px; color:var(--muted); }
+.cf-mvs{ margin-top:8px; font:700 16px/1.2 var(--ui); color:var(--leaf); }
+.cf-mvs.over{ color:var(--alert); }
+.cf-note.warn{ background:var(--alert-bg); color:var(--ink); border-color:var(--alert); }
+.cf-note b{ display:inline; }
+.cf-sum{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; padding:12px 8px; border:2px dashed var(--frame); border-radius:14px; }
+.cf-sc{ display:flex; flex-direction:column; align-items:center; text-align:center; min-width:56px; max-width:92px; }
+.cf-sc b{ font:700 24px/1.05 var(--display); font-variant-numeric:tabular-nums; }
+.cf-sc small{ font-size:13px; line-height:1.15; color:var(--muted); }
+.cf-op{ font:700 24px/1 var(--ui); color:var(--ink); }
+@media (max-width:359px){ .cf-grid.c3{ gap:6px; } .cf-tile b{ font-size:15px; } .cf-chip{ width:58px; } .cf-sbtn{ width:64px; } }
 .evcard{ margin:0 0 12px; padding:10px 14px; border:3px solid var(--btn-edge); border-radius:18px; background:var(--surface); color:var(--ink); box-shadow:0 4px 0 var(--btn-edge); font-size:16px; line-height:1.3; }
 .evcard p{ margin:0; }
 .evcard.ok{ display:flex; align-items:center; gap:12px; background:var(--pick); color:var(--pick-ink); }
@@ -2137,6 +2220,13 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .evlist{ margin:8px 0; }
 .evitem{ padding:8px 0; border-top:1px solid var(--line); }
 .evitem p{ margin:2px 0 0; }
+.evpop{ display:flex; flex-direction:column; align-items:center; gap:10px; padding:6px 2px 2px; text-align:center; }
+.evpop h3{ margin:0; font-family:var(--display); font-size:28px; line-height:1.1; }
+.evpop p{ margin:0; font-size:17px; line-height:1.35; }
+.evpop .evpmasc{ width:130px; }
+.evpop .evpmasc svg{ display:block; width:100%; height:auto; }
+.evpop .btn{ width:100%; }
+.evpop .btn.gold{ background:#F2A93B; color:#22120C; border-color:#22120C; }
 .froaster{ margin:12px 0 -4px; font:700 13px/1.2 var(--ui); letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); overflow-wrap:anywhere; }
 .fcoffee.hasroaster{ margin-top:6px; }
 .fsec{ margin-bottom:12px; }
@@ -2357,8 +2447,8 @@ button.hrow:active, .hrow.sel:active{ transform:translateY(3px); box-shadow:0 1p
 @media (max-width:359px){ .dpair .btn{ padding:8px 6px; font-size:17px; } .fcoffee.hhead h1{ font-size:30px; } .dock .btn{ font-size:18px; } .dock .btn .sub{ font-size:14px; } .dwhen{ font-size:15px; } }
 .nw{ white-space:nowrap; }
 .notice[hidden]{ display:none; }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .saymark svg, :root:not([data-theme="light"]) .evmasc svg, :root:not([data-theme="light"]) .fmark svg, :root:not([data-theme="light"]) .topmark, :root:not([data-theme="light"]) .brandmark svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); } }
-:root[data-theme="dark"] .saymark svg, :root[data-theme="dark"] .evmasc svg, :root[data-theme="dark"] .fmark svg, :root[data-theme="dark"] .topmark, :root[data-theme="dark"] .brandmark svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .saymark svg, :root:not([data-theme="light"]) .evmasc svg, :root:not([data-theme="light"]) .evpmasc svg, :root:not([data-theme="light"]) .fmark svg, :root:not([data-theme="light"]) .topmark, :root:not([data-theme="light"]) .brandmark svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); } }
+:root[data-theme="dark"] .saymark svg, :root[data-theme="dark"] .evmasc svg, :root[data-theme="dark"] .evpmasc svg, :root[data-theme="dark"] .fmark svg, :root[data-theme="dark"] .topmark, :root[data-theme="dark"] .brandmark svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); }
 /* the drink pictures sit on a light plate, as the app's other pictures do in dark mode (--icon-bg is clear in light mode) */
 .phpic{ display:block; flex:none; }
 .phpic svg{ display:block; width:62px; height:62px; background:var(--icon-bg); border-radius:14px; }
@@ -3103,6 +3193,37 @@ details.mfold > .mrows{ margin-top:14px; }
 <symbol id="ln-taste" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="24" cy="24" r="17" fill="#FBE3B0"/><path d="M16 27c2 5 14 5 16 0"/><path d="M17 19h.1M31 19h.1"/></g></symbol>
 <symbol id="ln-water" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M24 7C17 18 12 23 12 30a12 12 0 0 0 24 0C36 23 31 18 24 7z" fill="#9CC8E8"/><path d="M17 33a7 7 0 0 0 7 7"/></g></symbol>
 <symbol id="ln-seed" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"><ellipse cx="24" cy="24" rx="13" ry="18" fill="#B98A5E" transform="rotate(25 24 24)"/><path d="M19 10c6 10 -1 17 5 28"/></g></symbol>
+<symbol id="cf-latte" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(-3 0)"><circle cx="24" cy="26" r="19" fill="#FFF8EA"/><path d="M41 22 h4 a3.500 3.500 0 0 1 0 7 h-4" fill="none"/><circle cx="24" cy="26" r="13" fill="#D8B48A"/><path d="M24 34 C16 28 18 21 22 21 C23.500 21 24 22.500 24 23 C24 22.500 24.500 21 26 21 C30 21 32 28 24 34Z" fill="#FFF8EA" stroke-width="1.8"/></g></symbol>
+<symbol id="cf-cap" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(-3 0)"><circle cx="24" cy="26" r="19" fill="#FFF8EA"/><path d="M41 22 h4 a3.500 3.500 0 0 1 0 7 h-4" fill="none"/><circle cx="24" cy="26" r="13" fill="#D8B48A"/><circle cx="24" cy="26" r="9" fill="#FFF8EA" stroke-width="1.6"/><path d="M19 24 h10 M20 28 h8" stroke="#8A5230" stroke-width="1.8"/></g></symbol>
+<symbol id="cf-amer" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(-3 0)"><circle cx="24" cy="26" r="19" fill="#FFF8EA"/><path d="M41 22 h4 a3.500 3.500 0 0 1 0 7 h-4" fill="none"/><circle cx="24" cy="26" r="13" fill="#4A2A1A"/><circle cx="24" cy="26" r="9" fill="none" stroke="#C79A66" stroke-width="2"/></g></symbol>
+<symbol id="cf-flat" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(-3 0)"><circle cx="24" cy="26" r="19" fill="#FFF8EA"/><path d="M41 22 h4 a3.500 3.500 0 0 1 0 7 h-4" fill="none"/><circle cx="24" cy="26" r="13" fill="#C79A66"/><circle cx="24" cy="26" r="7" fill="#FFF8EA" stroke-width="1.8"/></g></symbol>
+<symbol id="cf-mac" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(-3 0)"><circle cx="24" cy="26" r="19" fill="#FFF8EA"/><path d="M41 22 h4 a3.500 3.500 0 0 1 0 7 h-4" fill="none"/><circle cx="24" cy="26" r="13" fill="#4A2A1A"/><circle cx="24" cy="25" r="4.500" fill="#FFF8EA" stroke-width="1.8"/></g></symbol>
+<symbol id="cf-cmac" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(-3 0)"><circle cx="24" cy="26" r="19" fill="#FFF8EA"/><path d="M41 22 h4 a3.500 3.500 0 0 1 0 7 h-4" fill="none"/><circle cx="24" cy="26" r="13" fill="#D8B48A"/><circle cx="24" cy="26" r="8" fill="#FFF8EA" stroke-width="1.6"/><path d="M17 22 l14 8 M17 28 l14 -8 M24 17 v18" stroke="#C0762B" stroke-width="2.2" fill="none"/></g></symbol>
+<symbol id="cf-mocha" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(-3 0)"><circle cx="24" cy="26" r="19" fill="#FFF8EA"/><path d="M41 22 h4 a3.500 3.500 0 0 1 0 7 h-4" fill="none"/><circle cx="24" cy="26" r="13" fill="#6B3E22"/><circle cx="24" cy="26" r="8" fill="#FFF8EA" stroke-width="1.6"/><path d="M19 24 q5 -4 10 0 q-5 6 -10 0z" fill="#6B3E22" stroke-width="1.4"/></g></symbol>
+<symbol id="cf-brewed" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11.0,15 L37.0,15 L33.62,45 L14.38,45 Z" fill="#FFF8EA"/><path d="M12.1492,25.200000000000003 L35.8508,25.200000000000003 L34.4988,37.2 L13.5012,37.2 Z" fill="#C79A66"/><rect x="9.5" y="10.5" width="29" height="4.5" rx="1.6" fill="#D9503B"/></g></symbol>
+<symbol id="cf-cold" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 10 H35 L32 41 a3 3 0 0 1-3 3 H19 a3 3 0 0 1-3-3Z" fill="#FFF8EA"/><path d="M14.3 20 H33.7 L32 41 a3 3 0 0 1-3 3 H19 a3 3 0 0 1-3-3Z" fill="#8A5230"/><rect x="18" y="22" width="8" height="8" rx="1.5" fill="#DDF1F7" transform="rotate(-12 22 26)"/><rect x="25" y="30" width="7" height="7" rx="1.5" fill="#DDF1F7" transform="rotate(10 28 33)"/><path d="M28 3 L31 21" stroke="#D9503B" stroke-width="3.4"/></g></symbol>
+<symbol id="cf-sunrise" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M36.0,32.0 L40.0,32.0" fill="none"/><path d="M32.5,40.5 L35.3,43.3" fill="none"/><path d="M24.0,44.0 L24.0,48.0" fill="none"/><path d="M15.5,40.5 L12.7,43.3" fill="none"/><path d="M12.0,32.0 L8.0,32.0" fill="none"/><path d="M15.5,23.5 L12.7,20.7" fill="none"/><path d="M24.0,20.0 L24.0,16.0" fill="none"/><path d="M32.5,23.5 L35.3,20.7" fill="none"/><circle cx="24" cy="32" r="9" fill="#F2A93B"/><path d="M4 33 H44" fill="none"/><path d="M12 40 H36" fill="none"/></g></symbol>
+<symbol id="cf-sun" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M37.0,24.0 L41.0,24.0" fill="none"/><path d="M33.2,33.2 L36.0,36.0" fill="none"/><path d="M24.0,37.0 L24.0,41.0" fill="none"/><path d="M14.8,33.2 L12.0,36.0" fill="none"/><path d="M11.0,24.0 L7.0,24.0" fill="none"/><path d="M14.8,14.8 L12.0,12.0" fill="none"/><path d="M24.0,11.0 L24.0,7.0" fill="none"/><path d="M33.2,14.8 L36.0,12.0" fill="none"/><circle cx="24" cy="24" r="10" fill="#F2A93B"/></g></symbol>
+<symbol id="cf-sunhigh" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M38.0,22.0 L42.0,22.0" fill="none"/><path d="M33.9,31.9 L36.7,34.7" fill="none"/><path d="M24.0,36.0 L24.0,40.0" fill="none"/><path d="M14.1,31.9 L11.3,34.7" fill="none"/><path d="M10.0,22.0 L6.0,22.0" fill="none"/><path d="M14.1,12.1 L11.3,9.3" fill="none"/><path d="M24.0,8.0 L24.0,4.0" fill="none"/><path d="M33.9,12.1 L36.7,9.3" fill="none"/><circle cx="24" cy="22" r="11" fill="#F2A93B"/><path d="M14 42 q4-6 10-4 q6-3 10 4Z" fill="#FFF8EA"/></g></symbol>
+<symbol id="cf-moon" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M30 6 C20 6 12 14 12 24 C12 34 20 42 30 42 C34 42 37 41 40 39 C31 38 25 32 25 24 C25 16 31 10 37 8 C35 7 33 6 30 6Z" fill="#F2A93B"/><path d="M38 14 l1.500 3 3 1.500 -3 1.500 -1.500 3 -1.500 -3 -3 -1.500 3 -1.500z" fill="#FFF8EA" stroke-width="1.6"/></g></symbol>
+<symbol id="cf-nesp" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 12 H34 L38 36 C38 40 31 43 24 43 C17 43 10 40 10 36Z" fill="#6B7C8F"/><ellipse cx="24" cy="12" rx="10" ry="3.500" fill="#FFF8EA"/><path d="M12 30 H36" stroke-width="2"/></g></symbol>
+<symbol id="cf-vertuo" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 30 C8 18 15 11 24 11 C33 11 40 18 40 30 C40 36 33 40 24 40 C15 40 8 36 8 30Z" fill="#3E5A47"/><ellipse cx="24" cy="30" rx="16" ry="4" fill="none" stroke-width="2"/><ellipse cx="24" cy="11.500" rx="4" ry="1.800" fill="#FFF8EA"/></g></symbol>
+<symbol id="cf-press" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="12" y="16" width="20" height="26" rx="3" fill="#DDF1F7"/><rect x="12" y="26" width="20" height="16" rx="3" fill="#8A5230"/><path d="M32 22 h5 a4 4 0 0 1 0 12 h-5" fill="none"/><path d="M22 6 V22" stroke-width="3"/><rect x="16" y="14" width="12" height="4" rx="1.500" fill="#D9503B"/><path d="M11 42 H33" /></g></symbol>
+<symbol id="cf-moka" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 8 H32 L35 22 H11Z" fill="#B9AE96"/><path d="M11 22 H35 L31 42 H15Z" fill="#B9AE96"/><path d="M35 12 h4 a3 3 0 0 1 3 3 v8 a3 3 0 0 1-3 3 h-4" fill="none"/><circle cx="23" cy="8" r="2.400" fill="#D9503B"/><path d="M13 22 H33" /></g></symbol>
+<symbol id="cf-espr" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 22 H34 V28 a10 10 0 0 1-10 10 h-4 a10 10 0 0 1-10-10Z" fill="#FFF8EA"/><path d="M34 24 h3 a4 4 0 0 1 0 8 h-3" fill="none"/><path d="M12 22 H32" stroke="#8A5230" stroke-width="4"/><path d="M9 42 H36" /></g></symbol>
+<symbol id="cf-aero" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="15" y="12" width="18" height="24" rx="3" fill="#FFF8EA"/><rect x="18" y="4" width="12" height="8" rx="2" fill="#D9503B"/><path d="M15 22 H33"/><path d="M12 42 H36"/><rect x="12" y="36" width="24" height="6" rx="2" fill="#8A5230"/></g></symbol>
+<symbol id="cf-clock" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="17" fill="#FFF8EA"/><path d="M24 24 V12 M24 24 L33 29" fill="none"/></g></symbol>
+<symbol id="cf-fast" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="27" cy="24" r="14" fill="#FFF8EA"/><path d="M27 24 V16 M27 24 L33 27" fill="none"/><path d="M4 16 H11 M2 24 H9 M4 32 H11" stroke="#F2A93B" stroke-width="3"/></g></symbol>
+<symbol id="cf-slow" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6 H35 M13 42 H35 M15 6 C15 18 24 20 24 24 C24 28 15 30 15 42 M33 6 C33 18 24 20 24 24 C24 28 33 30 33 42" fill="none"/><path d="M18 38 H30 L24 30Z" fill="#F2A93B" stroke-width="1.6"/></g></symbol>
+<symbol id="cf-machine" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10 H40 V30 H8Z" fill="#B9AE96"/><rect x="10" y="30" width="28" height="12" rx="2" fill="#FFF8EA"/><path d="M18 30 V36 M30 30 V36" /><path d="M14 38 H34 V42 H14Z" fill="#8A5230"/><circle cx="34" cy="17" r="3" fill="#F2A93B"/></g></symbol>
+<symbol id="cf-weak" viewBox="0 0 48 48"><path d="M11.2,23.84 H32.8 V39 a6 6 0 0 1-6 6 H17.0 a6 6 0 0 1-6-6Z" fill="#E3C9A1" stroke="none"/><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.0,16 H34.0 V39 a6 6 0 0 1-6 6 H16.0 a6 6 0 0 1-6-6Z" fill="none"/><path d="M34.0,23.0 h6.0 a4.800000000000001 4.800000000000001 0 0 1 0 10 h-6.0" fill="none"/></g></symbol>
+<symbol id="cf-reg" viewBox="0 0 48 48"><path d="M11.2,23.84 H32.8 V39 a6 6 0 0 1-6 6 H17.0 a6 6 0 0 1-6-6Z" fill="#8A5230" stroke="none"/><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.0,16 H34.0 V39 a6 6 0 0 1-6 6 H16.0 a6 6 0 0 1-6-6Z" fill="none"/><path d="M34.0,23.0 h6.0 a4.800000000000001 4.800000000000001 0 0 1 0 10 h-6.0" fill="none"/></g></symbol>
+<symbol id="cf-strong" viewBox="0 0 48 48"><path d="M11.2,23.84 H32.8 V39 a6 6 0 0 1-6 6 H17.0 a6 6 0 0 1-6-6Z" fill="#3E2516" stroke="none"/><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.0,16 H34.0 V39 a6 6 0 0 1-6 6 H16.0 a6 6 0 0 1-6-6Z" fill="none"/><path d="M34.0,23.0 h6.0 a4.800000000000001 4.800000000000001 0 0 1 0 10 h-6.0" fill="none"/></g></symbol>
+<symbol id="cf-s8" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13.0,25 L35.0,25 L32.14,45 L15.86,45 Z" fill="#FFF8EA"/><path d="M13.9724,31.8 L34.0276,31.8 L32.8836,39.8 L15.116399999999999,39.8 Z" fill="#C79A66"/><rect x="11.5" y="20.5" width="25" height="4.5" rx="1.6" fill="#D9503B"/></g></symbol>
+<symbol id="cf-s12" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5,19 L36.5,19 L33.25,45 L14.75,45 Z" fill="#FFF8EA"/><path d="M12.605,27.84 L35.394999999999996,27.84 L34.095,38.239999999999995 L13.905,38.239999999999995 Z" fill="#C79A66"/><rect x="10.0" y="14.5" width="28" height="4.5" rx="1.6" fill="#D9503B"/></g></symbol>
+<symbol id="cf-s16" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.0,13 L38.0,13 L34.36,45 L13.64,45 Z" fill="#FFF8EA"/><path d="M11.2376,23.880000000000003 L36.7624,23.880000000000003 L35.3064,36.68 L12.6936,36.68 Z" fill="#C79A66"/><rect x="8.5" y="8.5" width="31" height="4.5" rx="1.6" fill="#D9503B"/></g></symbol>
+<symbol id="cf-s20" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5,7 L39.5,7 L35.47,45 L12.53,45 Z" fill="#FFF8EA"/><path d="M9.8702,19.92 L38.1298,19.92 L36.5178,35.120000000000005 L11.482199999999999,35.120000000000005 Z" fill="#C79A66"/><rect x="7.0" y="2.5" width="34" height="4.5" rx="1.6" fill="#D9503B"/></g></symbol>
+<symbol id="mi-caffeine" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h12v5.5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5z"/><path d="M15.5 10.5h1.5a2.5 2.5 0 0 1 0 5h-1.5"/><path d="M10.5 9.8l-2 3.4h3l-2 3.4"/><path d="M6.5 3.5c-.8 1 .8 1.5 0 2.5M10.5 3.5c-.8 1 .8 1.5 0 2.5"/></g></symbol>
 </svg>
 
 <a class="skiplink" href="#app" id="skipLink">Skip to main content</a>
@@ -3855,7 +3976,7 @@ function buildRecipe(coffee, methodKey, batch, adjust, now){
   } else if (m.key === 'moka'){
     prep.push('Heat water in a kettle to just off the boil.');
     prep.push('Weigh and grind ' + D + ' g of coffee, ' + grindTxt + '. That is finer than filter and a little coarser than espresso.');
-    prep.push('A moka pot is built for a fixed ratio. If your pot differs from these amounts, fill the basket and fill the base to just below the valve instead.');
+    prep.push('A moka pot’s ratio is usually fixed by its basket. If your pot differs from these amounts, fill the basket and fill the base to just below the valve instead.');
     steps.push({ t:null, title:'Fill the base', detail:'Pour ' + W + ' g (' + W + ' mL) of hot water into the base, just below the safety valve.' });
     steps.push({ t:null, title:'Fill the basket', detail:'Add ' + D + ' g of coffee, level the surface, and do not tamp.' });
     steps.push({ t:null, title:'Heat', detail:'Screw the pot together and set it on medium-low heat with the lid open.' });
@@ -4079,7 +4200,7 @@ function fixForBase(sym, rec, ctx){
       if (ctx.methodType === 'espresso') return { primary:'Stop the shot at a higher yield: about 25% more (for example 36 g becomes 45 g).', secondary:'The shot already tastes extracted, so keep the grind and change only the yield.',
         why:'An intense, heavy shot that is not sour or bitter is concentrated, not over-extracted. It needs more water through the same coffee.', adjust:A(0, 0.5) };
       if (ctx.methodType === 'moka') return { primary:'Add a little hot water to the finished cup, a few grams at a time, until it tastes right.', secondary:'A moka pot makes a concentrated cup, so this is normal. Keep the grind the same.',
-        why:'The basket fixes how much coffee goes in, so the easiest way to weaken the cup is to dilute it.', adjust:A() };
+        why:'The basket usually fixes how much coffee goes in, so the easiest way to weaken the cup is to dilute it.', adjust:A() };
       return { primary:'Use a weaker ratio by 1 (for example 1:16 becomes 1:17).', secondary:'Or add a little hot water to the finished cup, a few grams at a time, until it tastes right.',
         why:'A cup that is intense and heavy, but not sour or bitter, was extracted well. There is simply too much coffee for the water, so the grind is fine as it is.', adjust:A(0, 1) };
     case 'muddy':
@@ -9704,7 +9825,7 @@ function evidenceFor(r, key){
   }
   if (key === 'yield'){
     if (r.yield == null) return null;
-    return out('B', 'The grounds keep about 2 to 2.5 g of water for every gram of coffee (Barista Hustle). We count 2 g, so this is a slightly generous estimate.');
+    return out('B', 'Guides put what the grounds keep at about 1.5 to 2.5 g of water for every gram of coffee, and Barista Hustle puts it at 2 to 2.5 g. We count 2 g, so this is a slightly generous estimate.');
   }
   if (key === 'target') return out('A', 'The usual North American target zone on the SCA brewing chart: 18 to 22 % extraction and 1.15 to 1.35 % strength. Other regions use slightly different strength ranges.');
   if (key === 'ice'){
@@ -10106,6 +10227,21 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 78,
+  "version": "4.030.0078",
+  "tier": "medium",
+  "at": "2026-10-14T03:48:19Z",
+  "date": "2026-10-14",
+  "title": "Caffeine from your real cup, and a clearer Save everything",
+  "notes": [
+   "A fourth Calculators row, Caffeine: tell it the drinks you usually have (home brew, pods, shop drinks or a label) and when, and it shows your day's caffeine as a mug filling toward the FDA's 400 mg line, then your usual times against suggested times on one chart. Every figure is a range, and every reason it gives is one a study supports.",
+   "It says so plainly when your usual day is over 400 mg, and warns you could have trouble sleeping when bedtime caffeine is above the Relaxed line. There is no crash zone, because a 2024 review found no evidence that timing prevents one. Pregnancy: ask your doctor.",
+   "A Caffeine in a cup calculator (coffee in grams, beans, method, regular or decaf, with the sums shown) and a caffeine line in In your cup on the Brew page.",
+   "Save everything now opens a pop-up: the bean with a thumbs up and the file name when it saved, a shrug and Try again when it did not.",
+   "Wording fixes: a one-line note that extraction counts the coffee in your cup, a softer moka line (the basket usually fixes the ratio), and one honest range for how much water the grounds keep."
+  ]
+ },
  {
   "release": 77,
   "version": "4.029.0077",
@@ -11257,6 +11393,249 @@ function shopVsHome(d, homeStars, bags){
   const homeBeans = st.length ? Math.round(st.reduce((a, b) => a + b, 0) / st.length * 10) / 10 : null, homeCup = cups.length ? cups.reduce((a, b) => a + b, 0) / cups.length : null, shopCup = d && d.price > 0 ? d.price : null;
   return { homeBeans, homeN:st.length, homeCup, shopCup, times:homeCup && shopCup ? Math.max(1, Math.round(shopCup / homeCup)) : null };
 }
+/* ---------- caffeine ----------
+   In a cup:  mg = coffee grams × caffeine in the beans (mg per g) × the share that reaches the cup.  Every figure comes as { lo, mid, hi } and the screens show the range, because bean caffeine alone spans 2.3 times across published studies.
+   In the body: one compartment, first-order absorption and elimination (Institute of Medicine 2001 says it fits):  A(t) = D·ka/(ka−ke)·(e^(−ke·t) − e^(−ka·t)),  ke = ln 2 ÷ half-life, ka solved so the peak lands at 45 minutes.  The body total is the sum over drinks.
+   A usual day is a list of drinks, each with a clock time (minutes after midnight). The planner moves the times, never the drinks.
+   Sources and ratings: audit/audit-notes.md (Build 9). The two bedtime lines are our reading of two published cutoffs (C). Strength ±20 percent is a guess (D). */
+/* caffeine in the beans, mg per gram of ground coffee (de Paula and Farah 2019: arabica 0.7 to 1.6 g per 100 g, robusta 1.8 to 2.6) */
+const CAF_BEANS = { arabica:{ lo:7, mid:12.5, hi:16 }, robusta:{ lo:18, mid:24, hi:26 } };
+/* the share of the beans' caffeine that reaches the cup: 100 percent minus what is left in the spent grounds (Vandeponseele 2021); AeroPress has no direct measure and sits between filter and immersion */
+const CAF_SHARE = { filter:{ lo:0.84, mid:0.94, hi:0.97 }, immersion:{ lo:0.78, mid:0.88, hi:0.97 }, aeropress:{ lo:0.78, mid:0.91, hi:0.97 }, moka:{ lo:0.74, mid:0.84, hi:0.94 }, espresso:{ lo:0.69, mid:0.75, hi:0.97 } };
+const CAF_CLASS = { v60:'filter', kalita:'filter', chemex:'filter', drip:'filter', phin:'filter', siphon:'immersion', switch:'immersion', clever:'immersion', press:'immersion', turkish:'immersion', cold:'immersion', aeropress:'aeropress', moka:'moka', espresso:'espresso' };
+const CAF_SHOT_G = 9;   /* grams of coffee in one espresso shot when a person counts shots (a double is about 18 g) */
+/* decaf: 0 to 13.9 mg per 16 oz brewed, 3.0 to 15.8 mg per decaf espresso shot (McCusker 2006). Brewed decaf is a share of the regular cup; a shot is a flat figure. */
+const CAF_DECAF = { brew:{ lo:0, mid:0.02, hi:0.045 }, shot:{ lo:3, mid:9, hi:16 }, brewed16:{ lo:0, mid:7, hi:14 }, pod:{ lo:2, mid:6, hi:12 } };
+const CAF_STRENGTH = { weaker:0.8, regular:1, stronger:1.2 };
+const CAF_HALF = { typical:5, smoker:3, pill:10 };   /* half-life in hours: IOM 2001 about 5; smoking shortens it 30 to 50 percent; the pill almost doubles it */
+/* the two bedtime lines, in mg left in the body at bedtime (derived from Gardiner 2023 and 2024, see audit notes) */
+const CAF_LINES = { careful:{ mg:35, label:'Careful' }, relaxed:{ mg:57, label:'Relaxed' } };
+const CAF_LIMITS = { day:400, single:200 };   /* FDA 400 mg a day; EFSA 200 mg in one go */
+const CAF_MAX_DRINKS = 8;
+/* pods: Keurig K-Cup 75 to 125 mg per 8 oz, extra bold about 150 (second hand, C); Nespresso says the Original line runs 40 to 130 mg and Vertuo 60 to 200, by size (manufacturer ranges, B) */
+const CAF_PODS = [
+  { id:'keurig', name:'Keurig K-Cup', sizes:[
+    { id:'reg', name:'Regular', note:'8 oz', lo:75, mid:100, hi:125 },
+    { id:'bold', name:'Extra bold', note:'8 oz', lo:125, mid:150, hi:175 }] },
+  { id:'nespresso', name:'Nespresso Original', sizes:[
+    { id:'ristretto', name:'Ristretto', note:'25 mL', lo:40, mid:70, hi:100 },
+    { id:'espresso', name:'Espresso', note:'40 mL', lo:40, mid:70, hi:100 },
+    { id:'lungo', name:'Lungo', note:'110 mL', lo:70, mid:90, hi:110 }] },
+  { id:'vertuo', name:'Nespresso Vertuo', sizes:[
+    { id:'espresso', name:'Espresso', note:'40 mL', lo:60, mid:105, hi:150 },
+    { id:'double', name:'Double espresso', note:'80 mL', lo:130, mid:145, hi:160 },
+    { id:'gran', name:'Gran Lungo', note:'150 mL', lo:120, mid:160, hi:200 },
+    { id:'mug', name:'Mug', note:'230 mL', lo:130, mid:165, hi:200 },
+    { id:'alto', name:'Alto', note:'414 mL', lo:160, mid:180, hi:200 }] }
+];
+/* shop drinks: Starbucks' own figures through Caffeine Informer (C). A latte or cappuccino holds one shot at 8 and 12 oz and two at 16 and 20; an americano gains a shot a size; a flat white uses smaller ristretto shots; brewed coffee grows with the ounces. A café shot measured 51 to 322 mg in one study of 20 shops (Crozier 2012), hence the wide range. */
+const CAF_SHOP_SIZES = [8, 12, 16, 20];
+const CAF_SHOT = { lo:55, mid:75, hi:140 };
+const CAF_SHOP = [
+  { id:'latte', name:'Latte', shots:{ 8:1, 12:1, 16:2, 20:2 } },
+  { id:'cappuccino', name:'Cappuccino', shots:{ 8:1, 12:1, 16:2, 20:2 } },
+  { id:'americano', name:'Americano', shots:{ 8:1, 12:2, 16:3, 20:4 } },
+  { id:'flat', name:'Flat white', shots:{ 8:1, 12:2, 16:3, 20:3 }, shot:{ lo:50, mid:65, hi:120 } },
+  { id:'caramel', name:'Caramel macchiato', shots:{ 8:1, 12:1, 16:2, 20:2 } },
+  { id:'espmac', name:'Espresso macchiato', shots:{ 8:1, 12:1, 16:1, 20:1 }, noSize:true },
+  { id:'mocha', name:'Mocha', shots:{ 8:1, 12:1, 16:2, 20:2 } },
+  { id:'brewed', name:'Brewed coffee', brewed:{ 8:155, 12:235, 16:310, 20:410 } },
+  { id:'coldbrew', name:'Cold brew', brewed:{ 8:155, 12:235, 16:310, 20:410 } }
+];
+const CAF_HOME_METHODS = ['drip', 'press', 'espresso', 'moka', 'aeropress', 'cold'];
+const cafNum = (v, lo, hi) => { const n = typeof v === 'number' ? v : parseFloat(String(v === undefined || v === null ? '' : v).replace(',', '.')); return isFinite(n) && n >= lo && n <= hi ? n : null; };
+const cafBox = (lo, mid, hi) => ({ lo:lo, mid:mid, hi:hi });
+const cafScale = (b, f) => cafBox(b.lo * f, b.mid * f, b.hi * f);
+/* grams of coffee for a home drink: weighed, counted in shots (espresso), or worked out from the cup size and the method's usual ratio */
+function cafHomeGrams(o){
+  o = o || {};
+  const m = CAF_CLASS[o.method] ? o.method : 'drip';
+  if (o.how === 'weigh') return cafNum(o.grams, 1, 500);
+  if (m === 'espresso'){ const s = cafNum(o.shots, 1, 6); return s === null ? null : s * CAF_SHOT_G; }
+  const ml = cafNum(o.ml, 20, 3000); if (ml === null) return null;
+  const mm = METHODS.find(x => x.key === m); return ml / (mm ? mm.ratio : 16);
+}
+/* caffeine in one home brew made from this much coffee: { ok, lo, mid, hi, grams } */
+function cafBrew(o){
+  o = o || {};
+  const m = CAF_CLASS[o.method] ? o.method : 'drip', g = o.grams !== undefined ? cafNum(o.grams, 0.5, 1000) : cafHomeGrams(o);
+  if (g === null) return { ok:false, why:'grams' };
+  const cls = CAF_SHARE[CAF_CLASS[m]], bean = CAF_BEANS[o.species === 'robusta' ? 'robusta' : 'arabica'];
+  let r = cafBox(g * bean.lo * cls.lo, g * bean.mid * cls.mid, g * bean.hi * cls.hi);
+  if (o.decaf){
+    if (CAF_CLASS[m] === 'espresso'){ const shots = g / CAF_SHOT_G; r = cafScale(CAF_DECAF.shot, shots); }
+    else { const reg = g * CAF_BEANS.arabica.mid * cls.mid; r = cafBox(reg * CAF_DECAF.brew.lo, reg * CAF_DECAF.brew.mid, reg * CAF_DECAF.brew.hi); }
+  }
+  r.ok = true; r.grams = g; return r;
+}
+const cafPodSizes = id => { const p = CAF_PODS.find(x => x.id === id); return p ? p.sizes : []; };
+/* one pod (or n pods in one cup: the caffeine adds up) */
+function cafPod(o){
+  o = o || {};
+  const p = CAF_PODS.find(x => x.id === o.pod); if (!p) return { ok:false, why:'pod' };
+  const s = p.sizes.find(x => x.id === o.size); if (!s) return { ok:false, why:'size' };
+  const n = cafNum(o.n === undefined ? 1 : o.n, 1, 6); if (n === null) return { ok:false, why:'n' };
+  const one = o.decaf ? CAF_DECAF.pod : s, r = cafScale(cafBox(one.lo, one.mid, one.hi), n); r.ok = true; return r;
+}
+/* shots in a shop drink of this size (a guess from the chain's published sizes, changeable) */
+function cafShopShots(drink, size){
+  const d = CAF_SHOP.find(x => x.id === drink); if (!d || !d.shots) return null;
+  return d.shots[CAF_SHOP_SIZES.indexOf(+size) >= 0 ? +size : 12];
+}
+function cafShop(o){
+  o = o || {};
+  const d = CAF_SHOP.find(x => x.id === o.drink); if (!d) return { ok:false, why:'drink' };
+  const size = CAF_SHOP_SIZES.indexOf(+o.size) >= 0 ? +o.size : 12;
+  let r;
+  if (d.brewed){
+    const mid = d.brewed[size];
+    r = o.decaf ? cafScale(CAF_DECAF.brewed16, size / 16) : cafBox(mid * 0.7, mid, mid * 1.2);
+  } else {
+    const shots = o.shots !== undefined && o.shots !== null && o.shots !== '' ? cafNum(o.shots, 1, 8) : cafShopShots(d.id, size);
+    if (shots === null) return { ok:false, why:'shots' };
+    r = cafScale(o.decaf ? CAF_DECAF.shot : (d.shot || CAF_SHOT), shots);
+  }
+  r.ok = true; return r;
+}
+/* ---------- one drink in the day ---------- */
+const CAF_KINDS = ['pod', 'home', 'shop', 'other'];
+const cafMinutes = v => { const n = cafNum(v, 0, 1439); return n === null ? null : Math.round(n); };
+const cafPick = (v, list, fallback) => list.indexOf(v) >= 0 ? v : fallback;
+function cafEntryClean(src){
+  if (!src || typeof src !== 'object' || CAF_KINDS.indexOf(src.kind) < 0) return null;
+  const e = { kind:src.kind, t:cafMinutes(src.t), strength:cafPick(src.strength, Object.keys(CAF_STRENGTH), 'regular') };
+  const n = cafNum(src.n, 1, 6); e.n = n === null ? 1 : Math.round(n);
+  if (e.kind === 'pod'){
+    const p = CAF_PODS.find(x => x.id === src.pod) || CAF_PODS[0];
+    e.pod = p.id; e.size = p.sizes.some(s => s.id === src.size) ? src.size : p.sizes[0].id; e.decaf = !!src.decaf;
+  } else if (e.kind === 'home'){
+    e.method = cafPick(src.method, CAF_HOME_METHODS, 'drip');
+    e.how = cafPick(src.how, ['weigh', 'cup'], 'cup');
+    e.species = src.species === 'robusta' ? 'robusta' : 'arabica'; e.decaf = !!src.decaf; e.edrink = cafPick(src.edrink, ['espresso', 'americano', 'milk'], 'espresso');
+    const g = cafNum(src.grams, 1, 500), ml = cafNum(src.ml, 20, 3000), sh = cafNum(src.shots, 1, 6);
+    e.grams = g === null ? null : g; e.ml = ml === null ? 240 : ml; e.shots = sh === null ? 2 : Math.round(sh);
+  } else if (e.kind === 'shop'){
+    const d = CAF_SHOP.find(x => x.id === src.drink) || CAF_SHOP[0];
+    e.drink = d.id; e.temp = src.temp === 'iced' ? 'iced' : 'hot'; e.size = CAF_SHOP_SIZES.indexOf(+src.size) >= 0 ? +src.size : 12; e.decaf = !!src.decaf;
+    const sh = cafNum(src.shots, 1, 8); e.shots = sh === null ? null : Math.round(sh);
+  } else {
+    const mg = cafNum(src.mg, 0, 1000); e.mg = mg === null ? null : mg; e.strength = 'regular';
+  }
+  return e;
+}
+/* what one entry holds: { ok, lo, mid, hi } for ALL its cups, strength applied (not to a label figure) */
+function cafEntry(e){
+  e = cafEntryClean(e); if (!e) return { ok:false, why:'entry' };
+  let r;
+  if (e.kind === 'pod') r = cafPod({ pod:e.pod, size:e.size, n:1, decaf:e.decaf });
+  else if (e.kind === 'home') r = cafBrew({ method:e.method, how:e.how, grams:e.how === 'weigh' ? e.grams : undefined, ml:e.ml, shots:e.shots, species:e.species, decaf:e.decaf });
+  else if (e.kind === 'shop') r = cafShop({ drink:e.drink, size:e.size, shots:e.shots, decaf:e.decaf });
+  else r = e.mg === null ? { ok:false, why:'mg' } : Object.assign(cafBox(e.mg, e.mg, e.mg), { ok:true });
+  if (!r.ok) return r;
+  const f = (e.kind === 'other' ? 1 : CAF_STRENGTH[e.strength]) * e.n;
+  return Object.assign(cafScale(r, f), { ok:true, n:e.n });
+}
+/* the saved caffeine setup: wake and bed in minutes, the bedtime line, how fast the body clears it, how many drinks a day and the drinks */
+function caffeineClean(src){
+  src = src && typeof src === 'object' ? src : {};
+  const w = cafMinutes(src.wake), b = cafMinutes(src.bed);
+  const entries = (Array.isArray(src.entries) ? src.entries : []).slice(0, CAF_MAX_DRINKS).map(cafEntryClean).filter(Boolean);
+  const c = cafNum(src.count, 0, CAF_MAX_DRINKS);
+  return { wake:w === null ? 420 : w, bed:b === null ? 1380 : b, line:cafPick(src.line, Object.keys(CAF_LINES), 'relaxed'), speed:cafPick(src.speed, Object.keys(CAF_HALF), 'typical'), count:Math.max(entries.length, c === null ? 0 : Math.round(c)), entries:entries };
+}
+/* ---------- the body ---------- */
+const CAF_KA_CACHE = {};
+/* ka for a half-life, solved so the peak after one dose lands at 0.75 h (bisection) */
+function cafKa(half){
+  if (CAF_KA_CACHE[half]) return CAF_KA_CACHE[half];
+  const ke = Math.LN2 / half, f = ka => Math.log(ka / ke) / (ka - ke) - 0.75;
+  let lo = ke * 1.0001, hi = 60;
+  for (let i = 0; i < 80; i++){ const mid = (lo + hi) / 2; if (f(mid) > 0) lo = mid; else hi = mid; }
+  return (CAF_KA_CACHE[half] = { ka:(lo + hi) / 2, ke:ke });
+}
+/* mg in the body at hour h from drinks [{ t (hours), mg }] */
+function cafBodyAt(items, h, half){
+  const k = cafKa(half || CAF_HALF.typical); let s = 0;
+  for (const it of items){ const t = h - it.t; if (t > 0) s += it.mg * k.ka / (k.ka - k.ke) * (Math.exp(-k.ke * t) - Math.exp(-k.ka * t)); }
+  return s;
+}
+function cafCurve(items, from, to, step, half){
+  const a = []; for (let h = from; h <= to + 1e-9; h += step) a.push([h, cafBodyAt(items, h, half)]);
+  return a;
+}
+/* bedtime in hours after the wake day starts; a bedtime at or before wake time is after midnight */
+function cafBedHours(d){ const w = d.wake / 60, b = d.bed / 60; return b <= w ? b + 24 : b; }
+/* the finished drinks of a day as [{ i, t, mg, lo, hi, n }], oldest first */
+function cafItems(d){
+  const a = [];
+  d.entries.forEach((e, i) => { if (e.t === null) return; const r = cafEntry(e); if (r.ok) a.push({ i:i, t:e.t / 60, mg:r.mid, lo:r.lo, hi:r.hi, n:r.n }); });
+  return a.sort((x, y) => x.t - y.t);
+}
+/* highest body level between the first drink and bedtime: { h, mg } */
+function cafPeak(items, bed, half){
+  let best = { h:0, mg:0 };
+  if (!items.length) return best;
+  for (let h = items[0].t; h <= bed + 1e-9; h += 1 / 12){ const v = cafBodyAt(items, h, half); if (v > best.mg) best = { h:h, mg:v }; }
+  return best;
+}
+/* ---------- reading a day ---------- */
+/* drinks less than an hour apart are one go: absorption takes about 45 minutes, so they arrive together. EFSA's 200 mg is for one intake; whether a stack counts as one intake is our reading (C). */
+const CAF_STACK_GAP = 1;
+/* safety: 'over' when the usual day is past the FDA's 400 mg, 'maybe' when only the top of the range is. sleep: 'high' when bedtime is past the Relaxed line, 'some' when past the Careful line, whichever line the person picked. */
+/* the goes in a day: [{ start, end, mg, items }] for drinks [{ i, mg }] at the hours in times */
+function cafGoes(list, times){
+  const idx = list.map((x, i) => i).sort((p, q) => times[p] - times[q]), out = [];
+  let cur = null;
+  idx.forEach(i => {
+    if (cur && times[i] - cur.end <= CAF_STACK_GAP + 1e-9){ cur.mg += list[i].mg; cur.end = times[i]; cur.items.push(list[i].i); }
+    else { if (cur) out.push(cur); cur = { start:times[i], end:times[i], mg:list[i].mg, items:[list[i].i] }; }
+  });
+  if (cur) out.push(cur);
+  return out;
+}
+const cafStacksOf = goes => goes.filter(g => g.items.length > 1 && g.mg > CAF_LIMITS.single);
+function cafAnalyze(day){
+  const d = caffeineClean(day), half = CAF_HALF[d.speed], line = CAF_LINES[d.line].mg, items = cafItems(d), bed = cafBedHours(d);
+  const total = items.reduce((a, x) => cafBox(a.lo + x.lo, a.mid + x.mg, a.hi + x.hi), cafBox(0, 0, 0));
+  const atBed = cafBodyAt(items, bed, half), peak = cafPeak(items, bed, half), goes = cafGoes(items, items.map(x => x.t));
+  return { ok:items.length > 0, items:items, total:total, atBed:atBed, line:line, overLine:atBed > line, peak:peak, stacks:cafStacksOf(goes), bigDrinks:goes.filter(g => g.items.length === 1 && g.mg > CAF_LIMITS.single), overDay:total.mid > CAF_LIMITS.day, maybeOverDay:total.mid <= CAF_LIMITS.day && total.hi > CAF_LIMITS.day, safety:total.mid > CAF_LIMITS.day ? 'over' : total.hi > CAF_LIMITS.day ? 'maybe' : 'ok', sleep:atBed > CAF_LINES.relaxed.mg ? 'high' : atBed > CAF_LINES.careful.mg ? 'some' : 'none', half:half, bed:bed };
+}
+const cafSnap = h => Math.round(h * 12) / 12;
+/* The suggested times for the same drinks. The rule: leave the day alone if it already keeps bedtime under the line and no drinks pile into one go over 200 mg. Otherwise move as little as possible (the first drink earlier, the last drink earlier or later, the ones between spread evenly) until bedtime is under the line, preferring no pile-up. If even all drinks at wake time would leave too much at bedtime, drop the latest drinks until the rest fit and say how many. */
+function cafSuggest(day){
+  const d = caffeineClean(day), a = cafAnalyze(d); if (!a.ok) return { ok:false, why:'none' };
+  const items = a.items, half = a.half, line = a.line, wake = d.wake / 60, bed = a.bed, eps = 1e-6;
+  const stat = (list, times) => { const it = list.map((x, i) => ({ t:times[i], mg:x.mg })); return { atBed:cafBodyAt(it, bed, half), peak:cafPeak(it, bed, half), stackMg:cafStacksOf(cafGoes(list, times)).reduce((m, g) => m + g.mg, 0) }; };
+  const u = stat(items, items.map(x => x.t));
+  if (u.atBed <= line + eps && u.stackMg === 0) return { ok:true, already:true, times:items.map(x => x.t), kept:items.length, dropped:[], items:items, atBed:u.atBed, peak:u.peak, stackStays:false };
+  for (let k = items.length; k >= 1; k--){
+    const list = items.slice(0, k), f0 = Math.max(list[0].t, wake), l0 = Math.max(f0, bed - 0.25);
+    let bestFree = null, bestAny = null;
+    for (let f = f0; f >= wake - eps; f -= 0.25){
+      for (let l = k === 1 ? f : l0; l >= f - eps; l -= 0.25){
+        const times = list.map((_, i) => cafSnap(k === 1 ? f : f + (l - f) * i / (k - 1)));
+        const s = stat(list, times); if (s.atBed > line + eps) continue;
+        const move = list.reduce((m, x, i) => m + Math.abs(times[i] - x.t), 0), c = { times:times, s:s, move:move };
+        if (s.stackMg === 0 && (!bestFree || move < bestFree.move - eps || (Math.abs(move - bestFree.move) <= eps && s.atBed < bestFree.s.atBed))) bestFree = c;
+        if (!bestAny || s.stackMg < bestAny.s.stackMg - eps || (Math.abs(s.stackMg - bestAny.s.stackMg) <= eps && move < bestAny.move)) bestAny = c;
+      }
+    }
+    const best = bestFree || bestAny;
+    if (best) return { ok:true, already:false, times:best.times, kept:k, dropped:items.slice(k).map(x => x.i), items:list, atBed:best.s.atBed, peak:best.s.peak, stackStays:!bestFree };
+  }
+  return { ok:true, already:false, times:[], kept:0, dropped:items.map(x => x.i), items:[], atBed:0, peak:{ h:0, mg:0 }, stackStays:false };
+}
+/* usual against suggested, with the reasons that are supported: bedtime level (C), drinks piled into one go (C), a single drink over 200 mg (EFSA, B), a day over 400 mg (FDA, A). No claim about a crash: no study shows timing prevents one. */
+function cafCompare(day){
+  const d = caffeineClean(day), a = cafAnalyze(d); if (!a.ok) return { ok:false, why:'none' };
+  const s = cafSuggest(d), why = [];
+  if (a.overLine) why.push({ id:'bed', usual:a.atBed, sugg:s.atBed, line:a.line, fixed:s.kept > 0 && s.atBed <= a.line + 1e-6 });
+  if (a.stacks.length) why.push({ id:'stack', goes:a.stacks, fixed:!s.stackStays });
+  if (a.bigDrinks.length) why.push({ id:'single', goes:a.bigDrinks });
+  if (a.overDay) why.push({ id:'day', total:a.total.mid });
+  else if (a.maybeOverDay) why.push({ id:'daymaybe', hi:a.total.hi });
+  return { ok:true, usual:a, suggested:s, why:why, same:s.already, fits:s.kept >= a.items.length };
+}
 /*ENGINE_END*/
 (function(){
 'use strict';
@@ -11508,7 +11887,7 @@ function newCoffee(){
   return { id:newId(), name:'', roaster:'', origin:'', varietal:'', roast:'', process:'', decaf:'', density:'', elevText:'', roast_date:'', bag_notes:'', scanned:'', scannedFrom:'', roastUnsure:'', dateUnsure:'', answered:'', blend:'', varietalUnsure:'' };
 }
 function newApp(){
-  return { screen:'door', resume:'', cupFor:'', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', taste:'', sound:'off', coach:'guide', level:'', calib:{}, yieldCal:{}, roasterSites:{}, gear:setupDefaults().gear }, adjust:{ grind:0, ratio:0, agit:'' }, gearOk:false, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
+  return { screen:'door', resume:'', cupFor:'', timerSave:null, coffee:newCoffee(), brew:{ method:'', water:0, grind_setting:'', tempF:null, tempComp:false, altitudeFt:null, ratio:null, agitation:'standard', technique:'standard', pulseTaste:'balanced', pulseStrength:'', ice:0.4, waterType:'', filter:'', grinderType:'', grinderKey:'', grindEdited:false, grindMethod:'', grinderName:'', waterAlk:'', waterGH:'', pourNotes:'', actualSecs:0, machine:{ drink:'cappuccino', milk:'whole', strength:null, temp:null } }, prefs:{ waterUnit:'g', coffeeUnit:'g', seenCupHelp:false, seenTermHint:false, cupView:'', taste:'', sound:'off', coach:'guide', level:'', calib:{}, yieldCal:{}, caffeine:caffeineClean(null), roasterSites:{}, gear:setupDefaults().gear }, adjust:{ grind:0, ratio:0, agit:'' }, gearOk:false, attempt:0, dialMethod:'', dialNote:null, cupBrew:null, proto:{ bowl:150 }, lastTotal:null, lastSymptom:'', lastReasons:[] };
 }
 function newCup(){
   return {
@@ -11555,6 +11934,7 @@ function loadDraft(){
       if (['new', 'comfortable', 'expert'].includes(src.prefs.level)) a.prefs.level = src.prefs.level;
       a.prefs.calib = calibClean(src.prefs.calib);
       a.prefs.yieldCal = yieldClean(src.prefs.yieldCal);   /* your own cup-yield figures, kept in this browser */
+      a.prefs.caffeine = caffeineClean(src.prefs.caffeine);   /* your usual caffeine day, kept in this browser */
       a.prefs.gear = setupClean({ gear:src.prefs.gear }, setupCtx()).gear;   /* the gear defaults of My setup, checked like a file's */
       if (src.prefs.roasterSites && typeof src.prefs.roasterSites === 'object' && !Array.isArray(src.prefs.roasterSites)){   /* the shop address remembered for each roaster */
         Object.keys(src.prefs.roasterSites).slice(0, 60).forEach(k => { const o = shopOrigin(src.prefs.roasterSites[k]), key = shopKey(k); if (o && key) a.prefs.roasterSites[key.slice(0, 60)] = o; });
@@ -11570,8 +11950,8 @@ function loadDraft(){
     a.lastTotal = typeof src.lastTotal === 'number' ? src.lastTotal : null;
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
-    const ok = ['door','shop','sdrink','staste','sperfect','shops','start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','tend','guide','tools','yield','ratio','cost','prices','tastes','wheels','chart','folk'];
-    a.screen = ok.includes(src.screen) ? src.screen : /^tp[a-z]+$/.test(String(src.screen)) ? 'tend' : 'door';   /* a Tendencies page opens its home again */
+    const ok = ['door','shop','sdrink','staste','sperfect','shops','start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','detail','learn','tend','guide','tools','yield','ratio','cost','caffeine','prices','tastes','wheels','chart','folk'];
+    a.screen = ok.includes(src.screen) ? src.screen : /^tp[a-z]+$/.test(String(src.screen)) ? 'tend' : /^caf[a-z]+$/.test(String(src.screen)) ? 'caffeine' : 'door';   /* a Tendencies page opens its home again */
     a.resume = TRAIL_HOME.includes(src.resume) ? src.resume : (TRAIL_HOME.includes(src.screen) ? src.screen : ['change', 'ready', 'timer'].includes(src.screen) ? 'recipe' : '');   /* where Keep brewing returns to */
     if (isFinite(d.at) && d.at > 0 && d.at <= Date.now() + 60000){ draftAt = d.at; if (Date.now() - d.at > DRAFT_STALE_MS) a.screen = 'door'; }   /* untouched for 3 hours: open on the first screen, the draft stays */
     /* a saved timer comes back only if it is recent: running for under 45 minutes in all, or paused within the last 30 minutes */
@@ -11635,7 +12015,7 @@ const PARENT = {
   tpflavors:'tend', tpenjoy:'tend', tprate:'tend', tpkinds:'tend', tpbrews:'tend', tpshops:'tend', tpbrewers:'tend', tpmix:() => tpMixFrom === 'tpbrewers' ? 'tpbrewers' : 'tend',
   guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'door'),
   compare:() => (cmpFrom && cmpFrom !== 'compare' && cmpFrom !== 'timer') ? cmpFrom : (app.coffee.name ? 'coffee' : 'door'),
-  tools:() => (toolsFrom && toolsFrom !== 'tools' && toolsFrom !== 'yield' && toolsFrom !== 'ratio' && toolsFrom !== 'cost' && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'door'), yield:'tools', ratio:'tools', cost:'tools',
+  tools:() => (toolsFrom && toolsFrom !== 'tools' && toolsFrom !== 'yield' && toolsFrom !== 'ratio' && toolsFrom !== 'cost' && toolsFrom !== 'caffeine' && toolsFrom !== 'cafdrink' && toolsFrom !== 'cafresult' && toolsFrom !== 'cafcup' && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'door'), yield:'tools', ratio:'tools', cost:'tools', caffeine:'tools', cafdrink:'caffeine', cafresult:'caffeine', cafcup:() => cf.from === 'recipe' ? 'recipe' : 'caffeine',
   about:() => (aboutFrom && aboutFrom !== 'about' && aboutFrom !== 'timer') ? aboutFrom : (app.coffee.name ? 'coffee' : 'door'),
   glossary:() => (glossaryFrom && glossaryFrom !== 'glossary' && glossaryFrom !== 'timer') ? glossaryFrom : 'about',
   files:() => (filesFrom && filesFrom !== 'files' && filesFrom !== 'timer') ? filesFrom : (app.coffee.name ? 'coffee' : 'door')
@@ -11685,7 +12065,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Calculators', yield:'Cup yield', ratio:'Ratio calculator', cost:'Cost of coffee', prices:'Coffee prices', tastes:'Train your palate', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', about:'About', glossary:'Glossary', files:'My files' };
+  const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Calculators', yield:'Cup yield', ratio:'Ratio calculator', cost:'Cost of coffee', caffeine:'Caffeine', cafdrink:'Add a drink', cafresult:'Your caffeine day', cafcup:'Caffeine in a cup', prices:'Coffee prices', tastes:'Train your palate', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', about:'About', glossary:'Glossary', files:'My files' };
   Object.assign(titles, TP_TITLES);
   $('topTitle').textContent = sc === 'start' || sc === 'door' || sc === 'shop' ? '' : (titles[sc] || 'BeanTelligence');
   SCREENS[sc](m);
@@ -13158,7 +13538,7 @@ function screenChart(m){
   }
   const work = h('details', { class:'chartfold', id:'chartFold' }, h('summary', { text:'Not sure of your extraction? Work it out' }),
     h('p', { class:'fine', style:'margin:6px 0', text:'Weigh the coffee you used and the drink you made, and use the strength you typed above.' }), h('div', { class:'chartin' }, doseF, outF),
-    h('p', { class:'fine', style:'margin:6px 0', text:'Extraction = strength × drink in the cup ÷ coffee. For example, 1.30 × 300 ÷ 20 = 19.5 %.' }), calc, use);
+    h('p', { class:'fine', style:'margin:6px 0', text:'Extraction = strength × drink in the cup ÷ coffee. For example, 1.30 × 300 ÷ 20 = 19.5 %. Extraction counts the coffee in your cup. Coffee left in the grounds is not counted.' }), calc, use);
   const zoneList = plain ? h('ul', { class:'prep', id:'chartMeaning', style:'margin:10px 0 0' }, [['Under 18 %', 'Often sour or thin.'], ['18 to 22 %', 'The usual zone. It is a convention.'], ['Above 22 %', 'A little above, and many like it. Above 24 %, it can be harsher.']].map(z => h('li', null, h('b', { text:z[0] + ': ' }), z[1]))) : null;
   m.append(tband('The map', { tan:'Look' }, 'where the usual zone sits', null, plot, zoneList));
   const inputs = [h('div', { class:'chartin' }, tdsF, eyF), work, out];
@@ -14930,7 +15310,7 @@ function settingsRows(r, gi){
   const target = sci && r.yield != null && type !== 'phin' && r.ratio >= 14 ? krow('Target', h('strong', { class:'kt', 'data-noterm':'', text:'18 to 22 % extraction' }), ['Strength 1.15 to 1.35 % TDS. The SCA zone, a target and not a rule of taste.']) : null;
   const rows = h('div', null,
     h('div', { class:'ktri', style:'--n:' + tiles.length }, tiles),
-    kettleNote(r),
+    cfCupRow(r), kettleNote(r),
     yLine ? h('p', { class:'yline', text:yLine }) : null, yBox,
     evidenceKey(),
     ice ? krow('Ice', waterShown(r.ice, wu), 'Finished drink: ' + waterShown(r.water, wu)) : null,
@@ -15589,12 +15969,13 @@ function brewDock(m, r){
 function screenReady(m){ app.screen = 'recipe'; return SCREENS.recipe(m); }
 /* ---------- screen: tools ---------- */
 let toolsFrom = '';
-function goTools(){ if (app.screen !== 'tools' && app.screen !== 'yield' && app.screen !== 'ratio' && app.screen !== 'cost') toolsFrom = app.screen === 'timer' ? 'ready' : app.screen; go('tools'); }
+function goTools(){ if (app.screen !== 'tools' && app.screen !== 'yield' && app.screen !== 'ratio' && app.screen !== 'cost' && app.screen !== 'caffeine' && app.screen !== 'cafdrink' && app.screen !== 'cafresult' && app.screen !== 'cafcup') toolsFrom = app.screen === 'timer' ? 'ready' : app.screen; go('tools'); }
 /* One row per tool. Add a tool here and it shows up in the list; the Menu stays one row long. */
 const TOOLS = [
   { id:'yield', icon:'cupyield', tone:'a', name:'Cup yield', text:'How much ends up in your cup, and how much water to pour for the cup you want', open:() => goYield() },
   { id:'ratio', icon:'ratio', tone:'g', name:'Ratio and strength calculator', text:'The ratio for the strength you want, and how much water to add to a strong brew', open:() => goRatio() },
-  { id:'cost', icon:'cost', tone:'t', name:'Cost of coffee', text:'What a cup costs from the price of a bag, and what you spend a month', open:() => goCost() }
+  { id:'cost', icon:'cost', tone:'t', name:'Cost of coffee', text:'What a cup costs from the price of a bag, and what you spend a month', open:() => goCost() },
+  { id:'caffeine', icon:'caffeine', tone:'g', name:'Caffeine', text:'The best times for your coffee across the day, and the caffeine in one cup', open:() => goCaffeine() }
 ];
 function screenTools(m){
   /* the tile, the page and the top bar all say Calculators; the name shows once, in the bar */
@@ -15602,6 +15983,441 @@ function screenTools(m){
     h('p', { class:'lede', style:'margin:0 0 10px', text:'Pick a helper. Each one does a single sum for you.' }),
     h('div', { class:'hublist' }, TOOLS.map(t => hubRow(t.icon, t.name, t.text, t.open, { tone:t.tone, id:'tool-' + t.id }))));
 }
+/* ---------- caffeine: pictures ---------- */
+const CF_INK = '#22120C', CF_TAN = '#C79A66', CF_GREEN = '#2E7D4F', CF_ALERT = '#B3261E';
+/* 7 as "7a", 13 as "1p" */
+const cfHourLabel = t => { const hh = ((Math.floor(t) % 24) + 24) % 24; return (hh % 12 || 12) + (hh < 12 ? 'a' : 'p'); };
+/* a little mug whose size follows the milligrams */
+function cfMugAt(cx, cy, mg, fill){
+  const k = Math.max(0.62, Math.sqrt(mg) / 19), sw = (2.4 / k).toFixed(2);
+  return '<g transform="translate(' + cx.toFixed(1) + ' ' + cy + ') scale(' + k.toFixed(2) + ')"><path d="M-11,-18 H9 V-8 a8 8 0 0 1-8 8 H-3 a8 8 0 0 1-8-8Z" fill="#FFF8EA" stroke="' + CF_INK + '" stroke-width="' + sw + '" stroke-linejoin="round"/>'
+    + '<path d="M-10,-14 H8 V-8 a7 7 0 0 1-7 7 H-3 a7 7 0 0 1-7-7Z" fill="' + fill + '"/><path d="M9,-14 h3 a4 4 0 0 1 0 8 h-3" fill="none" stroke="' + CF_INK + '" stroke-width="' + sw + '" stroke-linecap="round"/></g>';
+}
+/* the morning sun with a face, drawn at (cx, cy) */
+function cfSunSvg(cx, cy, r){
+  let g = '';
+  for (let k = 0; k < 8; k++){ const a = k * Math.PI / 4; g += '<path d="M' + (cx + (r + 3) * Math.cos(a)).toFixed(1) + ',' + (cy + (r + 3) * Math.sin(a)).toFixed(1) + ' L' + (cx + (r + 7) * Math.cos(a)).toFixed(1) + ',' + (cy + (r + 7) * Math.sin(a)).toFixed(1) + '" fill="none"/>'; }
+  g += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#F2A93B"/><circle cx="' + (cx - r * 0.35).toFixed(1) + '" cy="' + (cy - r * 0.1).toFixed(1) + '" r="' + (r * 0.1).toFixed(1) + '" fill="' + CF_INK + '"/><circle cx="' + (cx + r * 0.35).toFixed(1) + '" cy="' + (cy - r * 0.1).toFixed(1) + '" r="' + (r * 0.1).toFixed(1) + '" fill="' + CF_INK + '"/>';
+  g += '<path d="M' + (cx - r * 0.4).toFixed(1) + ',' + (cy + r * 0.25).toFixed(1) + ' q' + (r * 0.4).toFixed(1) + ' ' + (r * 0.4).toFixed(1) + ' ' + (r * 0.8).toFixed(1) + ' 0" fill="none" stroke-width="1.8"/>';
+  return '<g stroke="' + CF_INK + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' + g + '</g>';
+}
+/* a mascot svg string put at a place inside another svg */
+const cfPlace = (svg, x, y, w, h) => svg.replace('<svg ', '<svg x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" ');
+/* The day: the body's caffeine as a hill, the night sky after bedtime, a sleep line, the cups for your times and for mine. cmp is cafCompare's answer; D is the saved setup. */
+function cfChartSvg(cmp, D){
+  const a = cmp.usual, s = cmp.suggested, half = a.half, bed = a.bed, wake = D.wake / 60, line = a.line;
+  const W = 350, H = 412, pl = 10, pr = 10, g0 = 370, hill0 = 252, ytop = 14;
+  const x0 = Math.floor(wake) - 1, x1 = Math.max(x0 + 20, Math.ceil(bed) + 3);
+  const X = t => pl + (W - pl - pr) * (t - x0) / (x1 - x0);
+  const uItems = a.items.map(x => ({ t:x.t, mg:x.mg })), sItems = s.items.map((x, k) => ({ t:s.times[k], mg:x.mg }));
+  const curveOf = list => { const pts = []; for (let t = x0; t <= x1 + 1e-9; t += 1 / 12) pts.push([t, cafBodyAt(list, t, half)]); return pts; };
+  const uc = curveOf(uItems), sc = curveOf(sItems);
+  const ymax = Math.max(250, ...uc.map(p => p[1]), ...sc.map(p => p[1])) * 1.08;
+  const Y = v => hill0 - (hill0 - ytop - 40) * v / ymax;
+  const path = pts => 'M' + pts.map(p => X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1)).join(' L');
+  const pu = path(uc), ps = path(sc), xb = X(bed);
+  const lu = cafBodyAt(uItems, bed, half), ls = cafBodyAt(sItems, bed, half);
+  const o = [];
+  o.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Your usual schedule against the suggested schedule">');
+  o.push('<defs><clipPath id="cfClip"><rect x="3" y="3" width="' + (W - 6) + '" height="' + (H - 6) + '" rx="18"/></clipPath><linearGradient id="cfSky" x1="0" x2="1"><stop offset="0" stop-color="#FFE3A8"/><stop offset=".55" stop-color="#FFF1CC"/><stop offset="1" stop-color="#F6D9B5"/></linearGradient></defs>');
+  o.push('<g clip-path="url(#cfClip)"><rect width="' + W + '" height="' + H + '" fill="url(#cfSky)"/><rect x="' + xb.toFixed(1) + '" y="0" width="' + (W - xb).toFixed(1) + '" height="' + H + '" fill="#26305A"/>');
+  [[10, 30, 2.2], [22, 120, 1.8], [34, 24, 2.4], [14, 170, 1.6], [44, 140, 1.6]].forEach(q => { const sx = xb + q[0], sy = q[1], r = q[2]; o.push('<path d="M' + sx.toFixed(1) + ',' + (sy - r * 2) + ' l' + (r * .6) + ',' + (r * 1.4) + ' ' + (r * 1.4) + ',' + (r * .6) + ' -' + (r * 1.4) + ',' + (r * .6) + ' -' + (r * .6) + ',' + (r * 1.4) + ' -' + (r * .6) + ',-' + (r * 1.4) + ' -' + (r * 1.4) + ',-' + (r * .6) + ' ' + (r * 1.4) + ',-' + (r * .6) + 'z" fill="#FFE9A8"/>'); });
+  o.push('<path d="' + pu + ' L' + X(x1).toFixed(1) + ',' + hill0 + ' L' + X(x0).toFixed(1) + ',' + hill0 + ' Z" fill="' + CF_TAN + '"/>');
+  o.push('<rect x="0" y="' + hill0 + '" width="' + W + '" height="' + (g0 - hill0) + '" fill="#EBDBAE"/><rect x="' + xb.toFixed(1) + '" y="' + hill0 + '" width="' + (W - xb).toFixed(1) + '" height="' + (g0 - hill0) + '" fill="#1E2748"/>');
+  o.push('<rect x="0" y="' + g0 + '" width="' + W + '" height="60" fill="#1D3E2F"/></g>');
+  o.push('<g transform="translate(' + (X(wake) - 22).toFixed(1) + ' 24)">' + cfSunSvg(22, 22, 13) + '</g>');
+  o.push('<path d="' + pu + '" fill="none" stroke="' + CF_INK + '" stroke-width="3" stroke-linejoin="round"/>');
+  o.push('<path d="' + ps + '" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linejoin="round" opacity=".85"/><path d="' + ps + '" fill="none" stroke="' + CF_GREEN + '" stroke-width="4" stroke-linejoin="round" stroke-dasharray="9 6"/>');
+  o.push('<line x1="' + (xb - 108).toFixed(1) + '" x2="' + (W - 8) + '" y1="' + Y(line).toFixed(1) + '" y2="' + Y(line).toFixed(1) + '" stroke="' + CF_ALERT + '" stroke-width="2.4" stroke-dasharray="5 4"/>');
+  o.push('<rect x="' + (xb - 176).toFixed(1) + '" y="' + (Y(line) - 10).toFixed(1) + '" width="72" height="20" rx="10" fill="#FFF8EA" stroke="' + CF_ALERT + '" stroke-width="2"/><text x="' + (xb - 140).toFixed(1) + '" y="' + (Y(line) + 4).toFixed(1) + '" text-anchor="middle" font-size="12" font-weight="700" fill="' + CF_ALERT + '">sleep ' + line + '</text>');
+  o.push('<circle cx="' + xb.toFixed(1) + '" cy="' + Y(lu).toFixed(1) + '" r="6" fill="' + CF_TAN + '" stroke="' + CF_INK + '" stroke-width="2.4"/><circle cx="' + xb.toFixed(1) + '" cy="' + Y(ls).toFixed(1) + '" r="6" fill="' + CF_GREEN + '" stroke="#FFFFFF" stroke-width="2.4"/>');
+  o.push('<rect x="' + (xb - 70).toFixed(1) + '" y="' + (Y(lu) - 38).toFixed(1) + '" width="62" height="22" rx="11" fill="#FFF8EA" stroke="' + CF_INK + '" stroke-width="2.2"/><text x="' + (xb - 39).toFixed(1) + '" y="' + (Y(lu) - 23).toFixed(1) + '" text-anchor="middle" font-size="12" font-weight="700" fill="' + CF_INK + '">' + Math.round(lu) + ' mg</text>');
+  o.push('<rect x="' + (xb - 70).toFixed(1) + '" y="' + (Y(ls) + 8).toFixed(1) + '" width="62" height="22" rx="11" fill="' + CF_GREEN + '" stroke="#FFFFFF" stroke-width="2.2"/><text x="' + (xb - 39).toFixed(1) + '" y="' + (Y(ls) + 23).toFixed(1) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#FFFFFF">' + Math.round(ls) + ' mg</text>');
+  o.push(cfPlace(mascotSvg({ view:'bust', face:'sleepy', outfit:'suit' }), W - 86, 18, 74, 68));
+  o.push('<text x="188" y="' + (hill0 + 40) + '" font-size="12" font-weight="700" fill="#5C4A3E">Your times</text><text x="188" y="' + (hill0 + 92) + '" font-size="12" font-weight="700" fill="' + CF_GREEN + '">Suggested times</text>');
+  const lane = (list, y, fill, col) => { let last = -99; list.slice().sort((p, q) => p.t - q.t).forEach(c => { const cx = X(c.t), dy = cx - last < 34 ? 13 : 0; o.push(cfMugAt(cx, y, c.mg, fill)); o.push('<text x="' + cx.toFixed(1) + '" y="' + (y + 13 + dy) + '" text-anchor="middle" font-size="12" font-weight="700" fill="' + col + '">' + cfClock(c.t * 60, true) + '</text>'); last = cx; }); };
+  lane(uItems, hill0 + 38, CF_TAN, '#5C4A3E'); lane(sItems, hill0 + 90, CF_GREEN, CF_GREEN);
+  for (let t = Math.ceil(wake); t <= x1 - 1; t += 3) o.push('<text x="' + X(t).toFixed(1) + '" y="' + (g0 + 26) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#E0EDE6">' + cfHourLabel(t) + '</text>');
+  o.push('<rect x="3" y="3" width="' + (W - 6) + '" height="' + (H - 6) + '" rx="18" fill="none" stroke="' + CF_INK + '" stroke-width="3"/></svg>');
+  return o.join('');
+}
+/* the mug that fills to the day's total: the part over the FDA's 400 mg is drawn red */
+function cfMugSvg(total){
+  const cap = Math.max(520, total * 1.12), yb = 128, ytop = 34, Y = v => yb - (yb - ytop) * Math.min(v, cap) / cap, over = total > CAF_LIMITS.day;
+  const body = 'M22,26 H100 V104 a24 24 0 0 1-24 24 H46 a24 24 0 0 1-24-24Z';
+  const o = ['<svg viewBox="0 0 150 150" width="100%" role="img" aria-label="A mug filled to about ' + Math.round(total) + ' mg, with a line at the 400 mg the FDA cites">',
+    '<defs><clipPath id="cfMugClip"><path d="' + body + '"/></clipPath></defs>',
+    '<path d="M44,18 c-4,-5 4,-8 0,-14 M62,18 c-4,-5 4,-8 0,-14 M80,18 c-4,-5 4,-8 0,-14" fill="none" stroke="#C79A66" stroke-width="3" stroke-linecap="round"/>',
+    '<path d="' + body + '" fill="#FFF8EA"/>',
+    '<g clip-path="url(#cfMugClip)"><rect x="0" y="' + Y(Math.min(total, CAF_LIMITS.day)).toFixed(1) + '" width="130" height="' + (yb + 4 - Y(Math.min(total, CAF_LIMITS.day))).toFixed(1) + '" fill="#8A5230"/>'
+      + (over ? '<rect x="0" y="' + Y(total).toFixed(1) + '" width="130" height="' + (Y(CAF_LIMITS.day) - Y(total)).toFixed(1) + '" fill="#D9503B"/>' : '') + '</g>',
+    '<path d="M100,46 h10 a15 15 0 0 1 0 30 h-10" fill="none" stroke="' + CF_INK + '" stroke-width="3" stroke-linecap="round"/><path d="' + body + '" fill="none" stroke="' + CF_INK + '" stroke-width="3" stroke-linejoin="round"/>',
+    '<line x1="12" x2="112" y1="' + Y(CAF_LIMITS.day).toFixed(1) + '" y2="' + Y(CAF_LIMITS.day).toFixed(1) + '" stroke="' + CF_ALERT + '" stroke-width="2.6" stroke-dasharray="6 4"/>',
+    '<rect x="20" y="' + (Y(CAF_LIMITS.day) - 24).toFixed(1) + '" width="80" height="20" rx="10" fill="#FFF8EA" stroke="' + CF_ALERT + '" stroke-width="2"/><text x="60" y="' + (Y(CAF_LIMITS.day) - 10).toFixed(1) + '" text-anchor="middle" font-size="12" font-weight="700" fill="' + CF_ALERT + '">FDA 400 mg</text></svg>'];
+  return o.join('');
+}
+/* ---------- screen: caffeine in one cup ---------- */
+let cfc = null, cfcHost = null;
+/* every method on the Brew page falls under one of the six tiles */
+const CF_TILE_OF = { v60:'drip', kalita:'drip', chemex:'drip', phin:'drip', drip:'drip', switch:'press', clever:'press', siphon:'press', turkish:'press', press:'press', aeropress:'aeropress', moka:'moka', espresso:'espresso', cold:'cold' };
+const CF_SHARE_WORDS = { filter:'a filter cup', immersion:'a press or cold brew cup', aeropress:'an AeroPress cup', moka:'a moka pot cup', espresso:'an espresso cup' };
+const cfcDefaults = () => ({ method:'espresso', grams:'18', species:'arabica', decaf:false, open:{ work:false } });
+/* o is an optional { method, grams, species, decaf } to start from, such as the brew just worked out */
+function goCafCup(o){
+  cfc = cfcDefaults(); cf.from = app.screen === 'recipe' || app.screen === 'ready' ? 'recipe' : 'caffeine';
+  if (o && typeof o === 'object' && o.method){ cfc.method = CAF_CLASS[o.method] ? o.method : 'drip'; cfc.grams = String(Math.round((+o.grams || 18) * 10) / 10); cfc.species = o.species === 'robusta' ? 'robusta' : 'arabica'; cfc.decaf = !!o.decaf; }
+  go('cafcup');
+}
+const cfcRes = () => cafBrew({ method:cfc.method, grams:cfc.grams, species:cfc.species, decaf:cfc.decaf });
+/* the sums with this person's numbers, drawn as the equation and then in words */
+function cfcWorkNodes(res){
+  if (!res.ok) return [h('p', { class:'fine', style:'margin:0', text:'Enter the coffee in grams to see the sums.' })];
+  const cls = CAF_CLASS[cfc.method], bean = CAF_BEANS[cfc.species], share = CAF_SHARE[cls], f = x => String(Math.round(x * 10) / 10), pc = x => Math.round(x * 100);
+  const cell = (big, small) => h('span', { class:'cf-sc' }, h('b', { text:big }), h('small', { text:small }));
+  if (cfc.decaf){
+    return [h('div', { class:'cf-sum' }, cell(f(res.grams) + ' g', 'coffee'), h('span', { class:'cf-op', text:'→' }), cell(cfMg(res.mid) + ' mg', 'decaf, a guess')),
+      h('p', { class:'fine', style:'margin:8px 0 0', text:'Decaf coffee is not zero. One lab study found 0 to 14 mg in a 16 oz brewed cup and 3 to 16 mg in a decaf espresso shot (McCusker 2006, rated B). We take that as a small share of the regular cup, so the range is wide.' })];
+  }
+  return [h('div', { class:'cf-sum' }, cell(f(res.grams) + ' g', 'coffee'), h('span', { class:'cf-op', text:'×' }), cell(f(bean.mid), 'mg per gram'), h('span', { class:'cf-op', text:'×' }), cell(pc(share.mid) + '%', 'reaches ' + CF_SHARE_WORDS[cls]), h('span', { class:'cf-op', text:'=' }), cell(cfMg(res.mid), 'mg')),
+    h('p', { class:'fine', style:'margin:8px 0 0', text:(cfc.species === 'robusta' ? 'Robusta' : 'Arabica') + ' beans hold about ' + f(bean.mid) + ' mg of caffeine per gram (' + f(bean.lo) + ' to ' + f(bean.hi) + ' in published tests). ' + CF_SHARE_WORDS[cls].replace(/^an? /, '').replace(/^./, c => c.toUpperCase()) + ' gets about ' + pc(share.mid) + '% of it into the cup (' + pc(share.lo) + ' to ' + pc(share.hi) + '%). The low and high numbers use the ends of those ranges. The share is our reading of lab results on the caffeine left in used grounds, rated C in the Science Audit. The sums match three lab measurements of real cups.' })];
+}
+function cfcLive(){
+  const res = cfcRes(), box = $('cfcAnswer'); if (box) box.replaceWith(cfAnswer('About', res, 'cfcAnswer'));
+  const w = $('cfcWork'); if (w){ w.textContent = ''; w.append(...cfcWorkNodes(res)); }
+}
+function cfcPaint(){
+  const host = cfcHost; host.textContent = '';
+  const tile = CF_TILE_OF[cfc.method] || 'drip', res = cfcRes();
+  const setM = m => { if (CF_TILE_OF[cfc.method] !== m){ cfc.method = m; cfcPaint(); } };
+  host.append(toolHero('Caffeine in a cup', 'Weigh the coffee. I guess the caffeine.', 'caffeine'), sayRow('Tell me how much coffee went in and how you made it. I will work out the caffeine.', '', 'informing'),
+    tband('Your cup', 'Type or pick', 'a calculator', { pic:'beans' },
+      cfQ('How much coffee?'), ycNum('cfcGrams', 'Coffee in grams', 'g', cfc.grams, 0.5, v => { cfc.grams = v; cfcLive(); }, '18'),
+      cfQ('Which beans?'), cfGrid(2, [cfTile('bean-3', 'Arabica', 'most specialty coffee', cfc.species !== 'robusta', () => { cfc.species = 'arabica'; cfcPaint(); }, { k:'arabica' }), cfTile('bean-5', 'Robusta', 'about twice the caffeine', cfc.species === 'robusta', () => { cfc.species = 'robusta'; cfcPaint(); }, { k:'robusta' })], 'Which beans'),
+      cfFine('Not sure? Pick Arabica. It is what most specialty bags are.'),
+      cfQ('How did you make it?'), cfGrid(3, ['drip', 'press', 'espresso', 'moka', 'aeropress', 'cold'].map(m => cfTile(cfPicId({ kind:'home', method:m }), CF_METHOD_NAMES[m].replace(' machine', '').replace(' coffee', ''), { drip:'pour-over, drip', press:'immersion' }[m] || '', tile === m, () => setM(m), { k:m })), 'How you made it'),
+      cfQ('Regular or decaf?'), cfGrid(2, [cfTile('bean-3', 'Regular', '', !cfc.decaf, () => { cfc.decaf = false; cfcPaint(); }, { k:'reg' }), cfTile('art-decaf', 'Decaf', 'not zero: a few mg', cfc.decaf, () => { cfc.decaf = true; cfcPaint(); }, { k:'decaf' })], 'Regular or decaf'),
+      cfAnswer('About', res, 'cfcAnswer')),
+    toolFold(cfc.open, 'work', 'cfcWorkd', 'How this is worked out', 'The sums, with your numbers', 'flask', h('div', { id:'cfcWork' }, ...cfcWorkNodes(res))),
+    hubRow('caffeine', 'Your caffeine day', 'Find the best times for your drinks', goCaffeine, { tone:'t', id:'cfcToDay' }));
+}
+function screenCafCup(m){ if (!cfc) cfc = cfcDefaults(); cfcHost = h('div', { id:'cfcHost' }); m.append(cfcHost); cfcPaint(); }
+/* the line on the Brew page, under Coffee, Water and In your cup: the caffeine in this cup, with a way to see the sums */
+function cfCupRow(r){
+  const key = r && r.method && r.method.key, dose = r && r.dose; if (!(dose > 0) || !CAF_CLASS[key]) return null;
+  const c = app.coffee || {}, spec = { method:key, grams:dose, species:/robusta/i.test(String(c.varietal || '')) ? 'robusta' : 'arabica', decaf:c.decaf === 'yes' }, res = cafBrew(spec); if (!res.ok) return null;
+  return h('button', { type:'button', class:'cf-cuprow', id:'cfCupRow', onclick:() => goCafCup(spec) }, symPic('cf-reg'), h('span', { class:'cf-rt' }, h('b', { text:'Caffeine in this cup' }), h('small', { text:'An estimate. Tap to see the sums.' })),
+    h('span', { class:'cf-rmg' }, h('b', { text:cfMg(res.mid) }), h('small', { text:'mg' + (cfRangeText(res) ? ' · ' + cfRangeText(res) : '') })));
+}
+/* ---------- screen: your caffeine day ---------- */
+let cfdayHost = null;
+function goCaffeine(){ go('caffeine'); }
+const CF_LINE_TILES = [['careful', 'cf-moon', 'Careful', '35 mg left at bedtime'], ['relaxed', 'cf-sunrise', 'Relaxed', '57 mg left at bedtime']];
+const CF_SPEED_TILES = [['typical', 'cf-clock', 'Typical', 'half gone in about 5 hours'], ['smoker', 'cf-fast', 'Smoker', 'about 3 hours'], ['pill', 'cf-slow', 'On the pill', 'about 10 hours']];
+/* how many drinks the usual day has; three until the person says */
+const cfCount = D => D.count || 3;
+const cfRepaint = () => { if (cfdayHost) cfDayPaint(); };
+function cfRow(e, i){
+  const r = cafEntry(e), chip = h('span', { class:'cf-chip' + (e.t === null ? ' none' : '') }, e.t === null ? '?' : cfClock(e.t, true), h('small', { text:e.t === null ? 'time' : cfClock(e.t).slice(-2) }));
+  return h('button', { type:'button', class:'cf-row', 'data-i':String(i), 'aria-label':'Change ' + cfTitle(e), onclick:() => goCafDrink(i) }, chip, symPic(cfPicId(e)),
+    h('span', { class:'cf-rt' }, h('b', { text:cfTitle(e) }), h('small', { text:cfSub(e) })),
+    r.ok ? h('span', { class:'cf-rmg' }, h('b', { text:cfMg(r.mid) }), h('small', { text:'mg' + (cfRangeText(r) ? ' · ' + cfRangeText(r) : '') })) : h('span', { class:'cf-rmg' }, h('small', { text:'unfinished' })));
+}
+const cfEmptyRow = n => h('button', { type:'button', class:'cf-row empty', 'data-empty':String(n), onclick:() => goCafDrink(-1) }, h('span', { class:'cf-chip none' }, '+'), h('span', { class:'cf-rt' }, h('b', { text:'Drink ' + n }), h('small', { text:'tap to add what you usually have' })));
+function cfSleepCard(D){
+  return tband('Your sleep', { tan:'Tap to change' }, '', { pic:'beans' }, h('div', { class:'cf-grid c2' },
+    cfTimeTile('I wake at', 'cf-sunrise', D.wake, m => { D.wake = m; cfSave(); cfRepaint(); }, 'cfWake'), cfTimeTile('I go to bed at', 'cf-moon', D.bed, m => { D.bed = m; cfSave(); cfRepaint(); }, 'cfBed')));
+}
+function cfCountCard(D){
+  return tband('How many times a day?', 'Pick', 'your usual, not your best day', {}, cfStepper('cfCount', cfCount(D), Math.max(1, D.entries.length), 8, v => { const d = cfData(); d.count = v; app.prefs.caffeine = d; cfSave(); cfRepaint(); }),
+    h('p', { class:'cf-fine center', text:'Count the drinks you have most days. You can change this later.' }));
+}
+function cfShow(){
+  const D = cfData(); if (!cafItems(D).length) return;
+  cf.applied = false; go('cafresult');
+}
+function cfListCard(D){
+  const n = Math.max(cfCount(D), D.entries.length), order = D.entries.map((e, i) => i).sort((a, b) => (D.entries[a].t === null ? 9999 : D.entries[a].t) - (D.entries[b].t === null ? 9999 : D.entries[b].t));
+  const rows = order.map(i => cfRow(D.entries[i], i));
+  for (let k = D.entries.length + 1; k <= n; k++) rows.push(cfEmptyRow(k));
+  const filled = cafItems(D).length, ready = filled > 0;
+  const btn = h('button', { type:'button', class:'btn primary block', id:'cfShow', text:'Show my schedule', onclick:cfShow }); btn.disabled = !ready;
+  return tband('What you have, and when', 'Add', filled + ' of ' + n + ' filled in' + (D.entries.length ? ' · tap one to change it' : ''), { pic:'beans' }, h('div', { class:'cf-rows' }, rows),
+    D.entries.length && D.entries.length < 8 && D.entries.length >= n ? h('button', { type:'button', class:'btn block', id:'cfAdd', style:'margin:8px 0 0', text:'Add another drink', onclick:() => { const d = cfData(); d.count = Math.min(8, d.entries.length + 1); app.prefs.caffeine = d; cfSave(); goCafDrink(-1); } }) : null,
+    ready && filled < n ? h('p', { class:'cf-fine center', text:'Empty ones are left out of the schedule.' }) : null, btn);
+}
+function cfSumsFold(D){
+  return toolFold(cf.open, 'sums', 'cfSums', 'Change the sums', 'Your sleep line and how fast you clear caffeine', 'flask', h('div', null,
+    cfQ('How careful about sleep?'), cfGrid(2, CF_LINE_TILES.map(x => cfTile(x[1], x[2], x[3], D.line === x[0], () => { const d = cfData(); d.line = x[0]; app.prefs.caffeine = d; cfSave(); cfRepaint(); }, { k:x[0] })), 'Sleep line'),
+    cfFine('Both lines are our reading of two sleep studies, so they are rated C in the Science Audit. Relaxed is what 100 mg four hours before bed left in the body without a measurable effect. Careful is what two meta-analysis cutoffs left.'),
+    cfQ('How fast do you clear caffeine?'), cfGrid(3, CF_SPEED_TILES.map(x => cfTile(x[1], x[2], x[3], D.speed === x[0], () => { const d = cfData(); d.speed = x[0]; app.prefs.caffeine = d; cfSave(); cfRepaint(); }, { cls:'sm', k:x[0] })), 'How fast you clear caffeine'),
+    cfFine('About 5 hours is the usual half-life. Smoking shortens it by 30 to 50 percent and the pill can nearly double it (rated B). Pregnancy slows it much more, so ask your doctor first.')));
+}
+function cfDayPaint(){
+  const D = cfData(), host = cfdayHost; host.textContent = '';
+  host.append(toolHero('Your caffeine day', 'Find your best schedule.', 'caffeine'), sayRow('Tell me what you usually have and when. I will suggest a better schedule.', '', 'happy'),
+    cfSleepCard(D), cfCountCard(D), cfListCard(D), cfSumsFold(D),
+    hubRow('caffeine', 'Caffeine in one cup', 'Weigh the coffee and get the milligrams', goCafCup, { tone:'t', id:'cfToCup' }));
+}
+function screenCaffeine(m){ cfdayHost = h('div', { id:'cfdayHost' }); m.append(cfdayHost); cfDayPaint(); }
+/* ---------- screen: add or change one drink ---------- */
+let cfdHost = null;
+/* i is the drink to change, or -1 for a new one */
+function goCafDrink(i){
+  const D = cfData();
+  cf.idx = i >= 0 && D.entries[i] ? i : -1;
+  cf.d = cf.idx >= 0 ? JSON.parse(JSON.stringify(D.entries[i])) : { kind:'', t:Math.min(D.wake + D.entries.length * 180, 1439), n:1, strength:'regular', decaf:false };
+  go('cafdrink');
+}
+/* choosing a kind starts that kind's answers at their usual values; the time and the count stay */
+function cfdKind(kind){
+  const old = cf.d, d = { kind, t:old.t, n:1, strength:'regular', decaf:false };
+  if (kind === 'pod'){ d.pod = 'keurig'; d.size = 'reg'; }
+  else if (kind === 'home') Object.assign(d, { method:'drip', how:'cup', ml:240, grams:'', shots:2, species:'arabica', edrink:'americano' });
+  else if (kind === 'shop') Object.assign(d, { drink:'latte', temp:'hot', size:12, shots:null });
+  else d.mg = '';
+  cf.d = d;
+}
+const CF_SHOP_PICS = { latte:'cf-latte', cappuccino:'cf-cap', americano:'cf-amer', flat:'cf-flat', caramel:'cf-cmac', espmac:'cf-mac', mocha:'cf-mocha', brewed:'cf-brewed', coldbrew:'cf-cold' };
+const CF_POD_SIZE_PICS = { reg:'cf-reg', bold:'cf-strong', ristretto:'cf-espr', espresso:'cf-espr', double:'cf-espr', lungo:'cf-reg', gran:'cf-reg', mug:'cf-reg', alto:'cf-s16' };
+function cfdSections(d){
+  const out = [], paint = () => cfdPaint(), pick = (k, v, then) => () => { if (d[k] !== v){ d[k] = v; if (then) then(); paint(); } };
+  const times = [cfQ('What time do you have it?'), cfTimeTile('Tap to set the time', 'cf-clock', d.t, m => { d.t = m; paint(); }, 'cfdTime'), ...cfQuickTimes(d.t, m => { d.t = m; paint(); })];
+  const decaf = [cfQ('Regular or decaf?'), cfGrid(2, [cfTile('bean-3', 'Regular', '', !d.decaf, pick('decaf', false), { k:'reg' }), cfTile('art-decaf', 'Decaf', 'not zero: a few mg', !!d.decaf, pick('decaf', true), { k:'decaf' })], 'Regular or decaf')];
+  const many = (q, note) => [cfQ(q), note ? cfFine(note) : null, cfStepper('cfdN', d.n, 1, 6, v => { d.n = v; cfdLive(); })];
+  out.push(cfQ('What is it?'), cfGrid(2, [['home', 'art-filter', 'Home brew', 'dripper, press, machine'], ['pod', 'art-pod', 'Pod or capsule', 'Nespresso, K-Cup'], ['shop', 's-shop', 'Shop drink', 'latte, macchiato'], ['other', 'bean-3', 'Something else', 'energy drink, tea']].map(k =>
+    cfTile(k[1], k[2], k[3], d.kind === k[0], () => { if (d.kind !== k[0]){ cfdKind(k[0]); paint(); } }, { k:k[0] })), 'What it is'));
+  if (d.kind === 'pod'){
+    const p = CAF_PODS.find(x => x.id === d.pod) || CAF_PODS[0], n = p.sizes.length;
+    out.push(cfQ('Which kind of pod?'), cfGrid(3, CAF_PODS.map(x => cfTile(x.id === 'keurig' ? 'art-pod' : x.id === 'nespresso' ? 'cf-nesp' : 'cf-vertuo', x.id === 'keurig' ? 'Keurig' : x.name, x.id === 'keurig' ? 'K-Cup' : x.id === 'nespresso' ? 'small pod' : 'round pod', d.pod === x.id, () => { if (d.pod !== x.id){ d.pod = x.id; d.size = x.sizes[0].id; paint(); } }, { k:x.id })), 'Kind of pod'),
+      cfQ('How big is the cup it makes?'), cfGrid(n > 3 ? 5 : n, p.sizes.map(s => cfTile(CF_POD_SIZE_PICS[s.id], s.name, s.note, d.size === s.id, pick('size', s.id), { cls:n > 3 ? 'sm' : '', k:s.id })), 'Cup size'),
+      ...many('How many pods at a time?', 'Two pods in one go is twice the caffeine of one.'), ...decaf);
+  } else if (d.kind === 'home'){
+    const esp = d.method === 'espresso';
+    out.push(cfQ('How did you make it?'), cfGrid(3, ['espresso', 'drip', 'press', 'moka', 'aeropress', 'cold'].map(m =>
+      cfTile(cfPicId({ kind:'home', method:m }), CF_METHOD_NAMES[m], { espresso:'bean to cup, espresso', drip:'pour-over, drip', press:'immersion' }[m] || '', d.method === m, () => { if (d.method !== m){ d.method = m; const ps = yieldPresets(m); d.ml = ps[Math.min(1, ps.length - 1)][1]; paint(); } }, { k:m })), 'How you made it'));
+    if (esp){
+      out.push(cfQ('Which drink?'), cfGrid(3, [['espresso', 'cf-espr', 'Espresso', '', 1], ['americano', 'cf-amer', 'Americano', 'a bigger coffee', 2], ['milk', 'cf-latte', 'Latte or cappuccino', 'with milk', 2]].map(x => cfTile(x[1], x[2], x[3], d.edrink === x[0], () => { d.edrink = x[0]; d.shots = x[4]; paint(); }, { k:x[0] })), 'Which drink'),
+        cfQ('How many shots?'), cfFine('An Americano from your machine is usually 1 or 2 shots with water added.'), cfStepper('cfdShots', d.shots, 1, 6, v => { d.shots = v; cfdLive(); }));
+    } else {
+      out.push(cfQ('How much coffee?'), cfGrid(2, [cfTile('art-scale', 'Weigh it', 'grams of coffee', d.how === 'weigh', pick('how', 'weigh'), { k:'weigh' }), cfTile('cf-reg', 'Go by cup size', 'we work out the coffee', d.how !== 'weigh', pick('how', 'cup'), { k:'cup' })], 'How to count the coffee'));
+      if (d.how === 'weigh') out.push(ycNum('cfdGrams', 'Coffee in grams', 'g', d.grams, 0.5, v => { d.grams = v; cfdLive(); }, '18'));
+      else { const ps = yieldPresets(d.method); out.push(cfGrid(ps.length <= 4 ? ps.length : 3, ps.map((x, i) => cfTile(['cf-s8', 'cf-s12', 'cf-s16', 'cf-s20', 'cf-s20'][Math.min(i, 4)], x[0], x[1] + ' mL', +d.ml === x[1], pick('ml', x[1]), { cls:'sm', k:'ml' + x[1] })), 'Cup size')); }
+      out.push(cfQ('Which beans?'), cfGrid(2, [cfTile('bean-3', 'Arabica', 'most specialty coffee', d.species !== 'robusta', pick('species', 'arabica'), { k:'arabica' }), cfTile('bean-5', 'Robusta', 'about twice the caffeine', d.species === 'robusta', pick('species', 'robusta'), { k:'robusta' })], 'Which beans'), cfFine('Not sure? Pick Arabica. It is what most specialty bags are.'));
+    }
+    out.push(...decaf, cfQ('How strong do you make it?'), cfGrid(3, [['weaker', 'cf-weak', 'Weaker', 'about 20% less'], ['regular', 'cf-reg', 'Regular', 'as you usually make it'], ['stronger', 'cf-strong', 'Stronger', 'about 20% more']].map(x => cfTile(x[1], x[2], x[3], d.strength === x[0], pick('strength', x[0]), { k:x[0] })), 'How strong'),
+      cfFine('A rough nudge: no study measures this, so it is a guess (rated D), and the range covers it.'), ...many('How many cups at a time?'));
+  } else if (d.kind === 'shop'){
+    const sd = CAF_SHOP.find(x => x.id === d.drink) || CAF_SHOP[0];
+    out.push(cfQ('Which drink?'), cfGrid(3, CAF_SHOP.map(x => cfTile(CF_SHOP_PICS[x.id], x.name, '', d.drink === x.id, () => { if (d.drink !== x.id){ d.drink = x.id; d.shots = null; if (x.id === 'coldbrew') d.temp = 'iced'; paint(); } }, { k:x.id })), 'Which drink'));
+    if (sd.id !== 'coldbrew') out.push(cfQ('Hot or iced?'), cfGrid(2, [cfTile('cf-latte', 'Hot', '', d.temp !== 'iced', pick('temp', 'hot'), { k:'hot' }), cfTile('cf-cold', 'Iced', '', d.temp === 'iced', pick('temp', 'iced'), { k:'iced' })], 'Hot or iced'));
+    if (!sd.noSize) out.push(cfQ('How big?'), cfGrid(4, CAF_SHOP_SIZES.map(s => cfTile('cf-s' + s, CF_SIZE_NAMES[s], s + ' oz', +d.size === s, () => { if (+d.size !== s){ d.size = s; d.shots = null; paint(); } }, { cls:'sm', k:'s' + s })), 'How big'), cfFine('Starbucks calls these Short, Tall, Grande and Venti.'));
+    if (sd.shots){ const g = cafShopShots(sd.id, d.size); out.push(cfQ('Shots of espresso'), cfFine('We guessed ' + g + ' from the size. Change it if you know.'), cfStepper('cfdShots', d.shots === null ? g : d.shots, 1, 8, v => { d.shots = v; cfdLive(); })); }
+    out.push(...many('How many?'), ...decaf);
+  } else if (d.kind === 'other'){
+    out.push(cfQ('Caffeine on the label'), ycNum('cfdMg', 'Milligrams', 'mg', d.mg, 1, v => { d.mg = v; cfdLive(); }, '80'), cfFine('Look for mg on the can, bottle or box. We use it as it is.'), ...many('How many?'));
+  }
+  if (d.kind) out.push(...times);
+  return out.filter(Boolean);
+}
+function cfdLive(){
+  const r = cafEntry(cf.d), box = $('cfdAnswer'); if (box) box.replaceWith(cfAnswer('This drink is about', r, 'cfdAnswer'));
+  const sv = $('cfdSave'); if (sv) sv.disabled = !(r.ok && cf.d.t !== null && cf.d.t !== undefined);
+}
+/* where the numbers for this kind of drink come from, for the person who wants to check */
+function cfdSource(d){
+  if (d.kind === 'shop') return 'Starbucks lists a Small and Normal latte at 75 mg and a Large and Extra large at 150 mg: one shot, then two. A flat white uses smaller shots, and brewed coffee grows with the ounces. We got these from Caffeine Informer, which quotes Starbucks, and Starbucks calls them approximate (rated C). One 2012 survey of 20 shops found a single espresso shot anywhere from 51 to 322 mg (Crozier and others), so we show a wide range on purpose. Hot and iced are counted the same. Other shops are guessed from the same rule, and the shots can be changed.';
+  if (d.kind === 'pod') return 'Nespresso gives a range for each line (Original 40 to 130 mg, Vertuo 60 to 200 mg) and says it varies with the blend, the dose and the extraction (rated B). We split the Original range by cup size as a guess. The K-Cup figure of 75 to 125 mg for 8 oz, about 150 for extra bold, comes second hand from Caffeine Informer (rated C). Pods in one cup add up. Decaf pods are 2 to 12 mg.';
+  if (d.kind === 'home') return 'Caffeine in a cup is the coffee in grams, times the caffeine in the beans (Arabica about 12.5 mg a gram, 7 to 16 in published tests; Robusta about 24), times the share that reaches the cup (filter 94 %, French press and cold brew 88 %, moka 84 %, espresso 75 %). It matches three lab measurements (rated B and C). By cup size, the coffee comes from the method’s usual ratio; espresso counts 9 g a shot. Strength is a guess (rated D).';
+  return 'Whatever the label says is used as it is.';
+}
+function cfdPaint(){
+  const D = cfData(), d = cf.d, host = cfdHost; host.textContent = '';
+  const no = (cf.idx >= 0 ? cf.idx : D.entries.length) + 1;
+  host.append(toolHero('Your caffeine day', 'Drink ' + no + ' of ' + Math.max(cfCount(D), no), 'caffeine'),
+    sayRow(!d.kind ? 'Tell me about this one. Roughly is fine.' : d.kind === 'pod' ? 'Pods are quick. Pick the pod, the size and how many.' : d.kind === 'shop' ? 'Shop drinks are easy. Pick the drink, hot or iced, and the size.' : d.kind === 'home' ? 'Tell me how you make it. Roughly is fine.' : 'Type what the label says. I will use it as it is.', '', d.kind === 'pod' || d.kind === 'shop' ? 'informing' : 'happy'));
+  const r = cafEntry(d);
+  const save = h('button', { type:'button', class:'btn primary block', id:'cfdSave', text:'Save this drink', onclick:cfdSave });
+  host.append(tband('Drink ' + no, 'Pick', d.kind ? { pod:'Pod', home:'Home brew', shop:'Shop drink', other:'Something else' }[d.kind] : 'what you have', {}, ...cfdSections(d), d.kind ? cfAnswer('This drink is about', r, 'cfdAnswer') : null, d.kind ? save : null,
+    cf.idx >= 0 ? h('button', { type:'button', class:'flink', id:'cfdRemove', style:'margin:10px 0 0', text:'Remove this drink', onclick:cfdRemove }) : null));
+  save.disabled = !(r.ok && d.t !== null && d.t !== undefined);
+  if (d.kind) host.append(toolFold(cf.open, 'work', 'cfdWork', 'Where these numbers come from', 'And how sure we are', 'flask', h('p', { class:'fine', style:'margin:0', text:cfdSource(d) })));
+}
+function cfdSave(){
+  const D = cfData(), e = cafEntryClean(cf.d);
+  if (!e || !cafEntry(e).ok || e.t === null) return;
+  if (cf.idx >= 0 && D.entries[cf.idx]) D.entries[cf.idx] = e; else D.entries.push(e);
+  D.count = Math.max(cfCount(D), D.entries.length); app.prefs.caffeine = D; cf.applied = false; cfSave(); go('caffeine');
+}
+function cfdRemove(){
+  const D = cfData();
+  if (cf.idx >= 0 && D.entries[cf.idx]){ D.entries.splice(cf.idx, 1); D.count = Math.max(D.entries.length, cfCount(D) - 1); app.prefs.caffeine = D; cf.applied = false; cfSave(); }
+  go('caffeine');
+}
+function screenCafDrink(m){
+  if (!cf.d) cf.d = { kind:'', t:600, n:1, strength:'regular', decaf:false };
+  cfdHost = h('div', { id:'cfdHost' }); m.append(cfdHost); cfdPaint();
+}
+/* ---------- caffeine: parts ----------
+   Nothing is logged. The person says what a usual day is, and that usual day is kept in app.prefs.caffeine, in this browser with the other settings. It is not part of a saved file. */
+let cf = { idx:-1, d:null, open:{ sums:false, work:false }, applied:false, from:'' };
+const cfData = () => (app.prefs.caffeine = caffeineClean(app.prefs.caffeine));
+function cfSave(){ app.prefs.caffeine = caffeineClean(app.prefs.caffeine); scheduleDraft(); }
+/* minutes after midnight (or hours past 24 for after midnight) as "7:00 am"; short leaves off am and pm */
+function cfClock(min, short){
+  const m = ((Math.round(min) % 1440) + 1440) % 1440, hr = Math.floor(m / 60), mn = m % 60, t = (hr % 12 || 12) + ':' + String(mn).padStart(2, '0');
+  return short ? t : t + ' ' + (hr < 12 ? 'am' : 'pm');
+}
+/* milligrams are said in fives once they are past 20, because the sums are not that exact */
+const cfMg = n => n < 20 ? String(Math.round(n)) : String(Math.round(n / 5) * 5);
+const cfRangeText = r => r.hi - r.lo < 1 ? '' : cfMg(r.lo) + ' to ' + cfMg(r.hi);
+/* a picture tile: a drawing, a name, one small line. Used for every choice on the Caffeine screens. */
+function cfTile(pic, name, sub, on, fn, o){
+  o = o || {};
+  return h('button', { type:'button', class:'cf-tile' + (o.cls ? ' ' + o.cls : ''), 'aria-pressed':String(!!on), 'data-k':o.k || null, onclick:fn }, pic ? symPic(pic) : null, h('b', { text:name }), sub ? h('small', { text:sub }) : null);
+}
+const cfGrid = (cols, tiles, label) => h('div', { class:'cf-grid c' + cols, role:'group', 'aria-label':label || null }, tiles);
+const cfQ = text => h('h3', { class:'cf-q', text });
+const cfFine = (text, id) => h('p', { class:'cf-fine', id:id || null, text });
+/* a plus and minus box for a small count */
+function cfStepper(id, value, min, max, set){
+  const val = h('output', { class:'cf-sval', id, 'aria-live':'polite', text:String(value) });
+  const mk = (txt, d, label) => h('button', { type:'button', class:'cf-sbtn', 'aria-label':label, text:txt, onclick:() => { const v = Math.max(min, Math.min(max, (parseInt(val.textContent, 10) || min) + d)); val.textContent = String(v); set(v); } });
+  return h('div', { class:'cf-stepper' }, mk('-', -1, 'One fewer'), val, mk('+', 1, 'One more'));
+}
+/* tap to set a clock time: a big tile with the native time picker laid over it. set gets minutes after midnight. */
+function cfTimeTile(label, icon, min, set, id){
+  const inp = h('input', { type:'time', class:'cf-timein', id:id || null, 'aria-label':label, value:min === null || min === undefined ? '' : String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0') });
+  inp.addEventListener('change', () => { const m = /^(\d{2}):(\d{2})$/.exec(inp.value); if (m) set(+m[1] * 60 + +m[2]); });
+  return h('label', { class:'cf-timetile' }, symPic(icon), h('span', { class:'cf-tlab', text:label }), h('span', { class:'cf-tval', text:min === null || min === undefined ? 'Not set' : cfClock(min) }), inp);
+}
+/* four usual times to tap instead */
+function cfQuickTimes(min, set){
+  const q = [['Morning', 420, 'cf-sunrise'], ['Mid-morning', 600, 'cf-sun'], ['Afternoon', 840, 'cf-sunhigh'], ['Evening', 1080, 'cf-moon']];
+  return [cfFine('Or pick a usual time:'), cfGrid(4, q.map(x => cfTile(x[2], x[0], cfClock(x[1], true), min === x[1], () => set(x[1]), { cls:'sm', k:'q' + x[1] })), 'Usual times')];
+}
+const CF_PODSHORT = { keurig:'K-Cup', nespresso:'Nespresso', vertuo:'Vertuo' };
+const CF_METHOD_NAMES = { drip:'Filter coffee', press:'French press', espresso:'Espresso machine', moka:'Moka pot', aeropress:'AeroPress', cold:'Cold brew' };
+const CF_SIZE_NAMES = { 8:'Small', 12:'Normal', 16:'Large', 20:'Extra large' };
+const CF_STRENGTH_NAMES = { weaker:'weaker', regular:'regular', stronger:'stronger' };
+/* the drawing for a drink */
+function cfPicId(e){
+  if (e.kind === 'pod') return e.pod === 'keurig' ? 'art-pod' : e.pod === 'nespresso' ? 'cf-nesp' : 'cf-vertuo';
+  if (e.kind === 'home') return { drip:'art-filter', press:'cf-press', espresso:'cf-machine', moka:'cf-moka', aeropress:'cf-aero', cold:'cf-cold' }[e.method] || 'art-filter';
+  if (e.kind === 'shop') return { latte:'cf-latte', cappuccino:'cf-cap', americano:'cf-amer', flat:'cf-flat', caramel:'cf-cmac', espmac:'cf-mac', mocha:'cf-mocha', brewed:'cf-brewed', coldbrew:'cf-cold' }[e.drink] || 'cf-latte';
+  return 'bean-3';
+}
+/* the name of a drink on a row, and the small line under it */
+function cfTitle(e){
+  if (e.kind === 'pod'){ const p = CAF_PODS.find(x => x.id === e.pod), s = p && p.sizes.find(x => x.id === e.size); return CF_PODSHORT[e.pod] + ' pods' + (s ? ', ' + s.name : ''); }
+  if (e.kind === 'home') return e.method === 'espresso' ? ({ espresso:'Espresso', americano:'Americano', milk:'Latte or cappuccino' }[e.edrink] || 'Espresso') + ', home machine' : CF_METHOD_NAMES[e.method];
+  if (e.kind === 'shop'){ const d = CAF_SHOP.find(x => x.id === e.drink); return (d ? d.name : 'Drink') + (d && d.noSize ? '' : ', ' + CF_SIZE_NAMES[e.size]); }
+  return 'Something else';
+}
+function cfSub(e){
+  const n = e.n > 1;
+  if (e.kind === 'pod') return (n ? e.n + ' pods at a time' : 'one pod') + (e.decaf ? ' · decaf' : '');
+  if (e.kind === 'home'){
+    const how = e.method === 'espresso' ? e.shots + (e.shots === 1 ? ' shot' : ' shots') : e.how === 'weigh' ? (e.grams === null ? '' : e.grams + ' g of coffee') : e.ml + ' mL';
+    return [how, e.decaf ? 'decaf' : (e.species === 'robusta' ? 'robusta' : ''), CF_STRENGTH_NAMES[e.strength], n ? e.n + ' cups' : ''].filter(Boolean).join(' · ');
+  }
+  if (e.kind === 'shop'){
+    const d = CAF_SHOP.find(x => x.id === e.drink), sh = d && d.shots ? (e.shots === null ? cafShopShots(e.drink, e.size) : e.shots) : 0;
+    return ['shop', d && d.noSize ? '' : e.size + ' oz', sh ? sh + (sh === 1 ? ' shot' : ' shots') : '', e.temp === 'iced' && e.drink !== 'coldbrew' ? 'iced' : '', e.decaf ? 'decaf' : '', n ? e.n + ' drinks' : ''].filter(Boolean).join(' · ');
+  }
+  return 'from the label' + (n ? ' · ' + e.n + ' at a time' : '');
+}
+/* the green answer box: the milligrams, and the range */
+function cfAnswer(lead, r, id){
+  if (!r || !r.ok) return h('div', { class:'yc-result cf-res', id:id || null, 'aria-live':'polite' }, h('div', { class:'yc-rlab', text:lead }), h('div', { class:'yc-line mute', text:'Finish the choices above to see the milligrams.' }));
+  const rg = cfRangeText(r);
+  return h('div', { class:'yc-result cf-res', id:id || null, 'aria-live':'polite' }, h('div', { class:'yc-rlab', text:lead }), h('div', { class:'yc-big', 'data-mg':String(Math.round(r.mid)) }, cfMg(r.mid), h('small', { text:' mg' })), rg ? h('div', { class:'yc-line mute', text:'range ' + rg }) : h('div', { class:'yc-line mute', text:'as the label says' }));
+}
+/* a note with the mascot beside it. kind 'ok' is the green note; 'warn' is the amber one for a caution. */
+function cfNote(kind, pose, face, id, ...kids){
+  const n = moneyNote(pose, face, id, ...kids);
+  n.classList.toggle('green', kind !== 'warn'); n.classList.add('cf-note', kind === 'warn' ? 'warn' : 'ok');
+  return n;
+}
+/* ---------- screen: the result ---------- */
+let cfresHost = null;
+const cfWhole = n => String(Math.round(n));
+function cfMugCard(cmp){
+  const a = cmp.usual, t = a.total, over = t.mid - CAF_LIMITS.day, svg = h('div', { class:'cf-mug' });
+  svg.innerHTML = cfMugSvg(t.mid);
+  return tband('Your day in a mug', { tan:'Your answer' }, a.items.length + (a.items.length === 1 ? ' drink' : ' drinks'), { pic:'beans' },
+    h('div', { class:'cf-mugrow' }, svg, h('div', { class:'cf-mugtx' }, h('div', { class:'cf-mbig', id:'cfTotal', 'data-mg':cfWhole(t.mid) }, cfMg(t.mid), h('small', { text:' mg a day' })), h('div', { class:'cf-mrng', text:'range ' + cfMg(t.lo) + ' to ' + cfMg(t.hi) }),
+      h('div', { class:'cf-mvs' + (over > 0 ? ' over' : ''), text:over > 0 ? cfMg(over) + ' mg over the FDA’s 400 mg line' : cfMg(-over) + ' mg under the FDA’s 400 mg line' }))),
+    cfSafetyNote(a));
+}
+/* the safety feedback: more than the FDA's 400 mg a day is called out */
+function cfSafetyNote(a){
+  const tot = cfMg(a.total.mid);
+  if (a.safety === 'over') return cfNote('warn', 'cheeks', 'worried', 'cfSafety', h('b', { text:'This is more than the 400 mg a day the FDA cites. ' }), 'Your usual day comes to about ' + tot + ' mg. The FDA says 400 mg a day is an amount not generally linked to dangerous effects for healthy adults. As a safety precaution I would aim for less, with fewer or smaller drinks. If you have a health condition or take medicine, ask your doctor. (FDA, rated A.)');
+  if (a.safety === 'maybe') return cfNote('ok', 'think', 'thinking', 'cfSafety', h('b', { text:'Close to the FDA line. ' }), 'The middle of my estimate, about ' + tot + ' mg, is under the 400 mg a day the FDA cites, but the top of the range, ' + cfMg(a.total.hi) + ' mg, goes over it. Coffee varies a lot, so keep an eye on it. (FDA, rated A.)');
+  return cfNote('ok', 'thumbs', 'happy', 'cfSafety', 'About ' + tot + ' mg a day is under the 400 mg the FDA cites for healthy adults. (FDA, rated A.)');
+}
+/* the sleep feedback: over the Relaxed line, or over the line the person chose */
+function cfSleepNote(cmp, D){
+  const a = cmp.usual, s = cmp.suggested, bed = cfClock(a.bed * 60), left = cfMg(a.atBed);
+  if (a.sleep !== 'high' && !a.overLine) return null;
+  const fix = !cmp.same && s.kept > 0 && s.atBed < a.atBed ? ' My suggested times bring it down to about ' + cfMg(s.atBed) + ' mg.' : '';
+  if (a.sleep === 'high') return cfNote('warn', 'stand', 'sleepy', 'cfSleep', h('b', { text:'You could have trouble sleeping. ' }), 'At ' + bed + ' you would still have about ' + left + ' mg in your body, above the ' + CAF_LINES.relaxed.mg + ' mg Relaxed line. Across 24 studies, caffeine cut sleep by about 45 minutes (rated A), and in one trial 400 mg six hours before bed cut it by more than an hour, even though people did not notice (rated B).' + fix);
+  return cfNote('warn', 'stand', 'sleepy', 'cfSleep', h('b', { text:'A little over your Careful line. ' }), 'At ' + bed + ' you would still have about ' + left + ' mg in your body, above the ' + CAF_LINES.careful.mg + ' mg Careful line. That is under the Relaxed line, so many people sleep fine, but you picked Careful.' + fix);
+}
+function cfWhy(icon, head, body, tag){
+  return h('div', { class:'cf-why' }, h('span', { class:'cf-wi' }, symPic(icon)), h('div', { class:'cf-wt' }, h('b', { text:head }), h('p', { text:body }), h('small', { text:tag })));
+}
+function cfWhyCard(cmp, D){
+  const a = cmp.usual, s = cmp.suggested, n = a.items.length, lineName = CAF_LINES[D.line].label, kids = [];
+  const titleOf = i => D.entries[i] ? cfTitle(D.entries[i]) : 'One drink';
+  cmp.why.forEach(w => {
+    if (w.id === 'bed'){
+      const tail = s.kept === 0 ? ' Even one drink at wake time would leave too much, so I cannot suggest a time.' : s.kept < n ? ' Even with every drink moved as early as it can go, only ' + s.kept + ' of your ' + n + ' fit under your ' + lineName + ' line of ' + w.line + ' mg.' : w.fixed ? ' Starting at ' + cfClock(s.times[0] * 60) + ' and spacing the drinks leaves about ' + cfMg(w.sugg) + ' mg, under your ' + lineName + ' line of ' + w.line + ' mg.' : ' My times leave about ' + cfMg(w.sugg) + ' mg, still above your ' + lineName + ' line of ' + w.line + ' mg. This much caffeine in a day cannot get under it, so I can only get closer.';
+      kids.push(cfWhy('cf-moon', 'Still in your body at bedtime: ' + cfMg(w.usual) + ' mg', 'Your usual times leave about ' + cfMg(w.usual) + ' mg at ' + cfClock(a.bed * 60) + '.' + tail, 'Sleep line is our reading of sleep studies · rated C'));
+    } else if (w.id === 'stack'){
+      const g = w.goes[0], c = g.items.length;
+      kids.push(cfWhy('cf-fast', c + ' drinks within an hour', 'Between ' + cfClock(g.start * 60) + ' and ' + cfClock(g.end * 60) + ' about ' + cfMg(g.mg) + ' mg arrives in one go. Drinks less than an hour apart land together, because absorption takes about 45 minutes. EFSA looks at 200 mg for a single intake.' + (w.fixed ? ' My times spread them out.' : ' I could not spread them out without pushing bedtime over your line.'), 'EFSA 2015 for the 200 mg · rated B. Treating close drinks as one go is our reading · rated C'));
+    } else if (w.id === 'single'){
+      w.goes.slice(0, 2).forEach(g => kids.push(cfWhy(D.entries[g.items[0]] ? cfPicId(D.entries[g.items[0]]) : 'cf-reg', titleOf(g.items[0]) + ' is about ' + cfMg(g.mg) + ' mg in one go', 'The European food safety authority says up to 200 mg at one time is not a safety concern for healthy adults. This one is above it. Splitting it into two drinks a few hours apart would keep each under that.', 'EFSA 2015 · rated B')));
+    } else if (w.id === 'day'){
+      kids.push(cfWhy('cf-reg', 'The day adds up to about ' + cfMg(w.total) + ' mg', 'The FDA cites 400 mg a day as an amount not generally linked to dangerous effects for healthy adults. Moving your drinks does not change the total. Fewer or smaller drinks would.', 'FDA · rated A'));
+    } else if (w.id === 'daymaybe'){
+      kids.push(cfWhy('cf-reg', 'The day could reach ' + cfMg(w.hi) + ' mg', 'The middle of my estimate is under the 400 mg the FDA cites, but the top of the range is over it. Beans and brewing vary a lot.', 'FDA · rated A · ranges are ours'));
+    }
+  });
+  if (!kids.length) kids.push(cfNote('ok', 'thumbs', 'happy', 'cfFine', 'Nothing to fix. Your usual times keep bedtime under your ' + lineName + ' line, no drinks pile up, and no single drink is above 200 mg.'));
+  return tband('Why I suggest it', 'Read', 'what I found in your day', { pic:'beans' }, ...kids);
+}
+function cfApply(cmp){
+  const D = cfData();
+  cmp.suggested.items.forEach((x, k) => { const e = D.entries[x.i]; if (e) e.t = Math.round(cmp.suggested.times[k] * 60) % 1440; });
+  app.prefs.caffeine = D; cfSave(); cf.applied = true; cfResultPaint();
+}
+function cfDayCard(cmp, D){
+  const a = cmp.usual, s = cmp.suggested, box = h('div', { class:'cf-chart' });
+  box.innerHTML = cfChartSvg(cmp, D);
+  const leg = h('div', { class:'cf-legend' }, h('span', null, h('i', { class:'k hill' }), ' Your usual'), h('span', null, h('i', { class:'k sug' }), ' Suggested'), h('span', { class:'bad' }, h('i', { class:'k slp' }), ' Sleep line'));
+  const bedC = cfClock(a.bed * 60);
+  const kids = [box, leg, h('p', { class:'cf-fine', text:'The hill is the caffeine still in your body. The cups on the lines under it are when you have each drink, yours and mine. At ' + bedC + ' you would have about ' + cfMg(a.atBed) + ' mg left your usual way and about ' + cfMg(s.atBed) + ' mg my way.' })];
+  if (!cmp.fits && s.kept > 0) kids.push(cfNote('warn', 'shrug', 'worried', 'cfFits', 'Only ' + s.kept + ' of your ' + a.items.length + ' drinks fit before bedtime under your line. I show those ' + s.kept + '. The rest would still be in your body at bedtime.'));
+  if (cmp.same && !cf.applied) kids.push(cfNote('ok', 'thumbs', 'happy', 'cfSame', 'Your usual times already keep you under your line. Nothing to change.'));
+  if (cf.applied) kids.push(cfNote('ok', 'thumbs', 'happy', 'cfApplied', 'Done. Your usual day now uses the suggested times. Tap Change my times to set them yourself again.'));
+  if (!cmp.same) kids.push(h('button', { type:'button', class:'btn primary block', id:'cfUse', style:'margin-top:12px', text:'Use the suggested times', onclick:() => cfApply(cmp) }));
+  kids.push(h('button', { type:'button', class:'btn block cf-gold', id:'cfChange', style:'margin-top:10px', text:'Change my times', onclick:goCaffeine }));
+  return tband('Your day', { tan:'Your answer' }, a.items.length + (a.items.length === 1 ? ' drink' : ' drinks'), { pic:'beans' }, ...kids);
+}
+function cfResultPaint(){
+  const D = cfData(), host = cfresHost; host.textContent = '';
+  host.append(toolHero('Your caffeine day', 'Your usual schedule, and a better one.', 'caffeine'));
+  const cmp = cafCompare(D);
+  if (!cmp.ok){ host.append(cfNote('ok', 'think', 'thinking', null, 'Add at least one finished drink first.'), h('button', { type:'button', class:'btn primary block', text:'Back to my drinks', onclick:goCaffeine })); return; }
+  host.append(cfMugCard(cmp), cfDayCard(cmp, D));
+  const sleep = cfSleepNote(cmp, D); if (sleep) host.append(sleep);
+  host.append(cfWhyCard(cmp, D),
+    cfNote('ok', 'think', 'thinking', 'cfCrash', 'You may be wondering about a crash. A 2024 review found no evidence that timing your drinks prevents one, so I do not draw one. I show what the studies back: caffeine at bedtime, big doses at once, and the daily total.'),
+    cfNote('warn', 'shrug', 'worried', 'cfPreg', 'Pregnant, or planning to be? Ask your doctor first. Caffeine clears much more slowly, so I do not plan for it.'));
+}
+function screenCafResult(m){ cfresHost = h('div', { id:'cfresHost' }); m.append(cfresHost); cfResultPaint(); }
 /* ---------- the purchase form and the words around it ----------
    One form serves Add a bag and Edit a purchase. It works on a plain object `a` (see prNewBag) and redraws itself when the kind changes; typing never redraws it.
    A purchase's date is a month and a year (YYYY-MM). A purchase that already has a day keeps it while its month and year are left alone. */
@@ -16766,7 +17582,7 @@ function measureBlock(b){
     outIn, outHint, tdsIn, brixBox, h('p', { class:'fine', style:'margin:6px 0 4px', id:'tasteAsk', text:'How did the cup taste? (optional)' }),
     choiceGroup([{ v:'sour', label:'Sour or thin', sym:'p-sour' }, { v:'balanced', label:'Balanced', sym:'p-great' }, { v:'bitter', label:'Bitter or dry', sym:'p-bitter' }], () => tdsPick.taste, v => { tdsPick.taste = v; }, { label:'How did the cup taste?', ptiles:true, cls:'tdstaste' }),
     warnLine, res, chart,
-    h('p', { class:'fine', text:'Extraction % = TDS % × finished coffee weight ÷ coffee dose (the cup basis). It leaves out dissolved coffee still held in the wet grounds, so it reads a few points lower than papers that work from the brew water weight; do not mix the two. The 18–22% extraction and 1.15–1.35% TDS zone for filter coffee is a convention from the 1950s (Lockhart), and 8–12% TDS is the common café target for espresso. Neither is a rule: tasters in a 2013 SCA study leaned toward 20–24%, and people differ.' }));
+    h('p', { class:'fine', text:'Extraction counts the coffee in your cup. Coffee left in the grounds is not counted. Extraction % = TDS % × finished coffee weight ÷ coffee dose (the cup basis). So it reads a few points lower than papers that work from the brew water weight; do not mix the two. The 18–22% extraction and 1.15–1.35% TDS zone for filter coffee is a convention from the 1950s (Lockhart), and 8–12% TDS is the common café target for espresso. Neither is a rule: tasters in a 2013 SCA study leaned toward 20–24%, and people differ.' }));
 }
 function screenCup(m){
   const c = app.coffee, b = app.cupBrew;
@@ -17261,6 +18077,7 @@ function renderSheetBody(){
   if (sheet.step === 'setup'){ renderSetupSheet(title); return; }   /* My setup (63-sheet-setup.js) */
   if (sheet.step === 'setupFound'){ renderSetupFoundSheet(title); return; }
   if (sheet.step === 'everyUpload'){ renderEveryUploadSheet(title); return; }   /* Load a backup (78-every-load.js) */
+  if (sheet.step === 'everyResult'){ renderEveryResultSheet(title); return; }   /* the pop-up after Save everything (78-every-save.js) */
   if (sheet.step === 'everyLoad'){ renderEveryLoadSheet(title); return; }
   if (sheet.step === 'otherWay'){ renderOtherWaySheet(title); return; }   /* Cup this one too? / Rate it too?, before saving (69-sheet-other-way.js) */
   if (sheet.step === 'bagtile'){ renderBagTileSheet(title); return; }   /* what one part of the bag means (69-sheet-bag-tile.js) */
@@ -18906,7 +19723,7 @@ const MK = (() => {
   MK.poses = POSES; MK.arms = arms;
 })();
 /* each part of the app has its own outfit: lab coat for tasting, little suit for numbers, vest for learning, tweed for history and origins */
-const MASCOT_OUTFITS = { lab:['cup', 'quick', 'sca', 'cva', 'staste', 'dial', 'wheels', 'tastes'], suit:['tend', 'tpmix', 'tpflavors', 'cost', 'prices', 'yield', 'ratio', 'compare', 'tools', 'files'], vest:['learn', 'glossary', 'guide', 'help'], tweed:['history', 'detail', 'folk', 'facts'] };
+const MASCOT_OUTFITS = { lab:['cup', 'quick', 'sca', 'cva', 'staste', 'dial', 'wheels', 'tastes'], suit:['tend', 'tpmix', 'tpflavors', 'cost', 'prices', 'yield', 'ratio', 'compare', 'tools', 'files', 'caffeine', 'cafdrink', 'cafresult', 'cafcup'], vest:['learn', 'glossary', 'guide', 'help'], tweed:['history', 'detail', 'folk', 'facts'] };
 function outfitForScreen(){
   const s = app.screen;
   for (const k of Object.keys(MASCOT_OUTFITS)) if (MASCOT_OUTFITS[k].includes(s)) return k;
@@ -20125,14 +20942,14 @@ function everyErrorCopy(e){
   if ((e && e.code === 'denied') || n === 'NotAllowedError') return 'The browser did not allow writing to that file, so nothing was saved. Tap again and allow it, or choose Save under a new name.';
   if (n === 'NotFoundError') return 'That file could not be found. It may have been moved or deleted. Choose Save under a new name.';
   if (n === 'SecurityError') return "This page can't open the Save box here. A copy will download instead the next time you tap Save everything.";
-  return 'The backup could not be saved. Nothing was changed. Try again, or tap Save everything once more to choose a new file.';
+  return 'Nothing was changed and your tastings are still safe here. Tap Try again, or pick a new file name when your browser asks.';
 }
 const everyDay = () => new Date().toISOString().slice(0, 10);
 /* Save every part into the one file. asNew: ask for a file again instead of using the remembered one.
    Returns { ok, msg } (msg is the one line to show), or { quiet:true } when the person closed the Save box. */
 async function everySave(asNew){
   const parts = everyGather();
-  if (!parts.length) return { ok:false, msg:'Nothing to save yet. Save a tasting, log a drink or add a bag first.' };
+  if (!parts.length) return { ok:false, empty:true, msg:'Nothing to save yet. Save a tasting, log a drink or add a bag first.' };
   const info = { made:new Date().toISOString().replace(/\.\d+Z$/, 'Z'), app:releaseLatest().version };
   try {
     let handle = null, over = false, name = '';
@@ -20155,6 +20972,22 @@ async function everySave(asNew){
     if (e && e.name === 'NotFoundError') await forgetEveryFile();
     return { ok:false, msg:everyErrorCopy(e) };
   }
+}
+/* the pop-up after a save: the mascot with a thumbs up when it worked, a shrug when it did not (sheet step 'everyResult'). Closing the Save box on purpose shows nothing. */
+function everyPopup(r, again){
+  sheet = { step:'everyResult', ok:!!r.ok, name:r.name || '', msg:r.msg || '', again }; openSheet();
+}
+async function everyRun(asNew){
+  const r = await everySave(asNew); if (r.quiet) return;
+  every.msg = r.msg; if (app.screen === 'files') render();
+  if (!r.empty) everyPopup(r, () => { closeSheet(); everyRun(asNew); });
+}
+function renderEveryResultSheet(title){
+  const ok = sheet.ok, mk = h('span', { class:'evpmasc', 'aria-hidden':'true' }); mk.innerHTML = mascotSvg({ view:'full', pose:ok ? 'thumbs' : 'shrug', face:ok ? 'happy' : 'worried' });
+  title.textContent = ok ? 'Saved!' : 'It did not save';
+  const body = h('p', { id:'everyPopMsg', text:sheet.msg });
+  const done = h('button', { type:'button', class:'btn primary block', id:ok ? 'everyPopDone' : 'everyPopAgain', text:ok ? 'Done' : 'Try again', onclick:ok ? closeSheet : sheet.again });
+  sheetEl.append(h('div', { class:'evpop ' + (ok ? 'ok' : 'bad') }, mk, title, body, done, ok ? null : h('button', { type:'button', class:'btn block gold', id:'everyPopClose', text:'Close', onclick:closeSheet })));
 }
 /* ---------- the first screen ----------
    It shows whenever nothing is in progress, and when the person comes back to it from the Menu. A coffee is "in progress" once anything has been typed or chosen for it; a shop drink once a shop or anything about the drink is chosen.
@@ -20224,12 +21057,11 @@ function everyRows(){
     : has.map(p => p.name).join(', ') + ' in one file';
   const msg = h('p', { class:'fine', id:'everyMsg', role:'status', style:'margin:6px 0 0', text:every.msg });
   const save = hubRow('fl-save', 'Save everything', sub, async () => {
-    const r = await everySave(false); if (r.quiet) return;
-    every.msg = r.msg; if (app.screen === 'files') render();
+    await everyRun(false);
   }, { tone:'a', id:'everySaveBtn' });
   const load = hubRow('fl-folder', 'Load a backup', 'Bring back what you saved, or an older file', () => { sheet = { step:'everyUpload', error:'' }; openSheet(); }, { tone:'t', id:'everyLoadBtn' });
   const links = h('div', { class:'evlinks' });
-  if (picking && has.length) links.append(h('button', { type:'button', class:'btn link', id:'everyNew', style:'margin:0', text:'Save under a new name...', onclick:async () => { const r = await everySave(true); if (r.quiet) return; every.msg = r.msg; if (app.screen === 'files') render(); } }));
+  if (picking && has.length) links.append(h('button', { type:'button', class:'btn link', id:'everyNew', style:'margin:0', text:'Save under a new name...', onclick:() => everyRun(true) }));
   if (picking && everyFile) links.append(h('button', { type:'button', class:'btn link', id:'everyForget', style:'margin:0', text:'Stop saving to ' + everyFile.name, onclick:() => { forgetEveryFile().then(() => { every.msg = 'Saving to that file stopped. The file itself is not touched.'; if (app.screen === 'files') render(); }); } }));
   return [card, h('div', { class:'hublist' }, save, load), links, msg, h('p', { class:'fine hubnote', text:'One file holds your tasting history, coffee shops and prices. Each part is checked on its own when you load it. You can still save each part by itself below.' })];
 }
@@ -20320,7 +21152,7 @@ function shopsFilesRows(){
     h('button', { type:'button', class:'btn', id:'shPasteBtn', style:'margin-top:8px', text:'Use pasted text', onclick:() => { if (paste.value.trim()){ shLoadText(paste.value); say(sh.msg); save.querySelector('.hs').textContent = subText(); } else say('Paste the file contents first.'); } }));
   return [save, load, file, fold, msg, h('p', { class:'fine hubnote', style:'margin:0', text:'The coffee shops file is a file of its own. It is not your tasting history, and your history is never changed by it.' })];
 }
-const SCREENS = { door:screenDoor, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, tpflavors:screenTpFlavors, tpenjoy:screenTpEnjoy, tprate:screenTpRate, tpkinds:screenTpKinds, tpbrews:screenTpBrews, tpshops:screenTpShops, tpbrewers:screenTpBrewers, tpmix:screenTpMix, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, glossary:screenGlossary, files:screenFiles };
+const SCREENS = { door:screenDoor, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, tpflavors:screenTpFlavors, tpenjoy:screenTpEnjoy, tprate:screenTpRate, tpkinds:screenTpKinds, tpbrews:screenTpBrews, tpshops:screenTpShops, tpbrewers:screenTpBrewers, tpmix:screenTpMix, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, caffeine:screenCaffeine, cafdrink:screenCafDrink, cafresult:screenCafResult, cafcup:screenCafCup, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, glossary:screenGlossary, files:screenFiles };
 
 syncMenuBtn();
 $('homeBtn').addEventListener('click', () => { if (menuIsOpen()) closeSheet(); else openMenu(); });

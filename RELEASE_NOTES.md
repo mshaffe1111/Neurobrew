@@ -4,6 +4,16 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.030.0078: Caffeine from your real cup, and a clearer Save everything
+
+2026-10-14 03:48:19 UTC
+
+- A fourth Calculators row, Caffeine: tell it the drinks you usually have (home brew, pods, shop drinks or a label) and when, and it shows your day's caffeine as a mug filling toward the FDA's 400 mg line, then your usual times against suggested times on one chart. Every figure is a range, and every reason it gives is one a study supports.
+- It says so plainly when your usual day is over 400 mg, and warns you could have trouble sleeping when bedtime caffeine is above the Relaxed line. There is no crash zone, because a 2024 review found no evidence that timing prevents one. Pregnancy: ask your doctor.
+- A Caffeine in a cup calculator (coffee in grams, beans, method, regular or decaf, with the sums shown) and a caffeine line in In your cup on the Brew page.
+- Save everything now opens a pop-up: the bean with a thumbs up and the file name when it saved, a shrug and Try again when it did not.
+- Wording fixes: a one-line note that extraction counts the coffee in your cup, a softer moka line (the basket usually fixes the ratio), and one honest range for how much water the grounds keep.
+
 ## Version 4.029.0077: Coffee prices becomes a purchase log, plus a Freshness clock
 
 2026-10-14 00:11:39 UTC
