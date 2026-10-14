@@ -4,6 +4,22 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.031.0080: Share, and pictures in the guide
+
+2026-10-14 15:38:34 UTC
+
+- Share these brew settings (on the Brew screen), Share this tasting (on a saved tasting) and Share this drink (on a coffee shop drink) open a pop-up with the plain text that will go out. Then tap Share, Copy the text or Close. Your notes stay private.
+- The guide now shows a real picture of the Coffee, Brew and Perfect screens at the top of those sections, and it explains Share.
+
+## Version 4.031.0079: Reset buttons and sourced Why lines
+
+2026-10-14 14:44:01 UTC
+
+- The Yield, Ratio, Cost of a cup and Caffeine in a cup calculators now each have a Reset button. The Caffeine in your day screen has Reset my day, which asks first.
+- Every Why line on the Perfect screen now shows how well supported it is (Well supported, Common practice or Our starting point), with a What this rests on note that names the study or says no test was found.
+- Three Why lines said more than the research shows (hot water and roasty taste, winey taste, stale coffee), so they now say less.
+- The guide's Taste section has a sentence about how words on a bag can nudge your rating.
+
 ## Version 4.030.0078: Caffeine from your real cup, and a clearer Save everything
 
 2026-10-14 03:48:19 UTC
