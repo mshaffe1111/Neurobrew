@@ -4,6 +4,16 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.032.0081: Load a shared coffee, and many more shop drinks
+
+2026-10-14 16:44:34 UTC
+
+- A new Load a shared coffee row on the first screen. Paste what a friend sent from Share, check what I found, and load it. It fills in the bean facts and how it was made, and opens the Coffee step. Elevation and roast date stay yours to answer, because they are about your own bag.
+- Shared brew settings and saved tastings now end with a code line, so another phone can load them back. Older shared text still loads, with only the parts I can find.
+- The shop drink list grew from 9 to 22 tiles: macchiato, cortado, flat white, cappuccino, mocha, chai latte, matcha latte, cold brew, nitro cold brew, refresher, frappuccino and more, in groups.
+- New shop drink questions: milk type, extra shots with a plus and minus, flavor or syrup, how you ordered, and a strength and sweetness check. All are optional, and older shop files still load.
+- Share this drink now includes the new answers. A shared shop drink cannot be loaded; the Load screen says so.
+
 ## Version 4.031.0080: Share, and pictures in the guide
 
 2026-10-14 15:38:34 UTC

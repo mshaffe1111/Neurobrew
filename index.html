@@ -2245,6 +2245,13 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .gshot{ margin:12px 0 4px; text-align:center; }
 .gshot img{ display:block; width:100%; max-width:260px; height:auto; margin:0 auto; border:2px solid var(--line); border-radius:16px; background:var(--surface); }
 .gshot figcaption{ margin:6px 0 0; }
+
+/* Load a shared coffee: the row on the first screen and the "what I found" lines */
+.fresh.loadrow{ margin-top:12px; }
+.fnd p{ margin:0 0 12px; font:400 17px/1.3 var(--ui); }
+.fnd p:last-child{ margin-bottom:0; }
+.fnd p b{ font:700 17px/1.3 var(--ui); }
+.fnd p.hint{ font-size:15px; margin-top:6px; }
 .froaster{ margin:12px 0 -4px; font:700 13px/1.2 var(--ui); letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); overflow-wrap:anywhere; }
 .fcoffee.hasroaster{ margin-top:6px; }
 .fsec{ margin-bottom:12px; }
@@ -2664,6 +2671,12 @@ body[data-screen="shop"] .pstep .pl{ font-size:16px; }
 .menuitem.mtile.mshops{ margin:10px 0 0; min-height:72px; gap:12px; padding:0 12px; background:var(--door-shop); color:var(--ink); border:3px solid var(--btn-edge); box-shadow:0 4px 0 var(--btn-edge); border-radius:16px; }
 .mshops .mdisc{ width:52px; height:52px; background:#FFF6E6; } .mshops .mdisc .spic{ width:40px; height:40px; } .mshops .mi-t{ font-size:21px; } .mshops .mi-s{ color:var(--ink); }
 @media (max-width:359px){ .door .dpic{ width:72px; height:72px; } .door .dpic .spic{ width:60px; height:60px; } .door .dnm{ font-size:24px; } .stile.sart .spic{ width:48px; height:48px; } .stile{ font-size:16px; } }
+
+/* Release 81: the drink groups, and the extra shots row */
+.sband .sgroup{ margin:14px 2px 8px; font:700 16px/1.2 var(--ui); }
+.sband .sgroup:first-child{ margin-top:2px; }
+.sshots{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.sshots .what{ font:700 17px/1.2 var(--ui); }
 /* ---- Release 65: Start ---- */
 /* the "More about this coffee" title and line were dark brown on the green band */
 .moredetails > summary .gtx .gt{ color:#FFFFFF; }
@@ -3095,7 +3108,7 @@ details.mfold > .mrows{ margin-top:14px; }
 <symbol id="d-americano" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#6FB5D9"/><path d="M12 22h34v14a15 15 0 0 1-15 15H27a15 15 0 0 1-15-15z" fill="#FDFBF7"/><ellipse cx="29" cy="22" rx="17" ry="3.5" fill="#4A2A18"/><path d="M46 26h3.5a5.5 5.5 0 0 1 0 11H44" fill="none"/><path d="M21 8c-2 3 2 5 0 8M29 6c-2 3 2 5 0 9M37 8c-2 3 2 5 0 8" fill="none" stroke-width="2"/><path d="M55 10s-4 4.5-4 7a4 4 0 0 0 8 0c0-2.5-4-7-4-7z" fill="#6FB5D9" stroke-width="2"/></g></symbol>
 <symbol id="d-cappuccino" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#D9503B"/><path d="M12 28h34v8a14 14 0 0 1-14 14H26a14 14 0 0 1-14-14z" fill="#FDFBF7"/><path d="M13 28c0-8 7-12 16-12s16 4 16 12c0 2-4 3.5-16 3.5S13 30 13 28z" fill="#F7EBD2"/><circle cx="24" cy="21" r="1.5" fill="#6B3E22" stroke="none"/><circle cx="31" cy="19" r="1.5" fill="#6B3E22" stroke="none"/><circle cx="36" cy="23" r="1.5" fill="#6B3E22" stroke="none"/><circle cx="28" cy="25" r="1.5" fill="#6B3E22" stroke="none"/><path d="M46 31h3a5 5 0 0 1 0 10h-4" fill="none"/></g></symbol>
 <symbol id="d-iced-latte" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M16 12h32l-3 44a3 3 0 0 1-3 3H22a3 3 0 0 1-3-3z" fill="#DDF1F7"/><path d="M17 28h30l-2 28a3 3 0 0 1-3 3H22a3 3 0 0 1-3-3z" fill="#F3E3C3"/><path d="M16.4 18h31.2L47 28H17z" fill="#7A4A2D"/><path d="M22 19h9v9h-9z" fill="#EAF6F8" transform="rotate(-8 26 23)"/><path d="M33 22h8v8h-8z" fill="#EAF6F8" transform="rotate(10 37 26)"/><path d="M38 20l8-17" fill="none" stroke="#F2A93B" stroke-width="4"/></g></symbol>
-<symbol id="d-special" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M16 20h32l-4 38a3 3 0 0 1-3 3H23a3 3 0 0 1-3-3z" fill="#F2A93B"/><path d="M18.5 31h27l-1.3 14H19.8z" fill="#C79A66"/><polygon points="32,33 33.8,37 38,37.3 34.8,40 35.8,44.2 32,42 28.2,44.2 29.2,40 26,37.3 30.2,37" fill="#FDFBF7" stroke-width="1.6"/><path d="M13 14h38v6H13z" fill="#FDFBF7"/><path d="M18 14c0-4 6-6 14-6s14 2 14 6" fill="#FDFBF7"/><path d="M55 7v8M51 11h8M9 26v5M6.5 28.5h5" fill="none" stroke-width="2.2"/></g></symbol>
+<symbol id="d-special" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M16 20h32l-4 38a3 3 0 0 1-3 3H23a3 3 0 0 1-3-3z" fill="#F2A93B"/><path d="M18.5 31h27l-1.3 14H19.8z" fill="#C79A66"/><polygon points="32,33 33.8,37 38,37.3 34.8,40 35.8,44.2 32,42 28.2,44.2 29.2,40 26,37.3 30.2,37" fill="#FDFBF7" stroke-width="1.6"/><path d="M13 14h38v6H13z" fill="#FDFBF7"/><path d="M18 14c0-4 6-6 14-6s14 2 14 6" fill="#FDFBF7"/><path d="M55 7v8M51 11h8M9 26v5M6.5 28.5h5" fill="none" stroke-width="2.2"/></g></symbol><symbol id="d-flatwhite" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#7FB285"/><path d="M10 24h38v10a16 16 0 0 1-16 16H26a16 16 0 0 1-16-16z" fill="#FDFBF7"/><ellipse cx="29" cy="24" rx="19" ry="5.5" fill="#B98C5A"/><ellipse cx="29" cy="24" rx="12" ry="3.2" fill="#F7EBD2" stroke-width="1.8"/><path d="M48 28h3a5 5 0 0 1 0 10h-4" fill="none"/></g></symbol><symbol id="d-macchiato" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="51" rx="20" ry="5" fill="#D9503B"/><path d="M16 30h26v6a11 11 0 0 1-11 11H27a11 11 0 0 1-11-11z" fill="#FDFBF7"/><ellipse cx="29" cy="30" rx="13" ry="4" fill="#4A2A18"/><ellipse cx="29" cy="29.2" rx="6.5" ry="2.6" fill="#F7EBD2" stroke-width="1.8"/><path d="M42 33h2.5a4 4 0 0 1 0 8H41" fill="none"/><path d="M23 14c-2 3 2 5 0 8M31 12c-2 3 2 5 0 9" fill="none" stroke-width="2"/></g></symbol><symbol id="d-caramel-macchiato" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#C9803A"/><path d="M10 24h38v10a16 16 0 0 1-16 16H26a16 16 0 0 1-16-16z" fill="#FDFBF7"/><ellipse cx="29" cy="24" rx="19" ry="5.5" fill="#F7EBD2"/><path d="M15 22.5l8 3.5M22 20.6l8 4.8M30 19.6l8 5M37 20l7 4M44 22l-3 3.2" fill="none" stroke="#C9803A" stroke-width="2.2"/><path d="M48 28h3a5 5 0 0 1 0 10h-4" fill="none"/></g></symbol><symbol id="d-mocha" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#8B5A3C"/><path d="M10 28h38v8a14 14 0 0 1-14 14H24a14 14 0 0 1-14-14z" fill="#FDFBF7"/><ellipse cx="29" cy="28" rx="19" ry="5" fill="#6B3E22"/><path d="M14 27c-1-9 6-14 15-14s16 5 15 14c-4 3-26 3-30 0z" fill="#FDFBF7"/><path d="M17 24c6 2.600 18 2.600 24 0M21 18c5 2 12 2 17 0" fill="none" stroke="#6B3E22" stroke-width="2.2"/><path d="M48 31h3a5 5 0 0 1 0 10h-4" fill="none"/></g></symbol><symbol id="d-cortado" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="57" rx="14" ry="5" fill="#6FB5D9"/><path d="M17 14h30l-2.500 41a3 3 0 0 1-3 3H22.500a3 3 0 0 1-3-3z" fill="#DDF1F7"/><path d="M19.300 38h25.400l-1 17a3 3 0 0 1-3 3H23.300a3 3 0 0 1-3-3z" fill="#4A2A18"/><path d="M18.300 22h27.400l-1 16H19.300z" fill="#F3E3C3"/><path d="M17.800 14h28.400l-.5 8H18.300z" fill="#FDFBF7" stroke-width="1.8"/></g></symbol><symbol id="d-brewed" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="56" rx="22" ry="5" fill="#CFC8BA"/><path d="M14 22h28v26a5 5 0 0 1-5 5H19a5 5 0 0 1-5-5z" fill="#F2A93B"/><ellipse cx="28" cy="22" rx="14" ry="3.500" fill="#4A2A18"/><path d="M42 28h5a6 6 0 0 1 0 14h-5" fill="none"/><path d="M20 8c-2 3 2 5 0 8M28 6c-2 3 2 5 0 9M36 8c-2 3 2 5 0 8" fill="none" stroke-width="2"/></g></symbol><symbol id="d-iced-coffee" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M16 12h32l-3 44a3 3 0 0 1-3 3H22a3 3 0 0 1-3-3z" fill="#DDF1F7"/><path d="M17.200 22h29.600l-1.800 34a3 3 0 0 1-3 3H22a3 3 0 0 1-3-3z" fill="#5A3320"/><path d="M22 23h9v9h-9z" fill="#EAF6F8" transform="rotate(-8 26 27)"/><path d="M33 26h8v8h-8z" fill="#EAF6F8" transform="rotate(10 37 30)"/><path d="M38 20l8-17" fill="none" stroke="#D9503B" stroke-width="4"/></g></symbol><symbol id="d-nitro" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M16 12h32l-3 44a3 3 0 0 1-3 3H22a3 3 0 0 1-3-3z" fill="#DDF1F7"/><path d="M17.400 26h29.200l-1.600 30a3 3 0 0 1-3 3H22a3 3 0 0 1-3-3z" fill="#3A2418"/><path d="M16.300 14L47.700 14L47.100 30Q43 33.500 39 31.500Q34 29.500 30 32Q25 34.500 21 32Q19 31 17.200 30Z" fill="#F7EBD2" stroke-width="1.8"/><circle cx="27" cy="40" r="1.400" fill="#C79A66" stroke="none"/><circle cx="35" cy="46" r="1.400" fill="#C79A66" stroke="none"/><circle cx="30" cy="51" r="1.400" fill="#C79A66" stroke="none"/><circle cx="38" cy="38" r="1.400" fill="#C79A66" stroke="none"/></g></symbol><symbol id="d-frappe" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M18 26h28l-3 30a3 3 0 0 1-3 3H24a3 3 0 0 1-3-3z" fill="#E8D2B0"/><path d="M15 26c0-11 8-15 17-15s17 4 17 15z" fill="#FDFBF7"/><path d="M18 22c8 3 20 3 28 0M21 16c6 2.500 16 2.500 22 0" fill="none" stroke="#6B3E22" stroke-width="2.2"/><path d="M34 12l8-9" fill="none" stroke="#D9503B" stroke-width="4"/><path d="M24 38h16M25 46h14" fill="none" stroke="#C79A66" stroke-width="2"/></g></symbol><symbol id="d-affogato" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M8 32h48c0 14-10 22-24 22S8 46 8 32z" fill="#DDF1F7"/><path d="M10 38h44c-1.500 9-10 16-22 16S11.500 47 10 38z" fill="#4A2A18"/><circle cx="32" cy="24" r="12" fill="#FDFBF7"/><path d="M24 31c0 4 1 6 2.500 6M34 33c0 4 1 6 2.500 6" fill="none" stroke-width="2"/><path d="M26 18c2-3 6-3 8-2" fill="none" stroke-width="1.800"/><path d="M22 56h20" fill="none"/></g></symbol><symbol id="d-chai" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#C9803A"/><path d="M10 24h38v10a16 16 0 0 1-16 16H26a16 16 0 0 1-16-16z" fill="#FDFBF7"/><ellipse cx="29" cy="24" rx="19" ry="5.5" fill="#D9A66B"/><path d="M33 22L46 6" fill="none" stroke="#8B4A2B" stroke-width="5"/><path d="M33 22L46 6" fill="none" stroke="#C97B4A" stroke-width="2" stroke-linecap="butt"/><path d="M48 28h3a5 5 0 0 1 0 10h-4" fill="none"/></g></symbol><symbol id="d-matcha" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#7FB285"/><path d="M10 24h38v10a16 16 0 0 1-16 16H26a16 16 0 0 1-16-16z" fill="#FDFBF7"/><ellipse cx="29" cy="24" rx="19" ry="5.5" fill="#8DB96A"/><path d="M18 24c4-2 7 2 11 0s7 2 11 0" fill="none" stroke="#E4F0C8" stroke-width="2"/><path d="M48 28h3a5 5 0 0 1 0 10h-4" fill="none"/></g></symbol><symbol id="d-hotchoc" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#D9503B"/><path d="M12 24h34v22a8 8 0 0 1-8 8H20a8 8 0 0 1-8-8z" fill="#FDFBF7"/><ellipse cx="29" cy="24" rx="17" ry="4.500" fill="#6B3E22"/><rect x="18" y="16" width="8" height="8" rx="2" fill="#FFF" transform="rotate(-10 22 20)"/><rect x="28" y="14" width="8" height="8" rx="2" fill="#F7C6D0" transform="rotate(8 32 18)"/><rect x="36" y="17" width="7" height="7" rx="2" fill="#FFF" transform="rotate(-6 39 20)"/><path d="M46 28h3a5 5 0 0 1 0 10h-3" fill="none"/></g></symbol><symbol id="d-tea" viewBox="0 0 64 64"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><ellipse cx="32" cy="55" rx="24" ry="5" fill="#6FB5D9"/><path d="M10 24h38v10a16 16 0 0 1-16 16H26a16 16 0 0 1-16-16z" fill="#FDFBF7"/><ellipse cx="29" cy="24" rx="19" ry="5.500" fill="#D98F3B"/><path d="M29 24l12-14" fill="none" stroke-width="1.8"/><rect x="39" y="5" width="9" height="9" rx="1.500" fill="#F7EBD2" stroke-width="1.8" transform="rotate(12 43 9)"/><path d="M48 28h3a5 5 0 0 1 0 10h-4" fill="none"/></g></symbol>
 <symbol id="z-s" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M10 32h28l-3 12a2 2 0 0 1-2 2H15a2 2 0 0 1-2-2z" fill="#C79A66"/><path d="M8 28h32v4H8z" fill="#FDFBF7"/><path d="M11 37h26" fill="none" stroke-width="2"/></g></symbol>
 <symbol id="z-m" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M10 24h28l-3 20a2 2 0 0 1-2 2H15a2 2 0 0 1-2-2z" fill="#C79A66"/><path d="M8 20h32v4H8z" fill="#FDFBF7"/><path d="M11 32h26" fill="none" stroke-width="2"/></g></symbol>
 <symbol id="z-l" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M10 16h28l-3 28a2 2 0 0 1-2 2H15a2 2 0 0 1-2-2z" fill="#C79A66"/><path d="M8 12h32v4H8z" fill="#FDFBF7"/><path d="M11 26h26" fill="none" stroke-width="2"/></g></symbol>
@@ -8304,7 +8317,7 @@ const GUIDE_SECTIONS = [
     paras:['The ' + STEP_NAME.brew + ' page opens on your settings for this coffee. You get the amount of coffee and water, the grind in plain words, the water temperature, the ratio and the bloom. Pick a cup size above the numbers. Each line has a reason behind it: tap Why? where you see it, or read the line under it. Amounts show in one unit, grams unless you chose another. Tap Other units to see the rest.',
       'Under the numbers, a card says Fill your kettle to. It adds up the water you pour, a little the kettle keeps back, and water to rinse a paper filter. Running short is worse than going over, so a little extra is fine. Comfy Brewer and Bean Scientist can change the rinse water and add a margin.',
       'To change anything, tap Change settings. Start from your coffee or your water. Choose Lighter, Standard or Stronger, set the ratio, or try pulse pours or iced coffee. To change the water temperature, tap Adjust on the Temperature row. To use your own grinder setting, tap Adjust on the Grind row. The page says what you changed, and Reset all puts it all back. Your grinder, water and filter are on the Gear page. Tap Change gear under the numbers to change them. If your grinder has no settings table yet, you can teach BeanTelligence from your own results. The water type and alkalinity you add on Gear let it check your water before blaming the grind.',
-      'Tap Next: What\'s in your cup for one last look. It shows your final settings, what you changed (or why the settings are what they are), what to do before you start, and the steps. Tap Change to go back, or Brew it for a timer with scale targets. You can switch sound off, use a beep, or have a voice read each step. The voice can tell you where you should be along the way, so you do not have to watch the screen. When you have brewed it, tap I brewed it: taste it. To send your settings to someone, tap Share these brew settings. It shows plain text you can share or copy.'],
+      'Tap Next: What\'s in your cup for one last look. It shows your final settings, what you changed (or why the settings are what they are), what to do before you start, and the steps. Tap Change to go back, or Brew it for a timer with scale targets. You can switch sound off, use a beep, or have a voice read each step. The voice can tell you where you should be along the way, so you do not have to watch the screen. When you have brewed it, tap I brewed it: taste it. To send your settings to someone, tap Share these brew settings. To use settings someone sent you, tap Load a shared coffee on the first screen and paste the message. It fills in the coffee and the method. You still answer elevation and roast date, because they are about your own bag. It shows plain text you can share or copy.'],
     tips:['If you already have earlier tries of this coffee, this screen offers them as a starting point. A new bag of a coffee you know can start from the best brew you kept.'] },
   { id:'cup', title:'5. ' + STEP_NAME.taste + ': smell, sip and score', lead:'Smell, sip hot, sip as it cools.',
     paras:['There are two ways to taste, and ' + STEP_NAME.taste + ' opens on Quick. Give the coffee stars, which are your own. Say whether you would make it again. Pick the flavors from the bag that you liked, and the ones you did not. Words on a bag can nudge how you rate a cup. In one study of 180 coffee drinkers, the same coffee scored differently for acidity and liking depending on its label. So try tasting first, and read the bag\'s flavors afterward. That study tested a process word, not flavor notes, so treat it as a nudge, not a rule (see Solid or folklore?, bag notes). Nothing else changes your stars. Under How did each part taste?, rate the smell, taste, aftertaste, acidity, sweetness and body, each as Good, Okay or Not good. Smell, taste and aftertaste also have a word wheel to pick from.',
@@ -8330,7 +8343,7 @@ const GUIDE_SECTIONS = [
       'If your view cannot save files, use Back up as text under My files. It makes a code you can paste into Notes or an email and paste back to restore. Clear everything on this device removes the copy in this browser, but not files you downloaded.'] },
   { id:'shops', title:'Coffee shops: a drink you bought', lead:'Shop, Drink, Taste, Perfect. No brewing.',
     paras:['The first screen asks where you are having coffee. Choose At a coffee shop to log a drink you bought. It has steps of its own: Shop, Drink, Taste and Perfect.',
-      'Shop: pick one of your spots, or add a new one with its city and state. A new shop starts from your home town or your last shop, so you rarely retype a place. Set your home town under Menu, My setup. Drink: choose what you ordered, hot or iced, the size and what it cost. Taste: pick a face, rate the beans if you like, and say whether you would order it again and whether it was worth the price. Perfect: see what was saved, next to your home tastings.',
+      'Shop: pick one of your spots, or add a new one with its city and state. A new shop starts from your home town or your last shop, so you rarely retype a place. Set your home town under Menu, My setup. Drink: choose what you ordered, hot or iced, the milk and any extra shots. Add a flavor, the size, how you ordered and the cost. Taste: pick a face and rate the beans if you like. Say if it was too weak or too sweet. Say if it was worth the price and if you would order it again. Perfect: see what was saved, next to your home tastings.',
       'The Coffee shops screen in the Menu lists every drink, your shops with how many times you went, and your Favorites, with a search. Your drinks are kept in this browser and in a small file of their own under Menu, My files. It is not your tasting history, and loading it only adds drinks. Open a drink and tap Share this drink to send it as text. Your note stays private.'],
     tips:['Your home coffee waits while you log a shop drink. Starting a fresh coffee is what throws it away, and it asks twice.', 'A draft left alone for 3 hours opens on the first screen next time. It is not deleted.'] },
   { id:'learn', title:'Your tendencies and understanding coffee', lead:'What you like, and how to shop for it.',
@@ -9995,6 +10008,184 @@ function columnGuideCsv(){
   COLUMN_NOTES.forEach(n => lines.push([n]));
   return toCSV(lines.map(l => l.length ? l : ['']));
 }
+/* ---------- the code line ----------
+   "BT-code: V1.<payload>.<check>". The payload is the sender's coffee and brew settings as small JSON, in url-safe base64. The check is three base-36 characters, so a line that was cut or edited is caught, not half-loaded.
+   Only what Share already shows is in it: bean facts (name, roaster, origin, roast, process, variety, blend, decaf) and the brew settings (method, water, ratio, temperature, pour style, technique, ice, the sender's grind and ratio nudges).
+   Left out on purpose: notes, bag notes, roast date, elevation, scores, and anything about the sender's own gear. A newer version number is refused with a clear reason, never guessed at. */
+const SHARE_TAG = 'BT-code:', SHARE_VERSION = 1;
+function shUtf8(s){
+  const o = [];
+  for (let i = 0; i < s.length; i++){
+    let c = s.charCodeAt(i);
+    if (c >= 0xd800 && c < 0xdc00 && i + 1 < s.length){ const d = s.charCodeAt(i + 1); if (d >= 0xdc00 && d < 0xe000){ c = 0x10000 + ((c - 0xd800) << 10) + (d - 0xdc00); i++; } }
+    if (c < 0x80) o.push(c);
+    else if (c < 0x800) o.push(0xc0 | (c >> 6), 0x80 | (c & 63));
+    else if (c < 0x10000) o.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    else o.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+  }
+  return o;
+}
+function shFromUtf8(b){
+  let s = '';
+  for (let i = 0; i < b.length;){
+    const c = b[i++]; let cp;
+    if (c < 0x80) cp = c;
+    else if (c >= 0xc0 && c < 0xe0 && i < b.length) cp = ((c & 31) << 6) | (b[i++] & 63);
+    else if (c >= 0xe0 && c < 0xf0 && i + 1 < b.length){ cp = ((c & 15) << 12) | ((b[i] & 63) << 6) | (b[i + 1] & 63); i += 2; }
+    else if (c >= 0xf0 && i + 2 < b.length){ cp = ((c & 7) << 18) | ((b[i] & 63) << 12) | ((b[i + 1] & 63) << 6) | (b[i + 2] & 63); i += 3; }
+    else return null;
+    if (cp >= 0x10000){ cp -= 0x10000; s += String.fromCharCode(0xd800 + (cp >> 10), 0xdc00 + (cp & 1023)); } else s += String.fromCharCode(cp);
+  }
+  return s;
+}
+const SH_B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+function shB64(str){
+  const b = shUtf8(str); let o = '';
+  for (let i = 0; i < b.length; i += 3){
+    const n = (b[i] << 16) | ((b[i + 1] || 0) << 8) | (b[i + 2] || 0), left = b.length - i;
+    o += SH_B64[(n >> 18) & 63] + SH_B64[(n >> 12) & 63] + (left > 1 ? SH_B64[(n >> 6) & 63] : '') + (left > 2 ? SH_B64[n & 63] : '');
+  }
+  return o;
+}
+/* the text back from url-safe base64, or null when it is not valid */
+function shUnB64(s){
+  if (!/^[A-Za-z0-9_-]*$/.test(s) || s.length % 4 === 1) return null;
+  const b = [];
+  for (let i = 0; i < s.length; i += 4){
+    const q = [0, 1, 2, 3].map(k => i + k < s.length ? SH_B64.indexOf(s[i + k]) : -1), n = (q[0] << 18) | ((q[1] & 63) << 12) | ((Math.max(q[2], 0)) << 6) | Math.max(q[3], 0);
+    b.push((n >> 16) & 255); if (q[2] >= 0) b.push((n >> 8) & 255); if (q[3] >= 0) b.push(n & 255);
+  }
+  return shFromUtf8(b);
+}
+/* three base-36 characters from the payload */
+function shSum(s){
+  let a = 7, b = 13;
+  for (let i = 0; i < s.length; i++){ a = (a * 31 + s.charCodeAt(i)) % 46655; b = (b * 17 + a + i) % 46653; }
+  return ((a + b) % 46656).toString(36).padStart(3, '0');
+}
+/* a short clean text from outside: no control characters, one space between words, at most n characters */
+function shText(v, n){ return String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n || 80); }
+/* the payload for a coffee and its brew settings (the same objects the Brew screen reads) */
+function shPack(coffee, brew, adjust){
+  coffee = coffee || {}; brew = brew || {}; adjust = adjust || {};
+  const c = {}, put = (k, v) => { v = shText(v, 80); if (v) c[k] = v; };
+  put('n', coffee.name); put('r', coffee.roaster); put('o', coffee.origin); put('ro', coffee.roast); put('p', coffee.process); put('vr', coffee.varietal); put('b', coffee.blend);
+  if (coffee.decaf === 'yes') c.d = 1;
+  const o = { v:SHARE_VERSION, c };
+  if (brew.method) o.m = String(brew.method);
+  if (+brew.water > 0) o.w = Math.round(+brew.water * 10) / 10;
+  if (+brew.tempF > 0) o.t = Math.round(+brew.tempF);
+  if (brew.tempComp) o.tc = 1;
+  if (+brew.ratio > 0) o.ra = Math.round(+brew.ratio * 10) / 10;
+  if (brew.agitation && brew.agitation !== 'standard') o.ag = String(brew.agitation);
+  if (brew.technique && brew.technique !== 'standard') o.tq = String(brew.technique);
+  if (brew.pulseTaste && brew.pulseTaste !== 'balanced') o.pt = String(brew.pulseTaste);
+  if (brew.pulseStrength) o.ps = String(brew.pulseStrength);
+  if (brew.ice != null && +brew.ice > 0 && +brew.ice !== 0.4 && (brew.technique === 'flash' || brew.technique === 'iceafter')) o.ic = +brew.ice;
+  const g = Math.round(+adjust.grind || 0), r = Math.round(+adjust.ratio || 0), a = adjust.agit === 'gentle' || adjust.agit === 'active' ? adjust.agit : '';
+  if (g || r || a) o.aj = [g, r, a];
+  return o;
+}
+/* the whole line, or '' when there is no method to carry */
+function shareCode(coffee, brew, adjust){
+  if (!brew || !brew.method) return '';
+  const p = shB64(JSON.stringify(shPack(coffee, brew, adjust)));
+  return SHARE_TAG + ' V' + SHARE_VERSION + '.' + p + '.' + shSum(p);
+}
+/* the line for a saved tasting (a history row), or '' when the row has no method the app knows */
+function shareCodeOfRow(o){
+  if (!o) return '';
+  const g = k => unneutralize(o[k] || '');
+  const raw = String(o.brew_method || '').trim(), m = METHODS.find(x => x.key === raw || x.label.toLowerCase() === raw.toLowerCase());
+  if (!m) return '';
+  const coffee = { name:g('coffee_name'), roaster:g('roaster'), origin:g('origin'), varietal:g('varietal'), roast:valueByLabel(ROASTS, g('roast_level')) || '', process:valueByLabel(PROCESSES, g('process')) || '',
+    blend:valueByLabel(BLEND_OPTS, g('blend')) || '', decaf:o.decaf === 'yes' ? 'yes' : '' };
+  const brew = { method:m.key, water:+o.brew_water_g, tempF:+o.brew_temp_f, ratio:+o.brew_ratio, agitation:['gentle', 'active'].includes(o.brew_agitation) ? o.brew_agitation : '', technique:techKeyOf(o.brew_technique) };
+  return shareCode(coffee, brew, null);
+}
+/* check a payload against the app's own lists and limits. Returns { coffee, brew, adjust } with only the parts that were valid, or null when there is nothing usable (no bean name and no method). */
+function shCheck(o){
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+  const c = o.c && typeof o.c === 'object' ? o.c : {}, coffee = {};
+  [['n', 'name'], ['r', 'roaster'], ['o', 'origin'], ['vr', 'varietal']].forEach(p => { const t = shText(c[p[0]], 80); if (t) coffee[p[1]] = t; });
+  if (ROASTS.some(x => x.v === c.ro)) coffee.roast = c.ro;
+  if (PROCESSES.some(x => x.v === c.p) && c.p !== 'unknown') coffee.process = c.p;
+  if (BLEND_OPTS.some(x => x.v === c.b)) coffee.blend = c.b;
+  if (c.d === 1 || c.d === true) coffee.decaf = 'yes';
+  const m = typeof o.m === 'string' ? METHODS.find(x => x.key === o.m) : null, brew = {}, adjust = { grind:0, ratio:0, agit:'' };
+  if (m){
+    brew.method = m.key;
+    const w = +o.w; if (w >= 20 && w <= 5000) brew.water = Math.round(w * 10) / 10;
+    const t = +o.t; if (t >= 165 && t <= 212) brew.tempF = Math.round(t);
+    if (o.tc === 1) brew.tempComp = true;
+    const rb = ratioBounds(m), ra = +o.ra; if (ra >= rb[0] && ra <= rb[1]) brew.ratio = Math.round(ra * 10) / 10;
+    if (['gentle', 'active'].includes(o.ag)) brew.agitation = o.ag;
+    if (typeof o.tq === 'string' && o.tq !== 'standard' && techniquesFor(m).includes(o.tq)) brew.technique = o.tq;
+    if (typeof o.pt === 'string' && PULSE_TASTE[o.pt]) brew.pulseTaste = o.pt;
+    if (typeof o.ps === 'string' && PULSE_STRENGTH[o.ps]) brew.pulseStrength = o.ps;
+    if (ICE_SHARES.includes(+o.ic)) brew.ice = +o.ic;
+    if (Array.isArray(o.aj)){
+      const cl = v => Math.max(-6, Math.min(6, Math.round(+v || 0)));
+      adjust.grind = cl(o.aj[0]); adjust.ratio = cl(o.aj[1]); adjust.agit = ['gentle', 'active'].includes(o.aj[2]) ? o.aj[2] : '';
+    }
+  }
+  if (!coffee.name && !brew.method) return null;
+  return { coffee, brew, adjust };
+}
+/* older plain Share text, read by its words. A recipe's first line is "Method · coffee"; a tasting's first line is the coffee and its second starts with the method. Returns the same shape as shCheck, or null. */
+function shReadWords(text){
+  const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  let mi = -1, m = null, rest = '';
+  for (let i = 0; i < lines.length && mi < 0; i++){
+    const ln = lines[i];
+    METHODS.forEach(x => {
+      if (mi >= 0) return;
+      [x.label, x.key].forEach(nm => {
+        if (mi >= 0 || ln.length < nm.length || ln.slice(0, nm.length).toLowerCase() !== nm.toLowerCase()) return;
+        const after = ln.slice(nm.length);
+        if (after === '' || /^\s*(·|:)/.test(after)){ mi = i; m = x; rest = after.replace(/^\s*(·|:)\s*/, ''); }
+      });
+    });
+  }
+  if (!m) return null;
+  const hot = lines.join('\n');
+  let coffeeLine = '';
+  if (/^\s*·/.test(lines[mi].slice(m.label.length)) || /^\s*·/.test(lines[mi].slice(m.key.length))) coffeeLine = rest;
+  else if (mi > 0) coffeeLine = lines[0];
+  const o = { v:1, c:{}, m:m.key };
+  if (coffeeLine){
+    let cl = coffeeLine; const ro = /,?\s*(medium-light|medium-dark|light|medium|dark) roast$/i.exec(cl);
+    if (ro){ o.c.ro = ro[1].toLowerCase(); cl = cl.slice(0, ro.index); }
+    const nr = /^(.*?)\s*\((.*)\)$/.exec(cl.trim());
+    if (nr){ o.c.n = nr[1]; o.c.r = nr[2]; } else o.c.n = cl.trim();
+    if (!ro && /\bg (coffee|water)\b|°F|^Grind\b|^My (rating|score)/i.test(coffeeLine)) o.c = {};
+  }
+  let x;
+  if ((x = /(\d+(?:\.\d+)?) g hot water over (\d+(?:\.\d+)?) g ice \(1:(\d+(?:\.\d+)?) in total\)/.exec(hot))){ o.w = Math.round((+x[1] + +x[2]) * 10) / 10; o.ra = +x[3]; o.tq = 'flash'; }
+  else if ((x = /(\d+(?:\.\d+)?) g water(?: \(1:(\d+(?:\.\d+)?)\))?/.exec(hot))){ o.w = +x[1]; if (x[2]) o.ra = +x[2]; }
+  if ((x = /(\d{3})\s*°\s*F/.exec(hot))) o.t = +x[1];
+  return shCheck(o);
+}
+/* Read what a person pasted. Returns { ok:true, via:'code'|'words', coffee, brew, adjust } or { ok:false, why } with why one of empty, drink, newer, damaged, unreadable. */
+function shareRead(text){
+  text = String(text == null ? '' : text).slice(0, 20000);
+  if (!text.trim()) return { ok:false, why:'empty' };
+  const at = text.toLowerCase().indexOf(SHARE_TAG.toLowerCase());
+  if (at >= 0){
+    const rest = SHARE_TAG + text.slice(at + SHARE_TAG.length).replace(/\s+/g, ''), m = /^BT-code:V(\d{1,3})\.([A-Za-z0-9_-]+)\.([0-9a-z]{3})/.exec(rest);
+    if (!m) return { ok:false, why:'damaged' };
+    if (+m[1] > SHARE_VERSION) return { ok:false, why:'newer' };
+    if (shSum(m[2]) !== m[3]) return { ok:false, why:'damaged' };
+    const json = shUnB64(m[2]); let o = null;
+    try { o = json == null ? null : JSON.parse(json); } catch (e){ o = null; }
+    const r = shCheck(o);
+    return r ? { ok:true, via:'code', coffee:r.coffee, brew:r.brew, adjust:r.adjust } : { ok:false, why:'damaged' };
+  }
+  const r = shReadWords(text);
+  if (r) return { ok:true, via:'words', coffee:r.coffee, brew:r.brew, adjust:r.adjust };
+  if (/Worth the price:|Order it again:/i.test(text) || (/Made with BeanTelligence/i.test(text) && /(^|\n)At [^\n]+/.test(text) && /\n\D?\d+\.\d\d\s*(\n|$)/.test(text))) return { ok:false, why:'drink' };
+  return { ok:false, why:'unreadable' };
+}
 const SHARE_FOOT = 'Made with BeanTelligence';
 const shNum = (v, d) => { const n = +v; return isFinite(n) ? String(Math.round(n * Math.pow(10, d)) / Math.pow(10, d)) : ''; };
 const shLow = s => String(s == null ? '' : s).trim().toLowerCase();
@@ -10004,8 +10195,8 @@ function shCoffeeLine(name, roaster, roast){
   const head = n ? n + (r ? ' (' + r + ')' : '') : r;
   return [head, ro ? ro + ' roast' : ''].filter(Boolean).join(', ');
 }
-/* a recipe from buildRecipe, with the coffee it was built for */
-function shareRecipeText(r, coffee){
+/* a recipe from buildRecipe, with the coffee it was built for. st = { brew, adjust } (the Brew screen's settings) adds the BT-code line, so the text can be loaded back. */
+function shareRecipeText(r, coffee, st){
   if (!r || !r.method) return '';
   coffee = coffee || {};
   const lines = [];
@@ -10023,6 +10214,8 @@ function shareRecipeText(r, coffee){
   if (r.totalSecs) t.push('total time ' + fmtTime(r.totalSecs));
   if (t.length){ const s = t.join(', '); lines.push(s.charAt(0).toUpperCase() + s.slice(1)); }
   lines.push(SHARE_FOOT);
+  const code = st ? shareCode(coffee, Object.assign({}, st.brew, { method:r.method.key }), st.adjust) : '';
+  if (code) lines.push(code);
   return lines.join('\n');
 }
 /* a saved tasting (a history row). Only the coffee, the recipe and the scores: no notes, no words, no origin details. */
@@ -10034,7 +10227,7 @@ function shareTastingText(o){
   if (+o.brew_dose_g > 0) bits.push(shNum(o.brew_dose_g, 1) + ' g coffee');
   if (+o.brew_water_g > 0) bits.push(shNum(o.brew_water_g, 1) + ' g water' + (+o.brew_ratio > 0 ? ' (1:' + shNum(o.brew_ratio, 1) + ')' : ''));
   if (+o.brew_temp_f > 0) bits.push(shNum(o.brew_temp_f, 0) + '°F');
-  const m = String(o.brew_method || '').trim();
+  const mk = String(o.brew_method || '').trim(), mdef = METHODS.find(x => x.key === mk), m = mdef ? mdef.label : mk;
   if (m || bits.length) lines.push((m ? m + (bits.length ? ': ' : '') : '') + bits.join(', '));
   const g = [];
   if (+o.brew_grind_target_um > 0) g.push('Grind about ' + shNum(o.brew_grind_target_um, 0) + ' µm');
@@ -10044,6 +10237,8 @@ function shareTastingText(o){
   if (stars) lines.push('My rating: ' + shNum(stars, 1) + ' out of 5 stars');
   if (o.total_score !== '' && o.total_score != null && +o.total_score > 0) lines.push('My score: ' + shNum(o.total_score, 2) + ' out of 100');
   lines.push(SHARE_FOOT);
+  const code = shareCodeOfRow(o);
+  if (code) lines.push(code);
   return lines.join('\n');
 }
 /* a coffee shop drink (an entry of the shops list). The note is left out. Money keeps two decimals. */
@@ -10053,9 +10248,18 @@ function shareDrinkText(d){
   const name = String(d.name || '').trim() || (kind ? kind.label : 'Drink');
   const lines = [];
   lines.push([name, shLow(d.temp), size ? shLow(size.label) : '', d.amount ? d.amount + ' ' + d.unit : ''].filter(Boolean).join(', '));
+  /* what went in it: milk, extra shots, flavor */
+  const mk = SHOP_MILKS.find(x => x.v === d.milk), fl = SHOP_FLAVORS.find(x => x.v === d.flavor), sn = shopShots(d.shots);
+  const extra = [mk ? mk.say.charAt(0).toUpperCase() + mk.say.slice(1) : '', sn ? sn + ' extra ' + (sn === 1 ? 'shot' : 'shots') : '', fl && fl.v !== 'none' ? shLow(fl.label) : ''].filter(Boolean);
+  if (extra.length) lines.push(extra.join(', '));
   const place = shopPlaceText(d);
   if (d.shop || place) lines.push('At ' + [d.shop, place].filter(Boolean).join(', '));
   if (d.price > 0) lines.push((d.sym || '$') + (Math.round(d.price * 100) / 100).toFixed(2));
+  const od = SHOP_ORDERS.find(x => x.v === d.how), st = SHOP_STRENGTHS.find(x => x.v === d.strength), sw = SHOP_SWEETS.find(x => x.v === d.sweet), q = [];
+  if (od) q.push('Ordered: ' + shLow(od.label));
+  if (st) q.push('Strength: ' + shLow(st.label));
+  if (sw) q.push('Sweetness: ' + shLow(sw.label));
+  if (q.length) lines.push(q.join('. ') + '.');
   const w = SHOP_WORTHS.find(x => x.v === d.worth), a = SHOP_AGAINS.find(x => x.v === d.again);
   const j = [];
   if (w) j.push('Worth the price: ' + w.label.toLowerCase());
@@ -10316,6 +10520,21 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 81,
+  "version": "4.032.0081",
+  "tier": "medium",
+  "at": "2026-10-14T16:44:34Z",
+  "date": "2026-10-14",
+  "title": "Load a shared coffee, and many more shop drinks",
+  "notes": [
+   "A new Load a shared coffee row on the first screen. Paste what a friend sent from Share, check what I found, and load it. It fills in the bean facts and how it was made, and opens the Coffee step. Elevation and roast date stay yours to answer, because they are about your own bag.",
+   "Shared brew settings and saved tastings now end with a code line, so another phone can load them back. Older shared text still loads, with only the parts I can find.",
+   "The shop drink list grew from 9 to 22 tiles: macchiato, cortado, flat white, cappuccino, mocha, chai latte, matcha latte, cold brew, nitro cold brew, refresher, frappuccino and more, in groups.",
+   "New shop drink questions: milk type, extra shots with a plus and minus, flavor or syrup, how you ordered, and a strength and sweetness check. All are optional, and older shop files still load.",
+   "Share this drink now includes the new answers. A shared shop drink cannot be loaded; the Load screen says so."
+  ]
+ },
  {
   "release": 80,
   "version": "4.031.0080",
@@ -11396,20 +11615,43 @@ function folkProblems(list){
 /* the four steps of a shop drink, in order: the screen name and the step name (the same word) */
 const STEP_SHOP = { shop:'Shop', drink:'Drink', taste:'Taste', perfect:'Perfect' };
 const SHOP_STEPS = [['shop', STEP_SHOP.shop], ['sdrink', STEP_SHOP.drink], ['staste', STEP_SHOP.taste], ['sperfect', STEP_SHOP.perfect]];
+/* What a person can order. `hot` is the temperature a new pick starts on (the person can change it). Iced latte is the old name from before Hot or iced was its own question: files and drinks that have it keep it, but it is not offered any more (`old`). */
 const SHOP_KINDS = [
   { v:'pour', label:'Pour over', hot:true }, { v:'espresso', label:'Espresso', hot:true }, { v:'americano', label:'Americano', hot:true }, { v:'latte', label:'Latte', hot:true },
-  { v:'cappuccino', label:'Cappuccino', hot:true }, { v:'cold', label:'Cold brew', hot:false }, { v:'icedlatte', label:'Iced latte', hot:false }, { v:'special', label:'Seasonal special', hot:true }, { v:'other', label:'Something else', hot:true }
+  { v:'cappuccino', label:'Cappuccino', hot:true }, { v:'cold', label:'Cold brew', hot:false }, { v:'icedlatte', label:'Iced latte', hot:false, old:true }, { v:'special', label:'Seasonal special', hot:true }, { v:'other', label:'Something else', hot:true },
+  { v:'macchiato', label:'Macchiato', hot:true }, { v:'cortado', label:'Cortado', hot:true }, { v:'flatwhite', label:'Flat white', hot:true }, { v:'caramelmac', label:'Caramel macchiato', hot:true }, { v:'mocha', label:'Mocha', hot:true },
+  { v:'brewed', label:'Brewed coffee', hot:true }, { v:'icedcoffee', label:'Iced coffee', hot:false }, { v:'nitro', label:'Nitro cold brew', hot:false },
+  { v:'frappe', label:'Frappe or blended', hot:false }, { v:'affogato', label:'Affogato', hot:true },
+  { v:'chai', label:'Chai latte', hot:true }, { v:'matcha', label:'Matcha latte', hot:true }, { v:'hotchoc', label:'Hot chocolate', hot:true }, { v:'tea', label:'Tea', hot:true }
 ];
+/* the drink step shows the kinds in these groups, in this order (the menus of the big chains and coffee bars, read 14 Oct 2026: Starbucks, Dunkin') */
+const SHOP_KIND_GROUPS = [
+  ['Espresso drinks', ['espresso', 'americano', 'macchiato', 'cortado', 'flatwhite', 'cappuccino', 'latte', 'caramelmac', 'mocha']],
+  ['Brewed and cold', ['brewed', 'pour', 'icedcoffee', 'cold', 'nitro']],
+  ['Sweet and blended', ['frappe', 'affogato']],
+  ['Not coffee', ['chai', 'matcha', 'hotchoc', 'tea']],
+  ['Something else', ['special', 'other']]
+];
+/* what went in it; `say` is how it reads in a sentence */
+const SHOP_MILKS = [{ v:'none', label:'No milk', say:'no milk' }, { v:'whole', label:'Whole', say:'whole milk' }, { v:'twopct', label:'2 percent', say:'2 percent milk' }, { v:'skim', label:'Skim', say:'skim milk' },
+  { v:'oat', label:'Oat', say:'oat milk' }, { v:'almond', label:'Almond', say:'almond milk' }, { v:'soy', label:'Soy', say:'soy milk' }, { v:'coconut', label:'Coconut', say:'coconut milk' }, { v:'half', label:'Half and half', say:'half and half' }];
+const SHOP_MAX_SHOTS = 8;
+const SHOP_FLAVORS = [{ v:'none', label:'None' }, { v:'vanilla', label:'Vanilla' }, { v:'caramel', label:'Caramel' }, { v:'hazelnut', label:'Hazelnut' }, { v:'pumpkin', label:'Pumpkin spice' }, { v:'mocha', label:'Mocha' }, { v:'other', label:'Other' }];
+const SHOP_ORDERS = [{ v:'shop', label:'In the shop' }, { v:'drive', label:'Drive-through' }, { v:'mobile', label:'Mobile order' }, { v:'delivery', label:'Delivery' }];
+const SHOP_STRENGTHS = [{ v:'weak', label:'Too weak' }, { v:'right', label:'Just right' }, { v:'strong', label:'Too strong' }];
+const SHOP_SWEETS = [{ v:'less', label:'Not sweet enough' }, { v:'right', label:'Just right' }, { v:'more', label:'Too sweet' }];
 const SHOP_SIZES = [{ v:'small', label:'Small' }, { v:'medium', label:'Medium' }, { v:'large', label:'Large' }];
 const SHOP_FACES = [{ v:'good', label:'Good' }, { v:'okay', label:'Okay' }, { v:'notgood', label:'Not good' }];
 const SHOP_AGAINS = [{ v:'yes', label:'Yes, again' }, { v:'maybe', label:'Maybe' }, { v:'no', label:'Never again' }];
 const SHOP_WORTHS = [{ v:'worth', label:'Worth it' }, { v:'fair', label:'Fair' }, { v:'over', label:'Overpriced' }];
 const US_STATES = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'District of Columbia', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
 const SHOP_COUNTRIES = ['United States', 'Canada', 'Mexico', 'United Kingdom', 'Ireland', 'France', 'Germany', 'Italy', 'Spain', 'Portugal', 'Netherlands', 'Belgium', 'Switzerland', 'Austria', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Poland', 'Czechia', 'Greece', 'Turkey', 'Ethiopia', 'Kenya', 'Rwanda', 'Brazil', 'Colombia', 'Costa Rica', 'Guatemala', 'Panama', 'Peru', 'Argentina', 'Chile', 'Japan', 'South Korea', 'China', 'Taiwan', 'Thailand', 'Vietnam', 'Indonesia', 'Philippines', 'India', 'Australia', 'New Zealand', 'United Arab Emirates', 'South Africa', 'Israel'];
-const SHOP_COLUMNS = ['row', 'date', 'shop', 'city', 'region', 'country', 'drink', 'menu name', 'hot or iced', 'size', 'amount', 'unit', 'currency', 'price', 'overall', 'beans', 'order again', 'worth the price', 'favorite', 'notes'];
+const SHOP_COLUMNS = ['row', 'date', 'shop', 'city', 'region', 'country', 'drink', 'menu name', 'hot or iced', 'size', 'amount', 'unit', 'currency', 'price', 'overall', 'beans', 'order again', 'worth the price', 'favorite', 'notes', 'milk', 'extra shots', 'flavor', 'how ordered', 'strength', 'sweetness'];   /* the last six came in Release 81: older files do not have them and still load */
 const SHOP_MAX_DRINKS = 5000, SHOP_MAX_TEXT = 2000000;
 const shopPick = (list, v) => { v = String(v == null ? '' : v).trim().toLowerCase(); const f = list.find(x => x.v === v); return f ? f.v : ''; };
 const shopTxt = (v, n) => priceText(v, n);
+/* extra shots added: a whole number from 1 to SHOP_MAX_SHOTS, or null (none added or not answered) */
+const shopShots = v => { const n = Math.round(parseFloat(String(v == null ? '' : v).replace(',', '.'))); return isFinite(n) && n >= 1 && n <= SHOP_MAX_SHOTS ? n : null; };
 /* a place: country, region (a US state, or any typed region elsewhere) and city. Blank country means the United States only when a US state is given. */
 function shopPlace(o){
   o = o || {}; let country = shopTxt(o.country, 40), region = shopTxt(o.region, 40);
@@ -11434,7 +11676,8 @@ function drinkEntry(o){
   const temp = shopPick([{ v:'hot' }, { v:'iced' }], o.temp);
   return { date:/^\d{4}-\d{2}-\d{2}$/.test(String(o.date || '').trim()) ? String(o.date).trim() : '', shop:sh.name, city:sh.city, region:sh.region, country:sh.country, kind, name:shopTxt(o.name, 80), temp,
     size:shopPick(SHOP_SIZES, o.size), amount:amount > 0 && amount <= 3000 && unit ? amount : null, unit:amount > 0 && amount <= 3000 ? unit : '', sym:shopTxt(o.sym, 3) || '$', price:price > 0 && price <= 1000 ? price : null,
-    face:shopPick(SHOP_FACES, o.face), beans:beans != null && beans >= 0.5 && beans <= 5 ? Math.round(beans * 2) / 2 : null, again:shopPick(SHOP_AGAINS, o.again), worth:shopPick(SHOP_WORTHS, o.worth), fav:o.fav === true || String(o.fav).toLowerCase() === 'yes', notes:shopTxt(o.notes, 400) };
+    face:shopPick(SHOP_FACES, o.face), beans:beans != null && beans >= 0.5 && beans <= 5 ? Math.round(beans * 2) / 2 : null, again:shopPick(SHOP_AGAINS, o.again), worth:shopPick(SHOP_WORTHS, o.worth), fav:o.fav === true || String(o.fav).toLowerCase() === 'yes', notes:shopTxt(o.notes, 400),
+    milk:shopPick(SHOP_MILKS, o.milk), shots:shopShots(o.shots), flavor:shopPick(SHOP_FLAVORS, o.flavor), how:shopPick(SHOP_ORDERS, o.how), strength:shopPick(SHOP_STRENGTHS, o.strength), sweet:shopPick(SHOP_SWEETS, o.sweet) };
 }
 function drinkKey(d){ return [d.date, d.shop, d.city, d.region, d.country, d.kind, d.name, d.size, d.price].map(x => String(x == null ? '' : x).toLowerCase()).join('|'); }
 /* put a drink on the store. Returns { store (a new store), added, why }. The same drink (date, shop, place, kind, name, size, price) is not added twice. */
@@ -11475,9 +11718,9 @@ function shopCsv(store){
   const st = store || shopStore(), lines = [SHOP_COLUMNS], blank = n => new Array(n).fill('');
   const place = p => [neutralize(p.city), neutralize(p.region), neutralize(p.country)];
   const has = new Set(st.drinks.map(d => csKey({ name:d.shop, city:d.city, region:d.region, country:d.country })));
-  if (st.home.city || st.home.region || st.home.country) lines.push(['home', '', ''].concat(place(st.home), blank(14)));
-  st.shops.forEach(s => { if (!has.has(csKey(s))) lines.push(['shop', '', neutralize(s.name)].concat(place(s), blank(14))); });
-  st.drinks.forEach(d => lines.push(['drink', d.date, neutralize(d.shop)].concat(place(d), [d.kind, neutralize(d.name), d.temp, d.size, d.amount == null ? '' : String(d.amount), d.unit, neutralize(d.sym), d.price == null ? '' : String(d.price), d.face, d.beans == null ? '' : String(d.beans), d.again, d.worth, d.fav ? 'yes' : '', neutralize(d.notes)])));
+  if (st.home.city || st.home.region || st.home.country) lines.push(['home', '', ''].concat(place(st.home), blank(SHOP_COLUMNS.length - 6)));
+  st.shops.forEach(s => { if (!has.has(csKey(s))) lines.push(['shop', '', neutralize(s.name)].concat(place(s), blank(SHOP_COLUMNS.length - 6))); });
+  st.drinks.forEach(d => lines.push(['drink', d.date, neutralize(d.shop)].concat(place(d), [d.kind, neutralize(d.name), d.temp, d.size, d.amount == null ? '' : String(d.amount), d.unit, neutralize(d.sym), d.price == null ? '' : String(d.price), d.face, d.beans == null ? '' : String(d.beans), d.again, d.worth, d.fav ? 'yes' : '', neutralize(d.notes), d.milk || '', d.shots == null ? '' : String(d.shots), d.flavor || '', d.how || '', d.strength || '', d.sweet || ''])));
   return toCSV(lines);
 }
 /* read a file. Returns { error } or { store, skipped (rows that were not a home, shop or drink), repeats }. Loading a file into a store is done by the caller with shopAddDrink and shopAddShop. */
@@ -11495,7 +11738,7 @@ function shopRead(text){
     if (kind === 'home') st = shopSetHome(st, pl);
     else if (kind === 'shop'){ const a = shopAddShop(st, Object.assign({ name:un(r, 'shop') }, pl)); if (a.added) st = a.store; else if (a.why === 'same') repeats++; else skipped++; }
     else if (kind === 'drink'){
-      const a = shopAddDrink(st, Object.assign({ date:get(r, 'date'), shop:un(r, 'shop'), kind:get(r, 'drink'), name:un(r, 'menu name'), temp:get(r, 'hot or iced'), size:get(r, 'size'), amount:get(r, 'amount'), unit:get(r, 'unit'), sym:un(r, 'currency'), price:get(r, 'price'), face:get(r, 'overall'), beans:get(r, 'beans'), again:get(r, 'order again'), worth:get(r, 'worth the price'), fav:get(r, 'favorite'), notes:un(r, 'notes') }, pl));
+      const a = shopAddDrink(st, Object.assign({ date:get(r, 'date'), shop:un(r, 'shop'), kind:get(r, 'drink'), name:un(r, 'menu name'), temp:get(r, 'hot or iced'), size:get(r, 'size'), amount:get(r, 'amount'), unit:get(r, 'unit'), sym:un(r, 'currency'), price:get(r, 'price'), face:get(r, 'overall'), beans:get(r, 'beans'), again:get(r, 'order again'), worth:get(r, 'worth the price'), fav:get(r, 'favorite'), notes:un(r, 'notes'), milk:get(r, 'milk'), shots:get(r, 'extra shots'), flavor:get(r, 'flavor'), how:get(r, 'how ordered'), strength:get(r, 'strength'), sweet:get(r, 'sweetness') }, pl));
       if (a.added) st = a.store; else if (a.why === 'same') repeats++; else skipped++;
     } else skipped++;
   });
@@ -12118,7 +12361,7 @@ function changed(){ refreshAll(); scheduleDraft(); }
 /* gearFrom: where Back goes from Gear ('brew' = the method list, 'recipe' = the Brew page). recipeVia: 'gear' when the Brew page was reached from Gear, so Back returns there. Neither is saved: after a reload Back means the method list. */
 let gearFrom = 'brew', recipeVia = '';
 const PARENT = {
-  door:null, start:'door', shop:'door', sdrink:'shop', staste:'sdrink', sperfect:'staste', shops:() => (shopsFrom && shopsFrom !== 'shops' && shopsFrom !== 'timer') ? shopsFrom : 'door', coffee:'start', brew:'coffee', gear:() => gearFrom === 'recipe' ? 'recipe' : 'brew', recipe:() => recipeVia === 'gear' ? 'gear' : 'brew', change:'recipe', ready:'recipe', timer:'recipe',
+  door:null, loadshared:'door', start:'door', shop:'door', sdrink:'shop', staste:'sdrink', sperfect:'staste', shops:() => (shopsFrom && shopsFrom !== 'shops' && shopsFrom !== 'timer') ? shopsFrom : 'door', coffee:'start', brew:'coffee', gear:() => gearFrom === 'recipe' ? 'recipe' : 'brew', recipe:() => recipeVia === 'gear' ? 'gear' : 'brew', change:'recipe', ready:'recipe', timer:'recipe',
   cup:() => app.cupBrew ? 'recipe' : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', detail:'history',
   learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'door'),
   prices:() => (pricesFrom && pricesFrom !== 'prices' && pricesFrom !== 'timer') ? pricesFrom : (app.coffee.name ? 'coffee' : 'door'),
@@ -12182,7 +12425,7 @@ function render(){
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
   const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Calculators', yield:'Cup yield', ratio:'Ratio calculator', cost:'Cost of coffee', caffeine:'Caffeine', cafdrink:'Add a drink', cafresult:'Your caffeine day', cafcup:'Caffeine in a cup', prices:'Coffee prices', tastes:'Train your palate', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', about:'About', glossary:'Glossary', files:'My files' };
   Object.assign(titles, TP_TITLES);
-  $('topTitle').textContent = sc === 'start' || sc === 'door' || sc === 'shop' ? '' : (titles[sc] || 'BeanTelligence');
+  $('topTitle').textContent = sc === 'start' || sc === 'door' || sc === 'shop' || sc === 'loadshared' ? '' : (titles[sc] || 'BeanTelligence');
   SCREENS[sc](m);
   refreshAll();
   window.scrollTo({ top:0 });
@@ -16086,7 +16329,7 @@ function watchFix(t){ return t.replace(/grind one step (finer|coarser) \(about (
 /* the way on: Brew it starts the guided timer; a brew with no timer goes straight to tasting */
 function brewDock(m, r){
   const brewed = () => { snapshotBrew(); prepCupEntry(); go('cup'); };
-  m.append(h('div', { class:'flinks one' }, h('button', { type:'button', class:'flink', id:'shareRecipeBtn', text:'Share these brew settings', onclick:() => openShare('Share these brew settings', shareRecipeText(r, app.coffee)) })));
+  m.append(h('div', { class:'flinks one' }, h('button', { type:'button', class:'flink', id:'shareRecipeBtn', text:'Share these brew settings', onclick:() => openShare('Share these brew settings', shareRecipeText(r, app.coffee, { brew:app.brew, adjust:app.adjust })) })));
   if (r.timed){
     m.append(h('div', { class:'flinks one' }, h('button', { type:'button', class:'flink', id:'brewedBtn', text:'I already brewed it: go to Taste', onclick:brewed })));
     m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary', id:'brewItBtn', onclick:() => go('timer') }, h('span', { class:'bi' }, 'Brew it'), h('span', { class:'sub', text:'Starts the timer' })))));
@@ -18221,6 +18464,7 @@ function renderSheetBody(){
   if (sheet.step === 'everyResult'){ renderEveryResultSheet(title); return; }
   if (sheet.step === 'cafClear'){ renderCafClearSheet(title); return; }
   if (sheet.step === 'share'){ renderShareSheet(title); return; }   /* Share this recipe, tasting or drink (64-share-sheet.js) */   /* the pop-up after Save everything (78-every-save.js) */
+  if (sheet.step === 'loadErr'){ renderLoadErrSheet(title); return; }   /* Load a shared coffee could not read the text (64-load-shared.js) */
   if (sheet.step === 'everyLoad'){ renderEveryLoadSheet(title); return; }
   if (sheet.step === 'otherWay'){ renderOtherWaySheet(title); return; }   /* Cup this one too? / Rate it too?, before saving (69-sheet-other-way.js) */
   if (sheet.step === 'bagtile'){ renderBagTileSheet(title); return; }   /* what one part of the bag means (69-sheet-bag-tile.js) */
@@ -18801,6 +19045,104 @@ function renderSetupFoundSheet(title){
     h('p', { class:'fine', text:'Whichever you keep goes into your file the next time you save.' }),
     h('div', { class:'row', style:'margin-top:12px' }, h('button', { type:'button', class:'btn', id:'setupKeepMine', text:'Keep this browser\'s', onclick:done }),
       h('button', { type:'button', class:'btn primary', id:'setupUseFile', text:"Use the file's", onclick:() => { applySetup(sheet.setup); done(); } })));
+}
+/* ---------- Load a shared coffee ----------
+   The text is read by the engine (shareRead, 75-share-read.js) every time it changes, so the person sees what was found before anything is loaded.
+   Loading replaces the coffee in progress (the first screen's Start a fresh coffee does the same, with a second tap), then opens the Coffee step: elevation and roast date are about the person's own bag, so they are never sent. */
+let ld = { text:'', res:null };
+const LD_WHY = {
+  drink:'That is a shop drink. I can only load a coffee made at home.',
+  newer:'That was made by a newer BeanTelligence. Update this app, then try again.',
+  damaged:'The code line at the bottom looks cut off. Paste the whole message.',
+  unreadable:'I cannot find a coffee in that. Paste the whole message from Share.'
+};
+/* the mascot's line under the cards */
+function ldSay(res, text){
+  if (!String(text || '').trim()) return 'Paste the message and I will read it. I can read text made by Share in this app.';
+  if (!res || !res.ok) return (res && LD_WHY[res.why]) || LD_WHY.unreadable;
+  return res.via === 'words' ? 'This is older text, so I only found part of it. I will fill in what I found.' : 'That looks like a good one. Load it and I will open the Coffee step.';
+}
+/* what was found, as short labelled lines: [label, text] */
+function ldFoundLines(res){
+  const c = Object.assign(newCoffee(), res.coffee), out = [];
+  const pr = PROCESSES.find(x => x.v === c.process), bl = BLEND_OPTS.find(x => x.v === c.blend);
+  const coffee = [shCoffeeLine(c.name, c.roaster, c.roast), c.origin, pr ? pr.label.toLowerCase() : '', c.varietal, bl ? bl.label.toLowerCase() : '', c.decaf === 'yes' ? 'decaf' : ''].filter(Boolean).join(', ');
+  if (coffee) out.push(['Coffee', coffee]);
+  if (res.brew && res.brew.method){
+    let r = null;
+    try { r = buildRecipe(c, res.brew.method, { water:res.brew.water || (METHODS.find(x => x.key === res.brew.method) || {}).water, tempF:res.brew.tempF, tempComp:res.brew.tempComp, ratio:res.brew.ratio, tech:res.brew.technique, pulseTaste:res.brew.pulseTaste, pulseStrength:res.brew.pulseStrength, ice:res.brew.ice, agit:res.brew.agitation }, res.adjust || { grind:0, ratio:0, agit:'' }, new Date()); } catch(e){ r = null; }
+    if (r){
+      const lines = shareRecipeText(r, {}).split('\n');
+      out.push(['Method', r.method.label + (lines[1] ? ', ' + lines[1] : '')]);
+      const w = lines.find(l => /^Water \d/.test(l)); if (w) out.push(['Water', w.replace(/^Water /, '')]);
+    } else out.push(['Method', (METHODS.find(x => x.key === res.brew.method) || {}).label || '']);
+  }
+  return out;
+}
+/* put the loaded coffee and brew settings in place of whatever was open, then open the Coffee step */
+function ldApply(res){
+  const keepPrefs = app.prefs, b = res.brew || {}, m = METHODS.find(x => x.key === b.method);
+  app = newApp(); app.prefs = keepPrefs; applyGearDefaults(); recipeVia = '';
+  Object.assign(app.coffee, res.coffee);
+  if (m){
+    app.brew.method = m.key; app.brew.water = b.water || m.water;
+    if (b.tempF) app.brew.tempF = b.tempF; if (b.tempComp) app.brew.tempComp = true; if (b.ratio) app.brew.ratio = b.ratio;
+    if (b.agitation) app.brew.agitation = b.agitation; if (b.technique) app.brew.technique = b.technique;
+    if (b.pulseTaste) app.brew.pulseTaste = b.pulseTaste; if (b.pulseStrength) app.brew.pulseStrength = b.pulseStrength; if (b.ice) app.brew.ice = b.ice;
+    if (res.adjust) app.adjust = { grind:res.adjust.grind || 0, ratio:res.adjust.ratio || 0, agit:res.adjust.agit || '' };
+  }
+  state = newCup(); ld = { text:'', res:null };
+  go('start');
+  showStepMsg('Loaded. Elevation and roast date are yours to answer.');
+}
+function openLoadErr(why){ sheet = { step:'loadErr', why:why || 'unreadable' }; openSheet(); }
+function renderLoadErrSheet(title){
+  const mk = h('span', { class:'evpmasc', 'aria-hidden':'true' }); mk.innerHTML = mascotSvg({ view:'full', pose:'shrug', face:'worried' });
+  title.textContent = 'I could not read that';
+  sheetEl.append(h('div', { class:'evpop ok' }, mk, title, h('p', { id:'ldErrWhy', text:LD_WHY[sheet.why] || LD_WHY.unreadable }),
+    h('button', { type:'button', class:'btn primary block', id:'ldErrAgain', text:'Try again', onclick:() => { closeSheet(); const t = $('ldTxt'); if (t){ t.focus(); try { t.select(); } catch(e){} } } }),
+    h('button', { type:'button', class:'btn block gold', id:'ldErrClose', text:'Close', onclick:closeSheet })));
+}
+function screenLoadShared(m){
+  m.append(h('h1', { style:'margin-top:14px', text:'Load a shared coffee' }), h('p', { class:'lede', text:'Paste what someone sent you. I fill in the coffee and how it was made.' }));
+  const ta = h('textarea', { id:'ldTxt', rows:'6', maxlength:'20000', placeholder:'Paste the whole message here', autocomplete:'off', autocapitalize:'off', spellcheck:'false' });
+  ta.value = ld.text;
+  const note = h('p', { class:'fine', id:'ldNote', role:'status' });
+  const canPaste = typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.readText === 'function';
+  const pasteBtn = canPaste ? h('button', { type:'button', class:'btn block', id:'ldPaste', text:'Paste from my clipboard', onclick:async () => {
+    try { const t = await navigator.clipboard.readText(); if (!String(t || '').trim()){ note.textContent = 'Your clipboard is empty. Copy the message first.'; return; } ta.value = t; note.textContent = ''; ldPaint(); }
+    catch(e){ note.textContent = 'Paste did not work here. Press and hold the box, then tap Paste.'; }
+  } }) : null;
+  m.append(sBand('fl-text', 'Paste it here', ['Required', 'Text from a friend or from Share'], h('div', { class:'field' }, h('label', { for:'ldTxt', text:'What they sent' }), ta), pasteBtn, note));
+  const found = h('div', { id:'ldFoundHost' });
+  m.append(found);
+  const say = sayRow(ldSay(null, ''));
+  m.append(say);
+  const err = h('p', { class:'msg', role:'alert', id:'ldErr' });
+  const go1 = h('button', { type:'button', class:'btn primary', id:'ldGo' }, h('span', { id:'ldGoText' }));
+  m.append(err, h('div', { class:'dock' }, h('div', { class:'dock-inner' }, go1)));
+  /* read the box and redraw what depends on it */
+  function ldPaint(){
+    ld.text = ta.value; ld.res = ld.text.trim() ? shareRead(ld.text) : null;
+    found.textContent = ''; err.textContent = '';
+    const ok = !!(ld.res && ld.res.ok);
+    if (ok){
+      const lines = ldFoundLines(ld.res), fnd = h('div', { class:'fnd' });
+      lines.forEach(x => fnd.append(h('p', null, h('b', { text:x[0] }), h('br'), x[1])));
+      fnd.append(h('p', { class:'hint', text:'I do not load notes or scores. Elevation and roast date are yours to answer, because they are about your own bag.' + (homeTyped() ? ' This replaces the coffee you have open.' : '') }));
+      found.append(sBand('bn-on', 'Here is what I found', ['', ld.res.via === 'words' ? 'Older text, so only part of it' : 'Check it, then load it'], fnd));
+    }
+    say.querySelector('.saybub').textContent = ldSay(ld.res, ld.text);
+    $('ldGoText').textContent = !ld.text.trim() ? 'Paste something first' : ok ? (homeTyped() ? 'Replace my coffee with this' : 'Load this coffee') : 'Load this coffee';
+    go1.classList.toggle('notready', !ok);
+  }
+  ta.addEventListener('input', ldPaint);
+  go1.addEventListener('click', () => {
+    if (!ld.text.trim()){ err.textContent = 'Paste the message first.'; ta.focus(); return; }
+    if (!ld.res || !ld.res.ok){ openLoadErr(ld.res && ld.res.why); return; }
+    ldApply(ld.res);
+  });
+  ldPaint();
 }
 const inClaude = () => !!(window.claude && typeof window.claude.use === 'function');
 async function getDownloads(){
@@ -20550,7 +20892,8 @@ const SHOPS_KEY = 'brew-and-cup-shops-v1', SHOPS_CHANGES_KEY = 'brew-and-cup-sho
 const SHOP_TRAIL = SHOP_STEPS.map(x => x[0]);
 let sh = { store:shopStore(), changes:0, failed:false, msg:'', q:'', tab:'drinks' };
 const sdBlank = () => ({ on:false, step:'shop', mode:'pick', pickKey:'', name:'', country:'United States', region:'', city:'', from:'',
-  kind:'', menu:'', temp:'', size:'', amount:'', unit:'oz', price:'', sym:'$', face:'', beans:0, again:'', worth:'', notes:'', date:'', saved:'', at:0 });
+  kind:'', menu:'', temp:'', size:'', amount:'', unit:'oz', price:'', sym:'$', face:'', beans:0, again:'', worth:'', notes:'', date:'', saved:'', at:0,
+  milk:'', shots:0, flavor:'', how:'', strength:'', sweet:'' });
 let sd = sdBlank();
 const shEmpty = () => !sh.store.drinks.length && !sh.store.shops.length && !(sh.store.home.city || sh.store.home.region || sh.store.home.country);
 function persistShops(){
@@ -20620,6 +20963,7 @@ function loadShopDraft(){
     d.kind = shopPick(SHOP_KINDS, s.kind); d.menu = t(s.menu, 80); d.temp = s.temp === 'hot' || s.temp === 'iced' ? s.temp : ''; d.size = shopPick(SHOP_SIZES, s.size);
     d.amount = t(s.amount, 8); d.unit = s.unit === 'ml' ? 'ml' : 'oz'; d.price = t(s.price, 10); d.sym = t(s.sym, 3) || '$'; d.face = shopPick(SHOP_FACES, s.face);
     d.beans = +s.beans >= 0.5 && +s.beans <= 5 ? Math.round(+s.beans * 2) / 2 : 0; d.again = shopPick(SHOP_AGAINS, s.again); d.worth = shopPick(SHOP_WORTHS, s.worth);
+    d.milk = shopPick(SHOP_MILKS, s.milk); d.shots = shopShots(s.shots) || 0; d.flavor = shopPick(SHOP_FLAVORS, s.flavor); d.how = shopPick(SHOP_ORDERS, s.how); d.strength = shopPick(SHOP_STRENGTHS, s.strength); d.sweet = shopPick(SHOP_SWEETS, s.sweet);
     d.notes = t(s.notes, 400); d.date = /^\d{4}-\d{2}-\d{2}$/.test(s.date) ? s.date : ''; d.saved = t(s.saved, 400); d.at = isFinite(s.at) ? +s.at : 0;
     sd = d;
   } catch(e){}
@@ -20627,7 +20971,8 @@ function loadShopDraft(){
 /* something has been chosen or typed in the drink being logged */
 function sdStarted(){ return sd.on && !!(sd.pickKey || sd.name.trim() || sd.city.trim() || sd.kind || sd.menu.trim() || sd.temp || sd.size || sd.price.trim() || sd.face || sd.beans || sd.notes.trim()); }
 /* ---------- coffee shops: shared pieces ---------- */
-const KIND_ART = { pour:'m-v60', espresso:'m-espresso', americano:'d-americano', latte:'d-latte', cappuccino:'d-cappuccino', cold:'m-cold', icedlatte:'d-iced-latte', special:'d-special', other:'bean-q' };
+const KIND_ART = { pour:'m-v60', espresso:'m-espresso', americano:'d-americano', latte:'d-latte', cappuccino:'d-cappuccino', cold:'m-cold', icedlatte:'d-iced-latte', special:'d-special', other:'bean-q',
+  macchiato:'d-macchiato', cortado:'d-cortado', flatwhite:'d-flatwhite', caramelmac:'d-caramel-macchiato', mocha:'d-mocha', brewed:'d-brewed', icedcoffee:'d-iced-coffee', nitro:'d-nitro', frappe:'d-frappe', affogato:'d-affogato', chai:'d-chai', matcha:'d-matcha', hotchoc:'d-hotchoc', tea:'d-tea' };
 const SIZE_ART = { small:'z-s', medium:'z-m', large:'z-l' };
 const FACE_ART = { good:['mi-smile', 'g'], okay:['mi-meh', 'a'], notgood:['mi-frown', 'r'] };
 const AGAIN_ART = { yes:['ag-y', 'g'], maybe:['ag-m', 'a'], no:['ag-n', 'r'] };
@@ -20702,7 +21047,8 @@ function sdDrinkMissing(){
 const sdTasteMissing = () => sd.face ? [] : ['how it was'];
 function sdDrinkObj(){
   const p = sdShop() || {};
-  return { shop:p.name, city:p.city, region:p.region, country:p.country, date:sd.date || today(), kind:sd.kind, name:sd.menu, temp:sd.temp, size:sd.size, amount:sd.amount, unit:sd.unit, sym:sd.sym || '$', price:sd.price, face:sd.face, beans:sd.beans || '', again:sd.again, worth:sd.worth, notes:sd.notes, fav:false };
+  return { shop:p.name, city:p.city, region:p.region, country:p.country, date:sd.date || today(), kind:sd.kind, name:sd.menu, temp:sd.temp, size:sd.size, amount:sd.amount, unit:sd.unit, sym:sd.sym || '$', price:sd.price, face:sd.face, beans:sd.beans || '', again:sd.again, worth:sd.worth, notes:sd.notes, fav:false,
+    milk:sd.milk, shots:sd.shots || '', flavor:sd.flavor, how:sd.how, strength:sd.strength, sweet:sd.sweet };
 }
 const sdKindLabel = () => { const k = SHOP_KINDS.find(x => x.v === sd.kind); return k ? k.label : ''; };
 const sdStepName = step => { const s = SHOP_STEPS.find(x => x[0] === step); return s ? s[1] : STEP_SHOP.shop; };
@@ -20793,18 +21139,40 @@ function screenShop(m){
   sdDock(m, 'Next: ' + STEP_SHOP.drink, sdShopMissing, () => go('sdrink'));
 }
 /* ---- step 2: Drink ---- */
-const SD_SAY = { other:'Something different. Tell me everything.', special:'A seasonal special. Tell me everything.' };
+const SD_SAY = { other:'Something different. Tell me everything.', special:'A seasonal special. Tell me everything.', frappe:'A blended drink. Nice. Tell me everything.', icedlatte:'An iced latte. Nice. Tell me everything.' };
+/* the Drink card: every kind, in its groups (Espresso drinks, Brewed and cold, and so on) */
+function sdKindCard(){
+  const kindDef = k => k ? (k.hot ? 'hot' : 'iced') : '', parts = [];
+  SHOP_KIND_GROUPS.forEach(g => {
+    parts.push(h('div', { class:'lbl sgroup', text:g[0] }));
+    parts.push(sTiles(g[1].map(v => { const k = SHOP_KINDS.find(x => x.v === v); return { v:k.v, label:k.label, icon:KIND_ART[k.v] }; }), () => sd.kind,
+      v => { const was = SHOP_KINDS.find(k => k.v === sd.kind); if (!sd.temp || sd.temp === kindDef(was)) sd.temp = kindDef(SHOP_KINDS.find(k => k.v === v)); sd.kind = v; }, { cols:3, art:true, label:g[0] }));
+  });
+  return sBand('ic-cup-steam', 'Drink', ['Required', 'Pick the closest one'], ...parts);
+}
+/* extra shots: a minus and a plus, 0 to SHOP_MAX_SHOTS */
+function sdShotsRow(){
+  const n = h('span', { class:'n', id:'sdShotsN', 'aria-live':'polite' });
+  const minus = h('button', { type:'button', class:'nudge', id:'sdShotsMinus', text:'\u2212', 'aria-label':'Fewer extra shots', onclick:() => bump(-1) });
+  const plus = h('button', { type:'button', class:'nudge', id:'sdShotsPlus', text:'+', 'aria-label':'More extra shots', onclick:() => bump(1) });
+  function paint(){ const v = +sd.shots || 0; n.textContent = String(v); minus.disabled = v <= 0; plus.disabled = v >= SHOP_MAX_SHOTS; }
+  function bump(d){ sd.shots = Math.max(0, Math.min(SHOP_MAX_SHOTS, (+sd.shots || 0) + d)); paint(); sdTouch(); }
+  refreshers.push(paint); paint();
+  return h('div', { class:'sshots' }, h('div', { class:'what', text:'Shots you added' }), h('div', { class:'stepper' }, minus, n, plus));
+}
 function screenSdrink(m){
-  const kindDef = k => k ? (k.hot ? 'hot' : 'iced') : '';
   m.append(h('h1', { style:'margin-top:14px', text:'What did you order?' }));
-  m.append(sBand('ic-cup-steam', 'Drink', ['Required', 'Pick the closest one'], sTiles(SHOP_KINDS.map(k => ({ v:k.v, label:k.label, icon:KIND_ART[k.v] })), () => sd.kind,
-    v => { const was = SHOP_KINDS.find(k => k.v === sd.kind); if (!sd.temp || sd.temp === kindDef(was)) sd.temp = kindDef(SHOP_KINDS.find(k => k.v === v)); sd.kind = v; }, { cols:3, art:true, label:'Kind of drink' })));
+  m.append(sdKindCard());
   sdLine(m, () => { const l = sdKindLabel(); return !l ? 'Pick the closest one and I will ask the rest.' : SD_SAY[sd.kind] || (/^[aeiou]/i.test(l) ? 'An ' : 'A ') + l.toLowerCase() + '. Nice. Tell me everything.'; });
   m.append(sBand('d-special', 'Name on the menu', ['Optional', 'Saved with your drink'], sInput('Name', () => sd.menu, v => { sd.menu = v; }, { placeholder:'e.g. Ethiopia Guji, washed', max:80 })));
   m.append(sBand('ic-cup-steam', 'Hot or iced', ['Required', ''], sTiles([{ v:'hot', label:'Hot', icon:'ic-cup-steam' }, { v:'iced', label:'Iced', icon:'m-cold' }], () => sd.temp, v => { sd.temp = v; }, { cols:2, row:true, label:'Hot or iced' })));
+  m.append(sBand('d-latte', 'Milk', ['Optional', 'What went in it'], sTiles(SHOP_MILKS.map(x => ({ v:x.v, label:x.label })), () => sd.milk, v => { sd.milk = v; }, { cols:3, toggle:true, label:'Milk' })));
+  m.append(sBand('m-espresso', 'Extra shots', ['Optional', 'Shots added on top'], sdShotsRow(), h('span', { class:'hint', text:'Count only the shots you added on top of what the drink comes with.' })));
+  m.append(sBand('s-tag', 'Flavor or syrup', ['Optional', ''], sTiles(SHOP_FLAVORS.map(x => ({ v:x.v, label:x.label })), () => sd.flavor, v => { sd.flavor = v; }, { cols:3, toggle:true, label:'Flavor or syrup' })));
   m.append(sBand('z-m', 'Size', ['Required', 'Exact size is optional'], sTiles(SHOP_SIZES.map(s => ({ v:s.v, label:s.label, icon:SIZE_ART[s.v] })), () => sd.size, v => { sd.size = v; }, { cols:3, art:true, label:'Size' }),
     sInput('Exact size, if you know it', () => sd.amount, v => { sd.amount = v; }, { placeholder:'e.g. 12', inputmode:'decimal', max:8 }),
     sTiles([{ v:'oz', label:'oz' }, { v:'ml', label:'ml' }], () => sd.unit, v => { sd.unit = v; }, { cols:2, label:'Unit of the exact size' })));
+  m.append(sBand('s-shop', 'How did you order?', ['Optional', ''], sTiles(SHOP_ORDERS.map(x => ({ v:x.v, label:x.label })), () => sd.how, v => { sd.how = v; }, { cols:2, toggle:true, label:'How you ordered' })));
   m.append(sBand('d-americano', 'What did it cost?', ['Required', 'The price before tip'], h('div', { class:'srow2' },
     sInput('Price', () => sd.price, v => { sd.price = v; }, { placeholder:'e.g. 6.50', inputmode:'decimal', max:10 }), sInput('Currency', () => sd.sym, v => { sd.sym = v.slice(0, 3); }, { placeholder:'$', max:3 }))));
   sdDock(m, 'Next: ' + STEP_SHOP.taste, sdDrinkMissing, () => go('staste'));
@@ -20814,6 +21182,8 @@ function screenStaste(m){
   m.append(h('h1', { style:'margin-top:14px', text:'How was it?' }));
   m.append(sBand('ic-cup-steam', 'Overall', ['Required', 'Pick a face'], sTiles(SHOP_FACES.map(f => ({ v:f.v, label:f.label, icon:FACE_ART[f.v][0], tone:FACE_ART[f.v][1] })), () => sd.face, v => { sd.face = v; }, { cols:3, face:true, label:'Overall' })));
   m.append(sBand('bn-on', 'Beans', ['', 'Same beans as your home tastings'], starRating(() => sd.beans, v => { sd.beans = v; sdTouch(); refreshAll(); }, { label:'Beans for this drink' })));
+  const SW = (list, key, label, icon, hint) => sBand(icon, label, ['Optional', hint], sTiles(list.map(x => ({ v:x.v, label:x.label, icon:x.v === 'right' ? 'mi-smile' : 'mi-meh', tone:x.v === 'right' ? 'g' : 'a' })), () => sd[key], v => { sd[key] = v; }, { cols:3, face:true, toggle:true, label:label }));
+  m.append(SW(SHOP_STRENGTHS, 'strength', 'Strength', 'm-espresso', 'Was the coffee taste right?'), SW(SHOP_SWEETS, 'sweet', 'Sweetness', 's-tag', ''));
   sdLine(m, () => {
     const p = sdShop(), n = p ? p.name : 'This shop';
     if (sd.face === 'good' && sd.beans >= 4 && sd.again === 'yes') return (sd.beans >= 5 ? 'Five beans' : 'Four beans') + ' and a yes. ' + n + ' is turning into your spot.';
@@ -20843,6 +21213,12 @@ function sdFinish(){
 const SD_TONE = { good:'g', yes:'g', worth:'g', okay:'a', maybe:'a', fair:'a', notgood:'r', no:'r', over:'r' };
 function sdRow(k, ...v){ return h('div', { class:'skv' }, h('span', { text:k }), h('span', { class:'skvv' }, ...v)); }
 const labelIn = (list, v) => { const f = list.find(x => x.v === v); return f ? f.label : ''; };
+/* what a drink holds besides its shop and price, as [label, text] pairs: only what was answered */
+function sdExtras(d){
+  const mk = SHOP_MILKS.find(x => x.v === d.milk), fl = SHOP_FLAVORS.find(x => x.v === d.flavor), sn = shopShots(d.shots);
+  return [mk ? ['Milk', mk.label] : null, sn ? ['Extra shots', String(sn)] : null, fl ? ['Flavor', fl.label] : null, d.how ? ['Ordered', labelIn(SHOP_ORDERS, d.how)] : null,
+    d.strength ? ['Strength', labelIn(SHOP_STRENGTHS, d.strength)] : null, d.sweet ? ['Sweetness', labelIn(SHOP_SWEETS, d.sweet)] : null].filter(Boolean);
+}
 /* another drink at the same shop: the shop stays, the drink starts blank */
 function sdAnother(){
   const p = sdShop(), n = sdBlank();
@@ -20865,6 +21241,7 @@ function screenSperfect(m){
   const rows = [sdRow('Shop', h('b', { text:d.shop })), sdRow('Place', h('b', { text:shopPlaceText(d) || 'Not set' })), size ? sdRow('Size', h('b', { text:size })) : null, d.price ? sdRow('Price', h('b', { text:d.sym + fmt2(d.price) })) : null,
     d.face ? sdRow('Overall', h('b', { text:labelIn(SHOP_FACES, d.face) }), h('span', { class:'fdot tone-' + SD_TONE[d.face], role:'img', 'aria-label':labelIn(SHOP_FACES, d.face) }, spic(FACE_ART[d.face][0]))) : null,
     d.beans ? sdRow('Beans', beanMini(d.beans), h('b', { text:d.beans + ' of 5' })) : null,
+    ...sdExtras(d).map(x => sdRow(x[0], h('b', { text:x[1] }))),
     d.again ? sdRow('Order it again', h('b', { class:'tone-t-' + SD_TONE[d.again], text:labelIn(SHOP_AGAINS, d.again) })) : null,
     d.worth ? sdRow('Worth the price', h('b', { class:'tone-t-' + SD_TONE[d.worth], text:labelIn(SHOP_WORTHS, d.worth) })) : null,
     d.notes ? sdRow('Notes', h('b', { text:d.notes })) : null].filter(Boolean);
@@ -20988,7 +21365,7 @@ function everyFinish(){
   if (P.kind === 'everything'){
     if (P.handle) rememberEvery(P.handle);   /* the file just opened is where the next Save everything goes */
     const cur = everyGather();   /* if this browser now holds exactly what the backup holds, that backup is its saved copy */
-    if (cur.length && cur.every(c => P.load.items.some(x => x.id === c.id && everyStamp(x.text) === everyStamp(c.text)))) everyMarkSaved(cur, P.handle ? P.handle.name : '', Date.parse(P.load.made) || Date.now());
+    if (cur.length && cur.every(c => P.load.items.some(x => x.id === c.id && everyStamp(x.text) === everyStamp(c.text) || (everyPart(c.id).norm && everyStamp(everyPart(c.id).norm(x.text)) === everyStamp(c.text))))) everyMarkSaved(cur, P.handle ? P.handle.name : '', Date.parse(P.load.made) || Date.now());
   }
   closeSheet(); if (app.screen === 'files') render(); else go('files');
 }
@@ -21056,6 +21433,8 @@ everyRegister({ id:'history', name:'Tasting history',
   markSaved:() => { histDirty = 0; persistDirty(); histEdited = 0; editUndo = null; persistEdited(); histAdded = 0; persistAdded(); } });
 everyRegister({ id:'shops', name:'Coffee shops',
   has:() => !shEmpty(), text:() => shopCsv(sh.store),
+  /* an older file has fewer columns: the same drinks written the way this app writes them */
+  norm:t => { const r = shopRead(t); return r.error ? t : shopCsv(r.store); },
   look:t => { const r = shopRead(t); if (r.error) return { error:r.error }; const d = r.store.drinks.length, n = shopList(r.store).length; return { line:d ? d + (d === 1 ? ' drink' : ' drinks') + ' from ' + n + (n === 1 ? ' shop' : ' shops') : 'a home town' }; },
   rule:'Adds what is new. Nothing here is lost.',
   keysIn:t => { const r = shopRead(t); return r.error ? null : r.store.drinks.map(drinkKey); },
@@ -21207,6 +21586,7 @@ function screenDoor(m){
     ss ? 'You are on the ' + sdStepName(sd.step) + ' step' : hs ? 'Your brew waits for you' : 'Latte, cold brew, a cup to go', ss ? 'Drink in progress' : '', sdOpen));
   m.append(sayRow(hs && ss ? 'Both are safe. Pick the one you want to finish.' : hs ? 'Your ' + (name || 'coffee') + ' is safe. Log the shop drink first.' : ss ? 'Your drink is safe. Finish it whenever you like.' : 'Pick one and I will ask the right questions.'));
   if (hs || ss) m.append(doorFreshButton());
+  m.append(h('button', { type:'button', class:'fresh loadrow', id:'doorLoad', onclick:() => go('loadshared') }, h('span', { class:'fpic' }, spic('fl-text')), h('span', null, h('b', { text:'Load a shared coffee' }), h('span', { class:'sub', text:'Paste what a friend sent you' }))));
   m.append(levelCard());
   const one = hs !== ss, label = hs && !ss ? 'Back to ' + homeStepName() : ss && !hs ? 'Finish your drink' : 'Pick one above';
   m.append(h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary' + (one ? '' : ' notready'), id:'doorNext', text:label,
@@ -21273,6 +21653,7 @@ function shDrinkRow(d, open, toggle){
   const shr = h('button', { type:'button', class:'btn small sshare', text:'Share this drink', onclick:() => openShare('Share this drink', shareDrinkText(d), 'This is what will go out. Your note stays private.') });
   const fav = h('button', { type:'button', class:'btn small sfavbtn', 'aria-pressed':String(!!d.fav), text:d.fav ? 'Remove from Favorites' : 'Add to Favorites', onclick:() => { sh.store = shopSetFavorite(sh.store, key, !d.fav); sh.changes++; persistShops(); toggle('keep'); } });
   return h('div', { class:'sdopen' }, row, h('div', { class:'sdetail' }, info ? h('p', { class:'fine', style:'margin:0', text:info }) : null,
+    ...sdExtras(d).map(x => h('p', { class:'fine', style:'margin:0', text:x[0] + ': ' + x[1] })),
     d.again ? h('p', { class:'fine', style:'margin:0', text:'Order it again: ' + labelIn(SHOP_AGAINS, d.again) }) : null, d.worth ? h('p', { class:'fine', style:'margin:0', text:'Worth the price: ' + labelIn(SHOP_WORTHS, d.worth) }) : null,
     d.notes ? h('p', { class:'serif', style:'margin:0', text:d.notes }) : null, h('div', { class:'row' }, fav, shr, del)));
 }
@@ -21330,7 +21711,7 @@ function shopsFilesRows(){
     h('button', { type:'button', class:'btn', id:'shPasteBtn', style:'margin-top:8px', text:'Use pasted text', onclick:() => { if (paste.value.trim()){ shLoadText(paste.value); say(sh.msg); save.querySelector('.hs').textContent = subText(); } else say('Paste the file contents first.'); } }));
   return [save, load, file, fold, msg, h('p', { class:'fine hubnote', style:'margin:0', text:'The coffee shops file is a file of its own. It is not your tasting history, and your history is never changed by it.' })];
 }
-const SCREENS = { door:screenDoor, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, tpflavors:screenTpFlavors, tpenjoy:screenTpEnjoy, tprate:screenTpRate, tpkinds:screenTpKinds, tpbrews:screenTpBrews, tpshops:screenTpShops, tpbrewers:screenTpBrewers, tpmix:screenTpMix, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, caffeine:screenCaffeine, cafdrink:screenCafDrink, cafresult:screenCafResult, cafcup:screenCafCup, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, glossary:screenGlossary, files:screenFiles };
+const SCREENS = { door:screenDoor, loadshared:screenLoadShared, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, detail:screenDetail, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, tpflavors:screenTpFlavors, tpenjoy:screenTpEnjoy, tprate:screenTpRate, tpkinds:screenTpKinds, tpbrews:screenTpBrews, tpshops:screenTpShops, tpbrewers:screenTpBrewers, tpmix:screenTpMix, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, caffeine:screenCaffeine, cafdrink:screenCafDrink, cafresult:screenCafResult, cafcup:screenCafCup, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, glossary:screenGlossary, files:screenFiles };
 
 syncMenuBtn();
 $('homeBtn').addEventListener('click', () => { if (menuIsOpen()) closeSheet(); else openMenu(); });
