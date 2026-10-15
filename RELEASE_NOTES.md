@@ -4,6 +4,24 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.039.0091: Back and Menu at the top, one big button below
+
+2026-10-15 16:33:10 UTC
+
+- Back, the screen name and Menu now sit together in a bar at the top of every screen, so the bottom bar is free for one thing: the big button that takes you forward.
+- Screens with no forward step (the Learn pages, the glossary, the calculators) have no bottom bar at all, so you get the room back.
+- The Menu drops down from the top bar and its button turns into an X to close it. It also opens scrolled to its first row now.
+- The timer's bottom bar splits in half for Pause and Done brewing, each with its words.
+- The question counter on the Coffee screen is gone. It was pinned to the top and could cover the box you were typing in.
+- Just Starting now works like the other levels: tap a brewer, then press Next.
+
+## Version 4.038.0090: Quieter cards
+
+2026-10-15 14:41:19 UTC
+
+- Build 25, idea 1. Boxes you only read (cards, speech bubbles, notes, info tiles, fold-open cards, the green header boxes, the glossary entries, the timer panel) now have a thin quiet edge and no shadow. Anything you tap keeps its thick border and hard shadow. Warning and tip notes keep their amber or green edge, and dashed boxes stay dashed. Light and dark each have their own quiet edge colour.
+- Tests: a new check fails if a read-only box gets the loud look again; the card-edge accessibility check now expects the quiet edge on cards and still demands a clear outline on everything you tap. The Guide pictures were retaken from the new look.
+
 ## Version 4.037.0089: Style files merged and cleaned
 
 2026-10-15 08:27:00 UTC
