@@ -4,6 +4,19 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.036.0085: Quick fixes and text boxes
+
+2026-10-15 02:45:30 UTC
+
+- Typing on a phone is easier: while you type, Back, Menu and the big header tuck away and a Next button sits right under the question, so the keyboard never covers it. Everything comes back when you leave the box.
+- The grinder and filter boxes on the Gear page now open a search pop-up with the search box at the top and the choices under it.
+- The phone keyboard's Enter key says Next on the Coffee questions and Done everywhere else.
+- Your phone's browser bar now matches the app's colours, light or dark.
+- Loading a backup now takes your setup from the newest saved tasting, even if the file's rows are in a different order.
+- Your tendencies: the middle rating is worked out on your real star ratings, so a 2.5 is no longer rounded up to 3 first.
+- Brewing a pulse or iced coffee again now brings back its pulse taste, pulse strength and ice share.
+- A spoken timer cue that never started is dropped, so it cannot speak late over a newer one. The Coffee facts cup bar no longer clashes with the Cost of Coffee one, and a duplicate icon was removed.
+
 ## Version 4.035.0084: A cleaner home and Coffee screen, and more Beanjamin
 
 2026-10-15 01:19:51 UTC

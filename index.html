@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F1E6C8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12100C" media="(prefers-color-scheme: dark)">
 <title>BeanTelligence: a little science, a lot of delicious</title>
 <meta name="description" content="Brew it. Cup it. Perfect it. BeanTelligence gives you a brew recipe for your exact coffee, guides the brew, helps you taste and score it, and then helps you dial it in.">
 <meta name="theme-color" content="#FBFAF7" media="(prefers-color-scheme: light)">
@@ -870,8 +872,6 @@ h1{ letter-spacing:-0.028em; }
 .gearline-val{ font-size:15px; font-weight:600; margin-top:2px; overflow-wrap:anywhere; }
 .gearline .btn{ flex:none; min-height:44px; margin:0; padding:8px 12px; font-size:14px; }
 .adjpanel .presets .choice{ flex:1 1 auto; font-size:14px; padding:8px 10px; min-width:0; }
-.gpick-pad{ position:absolute; left:0; top:100%; width:1px; height:340px; pointer-events:none; }   /* blank room under the box while its list is open, so the page can scroll the box up above the keyboard; it takes no room in the layout */
-.gpick-pad[hidden]{ display:none; }
 .trail{ list-style:none; margin:0; padding:0; }
 .trl{ padding:10px 0 10px 12px; border-left:3px solid var(--line); margin:0 0 2px 4px; }
 .trl.best{ border-left-color:var(--leaf); }
@@ -2406,10 +2406,10 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .fcl .flink{ min-height:44px; margin:0; }
 .fcup{ padding:10px 12px; }
 .fcupl{ margin:0; font-size:17px; line-height:1.3; }
-.cupbar{ display:flex; height:30px; border:2px solid var(--ink); border-radius:10px; overflow:hidden; margin:8px 0 6px; }
-.cupbar i{ display:block; }
-.cupbar .cw{ flex:1; background:#9CC8E8; }
-.cupbar .cc{ flex:none; width:6px; background:#6B4226; }
+.fcupbar{ display:flex; height:30px; border:2px solid var(--ink); border-radius:10px; overflow:hidden; margin:8px 0 6px; }
+.fcupbar i{ display:block; }
+.fcupbar .cw{ flex:1; background:#9CC8E8; }
+.fcupbar .cc{ flex:none; width:6px; background:#6B4226; }
 .cupnum{ display:flex; justify-content:space-between; gap:8px; font-size:14px; color:var(--muted); }
 .cupfacts{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
 .cupfacts > div{ display:flex; gap:10px; align-items:flex-start; }
@@ -2463,7 +2463,7 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 @media (max-width:359px){ .lgrid{ grid-template-columns:1fr; } .nj .nb strong{ font-size:17px; } .fnote.withm{ grid-template-columns:58px 1fr; } .fnote.withm .fmasc{ width:58px; } }
 @media (forced-colors: active){
   .nj .nb, .lt, .dyk, .fstory, .fcup, .fclock{ border:2px solid ButtonText; box-shadow:none; }
-  .cupbar{ border-color:CanvasText; } .cupbar .cw{ background:Highlight; } .cupbar .cc{ background:CanvasText; }
+  .fcupbar{ border-color:CanvasText; } .fcupbar .cw{ background:Highlight; } .fcupbar .cc{ background:CanvasText; }
   .pic svg, .fmasc svg, .fm svg{ forced-color-adjust:none; }
 }
 /* notices: an amber card with a hard shadow, like the other cards */
@@ -2576,6 +2576,25 @@ button.hrow:active, .hrow.sel:active{ transform:translateY(3px); box-shadow:0 1p
 @media (max-width:359px){ .dpair .btn{ padding:8px 6px; font-size:17px; } .fcoffee.hhead h1{ font-size:30px; } .dock .btn{ font-size:18px; } .dock .btn .sub{ font-size:14px; } .dwhen{ font-size:15px; } }
 .nw{ white-space:nowrap; }
 .notice[hidden]{ display:none; }
+/* while a text box has the phone keyboard (the page has the class kb, set in js/ui/38-keyboard.js) */
+body.kb #gdock, body.kb .dock{ display:none; }
+body.kb .brandslot, body.kb .progress, body.kb .progressmsg{ display:none; }
+:root:has(body.kb[data-screen]){ scroll-padding-bottom:12px; }
+.kbnext{ display:block; width:100%; margin:12px 0 4px; min-height:52px; }
+.kbnext span.sub{ display:none; }
+/* the grinder and filter boxes are buttons that look like the other text boxes and open the search pop-up */
+.gpick{ position:relative; }
+.gpickbtn{
+  display:flex; align-items:center; width:100%; text-align:left; font-family:inherit; font-weight:400; cursor:pointer;
+  background-image:var(--pen); background-repeat:no-repeat; background-position:right 12px center; background-size:24px 24px; padding:0 44px 0 12px;
+}
+.gpickbtn .gpv{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.gpickbtn .gpv.ph{ color:var(--muted); }
+.sheet.picksheet{ display:flex; flex-direction:column; max-height:100%; padding-top:14px; padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px)); border:3px solid var(--btn-edge); border-bottom:0; border-radius:22px 22px 0 0; }
+.picksheet h3{ margin:0 0 2px; }
+.picksheet #pickQ{ width:100%; flex:none; background-image:var(--pen); background-repeat:no-repeat; background-position:right 12px center; background-size:24px 24px; padding-right:44px; }
+.picksheet .gpick-list{ position:static; flex:1 1 auto; min-height:120px; max-height:none; overflow-y:auto; margin-top:10px; box-shadow:none; }
+.picksheet .row{ flex:none; margin-top:10px; }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .saymark svg, :root:not([data-theme="light"]) .evmasc svg, :root:not([data-theme="light"]) .evpmasc svg, :root:not([data-theme="light"]) .fmark svg, :root:not([data-theme="light"]) .topmark, :root:not([data-theme="light"]) .brandmark svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); } }
 :root[data-theme="dark"] .saymark svg, :root[data-theme="dark"] .evmasc svg, :root[data-theme="dark"] .evpmasc svg, :root[data-theme="dark"] .fmark svg, :root[data-theme="dark"] .topmark, :root[data-theme="dark"] .brandmark svg{ filter:drop-shadow(0 0 1px #FFF8EA) drop-shadow(0 0 1px #FFF8EA); }
 /* the drink pictures sit on a light plate, as the app's other pictures do in dark mode (--icon-bg is clear in light mode) */
@@ -3224,7 +3243,6 @@ details.mfold > .mrows{ margin-top:14px; }
 <symbol id="mi-frown" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 16.500q4-3.800 8 0"/><path d="M9 9.500v.01M15 9.500v.01" stroke-width="3"/></g></symbol>
 <symbol id="mi-thumbup" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11v9H4v-9zM7 11l4-7c2.200 0 3.200 1.600 2.600 3.600L13 10h5.500a2 2 0 0 1 2 2.300l-1.200 6A2 2 0 0 1 17.300 20H7"/></g></symbol>
 <symbol id="mi-thumbdown" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(180 12 12)"><path d="M7 11v9H4v-9zM7 11l4-7c2.200 0 3.200 1.600 2.600 3.600L13 10h5.500a2 2 0 0 1 2 2.300l-1.200 6A2 2 0 0 1 17.300 20H7"/></g></g></symbol>
-<symbol id="mi-spoon" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="7.500" rx="4" ry="5"/><path d="M12 12.500V21"/></g></symbol>
 <symbol id="mi-cupheart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 12h1.500a2.500 2.500 0 0 1 0 5H16"/><path d="M10 15.500c-1.600-1.100-2.300-1.800-2.300-2.800a1.300 1.300 0 0 1 2.300-.8 1.300 1.300 0 0 1 2.300.8c0 1-.7 1.700-2.300 2.800z" stroke-width="1.600"/></g></symbol>
 <symbol id="bn-on" viewBox="0 0 48 48"><g transform="rotate(-28 24 24)"><ellipse cx="24" cy="24" rx="12.5" ry="18" fill="#8C5A33" stroke="#22120C" stroke-width="2.6"/><path d="M24 7 C18 15 30 20 24 26 C19 32 29 36 24 41" fill="none" stroke="#22120C" stroke-width="2.4" stroke-linecap="round" opacity=".7"/></g></symbol>
 <symbol id="bn-off" viewBox="0 0 48 48"><g transform="rotate(-28 24 24)"><ellipse cx="24" cy="24" rx="12.5" ry="18" style="fill:var(--surface);stroke:var(--muted)" stroke-width="2.6" stroke-dasharray="4 3.4"/><path d="M24 7 C18 15 30 20 24 26 C19 32 29 36 24 41" fill="none" style="stroke:var(--muted)" stroke-width="2.4" stroke-linecap="round" opacity=".5"/></g></symbol>
@@ -7408,11 +7426,12 @@ function tpJar(r){
   const top = layers.slice().sort((a, b) => b.n - a.n || b.star - a.star)[0];
   return { n:r.n, ready:r.ready, narrow:r.narrow, unit, layers, top:top && top.n ? top : null };
 }
-/* One pile of beans for each whole star. Half stars count with the whole star above, as everywhere else. The middle (the flag) and the middle half show from 3 coffees. */
+/* One pile of beans for each whole star. Half stars count with the whole star above in the piles (the counts), as everywhere else. The middle (the flag) and the middle half are worked out on the real ratings,
+   so a 2.5 is not pushed up to a 3 before the middle is found. They show from 3 coffees. */
 function tpHeap(stars){
-  const counts = [0, 0, 0, 0, 0], bin = (stars || []).map(s => Math.min(5, Math.max(1, Math.ceil(s - 1e-9))));
+  const counts = [0, 0, 0, 0, 0], raw = (stars || []).map(s => Math.min(5, Math.max(1, +s || 1))), bin = raw.map(s => Math.min(5, Math.max(1, Math.ceil(s - 1e-9))));
   bin.forEach(b => { counts[b - 1]++; });
-  const n = bin.length, s = bin.slice().sort((a, b) => a - b), enough = n >= TP_FLAG_MIN;
+  const n = raw.length, s = raw.slice().sort((a, b) => a - b), enough = n >= TP_FLAG_MIN;
   return { counts, n, enough, median:enough ? tpMedian(s) : null, band:enough ? [s[Math.floor((n - 1) * 0.25)], s[Math.min(n - 1, Math.round((n - 1) * 0.75))]] : null, max:Math.max(0, ...counts) };
 }
 /* Ratings by roast, process, elevation, origin and variety as heaps. One unit for the whole feature so the piles can be compared; the dashed flag is the middle of all your rated coffees. */
@@ -7795,7 +7814,7 @@ function dialingList(objs, now){
 }
 /* Rebuild an earlier attempt as a starting point for the next brew: the recipe settings that put the recipe back where that cup was.
    The recipe is built as the app would for this coffee, then the grind and ratio are expressed as dial-in steps from there, and water temperature and pour style as your own choices.
-   Pulse and iced settings other than the technique itself are not kept in the file, so they start at their defaults. */
+   The pulse taste and strength and the share of ice are read back from the technique's readable name in the file ("sweeter taste, lighter strength, 5 pours", "ice 30% (…)"); when that text is missing or unreadable they start at their defaults. */
 function trailRestore(coffee, methodKey, a, now){
   const m = METHODS.find(x => x.key === methodKey); if (!m || !a) return null;
   const tech = a.tech || 'standard', batch = { water:a.water || m.water, tech, agit:a.agit };
@@ -7821,6 +7840,14 @@ function trailRestore(coffee, methodKey, a, now){
     const adj = Math.round((a.ratio - r0.ratio) * 2) / 2, r1 = buildRecipe(coffee, methodKey, batch, { grind:0, ratio:adj, agit:'' }, now);
     if (Math.abs(r1.ratio - a.ratio) < 0.001) out.adjust.ratio = adj;
     else { out.brew.ratio = a.ratio; }
+  }
+  const det = String(unneutralize((a.row || {}).brew_technique_detail || '')).toLowerCase();
+  if (tech === 'pulse' && det){
+    const pt = det.match(/\b(sweeter|balanced|brighter) taste/), ps = det.match(/\b(lighter|standard|stronger) strength/);
+    if (pt) out.brew.pulseTaste = Object.keys(PULSE_TASTE).find(k => PULSE_TASTE[k].label.toLowerCase() === pt[1]);
+    if (ps) out.brew.pulseStrength = Object.keys(PULSE_STRENGTH).find(k => PULSE_STRENGTH[k].label.toLowerCase() === ps[1]);
+  } else if ((tech === 'flash' || tech === 'iceafter') && det){
+    const ic = det.match(/\bice (\d{1,2})%/); if (ic && ICE_SHARES.includes(+ic[1] / 100)) out.brew.ice = +ic[1] / 100;
   }
   if (a.tempF != null && r0.temp.kind === 'hot' && Math.abs(a.tempF - r0.temp.recF) >= 1) out.brew.tempF = Math.round(a.tempF);
   return out;
@@ -8411,7 +8438,7 @@ function bkpPack(parts, info){
   if (info && safe(info.app)) add('#APP ' + safe(info.app) + '\n');
   (parts || []).forEach(p => {
     if (!p || !BKP_ID.test(String(p.id))) return;
-    const body = enc.encode(String(p.text == null ? '' : p.text).replace(/^﻿/, ''));
+    const body = enc.encode(String(p.text == null ? '' : p.text).replace(/^\uFEFF/, ''));
     add('#PART ' + p.id + ' ' + body.length + ' ' + bkCrc32(body) + '\n'); add(body); add('\n');
   });
   let n = 0; chunks.forEach(c => { n += c.length; });
@@ -8421,7 +8448,7 @@ function bkpPack(parts, info){
 /* The container text back into parts, or null when the text is not a container (an old plain backup).
    { made, app, order:[ids], parts:{ id:{ ok, text, why } }, damaged:[ids] }: a part that is cut off or fails its check has ok false and why 'cut' or 'check', and its text is empty. */
 function bkpUnpack(text){
-  const t = String(text == null ? '' : text).replace(/^﻿/, '');
+  const t = String(text == null ? '' : text).replace(/^\uFEFF/, '');
   if (t.slice(0, BKP_MAGIC.length) !== BKP_MAGIC) return null;
   const b = new TextEncoder().encode(t), dec = new TextDecoder('utf-8'), out = { made:'', app:'', order:[], parts:{}, damaged:[] };
   let i = 0;
@@ -8790,16 +8817,20 @@ function setupMergeExtras(mine, theirs){
   const ts = (theirs && theirs.roasterSites) || {}; Object.keys(ts).forEach(k => { if (!sites[k] && Object.keys(sites).length < 60) sites[k] = ts[k]; });
   return { calib:calibClean(calib), roasterSites:sites };
 }
-/* the setup stored in a file: the newest cupping that carries one wins; text that is too long, not JSON or not an object gives nothing */
+/* the setup stored in a file: the cupping saved last that carries one wins (by its saved_at time, so a file whose rows were sorted or merged still gives the newest setup; with no times, the last row wins);
+   text that is too long, not JSON or not an object gives nothing */
 function setupRead(header, rows, ctx){
   const si = (header || []).indexOf(SETUP_COLUMN); if (si < 0) return null;
-  for (let i = (rows || []).length - 1; i >= 0; i--){
+  const ti = (header || []).indexOf('saved_at'); let best = null, bestAt = '';
+  for (let i = 0; i < (rows || []).length; i++){
     const t = String((rows[i] || [])[si] || '').trim(); if (!t) continue;
     if (t.length > SETUP_MAX_CHARS) continue;
+    const at = ti >= 0 ? String((rows[i] || [])[ti] || '') : '';
+    if (best && at && bestAt && at < bestAt) continue;
     let o; try { o = JSON.parse(t); } catch(e){ continue; }
-    const c = setupClean(o, ctx); if (c) return c;
+    const c = setupClean(o, ctx); if (c){ best = c; bestAt = at; }
   }
-  return null;
+  return best;
 }
 /* plain lines for the screen: what this setup would change */
 function setupSummary(s){
@@ -10682,6 +10713,24 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 85,
+  "version": "4.036.0085",
+  "tier": "medium",
+  "at": "2026-10-15T02:45:30Z",
+  "date": "2026-10-15",
+  "title": "Quick fixes and text boxes",
+  "notes": [
+   "Typing on a phone is easier: while you type, Back, Menu and the big header tuck away and a Next button sits right under the question, so the keyboard never covers it. Everything comes back when you leave the box.",
+   "The grinder and filter boxes on the Gear page now open a search pop-up with the search box at the top and the choices under it.",
+   "The phone keyboard's Enter key says Next on the Coffee questions and Done everywhere else.",
+   "Your phone's browser bar now matches the app's colours, light or dark.",
+   "Loading a backup now takes your setup from the newest saved tasting, even if the file's rows are in a different order.",
+   "Your tendencies: the middle rating is worked out on your real star ratings, so a 2.5 is no longer rounded up to 3 first.",
+   "Brewing a pulse or iced coffee again now brings back its pulse taste, pulse strength and ice share.",
+   "A spoken timer cue that never started is dropped, so it cannot speak late over a newer one. The Coffee facts cup bar no longer clashes with the Cost of Coffee one, and a duplicate icon was removed."
+  ]
+ },
  {
   "release": 84,
   "version": "4.035.0084",
@@ -13515,7 +13564,7 @@ function journeySection(c, now, guide){
 /* what is in your cup */
 function cupCard(){
   const F = cupFacts('filter'), X = cupFacts('espresso'), K = CUP_FACTS;
-  const bar = h('div', { class:'cupbar', role:'img', 'aria-label':'About 99 percent water and about 1 percent coffee' }, h('i', { class:'cw' }), h('i', { class:'cc' }));
+  const bar = h('div', { class:'fcupbar', role:'img', 'aria-label':'About 99 percent water and about 1 percent coffee' }, h('i', { class:'cw' }), h('i', { class:'cc' }));
   const src = h('details', { class:'fsrc', id:'cupSources' }, h('summary', { text:'Where these numbers come from' }),
     h('p', { class:'fine', text:'Rated ' + K.rate + ': ' + RATE_WORDS[K.rate] + '.' }),
     h('ul', null, K.src.map(s => h('li', null, s.cite + ' ', h('a', { href:s.link, target:'_blank', rel:'noopener noreferrer', text:'Open the page' })))),
@@ -15203,47 +15252,25 @@ function screenGuide(m){
   m.append(h('div', { class:'lfolds' }, ...cards));
   m.append(h('div', { class:'flinks' }, h('button', { type:'button', class:'flink', id:'guideOpenAll', text:'Open all', onclick:() => setAll(true) }), h('button', { type:'button', class:'flink', id:'guideCloseAll', text:'Close all', onclick:() => setAll(false) })));
 }
-/* get() returns the saved text and set(text) is told a new one. What you type is kept as typed: the list only offers names. */
+/* get() returns the saved text and set(text) is told a new one. The box shows the filter you chose; tapping it opens the search pop-up (38-pick-sheet.js). What you type is kept as typed: the list only offers names, and "Use ..." takes your own words. */
 function filterPicker(get, set){
   const id = 'gear_filter', listId = 'gear_filter_list';
-  const input = h('input', { id, type:'text', class:'plain', autocomplete:'off', placeholder:'Search, or type your own', role:'combobox', 'aria-expanded':'false', 'aria-controls':listId, 'aria-autocomplete':'list', value:get() || '' });
-  const list = h('div', { id:listId, class:'gpick-list', role:'listbox', 'aria-label':'Common filters', hidden:true });
-  const fitter = pickerFit(input, list);
-  let typed = false, active = -1, shown = [];
-  const close = () => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); active = -1; fitter.fit(); };
-  function draw(){
-    const q = typed ? input.value.trim() : '', f = filtersFor(q, app.brew.method), m = METHODS.find(x => x.key === app.brew.method);
-    shown = [];
-    if (q && !FILTERS.some(x => x.name.toLowerCase() === q.toLowerCase())) shown.push({ group:'Your own words', name:q, text:'Use "' + q + '"' });
-    f.fits.forEach(x => shown.push({ group:'Suits ' + (m ? m.label : 'your brewer'), name:x.name, text:x.name }));
-    f.others.forEach(x => shown.push({ group:f.fits.length ? 'Other filters' : 'Common filters', name:x.name, text:x.name }));
-    list.textContent = ''; active = shown.length && typed ? 0 : -1;
-    let last = '', box = list;
-    shown.forEach((c, i) => {
-      if (c.group !== last){ last = c.group; box = h('div', { role:'group', 'aria-label':c.group }, h('div', { class:'gpick-group', 'aria-hidden':'true', text:c.group })); list.append(box); }
-      box.append(h('button', { type:'button', class:'gpick-opt', role:'option', id:'fopt_' + i, 'aria-selected':String(c.name === get()), tabindex:'-1', text:c.text, onmousedown:e => e.preventDefault(), onclick:() => pick(c.name) }));
-    });
-    if (!shown.length) list.append(h('div', { class:'gpick-none', role:'presentation', text:'Type the name of your filter.' }));
-    mark(); list.hidden = false; input.setAttribute('aria-expanded', 'true'); fitter.fit();
-  }
-  function mark(){
-    list.querySelectorAll('.gpick-opt').forEach((b, i) => b.classList.toggle('on', i === active));
-    if (active >= 0) input.setAttribute('aria-activedescendant', 'fopt_' + active); else input.removeAttribute('aria-activedescendant');
-  }
-  function pick(name){ holdScroll(); close(); typed = false; input.value = name; set(name); input.blur(); }
-  input.addEventListener('focus', () => { typed = false; draw(); });
-  input.addEventListener('click', () => { if (list.hidden){ typed = false; draw(); } });
-  input.addEventListener('input', () => { typed = true; set(input.value.trim()); draw(); });
-  input.addEventListener('blur', () => { close(); typed = false; });
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Escape'){ close(); return; }
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
-      e.preventDefault(); if (list.hidden) draw(); if (!shown.length) return;
-      active = e.key === 'ArrowDown' ? Math.min(shown.length - 1, active + 1) : Math.max(0, active - 1); mark();
-      const b = list.querySelectorAll('.gpick-opt')[active]; if (b && b.scrollIntoView) b.scrollIntoView({ block:'nearest' });
-    } else if (e.key === 'Enter' && !list.hidden && active >= 0 && shown[active]){ e.preventDefault(); pick(shown[active].name); }
-  });
-  return { el:h('div', { class:'gpick' }, input, list, fitter.pad), refresh:() => { if (document.activeElement !== input) input.value = get() || ''; } };
+  const val = h('span', { class:'gpv' });
+  const btn = h('button', { type:'button', id, class:'plain gpickbtn', 'aria-haspopup':'dialog' }, val);
+  function paint(){ const t = get() || ''; val.textContent = t || 'Search, or type your own'; val.classList.toggle('ph', !t); }
+  btn.addEventListener('click', () => openPickSheet({
+    title:'Filter paper', hint:'Type to narrow the list, or type your own and tap Use.', placeholder:'Search, or type your own', label:'Search filters', listId, listLabel:'Common filters', none:'Type the name of your filter.',
+    choices:(q, typed) => {
+      const f = filtersFor(q, app.brew.method), m = METHODS.find(x => x.key === app.brew.method), out = [];
+      if (q && !FILTERS.some(x => x.name.toLowerCase() === q.toLowerCase())) out.push({ group:'Your own words', text:'Use "' + q + '"', value:q });
+      f.fits.forEach(x => out.push({ group:'Suits ' + (m ? m.label : 'your brewer'), text:x.name, value:x.name, on:x.name === get() }));
+      f.others.forEach(x => out.push({ group:f.fits.length ? 'Other filters' : 'Common filters', text:x.name, value:x.name, on:x.name === get() }));
+      return out;
+    },
+    onPick:name => { set(name); paint(); }
+  }));
+  paint();
+  return { el:h('div', { class:'gpick' }, btn), refresh:paint };
 }
 /* the short name shown for a grinder choice */
 function grinderLabel(key){
@@ -15261,62 +15288,136 @@ function grinderChoices(){
   out.push({ group:'Something else', key:GEAR_OTHER, text:'Not listed: I will type its name' }, { group:'Something else', key:GEAR_UNSURE, text:'Not sure' });
   return out;
 }
-/* a text box with a list under it. Tapping it shows every grinder; typing narrows the list. onPick gets the chosen key. */
+/* the grinder box: it shows the grinder you chose, and tapping it opens the search pop-up (38-pick-sheet.js): the search box at the top, every grinder under it, typing narrows the list. onPick gets the chosen key. */
 function grinderPicker(onPick){
   const id = 'gear_sel', listId = 'gear_list';
-  const input = h('input', { id, type:'text', class:'plain', autocomplete:'off', placeholder:'Search, or tap to see all', role:'combobox', 'aria-expanded':'false', 'aria-controls':listId, 'aria-autocomplete':'list' });
-  const list = h('div', { id:listId, class:'gpick-list', role:'listbox', 'aria-label':'Grinders', hidden:true });
-  const fitter = pickerFit(input, list);
+  const val = h('span', { class:'gpv' });
+  const btn = h('button', { type:'button', id, class:'plain gpickbtn', 'aria-haspopup':'dialog' }, val);
+  function paint(){ const t = grinderLabel(app.brew.grinderKey); val.textContent = t || 'Search, or tap to see all'; val.classList.toggle('ph', !t); }
+  btn.addEventListener('click', () => openPickSheet({
+    title:'Your grinder', hint:'Type to narrow the list, or tap one.', placeholder:'Search, or tap to see all', label:'Search grinders', listId, listLabel:'Grinders', none:'No match. Clear the box and choose "Not listed" to type its name.',
+    choices:(q, typed) => { q = q.toLowerCase(); return grinderChoices().filter(c => !q || c.text.toLowerCase().includes(q) || (grinderFor(c.key) || { name:'' }).name.toLowerCase().includes(q)).map(c => ({ group:c.group, text:c.text, value:c.key, on:c.key === app.brew.grinderKey })); },
+    onPick:key => { onPick(key); paint(); }
+  }));
+  paint();
+  return { el:h('div', { class:'gpick' }, btn), refresh:paint };
+}
+/* A phone keyboard covers the lower part of the page, and the bottom bar rides up on top of it. So while a one-line or multi-line text box has the focus and the visible page has shrunk (the keyboard is up),
+   the page gets the class "kb": the bar and the big header go (see styles/88-look-keyboard.css) and a copy of the bar's Next button is put right under the question being answered. The copy presses the real one.
+   The visual viewport is the part of the page you can see with the keyboard up. A box inside the pop-up (the overlay) is left alone: the pop-up takes care of itself. */
+const KB_TEXT = 'input:not([type]),input[type=text],input[type=search],input[type=number],input[type=tel],input[type=email],input[type=url],textarea';
+const kbVV = window.visualViewport;
+let kbBase = 0, kbHold = false, kbInl = null, kbSrc = null, kbWatch = null, kbTimer = 0;
+const kbViewH = () => kbVV ? kbVV.height : window.innerHeight;
+const kbViewBottom = () => kbVV ? kbVV.offsetTop + kbVV.height : window.innerHeight;
+function kbField(el){ return !!(el && el.matches && el.matches(KB_TEXT) && !el.readOnly && !el.disabled && !el.closest('#overlay') && !el.hidden); }
+/* the keyboard is up when a text box has the focus and the visible page is well under the tallest it was a moment ago with no box focused */
+function kbIsUp(){ return kbField(document.activeElement) && kbViewH() < kbBase - 150; }
+function kbLabel(){
+  if (!kbInl || !kbSrc) return;
+  const first = kbSrc.firstElementChild, t = (first && first.tagName === 'SPAN' ? first.textContent : kbSrc.textContent) || '';
+  if (kbInl.textContent !== t.trim()) kbInl.textContent = t.trim();
+  const cls = (kbSrc.className + ' kbnext').trim(); if (kbInl.className !== cls) kbInl.className = cls;
+  kbInl.disabled = !!kbSrc.disabled;
+}
+function kbClear(){
+  if (kbInl && kbInl.parentNode) kbInl.remove();
+  if (kbWatch){ kbWatch.disconnect(); kbWatch = null; }
+  kbInl = null; kbSrc = null;
+}
+/* the copy of the Next button goes at the end of the question being answered (the Coffee screen), or after the card the box is in */
+function kbPlace(f){
+  const src = document.querySelector('.dock button'); if (!src){ kbClear(); return; }
+  if (!kbInl){
+    kbInl = h('button', { type:'button', onmousedown:e => e.preventDefault(), onpointerdown:() => { kbHold = true; setTimeout(() => { kbHold = false; }, 800); },
+      onclick:() => { kbHold = false; const s = kbSrc; if (s && s.isConnected) s.click(); setTimeout(kbSync, 250); } });
+  }
+  if (kbSrc !== src){ if (kbWatch) kbWatch.disconnect(); kbSrc = src; kbWatch = new MutationObserver(kbLabel); kbWatch.observe(src, { attributes:true, childList:true, subtree:true, characterData:true }); }
+  kbLabel();
+  const q = f.closest('.qbody');
+  if (q){ if (kbInl.parentNode !== q || q.lastElementChild !== kbInl) q.append(kbInl); }
+  else { const card = f.closest('.card') || f.closest('.field') || f; if (card.nextElementSibling !== kbInl) card.after(kbInl); }
+}
+/* bring the box and the Next button into the part of the page that is above the keyboard, without pushing the box under the header */
+function kbFit(){
+  const f = document.activeElement; if (!kbField(f)) return;
+  requestAnimationFrame(() => {
+    if (!document.body.classList.contains('kb') || document.activeElement !== f) return;
+    const stick = document.querySelector('.stick'), top = stick && getComputedStyle(stick).position === 'sticky' ? stick.getBoundingClientRect().bottom + 8 : 8;
+    const bottom = kbViewBottom() - 8, fr = f.getBoundingClientRect(), tr = (kbInl && kbInl.isConnected ? kbInl : f).getBoundingClientRect();
+    let dy = tr.bottom > bottom ? tr.bottom - bottom : 0;
+    if (fr.top - dy < top) dy = fr.top - top;
+    if (Math.abs(dy) > 2) window.scrollBy(0, dy);
+  });
+}
+function kbSync(){
+  const f = document.activeElement;
+  if (!kbField(f)) kbBase = Math.max(window.innerHeight, kbVV ? kbVV.height : 0);   /* the full height, measured only while no box is being typed in */
+  const on = kbIsUp(), cl = document.body.classList;
+  if (on){ if (!cl.contains('kb')) cl.add('kb'); kbPlace(f); kbFit(); }
+  else { if (cl.contains('kb')) cl.remove('kb'); kbClear(); }
+}
+/* what the phone keyboard's Enter key says: Next on the Coffee questions, Done elsewhere */
+function kbHint(f){
+  if (f.hasAttribute('enterkeyhint') || f.tagName === 'TEXTAREA' || f.getAttribute('role') === 'combobox') return;
+  f.setAttribute('enterkeyhint', document.body.getAttribute('data-screen') === 'start' ? 'next' : 'done');
+}
+kbSync();
+document.addEventListener('focusin', e => { clearTimeout(kbTimer); if (kbField(e.target)) kbHint(e.target); kbTimer = setTimeout(kbSync, kbField(e.target) ? 0 : 120); }, true);
+document.addEventListener('focusout', () => { clearTimeout(kbTimer); kbTimer = setTimeout(() => { if (!kbHold) kbSync(); }, 160); }, true);
+window.addEventListener('resize', () => kbSync());
+if (kbVV) kbVV.addEventListener('resize', () => kbSync());
+/* Enter in a one-line box means "done typing" (the Coffee questions already take Enter as Next) */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.defaultPrevented || e.isComposing) return;
+  const f = e.target; if (!kbField(f) || f.tagName === 'TEXTAREA' || f.getAttribute('role') === 'combobox' || document.body.getAttribute('data-screen') === 'start') return;
+  f.blur();
+});
+/* a screen that is drawn again while you type loses the copy of the Next button: put it back */
+{
+  const mo = new MutationObserver(() => { if (document.body.classList.contains('kb') && kbField(document.activeElement) && !(kbInl && kbInl.isConnected)) kbSync(); });
+  const mount = $('mount'); if (mount) mo.observe(mount, { childList:true, subtree:true });
+}
+/* cfg: { title, hint, placeholder, label, listId, listLabel, choices(q, typed) -> [{ group, text, value, on }], onPick(value) }.
+   The pop-up is the page's one dialog (60-sheet-plumbing.js), so Escape, Tab and the focus on closing already work. */
+function openPickSheet(cfg){
+  sheet = { step:'pick', cfg };
+  openSheet();
+  const q = $('pickQ'); if (q) q.focus();   /* in the same tap, so a phone raises its keyboard */
+}
+function renderPickSheet(title){
+  const c = sheet.cfg; sheetEl.classList.add('picksheet');
+  title.textContent = c.title;
+  const input = h('input', { id:'pickQ', type:'text', class:'plain', autocomplete:'off', placeholder:c.placeholder, role:'combobox', enterkeyhint:'search', 'aria-expanded':'true', 'aria-controls':c.listId, 'aria-autocomplete':'list', 'aria-label':c.label });
+  const list = h('div', { id:c.listId, class:'gpick-list', role:'listbox', 'aria-label':c.listLabel });
   let typed = false, active = -1, shown = [];
-  const close = () => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); active = -1; fitter.fit(); };
+  const pick = v => { holdScroll(); closeSheet(); c.onPick(v); };
   function draw(){
-    const q = typed ? input.value.trim().toLowerCase() : '';
-    shown = grinderChoices().filter(c => !q || c.text.toLowerCase().includes(q) || (grinderFor(c.key) || { name:'' }).name.toLowerCase().includes(q));
+    shown = c.choices(typed ? input.value.trim() : '', typed);
     list.textContent = ''; active = shown.length && typed ? 0 : -1;
     let last = '', box = list;
-    shown.forEach((c, i) => {
+    shown.forEach((x, i) => {
       /* each group is a labelled group of options, so a screen reader says the group name */
-      if (c.group !== last){ last = c.group; box = h('div', { role:'group', 'aria-label':c.group }, h('div', { class:'gpick-group', 'aria-hidden':'true', text:c.group })); list.append(box); }
-      box.append(h('button', { type:'button', class:'gpick-opt', role:'option', id:'gopt_' + i, 'aria-selected':String(c.key === app.brew.grinderKey), tabindex:'-1', text:c.text,
-        onmousedown:e => e.preventDefault(), onclick:() => pick(c.key) }));
+      if (x.group !== last){ last = x.group; box = h('div', { role:'group', 'aria-label':x.group }, h('div', { class:'gpick-group', 'aria-hidden':'true', text:x.group })); list.append(box); }
+      box.append(h('button', { type:'button', class:'gpick-opt', role:'option', id:'pickopt_' + i, 'aria-selected':String(!!x.on), tabindex:'-1', text:x.text, onmousedown:e => e.preventDefault(), onclick:() => pick(x.value) }));
     });
-    if (!shown.length) list.append(h('div', { class:'gpick-none', role:'presentation', text:'No match. Choose "Not listed" to type its name.' }));
+    if (!shown.length) list.append(h('div', { class:'gpick-none', role:'presentation', text:c.none || 'No match.' }));
     mark();
-    list.hidden = false; input.setAttribute('aria-expanded', 'true'); fitter.fit();
   }
   function mark(){
     list.querySelectorAll('.gpick-opt').forEach((b, i) => b.classList.toggle('on', i === active));
-    if (active >= 0) input.setAttribute('aria-activedescendant', 'gopt_' + active); else input.removeAttribute('aria-activedescendant');
+    if (active >= 0) input.setAttribute('aria-activedescendant', 'pickopt_' + active); else input.removeAttribute('aria-activedescendant');
   }
-  function pick(key){ holdScroll(); close(); typed = false; onPick(key); input.value = grinderLabel(app.brew.grinderKey); input.blur(); }
-  input.addEventListener('focus', () => { typed = false; input.select(); draw(); });
-  input.addEventListener('click', () => { if (list.hidden){ typed = false; draw(); } });
   input.addEventListener('input', () => { typed = true; draw(); });
-  input.addEventListener('blur', () => { close(); typed = false; input.value = grinderLabel(app.brew.grinderKey); });
   input.addEventListener('keydown', e => {
-    if (e.key === 'Escape'){ close(); return; }
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); if (list.hidden) draw(); if (!shown.length) return; active = e.key === 'ArrowDown' ? Math.min(shown.length - 1, active + 1) : Math.max(0, active - 1); mark(); const b = list.querySelectorAll('.gpick-opt')[active]; if (b && b.scrollIntoView) b.scrollIntoView({ block:'nearest' }); }
-    else if (e.key === 'Enter' && !list.hidden && active >= 0 && shown[active]){ e.preventDefault(); pick(shown[active].key); }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+      e.preventDefault(); if (!shown.length) return;
+      active = e.key === 'ArrowDown' ? Math.min(shown.length - 1, active + 1) : Math.max(0, active - 1); mark();
+      const b = list.querySelectorAll('.gpick-opt')[active]; if (b && b.scrollIntoView) b.scrollIntoView({ block:'nearest' });
+    } else if (e.key === 'Enter'){ e.preventDefault(); if (active >= 0 && shown[active]) pick(shown[active].value); else if (shown.length === 1) pick(shown[0].value); }
   });
-  return { el:h('div', { class:'gpick' }, input, list, fitter.pad), refresh:() => { if (document.activeElement !== input) input.value = grinderLabel(app.brew.grinderKey); } };
-}
-/* The phone keyboard covers the lower half of the page, so a list that opens under its box is hidden. While the list is open this does three things: it adds blank room under the box so the page can scroll far enough, it scrolls the box up under the top bar (only when the list would not fit), and it cuts the list to the space that is left above the keyboard.
-   `fit()` is called after the list is drawn and after it is closed. The visual viewport is the part of the page you can see with the keyboard up. */
-function pickerFit(input, list){
-  const vv = window.visualViewport, pad = h('div', { class:'gpick-pad', 'aria-hidden':'true', hidden:true });
-  function fit(){
-    if (!input.isConnected){ if (vv) vv.removeEventListener('resize', fit); return; }
-    if (list.hidden){ pad.hidden = true; list.style.maxHeight = ''; return; }
-    pad.hidden = false;
-    const stick = document.querySelector('.stick'), topEdge = (stick ? stick.getBoundingClientRect().bottom : 0) + 8;
-    const dock = $('gdock'), dockTop = dock ? dock.getBoundingClientRect().top - 8 : Infinity;   /* in browsers that shrink the page for the keyboard, the bottom bar rides up above it */
-    const bottomEdge = Math.min((vv ? vv.offsetTop + vv.height : window.innerHeight) - 10, dockTop);
-    let r = input.getBoundingClientRect();
-    if (bottomEdge - r.bottom < 240 && Math.abs(r.top - topEdge) > 3){ window.scrollBy(0, r.top - topEdge); r = input.getBoundingClientRect(); }
-    list.style.maxHeight = Math.max(140, Math.min(360, bottomEdge - r.bottom - 12)) + 'px';
-  }
-  if (vv) vv.addEventListener('resize', fit);
-  return { pad, fit };
+  draw();
+  sheetEl.append(h('p', { class:'fine', style:'margin:0 0 8px', text:c.hint }), input, list, h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:'Cancel', onclick:closeSheet })));
 }
 /* ---------- screen: gear ---------- */
 const GEAR_FIELDS = ['grinderKey', 'grinderName', 'grinderType', 'waterType', 'waterAlk', 'waterGH', 'filter'];
@@ -16244,7 +16345,7 @@ function speak(text, onResult, soft){
     u.onerror = ev => { if (lastUtterance === u) lastUtterance = null; fin(false, ev && (ev.error === 'canceled' || ev.error === 'interrupted') ? 'cancelled' : 'error'); };
     lastUtterance = u;
     syn.speak(u);
-    setTimeout(() => fin(false, 'slow'), 3000);
+    setTimeout(() => { if (!done){ try { syn.cancel(); } catch(e){} fin(false, 'slow'); } }, 3000);   /* a phrase that never started is dropped, so it cannot speak late over a newer cue */
   } catch(e){ fin(false, 'error'); }
 }
 /* what is said at a step: the step and its grams, then (in Guide mode) what comes next, and at the last step how to finish. nxt is the following step, if any */
@@ -18670,10 +18771,11 @@ function menuFoot(){
     h('button', { type:'button', class:'btn link', id:'whatsNewBtn', text:'What changed in this release', onclick:() => { sheet = { step:'releases', back:'menu' }; renderSheet(); } }));
 }
 function renderSheetBody(){
-  sheetEl.textContent = ''; sheetEl.classList.toggle('menusheet', sheet.step === 'menu');
+  sheetEl.textContent = ''; sheetEl.classList.toggle('menusheet', sheet.step === 'menu'); sheetEl.classList.toggle('picksheet', sheet.step === 'pick');
   overlay.classList.toggle('menupanel', sheet.step === 'menu');   /* on a wide screen the menu opens under the Menu button, not from the bottom */
   const title = h('h3', { id:'sheetTitle' }); sheetEl.append(title);
   const closeRow = label => h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:label || 'Cancel', onclick:closeSheet }));
+  if (sheet.step === 'pick'){ renderPickSheet(title); return; }   /* the grinder and filter search (38-pick-sheet.js) */
   if (sheet.step === 'machine'){ renderMachineSheet(title); return; }   /* a Philips drink (43-sheet-machine.js) */
   if (sheet.step === 'setup'){ renderSetupSheet(title); return; }   /* My setup (63-sheet-setup.js) */
   if (sheet.step === 'setupFound'){ renderSetupFoundSheet(title); return; }
@@ -19521,7 +19623,7 @@ function applyAttempt(key, rs, adj, base, note, toGear){
   const x = METHODS.find(y => y.key === key), b = app.brew, cl = (v, n) => Math.max(-n, Math.min(n, v));
   if (rs){
     b.method = key; b.water = rs.brew.water || (x ? x.water : 0); b.grind_setting = ''; b.tempF = rs.brew.tempF; b.tempComp = false; b.ratio = rs.brew.ratio;
-    b.agitation = rs.brew.agitation; b.technique = rs.brew.technique; b.pulseTaste = 'balanced'; b.pulseStrength = ''; b.ice = 0.4; b.pourNotes = ''; b.actualSecs = 0; b.actualFromTimer = false;
+    b.agitation = rs.brew.agitation; b.technique = rs.brew.technique; b.pulseTaste = rs.brew.pulseTaste || 'balanced'; b.pulseStrength = rs.brew.pulseStrength || ''; b.ice = rs.brew.ice || 0.4; b.pourNotes = ''; b.actualSecs = 0; b.actualFromTimer = false;
     if (base){
       if (!b.grinderKey){ const g = GRINDERS.find(y => y.name === base.grinder); if (g){ b.grinderKey = g.key; b.grinderName = g.name; b.grinderType = 'burr'; b.grindEdited = false; b.grindMethod = ''; } }
       const r = base.row || {};
@@ -21611,7 +21713,7 @@ function everyBuild(pk, kind, raw){
 }
 /* any text a person might give: an "everything" backup code, an older backup code, or a plain file. Returns the list, or { error }. */
 async function everyClassify(text){
-  let t = String(text == null ? '' : text).replace(/^﻿/, '');
+  let t = String(text == null ? '' : text).replace(/^\uFEFF/, '');
   if (/BEGIN (?:BEANTELLIGENCE|NEUROBREW) BACKUP/i.test(t)){
     const r = await readBackupCode(t); if (r.error) return { error:r.error };
     if (r.parts) return everyBuild(r.parts, 'everything');
@@ -21715,7 +21817,7 @@ try {
 } catch(e){}
 function everyRegister(p){ if (p && p.id && !EVERY_PARTS.some(x => x.id === p.id)) EVERY_PARTS.push(p); }
 function everyPart(id){ return EVERY_PARTS.find(p => p.id === id) || null; }
-function everyStamp(text){ return bkCrc32(new TextEncoder().encode(String(text || '').replace(/^﻿/, ''))); }
+function everyStamp(text){ return bkCrc32(new TextEncoder().encode(String(text || '').replace(/^\uFEFF/, ''))); }
 /* the parts that have something to save, as the container takes them */
 function everyGather(){ return EVERY_PARTS.filter(p => p.has()).map(p => ({ id:p.id, text:p.text() })); }
 /* the parts whose text is not what the last "everything" file holds (new, changed, or emptied since) */
