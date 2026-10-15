@@ -4,6 +4,29 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.035.0084: A cleaner home and Coffee screen, and more Beanjamin
+
+2026-10-15 01:19:51 UTC
+
+- The first screen now starts with your Experience level, so you cannot miss it. Load a shared coffee is the third choice under At a coffee shop, in purple with a new phone-and-message picture.
+- Beanjamin stands full length on the first screen and changes pose as you point at At home, At a coffee shop or Load a shared coffee.
+- Coffee screen: the counter is slimmer and sits right under the cup bar. Load a past coffee is now a green card so it no longer runs into the AI row, and the AI picture is bigger.
+- Removed from the Coffee screen: the Your tasting history card and the typed elevation box. Lower, Mid and High stay, and their help now gives heights in metres and feet.
+- More Beanjamin on the Coffee screen: his face and pose change with each question, he says Got it or Nice name after an answer, Halfway there at the third, Last one on the final question, Good job on the optional extras, and a surprised look when an answer is missing.
+- Still perfecting has its own place in the Menu, right after Your tastings, instead of sitting on the Coffee screen.
+- Facts: About this coffee has an Edit button that takes you back to the Coffee screen. The Edit answers buttons and the link at the bottom are gone.
+
+## Version 4.034.0083: Beanjamin asks about your coffee, one question at a time
+
+2026-10-14 22:26:15 UTC
+
+- The Coffee screen now asks six things, one at a time: roaster, coffee name, roast date, roast level, process and elevation. A big counter stays at the top and shows how many are left.
+- Every question has two big buttons: I don't understand (shows where to find it on the bag) and Not on the bag, I don't know. The little i button says why we ask.
+- The roaster is now one of the six answers. After the six, Beanjamin asks a few optional extras: single origin or blend, origin, variety, decaf and bag notes.
+- Past coffees: pick one at the top to fill the answers in.
+- Have the bag? Use AI to fill this in. The AI symbol is a speech bubble in front of a coffee bag.
+- Removed the bag photo reader and the paste-the-label box. The Experience level card is gone from this screen: change it in the Menu under My setup.
+
 ## Version 4.033.0082: Edit a saved tasting, and TDS everywhere
 
 2026-10-14 20:19:34 UTC
