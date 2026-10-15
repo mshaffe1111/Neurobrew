@@ -4,6 +4,14 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.040.0092: Beanjamin speaks only when he has something to say
+
+2026-10-15 17:22:12 UTC
+
+- Every pop-up that says something now shows Beanjamin beside its title, with a face that fits: happy for Saved, worried for It did not save, sad for Nothing to back up.
+- The routine one-line tips are gone from ordinary screens (Brew, Gear, Change settings, the Caffeine calculators and About). Just Starting keeps its first-time tips.
+- The Beanjamin beside the BeanTelligence title is smaller.
+
 ## Version 4.039.0091: Back and Menu at the top, one big button below
 
 2026-10-15 16:33:10 UTC
