@@ -4,6 +4,31 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.037.0088: Small fixes and tidier tests
+
+2026-10-15 06:05:53 UTC
+
+- The Facts screen now says 'You said you do not know the process and elevation', the same words as the Coffee screen's 'Not on the bag, I don't know' button, in place of 'You chose Not sure'.
+- Behind the scenes: the pour gauge on the timer gives its glass its own id, the Philips cup label is escaped, the icon file lost 45 stray long numbers, and a doubled word in the Blind tasting glossary entry, an unused variable and a repeated gear check are gone. Nothing should look different.
+
+## Version 4.037.0087: Tidier style files
+
+2026-10-15 05:42:14 UTC
+
+- Behind the scenes only: nothing should look or work differently. Every colour now lives in one block, about 340 style lines that were always overridden are gone, and the leftover step-bar and old Coffee-collapse styles are removed.
+- A new check refuses a class that is defined in two style files, so the next change cannot quietly collide with an old one.
+
+## Version 4.037.0086: Fewer screens, one cup figure
+
+2026-10-15 04:06:26 UTC
+
+- If you have saved a usual grinder in My setup, choosing a method now goes straight to Brew. Your gear is shown there with a Change gear button, and the Gear page only opens when you have not picked a grinder yet.
+- The cup forecast on Brew now uses the same water-kept figure as the Cup Yield calculator for each method (2.1 g per gram for a V60, 2.5 for a French press, 1.7 for an AeroPress), plus the coffee that dissolves into the cup, so the two screens give the same answer. A figure you calibrated is used on Brew too.
+- A Chemex on a grinder with no Chemex table of its own now says the maker has no figure for it and that it lands at or past the top of the pour-over range, in place of saying the maker suggests it.
+- The Ratio row on Brew has an Adjust button like Temperature and Grind; it opens Change settings, where the amounts and the ratio are.
+- The voice for the timer is loaded when the timer opens, so the first spoken step is not late. Coming back to the timer after the phone slept updates the clock and the step at once.
+- The save sheets now say that your file holds your tastings and settings, that shop drinks and prices are separate, and that Save everything keeps all three together.
+
 ## Version 4.036.0085: Quick fixes and text boxes
 
 2026-10-15 02:45:30 UTC
