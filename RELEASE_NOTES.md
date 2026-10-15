@@ -4,6 +4,12 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.037.0089: Style files merged and cleaned
+
+2026-10-15 08:27:00 UTC
+
+- Build 24 release C. No visible change. The style files lost the 45 split classes (two remain on purpose: err and fine) and about 80 classes of style rules that nothing used. A before-and-after check of 270 screens found no style difference.
+
 ## Version 4.037.0088: Small fixes and tidier tests
 
 2026-10-15 06:05:53 UTC
