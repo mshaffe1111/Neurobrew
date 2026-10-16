@@ -4,6 +4,16 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.044.0098: A timer you can follow at a glance
+
+2026-10-16 11:11:35 UTC
+
+- Pick Ring or Dripper at the top of the timer; the app remembers it. The brewer fills as you pour and the cup fills as it drains, and the grams you should be at are the biggest number.
+- Before you press Start says how high to hold the kettle (low for a Clever, AeroPress, press, Switch or phin; as high as the stream stays smooth for a pour-over) and what to have ready: the water, the scale at 0 and, when the brewer needs one, a spoon.
+- During a stir, tap a circle for each stir. The card says what a stir is (a spoon in the coffee) and what a swirl is (spinning the whole brewer), and which one your brewer uses.
+- What the voice says lists every step in the voice's own words, and the voice now names each action. The Clever has its own steps: pour, stir, lid on, a slow stir 15 seconds before the valve opens, then set it on your mug.
+- A small full-body Beanjamin sits beside his line, and says each action as it comes up.
+
 ## Version 4.043.0097: Brew sizes, and an honest Ratio label
 
 2026-10-16 09:33:44 UTC

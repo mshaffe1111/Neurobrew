@@ -1352,16 +1352,13 @@ body:not([data-screen="start"]) .pstep .pl{ font-size:14px; }
 :root[data-theme="dark"] .way[aria-pressed="true"] span{ color:var(--pick-ink); }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .way[aria-pressed="true"] span{ color:var(--pick-ink); } }
 
-/* the guided timer: a green panel that stays put, steps that scroll under it, Start / Pause in the bottom bar */
+/* the guided timer: a green panel with the Ring or the Dripper (Build 29), the cards under it, Start / Pause in the bottom bar */
 body[data-screen="timer"] .progress{ display:none; }
-.timerpanel{ top:calc(env(safe-area-inset-top, 0px) + 56px); margin:0 -16px; display:flex; background:var(--band); color:#FDFBF7; border-bottom:1px solid var(--hush); border-radius:0 0 24px 24px; position:sticky; z-index:4; flex-direction:column; gap:8px; padding:12px 16px 14px; }
+.timerpanel{ margin:0 -16px; display:flex; background:var(--band); color:#FDFBF7; border-bottom:1px solid var(--hush); border-radius:0 0 24px 24px; flex-direction:column; gap:8px; padding:12px 16px 14px; }
 .tp-head{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; }
 .tp-title{ margin:0; font-family:var(--display); font-weight:700; font-size:22px; }
 .tp-sum{ margin:0; font-size:15px; color:var(--band-ink); }
 .timerpanel .bigtime{ color:#FDFBF7; }
-.tbar{ position:relative; height:16px; border-radius:8px; background:#0F2418; border:2px solid var(--band-ink); overflow:hidden; }
-.tfill{ position:absolute; left:0; top:0; bottom:0; width:0; background:var(--gold); }
-.ttick{ position:absolute; top:0; bottom:0; border-left:2px solid var(--band-ink); }
 .timerpanel .now{ text-align:left; margin:0; min-width:0; }
 .timerpanel .now .next{ font-size:16px; color:var(--band-ink); margin-top:2px; }
 .timerpanel .pace{ min-height:0; margin:0; font-size:16px; font-weight:400; color:var(--band-ink); text-align:left; }
@@ -1700,17 +1697,7 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .timerpanel .tp-sum{ margin:0; font-size:15px; color:var(--band-ink); }
 .tp-reset{ margin-bottom:4px; }
 .tp-reset:active{ transform:translateY(3px); box-shadow:0 1px 0 #22120C; }
-.tp-main{ display:flex; align-items:center; gap:6px; }
-.tp-left{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
-.tp-step{ font-weight:700; font-size:15px; letter-spacing:1.2px; text-transform:uppercase; color:var(--gold); }
-.timerpanel .bigtime{ margin:0; font-size:84px; line-height:.95; letter-spacing:-1px; font-variant-numeric:tabular-nums; }
-.timerpanel .now .what{ color:var(--gold); font-weight:700; line-height:1.05; font-size:28px; margin-top:2px; }
-.tgauge{ flex:none; background:#FDFBF7; border:3px solid #22120C; border-radius:18px; padding:6px 2px 4px 4px; }
-.tgauge svg{ width:140px; height:auto; }
-@media (max-width:359px){ .tgauge svg{ width:118px; } .timerpanel .bigtime{ font-size:68px; } }
 .tcoach{ display:flex; align-items:center; gap:10px; margin-top:2px; }
-.tmark{ flex:none; display:flex; align-items:center; justify-content:center; width:52px; height:52px; border-radius:50%; background:#FDFBF7; border:3px solid #22120C; overflow:hidden; }
-.tmark svg{ width:46px; height:46px; display:block; }
 .tbubble{ position:relative; flex:1; min-width:0; padding:6px 12px; background:#FDFBF7; color:#22120C; border:1px solid var(--hush); border-radius:14px; font-size:17px; line-height:1.2; font-weight:500; }
 .tbubble::before{ content:""; position:absolute; left:-9px; top:50%; margin-top:-8px; border:8px solid transparent; border-right:9px solid var(--hush); border-left:0; }
 .tbubble::after{ content:""; position:absolute; left:-5.5px; top:50%; margin-top:-6px; border:6px solid transparent; border-right:7px solid #FDFBF7; border-left:0; }
@@ -2693,6 +2680,66 @@ body[data-screen="shop"] .pstep .pl{ font-size:16px; }
 .tename{ display:block; margin:0 0 6px; font:700 17px/1.2 var(--ui); }
 .tefaces{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)) minmax(0, 1.5fr); gap:8px; }
 .tefaces .ttile{ width:100%; min-width:0; padding-left:4px; padding-right:4px; }
+.tviewrow{ display:flex; justify-content:center; }
+.tviewseg{ display:inline-flex; width:auto; background:rgba(253,251,247,.12); border:0; border-radius:999px; padding:4px; gap:2px; box-shadow:none; }
+.tviewseg button{ display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:0 16px; border:0; border-radius:999px; background:transparent; color:#FDFBF7; font:700 16px/1 var(--ui); box-shadow:none; }
+.tviewseg button[aria-pressed="true"]{ background:#FDFBF7; color:#22120C; }
+.tvico{ display:inline-block; width:20px; height:20px; }
+.tvico svg{ width:20px; height:20px; display:block; }
+.tstage{ display:flex; flex-direction:column; align-items:stretch; gap:6px; }
+.tstage .tgauge{ align-self:center; width:100%; max-width:300px; }
+.tstage .tgauge svg{ display:block; width:100%; height:auto; }
+.tstage.dripper .tgauge{ max-width:180px; }
+/* the readout under the ring: the grams first and biggest, the clock and the step beside them */
+.tread{ display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; }
+.tgr{ display:flex; align-items:baseline; gap:4px; flex:none; white-space:nowrap; }
+.tgrams{ font:800 76px/.9 var(--ui); letter-spacing:-1px; color:#FDFBF7; font-variant-numeric:tabular-nums; }
+.tgof{ font:700 22px/1 var(--ui); color:#FDFBF7; }
+.tclk{ flex:1; min-width:150px; }
+.timerpanel .bigtime{ margin:0; text-align:left; font:800 40px/1 var(--ui); letter-spacing:0; color:var(--gold); font-variant-numeric:tabular-nums; }
+.tstage.noscale .bigtime{ font-size:76px; color:#FDFBF7; }
+.timerpanel .now .what{ color:#FDFBF7; font-weight:700; font-size:18px; line-height:1.15; margin-top:2px; }
+/* the dripper view: the step in a pill, now and pour-to either side of the drawing */
+.tpill{ align-self:center; display:inline-flex; align-items:center; gap:8px; padding:6px 18px; border-radius:999px; background:var(--gold); color:#22120C; }
+.tpill .bigtime{ color:#22120C; font-size:30px; }
+.tpill .what{ color:#22120C; font:700 24px/1.1 var(--ui); }
+.tpill .tdot{ font:800 26px/1 var(--ui); }
+.tdrip{ display:grid; grid-template-columns:1fr minmax(0, 180px) 1fr; align-items:center; gap:4px; }
+.tside{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.tside.r{ align-items:flex-end; text-align:right; }
+.tglab{ font:500 16px/1.1 var(--ui); color:var(--band-ink); }
+.tdrip .tgrams{ font-size:44px; }
+.tdrip .tgof{ font-size:20px; }
+.tgtgt{ font:800 30px/1 var(--ui); color:var(--gold); white-space:nowrap; }
+.tstage.dripper .now{ text-align:center; }
+/* the small full-body Beanjamin beside his line */
+.tmark{ flex:none; width:58px; height:78px; display:block; }
+.tmark svg{ width:58px; height:78px; display:block; }
+/* the cards under the panel */
+#timerAside:empty{ display:none; }
+.tready .flabel, .tmovecard .flabel, .stepswrap .flabel{ margin:0 0 8px; }
+.tkettle{ display:grid; grid-template-columns:112px 1fr; gap:10px; align-items:start; }
+.kettlepic2{ display:block; padding:6px; border-radius:12px; background:var(--icon-bg); }
+.kettlepic2 svg{ width:100px; height:auto; display:block; }
+.tkettle b{ font:700 18px/1.2 var(--ui); }
+.tkettle p{ margin:4px 0 0; font-size:16px; line-height:1.35; }
+.tneeds{ display:grid; grid-template-columns:repeat(auto-fit, minmax(90px, 1fr)); gap:8px; margin-top:12px; }
+.tneed{ display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 6px; border:1px solid var(--hush); border-radius:12px; text-align:center; }
+.tneed .tnpic{ width:32px; height:32px; background:transparent; }
+.tneed b{ font:700 16px/1.15 var(--ui); }
+.tneed span:last-child{ font-size:14px; color:var(--muted); }
+.tstirs{ display:flex; gap:14px; justify-content:center; margin:4px 0 12px; }
+.tstir{ width:64px; height:64px; border-radius:50%; border:3px dashed var(--muted); background:transparent; font:800 26px/1 var(--ui); color:var(--ink); box-shadow:none; }
+.tstir[aria-pressed="true"]{ border:3px solid #22120C; background:var(--band); color:#FDFBF7; }
+.tmove{ display:grid; grid-template-columns:36px 1fr; gap:10px; align-items:start; padding:8px 0; }
+.tmove + .tmove{ border-top:1px solid var(--hush); }
+.tmove .tmpic{ width:34px; height:34px; background:transparent; }
+.tmove b{ font:700 17px/1.2 var(--ui); }
+.tmove p{ margin:3px 0 0; font-size:15.5px; line-height:1.35; }
+/* what the voice says, one row per step */
+.stepswrap .steps .say{ font-size:16px; line-height:1.35; }
+.stepswrap .steps .d{ font-size:14px; color:var(--muted); margin-top:2px; }
+@media (max-width:359px){ .tgrams{ font-size:62px; } .tdrip .tgrams{ font-size:36px; } .tgtgt{ font-size:28px; } .tkettle{ grid-template-columns:88px 1fr; } .kettlepic2 svg{ width:76px; } }
 /* ---- Release 65: Start ---- */
 /* the "More about this coffee" title and line were dark brown on the green band */
 .moredetails > summary .gtx .gt{ color:#FFFFFF; }
@@ -2994,6 +3041,7 @@ details.mfold > .mrows{ margin-top:14px; }
 <symbol id="art-ratio" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M24 8 V40 M13 43 H35" fill="none" stroke-width="3"/><path d="M7 14 H41" fill="none" stroke-width="3"/><circle cx="24" cy="7" r="2.600" fill="#F2A93B"/><path d="M7 14 L2 27 H12Z" fill="#8A5230"/><path d="M41 14 L36 27 H46Z" fill="#6FB5D9"/></g></symbol>
 <symbol id="art-kettle" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M30 30 C37 30 37 16 43 10" fill="none" stroke-width="6.400"/><path d="M30 30 C37 30 37 16 43 10" fill="none" stroke="#B9AE96" stroke-width="2.800"/><path d="M10 24 H30 V38 a4 4 0 0 1-4 4 H14 a4 4 0 0 1-4-4Z" fill="#B9AE96"/><path d="M10 28 C2 28 2 39 10 39" fill="none" stroke-width="3"/><path d="M12 24 a8 3 0 0 1 16 0" fill="#8A5230"/><circle cx="20" cy="19.500" r="2.600" fill="#F2A93B"/><path d="M45 19 v3 M43 25 v3" fill="none" stroke="#6FB5D9" stroke-width="2.800"/></g></symbol>
 <symbol id="n-jug" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M31 15 C42 15 42 31 31.500 31" fill="none" stroke-width="3"/><path d="M12 9 H32 L34 40 a3 3 0 0 1-3 3 H14 a3 3 0 0 1-3-3Z" fill="#E5F2F7"/><path d="M11.700 22 H33 L34 40 a3 3 0 0 1-3 3 H14 a3 3 0 0 1-3-3Z" fill="#6FB5D9"/><path d="M12 9 L6 7" fill="none" stroke-width="3"/><path d="M16 29 q2.500-2 5 0 t5 0" fill="none" stroke-width="2" stroke="#FFF8EA"/><path d="M5 15 v3.500 M7 22 v3.500" fill="none" stroke="#6FB5D9" stroke-width="2.800"/></g></symbol>
+<symbol id="art-spoon" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="31" cy="14" rx="7.5" ry="10.5" transform="rotate(35 31 14)" fill="#D9D3C7"/><ellipse cx="31.6" cy="13.2" rx="3.6" ry="6" transform="rotate(35 31.6 13.2)" fill="#F4F0E6" stroke="none"/><path d="M25.6 21.6 L11 40.5 q-2.4 2.9 -4.9 0.9 q-2.2 -2 0.4 -4.6 L22.2 19.2" fill="#D9D3C7"/></g></symbol>
 <symbol id="art-swirl" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="19" fill="#E8D7A8"/><path d="M24 24 a2 2 0 0 1 4 0 a5 5 0 0 1-10 0 a8 8 0 0 1 16 0 a11 11 0 0 1-22 0" fill="none" stroke="#8A5230" stroke-width="3"/></g></symbol>
 <symbol id="art-timer" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="27" r="16" fill="#FFF8EA"/><rect x="19.500" y="4" width="9" height="6" rx="2" fill="#F2A93B"/><path d="M24 10 v4 M38 13 l-3 3" fill="none"/><path d="M24 27 V17 M24 27 l7 4" fill="none" stroke-width="3"/><circle cx="24" cy="27" r="1.800" fill="#22120C"/></g></symbol>
 <symbol id="art-temp" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="19" y="4" width="10" height="28" rx="5" fill="#FFF8EA"/><circle cx="24" cy="36" r="8" fill="#D9503B"/><path d="M24 14 V35" stroke="#D9503B" stroke-width="4" fill="none"/><path d="M34 10 h5 M34 17 h5 M34 24 h5" fill="none"/></g></symbol>
@@ -3943,10 +3991,8 @@ function buildRecipe(coffee, methodKey, batch, adjust, now){
   } else if (m.key === 'clever'){
     const S = eng && eng.steepS ? eng.steepS : r5(m.steep);
     prep.push('Fit a paper cone filter (check the size for your model), rinse it with hot water, and let it drain, then set the dripper on the counter with the valve closed.');
-    prep.push('Add the grounds and zero the scale.'); steps.push({ t:0, title:'Pour and stir', detail:'With the valve closed, pour all ' + Wb + ' g of water over the grounds. Stir gently three times, then put the lid on.', scale:Wb });
-    steps.push({ t:S, title:'Open the valve', detail:'Set the Clever on your mug or server. The valve opens and the coffee drains.' });
-    total = S + r5(60 * s);
-    steps.push({ t:total, title:'Finish', detail:'Fully drained. Remove the dripper and serve.' });
+    prep.push('Add the grounds and zero the scale.');
+    const cs = cleverSteps(Wb, S, r5(60 * s)); steps.push(...cs.steps); total = cs.total;   /* 15-steeper-steps.js */
     timeWhy = 'Steep ' + fmtTime(S) + ' with the valve closed, then about a minute to drain. Published recipes steep from 2 to 4 minutes: longer adds body and strength, shorter keeps it brighter.';
   } else if (m.key === 'siphon'){
     const S = eng && eng.steepS ? eng.steepS : r5(m.steep);
@@ -4059,7 +4105,7 @@ function buildRecipe(coffee, methodKey, batch, adjust, now){
     else prep.push('Weigh ' + R.ice + ' g of ice into a glass (big cubes melt slower) and have it ready, so the coffee can go onto it right away.');
     const fin = steps.find(x => x.title === 'Finish'), plunge = steps.find(x => x.title === 'Plunge');
     if (pourOver && fin) fin.detail = tk.key === 'flash' ? 'The drawdown should be done about now. Swirl the server for a few seconds until the ice has mostly melted, then serve over fresh ice if you like.' : 'Pour the hot coffee over the ' + R.ice + ' g of ice right away (within about 30 seconds), swirl until it is cold, and serve.';
-    if (m.key === 'clever'){ const ov = steps.find(x => x.title === 'Open the valve'); if (tk.key === 'flash'){ if (ov) ov.detail = 'Set the Clever on the cup of ice. The valve opens and the hot coffee drains straight onto the ice.'; if (fin) fin.detail = 'Fully drained. Remove the Clever, swirl until the ice has mostly melted, then serve.'; } else if (fin) fin.detail = 'Fully drained. Pour the hot coffee over the ' + R.ice + ' g of ice right away (within about 30 seconds), swirl until it is cold, and serve.'; }
+    if (m.key === 'clever'){ const ov = steps.find(x => x.title === 'Open the valve'); [ov, fin].forEach(x => { if (x) delete x.say; }); if (tk.key === 'flash'){ if (ov) ov.detail = 'Set the Clever on the cup of ice. The valve opens and the hot coffee drains straight onto the ice.'; if (fin) fin.detail = 'Fully drained. Remove the Clever, swirl until the ice has mostly melted, then serve.'; } else if (fin) fin.detail = 'Fully drained. Pour the hot coffee over the ' + R.ice + ' g of ice right away (within about 30 seconds), swirl until it is cold, and serve.'; }
     if (m.key === 'aeropress'){ if (plunge) plunge.detail = 'Press slowly over about 30 seconds, straight onto the ice in your mug.'; if (fin) fin.detail = 'Swirl until the ice has mostly melted, then serve.'; }
     if (m.key === 'press'){ if (plunge) plunge.detail = 'Press down slowly over about 20 seconds, then pour the coffee straight onto the ice.'; if (fin) fin.detail = 'Swirl until the ice has mostly melted, then serve. Do not leave coffee in the press.'; }
   }
@@ -4075,6 +4121,21 @@ function buildRecipe(coffee, methodKey, batch, adjust, now){
   return R;
 }
 
+/* Wb: water in the brewer (g); S: the steep in seconds (the engine's, or the table's); drain: the drain time in seconds.
+   The pour is quick and low (all the water in about 15 g a second, our pace, C), then three slow stirs and the lid; one slow stir 15 seconds before the valve opens,
+   because the engine's steep model is for a stirred bed (Liang 2021). A steep under 2 minutes skips the slow stir: there is no time for it. */
+function cleverSteps(Wb, S, drain){
+  const pourS = Math.max(10, Math.min(30, Math.round(Wb / 15))), stirT = pourS, lidT = stirT + 15, slow = S >= 120 ? S - 15 : null, total = S + drain;
+  const steps = [
+    { t:0, title:'Pour', detail:'With the valve closed, pour all ' + Wb + ' g of water over the grounds in about ' + pourS + ' seconds. Keep the kettle low.', scale:Wb, from:0, pourSecs:pourS, say:'Pour all ' + Wb + ' grams, kettle low, in about ' + pourS + ' seconds.' },
+    { t:stirT, title:'Stir', detail:'Take your spoon and stir gently three times, front to back, so no dry clumps float. Do not scrape the paper.', stir:3, say:'Take your spoon: three slow stirs, front to back.' },
+    { t:lidT, title:'Lid on', detail:'Put the lid on to keep the heat in.', say:'Put the lid on the Clever.' }
+  ];
+  if (slow) steps.push({ t:slow, title:'Slow stir', detail:'Lid off. One slow stir with the spoon, then put the lid back on.', stir:1, say:'Lid off. One slow stir with the spoon, then lid back on.' });
+  steps.push({ t:S, title:'Open the valve', detail:'Set the Clever on your mug or server. The valve opens and the coffee drains.', say:'Set the Clever on your mug. It drains by itself.' },
+    { t:total, title:'Finish', detail:'Fully drained. Remove the dripper and serve.', say:'Done. Lift it off and enjoy.' });
+  return { steps, total };
+}
 /* the rating that goes with a "Why:" line: tier A, B or C from the evidence tiers (74-evidence.js) and the one-line basis shown under "What this rests on". Called when a fix is built, after all engine files have loaded. */
 const EVD = (tier, basis) => ({ key:'why', tier, label:EVIDENCE_TIERS[tier].label, dots:EVIDENCE_TIERS[tier].dots, basis });
 function expectFor(coffee, now){
@@ -8418,7 +8479,7 @@ const GUIDE_SECTIONS = [
       'Under the numbers, a card says Fill your kettle to. It adds up the water you pour, a little the kettle keeps back, and water to rinse a paper filter. Running short is worse than going over, so a little extra is fine. Comfy Brewer and Bean Scientist can change the rinse water and add a margin.',
       'To change the amount, tap Adjust on the Coffee tile. Choose Coffee or Water, then type an amount, step it up and down, or pick a cup size. The other one follows. On a Hario Switch, say which size you have (02 or 03), because the 02 holds less. A phin holds about 25 g of coffee, so a big batch is split into several brews. Comfy Brewer and Bean Scientist can also adjust the water temperature and the grind. Comfy Brewer stays within 5°F of our temperature. Tap Done at the top to close. For strength (Lighter or Stronger), pulse pours or iced coffee, tap More ways to brew it. That opens Change settings. Reset all puts it all back. Your grinder, water and filter are on the Gear page. Tap Change gear to change them.',
       'For Comfy Brewer and Bean Scientist, Tune it opens after your first cup. It asks how the last try was: sour, bitter, too weak, too strong or just right. Then Perfect changes one thing for the next brew. If your grinder has no settings table yet, you can teach BeanTelligence from your own results. The water you add on Gear lets it check your water before blaming the grind.',
-      'Tap Brew it for a timer with scale targets. Before you start and the steps are on the timer page. You can switch sound off, use a beep, or have a voice read each step. The voice can tell you where you should be along the way, so you do not have to watch the screen. When you have brewed it, tap I brewed it: taste it. To send your settings to someone, tap Share these brew settings. It shows plain text you can share or copy. To use settings someone sent you, tap Load a shared coffee on the first screen and paste the message. It fills in the coffee and the method. You still answer elevation and roast date, because they are about your own bag.'],
+      'Tap Brew it for the guided timer. Pick Ring or Dripper at the top, and the app remembers it. The grams you should be at are the biggest number, and the brewer fills as you pour. Before you press Start says how high to hold the kettle and what to have ready. During a stir, tap a circle for each stir. A stir is a spoon in the coffee; a swirl is spinning the whole brewer. What the voice says lists every step in the words the voice uses. You can switch sound off, use a beep, or have a voice read each step. The voice can tell you where you should be along the way, so you do not have to watch the screen. When you have brewed it, tap I brewed it: taste it. To send your settings to someone, tap Share these brew settings. It shows plain text you can share or copy. To use settings someone sent you, tap Load a shared coffee on the first screen and paste the message. It fills in the coffee and the method. You still answer elevation and roast date, because they are about your own bag.'],
     tips:['If you already have earlier tries of this coffee, this screen offers them as a starting point. A new bag of a coffee you know can start from the best brew you kept.'] },
   { id:'cup', title:'5. ' + STEP_NAME.taste + ': smell, sip and score', lead:'Smell, sip hot, sip as it cools.',
     paras:['There are two ways to taste, and ' + STEP_NAME.taste + ' opens on Quick. Give the coffee stars, which are your own. Say whether you would make it again. Pick the flavors from the bag that you liked, and the ones you did not. Words on a bag can nudge how you rate a cup. In one study of 180 coffee drinkers, the same coffee scored differently for acidity and liking depending on its label. So try tasting first, and read the bag\'s flavors afterward. That study tested a process word, not flavor notes, so treat it as a nudge, not a rule (see Solid or folklore?, bag notes). Nothing else changes your stars. Under How did each part taste?, rate the smell, taste, aftertaste, acidity, sweetness and body, each as Good, Okay or Not good. Smell, taste and aftertaste also have a word wheel to pick from.',
@@ -9911,6 +9972,38 @@ function coachLine(steps, t){
 }
 
 
+/* ---------- what each step asks you to do (Build 29): the voice names the action, and the timer page lists the same words ---------- */
+/* how many stirs a step asks for: a step can say it (stir), or its words do ("three times", "one gentle stir") */
+function stirCount(s){
+  if (!s) return 0; if (s.stir > 0) return s.stir;
+  const d = String(s.detail || ''); if (!/\bstir/i.test(d)) return 0;
+  const m = /(one|two|three|four|five)\s+(?:gentle\s+|slow\s+)?(?:stirs?|times|strokes)/i.exec(d) || /stir\w*\s+(?:\w+\s+){0,3}?(one|two|three|four|five)\s+times/i.exec(d);
+  return m ? ['one', 'two', 'three', 'four', 'five'].indexOf(m[1].toLowerCase()) + 1 : 1;
+}
+/* the spoken line for a step: its own words when the recipe wrote them, else the action from the grams and the first sentence */
+function stepVoice(s){
+  if (!s) return ''; if (s.say) return s.say;
+  const first = firstSentence(s.detail || '').trim();
+  if (s.scale != null && !/^stop/i.test(s.title)){
+    const rest = /swirl/i.test(s.detail || '') ? ' Then a gentle swirl.' : stirCount(s) ? ' Then stir.' : '';
+    return s.title + '. Pour to ' + s.scale + ' grams' + (s.pourSecs >= 8 ? ', in about ' + s.pourSecs + ' seconds' : '') + '.' + rest;
+  }
+  if (/^stop/i.test(s.title) && s.scale != null) return s.title + ' at ' + s.scale + ' grams.';
+  return s.title + (first ? '. ' + first : '.');
+}
+/* which moves a brewer uses: a stir (a spoon in the coffee) and a swirl (spinning the whole brewer), read from its steps */
+function brewerMoves(steps){
+  const st = steps || [];
+  return { stir:st.some(s => stirCount(s) > 0), swirl:st.some(s => /swirl/i.test(s.detail || '')) };
+}
+/* how high to hold the kettle. A pour-over is stirred by the pour itself: a higher stream that stays smooth stirs the bed more (Park, Young and Mathijssen 2025,
+   Physics of Fluids, a lab study, so B); no paper gives a height in inches. A steeper is stirred with the spoon, so the kettle stays low (our suggestion, C). */
+function kettleAdvice(m){
+  if (!m) return null;
+  if (m.type === 'flow') return { kind:'smooth', title:'Keep the stream smooth', text:'Start close to the coffee, then lift the kettle as high as the stream stays smooth and unbroken. A higher smooth stream stirs the bed more, so it extracts more evenly. Too high and it breaks into drops and splashes.', tier:'B', src:'Park, Young and Mathijssen 2025, a lab study of pour-over' };
+  if (['clever', 'switch', 'aeropress', 'press', 'phin'].includes(m.key)) return { kind:'low', title:'Hold the kettle low', text:'About 1 to 2 in (3 to 5 cm) above the grounds, about 2 fingers. A higher pour stirs the coffee more; here the spoon does the stirring, so keep the pour low and even.', tier:'C', src:'our suggestion' };
+  return null;
+}
 const EVIDENCE_TIERS = {
   A:{ label:'Well supported', dots:'●●●' },
   B:{ label:'Common practice', dots:'●●○' },
@@ -10636,6 +10729,21 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 98,
+  "version": "4.044.0098",
+  "tier": "medium",
+  "at": "2026-10-16T11:11:35Z",
+  "date": "2026-10-16",
+  "title": "A timer you can follow at a glance",
+  "notes": [
+   "Pick Ring or Dripper at the top of the timer; the app remembers it. The brewer fills as you pour and the cup fills as it drains, and the grams you should be at are the biggest number.",
+   "Before you press Start says how high to hold the kettle (low for a Clever, AeroPress, press, Switch or phin; as high as the stream stays smooth for a pour-over) and what to have ready: the water, the scale at 0 and, when the brewer needs one, a spoon.",
+   "During a stir, tap a circle for each stir. The card says what a stir is (a spoon in the coffee) and what a swirl is (spinning the whole brewer), and which one your brewer uses.",
+   "What the voice says lists every step in the voice's own words, and the voice now names each action. The Clever has its own steps: pour, stir, lid on, a slow stir 15 seconds before the valve opens, then set it on your mug.",
+   "A small full-body Beanjamin sits beside his line, and says each action as it comes up."
+  ]
+ },
  {
   "release": 97,
   "version": "4.043.0097",
@@ -13149,7 +13257,8 @@ function loadDraft(){
       if (['new', 'comfortable', 'expert'].includes(src.prefs.level)) a.prefs.level = src.prefs.level;
       a.prefs.calib = calibClean(src.prefs.calib);
       a.prefs.yieldCal = yieldClean(src.prefs.yieldCal);   /* your own cup-yield figures, kept in this browser */
-      if (src.prefs.switchSize === '03') a.prefs.switchSize = '03';   /* the Hario Switch you own (02 unless you said 03), kept in this browser, not in the file */
+      if (src.prefs.switchSize === '03') a.prefs.switchSize = '03';
+      if (src.prefs.timerView === 'dripper') a.prefs.timerView = 'dripper';   /* the timer view you picked (Ring unless you chose Dripper), this browser only */   /* the Hario Switch you own (02 unless you said 03), kept in this browser, not in the file */
       a.prefs.caffeine = caffeineClean(src.prefs.caffeine);   /* your usual caffeine day, kept in this browser */
       a.prefs.gear = setupClean({ gear:src.prefs.gear }, setupCtx()).gear;   /* the gear defaults of My setup, checked like a file's */
       if (src.prefs.roasterSites && typeof src.prefs.roasterSites === 'object' && !Array.isArray(src.prefs.roasterSites)){   /* the shop address remembered for each roaster */
@@ -17225,13 +17334,10 @@ function speak(text, onResult, soft){
     setTimeout(() => { if (!done){ try { syn.cancel(); } catch(e){} fin(false, 'slow'); } }, 3000);   /* a phrase that never started is dropped, so it cannot speak late over a newer cue */
   } catch(e){ fin(false, 'error'); }
 }
-/* what is said at a step: the step and its grams, then (in Guide mode) what comes next, and at the last step how to finish. nxt is the following step, if any */
+/* what is said at a step: the action (and its grams), then (in Guide mode) what comes next, and at the last step how to finish. nxt is the following step, if any */
 function stepSpeech(st, nxt){
   if (!st) return '';
-  let say;
-  if (!st.scale) say = st.title + '.';
-  else if (/^stop/i.test(st.title)) say = st.title + ' at ' + st.scale + ' grams.';
-  else say = st.title + '. Pour to ' + st.scale + ' grams' + (st.pourSecs >= 8 ? ', in about ' + st.pourSecs + ' seconds' : '') + '.';
+  let say = stepVoice(st);   /* Build 29: the voice names the action (72-voice-coach.js); the timer page lists the same words */
   const lastOne = !nxt || /^finish/i.test(nxt.title);
   if (/^finish/i.test(st.title)) return say + ' Tap Done brewing when you are ready to taste.';
   if (lastOne) return say + ' When it is done, or your time is up, tap Done brewing to taste.';   /* a French press or a slow drain: nobody can see the screen, so say what to tap */
@@ -17309,9 +17415,14 @@ function screenTimer(m){
   const big = h('div', { class:'bigtime', 'aria-live':'off', text:'0:00' });
   const nowEl = h('div', { class:'now' });
   const lockNote = h('p', { class:'fine', id:'lockNote', role:'status', style:'text-align:center;margin:6px 0 0;min-height:18px' });
-  const stepEl = h('div', { class:'tp-step' }), paceEl = h('div', { class:'pace', 'aria-live':'off' });
+  const paceEl = h('div', { class:'pace', 'aria-live':'off' });
   const hasGauge = steps.some(x => x.scale != null), cone = r.method.type === 'flow' || r.method.type === 'hybrid';
-  const gaugeBox = hasGauge ? h('div', { class:'tgauge' }) : null; let gaugeKey = '';
+  /* Build 29: the Ring or the Dripper (Matt's pick), drawn from one model of where the water is; the grams you should be at are the biggest number */
+  const levels = timerLevelsFor(r, steps), viewBox = h('div', { class:'tgauge' }); let gaugeKey = '';
+  const gNow = h('b', { class:'tgrams' }), gOf = h('span', { class:'tgof' }), gTgt = h('b', { class:'tgtgt' }), gTgtLab = h('span', { class:'tglab' });
+  const viewBtns = [['ring', 'Ring'], ['dripper', 'Dripper']].map(x => h('button', { type:'button', 'data-v':x[0], 'aria-pressed':'false', onclick:() => { app.prefs.timerView = x[0]; scheduleDraft(); layout(); gaugeKey = ''; tick(); } }, (() => { const ic = h('span', { class:'tvico', 'aria-hidden':'true' }); ic.innerHTML = x[0] === 'ring' ? '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M10 3 A7 7 0 0 1 17 10" fill="none" stroke="#F2A93B" stroke-width="2.6" stroke-linecap="round"/></svg>' : '<svg viewBox="0 0 20 20"><path d="M3 3 H17 L11 11 V15 H9 V11 Z M6 17 H14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></svg>'; return ic; })(), h('span', { text:x[1] })));
+  const viewSeg = h('div', { class:'seg tviewseg', role:'group', 'aria-label':'Timer view' }, viewBtns);
+  const stage = h('div', { class:'tstage' });
   const list = h('ol', { class:'steps' });
   const maxScale = steps.reduce((m, s) => Math.max(m, s.scale || 0), 0);
   /* Just Starting reads one plain sentence per step: no seconds, no pour speed, no gram bars. Comfy Brewer keeps the seconds, the speed and the bar. Bean Scientist moves the speed to its own line, with the running total. */
@@ -17319,7 +17430,7 @@ function screenTimer(m){
   const items = steps.map(s => {
     const sp = timerSpeed(s), fin = s.scale == null && s.title === 'Finish' && cone && lv === 'expert';
     const li = h('li', { class:'step' }, h('div', { class:'t', text:fmtTime(s.t) }),
-      h('div', null, h('div', { class:'sh' }, h('b', { text:s.title }), h('span', { class:'smark', 'aria-hidden':'true' })), h('div', { class:'d', text:timerDetail(s.detail, lv) }),
+      h('div', null, h('div', { class:'sh' }, h('b', { text:s.title }), h('span', { class:'smark', 'aria-hidden':'true' })), h('div', { class:'say', text:'“' + stepVoice(s) + '”' }), h('div', { class:'d', text:timerDetail(s.detail, lv) }),
         s.scale != null && maxScale > 0 && lv !== 'new' ? pourBar(s, maxScale) : null,
         lv === 'expert' && sp != null ? h('div', { class:'tmeta', text:'Pour speed about ' + sp + ' g/s' }) : null,
         fin ? h('div', { class:'tmeta', text:waterShown(r.water, app.prefs.waterUnit) + ' in the brewer' }) : null));
@@ -17362,23 +17473,34 @@ function screenTimer(m){
   });
   /* the top part stays put while the steps scroll under it: the clock, how far along the brew is, what to do now, what the scale should read, and Reset / Tap when drained. Start, Pause, Done brewing and Taste this brew live in the bottom bar. */
   const total = Math.max(r.totalSecs || 0, steps.length ? steps[steps.length - 1].t + 1 : 1);
-  const fillEl = h('div', { class:'tfill' });
-  const bar = h('div', { class:'tbar', role:'progressbar', 'aria-label':'Brew progress', 'aria-valuemin':'0', 'aria-valuemax':'100', 'aria-valuenow':'0' }, fillEl, ...steps.filter(s => s.t > 0).map(s => h('div', { class:'ttick', style:'left:' + Math.min(99, 100 * s.t / total).toFixed(1) + '%' })));
   const summary = r.method.label + ' · ' + r.dose + ' g coffee, ' + (r.iceShare ? r.hot + ' g hot water + ' + r.ice + ' g ice' : r.water + (r.method.type === 'espresso' ? ' g out' : ' g water')) + (r.temp.f ? ' · ' + r.temp.f + '°F / ' + r.temp.c + '°C' : '');
-  const mark = h('span', { class:'tmark' }); mark.innerHTML = mascotSvg({ face:'happy', outfit:'grad' });
+  const mark = h('span', { class:'tmark' }); mark.innerHTML = mascotSvg({ view:'full', pose:'thumbs', face:'happy', outfit:'grad' });   /* Build 29: a small full-body Beanjamin */
   const whatEl = h('div', { class:'what', 'aria-live':'polite', 'aria-atomic':'true' }), nextEl = h('div', { class:'next' });   /* the step name is announced when it changes; the clock and the pace line stay silent */
   nowEl.append(whatEl, nextEl);
   m.append(h('h1', { class:'sr-only', text:'Guided brew: ' + r.method.label }));
   m.append(h('div', { class:'timerpanel' },
     h('div', { class:'tp-head' }, h('div', null, h('p', { class:'tp-title', text:'Guided brew' }), h('p', { class:'tp-sum', text:summary })), resetBtn),
-    h('div', { class:'tp-main' }, h('div', { class:'tp-left' }, stepEl, big, nowEl), gaugeBox),
-    bar, lockNote, h('div', { class:'tcoach' }, mark, h('div', { class:'tbubble' }, paceEl)),
+    h('div', { class:'tviewrow' }, viewSeg), stage,
+    lockNote, h('div', { class:'tcoach' }, mark, h('div', { class:'tbubble' }, paceEl)),
     drained));
+  /* the one set of readouts moves into whichever view is showing, so each appears once on the page */
+  function layout(){
+    const v = timerView(); viewBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+    stage.textContent = ''; stage.className = 'tstage ' + v + (hasGauge ? '' : ' noscale');
+    const grams = hasGauge ? h('div', { class:'tgr' }, gNow, gOf) : null;
+    if (v === 'ring') stage.append(viewBox, h('div', { class:'tread' }, grams, h('div', { class:'tclk' }, big, nowEl)));
+    else stage.append(h('div', { class:'tpill' }, big, h('span', { class:'tdot', 'aria-hidden':'true', text:'·' }), whatEl),
+      h('div', { class:'tdrip' }, hasGauge ? h('div', { class:'tside l' }, h('span', { class:'tglab', text:'now' }), grams) : h('div'), viewBox, hasGauge ? h('div', { class:'tside r' }, gTgtLab, gTgt) : h('div')), nowEl);
+    if (v === 'ring' && !nowEl.contains(whatEl)) nowEl.prepend(whatEl);
+  }
+  layout();
+  const aside = h('div', { id:'timerAside' }); let asideKey = '';
+  m.append(aside);
   /* the sound choices sit in a closed card: most people set them once */
   const soundSub = h('span', { class:'gs' }), soundFold = h('details', { class:'card gcard haspico soundfold' }, h('summary', null, h('span', { class:'gdisc' }, lineIcon('speaker')), h('span', { class:'gtx' }, h('span', { class:'gt', text:'Sound' }), soundSub)),
     h('div', { class:'gbody' }, h('div', { class:'soundbox' }, soundSeg, coachWrap, soundNote, testBtn)));
   refreshers.push(() => { soundSub.textContent = app.prefs.sound === 'off' ? 'Off. Open to hear each step spoken' : app.prefs.sound === 'chime' ? 'A beep at each step' : (app.prefs.coach === 'steps' ? 'Voice, key steps only' : 'Voice, guides you'); });
-  m.append(brewPrepFold(r), soundFold, h('div', { class:'stepswrap' }, list));
+  m.append(brewPrepFold(r), soundFold, h('div', { class:'card stepswrap' }, h('div', { class:'flabel', text:'What the voice says' }), list));
   const dockInner = h('div', { class:'dock-inner' }); let dockMode = '';
   m.append(h('div', { class:'dock timerdock' }, dockInner));
   /* the bar follows the brew: Start alone; then Pause (smaller) beside Done brewing; then Resume (smaller) beside Taste this brew */
@@ -17399,7 +17521,7 @@ function screenTimer(m){
   let clsIdx = -2, reminded = false;
   function tick(){
     const t = elapsed(); setT(big, fmtTime(t));
-    const pct = Math.min(100, Math.round(100 * t / total)); fillEl.style.width = pct + '%'; bar.setAttribute('aria-valuenow', String(pct)); startBtn.classList.toggle('running', timer.running);
+    startBtn.classList.toggle('running', timer.running);
     let idx = -1; steps.forEach((s, i) => { if (t >= s.t) idx = i; });
     if (idx !== clsIdx){ items.forEach((li, i) => { li.classList.toggle('active', i === idx); li.classList.toggle('done', i < idx); }); clsIdx = idx; }
     const cur = steps[idx], nxt = steps[idx + 1];
@@ -17409,13 +17531,23 @@ function screenTimer(m){
     } else if (!timer.running && t === 0){
       setT(whatEl, 'Ready'); setT(nextEl, 'Weigh your coffee, then tap Start when the water hits the grounds.'); 
     } else {
-      setT(whatEl, cur ? cur.title : 'Get ready');
+      setT(whatEl, cur ? stageLabel(cur, nxt, t, r.method) : 'Get ready');
       setT(nextEl, nxt ? 'Next: ' + nxt.title + ' in ' + fmtTime(Math.max(0, Math.ceil(nxt.t - t))) : (idx === steps.length - 1 ? 'All done. Enjoy.' : ''));
     }
-    setT(paceEl, fin ? 'Nice brew! Tap Taste this brew.' : (timer.running || t > 0) ? (coachLine(steps, t) || (cur ? cur.title + '. Steady hands!' : '')) : 'Ready when you are. Steady hands!');
-    setT(stepEl, !fin && (timer.running || t > 0) && idx >= 0 ? 'Step ' + (idx + 1) + ' of ' + steps.length : fin ? 'All done' : 'Step 1 of ' + steps.length);
+    const ka = kettleAdvice(r.method), fresh = cur && !(cur.scale != null && cur.pourSecs > 0) && t - cur.t < 10;   /* the first seconds of a step that is not a pour: say the action itself */
+    setT(paceEl, fin ? 'Nice brew! Tap Taste this brew.' : (timer.running || t > 0) ? ((fresh ? stepVoice(cur) : '') || coachLine(steps, t) || (cur ? cur.title + '. Steady hands!' : ''))
+      : ka ? (ka.kind === 'low' ? 'Kettle low for this one: about 2 fingers above the grounds.' : 'Keep the stream smooth: start low, and lift while it stays unbroken.') : 'Ready when you are. Steady hands!');
     paintDock(fin ? 'fin' : (timer.running || t > 0) ? 'mid' : 'idle');
-    if (gaugeBox){ const g = pourAt(steps, t), key = g.now + '|' + g.tgt + '|' + g.pouring; if (key !== gaugeKey){ gaugeKey = key; g.cone = cone; gaugeBox.innerHTML = pourGauge(g); } }
+    { const lvl = levels(t), g = pourAt(steps, t), v = timerView(), key = v + '|' + Math.round(t) + '|' + lvl.pouring;
+      const allIn = hasGauge && g.tgt != null && g.now >= g.tgt && !g.pouring && !steps.slice(idx + 1).some(x => x.scale != null);
+      const label = hasGauge ? 'Pour level: ' + (g.tgt != null && !allIn ? 'pouring up to ' + g.tgt + ' grams, ' : 'all poured, ') + 'now about ' + g.now + ' grams' : 'Brew progress ' + Math.min(100, Math.round(100 * t / total)) + ' percent';
+      if (key !== gaugeKey){ gaugeKey = key; viewBox.innerHTML = v === 'ring' ? ringSvg(r, steps, t, lvl, label) : dripperSvg(r, lvl, label); }
+      if (hasGauge){
+        setT(gNow, String(g.now)); setT(gOf, v === 'dripper' ? ' g' : allIn ? ' g ✓' : g.tgt != null ? ' of ' + g.tgt + ' g' : ' g');
+        setT(gTgtLab, allIn ? 'all poured' : 'pour to'); setT(gTgt, (g.tgt != null ? g.tgt : g.now) + ' g' + (allIn ? ' ✓' : ''));
+      } }
+    const ak = fin ? 'fin' : (!timer.running && t === 0) ? 'ready' : 'step' + idx;
+    if (ak !== asideKey){ asideKey = ak; aside.textContent = ''; const card = ak === 'ready' ? timerReadyCard(r, steps) : ak.startsWith('step') && cur ? timerMoveCard(cur, steps, r) : null; if (card) aside.append(card); }
     setT(lockNote, fin ? '' : lockMissing ? 'Your phone may turn the screen off. Keep it awake while you brew.' : (timer.lock && !timer.lock.released) ? 'Your screen stays on until you tap Done brewing.' : '');
     if (idx !== timer.lastIdx){
       if (timer.lastIdx !== -1 && timer.running){ try { if (navigator.vibrate) navigator.vibrate(200); } catch(e){} cue(cur, nxt); }
@@ -17447,7 +17579,129 @@ function screenTimer(m){
   tick();
 }
 
-const GAUGE_INK = '#22120C', GAUGE_WATER = '#BFE0EA', GAUGE_COFFEE = '#7A4A2D';
+const TA_INK = '#22120C', TA_WATER = '#E3C4A0', TA_BREW = '#9A6640', TA_COFFEE = '#7A4A2D', TA_GLASS = '#E6F2F8', TA_RIM = '#E9705B';
+let taUid = 0;   /* every drawing gets its own clip ids, so two drawings on one page never share one */
+/* which drawing a brewer gets */
+function brewerShape(key){
+  return { v60:'cone', kalita:'flat', chemex:'chemex', switch:'switch', clever:'clever', aeropress:'aeropress', press:'press', phin:'phin', siphon:'siphon', espresso:'espresso' }[key] || 'cone';
+}
+/* the mug or server under a brewer: x0..x1 wide, y0..y1 tall, filled from the bottom by cup (0 to 1) */
+function taMug(id, x0, x1, y0, y1, cup, handle){
+  const lvl = y1 - 4 - (y1 - y0 - 8) * Math.max(0, Math.min(1, cup)), w = x1 - x0, path = 'M' + x0 + ' ' + y0 + ' H' + x1 + ' V' + (y1 - 8) + ' Q' + x1 + ' ' + y1 + ' ' + (x1 - 8) + ' ' + y1 + ' H' + (x0 + 8) + ' Q' + x0 + ' ' + y1 + ' ' + x0 + ' ' + (y1 - 8) + ' Z';
+  return '<clipPath id="' + id + 'm"><path d="' + path + '"/></clipPath>' + (handle !== false ? '<path d="M' + x1 + ' ' + (y0 + 12) + ' q16 0 16 16 t-16 16" fill="none" stroke="' + TA_INK + '" stroke-width="5" stroke-linecap="round"/>' : '')
+    + '<path d="' + path + '" fill="' + TA_GLASS + '"/><g clip-path="url(#' + id + 'm)"><rect x="' + x0 + '" y="' + lvl.toFixed(1) + '" width="' + w + '" height="' + (y1 - lvl + 2).toFixed(1) + '" fill="' + TA_COFFEE + '"/></g>'
+    + '<path d="M' + ((x0 + x1) / 2) + ' ' + (y0 + 8) + ' V' + (y1 - 8) + '" stroke="' + TA_COFFEE + '" stroke-width="3" stroke-dasharray="3 7" opacity=".7"/>'
+    + '<path d="' + path + '" fill="none" stroke="' + TA_INK + '" stroke-width="4" stroke-linejoin="round"/><rect x="' + (x0 - 3) + '" y="' + (y0 - 7) + '" width="' + (w + 6) + '" height="8" rx="3" fill="' + TA_RIM + '" stroke="' + TA_INK + '" stroke-width="3"/>';
+}
+/* a liquid level inside a shape: the shape's own path is the clip, the liquid fills from yBottom up to the level */
+function taFill(id, path, yTop, yBottom, f, color){
+  const y = yBottom - (yBottom - yTop) * Math.max(0, Math.min(1, f));
+  return '<clipPath id="' + id + '"><path d="' + path + '"/></clipPath><g clip-path="url(#' + id + ')"><rect x="0" y="' + y.toFixed(1) + '" width="200" height="' + (yBottom - y + 4).toFixed(1) + '" fill="' + color + '"/>'
+    + (f > 0.02 ? '<path d="M0 ' + y.toFixed(1) + ' q12 -4 25 0 t25 0 t25 0 t25 0 t25 0 t25 0 t25 0 t25 0 V' + (y + 5).toFixed(1) + ' H0z" fill="#C99C70" opacity=".55"/>' : '') + '</g>';
+}
+/* the dashed line to pour to, across a shape at height f of its liquid range */
+function taLine(yTop, yBottom, f, x0, x1){
+  if (f == null || !(f > 0)) return '';
+  const y = yBottom - (yBottom - yTop) * Math.min(1, f);
+  return '<path d="M' + x0 + ' ' + y.toFixed(1) + ' H' + x1 + '" stroke="#F2A93B" stroke-width="4" stroke-dasharray="9 6" stroke-linecap="round"/>';
+}
+/* o: { brew 0..1 (water in the brewer), cup 0..1, line 0..1 or null, pouring, lid, plunger 0..1 }. Returns an SVG group in a 200 x 220 box, so it can sit in the ring or alone. */
+function brewerArt(key, o){
+  const id = 'ta' + (++taUid), k = brewerShape(key), b = o.brew || 0, c = o.cup || 0;
+  const stream = (x, y0, y1) => o.pouring ? '<path d="M' + x + ' ' + y0 + ' V' + y1 + '" stroke="' + TA_INK + '" stroke-width="8" stroke-linecap="round"/><path d="M' + x + ' ' + y0 + ' V' + y1 + '" stroke="#BFE0EA" stroke-width="4" stroke-linecap="round"/>' : '';
+  let s = '';
+  if (k === 'cone' || k === 'switch'){
+    const cone = 'M30 22 H170 L104 118 H96 Z';
+    s += stream(100, 0, 40) + '<path d="' + cone + '" fill="#FFFDF7"/>' + taFill(id + 'b', cone, 22, 118, b, k === 'switch' ? TA_BREW : TA_WATER)
+      + '<path d="M86 104 L100 120 L114 104 Z" fill="' + TA_COFFEE + '"/>'
+      + '<path d="M58 26 L94 112 M78 26 L97 114 M100 26 V116 M122 26 L103 114 M142 26 L106 112" stroke="' + TA_RIM + '" stroke-width="2.2" opacity=".7"/>'
+      + taLine(22, 118, o.line, 40, 160) + '<path d="' + cone + '" fill="none" stroke="' + TA_INK + '" stroke-width="4" stroke-linejoin="round"/><rect x="24" y="14" width="152" height="10" rx="4" fill="' + TA_RIM + '" stroke="' + TA_INK + '" stroke-width="3"/>';
+    if (k === 'switch') s += '<rect x="78" y="118" width="44" height="12" rx="5" fill="#D9E7EC" stroke="' + TA_INK + '" stroke-width="3"/><circle cx="128" cy="124" r="5" fill="' + (o.open ? '#7BC59A' : TA_RIM) + '" stroke="' + TA_INK + '" stroke-width="2.4"/>';
+    s += taMug(id, 58, 142, k === 'switch' ? 142 : 134, 210, c);
+  } else if (k === 'flat'){
+    const kal = 'M30 24 H170 L132 112 H68 Z';
+    s += stream(100, 0, 40) + '<path d="' + kal + '" fill="#FFFDF7"/>' + taFill(id + 'b', kal, 24, 112, b, TA_WATER)
+      + '<rect x="72" y="104" width="56" height="8" fill="' + TA_COFFEE + '"/>' + '<path d="M44 30 L74 108 M64 30 L86 108 M86 30 L96 108 M114 30 L104 108 M136 30 L114 108 M156 30 L126 108" stroke="' + TA_RIM + '" stroke-width="2" opacity=".55"/>'
+      + taLine(24, 112, o.line, 38, 162) + '<path d="' + kal + '" fill="none" stroke="' + TA_INK + '" stroke-width="4" stroke-linejoin="round"/><path d="M24 20 q8 -6 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke="' + TA_INK + '" stroke-width="4"/>'
+      + taMug(id, 58, 142, 128, 208, c);
+  } else if (k === 'chemex'){
+    const top = 'M40 16 H160 L114 104 H86 Z', bot = 'M86 120 C40 140 34 200 60 208 H140 C166 200 160 140 114 120 Z';
+    s += stream(100, 0, 34) + '<path d="' + top + '" fill="#FFFDF7"/>' + taFill(id + 'b', top, 16, 104, b, TA_WATER) + '<path d="M90 96 L100 106 L110 96 Z" fill="' + TA_COFFEE + '"/>'
+      + taLine(16, 104, o.line, 50, 150) + '<path d="' + top + '" fill="none" stroke="' + TA_INK + '" stroke-width="4" stroke-linejoin="round"/>'
+      + '<path d="' + bot + '" fill="' + TA_GLASS + '"/>' + taFill(id + 'c', bot, 132, 208, c, TA_COFFEE) + '<path d="' + bot + '" fill="none" stroke="' + TA_INK + '" stroke-width="4" stroke-linejoin="round"/>'
+      + '<path d="M84 102 H116 L120 124 H80 Z" fill="#B07A4B" stroke="' + TA_INK + '" stroke-width="3.4" stroke-linejoin="round"/><circle cx="100" cy="126" r="5" fill="#B07A4B" stroke="' + TA_INK + '" stroke-width="2.4"/>';
+  } else if (k === 'clever'){
+    const cl = 'M40 30 H160 L134 116 H66 Z';
+    s += stream(100, 0, 40) + '<path d="' + cl + '" fill="#FFFDF7"/>' + taFill(id + 'b', cl, 30, 116, b, TA_BREW) + '<rect x="70" y="106" width="60" height="10" fill="' + TA_COFFEE + '"/>'
+      + taLine(30, 116, o.line, 50, 150) + '<path d="' + cl + '" fill="none" stroke="' + TA_INK + '" stroke-width="4" stroke-linejoin="round"/>'
+      + (o.lid ? '<rect x="32" y="18" width="136" height="12" rx="5" fill="#C9B6E4" stroke="' + TA_INK + '" stroke-width="3.4"/><rect x="88" y="8" width="24" height="10" rx="3" fill="#C9B6E4" stroke="' + TA_INK + '" stroke-width="3"/>' : '<rect x="34" y="24" width="132" height="8" rx="3" fill="#FFFDF7" stroke="' + TA_INK + '" stroke-width="3"/>')
+      + '<rect x="76" y="116" width="48" height="12" rx="4" fill="#C9B6E4" stroke="' + TA_INK + '" stroke-width="3"/>' + taMug(id, 58, 142, 142, 210, c);
+  } else if (k === 'aeropress'){
+    const tube = 'M70 30 H130 V126 H70 Z', pl = 30 + 90 * (o.plunger || 0);
+    s += stream(100, 0, 40) + '<path d="' + tube + '" fill="#F4F0E6"/>' + taFill(id + 'b', tube, 30, 126, b, TA_BREW) + '<rect x="70" y="118" width="60" height="8" fill="' + TA_COFFEE + '"/>'
+      + taLine(30, 126, o.line, 72, 128) + '<path d="' + tube + '" fill="none" stroke="' + TA_INK + '" stroke-width="4" stroke-linejoin="round"/><rect x="62" y="126" width="76" height="10" rx="4" fill="#8F8A80" stroke="' + TA_INK + '" stroke-width="3"/>'
+      + (o.capped ? '<rect x="76" y="' + (pl - 24).toFixed(1) + '" width="48" height="' + (24 + 6) + '" rx="4" fill="#A9A49A" stroke="' + TA_INK + '" stroke-width="3.4"/><rect x="66" y="' + (pl - 32).toFixed(1) + '" width="68" height="10" rx="4" fill="#8F8A80" stroke="' + TA_INK + '" stroke-width="3"/>' : '')
+      + taMug(id, 58, 142, 146, 212, c);
+  } else if (k === 'press'){
+    const jar = 'M52 40 H148 V196 Q148 206 138 206 H62 Q52 206 52 196 Z', disc = 40 + 150 * (o.plunger || 0);
+    s += stream(80, 0, 60) + '<path d="' + jar + '" fill="' + TA_GLASS + '"/>' + taFill(id + 'b', jar, 44, 206, b, TA_COFFEE)
+      + '<path d="M148 64 q26 0 26 30 v40 q0 30 -26 30" fill="none" stroke="' + TA_INK + '" stroke-width="6" stroke-linecap="round"/>'
+      + '<path d="' + jar + '" fill="none" stroke="' + TA_INK + '" stroke-width="4" stroke-linejoin="round"/><rect x="46" y="30" width="108" height="12" rx="5" fill="#B9B4AA" stroke="' + TA_INK + '" stroke-width="3.4"/>'
+      + (o.lid ? '<path d="M100 8 V' + disc.toFixed(1) + '" stroke="' + TA_INK + '" stroke-width="5"/><circle cx="100" cy="8" r="6" fill="#B9B4AA" stroke="' + TA_INK + '" stroke-width="3"/><rect x="56" y="' + disc.toFixed(1) + '" width="88" height="6" rx="2" fill="#B9B4AA" stroke="' + TA_INK + '" stroke-width="2.6"/>' : '');
+  } else if (k === 'phin'){
+    const ch = 'M62 58 H138 L132 116 H68 Z';
+    s += stream(100, 0, 52) + '<path d="' + ch + '" fill="#E8E2D6"/>' + taFill(id + 'b', ch, 58, 116, b, TA_BREW) + '<rect x="68" y="106" width="64" height="10" fill="' + TA_COFFEE + '"/>'
+      + '<path d="' + ch + '" fill="none" stroke="' + TA_INK + '" stroke-width="4" stroke-linejoin="round"/><rect x="50" y="116" width="100" height="10" rx="4" fill="#C9C2B4" stroke="' + TA_INK + '" stroke-width="3"/>'
+      + (o.lid ? '<rect x="64" y="44" width="72" height="12" rx="5" fill="#C9C2B4" stroke="' + TA_INK + '" stroke-width="3.2"/><rect x="92" y="36" width="16" height="8" rx="3" fill="#C9C2B4" stroke="' + TA_INK + '" stroke-width="2.6"/>' : '')
+      + (o.drip ? '<path d="M100 130 v8" stroke="' + TA_COFFEE + '" stroke-width="5" stroke-linecap="round"/>' : '') + taMug(id, 64, 136, 142, 210, c, false);
+  } else if (k === 'siphon'){
+    const up = 'M76 18 H124 V70 L108 96 H92 L76 70 Z', glob = 'M100 110 C52 110 46 192 100 200 C154 192 148 110 100 110 Z';
+    s += '<path d="' + up + '" fill="' + TA_GLASS + '"/>' + taFill(id + 'b', up, 22, 96, b, TA_COFFEE) + '<path d="' + up + '" fill="none" stroke="' + TA_INK + '" stroke-width="4" stroke-linejoin="round"/>'
+      + '<path d="M96 96 V124" stroke="' + TA_INK + '" stroke-width="5"/><path d="' + glob + '" fill="' + TA_GLASS + '"/>' + taFill(id + 'c', glob, 112, 200, c, TA_COFFEE)
+      + '<path d="' + glob + '" fill="none" stroke="' + TA_INK + '" stroke-width="4"/><path d="M70 208 H130" stroke="' + TA_INK + '" stroke-width="5" stroke-linecap="round"/>';
+  } else {   /* espresso: a portafilter over a small cup */
+    s += '<path d="M40 40 H120 V64 Q120 74 110 74 H50 Q40 74 40 64 Z" fill="#B9B4AA" stroke="' + TA_INK + '" stroke-width="4" stroke-linejoin="round"/><path d="M120 50 H180" stroke="' + TA_INK + '" stroke-width="12" stroke-linecap="round"/><path d="M120 50 H180" stroke="#4A3D2E" stroke-width="6" stroke-linecap="round"/>'
+      + '<path d="M70 74 v10 M90 74 v10" stroke="' + TA_INK + '" stroke-width="5"/>' + (o.pouring ? '<path d="M70 86 V128 M90 86 V128" stroke="' + TA_COFFEE + '" stroke-width="4" stroke-linecap="round"/>' : '') + taMug(id, 50, 112, 136, 196, c);
+  }
+  return '<g role="presentation">' + s + '</g>';
+}
+/* the kettle over a brewer, with the height marked: low for a steeper, a little higher for a pour-over */
+function kettlePic(kind){
+  const low = kind === 'low', y = low ? 58 : 34, s = h('span', { class:'kettlepic2', 'aria-hidden':'true' });
+  s.innerHTML = '<svg viewBox="0 0 170 100" aria-hidden="true" focusable="false"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">'
+    + '<rect x="6" y="' + (y - 18) + '" width="44" height="30" rx="6" fill="#E8DCC4"/><rect x="18" y="' + (y - 24) + '" width="20" height="7" rx="2" fill="#7A4A2D"/>'
+    + '<path d="M50 ' + (y - 4) + ' C68 ' + (y - 4) + ' 74 ' + (y - 22) + ' 92 ' + (y - 22) + '" fill="none" stroke-width="5"/><path d="M50 ' + (y - 4) + ' C68 ' + (y - 4) + ' 74 ' + (y - 22) + ' 92 ' + (y - 22) + '" fill="none" stroke="#E8DCC4" stroke-width="1.6"/>'
+    + '<path d="M93 ' + (y - 21) + ' V74" stroke="#7FB8CC" stroke-width="2.6"/>'
+    + '<path d="M70 74 H118 L108 94 H80 Z" fill="#FFFDF7"/><path d="M78 78 H110" stroke="#7A4A2D" stroke-width="4"/>'
+    + '<path d="M140 ' + (y - 20) + ' V74 M134 ' + (y - 14) + ' l6 -6 l6 6 M134 68 l6 6 l6 -6" fill="none" stroke="#F2A93B" stroke-width="2.6"/></g></svg>';
+  return s;
+}
+/* Before you press Start: the kettle height for this brewer, and the three things to have ready */
+function timerReadyCard(r, steps){
+  const ka = kettleAdvice(r.method), mv = brewerMoves(steps), water = r.temp && r.temp.f ? r.temp.f + '°F' : 'Water';
+  const tile = (art, b, sub) => h('div', { class:'tneed' }, symPic(art, 'tnpic'), h('b', { text:b }), h('span', { text:sub }));
+  const onIt = r.method.type === 'espresso' ? 'cup on it' : r.method.key === 'chemex' || r.method.key === 'press' ? r.method.label.replace(/^Hario /, '') + ' on it' : 'brewer and cup on it';
+  const tiles = h('div', { class:'tneeds' }, tile('art-temp', water, r.temp && r.temp.f ? 'water ready' : 'ready to pour'), tile('art-scale', 'Scale at 0', onIt), mv.stir ? tile('art-spoon', 'A spoon', 'for the stir') : null);
+  return h('div', { class:'card tready', id:'timerReady' }, h('div', { class:'flabel', text:'Before you press Start' }),
+    ka ? h('div', { class:'tkettle' }, kettlePic(ka.kind), h('div', null, h('b', { text:ka.title }), h('p', { text:ka.text }), h('p', { class:'fine', text:ka.tier === 'C' ? 'Our suggestion: no study gives a height.' : 'Source: ' + ka.src + '. It gives no height in inches.' }))) : null,
+    tiles);
+}
+/* during a stir or a swirl: what it means, and one tap per stir so you can keep count */
+function timerMoveCard(step, steps, r){
+  const n = stirCount(step), swirl = /swirl/i.test(step.detail || ''), mv = brewerMoves(steps), name = r.method.label.replace(/^Hario /, '');
+  if (!n && !swirl) return null;
+  const done = new Set();
+  const dots = n ? h('div', { class:'tstirs', role:'group', 'aria-label':'Stirs: tap each one' }, Array.from({ length:n }, (_, i) => {
+    const b = h('button', { type:'button', class:'tstir', 'aria-pressed':'false', 'aria-label':'Stir ' + (i + 1), text:String(i + 1) });
+    b.addEventListener('click', () => { if (done.has(i)) done.delete(i); else done.add(i); b.setAttribute('aria-pressed', String(done.has(i))); });
+    return b;
+  })) : null;
+  const stirDef = h('div', { class:'tmove' }, symPic('art-spoon', 'tmpic'), h('div', null, h('b', { text:'Stir = a spoon in the coffee' }),
+    h('p', { text:'Dip a spoon into the grounds and move it slowly front to back' + (n > 1 ? ', ' + n + ' times,' : ',') + ' so no dry clumps float. Do not scrape the paper.' })));
+  const swirlDef = h('div', { class:'tmove' }, symPic('art-swirl', 'tmpic'), h('div', null, h('b', { text:n ? 'Not a swirl' : 'Swirl = spin the whole brewer' }),
+    h('p', { text:'A swirl means gently spinning the whole brewer, with no spoon. ' + (mv.stir && mv.swirl ? 'The ' + name + ' uses both.' : mv.stir ? 'Pour-overs like the V60 use a swirl; the ' + name + ' uses the spoon.' : 'The ' + name + ' uses a swirl, not a spoon.') })));
+  return h('div', { class:'card tmovecard', id:'stirCard' }, h('div', { class:'flabel', text:n ? (n > 1 ? 'Stir: tap each one' : 'Stir: tap when done') : 'Swirl' }), dots, n ? stirDef : swirlDef, n ? swirlDef : null);
+}
 /* where the scale should read at time t (seconds): the pour in progress is spread evenly over its pouring time, then the level holds until the next pour */
 function pourAt(steps, t){
   const st = (steps || []).filter(s => s.t != null), withScale = st.filter(s => s.scale != null);
@@ -17465,31 +17719,62 @@ function pourAt(steps, t){
   } else { const prev = st.slice(0, idx).filter(s => s.scale != null).pop(); now = prev ? prev.scale : 0; }
   return { has:true, now:Math.round(now), tgt, max, ticks:withScale.map(s => s.scale), idx, pouring };
 }
-/* the picture. cone: draw a dripper over the glass (pour-over methods); the others show the glass alone. */
-let gaugeUid = 0;   /* each picture gets its own clip id, so two pictures on one page never share a clip */
-function pourGauge(o){
-  const gid = 'gSrv' + (++gaugeUid);
-  const yg = g => 158 - (o.max > 0 ? g / o.max : 0) * 90, yNow = yg(o.now), yT = o.tgt != null ? yg(o.tgt) : null;
-  const ticks = [...new Set(o.ticks)].filter(g => g !== o.tgt && g > 0).map(g => '<path d="M96 ' + yg(g).toFixed(1) + ' h7" stroke="' + GAUGE_INK + '" stroke-width="2" stroke-linecap="round"/><text x="106" y="' + (yg(g) + 4.5).toFixed(1) + '" font-family="Roboto Condensed, sans-serif" font-weight="700" font-size="14" fill="' + GAUGE_INK + '">' + g + '</text>').join('');
-  const glass = 'M32 66 H90 V146 C90 154 84 160 76 160 H46 C38 160 32 154 32 146 Z';
-  const label = 'Pour level' + (o.tgt != null ? ': pouring up to ' + o.tgt + ' grams' : '') + ', now about ' + o.now + ' grams';
-  let s = '<svg width="166" height="182" viewBox="0 0 166 182" role="img" aria-label="' + label + '" style="display:block"><defs><clipPath id="' + gid + '"><path d="' + glass + '"/></clipPath></defs>';
-  if (o.cone) s += '<path d="M20 8 H102 L80 50 H42 Z" fill="#F2A93B" stroke="' + GAUGE_INK + '" stroke-width="3" stroke-linejoin="round"/><path d="M34 14 L50 46 M61 12 V48 M88 14 L72 46" stroke="' + GAUGE_INK + '" stroke-width="2" opacity=".45" fill="none"/>';
-  if (o.pouring){
-    const top = o.cone ? 1 : 24;
-    s += '<path d="M61 ' + top + ' V' + (o.cone ? 46 : yNow - 2).toFixed(1) + '" stroke="' + GAUGE_INK + '" stroke-width="8" stroke-linecap="round"/><path d="M61 ' + top + ' V' + (o.cone ? 46 : yNow - 2).toFixed(1) + '" stroke="' + GAUGE_WATER + '" stroke-width="4" stroke-linecap="round"/>';
-    if (o.cone) s += '<path d="M61 52 V' + (yNow - 2).toFixed(1) + '" stroke="' + GAUGE_INK + '" stroke-width="6" stroke-linecap="round" stroke-dasharray="1 9"/><path d="M61 52 V' + (yNow - 2).toFixed(1) + '" stroke="' + GAUGE_WATER + '" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 9"/>';
-  }
-  s += '<path d="' + glass + '" fill="#FFFDF4"/><g clip-path="url(#' + gid + ')"><rect x="30" y="' + yNow.toFixed(1) + '" width="62" height="100" fill="' + GAUGE_COFFEE + '"/><path d="M30 ' + yNow.toFixed(1) + ' q8 -4 15.5 0 t15.5 0 t15.5 0 t15.5 0 V' + (yNow + 6).toFixed(1) + ' H30z" fill="#8C5A33"/></g>';
-  s += '<path d="' + glass + '" fill="none" stroke="' + GAUGE_INK + '" stroke-width="3" stroke-linejoin="round"/><path d="M29 56 H93" stroke="' + GAUGE_INK + '" stroke-width="3" stroke-linecap="round"/><path d="M38 76 V100" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/>' + ticks;
-  if (yT != null) s += '<path d="M26 ' + yT.toFixed(1) + ' H96" stroke="#F2A93B" stroke-width="4" stroke-dasharray="7 5" stroke-linecap="round"/><path d="M96 ' + yT.toFixed(1) + ' l9 -12 h52 v24 h-52z" fill="#F2A93B" stroke="' + GAUGE_INK + '" stroke-width="2.6" stroke-linejoin="round"/><text x="131" y="' + (yT + 6).toFixed(1) + '" text-anchor="middle" font-family="Roboto Condensed, sans-serif" font-weight="700" font-size="19" fill="' + GAUGE_INK + '">' + o.tgt + ' g</text>';
-  return s + '</svg>';
-}
 /* the bar on a step: the part of the water already in, then this pour's share */
 function pourBar(s, max){
   const from = s.from == null ? 0 : s.from, pp = max > 0 ? 100 * from / max : 0, tp = max > 0 ? 100 * s.scale / max : 0;
   return h('div', { class:'pbar' }, h('div', { class:'pbtrack', 'aria-hidden':'true' }, h('span', { class:'pbold', style:'width:' + pp.toFixed(1) + '%' }), h('span', { class:'pbnew', style:'left:' + pp.toFixed(1) + '%;width:' + Math.max(0, tp - pp).toFixed(1) + '%' })),
     h('span', { class:'pbl', text:(from > 0 ? '+' + (s.scale - from) + ' g → ' + s.scale + ' g' : '+' + s.scale + ' g') }));
+}
+/* which view this person likes, kept in this browser only (app.prefs.timerView, not in the file) */
+const timerView = () => app.prefs.timerView === 'dripper' ? 'dripper' : 'ring';
+/* Where the water is at time t, for the drawing only (the grams on screen come from pourAt, the scale reading). The water poured comes from the steps;
+   the cup fills while the brewer drains: from the end of the bloom for a pour-over, from the valve or the plunge for a steeper, through the slow drip of a phin.
+   This is a picture, not a measurement, so it is a straight line between those moments. */
+function timerLevelsFor(r, steps){
+  const key = r.method.key, shape = brewerShape(key), st = steps.filter(s => s.t != null), last = st[st.length - 1] || { t:0 };
+  const total = Math.max(r.totalSecs || 0, last.t || 0, 1), scaled = st.some(s => s.scale != null);
+  const W = scaled ? st.reduce((m, s) => Math.max(m, s.scale || 0), 0) : (r.hot || r.water || 1);
+  const find = re => st.find(s => re.test(s.title)), valve = find(/valve/i), plunge = find(/^plunge/i), heatOff = find(/heat off/i), lidOn = find(/^lid on/i), slow = find(/^slow stir/i), cap = find(/cap/i), fill = find(/^fill/i);
+  const cupFinal = shape === 'press' ? 0 : Math.max(1, typeof r.yield === 'number' && r.yield > 0 ? Math.min(r.yield, W) : W * 0.88);
+  const ds = shape === 'cone' || shape === 'flat' || shape === 'chemex' ? ((st[1] || {}).t || 30) : shape === 'phin' ? 90 : shape === 'siphon' ? (heatOff ? heatOff.t + 15 : total * 0.6)
+    : shape === 'espresso' ? 6 : (valve || plunge || { t:total * 0.8 }).t;
+  const clamp = x => Math.max(0, Math.min(1, x)), poured = t => scaled ? pourAt(st, t).now : (t > 0 ? W : 0);
+  const cupG = t => { if (!cupFinal || t <= ds) return 0; return Math.min(cupFinal * clamp((t - ds) / Math.max(1, total - ds)), poured(t)); };
+  const inBrew = t => Math.max(0, poured(t) - (cupFinal ? cupG(t) * W / cupFinal : 0));
+  let cap0 = 1; for (let t = 0; t <= total; t += 2) cap0 = Math.max(cap0, inBrew(t));
+  if (shape !== 'cone' && shape !== 'flat' && shape !== 'chemex') cap0 = Math.max(cap0, W);   /* a steeper is drawn full at the brew's size */
+  return t => {
+    const p = scaled && t > 0 ? pourAt(st, t) : { pouring:false, tgt:null }, cur = st.filter(s => t >= s.t).pop();   /* nothing pours before Start */
+    let line = null;
+    if (p.pouring && cur && cur.scale != null){ const end = cur.t + (cur.pourSecs || 0); line = clamp((cur.scale - (cupFinal ? cupG(end) * W / cupFinal : 0)) / cap0); }
+    else if (!t && st[0] && st[0].scale != null) line = clamp(st[0].scale / cap0);
+    const plungeAt = plunge ? clamp((t - plunge.t) / Math.max(1, total - plunge.t)) : 0;
+    return { brew:shape === 'espresso' ? 0 : clamp(inBrew(t) / cap0), cup:cupFinal ? clamp(cupG(t) / (cupFinal * 1.12)) : 0, line, pouring:!!p.pouring || (shape === 'espresso' && t > ds && t < total),
+      lid:shape === 'clever' ? !!(lidOn && t >= lidOn.t && !(slow && t >= slow.t && t < slow.t + 12)) : shape === 'press' ? t > 0 : shape === 'phin' ? !!(fill && t >= fill.t + 5) : false,
+      capped:!!(cap && t >= cap.t + 5), plunger:plungeAt, open:!!(valve && t >= valve.t), drip:shape === 'phin' && t > ds && t < total };
+  };
+}
+/* the word for what is happening now: the step's own title, or, once its action is over, the wait that follows (Drawdown, Steep, Dripping) */
+function stageLabel(cur, nxt, t, m){
+  const busy = cur.scale != null && cur.pourSecs > 0 ? t < cur.t + cur.pourSecs + 5 : t < cur.t + 10;
+  if (busy || !nxt) return cur.title;
+  if (/valve|^plunge|^slow stir/i.test(nxt.title)) return 'Steep';
+  if (/^finish/i.test(nxt.title)) return m.key === 'phin' ? 'Dripping' : m.type === 'flow' || /valve/i.test(cur.title) ? 'Drawdown' : cur.title;
+  return cur.title;
+}
+/* the ring: a track with a dot at each step, the brew so far in amber, and the brewer in a cream disc inside it */
+function ringSvg(r, steps, t, lv, label){
+  const st = steps.filter(s => s.t != null), total = Math.max(r.totalSecs || 0, (st[st.length - 1] || { t:1 }).t, 1), R = 136, C = 2 * Math.PI * R, pct = Math.max(0, Math.min(1, t / total));
+  const dot = s => { const a = (s.t / total) * 2 * Math.PI - Math.PI / 2, x = 150 + R * Math.cos(a), y = 150 + R * Math.sin(a); return '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="8" fill="' + (t > 0 && t >= s.t ? '#F2A93B' : '#1D3E2F') + '" stroke="#FDFBF7" stroke-width="3.4"/>'; };
+  return '<svg class="tring" viewBox="0 0 300 300" role="img" aria-label="' + escHtml(label || 'Brew progress ' + Math.round(pct * 100) + ' percent') + '">'
+    + '<circle cx="150" cy="150" r="' + R + '" fill="none" stroke="rgba(253,251,247,.18)" stroke-width="16"/>'
+    + (pct > 0 ? '<circle cx="150" cy="150" r="' + R + '" fill="none" stroke="#F2A93B" stroke-width="16" stroke-linecap="round" stroke-dasharray="' + (C * pct).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 150 150)"/>' : '')
+    + st.filter(s => s.t < total).map(dot).join('')
+    + '<circle cx="150" cy="150" r="116" fill="#FBF8F0"/><g transform="translate(62 53) scale(.88)">' + brewerArt(r.method.key, lv) + '</g></svg>';
+}
+/* the dripper alone, drawn bigger */
+function dripperSvg(r, lv, label){
+  return '<svg class="tdripart" viewBox="0 0 200 220" role="img" aria-label="' + escHtml(label || r.method.label + ', filling as you brew') + '">' + brewerArt(r.method.key, lv) + '</svg>';
 }
 /* ---------- the rest of the Brew page ---------- */
 /* what to know before you start, what shaped these settings, and the steps: closed cards with one picture each */
