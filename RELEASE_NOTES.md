@@ -4,6 +4,24 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.043.0097: Brew sizes, and an honest Ratio label
+
+2026-10-16 09:33:44 UTC
+
+- The cup-size buttons are gone from Brew. Pick a cup size in How much? (tap Adjust on the Coffee tile), next to typing or stepping the amount.
+- On a Hario Switch, How much? asks which one you have, 02 or 03. The 02 holds about 240 g closed, so a bigger batch steeps 240 g and you pour the rest through; the 03 holds about 400 g.
+- A phin holds about 25 g of coffee, so a bigger batch is split into brews of the same size. Brew says how many, and the timer steps follow one brew and remind you to make the next.
+- The Ratio row no longer says Common practice for brews the engine works out. It says Well supported: worked out from the cup we aim for, inside the SCA strength and extraction zone. The phin note now matches its 1:9 start.
+
+## Version 4.043.0096: Your brew, worked out
+
+2026-10-16 08:22:56 UTC
+
+- The Brew screen is one card, Your brew, worked out: four tiles for the coffee, water temperature, grind and time, with a Science start or Tuned to you badge.
+- Adjust opens a small pop-up with Done at the top: How much? (coffee or water, typed or stepped, quick sizes), Water temperature, and Grind. Just Starting changes only the amount; Comfy Brewer moves the temperature at most 5°F from ours; Bean Scientist can change everything.
+- In your cup shows the strength and extraction we aim for, then how we got there line by line, with a Your cups badge where your own tastings moved the brew. The taste-word temperature presets are gone.
+- Tune it opens after your first cup (Comfy Brewer and Bean Scientist). Before you start and the steps are now on the timer page.
+
 ## Version 4.042.0095: Facts in four parts, and a tidier Coffee screen
 
 2026-10-16 05:29:50 UTC
