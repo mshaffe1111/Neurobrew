@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#F1E6C8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#12100C" media="(prefers-color-scheme: dark)">
 <title>BeanTelligence: a little science, a lot of delicious</title>
@@ -741,6 +741,8 @@ h1{ letter-spacing:-0.028em; }
 .scanwarn.good{ border-color:var(--leaf); background:var(--surface); }
 .scanwarn.good .scanicon{ background:var(--leaf); color:var(--leaf-ink); }
 .scanwarn.good b{ color:var(--leaf); }
+/* Build 29: an answer the AI found in a web search, not on the bag */
+.webtag{ display:inline-block; margin-left:8px; padding:2px 7px; border-radius:999px; border:1px dashed var(--accent); font:700 12px/1.2 var(--ui); color:var(--ink); background:var(--pick); }
 .gcard .fine a, .gbody .fine a{ display:inline-block; min-height:24px; line-height:24px; padding:0 2px; }
 .pstep .pl{ font-size:max(12px, 1em); }
 .yc-f{ margin-top:16px; min-width:0; }
@@ -1640,18 +1642,22 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .fnote.green{ border-color:var(--leaf); }
 .fnote .fnt{ flex:1; min-width:0; font-size:16px; line-height:1.25; }
 .fnote .btn.tap{ flex:none; width:auto; min-height:44px; padding:0 14px; font-size:16px; }
-.ftile:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--frame); }
-.ftile .fk{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:15px; letter-spacing:1.1px; text-transform:uppercase; color:var(--muted); }
-.ftile .fk .mico{ width:22px; height:22px; color:var(--leaf); }
-.ftile .fv{ font-weight:700; font-size:22px; line-height:1.1; color:var(--ink); }
-.ftile .fh{ font-size:15px; color:var(--muted); }
-.ftile.unset{ border-style:dashed; background:transparent; box-shadow:none; }
-.ftile.unset .fv{ font-size:20px; color:var(--muted); }
+/* Build 29: each part of the bag is a row in the About your cup card (icon, name, value, one line of what it means, a chevron); tap to learn */
+.ftile:active{ background:var(--tint); }
+.ftile .fti{ grid-column:1; grid-row:1 / span 3; align-self:start; width:32px; height:32px; border-radius:9px; background:var(--icon-bg); }
+.ftile .fk{ grid-column:2; font:700 12px/1.3 var(--ui); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.ftile .fv{ grid-column:3; font:700 17px/1.2 var(--ui); color:var(--ink); overflow-wrap:anywhere; }
+.ftile .fm2{ grid-column:2 / 4; font-size:14.5px; line-height:1.3; color:var(--muted); }
+.ftile .fh{ grid-column:2 / 4; font-size:14.5px; color:var(--muted); }
+.ftile::after{ content:"\203A"; grid-column:4; grid-row:1 / span 3; align-self:center; font:700 24px/1 var(--ui); color:var(--muted); }
+.ftile.unset{ border-bottom-style:dashed; }
+.ftile.unset .fv{ color:var(--muted); }
 .ftile.unset .fh{ color:var(--leaf); font-weight:700; }
-.fknow{ display:flex; flex-direction:column; gap:10px; margin:0 0 16px; }
+.ftile.guess .fv{ font-style:italic; }
+.fknow{ display:flex; flex-direction:column; gap:8px; margin:0 0 12px; padding:10px 14px; }
 .know{ display:flex; flex-direction:column; gap:1px; }
-.know b{ font-size:16px; color:var(--ink); }
-.know span{ font-size:16px; line-height:1.3; color:var(--ink); }
+.know b{ font:700 14px/1.3 var(--ui); color:var(--muted); }
+.know span{ font-size:15px; line-height:1.3; color:var(--ink); }
 .flinks{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0 12px; margin:0 0 6px; }
 .flink{ display:flex; align-items:center; justify-content:flex-start; min-height:48px; padding:0 2px; border:0; background:transparent; color:var(--leaf); font:700 18px/1.15 var(--ui); text-align:left; text-decoration:underline; text-underline-offset:4px; cursor:pointer; }
 
@@ -1935,15 +1941,37 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .cf-op{ font:700 24px/1 var(--ui); color:var(--ink); }
 @media (max-width:359px){ .cf-grid.c3{ gap:6px; } .cf-tile b{ font-size:15px; } .cf-chip{ width:58px; } .cf-sbtn{ width:64px; } }
 /* Build 17: the Coffee screen, Beanjamin asks one question at a time. */
-/* what was answered: chat bubbles on the right, tap one to change it */
-.qchat{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; margin:6px 0 10px; }
+/* Build 29: what was answered, one quiet folded card: the coffee, small tags, and "Change an answer" opens a row for each (tap one to change it) */
+.qchat{ margin:6px 0 12px; }
 .qchat:empty{ display:none; }
-.ubub{ display:block; max-width:88%; text-align:left; padding:8px 14px; border:3px solid var(--btn-edge); border-radius:18px 18px 4px 18px; background:var(--primary); color:var(--primary-ink); box-shadow:0 3px 0 var(--btn-edge); font:700 18px/1.2 var(--ui); cursor:pointer; min-height:44px; }
-.ubub small{ display:block; font:500 14px/1.2 var(--ui); opacity:.85; }
-.ubub span{ display:block; font:500 14px/1.2 var(--ui); opacity:.85; }
-.ubub.dk{ background:var(--tint); color:var(--ink); }
-.ubub:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
-.ubub:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--btn-edge); }
+.qans{ background:var(--surface); border:1.5px solid var(--line); border-radius:14px; padding:12px 14px; }
+.qans-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.qans-who{ min-width:0; }
+.qans-rst{ display:block; font:700 12px/1 var(--ui); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); overflow-wrap:anywhere; }
+.qans-name{ display:block; font:700 19px/1.2 var(--display); margin-top:4px; overflow-wrap:anywhere; }
+.qans-n{ flex:none; font:700 12.5px/1 var(--ui); padding:5px 8px; border-radius:999px; background:var(--tint); color:var(--ink); }
+.qans-tags{ display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 0; }
+.qans-tag{ display:inline-flex; align-items:center; gap:5px; max-width:100%; font:600 14px/1.1 var(--ui); padding:5px 9px 5px 6px; border-radius:999px; border:1.5px solid var(--line); background:var(--bg); color:var(--ink); }
+.qans-tag > span:not(.qans-ic){ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.qans-tag.dk{ border-style:dashed; color:var(--muted); }
+.qans-ic{ display:inline-grid; place-items:center; width:20px; height:20px; flex:none; }
+.qans-ic svg{ width:20px; height:20px; }
+.qans-tog{ display:flex; align-items:center; gap:6px; width:100%; min-height:44px; margin:10px 0 0; padding:8px 0 0; border:0; border-top:1px solid var(--line); background:none; font:700 15px/1.2 var(--ui); color:var(--primary); text-align:left; cursor:pointer; }
+.qans-tog i{ font-style:normal; }
+.qans-rows{ margin:4px -14px -12px; border-top:1px solid var(--line); }
+.qans-rows[hidden]{ display:none; }
+.ubub{ display:flex; align-items:center; gap:10px; width:100%; min-height:48px; padding:6px 12px; border:0; border-bottom:1px solid var(--line); background:none; color:var(--ink); text-align:left; font:inherit; cursor:pointer; }
+.ubub:last-child{ border-bottom:0; border-radius:0 0 14px 14px; }
+.ubub .qans-ic, .ubub .qans-ic svg{ width:24px; height:24px; }
+.ubub small{ width:92px; flex:none; font:600 14px/1.15 var(--ui); color:var(--muted); }
+.qans-v{ flex:1; min-width:0; display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 6px; }
+.qans-v b{ font:700 16.5px/1.2 var(--ui); overflow-wrap:anywhere; }
+.qans-v span{ font:500 14px/1.2 var(--txt); color:var(--muted); }
+.ubub.dk .qans-v b{ font-weight:500; font-style:italic; color:var(--muted); }
+.qans-pen{ width:20px; height:20px; flex:none; color:var(--muted); }
+.qans-pen svg{ width:20px; height:20px; }
+.ubub:focus-visible, .qans-tog:focus-visible{ outline:3px solid var(--focus); outline-offset:-3px; }
+.ubub:active{ background:var(--tint); }
 /* Beanjamin's question: the mascot, a speech bubble, the round i */
 .qsteps > .qstep{ margin:0 0 14px; }
 .qaskrow{ display:flex; align-items:flex-end; gap:10px; margin:6px 0 12px; }
@@ -2073,22 +2101,78 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .fstory .stlink{ padding:6px 8px; background:var(--pick); color:var(--pick-ink); border-radius:10px; }
 .fstory .stout{ margin-top:4px; padding-top:6px; border-top:2px solid var(--line); }
 /* the six stops */
-.nj{ position:relative; margin:0; padding:0; list-style:none; }
-.nj li{ display:flex; gap:10px; align-items:flex-start; position:relative; padding:0 0 6px; }
-.nj li:not(:last-child)::before{ content:""; position:absolute; left:20px; top:42px; bottom:-2px; border-left:3px dotted var(--edge); }
-.nj .ip{ flex:none; display:grid; place-items:center; width:40px; height:40px; border-radius:12px; background:var(--icon-bg); }
-.nj .ip .pic{ width:36px; height:36px; background:transparent; }
-.nj .nb{ flex:1; min-width:0; display:grid; grid-template-columns:1fr auto; column-gap:8px; align-items:center; text-align:left; padding:6px 10px 7px; background:var(--surface); color:var(--ink); border:2px solid var(--frame); border-radius:14px; box-shadow:0 3px 0 var(--frame); font:inherit; cursor:pointer; }
-.nj .nb:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--frame); }
-.nj .nb b{ grid-column:1; font-size:12.5px; letter-spacing:1.1px; text-transform:uppercase; color:var(--muted); }
-.nj .nb strong{ grid-column:1; font-size:18px; line-height:1.15; margin:1px 0; overflow-wrap:anywhere; }
-.nj .nb span{ grid-column:1; font-size:14.5px; line-height:1.25; }
-.nj .nb::after{ content:"\203A"; grid-column:2; grid-row:1 / span 3; font-size:30px; font-weight:700; color:var(--leaf); line-height:1; }
-.nj .nb.unset{ border-style:dashed; background:transparent; box-shadow:none; }
+.nj{ position:relative; margin:10px 0 12px; padding:0; list-style:none; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; }
+.nj li{ display:flex; flex-direction:column; align-items:stretch; position:relative; padding:0; }
+.nj .ip{ position:absolute; top:6px; left:50%; margin-left:-19px; display:grid; place-items:center; width:38px; height:38px; border-radius:10px; background:var(--icon-bg); pointer-events:none; z-index:1; }
+.nj .ip .pic{ width:34px; height:34px; background:transparent; }
+.nj .nb{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:1px; text-align:center; padding:46px 6px 8px; background:var(--surface); color:var(--ink); border:1.5px solid var(--line); border-radius:12px; box-shadow:none; font:inherit; cursor:pointer; }
+.nj .nb:active{ background:var(--tint); }
+.nj .nb b{ font:700 11.5px/1.2 var(--ui); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+.nj .nb strong{ font:700 14.5px/1.15 var(--ui); overflow-wrap:anywhere; }
+.nj .nb span{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+.nj .nb.unset{ border-style:dashed; background:transparent; }
 .nj .nb.unset strong{ color:var(--muted); }
-/* tiles that fit their words */
-.fgrid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); align-items:start; gap:8px; }
-.ftile{ display:flex; align-items:flex-start; border:2px solid var(--frame); border-radius:16px; background:var(--surface); color:var(--ink); box-shadow:0 4px 0 var(--frame); font:inherit; flex-direction:column; gap:2px; text-align:left; cursor:pointer; min-height:0; padding:8px 10px 9px; }
+/* Build 29: About your cup, one card of rows */
+.fgrid{ display:flex; flex-direction:column; }
+.ftile{ display:grid; grid-template-columns:32px minmax(64px, auto) minmax(0, 1fr) 14px; column-gap:10px; row-gap:2px; align-items:baseline; width:100%; min-height:48px; padding:10px 0; border:0; border-bottom:1px solid var(--line); border-radius:0; background:none; box-shadow:none; color:var(--ink); font:inherit; text-align:left; cursor:pointer; }
+.fgrid .ftile:last-child{ border-bottom-width:0; }
+.fcupcard{ padding:2px 14px 4px; margin:0 0 8px; }
+.fcupcard .fbars{ border-top:1px solid var(--line); margin:0 -14px; }
+.fbars3{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); }
+.fbars3 .fbar{ flex-direction:column; align-items:center; gap:4px; padding:10px 4px 8px; text-align:center; }
+.fbars3 .fbar + .fbar{ border-top:0; }
+.fbars3 .fbar .fbart{ display:none; }
+.fbars3 .fbtx{ align-items:center; }
+.fbars3 .fbtx b{ font:700 12px/1.2 var(--ui); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.fbars3 .fbtx span{ font:700 14px/1.2 var(--ui); color:var(--ink); order:2; }
+.fbars3 .fbar .fbeans{ order:1; }
+.fbars3 .fbean{ width:16px; height:16px; }
+.fbars3 #whatIsAcidity{ grid-column:1 / -1; justify-self:center; }
+.fcupcard .fbars:not(.fbars3) .fbar{ padding:10px 14px; }
+.fcupcard .fbars:not(.fbars3) .fbar + .fbar{ border-top:1px solid var(--line); }
+.fexpfine{ margin:4px 2px 12px; }
+/* the bar to jump between the four sections */
+.fjump{ display:flex; gap:6px; overflow-x:auto; margin:0 0 6px; padding:2px 0 6px; scrollbar-width:none; }
+.fj{ flex:none; min-height:40px; padding:0 14px; border-radius:999px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); font:700 15px/1 var(--ui); cursor:pointer; }
+.fj:first-child{ background:var(--primary); border-color:var(--primary); color:var(--primary-ink); }
+.fj:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
+.fsec[id]{ scroll-margin-top:96px; }
+/* caffeine */
+.fcaf{ padding:12px 14px; }
+.fcafbig{ display:flex; align-items:center; gap:12px; }
+.fcafic{ flex:none; display:grid; place-items:center; width:40px; height:40px; border-radius:12px; background:var(--pick); color:var(--pick-ink); }
+.fcafic svg{ width:26px; height:26px; }
+.fcafbig b{ display:block; font:800 24px/1.05 var(--ui); }
+.fcafbig span{ font-size:14.5px; line-height:1.25; color:var(--muted); }
+.fcafbar{ position:relative; height:10px; margin:14px 0 0; border-radius:6px; background:var(--track); }
+.fcafbar i{ position:absolute; top:0; bottom:0; display:block; }
+.fcafbar .rng{ border-radius:6px; background:#C79A6B; }
+.fcafbar .cap{ right:0; top:-5px; bottom:-5px; width:3px; border-radius:2px; background:var(--ink); }
+.fcafax{ display:flex; justify-content:space-between; margin-top:6px; font:600 12.5px/1 var(--ui); color:var(--muted); }
+.fcafp{ margin:10px 0 0; font-size:15.5px; line-height:1.35; }
+.fcaf .flink{ min-height:44px; margin:2px 0 0; }
+/* what we aim for in your cup */
+.faimtwo{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.faimn{ display:block; font:800 19px/1.1 var(--ui); }
+.faiml{ display:block; font:700 12px/1.2 var(--ui); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.faimtwo p{ margin:6px 0 0; font-size:14.5px; line-height:1.3; }
+.faims{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0 0; }
+.faim{ display:grid; grid-template-columns:1fr 1fr; gap:2px 8px; padding:10px; border-radius:12px; background:var(--tint); }
+.faim.b{ background:var(--pick); color:var(--pick-ink); }
+.faim .faiml, .faim .faimx{ grid-column:1 / -1; }
+.faimx{ font-size:13px; line-height:1.2; color:var(--muted); margin:0 0 6px; }
+.faim b{ display:block; font:800 20px/1 var(--ui); }
+.faim small{ font:600 12px/1.2 var(--ui); color:var(--muted); }
+.faimc svg{ display:block; width:100%; height:auto; margin:12px 0 4px; }
+.faimchart .zone{ fill:rgba(46,125,91,.13); stroke:var(--mint); stroke-width:1.5; stroke-dasharray:4 3; }
+.faimchart .zt{ font:700 11px var(--ui); fill:var(--mint); }
+.faimchart .ax{ font:600 11px var(--ui); fill:var(--muted); }
+.faimchart .an{ font:700 11px var(--ui); fill:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+.faimchart .axl{ stroke:var(--line); stroke-width:1.5; }
+.faimchart .d1{ fill:#7A4A2D; stroke:var(--surface); stroke-width:2; }
+.faimchart .d2{ fill:#F2A93B; stroke:var(--ink); stroke-width:1.5; }
+.faimchart .dl{ font:700 12px var(--ui); fill:var(--ink); }
 /* what is in your cup */
 /* the Freshness clock */
 .fclock{ padding:12px; }
@@ -2109,34 +2193,27 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .fcd span{ font-size:17px; }
 .fcl{ display:flex; flex-wrap:wrap; gap:0 18px; margin-top:4px; }
 .fcl .flink{ min-height:44px; margin:0; }
-.fcup{ padding:10px 12px; }
-.fcupl{ margin:0; font-size:17px; line-height:1.3; }
-.fcupbar{ display:flex; height:30px; border:2px solid var(--ink); border-radius:10px; overflow:hidden; margin:8px 0 6px; }
+.fcup{ padding:12px 14px; }
+.fcupl{ margin:12px 0 0; font-size:15px; line-height:1.35; }
+.fcupbar{ display:flex; height:16px; border:1.5px solid var(--ink); border-radius:8px; overflow:hidden; margin:8px 0 6px; }
 .fcupbar i{ display:block; }
 .fcupbar .cw{ flex:1; background:#9CC8E8; }
 .fcupbar .cc{ flex:none; width:6px; background:#6B4226; }
 .cupnum{ display:flex; justify-content:space-between; gap:8px; font-size:14px; color:var(--muted); }
-.cupfacts{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
-.cupfacts > div{ display:flex; gap:10px; align-items:flex-start; }
-.cupfacts .ip{ flex:none; display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:var(--icon-bg); }
-.cupfacts .ip .pic{ width:30px; height:30px; background:transparent; }
-.cupfacts p{ margin:0; }
-.cupfacts b{ display:block; font-size:16px; }
-.cupfacts span{ font-size:15px; line-height:1.3; }
 .fsrc{ margin-top:8px; font-size:14.5px; }
 .fsrc summary{ cursor:pointer; min-height:44px; display:flex; align-items:center; font-weight:700; color:var(--leaf); }
 .fsrc ul{ margin:4px 0 6px; padding-left:20px; }
 .fsrc li{ margin:3px 0; }
 .fsrc a, .lssrc a{ color:var(--leaf); font-weight:700; }
 /* Coffee school */
-.lgrid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; align-items:start; }
-.lt{ display:flex; flex-direction:row; align-items:center; gap:8px; min-height:0; padding:8px 10px; text-align:left; background:var(--surface); color:var(--ink); border:2px solid var(--frame); border-radius:16px; box-shadow:0 4px 0 var(--frame); font:inherit; cursor:pointer; }
-.lt:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--frame); }
-.lt .ip{ flex:none; display:grid; place-items:center; width:40px; height:40px; border-radius:12px; background:var(--icon-bg); }
-.lt .ip .pic{ width:36px; height:36px; background:transparent; }
-.lt .tx{ display:flex; flex-direction:column; gap:1px; min-width:0; }
-.lt b{ font-size:16.5px; line-height:1.1; overflow-wrap:anywhere; }
-.lt .h{ font-size:13.5px; color:var(--muted); line-height:1.2; }
+.lgrid{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; align-items:stretch; }
+.lt{ display:flex; flex-direction:column; align-items:center; gap:6px; min-height:88px; padding:10px 6px; text-align:center; background:var(--surface); color:var(--ink); border:1.5px solid var(--line); border-radius:12px; box-shadow:none; font:inherit; cursor:pointer; }
+.lt:active{ background:var(--tint); }
+.lt .ip{ flex:none; display:grid; place-items:center; width:38px; height:38px; border-radius:10px; background:var(--icon-bg); }
+.lt .ip .pic{ width:34px; height:34px; background:transparent; }
+.lt .tx{ display:flex; flex-direction:column; align-items:center; gap:1px; min-width:0; }
+.lt b{ font:700 13.5px/1.15 var(--ui); overflow-wrap:anywhere; }
+.lt .h{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 /* Did you know? */
 .dyk{ display:flex; gap:10px; align-items:center; padding:8px 10px; border:1px dashed var(--hush); border-radius:16px; background:var(--surface); }
 .dyk .fm{ flex:none; width:64px; }
@@ -2165,7 +2242,7 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .rate{ display:inline-block; min-width:22px; text-align:center; font:700 12px/1 var(--ui); border:1.5px solid var(--ink); border-radius:7px; padding:3px 6px; margin-left:4px; vertical-align:1px; color:var(--ink); }
 .lssrc{ margin:0; padding-left:20px; font-size:14.5px; line-height:1.35; }
 .lssrc li{ margin:4px 0; }
-@media (max-width:359px){ .lgrid{ grid-template-columns:1fr; } .nj .nb strong{ font-size:17px; } .fnote.withm{ grid-template-columns:58px 1fr; } .fnote.withm .fmasc{ width:58px; } }
+@media (max-width:359px){ .lgrid, .nj{ grid-template-columns:repeat(2, minmax(0, 1fr)); } .faims, .faimtwo{ grid-template-columns:1fr; } .nj .nb strong{ font-size:17px; } .fnote.withm{ grid-template-columns:58px 1fr; } .fnote.withm .fmasc{ width:58px; } }
 @media (forced-colors: active){
   .nj .nb, .lt, .dyk, .fstory, .fcup, .fclock{ border:2px solid ButtonText; box-shadow:none; }
   .fcupbar{ border-color:CanvasText; } .fcupbar .cw{ background:Highlight; } .fcupbar .cc{ background:CanvasText; }
@@ -4546,19 +4623,28 @@ function mapScan(d){
   if (dt) items.push({ key:'roast_date', label:'Roast date', value:dt, display:dt, raw:dt });
   if (d.decaf === true) items.push({ key:'decaf', label:'Decaf', value:'yes', display:'Decaf', raw:'decaf' });
   text('bag_notes', 'Tasting notes', d.tasting_notes);
+  const WEB_KEY = { coffee_name:'name', roaster:'roaster', origin:'origin', varietal:'varietal', process:'process', roast_level:'roast', elevation:'density', tasting_notes:'bag_notes', decaf:'decaf' };
+  const web = new Set((Array.isArray(d.from_web) ? d.from_web : []).filter(x => typeof x === 'string').map(x => WEB_KEY[x.trim()] || x.trim()));
+  items.forEach(it => { if (web.has(it.key) && it.key !== 'roast_date') it.web = true; });
+  const sources = Array.isArray(d.sources) ? d.sources.filter(x => typeof x === 'string' && /^https:\/\/[^\s"<>]+$/.test(x.trim())).map(x => x.trim().slice(0, 300)).slice(0, 5) : [];
   const unclear = Array.isArray(d.unclear) ? d.unclear.filter(x => typeof x === 'string').map(x => x.trim().slice(0, 40)).filter(Boolean).slice(0, 12) : [];
-  return { items, unclear, note:str(d.notes), any:items.some(i => i.value) };
+  return { items, unclear, sources, note:str(d.notes), any:items.some(i => i.value) };
 }
-const SCAN_PROMPT = 'You are reading the printed label of a bag of roasted coffee from the attached photo(s).\n' +
-  'Extract ONLY what is actually printed or clearly visible. Never guess. Never use outside knowledge to fill a field that is not on the bag. ' +
-  'If a field is missing, blurry, cut off, or hidden, use null for it and add its key to "unclear".\n' +
+/* Build 29 (Matt, 16 Oct): read the bag first; then search the web for anything the bag does not say, and say which fields came from the web and where.
+   Matt's results are much better this way. The roast date never comes from the web (only this bag knows it), and every web answer is shown as "Found online" to check. */
+const SCAN_PROMPT = 'You are filling in the details of one bag of roasted coffee from the attached photo(s).\n' +
+  'Step 1, the bag: read everything printed on the bag first. Copy text as printed. Never guess.\n' +
+  'Step 2, the web: for every field that is NOT on the bag, search the web and find as much of the missing information as you can. Look first for the roaster\'s own page for this exact coffee, then the importer or the farm. ' +
+  'Use a web answer only when the page is clearly about this same coffee from this same roaster. Never invent a value; if you still cannot find it, use null and add its key to "unclear". ' +
+  'The roast date only ever comes from the bag, never from the web.\n' +
   'Reply with ONLY one JSON object with exactly these keys: ' +
   '{"coffee_name": string|null, "roaster": string|null, "origin": string|null, "varietal": string|null, "process": string|null, "roast_level": string|null, ' +
-  '"roast_date": string|null, "elevation": string|null, "tasting_notes": string|null, "decaf": boolean|null, "unclear": string[], "notes": string|null}.\n' +
-  'Rules: copy text as printed (for example "Washed", "Light roast", "1,800-2,000 masl"). ' +
-  '"roast_date" must be YYYY-MM-DD and only when a roast date is clearly printed and unambiguous; for formats like 03/04/26, or for a best-by date, use null and mention it in "notes". ' +
-  '"decaf" is true only if the bag says decaf or decaffeinated (or names a decaf process such as Swiss Water); otherwise null. ' +
-  '"tasting_notes" is the flavor description printed on the bag, if any. "notes" is one short sentence for anything the reader should know (for example that the photo is blurry or only shows the front).';
+  '"roast_date": string|null, "elevation": string|null, "tasting_notes": string|null, "decaf": boolean|null, "from_web": string[], "sources": string[], "unclear": string[], "notes": string|null}.\n' +
+  'Rules: "from_web" lists the keys you filled from the web, not from the bag. "sources" lists the web addresses you used. ' +
+  'Copy text as written (for example "Washed", "Light roast", "1,800-2,000 masl"). ' +
+  '"roast_date" must be YYYY-MM-DD and only when a roast date is clearly printed on the bag and unambiguous; for formats like 03/04/26, or for a best-by date, use null and mention it in "notes". ' +
+  '"decaf" is true only if the bag says decaf or decaffeinated (or names a decaf process such as Swiss Water), or the roaster\'s page for this coffee says so; otherwise null. ' +
+  '"tasting_notes" is the flavor description on the bag or the roaster\'s page. "notes" is one short sentence for anything the reader should know (for example that the photo is blurry or only shows the front).';
 
 function parseScanReply(text){
   let t = String(text || '').trim(); if (!t) return null;
@@ -5039,7 +5125,7 @@ function brewPart(screen){ return screen === 'brew' || screen === 'recipe' || sc
 
 /* ---------- the Coffee screen: one question at a time ---------- */
 /* key        the answer (the same names as COFFEE_NEEDED and the coffee object)
-   label      the short name, on the answer bubble and the counter
+   label      the short name, on the answer card rows and the counter
    ask        what Beanjamin says; first is the very first line of the screen
    why        the little i: why we ask and what it changes
    what       the name used in "Where to find the ..."
@@ -8233,10 +8319,16 @@ const GUIDE_SECTIONS = [
   { id:'coffee', title:'1. Coffee: tell it what you are brewing', lead:'Start with the bag.',
     paras:['Type the coffee name, then add what the bag says: roaster, origin, process, roast level, elevation, roast date and tasting notes. Each field says what it changes: your brew settings, your guide, your advice, or only your saved record. Origin and varietal are pickers, so there is no spelling to worry about. Not on the list? Choose Other and type it.',
       'If you are unsure about something, choose Not sure and BeanTelligence tells you what it assumed. If you leave out the process or the elevation, it makes a labelled guess from the origin, except for a blend.',
-      'Tap Scan a bag photo to fill in the form from the label. BeanTelligence reads the photo on your phone, so nothing is sent anywhere and nothing is charged. It fills in only what it can clearly read and leaves the rest blank, never guessing. A red notice lists what was not found. You check every line before anything fills in. You can also paste the label text, ask Claude in a chat to read the bag, or just type it.',
+      'Beanjamin asks one question at a time. Your answers gather in one small card above the question; tap Change an answer to fix one.',
+      'Have the bag? Tap Use AI to fill this in. Copy the prompt into an AI chat that can read photos and search the web, with a photo of your bag.',
+      'The AI reads the bag first. For anything the bag does not say, it searches the web, usually the roaster\'s page for that coffee. The roast date only comes from the bag.',
+      'Paste its reply back. Lines it found online are marked Found online. You check every line before anything fills in.',
       'Add the roast date if you have it. It tells BeanTelligence whether the coffee is still resting. It also helps BeanTelligence recognise a new bag of a coffee you have brewed before.'] },
   { id:'facts', title:'2. Facts: what to expect from this bag', lead:'A plain-language guide to your coffee.',
-    paras:['This screen explains your bag in plain words. It says what to expect in the cup (acidity, body, sweetness) and what to look for as you taste. If you entered a roast date, it says whether the coffee is ready for filter and for espresso.',
+    paras:['This screen explains your bag in plain words. A bar at the top jumps to each part.',
+      'About your cup has a row for each answer: origin, process, elevation, roast and variety. Each says what it means; tap a row to learn more. It also shows what to expect (acidity, body, sweetness) and the Freshness clock.',
+      'Caffeine shows a typical cup against the FDA\'s 400 mg a day. What we aim for explains strength (TDS) and extraction, with the aims your Brew screen uses and where they come from.',
+      'About coffee ties the bag together, follows it from seed to cup, and has the Coffee school lessons.',
       'At the bottom you choose Next: ' + STEP_NAME.method + ' to get brew settings for this coffee. Or choose I already brewed this: go to ' + STEP_NAME.taste + ', to score a coffee you made elsewhere, for example at an SCA cupping.'] },
   { id:'method', title:'3. Method: choose how you brew', lead:'Pick from the list.',
     paras:['Choose how you are brewing. Pour-over covers the V60, Kalita Wave and Chemex. The other choices are Hario Switch, Clever Dripper, siphon, AeroPress, French press, moka pot, Turkish coffee, Vietnamese phin, espresso, a drip machine and cold brew. Methods marked Top pick or Also good suit your roast, process and bag notes best. Nothing is blocked: a Less common pairing is only less often done.',
@@ -10458,6 +10550,20 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 95,
+  "version": "4.042.0095",
+  "tier": "medium",
+  "at": "2026-10-16T05:29:50Z",
+  "date": "2026-10-16",
+  "title": "Facts in four parts, and a tidier Coffee screen",
+  "notes": [
+   "Facts is rearranged into four parts with a bar to jump between them: About your cup (a row for each answer and what it means, what to expect, freshness), Caffeine, What we aim for in your cup (strength and extraction explained, with our aims on a small chart and their sources), and About coffee.",
+   "On the Coffee screen your answers now sit in one small card with the coffee's name and a tag for each answer. Tap Change an answer to fix one.",
+   "Text boxes stay in view above the phone keyboard, including after you press Enter to go to the next question.",
+   "Use AI to fill this in: the prompt now asks the AI to search the web for anything the bag does not say. Lines it found online are marked Found online, with the pages it used. The roast date only comes from the bag."
+  ]
+ },
  {
   "release": 94,
   "version": "4.041.0094",
@@ -13587,6 +13693,35 @@ function varietalPicker(get, set, getUnsure, setUnsure){
   }
   return { el:det, refresh };
 }
+/* the answers so far, as one quiet card: roaster and coffee name on top, a small tag for each other answer, and the rows to change them behind "Change an answer" */
+const START_ICON = { roaster:'art-roaster', name:'art-bag', roast_date:'art-cal', process:'art-proc', origin:'art-globe', varietal:'art-var', decaf:'art-decaf', bag_notes:'art-note' };
+function startIcon(k, c){
+  const sv = (id, vb) => { const s = h('span', { class:'qans-ic' }); s.innerHTML = '<svg viewBox="' + (vb || '0 0 48 48') + '" aria-hidden="true" focusable="false"><use href="#' + id + '"/></svg>'; return s; };
+  if (k === 'roast'){ const i = ROASTS.findIndex(x => x.v === c.roast); return sv('rb-' + (i < 0 ? 3 : i + 1)); }
+  if (k === 'elevation') return sv('mt-' + ({ low:'low', mid:'mid', high:'high' }[c.density] || 'q'), '0 0 46 34');
+  if (k === 'blend') return sv(c.blend === 'blend' ? 'art-blend' : 'art-pin');
+  return sv(START_ICON[k] || 'art-note');
+}
+function startAnswers(list, o){
+  const c = o.c, nm = list.find(q => q.key === 'name'), rs = list.find(q => q.key === 'roaster' && !o.isDk('roaster'));
+  const head = h('div', { class:'qans-head' }, h('div', { class:'qans-who' },
+      rs && nm ? h('span', { class:'qans-rst', text:o.ansText('roaster')[0] }) : null,
+      h('b', { class:'qans-name', text:nm ? o.ansText('name')[0] : rs ? o.ansText('roaster')[0] : 'Your coffee' })),
+    h('span', { class:'qans-n', text:list.length + (list.length === 1 ? ' answer' : ' answers') }));
+  const tagged = list.filter(q => q.key !== 'name' && q.key !== 'roaster' && q.key !== 'bag_notes');
+  const tags = tagged.length ? h('div', { class:'qans-tags' }, tagged.map(q => {
+    const dk = o.isDk(q.key), t = o.ansText(q.key), txt = dk ? q.label : q.key === 'roast_date' && t[1] ? t[1].replace(/ old$/, '') : t[0];
+    return h('span', { class:'qans-tag' + (dk ? ' dk' : ''), title:dk ? q.label + ': not on the bag' : null }, startIcon(q.key, c), h('span', { text:txt }), dk ? h('span', { class:'sr-only', text:': not on the bag' }) : null);
+  })) : null;
+  const rowsId = 'qansRows';
+  const tog = h('button', { type:'button', class:'qans-tog', 'aria-expanded':o.open ? 'true' : 'false', 'aria-controls':rowsId, onclick:o.toggle }, h('span', { text:o.open ? 'Hide answers' : 'Change an answer' }), h('i', { 'aria-hidden':'true', text:o.open ? '\u25B4' : '\u25BE' }));
+  const rows = h('div', { class:'qans-rows', id:rowsId, hidden:!o.open }, list.map(q => {
+    const t = o.ansText(q.key), dk = o.isDk(q.key), pen = h('span', { class:'qans-pen' }); pen.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ic-pen"/></svg>';
+    return h('button', { type:'button', class:'ubub' + (dk ? ' dk' : ''), 'data-k':q.key, 'aria-label':'Change ' + q.label + ': ' + t[0] + (t[1] ? ', ' + t[1] : ''), onclick:() => o.edit(q.key) },
+      startIcon(q.key, c), h('small', { text:q.label }), h('span', { class:'qans-v' }, h('b', { text:t[0] }), t[1] ? h('span', { text:t[1] }) : null), pen);
+  }));
+  return h('div', { class:'qans' }, head, tags, tog, rows);
+}
 const startDymNo = new Set();   /* typed coffee and roaster pairs the person said No to, so the question is not asked again for the same words */
 let startDymKnown = { hist:null, prices:null, list:[] };   /* the coffees they already have, worked out again only when their history or prices change */
 /* "Did you mean": a mascot box under the coffee name. When the coffee or roaster typed is a typo of one the person already has, or is one they have but the roaster is blank, it asks. Only their own coffees are used. Nothing changes unless they tap Yes, and it never touches price or size. It waits until they leave the box, and goes away while they type. */
@@ -13617,7 +13752,7 @@ function startDym(c, nameIn, roasterIn){
 /* ---------- the Coffee screen: Beanjamin asks one question at a time ----------
    The six answers (roaster, coffee name, roast date, roast level, process, elevation) come first, then the optional extras. Every question has two rows under the answer:
    "I don't understand" (where to find it on the bag, and what else it may be called) and "Not on the bag, I don't know" (its own answer, except for the coffee name).
-   The answers pile up above as bubbles; tap one to change it. What counts as answered is the coffee itself (coffeeMissing), and the flow only remembers which questions the person has moved past. */
+   The answers sit above in one folded card (the coffee and small tags); Change an answer opens a row for each, tap one to change it. What counts as answered is the coffee itself (coffeeMissing), and the flow only remembers which questions the person has moved past. */
 let startFlow = null;   /* { id, cur, done:Set, seen:Set, extras, help, react, flag:Set } for the coffee being worked on */
 /* the roast date shown in a bubble: 12 Mar 2026 and how old it is */
 function startDateText(c){
@@ -13830,12 +13965,12 @@ function screenStart(m){
       const mood = coffeeMood({ key:cur, helping:fl.help, flagged:fl.flag.has(cur) && ms.has(cur), afterDk:!!fl.react && !fl.help, left });
       if (marks[cur].dataset.f !== mood.face){ marks[cur].dataset.f = mood.face; marks[cur].innerHTML = mascotSvg({ face:mood.face }); }
     }
-    /* the bubbles of what was answered; tap one to change it */
+    /* what was answered: one folded card (the coffee, small tags); "Change an answer" opens a row for each, tap one to change it */
     const list = COFFEE_Q.filter(q => q.key !== cur && (q.req ? doneReq(q.key) : fl.seen.has(q.key) && hasOpt(q.key)));
-    const csig = list.map(q => q.key + ':' + ansText(q.key).join('|') + (isDk(q.key) ? '!' : '')).join('\n');
+    const csig = (fl.ansOpen ? 'o' : 'c') + list.map(q => q.key + ':' + ansText(q.key).join('|') + (isDk(q.key) ? '!' : '')).join('\n');
     if (chat.dataset.s !== csig){
       chat.dataset.s = csig; chat.textContent = '';
-      list.forEach(q => { const t = ansText(q.key), dkd = isDk(q.key); chat.append(h('button', { type:'button', class:'ubub' + (dkd ? ' dk' : ''), 'data-k':q.key, 'aria-label':'Change ' + q.label + ': ' + t[0] + (t[1] ? ', ' + t[1] : ''), onclick:() => editQ(q.key) }, h('small', { text:q.label }), h('b', { text:t[0] }), t[1] ? h('span', { text:t[1] }) : null)); });
+      if (list.length) chat.append(startAnswers(list, { c, isDk, ansText, open:!!fl.ansOpen, toggle:() => { fl.ansOpen = !fl.ansOpen; refreshAll(); const t = chat.querySelector('.qans-tog'); if (t) t.focus({ preventScroll:true }); }, edit:editQ }));
     }
     /* the finish */
     fin.hidden = cur !== 'done';
@@ -13857,7 +13992,7 @@ function screenStart(m){
     /* a new question: bring it into view and put the cursor in a box */
     if (lastCur !== null && lastCur !== cur && fl.moved){
       const w = wraps[cur] || fin;
-      setTimeout(() => { const f = cur !== 'done' && w.querySelector('input[type=text],input[type=date]:not([hidden]),textarea'); if (f && !f.closest('.varpick,.originpick')) f.focus({ preventScroll:true }); else if (cur !== 'done') asks[cur].focus({ preventScroll:true }); else finSay.focus({ preventScroll:true }); (w.querySelector('.qaskrow') || w).scrollIntoView({ block:'start', behavior:'auto' }); }, 30);
+      setTimeout(() => { const f = cur !== 'done' && w.querySelector('input[type=text],input[type=date]:not([hidden]),textarea'); if (f && !f.closest('.varpick,.originpick')) f.focus({ preventScroll:true }); else if (cur !== 'done') asks[cur].focus({ preventScroll:true }); else finSay.focus({ preventScroll:true }); (w.querySelector('.qaskrow') || w).scrollIntoView({ block:'start', behavior:'auto' }); if (f) kbSettle(); }, 30);
     }
     lastCur = cur;
   }
@@ -13927,23 +14062,61 @@ function journeySection(c, now, guide){
   });
   return h('div', { class:'fsec' }, h('div', { class:'flabel' }, h('span', { text:'From seed to cup' }), h('span', { class:'fhint', text:'tap a stop' })), list);
 }
-/* what is in your cup */
-function cupCard(){
-  const F = cupFacts('filter'), X = cupFacts('espresso'), K = CUP_FACTS;
+/* Build 29: caffeine gets its own section, and "What we aim for in your cup" explains strength (TDS) and extraction with the engine's aims (the same ones the Brew screen uses) */
+function srcFold(id, label, items, rate, limits){
+  return h('details', { class:'fsrc', id }, h('summary', { text:label }),
+    rate ? h('p', { class:'fine', text:'Rated ' + rate + ': ' + RATE_WORDS[rate] + '.' }) : null,
+    h('ul', null, items.map(s => h('li', null, s.cite + ' ', s.link ? h('a', { href:s.link, target:'_blank', rel:'noopener noreferrer', text:'Open the page' }) : null))),
+    limits ? h('p', { class:'fine', text:limits }) : null);
+}
+function cafCard(){
+  const K = CUP_FACTS, lo = K.caffeineMg[0], hi = K.caffeineMg[1], pct = v => Math.round(v / K.dailyMg * 1000) / 10;
+  const ic = h('span', { class:'fcafic' }); ic.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#mi-caffeine"/></svg>';
+  const bar = h('div', { class:'fcafbar', role:'img', 'aria-label':'One 12 oz cup, ' + lo + ' to ' + hi + ' mg, against ' + K.dailyMg + ' mg a day' },
+    h('i', { class:'rng', style:'left:' + pct(lo) + '%;width:' + (pct(hi) - pct(lo)) + '%' }), h('i', { class:'cap' }));
+  return h('div', { class:'fsec', id:'fsecCaf' }, h('div', { class:'flabel', text:'Caffeine' }),
+    h('div', { class:'card fcaf', id:'factsCaf' },
+      h('div', { class:'fcafbig' }, ic, h('div', null, h('b', { text:lo + ' to ' + hi + ' mg' }), h('span', { text:'in a ' + K.caffeineOz + ' oz cup of regular brewed coffee' }))),
+      bar, h('div', { class:'fcafax', 'aria-hidden':'true' }, h('span', { text:'0' }), h('span', { text:'one cup' }), h('span', { text:K.dailyMg + ' mg a day' })),
+      h('p', { class:'fcafp' }, 'The FDA cites ', h('b', { text:K.dailyMg + ' mg a day' }), ' for most healthy adults: about ' + K.dailyCups[0] + ' to ' + K.dailyCups[1] + ' of those cups. A bigger or stronger cup has more.'),
+      h('button', { type:'button', class:'flink', id:'factsCafTool', text:'Plan your caffeine day', onclick:() => goCaffeine() }),
+      srcFold('cafSources', 'Where these numbers come from', [K.src[0]], K.rate, K.limits)));
+}
+/* the aims, worked out the way the Brew screen does it (engine targets, no flavor-note nudge) */
+function factsAims(c, now){
+  const p = profileOf(c, now), q = Object.assign({}, p, { density:'' });
+  const st = beTarget(q, '', 'steep'), fl = beTarget(q, '', 'flow'); st.tdsT = st.tds.toFixed(2); fl.tdsT = fl.tds.toFixed(2);
+  return { steep:st, flow:fl, roast:p.roast, roastSet:!p.assumed.some(x => /^roast level/.test(x)), shift:BE_TARGET.roastEy[p.roast] || 0 };
+}
+/* a small brewing chart: extraction across, strength up, the SCA box, and our two aims */
+function aimChart(A){
+  const W = 330, H = 160, x0 = 16, x1 = 24, y0 = 1.0, y1 = 1.6, X = v => 34 + (v - x0) / (x1 - x0) * (W - 44), Y = v => H - 26 - (v - y0) / (y1 - y0) * (H - 40), f = v => v.toFixed(1);
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="faimchart" role="img" aria-label="Our aims sit inside the SCA zone: steeped ' + A.steep.tdsT + ' percent strength at ' + A.steep.ey + ' percent extraction, poured ' + A.flow.tdsT + ' percent at ' + A.flow.ey + ' percent.">';
+  s += '<rect x="' + f(X(18)) + '" y="' + f(Y(1.35)) + '" width="' + f(X(22) - X(18)) + '" height="' + f(Y(1.15) - Y(1.35)) + '" rx="6" class="zone"/><text x="' + f(X(22) - 6) + '" y="' + f(Y(1.15) - 6) + '" text-anchor="end" class="zt">SCA zone</text>';
+  [16, 18, 20, 22, 24].forEach(v => { s += '<text x="' + f(X(v)) + '" y="' + (H - 8) + '" text-anchor="middle" class="ax">' + v + '%</text>'; });
+  [1.0, 1.2, 1.4, 1.6].forEach(v => { s += '<text x="28" y="' + f(Y(v) + 4) + '" text-anchor="end" class="ax">' + v.toFixed(1) + '</text>'; });
+  s += '<line x1="34" y1="' + (H - 26) + '" x2="' + (W - 10) + '" y2="' + (H - 26) + '" class="axl"/><line x1="34" y1="10" x2="34" y2="' + (H - 26) + '" class="axl"/>';
+  s += '<text x="' + (W - 10) + '" y="' + (H - 30) + '" text-anchor="end" class="an">extraction</text><text x="40" y="16" class="an">strength (TDS)</text>';
+  s += '<circle cx="' + f(X(A.steep.ey)) + '" cy="' + f(Y(A.steep.tds)) + '" r="7" class="d1"/><text x="' + f(X(A.steep.ey) - 12) + '" y="' + f(Y(A.steep.tds) + 4) + '" text-anchor="end" class="dl">Steeped ' + A.steep.tdsT + '%</text>';
+  s += '<circle cx="' + f(X(A.flow.ey)) + '" cy="' + f(Y(A.flow.tds)) + '" r="7" class="d2"/><text x="' + f(X(A.flow.ey) + 10) + '" y="' + f(Y(A.flow.tds) - 10) + '" class="dl">Poured ' + A.flow.tdsT + '%</text>';
+  const el = h('div', { class:'faimc' }); el.innerHTML = s + '</svg>'; return el;
+}
+function cupCard(c, now){
+  const F = cupFacts('filter'), X = cupFacts('espresso'), K = CUP_FACTS, A = factsAims(c || app.coffee, now || new Date()), rl = labelOf(ROASTS, A.roast) || 'Medium';
   const bar = h('div', { class:'fcupbar', role:'img', 'aria-label':'About 99 percent water and about 1 percent coffee' }, h('i', { class:'cw' }), h('i', { class:'cc' }));
-  const src = h('details', { class:'fsrc', id:'cupSources' }, h('summary', { text:'Where these numbers come from' }),
-    h('p', { class:'fine', text:'Rated ' + K.rate + ': ' + RATE_WORDS[K.rate] + '.' }),
-    h('ul', null, K.src.map(s => h('li', null, s.cite + ' ', h('a', { href:s.link, target:'_blank', rel:'noopener noreferrer', text:'Open the page' })))),
-    h('p', { class:'fine', text:K.limits }));
-  return h('div', { class:'fsec', id:'factsCup' }, h('div', { class:'flabel', text:'What is in your cup' }),
+  const two = (n, l, t) => h('div', null, h('b', { class:'faimn', text:n }), h('span', { class:'faiml', text:l }), h('p', { text:t }));
+  const roastLine = A.shift === 0 ? (A.roastSet ? rl + ' roast: we aim for the full ' + A.steep.ey + ' to ' + A.flow.ey + '%.' : 'Roast not set, so we aim as for a medium roast.') + ' Darker roasts aim up to 1.5 points less.' : rl + ' roast: we aim ' + Math.abs(A.shift) + ' point' + (Math.abs(A.shift) === 1 ? '' : 's') + ' lower, so it does not turn bitter. Lighter roasts aim higher.';
+  const steeps = h('div', { class:'faims' },
+    h('div', { class:'faim' }, h('span', { class:'faiml', text:'Steeped' }), h('span', { class:'faimx', text:'Clever, French press, Switch' }), h('div', null, h('b', { text:A.steep.tdsT + '%' }), h('small', { text:'strength' })), h('div', null, h('b', { text:A.steep.ey + '%' }), h('small', { text:'extraction' }))),
+    h('div', { class:'faim b' }, h('span', { class:'faiml', text:'Poured' }), h('span', { class:'faimx', text:'V60, Chemex, Kalita' }), h('div', null, h('b', { text:A.flow.tdsT + '%' }), h('small', { text:'strength' })), h('div', null, h('b', { text:A.flow.ey + '%' }), h('small', { text:'extraction' }))));
+  return h('div', { class:'fsec', id:'factsCup' }, h('div', { class:'flabel', text:'What we aim for in your cup' }),
     h('div', { class:'card fcup' },
-      h('p', { class:'fcupl' }, h('b', { text:'About 99% water. ' }), 'The coffee is the small dark slice you taste.'),
+      h('div', { class:'faimtwo' }, two('Strength', 'TDS', 'How much coffee is in the drink. 1.3% means 1.3 g of coffee in every 100 g. The rest is water.'), two('Extraction', 'EY', 'How much of the grounds dissolved. Too little tastes sour and thin; too much, bitter and dry.')),
+      steeps, aimChart(A),
+      h('p', { class:'fcupl' }, h('b', { text:'About 99% water. ' }), 'Coffee is ' + F.coffeeLo + ' to ' + F.coffeeHi + '% of filter coffee; espresso is stronger, about ' + X.waterLo + ' to ' + X.waterHi + '% water.'),
       bar, h('div', { class:'cupnum' }, h('span', { text:'Water, about ' + F.waterLo + ' to ' + F.waterHi + '%' }), h('span', { text:'Coffee, ' + F.coffeeLo + ' to ' + F.coffeeHi + '%' })),
-      h('p', { class:'fine', style:'margin:4px 0 0', text:'That is typical filter coffee. Espresso is stronger: about ' + X.waterLo + ' to ' + X.waterHi + '% water.' }),
-      h('div', { class:'cupfacts' },
-        h('div', null, h('span', { class:'ip' }, symPic('ln-brewed')), h('p', null, h('b', { text:'Caffeine' }), h('span', { text:'A 12 oz cup of regular brewed coffee has about ' + K.caffeineMg[0] + ' to ' + K.caffeineMg[1] + ' mg.' }))),
-        h('div', null, h('span', { class:'ip' }, symPic('ln-rested')), h('p', null, h('b', { text:'How much is okay' }), h('span', { text:'The FDA cites ' + K.dailyMg + ' mg a day for most healthy adults. That is about ' + K.dailyCups[0] + ' to ' + K.dailyCups[1] + ' of those cups.' })))),
-      src));
+      h('p', { class:'fcupl' }, roastLine, ' Your own numbers show on the Brew screen, under ', h('b', { text:'In your cup' }), '.'),
+      srcFold('cupSources', 'Where these numbers come from', [K.src[1], { cite:BE_SRC.sca.ref + ' (rated ' + BE_SRC.sca.rating + ').', link:'' }, { cite:BE_SRC.liang.ref + ' (rated ' + BE_SRC.liang.rating + ').', link:'' }, { cite:'Two measured Clever brews (15 Oct 2026) set one speed number in our steep model. Expect about 0.5 points either way until more brews are measured (rated B).', link:'' }, { cite:'Darker roasts aim a little lower: common practice, they are brewed cooler and coarser to keep bitterness down (rated C).', link:'' }], 'A', 'The strength zone is a convention, and people like a wide range. Our steeped aim counts extraction from the water poured; the poured aim counts the cup.')));
 }
 /* Coffee school: six lessons, each a tap */
 function schoolSection(){
@@ -14101,19 +14274,31 @@ function fnote(tone, ...parts){
 /* the same note with no button */
 function fnoteText(tone, ...parts){ return h('div', { class:'fnote' + (tone ? ' ' + tone : '') }, h('div', { class:'fnt' }, ...parts)); }
 /* one tile of "Your bag, explained": what it is, its value, tap to learn. A tile with no answer is dashed and takes you to the Coffee page. */
-function factTile(d, i, p){
+/* Build 29: one row of "About your cup": the part of the bag, its value, one line of what it means; tap to learn. A row with no answer is dashed and takes you to the Coffee page. */
+function factMeaning(kind, d, g){
+  const gs = d.querySelector('.gs') ? d.querySelector('.gs').textContent : '', vn = (d.querySelector('.gt').textContent.split(': ')[1] || '');
+  if (kind === 'Origin' && g.origin && g.origin.short) return capFirst(g.origin.short) + '.';
+  if (kind === 'Process' && g.process) return capFirst(g.process.short) + '.';
+  if (kind === 'Elevation' && g.elev && g.elev.cup) return firstSentence(g.elev.cup);
+  if (kind === 'Roast' && g.roast) return capFirst(g.roast.short) + '.';
+  if (kind === 'Variety'){ const v = (g.varieties || (g.variety ? [g.variety] : [])).find(x => x.name === vn.trim()); if (v) return firstSentence(v.text); }
+  return gs && gs !== 'The coffee plant type' ? gs.replace(/\.?$/, '.') : '';
+}
+function factTile(d, i, p, g){
   const title = d.querySelector('.gt').textContent, ci = title.indexOf(': '), kind = ci > 0 ? title.slice(0, ci) : title;
   let value = ci > 0 ? title.slice(ci + 2) : (d.querySelector('.gs') ? d.querySelector('.gs').textContent : '');
   if (kind === 'Elevation') value = value.replace(/ \(.*?\)(?= \(guess\)|$)/, '');   /* High, not High (about 1,500 m (4,920 ft) and up): the range is in the sheet */
   const unset = /^not set$/i.test(value) || /^not set/i.test(title.replace(/^[^:]*: /, ''));
   const art = kind === 'Roast' ? 'rb-' + (Math.max(0, ROASTS.findIndex(r => r.v === p.roast)) + 1) : (FACT_ART[kind] || 'art-globe');
+  const mean = unset || !g ? '' : factMeaning(kind, d, g);
   return h('button', { type:'button', class:'ftile' + (unset ? ' unset' : '') + (/\(guess\)/.test(value) ? ' guess' : ''), 'aria-label':kind + ': ' + (unset ? 'not set' : value) + '. ' + (unset ? 'Tap to add' : 'Tap to learn'),
       onclick:() => { if (unset) go('start'); else { sheet = { step:'bagtile', idx:i }; openSheet(); } } },
-    h('span', { class:'fk' }, symPic(art), kind), unset ? h('span', { class:'fv', text:'Not set' }) : h('span', { class:'fv', text:value }), h('span', { class:'fh', text:unset ? 'Tap to add' : 'Tap to learn' }));
+    symPic(art, 'fti'), h('span', { class:'fk', text:kind }), unset ? h('span', { class:'fv', text:'Not set' }) : h('span', { class:'fv', text:value }),
+    mean ? h('span', { class:'fm2', text:mean }) : null, h('span', { class:'fh' + (unset ? '' : ' sr-only'), text:unset ? 'Tap to add' : 'Tap to learn' }));
 }
 /* what to expect: one card of three rows. Just Starting gets plain words, Comfy Brewer a word and five beans, Bean Scientist the rule behind each row. */
 function expectBars(ex, lv){
-  const card = h('div', { class:'card fbars' });
+  const card = h('div', { class:'fbars' + (lv === 'new' || lv === 'expert' ? '' : ' fbars3') });
   ex.bars.forEach(b => {
     const art = symPic(EXPECT_ART[b.label], 'fbart');
     if (lv === 'new') { card.append(h('div', { class:'fbar' }, art, h('div', { class:'fbtx' }, h('b', { text:b.word }), h('span', { text:b.line })))); return; }
@@ -14137,36 +14322,37 @@ function screenCoffee(m){
   /* the mascot says what this coffee is likely to be like */
   const lv = level(), mk = h('span', { class:'fmark' }); mk.innerHTML = mascotSvg({ face:'informing' });
   m.append(h('div', { class:'fsay' }, mk, h('div', { class:'fbubble' }, lv === 'expert' ? 'Here is what to expect, and why.' : ex.owl + '. Here is what ' + (lv === 'new' ? 'you will taste.' : 'to expect.'))));
-  /* what to expect */
-  m.append(h('div', { class:'fsec' }, h('div', { class:'flabel', text:'What to expect' }), expectBars(ex, lv),
-    lv === 'new' ? null : h('p', { class:'serif gp', style:'margin:12px 0 0', text:ex.notes[0] }),
-    h('p', { class:'fine', style:'margin:6px 0 0', text:'Built from general rules about roast, process and elevation. It is not lab data on this bag.' })));
-  /* the bag explained: how its answers fit together, then the six stops from seed to cup */
+  /* Build 29: four sections, in Matt's order, with a bar to jump between them */
+  const jumpTo = id => { const t = $(id); if (!t) return; const st = document.querySelector('.stick'), off = st && /sticky|fixed/.test(getComputedStyle(st).position) ? st.getBoundingClientRect().bottom : 0; window.scrollTo({ top:Math.max(0, t.getBoundingClientRect().top + window.scrollY - off - 8), behavior:window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); };
+  m.append(h('nav', { class:'fjump', 'aria-label':'Jump to a part of this page' }, [['fsecCup', 'Your cup'], ['fsecCaf', 'Caffeine'], ['factsCup', 'Strength'], ['fsecLearn', 'Coffee']].map(x => h('button', { type:'button', class:'fj', 'data-to':x[0], text:x[1], onclick:() => jumpTo(x[0]) }))));
+  /* 1. About your cup: what was filled in and what each part means, what to expect, guesses, freshness, and a few things worth knowing */
   const guide = bagGuide(c, g);
-  { const fcs = freshClockSection(c, now); m.append(h('div', { class:'fsec' }, storyCard(c, now, lv)), ...kept(fcs), journeySection(c, now, guide)); }
+  const cupSec = h('div', { class:'fsec', id:'fsecCup' }, h('div', { class:'flabel flabeledit' }, h('span', { text:'About your cup' }), h('span', { class:'fhint', text:'tap a row' }), h('button', { type:'button', class:'btn small fedit', id:'editAnswers', 'aria-label':'Edit your answers about this coffee', text:'Edit', onclick:() => go('start') })),
+    h('div', { class:'card fcupcard' }, h('div', { class:'fgrid' }, guide.map((d, i) => factTile(d, i, p, g))), expectBars(ex, lv)),
+    h('p', { class:'fine fexpfine', text:'What to expect is built from general rules about roast, process and elevation, not lab data on this bag. They shape your tips, never your brew numbers.' }));
+  m.append(cupSec);
   /* what we assumed or guessed, and where to change it */
   { const typedM = originMatch(c.origin), nameM = originMatch(c.name, { fuzzy:false }), tn = typedM.origin ? typedM.origin.name : (typedM.country ? typedM.country.name : ''), nn = nameM.origin ? nameM.origin.name : (nameM.country ? nameM.country.name : '');
     const same = tn && nn && (tn === nn || (typedM.origin && typedM.origin.key === 'africa') || (nameM.origin && nameM.origin.key === 'africa'));
-    if (tn && nn && !same && c.blend !== 'blend') m.append(fnoteM('think', '', h('b', { text:'Name and origin differ: ' }), 'The coffee name mentions ' + nn + ', but the origin says ' + tn + '. We used the origin field.')); }
-  if (c.scanned) m.append(fnoteM('thumbs', 'green', (c.scannedFrom ? 'Filled in from the listing on ' + c.scannedFrom + ': ' : 'Filled in from your bag photo: ') + c.scanned + '. Check these against the bag.'));
-  if (p.guessed.length) m.append(fnoteM('think', '', h('b', { text:'Guessed from the origin' + (p.origin ? ' (' + p.origin + ')' : '') + ': ' }), p.guessed.map(x => x.text).join(' '), ' Add the real details to replace the guess.'));
-  else if (c.blend === 'blend' && String(c.origin || '').trim() && (p.process === 'unknown' || p.density === 'unknown')) m.append(fnoteM('pointUp', '', 'This is a blend, so we do not guess its elevation or process from the origin. Add them if you know them.'));
+    if (tn && nn && !same && c.blend !== 'blend') cupSec.append(fnoteM('think', '', h('b', { text:'Name and origin differ: ' }), 'The coffee name mentions ' + nn + ', but the origin says ' + tn + '. We used the origin field.')); }
+  if (c.scanned) cupSec.append(fnoteM('thumbs', 'green', (c.scannedFrom ? 'Filled in from the listing on ' + c.scannedFrom + ': ' : /found online/.test(c.scanned) ? 'Filled in from your bag photo and a web search: ' : 'Filled in from your bag photo: ') + c.scanned + '. Check these against the bag.'));
+  if (p.guessed.length) cupSec.append(fnoteM('think', '', h('b', { text:'Guessed from the origin' + (p.origin ? ' (' + p.origin + ')' : '') + ': ' }), p.guessed.map(x => x.text).join(' '), ' Add the real details to replace the guess.'));
+  else if (c.blend === 'blend' && String(c.origin || '').trim() && (p.process === 'unknown' || p.density === 'unknown')) cupSec.append(fnoteM('pointUp', '', 'This is a blend, so we do not guess its elevation or process from the origin. Add them if you know them.'));
   const chosenNo = p.assumed.filter(x => (x === 'process' && c.process === 'unknown') || (x === 'elevation' && c.density === 'unknown'));
   const notSet = p.assumed.filter(x => !chosenNo.includes(x));
-  if (chosenNo.length) m.append(fnoteM('shrug', '', h('span', { text:'You said you do not know the ' + chosenNo.join(' and ') + ', so ' + (chosenNo.length > 1 ? 'those two tips are' : 'that tip is') + ' left out. ' + (chosenNo.length > 1 ? 'They never change' : 'It never changes') + ' your brew numbers.' })));
-  if (notSet.length) m.append(fnoteM('shrug', '', h('b', { text:'Not set: ' + notSet.join(', ') + '.' }), notSet.some(x => x === 'process' || x === 'elevation') ? ' These shape your guide and tips, not your brew settings.' : ''));
-  /* the bag, explained: a tile for each part of the label */
-  m.append(h('div', { class:'fsec' }, h('div', { class:'flabel flabeledit' }, h('span', { text:'About this coffee' }), h('span', { class:'fhint', text:'tap a tile' }), h('button', { type:'button', class:'btn small fedit', id:'editAnswers', 'aria-label':'Edit your answers about this coffee', text:'Edit', onclick:() => go('start') })), h('div', { class:'fgrid' }, guide.map((d, i) => factTile(d, i, p)))));
-  /* what is in the cup, the lessons, and a fact */
-  m.append(cupCard(), schoolSection(), dykCard(c));
-  /* a few things worth knowing */
+  if (chosenNo.length) cupSec.append(fnoteM('shrug', '', h('span', { text:'You said you do not know the ' + chosenNo.join(' and ') + ', so ' + (chosenNo.length > 1 ? 'those two tips are' : 'that tip is') + ' left out. ' + (chosenNo.length > 1 ? 'They never change' : 'It never changes') + ' your brew numbers.' })));
+  if (notSet.length) cupSec.append(fnoteM('shrug', '', h('b', { text:'Not set: ' + notSet.join(', ') + '.' }), notSet.some(x => x === 'process' || x === 'elevation') ? ' These shape your guide and tips, not your brew settings.' : ''));
+  { const fcs = freshClockSection(c, now); if (fcs) cupSec.append(fcs); }
   const know = [];
   { const adv = methodAdvice(c, now), picks = adv.length && !adv[0].assumed ? adv.filter(x => x.tier === 'best') : [];
     if (picks.length) know.push(h('div', { class:'know' }, h('b', { text:'Brews best as' }), h('span', { text:picks.map(x => x.label).join(', ') + '. ' + picks[0].why }))); }
   if (ex.look.length) know.push(h('div', { class:'know' }, h('b', { text:'Look for' }), h('span', { text:ex.look.join(', ') + '.' })));
   if (ex.freshness) know.push(h('div', { class:'know' }, h('b', { text:'Freshness: ' + ex.freshness.label }), h('span', { text:ex.freshness.tip }), h('span', { class:'fine', text:FRESH_NOTE })));
   if (String(c.bag_notes || '').trim()) know.push(h('div', { class:'know' }, h('b', { text:'On the bag' }), h('span', { text:c.bag_notes })));
-  if (know.length) m.append(h('div', { class:'card fknow' }, know));
+  if (know.length) cupSec.append(h('div', { class:'card fknow' }, know));
+  /* 2. caffeine, 3. what we aim for in the cup, 4. about coffee itself */
+  m.append(cafCard(), cupCard(c, now));
+  m.append(h('div', { class:'fsec', id:'fsecLearn' }, h('div', { class:'flabel', text:'About coffee' }), storyCard(c, now, lv), journeySection(c, now, guide), schoolSection(), dykCard(c)));
   const hcc = historyCoffeeCard(c);
   if (hcc) m.append(h('div', { class:'fsec' }, h('div', { class:'flabel', text:'Your history' }), hcc));
   else m.append(h('p', { class:'fine', id:'noHistory', text:history ? 'No saved tastings of this coffee yet. They show up here once you have saved a tasting of this coffee.' : 'Your tastings of this coffee show up here once you have saved one.' }));
@@ -15703,18 +15889,25 @@ function kbPlace(f){
   if (q){ if (kbInl.parentNode !== q || q.lastElementChild !== kbInl) q.append(kbInl); }
   else { const card = f.closest('.card') || f.closest('.field') || f; if (card.nextElementSibling !== kbInl) card.after(kbInl); }
 }
-/* bring the box and the Next button into the part of the page that is above the keyboard, without pushing the box under the header */
+/* bring the box and the Next button into the middle of the part of the page above the keyboard, never under the header.
+   The visible part is the visual viewport: on Android Chrome (since 108) and iPhone Safari the keyboard shrinks only that and may pan it (offsetTop), so the header can be off the top of it. */
+const kbViewTop = () => kbVV ? kbVV.offsetTop : 0;
 function kbFit(){
   const f = document.activeElement; if (!kbField(f)) return;
   requestAnimationFrame(() => {
     if (!document.body.classList.contains('kb') || document.activeElement !== f) return;
-    const bars = ['.stick', '.topbar'].map(q => document.querySelector(q)).filter(el => el && getComputedStyle(el).position === 'sticky'), top = bars.length ? Math.max(...bars.map(el => el.getBoundingClientRect().bottom)) + 8 : 8;   /* the header is sticky on most screens; on the first screens only the top bar is */
-    const bottom = kbViewBottom() - 8, fr = f.getBoundingClientRect(), tr = (kbInl && kbInl.isConnected ? kbInl : f).getBoundingClientRect();
-    let dy = tr.bottom > bottom ? tr.bottom - bottom : 0;
+    const bars = ['.stick', '.topbar'].map(q => document.querySelector(q)).filter(el => el && /sticky|fixed/.test(getComputedStyle(el).position)), barB = bars.length ? Math.max(...bars.map(el => el.getBoundingClientRect().bottom)) : 0;   /* the header is sticky on most screens; on the first screens only the top bar is */
+    const top = Math.max(barB, kbViewTop()) + 8, bottom = kbViewBottom() - 8, fr = f.getBoundingClientRect(), tr = (kbInl && kbInl.isConnected ? kbInl : f).getBoundingClientRect();
+    /* aim the box a third of the way down the visible part (the middle on a short screen), then make sure the Next button under it fits too */
+    const want = top + Math.max(0, (bottom - top) / 3 - fr.height / 2);
+    let dy = fr.top - want;
+    if (tr.bottom - dy > bottom) dy = tr.bottom - bottom;
     if (fr.top - dy < top) dy = fr.top - top;
     if (Math.abs(dy) > 2) window.scrollBy(0, dy);
   });
 }
+/* the keyboard slides in over a few hundred milliseconds and a screen may redraw: fit again as it settles */
+function kbSettle(){ [0, 180, 420].forEach(t => setTimeout(() => { if (document.body.classList.contains('kb')) kbFit(); else kbSync(); }, t)); }
 function kbSync(){
   const f = document.activeElement;
   if (!kbField(f)) kbBase = Math.max(window.innerHeight, kbVV ? kbVV.height : 0);   /* the full height, measured only while no box is being typed in */
@@ -15728,7 +15921,7 @@ function kbHint(f){
   f.setAttribute('enterkeyhint', document.body.getAttribute('data-screen') === 'start' ? 'next' : 'done');
 }
 kbSync();
-document.addEventListener('focusin', e => { clearTimeout(kbTimer); if (kbField(e.target)) kbHint(e.target); kbTimer = setTimeout(kbSync, kbField(e.target) ? 0 : 120); }, true);
+document.addEventListener('focusin', e => { clearTimeout(kbTimer); if (kbField(e.target)){ kbHint(e.target); kbTimer = setTimeout(() => { kbSync(); kbSettle(); }, 0); } else kbTimer = setTimeout(kbSync, 120); }, true);
 document.addEventListener('focusout', () => { clearTimeout(kbTimer); kbTimer = setTimeout(() => { if (!kbHold) kbSync(); }, 160); }, true);
 window.addEventListener('resize', () => kbSync());
 if (kbVV) kbVV.addEventListener('resize', () => kbSync());
@@ -19367,7 +19560,7 @@ function renderSheetBody(){
       sheet = { step:'scan', phase:'review', mode:'chat', res, files:[], ctl:null, err:'' }; renderSheet();
     });
     sheetEl.append(h('ol', { class:'prep', style:'margin-top:0' },
-        h('li', { text:'Tap Copy the prompt.' }), h('li', { text:'Open an AI chat app that can read photos, attach a photo of your bag, paste the prompt, and send.' }), h('li', { text:"Copy the AI's reply and paste it below." })),
+        h('li', { text:'Tap Copy the prompt.' }), h('li', { text:'Open an AI chat app that can read photos and search the web (turn web search on), attach a photo of your bag, paste the prompt, and send.' }), h('li', { text:"Copy the AI's reply and paste it below." })),
       h('div', { style:'display:flex;align-items:center;margin:8px 0' }, copyBtn, copied),
       h('details', { class:'more' }, h('summary', { text:'Show the prompt' }), h('p', { class:'fine', style:'white-space:pre-wrap', text:prompt })),
       ta, msg, h('div', { class:'row', style:'margin-top:10px' }, h('button', { type:'button', class:'btn', text:'Cancel', onclick:closeSheet }), read));
@@ -19398,16 +19591,18 @@ function renderSheetBody(){
       const cb = h('input', { type:'checkbox', 'aria-label':'Use ' + it.label }); cb.checked = !!it.value && !differs;
       const yours = differs ? h('div', { class:'fine', style:'margin-top:4px', text:'Your form has: ' + (it.key === 'process' ? labelOf(PROCESSES, cur) : it.key === 'roast' ? labelOf(ROASTS, cur) : it.key === 'density' ? labelOf(DENSITIES, cur) : cur) + '. Tick to replace it.' }) : null;
       const printed = (it.key === 'process' || it.key === 'roast' || it.key === 'density') ? h('div', { class:'fine', style:'margin-top:4px', text:'Printed: "' + it.raw + '"' + (it.unmatched ? (it.hint ? '. ' + it.hint + ' Pick the one that fits, or leave it unticked.' : '. Could not match it, so pick one or leave it unticked.') : (it.hint ? '. ' + it.hint : '')) }) : (it.hint ? h('div', { class:'fine', style:'margin-top:4px', text:it.hint }) : null);
-      sheetEl.append(h('div', { class:'rvrow' }, cb, h('div', null, h('div', { style:'font-size:13px;color:var(--muted);margin-bottom:3px', text:it.label }), ctl, printed, yours)));
-      return { key:it.key, label:it.label, raw:it.raw, cb, get };
+      sheetEl.append(h('div', { class:'rvrow' }, cb, h('div', null, h('div', { style:'font-size:13px;color:var(--muted);margin-bottom:3px' }, it.label, it.web ? h('span', { class:'webtag', text:'Found online' }) : null), ctl, printed, yours)));
+      return { key:it.key, label:it.label, raw:it.raw, web:!!it.web, cb, get };
     });
     if (res.unclear.length) sheetEl.append(h('p', { class:'fine', text:'Could not read: ' + res.unclear.join(', ') + '.' }));
     if (res.note) sheetEl.append(h('p', { class:'fine', text:'Note: ' + res.note }));
+    if (res.items.some(it => it.web)) sheetEl.append(h('p', { class:'fine', text:'Lines marked Found online were not on the bag; the AI found them in a web search. Check them most carefully.' }));
+    if (res.sources && res.sources.length) sheetEl.append(h('div', { class:'fine' }, 'Pages it used: ', ...res.sources.map((u, i) => h('span', null, i ? ', ' : '', h('a', { href:u, target:'_blank', rel:'noopener noreferrer', text:u.replace(/^https:\/\/(www\.)?/, '').slice(0, 48) })))));
     sheetEl.append(h('p', { class:'fine', text:'Read from the reply you pasted.' }),
       h('div', { class:'row', style:'margin-top:10px' }, h('button', { type:'button', class:'btn', text:'Cancel', onclick:closeSheet }),
         h('button', { type:'button', class:'btn primary', text:'Fill in my form', onclick:() => {
           const applied = [];
-          rows.forEach(r => { const v = r.get(); if (r.cb.checked && v){ app.coffee[r.key] = v; if (r.key === 'density' && r.raw) app.coffee.elevText = r.raw; applied.push(r.label.toLowerCase()); } });
+          rows.forEach(r => { const v = r.get(); if (r.cb.checked && v){ app.coffee[r.key] = v; if (r.key === 'density' && r.raw) app.coffee.elevText = r.raw; applied.push(r.label.toLowerCase() + (r.web ? ' (found online)' : '')); } });
           app.coffee.scanned = applied.join(', '); app.coffee.scannedFrom = '';
           closeSheet(); render();
         } })));

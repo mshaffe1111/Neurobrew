@@ -4,6 +4,15 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.042.0095: Facts in four parts, and a tidier Coffee screen
+
+2026-10-16 05:29:50 UTC
+
+- Facts is rearranged into four parts with a bar to jump between them: About your cup (a row for each answer and what it means, what to expect, freshness), Caffeine, What we aim for in your cup (strength and extraction explained, with our aims on a small chart and their sources), and About coffee.
+- On the Coffee screen your answers now sit in one small card with the coffee's name and a tag for each answer. Tap Change an answer to fix one.
+- Text boxes stay in view above the phone keyboard, including after you press Enter to go to the next question.
+- Use AI to fill this in: the prompt now asks the AI to search the web for anything the bag does not say. Lines it found online are marked Found online, with the pages it used. The roast date only comes from the bag.
+
 ## Version 4.041.0094: The BeanTelligence brew engine
 
 2026-10-16 02:18:30 UTC
