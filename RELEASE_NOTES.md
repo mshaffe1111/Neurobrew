@@ -4,6 +4,26 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.047.0102: Fixes and checks
+
+2026-10-16 20:37:21 UTC
+
+- Water advice now names its sources: the 2009 SCAA water standard for calcium hardness, with the SCA-102 range noted as different, and the hardness box says total hardness.
+- The 4:6 method only claims Tetsu Kasuya's 1:15 ratio when you are using his 300 g recipe.
+- Cost of coffee accepts bag sizes in kilograms.
+- Just Starting can now reach the pour style, tucked in an Optional fold.
+- The CVA form explains that the 4 points off for one defective cup is this app's adaptation of the SCA rule.
+- The AeroPress temperature, Brix, kettle, taste and sweetness notes are more careful about what is a starting point.
+- Removed the 'N logged' text from Home or shop, and fixed Reduce Motion so it turns button transitions off.
+
+## Version 4.047.0101: Compare 2 bags, and a Freshness calendar
+
+2026-10-16 18:42:59 UTC
+
+- Compare 2 bags, in Calculators: pick two bags from your coffee prices and see the price per 100 g and per cup, cups in the bag, how long it lasts, how fresh it is and your own stars side by side. It never picks a winner.
+- Freshness, in Calculators: a month calendar for each bag with a roast date, coloured resting, sweet spot, past the peak and fading, with the day the bag runs out, and a bar for every bag.
+- Both use the dose and cups a day from Cost of coffee, and the roast level from your tastings of that coffee (medium when none says). Nothing new is saved.
+
 ## Version 4.046.0100: A compact timer that stays at the top
 
 2026-10-16 15:35:13 UTC

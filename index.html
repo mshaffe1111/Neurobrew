@@ -608,7 +608,7 @@ details.help summary{ color:var(--accent); }
 .kv dt{ color:var(--muted); }
 .kv dd{ margin:0; font-weight:500; overflow-wrap:anywhere; }
 
-@media (prefers-reduced-motion: reduce){ .krow.flash{ animation:none; } .btn, .choice, .chip, .seg button, .levelopt, .mcard{ transition:none; } }
+@media (prefers-reduced-motion: reduce){ .krow.flash{ animation:none; } .btn, .choice, .chip, .seg button, .levelopt, .mcard{ transition:none !important; } }
 @media (max-width:380px){ .fields{ grid-template-columns:1fr; } }
 /* ---------- polish: one calm, consistent surface language ---------- */
 .levelcard{ padding:12px 14px; }
@@ -799,6 +799,34 @@ input[type=file]::file-selector-button{ margin:0 10px 0 0; min-height:48px; padd
 /* the shared Reset button under a calculator's hero */
 .tool-reset{ display:flex; justify-content:flex-end; margin:-4px 0 10px; }
 .tool-reset .btn{ margin:0; }
+.bagtab{ width:100%; border-collapse:collapse; font-size:16px; }
+.bagtab th, .bagtab td{ padding:9px 6px 9px 0; text-align:left; vertical-align:middle; border-top:1px solid var(--hush); line-height:1.25; }
+.bagtab thead th, .bagtab thead td{ border-top:0; font-size:15px; font-weight:800; }
+.bagtab tbody th{ width:34%; font-size:14.5px; font-weight:600; color:var(--muted); }
+.bagtab td{ font-weight:600; }
+.bagtab tr.bold td{ font-weight:800; }
+.bagtab td small{ display:block; font-size:13px; font-weight:600; color:var(--muted); }
+.bagtab .tag2{ margin-left:0; white-space:nowrap; }
+.bgbar{ padding:10px 0; border-top:1px solid var(--hush); }
+.bgbar:first-of-type{ border-top:0; padding-top:0; }
+.bgh{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.bgh b{ font-size:16px; }
+.fmnav{ display:flex; align-items:center; justify-content:space-between; margin:0 0 10px; }
+.fmnav b{ font-size:18px; }
+.fmo{ display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; }
+.fmh{ text-align:center; font-size:12px; font-weight:700; color:var(--muted); }
+.fmd{ display:flex; align-items:center; justify-content:center; height:38px; border-radius:8px; font-size:15px; font-weight:700; color:var(--muted); }
+.fmd.roast{ background:#22120C; color:#FFF8EA; }
+.fmd.rest{ background:#E8DBAE; color:#22120C; }
+.fmd.sweet{ background:#8DB45A; color:#22120C; }
+.fmd.past{ background:#E8C26A; color:#22120C; }
+.fmd.fade{ background:#D9B79A; color:#22120C; }
+.fmd.now{ outline:3px solid #22120C; outline-offset:-3px; }
+.fmd.fin{ box-shadow:inset 0 -5px 0 #2E5E4E; }
+.fmleg{ display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:12px; font-size:13.5px; font-weight:600; }
+.fmleg .k::before{ content:""; display:inline-block; width:12px; height:12px; margin-right:5px; border-radius:3px; border:1.5px solid #22120C; vertical-align:-1px; }
+.fmleg .roast::before{ background:#22120C; } .fmleg .sweet::before{ background:#8DB45A; } .fmleg .past::before{ background:#E8C26A; } .fmleg .fade::before{ background:#D9B79A; }
+.fmleg .fin::before{ background:#FFF8EA; border-bottom:5px solid #2E5E4E; height:8px; }
 .tgdl{ margin:6px 0 2px; }
 .tgdl dt{ font:600 13px/1.3 ui-monospace, Menlo, Consolas, monospace; margin-top:10px; color:var(--label); overflow-wrap:anywhere; }
 .tgdl dd{ margin:2px 0 0; font-size:14.5px; line-height:1.4; }
@@ -3706,7 +3734,7 @@ function tempFor(m, p, tk, altFt){
   const rl = labelOf(ROASTS, p.roast), layers = [], gs = k => (p.guessed || []).some(x => x.key === k) ? ' This process is a guess from the origin.' : '';
   let f = cls.start;
   layers.push({ k:'Starting point', d:0, f, text:pulse ? "Tetsu Kasuya's own 4:6 recipe starts at 199°F (93°C) for a light roast and goes cooler for darker ones."
-    : cls === TEMP_AERO ? "The AeroPress maker recommends 175–185°F (80–85°C), cooler than other methods. Many roasters brew hotter, so this is a starting point, not a rule."
+    : cls === TEMP_AERO ? "The AeroPress maker recommends 175–185°F (80–85°C), cooler than other methods. Many roasters brew hotter, and some specialty recipes use water just off the boil, so this is a starting point, not a rule."
     : 'The top of the usual 195–205°F (90–96°C) range for hot brewing. Every roast except light moves down from here.' });
   const rd = cls.d[p.roast] == null ? 0 : cls.d[p.roast];
   f += rd;
@@ -4825,8 +4853,8 @@ function noteCheck(expected, picked){
 /* For each section: `say` the mascot's line, `do` the steps of What to do (from the SCA June 2024 cupping procedure), `when` the short line under its name, `q` the question in plain words, `ex` the fuller help (New level), `cm` the short help (Comfortable level), and
    `skip` the label of the link that lets a section be left out when there was nothing to judge. The scale is the same for every section, as in the standard: an impression of quality. */
 const CVA_GUIDE = {
-  fragrance:{ say:'Dry grounds, short sniffs, then one score.', do:['Lift the dry grounds to your nose, before any water touches them.', 'Take two or three short sniffs, then one slow breath.', 'Give one score. It does not change as the cup cools.'], when:'Dry grounds · scored once', q:'How good does the dry coffee smell?',
-    ex:'Smell the ground coffee before any water touches it. A flat or off smell scores low. A clear, expressive smell you like scores high. It does not change as the cup cools, so this is scored once.',
+  fragrance:{ say:'Dry grounds, short sniffs, then one score.', do:['Lift the dry grounds to your nose, before any water touches them.', 'Take two or three short sniffs, then one slow breath.', 'Give one score. You score fragrance once, before the cup cools.'], when:'Dry grounds · scored once', q:'How good does the dry coffee smell?',
+    ex:'Smell the ground coffee before any water touches it. A flat or off smell scores low. A clear, expressive smell you like scores high. You score it once, before the cup cools.',
     cm:'Smell of the dry grounds. Scored once.', skip:'No grounds to smell' },
   aroma:{ say:'Two smells, one score. Get your nose in close for both.', do:['Pour hot water to the rim and start your timer.', 'Leave the crust alone for 3 to 5 minutes. Lean in and smell it. That is the first moment.', 'Stir the crust three times with a spoon and lean in for the steam. That is the second moment.', 'Skim the foam off with a spoon. Then give one score for both moments.'], when:'Brew, then crust broken · scored once', q:'How good does the brew smell?',
     ex:'Smell right after pouring, then again when you break the crust with a spoon. Give one score for both moments.',
@@ -7094,8 +7122,8 @@ const GL_TASTING = [
   ['Aroma', 'The smell of the coffee once water is added, rising from the wet grounds or from your cup.', 'smell; scent', 'wet aroma; nose; smell of coffee; scent; odor; odour'],
   ['Retronasal smell', 'Smells you sense through the back of your nose while you swallow. Much of what we call flavor comes this way.', 'retronasal aroma', 'retro nasal; retronasal olfaction; back of nose'],
   ['Flavor', 'The whole impression of taste and smell together as you drink. Taste alone is only sweet, sour, bitter, salty and umami.', 'taste and smell', 'flavour; flavors; flavours; what it tastes like'],
-  ['Taste', 'What your tongue senses: sweet, sour, bitter, salty and umami. Everything else comes from smell.', 'basic taste', 'tastes; five tastes; tongue; taste buds; tastebuds'],
-  ['Sweetness', 'A pleasant sugary quality. It does not mean added sugar. A well-extracted cup often tastes sweet.', 'sweet', 'sugary; sweetness in coffee; naturally sweet'],
+  ['Taste', 'What your tongue senses: sweet, sour, bitter, salty and umami. Much of what you notice in a cup comes from smell as well.', 'basic taste', 'tastes; five tastes; tongue; taste buds; tastebuds'],
+  ['Sweetness', 'A pleasant sweet quality, part taste on your tongue and part smell, like honey or caramel. It does not mean added sugar. A well-extracted cup often seems sweet.', 'sweet', 'sugary; sweetness in coffee; naturally sweet'],
   ['Sourness', 'A sharp, puckering taste, like vinegar or lemon. A little is lively and bright. Too much is unpleasant.', 'sour; tart', 'sour taste; sharp; vinegar; puckering; tangy; tartness; lemony'],
   ['Bitterness', 'A harsh, lingering taste. Dark roasts and over-extraction add more of it. A little is normal in coffee.', 'bitter', 'bitter taste; too bitter; harsh bitterness; bitter coffee; acrid'],
   ['Umami', 'A savory, brothy taste. It is rare in coffee, but some people notice it in certain cups.', 'savory taste', 'savoury; savory; brothy; meaty; broth'],
@@ -8514,7 +8542,7 @@ const GUIDE_SECTIONS = [
     paras:['Just Starting keeps things short, Comfy Brewer explains the reasons, and Bean Scientist shows every number. Change it any time from the start screen or the menu.',
       'My setup in the menu keeps your units, level, timer sound, taste card view and gear (your grinder, water and filter) in one place. New brews start with your gear filled in. The setup is saved inside your history file each time you save, so uploading the file on another device brings it back.',
       'Words with a dotted underline are tappable and give a short definition. The Glossary in the menu lists every term and can be searched.',
-      'Calculators in the menu holds small helpers. Cup yield shows how much ends up in your cup. The Ratio and strength calculator gives the ratio for the strength you want, and how much water to add to a strong brew. The strengths and extractions it starts from are common targets, not rules. The Cost of coffee tool works out what a cup costs from the price and size of a bag, in grams, ounces or pounds. It shows the cost per cup, day, week and month, and can compare two bags. It counts the coffee only. Nothing is kept unless you press Add to my coffee prices.',
+      'Calculators in the menu holds small helpers. Cup yield shows how much ends up in your cup. The Ratio and strength calculator gives the ratio for the strength you want, and how much water to add to a strong brew. The strengths and extractions it starts from are common targets, not rules. The Cost of coffee tool works out what a cup costs from the price and size of a bag, in grams, kilograms, ounces or pounds. It shows the cost per cup, day, week and month, and can compare two bags. It counts the coffee only. Nothing is kept unless you press Add to my coffee prices. Compare 2 bags puts two bags from your coffee prices side by side. It shows the price per 100 g and per cup, how long each bag lasts, how fresh it is, and your own stars. It never picks a winner. Freshness shows a month calendar of when a bag is in its sweet spot, from its roast date. The windows are typical values for filter coffee, and roasters differ.',
       'Coffee prices in the menu is your own list of the bags you have bought. Add a bag there, or from the Cost of coffee tool. The list is kept in this browser. Save it as a file called BeanTelligence Prices.csv, and load it again later. It is a separate file from your tasting history, and it never changes your history. Loading a file only adds bags that are not in the list yet.',
       'SCA cupping in the menu is a guided table session with timers. You choose to describe the coffees or to judge them, then the same coffee or different ones, and how many cups of each. The steps follow the SCA\'s standard 102-2024, in our own words, and the SCA has not reviewed them. Circles at the top stand for your coffees. Tap one to see that coffee. Timers tell you when each crust is ready to break. The session gives no scores and nothing is saved. Your Taste step is a separate, personal way to record a cup.'] },
   { id:'trust', title:'What to trust', lead:'Starting points, not rules.',
@@ -8848,13 +8876,15 @@ function freshnessFor(p, m){
   const f = line(freshWindowFor('filter', p.roast), 'filter coffee'), e = line(freshWindowFor('espresso', p.roast), 'espresso');
   return { label:FRESH_LABEL[f.st], tip:'Roasted ' + ds + ' ago. For filter coffee, ' + f.short + '. For espresso, ' + e.short + '.', tone:(f.st === 'resting' || f.st === 'fading') ? 'warn' : 'good', state:f.st, filter:f, espresso:e, note:FRESH_NOTE };
 }
+/* a day (YYYY-MM-DD) moved by n days, as YYYY-MM-DD */
+function isoAdd(iso, n){ const t = new Date(iso + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); }
 /* The Freshness clock on the Facts screen: where a bag's roast date puts it today, as filter coffee, for its real roast level (medium when none is saved; assumed says so).
    The bar runs from roast day to the day flavor starts to fade; at, rest, sweet and past are percentages of it. Null with no roast date, or a roast date in the future.
    p is profileOf(coffee, now) (days, roast); roastDate is the coffee's roast date as YYYY-MM-DD. */
 function freshClock(p, roastDate, assumed){
   const d = p && p.days; if (d == null || d < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(String(roastDate || ''))) return null;
   const w = freshWindowFor('filter', p.roast), st = freshState(d, w);
-  const add = n => { const t = new Date(roastDate + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+  const add = n => isoAdd(roastDate, n);
   const pct = x => Math.round(x / w.fade * 1000) / 10;
   return { days:d, state:st, label:FRESH_LABEL[st], title:'Day ' + d + ': ' + FRESH_LABEL[st].charAt(0).toLowerCase() + FRESH_LABEL[st].slice(1), roast:p.roast, assumed:!!assumed, window:w, roastDate,
     ready:add(w.ready), best:add(w.best), fade:add(w.fade), rest:pct(w.ready), sweet:pct(w.best - w.ready), past:pct(w.fade - w.best), at:Math.min(100, pct(d)), beyond:d > w.fade, note:FRESH_NOTE };
@@ -8896,16 +8926,16 @@ function numOrNull(v){ const m = String(v == null ? '' : v).replace(/,/g, '').ma
 function waterProfile(type, alk, gh){
   const a = numOrNull(alk), g = numOrNull(gh);
   const ac = a == null ? '' : a < 15 ? 'verylow' : a < 40 ? 'low' : a <= 75 ? 'ok' : a <= 120 ? 'high' : 'veryhigh';
-  const gc = g == null ? '' : g < 17 ? 'soft' : g <= 85 ? 'ok' : 'hard';   /* the SCA's acceptable range for calcium hardness is 17 to 85 mg/L */
+  const gc = g == null ? '' : g < 17 ? 'soft' : g <= 85 ? 'ok' : 'hard';   /* the 2009 SCAA water standard: calcium hardness target 68 mg/L, acceptable 17 to 85 */
   const lines = [];
   if (ac === 'ok') lines.push('Alkalinity ' + a + ' mg/L is in the range many brewing guides accept (up to about 75). The SCA standard itself says "at or near 40".');
   else if (ac === 'low') lines.push('Alkalinity ' + a + ' mg/L is a little below the SCA target of about 40. That is usually fine.');
   else if (ac === 'verylow') lines.push('Alkalinity ' + a + ' mg/L is very low. With very soft water, coffee can taste sharp or hollow.');
   else if (ac === 'high') lines.push('Alkalinity ' + a + ' mg/L is well above the SCA target of about 40. Bicarbonate can neutralize some of the coffee\'s acids, so the cup can taste flat and chalky.');
   else if (ac === 'veryhigh') lines.push('Alkalinity ' + a + ' mg/L is far above the SCA target of about 40. That much bicarbonate often leaves coffee flat, dull, and chalky.');
-  if (gc === 'soft') lines.push('Hardness ' + g + ' mg/L is below the SCA\'s acceptable range for calcium hardness (17 to 85 mg/L). Calcium and magnesium help pull flavor out of the coffee, so very soft water can under-extract.');
-  else if (gc === 'hard') lines.push('Hardness ' + g + ' mg/L is above the SCA\'s acceptable range for calcium hardness (17 to 85 mg/L, target 68). Water reports usually list total hardness, which also counts magnesium and reads higher, so a number a little above 85 is not a worry. Hard water can leave scale in your kettle.');
-  else if (gc === 'ok') lines.push('Hardness ' + g + ' mg/L is inside the SCA\'s range for calcium hardness (17 to 85 mg/L, target 68).');
+  if (gc === 'soft') lines.push('Hardness ' + g + ' mg/L is below the acceptable range for calcium hardness in the 2009 SCAA water standard (17 to 85 mg/L, target 68). Calcium and magnesium help pull flavor out of the coffee, so very soft water can under-extract.');
+  else if (gc === 'hard') lines.push('Hardness ' + g + ' mg/L is above the acceptable range for calcium hardness in the 2009 SCAA water standard (17 to 85 mg/L, target 68). Water reports usually list total hardness, which also counts magnesium and reads higher than calcium alone, so take this as a hint, not a verdict. The SCA-102 SCA-102 standard allows 50 to 175. Hard water can leave scale in your kettle.');
+  else if (gc === 'ok') lines.push('Hardness ' + g + ' mg/L is inside the acceptable range for calcium hardness in the 2009 SCAA water standard (17 to 85 mg/L, target 68).');
   return { type:type || '', alk:a, gh:g, alkClass:ac, ghClass:gc, lines, flatRisk:ac === 'high' || ac === 'veryhigh', sharpRisk:ac === 'verylow' || (ac === 'low' && gc === 'soft') };
 }
 function waterNotesFor(w, symptom){
@@ -8924,11 +8954,79 @@ function applyWaterFirst(fx, symptom, w){
     secondary:lead ? 'If it is still flat with better water, then: ' + lead : '', adjust:{ grind:0, ratio:0 }, btnLabel:'Brew again with new water', waterFirst:true };
 }
 
+/* ---------- bags side by side ----------
+   A bag is a purchase in the coffee prices list (engine/67-coffee-prices.js) that has a price and a size. Its roast date is the one saved with the purchase, and it is shown only when it is a real day that is not in the future.
+   Freshness uses the same typical windows as the Facts screen (engine/64-freshness.js, filter coffee). The roast level comes from the newest tasting of the same coffee; with none the window is the medium one, and the screen says so.
+   Nothing is ranked: the numbers are laid out and the verdict line only restates them. Taste is shown only as the person's own stars. */
+const BAG_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+/* the roast level of a coffee from its tastings (newest first, as historyForCoffee gives them), or '' when none says */
+function bagRoast(rows){
+  for (const o of rows || []){ const r = tendKey(ROASTS, o.roast_level); if (r) return r; }
+  return '';
+}
+/* where a bag is in its freshness window today. e is a purchase, roast is a roast level key ('' for medium), now a Date. Null with no usable roast date.
+   out: { days, state, label, roast, assumed, window, roastOn, readyOn, bestOn, fadeOn (all YYYY-MM-DD) } */
+function bagFresh(e, roast, now){
+  const d = e && e.roast ? daysSinceRoast(e.roast, now) : null; if (d == null) return null;
+  const r = roast || 'medium', w = freshWindowFor('filter', r), st = freshState(d, w);
+  return { days:d, state:st, label:FRESH_LABEL[st], roast:r, assumed:!roast, window:w, roastOn:e.roast, readyOn:isoAdd(e.roast, w.ready), bestOn:isoAdd(e.roast, w.best), fadeOn:isoAdd(e.roast, w.fade) };
+}
+/* a person's stars for a coffee, from its tastings: { count, avg } over the ones that have stars, or null when none do */
+function bagStars(rows){
+  const s = (rows || []).map(o => validStars(o.my_rating_stars)).filter(x => x > 0);
+  return s.length ? { count:s.length, avg:s.reduce((a, b) => a + b, 0) / s.length } : null;
+}
+/* one bag's column. e is a purchase (a bag, not pods); o: { dose, cups, now, rows (the coffee's tastings, newest first) }.
+   out: { ok:false } when e is not a priced bag, else { ok, name, sym, price, grams, per100, perCup, cupsInBag, daysInBag (null with no cups a day), fresh (bagFresh or null), stars (bagStars or null) } */
+function bagSide(e, o){
+  o = o || {};
+  if (!e || e.kind === 'pods') return { ok:false };
+  const c = costOne({ price:e.price, size:e.size, unit:e.unit, dose:o.dose, cups:o.cups });
+  if (!c.ok) return { ok:false, why:c.why };
+  const rows = o.rows || [];
+  return { ok:true, name:e.coffee, sym:e.sym, price:e.price, grams:c.grams, per100:c.perGram * 100, perCup:c.perCup, cupsInBag:c.cupsInBag, daysInBag:c.daysInBag, fresh:bagFresh(e, bagRoast(rows), o.now), stars:bagStars(rows) };
+}
+/* the line under the table, from two bags' columns (the cost gap, a bag past its best, whether both are gone before they fade). Plain restatement; it never names a winner. Empty when either column is not ok. */
+function bagVerdict(a, b){
+  if (!a || !b || !a.ok || !b.ok) return '';
+  const cc = costCompare({ ok:true, perCup:a.perCup, perMonth:null }, { ok:true, perCup:b.perCup, perMonth:null }), out = [];
+  if (a.sym !== b.sym) out.push('The prices are in different currencies, so the cost is not compared.');
+  else if (cc.cheaper === 'same') out.push('The two cost about the same a cup.');
+  else {
+    const lo = cc.cheaper === 'a' ? a : b, hi = lo === a ? b : a;
+    out.push(hi.name + ' costs about ' + Math.round((hi.perCup / lo.perCup - 1) * 100) + '% more a cup.');
+  }
+  [a, b].forEach(x => { if (x.fresh && x.fresh.state !== 'sweet') out.push(x.name + (x.fresh.state === 'resting' ? ' is still resting.' : x.fresh.state === 'past' ? ' is already past its peak.' : ' is fading.')); });
+  if (a.fresh && b.fresh && a.daysInBag != null && b.daysInBag != null && a.fresh.days + a.daysInBag <= a.fresh.window.fade && b.fresh.days + b.daysInBag <= b.fresh.window.fade && (a.fresh.state !== 'fading' && b.fresh.state !== 'fading')) out.push('Both will be gone before they fade.');
+  out.push('Your stars are the only taste score here.');
+  return out.join(' ');
+}
+const BAG_DAY = { resting:'rest', sweet:'sweet', past:'past', fading:'fade' };
+/* the line above the calendar: where one bag is today and when it runs out. f is a bagFresh result, finishOn the day the bag runs out (or ''), fmt turns YYYY-MM-DD into words. */
+function freshLine(name, f, finishOn, fmt){
+  const end = finishOn && finishOn <= f.fadeOn ? ' At your pace the bag is gone by ' + fmt(finishOn) + ', before it fades.' : finishOn ? ' At your pace the bag lasts until ' + fmt(finishOn) + '.' : '';
+  if (f.state === 'resting') return name + ' is still resting. It reaches its sweet spot on ' + fmt(f.readyOn) + ' and is at its best through ' + fmt(f.bestOn) + '.' + end;
+  if (f.state === 'sweet') return name + ' is in its sweet spot and at its best through ' + fmt(f.bestOn) + '.' + end;
+  if (f.state === 'past') return name + ' is past its peak but still good. Its flavor starts to fade after ' + fmt(f.fadeOn) + '.' + end;
+  return name + ' is fading, so brew it soon.' + end;
+}
+/* one month of a bag's calendar. f is a bagFresh result, year and month (1 to 12) pick the month, finishOn is the day the bag runs out (YYYY-MM-DD) or ''.
+   out: { title, lead (blank cells before the 1st, weeks start on Sunday), cells: [{ d, iso, st ('', 'roast', 'rest', 'sweet', 'past', 'fade'), finish }] } */
+function freshMonth(f, year, month, finishOn){
+  const n = new Date(Date.UTC(year, month, 0)).getUTCDate(), p = x => String(x).padStart(2, '0'), cells = [];
+  const roastT = Date.UTC(+f.roastOn.slice(0, 4), +f.roastOn.slice(5, 7) - 1, +f.roastOn.slice(8, 10));
+  for (let d = 1; d <= n; d++){
+    const iso = year + '-' + p(month) + '-' + p(d), age = Math.round((Date.UTC(year, month - 1, d) - roastT) / 86400000);
+    const st = age < 0 ? '' : age === 0 ? 'roast' : BAG_DAY[freshState(age, f.window)];
+    cells.push({ d, iso, st, finish:iso === finishOn });
+  }
+  return { title:BAG_MONTHS[month - 1] + ' ' + year, lead:new Date(Date.UTC(year, month - 1, 1)).getUTCDay(), cells };
+}
 /* ---------- cost of coffee ----------
    Plain arithmetic, nothing estimated.  cost per gram = price / (bag size in grams);  cost per cup = cost per gram x dose.
    A day is cups per day x cost per cup; a week is 7 days; a month is 365.25 / 12 days (30.44).  The bag lasts (bag grams / dose) cups.
    Coffee only: water, filters, milk and power are not counted. Nothing here is saved; the bags a person wants to keep go into their coffee prices (engine/67-coffee-prices.js). */
-const COST_UNITS = [['g', 1], ['oz', 28.349523125], ['lb', 453.59237]];
+const COST_UNITS = [['g', 1], ['kg', 1000], ['oz', 28.349523125], ['lb', 453.59237]];
 const COST_DAYS_PER_MONTH = 365.25 / 12;
 const COST_MAX_PODS = 1000;   /* most pods or capsules in one box that is accepted */
 /* a bag size in grams, or 0 when the size or unit is not usable */
@@ -10013,10 +10111,13 @@ const EVIDENCE_TIERS = {
 function evidenceFor(r, key){
   if (!r || !r.method) return null;
   const m = r.method, type = m.type, pulse = !!r.pulse, v60 = m.key === 'v60';
+  /* Kasuya's published recipe exactly: V60, five pours (the standard strength), his even split, 20 g of coffee and 300 g of water; any other size or setting is a scaled version of it */
+  const kasuya = pulse && v60 && r.tech && r.tech.strength === 'standard' && r.tech.taste === 'balanced' && r.water === 300 && Math.abs(r.ratio - 15) < 0.05;
   const out = (tier, basis) => ({ key, tier, label:EVIDENCE_TIERS[tier].label, dots:EVIDENCE_TIERS[tier].dots, basis });
   if (key === 'ratio'){
     if (r.ratioManual) return null;
-    if (pulse) return v60 ? out('A', "Tetsu Kasuya's own published 4:6 recipe uses 20 g of coffee for 300 g of water, a ratio of 1:15.")
+    if (pulse) return kasuya ? out('A', "Tetsu Kasuya's own published 4:6 recipe uses 20 g of coffee for 300 g of water, a ratio of 1:15.")
+      : v60 ? out('B', "Tetsu Kasuya's 4:6 ratio of 1:15, scaled from his 300 g recipe. His published recipe is 20 g of coffee for 300 g of water.")
       : out('B', "From Tetsu Kasuya's 4:6 recipe (1:15), used here on a method he did not design it for.");
     /* Build 29: a filter brew the engine leads has its ratio worked out from the cup it aims for (87-engine-link.js), so the label says so instead of "Common practice" */
     const eng = r.engine, tg = eng && eng.r && eng.r.target, steep = !!BE_STEEP[m.key], flow = !!BE_FLOW[m.key];
@@ -10135,8 +10236,8 @@ const COLUMN_GUIDE = [
   ['body', 'Scores', 'Body score.', 'Same scale as flavor'],
   ['balance', 'Scores (older form)', 'Balance score in the form used before Release 45.', 'SCA scale, 6 to 10'],
   ['overall', 'Scores', 'Overall score.', 'Same scale as flavor'],
-  ['acidity_intensity', 'Scores', 'How strong the acidity was, separate from how good it was.', '1 to 5'],
-  ['body_intensity', 'Scores', 'How strong the body was, separate from how good it was.', '1 to 5'],
+  ['acidity_intensity', 'Scores', 'How strong the acidity was, separate from how good it was. One of the app\'s own 1 to 5 columns, not an SCA field.', '1 to 5'],
+  ['body_intensity', 'Scores', 'How strong the body was, separate from how good it was. One of the app\'s own 1 to 5 columns, not an SCA field.', '1 to 5'],
   ['words_fragrance_aroma', 'Scores (older form)', 'Words picked for fragrance and aroma.', 'Semicolon list'],
   ['words_flavor', 'Scores (older form)', 'Words picked for flavor.', 'Semicolon list'],
   ['words_aftertaste', 'Scores (older form)', 'Words picked for aftertaste.', 'Semicolon list'],
@@ -10152,7 +10253,7 @@ const COLUMN_GUIDE = [
   ['sweetness', 'Scores', 'Sweetness score.', '0 to 10 on SCA rows; 1 to 9 on cva_affective rows'],
   ['taint_cups', 'Scores', 'Number of cups with a taint (a smell or taste in the cup).', 'Whole number'],
   ['fault_cups', 'Scores', 'Number of cups with a fault.', 'Whole number'],
-  ['defect_deduction', 'Scores', 'Points taken off the total for defects.', '0 or 4 on current rows'],
+  ['defect_deduction', 'Scores', 'Points taken off the total for one defective cup. This is the app\'s own adaptation of the SCA rule.', '0 or 4 on current rows'],
   ['total_score', 'Scores', 'The total score for the tasting.', 'Scale depends on score_kind'],
   ['score_kind', 'Scores', 'Which scoring scheme made total_score. Never pool across kinds.', 'home_1cup, sca_5cup, quick or cva_affective'],
   ['aroma_vials', 'Scores', 'Aroma vials you recognised.', 'Semicolon list'],
@@ -10731,6 +10832,50 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 102,
+  "version": "4.047.0102",
+  "tier": "small",
+  "at": "2026-10-16T20:37:21Z",
+  "date": "2026-10-16",
+  "title": "Fixes and checks",
+  "notes": [
+   "Water advice now names its sources: the 2009 SCAA water standard for calcium hardness, with the SCA-102 range noted as different, and the hardness box says total hardness.",
+   "The 4:6 method only claims Tetsu Kasuya's 1:15 ratio when you are using his 300 g recipe.",
+   "Cost of coffee accepts bag sizes in kilograms.",
+   "Just Starting can now reach the pour style, tucked in an Optional fold.",
+   "The CVA form explains that the 4 points off for one defective cup is this app's adaptation of the SCA rule.",
+   "The AeroPress temperature, Brix, kettle, taste and sweetness notes are more careful about what is a starting point.",
+   "Removed the 'N logged' text from Home or shop, and fixed Reduce Motion so it turns button transitions off."
+  ]
+ },
+ {
+  "release": 101,
+  "version": "4.047.0101",
+  "tier": "medium",
+  "at": "2026-10-16T18:42:59Z",
+  "date": "2026-10-16",
+  "title": "Compare 2 bags, and a Freshness calendar",
+  "notes": [
+   "Compare 2 bags, in Calculators: pick two bags from your coffee prices and see the price per 100 g and per cup, cups in the bag, how long it lasts, how fresh it is and your own stars side by side. It never picks a winner.",
+   "Freshness, in Calculators: a month calendar for each bag with a roast date, coloured resting, sweet spot, past the peak and fading, with the day the bag runs out, and a bar for every bag.",
+   "Both use the dose and cups a day from Cost of coffee, and the roast level from your tastings of that coffee (medium when none says). Nothing new is saved."
+  ]
+ },
+ {
+  "release": 100,
+  "version": "4.046.0100",
+  "tier": "medium",
+  "at": "2026-10-16T15:35:13Z",
+  "date": "2026-10-16",
+  "title": "A compact timer that stays at the top",
+  "notes": [
+   "The timer panel is smaller and stays at the top while you scroll: the brew in one line, the Ring or Dripper on the left with the grams, clock and step beside it, and Beanjamin under it.",
+   "The step you are on has its own card; the other steps sit together in one softer list.",
+   "Before you press Start, the kettle tip and the stir or swirl card fold away once you have read them.",
+   "Pouring is now said as slow circles from the center out; a swirl is a stir with no spoon, done after you set the kettle down."
+  ]
+ },
  {
   "release": 99,
   "version": "4.045.0099",
@@ -12028,7 +12173,8 @@ const FOLK_B = [
     verdict:'The SCA publishes target ranges, but we found little controlled taste testing, and no single ideal.',
     found:['Hendon, Colonna-Dashwood and Colonna-Dashwood (2014) estimated by computer how sodium, magnesium and calcium ions bind to coffee compounds. It suggests a mechanism. The abstract reports no taste tests.',
       'An SCA magazine article by a coffee researcher argues that alkalinity matters more than pH for the acidity you taste. It says hardness had an insignificant effect on extraction between 20 and 250 ppm, citing unnamed measurements.',
-      'Part of that article concerns scale in equipment, which is a separate matter from taste.'],
+      'Part of that article concerns scale in equipment, which is a separate matter from taste.',
+      'Two SCA documents give different calcium hardness figures. The 2009 SCAA water standard has a target of 68 mg/L with an acceptable range of 17 to 85, and the SCA-102 standard gives 50 to 175. We have these from a study guide, not from the documents.'],
     limits:['We could not open the SCA water standard itself in this check, so BeanTelligence quotes its figures from the Science Audit, not from a source opened here.', 'The espresso ranges in the article are proposals, not an adopted standard.'],
     app:'BeanTelligence points to water as a suspect to test, one change at a time, and quotes the SCA\'s alkalinity target of about 40 mg/L.',
     sources:[{ kind:'paper', cite:'Hendon CH, Colonna-Dashwood L, Colonna-Dashwood M (2014). The role of dissolved cations in coffee extraction. Journal of Agricultural and Food Chemistry 62(21):4947-4950.', link:'https://doi.org/10.1021/jf501687c' },
@@ -13292,7 +13438,7 @@ function loadDraft(){
     a.lastTotal = typeof src.lastTotal === 'number' ? src.lastTotal : null;
     a.lastSymptom = typeof src.lastSymptom === 'string' ? src.lastSymptom : '';
     a.lastReasons = Array.isArray(src.lastReasons) ? src.lastReasons.filter(x => typeof x === 'string').slice(0, 6) : [];
-    const ok = ['door','shop','sdrink','staste','sperfect','shops','start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','perfecting','detail','tastedit','learn','tend','guide','tools','yield','ratio','cost','caffeine','prices','tastes','wheels','chart','folk'];
+    const ok = ['door','shop','sdrink','staste','sperfect','shops','start','coffee','brew','gear','recipe','change','ready','timer','cup','dial','history','perfecting','detail','tastedit','learn','tend','guide','tools','yield','ratio','cost','bagcmp','fresh','caffeine','prices','tastes','wheels','chart','folk'];
     a.screen = ok.includes(src.screen) ? src.screen : /^tp[a-z]+$/.test(String(src.screen)) ? 'tend' : /^caf[a-z]+$/.test(String(src.screen)) ? 'caffeine' : 'door';   /* a Tendencies page opens its home again */
     a.resume = TRAIL_HOME.includes(src.resume) ? src.resume : (TRAIL_HOME.includes(src.screen) ? src.screen : ['change', 'ready', 'timer'].includes(src.screen) ? 'recipe' : '');   /* where Keep brewing returns to */
     if (isFinite(d.at) && d.at > 0 && d.at <= Date.now() + 60000){ draftAt = d.at; if (Date.now() - d.at > DRAFT_STALE_MS) a.screen = 'door'; }   /* untouched for 3 hours: open on the first screen, the draft stays */
@@ -13357,7 +13503,7 @@ const PARENT = {
   tpflavors:'tend', tpenjoy:'tend', tprate:'tend', tpkinds:'tend', tpbrews:'tend', tpshops:'tend', tpbrewers:'tend', tpmix:() => tpMixFrom === 'tpbrewers' ? 'tpbrewers' : 'tend',
   guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'door'),
   compare:() => (cmpFrom && cmpFrom !== 'compare' && cmpFrom !== 'timer') ? cmpFrom : (app.coffee.name ? 'coffee' : 'door'),
-  tools:() => (toolsFrom && toolsFrom !== 'tools' && toolsFrom !== 'yield' && toolsFrom !== 'ratio' && toolsFrom !== 'cost' && toolsFrom !== 'caffeine' && toolsFrom !== 'cafdrink' && toolsFrom !== 'cafresult' && toolsFrom !== 'cafcup' && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'door'), yield:'tools', ratio:'tools', cost:'tools', caffeine:'tools', cafdrink:'caffeine', cafresult:'caffeine', cafcup:() => cf.from === 'recipe' ? 'recipe' : 'caffeine',
+  tools:() => (toolsFrom && !TOOL_SCREENS.includes(toolsFrom) && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'door'), yield:'tools', ratio:'tools', cost:'tools', bagcmp:'tools', fresh:'tools', caffeine:'tools', cafdrink:'caffeine', cafresult:'caffeine', cafcup:() => cf.from === 'recipe' ? 'recipe' : 'caffeine',
   about:() => (aboutFrom && aboutFrom !== 'about' && aboutFrom !== 'timer') ? aboutFrom : (app.coffee.name ? 'coffee' : 'door'),
   glossary:() => (glossaryFrom && glossaryFrom !== 'glossary' && glossaryFrom !== 'timer') ? glossaryFrom : 'about',
   files:() => (filesFrom && filesFrom !== 'files' && filesFrom !== 'timer') ? filesFrom : (app.coffee.name ? 'coffee' : 'door')
@@ -13408,7 +13554,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', perfecting:'Still perfecting', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Calculators', yield:'Cup yield', ratio:'Ratio calculator', cost:'Cost of coffee', caffeine:'Caffeine', cafdrink:'Add a drink', cafresult:'Your caffeine day', cafcup:'Caffeine in a cup', prices:'Coffee prices', tastes:'Train your palate', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', tastedit:'Edit tasting', about:'About', glossary:'Glossary', files:'My files' };
+  const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', perfecting:'Still perfecting', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Calculators', yield:'Cup yield', ratio:'Ratio calculator', cost:'Cost of coffee', bagcmp:'Compare 2 bags', fresh:'Freshness', caffeine:'Caffeine', cafdrink:'Add a drink', cafresult:'Your caffeine day', cafcup:'Caffeine in a cup', prices:'Coffee prices', tastes:'Train your palate', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', tastedit:'Edit tasting', about:'About', glossary:'Glossary', files:'My files' };
   Object.assign(titles, TP_TITLES);
   $('topTitle').textContent = sc === 'start' || sc === 'door' || sc === 'shop' || sc === 'loadshared' ? '' : (titles[sc] || 'BeanTelligence');
   SCREENS[sc](m);
@@ -15936,7 +16082,12 @@ function renderWaySheet(title){
     if (tk) tk.refresh();
     const k = getRecipe().tech.key;
     psHost.textContent = '';
-    if (meth.type === 'flow' && !simple && k !== 'pulse'){ if (!ps) ps = pourStyleCard(sync); ps.refresh(); psHost.append(h('div', { class:'adjk', style:'margin:14px 0 6px', text:'How you pour' }), ps.el); }
+    if (meth.type === 'flow' && k !== 'pulse'){
+      if (!ps) ps = pourStyleCard(sync); ps.refresh();
+      /* at the New level the card sits in a closed fold, so a pour style that is still active is never hidden */
+      if (simple) psHost.append(plainFold('wayPourFold', 'How you pour', 'Optional', 'art-kettle', ps.el));
+      else psHost.append(h('div', { class:'adjk', style:'margin:14px 0 6px', text:'How you pour' }), ps.el);
+    }
     say.textContent = ''; say.append(h('p', null, k === 'standard' ? 'Hot is our pick for this coffee.' : techLabel(meth, k) + '.', h('span', { text:k === 'standard' ? (wayFrom === 'brew' ? 'The Brew page follows what you pick.' : 'You can change it later on the Brew page.') : techShort(meth, k) })));
     if (app.screen === 'recipe' && recipeRepaint) recipeRepaint(src || 'tech');
     scheduleDraft();
@@ -16347,10 +16498,10 @@ function gearFields(){
   const grinderBody = [h('div', { class:'field' }, h('label', { for:'gear_sel', class:'sr-only', text:'Grinder' }), picker.el, h('p', { class:'fine', style:'margin:4px 0 0', text:'Pick yours and we suggest a starting setting on the next page. Not listed, or not sure? Choose that.' })), nameIn, typeBox, forget];
   const waterTip = h('p', { class:'fine', style:'margin:8px 0 0' }), waterRead = h('div', { class:'waterread', role:'status' });
   refreshers.push(() => { const w = WATER_TYPES.find(x => x.v === b.waterType); waterTip.textContent = w ? w.tip : 'The SCA suggests clean water with about 150 mg/L of dissolved minerals (75 to 250 is acceptable) and alkalinity near 40 mg/L. Tell us yours and we can use it in your results.'; });
-  refreshers.push(() => { const wp = waterProfile(b.waterType, b.waterAlk, b.waterGH); waterRead.textContent = ''; wp.lines.forEach(t => waterRead.append(h('p', { class:'fine', style:'margin:6px 0 0;' + (/above|very low|is below the SCA/.test(t) ? 'color:var(--ink)' : ''), text:t }))); });
+  refreshers.push(() => { const wp = waterProfile(b.waterType, b.waterAlk, b.waterGH); waterRead.textContent = ''; wp.lines.forEach(t => waterRead.append(h('p', { class:'fine', style:'margin:6px 0 0;' + (/above|very low|is below/.test(t) ? 'color:var(--ink)' : ''), text:t }))); });
   const numbers = plainFold('waterNumbers', 'Water numbers', 'Alkalinity and hardness, optional', 'art-water',
-    h('div', { class:'twocol' }, textInput('Alkalinity (mg/L as CaCO₃)', () => b.waterAlk, v => { b.waterAlk = v; refreshAll(); }, { placeholder:'e.g. 40', inputmode:'decimal' }), textInput('Hardness (mg/L as CaCO₃)', () => b.waterGH, v => { b.waterGH = v; refreshAll(); }, { placeholder:'e.g. 68', inputmode:'decimal' })),
-    waterRead, h('p', { class:'fine', style:'margin:4px 0 0', text:'Find these on your water company\'s report or a test strip. The SCA target is about 40 mg/L for alkalinity, and 68 mg/L (acceptable 17 to 85) for calcium hardness. Reports usually list total hardness, which also counts magnesium and reads higher, so treat it as a rough guide.' }));
+    h('div', { class:'twocol' }, textInput('Alkalinity (mg/L as CaCO₃)', () => b.waterAlk, v => { b.waterAlk = v; refreshAll(); }, { placeholder:'e.g. 40', inputmode:'decimal' }), textInput('Total hardness (mg/L as CaCO₃)', () => b.waterGH, v => { b.waterGH = v; refreshAll(); }, { placeholder:'e.g. 68', inputmode:'decimal' })),
+    waterRead, h('p', { class:'fine', style:'margin:4px 0 0', text:lv === 'new' ? 'Find these on your water company\'s report or a test strip. Not sure? Skip this. It only changes our advice if the cup tastes flat or sour.' : 'Find these on your water company\'s report or a test strip. The 2009 SCAA water standard targets about 40 mg/L for alkalinity and 68 mg/L for calcium hardness (acceptable 17 to 85). Reports usually list total hardness, which also counts magnesium and reads higher than calcium alone, so treat it as a rough guide.' }));
   numbers.open = lv === 'expert' || !!(b.waterAlk || b.waterGH);
   const altMsg = h('p', { class:'fine', id:'altitudeNote', role:'status', style:'margin:4px 0 0' });
   const altField = textInput('Where you brew (optional)', () => b.altitudeFt != null ? String(b.altitudeFt) : '', v => { b.altitudeFt = parseAltitude(v); altMsg.textContent = altitudeNote(v); refreshAll(); }, { placeholder:'e.g. 5300 (feet), or 1600 m' });
@@ -17905,6 +18056,7 @@ function kettleNote(r){
     : 'That is ' + sw(W) + ' to pour' + (rinse ? ', ' + sw(rinse) + ' to rinse the filter' : '') + ' and about ' + sw(keep) + ' for what the kettle keeps back. Running short is worse than going over. Stop pouring when the scale reads ' + sw(W) + ', and leave the rest.';
   const kids = [h('p', { class:'kettlehead' }, symPic('art-kettle', 'kettlepic'), 'Fill your kettle to ', h('b', { class:'kettlenum', 'data-noterm':'', text:sw(fill) })), h('p', { class:'fine kettlenote', style:'margin:4px 0 0', text })];
   if (lv === 'expert') kids.push(h('p', { class:'fine', style:'margin:4px 0 0', text:'The kettle part is 3 g plus 2.5 % of the pour. It is our own estimate from one home weigh-in, not a published figure. Set your own margin below if your kettle differs.' }));
+  if (lv !== 'new') kids.push(h('p', { class:'fine', style:'margin:4px 0 0', text:'To measure your own kettle, weigh it full, pour out a brew, and weigh it again: the gap between the water poured and the water gone is what it keeps. An electric kettle also has a minimum fill line, so do not fill below it.' }));
   if (paper){
     const cb = h('input', { type:'checkbox', id:'rinsedBox' }); cb.checked = kettleOpt.rinsed;
     cb.addEventListener('change', () => { kettleOpt.rinsed = cb.checked; again('rinsedBox'); });
@@ -17939,12 +18091,15 @@ function brewDock(m, r){
 function screenReady(m){ app.screen = 'recipe'; return SCREENS.recipe(m); }
 /* ---------- screen: tools ---------- */
 let toolsFrom = '';
-function goTools(){ if (app.screen !== 'tools' && app.screen !== 'yield' && app.screen !== 'ratio' && app.screen !== 'cost' && app.screen !== 'caffeine' && app.screen !== 'cafdrink' && app.screen !== 'cafresult' && app.screen !== 'cafcup') toolsFrom = app.screen === 'timer' ? 'recipe' : app.screen; go('tools'); }
+const TOOL_SCREENS = ['tools', 'yield', 'ratio', 'cost', 'caffeine', 'cafdrink', 'cafresult', 'cafcup', 'bagcmp', 'fresh'];   /* every screen that belongs to the Calculators family: Back from one lands in the list, not where the list was opened from */
+function goTools(){ if (!TOOL_SCREENS.includes(app.screen)) toolsFrom = app.screen === 'timer' ? 'recipe' : app.screen; go('tools'); }
 /* One row per tool. Add a tool here and it shows up in the list; the Menu stays one row long. */
 const TOOLS = [
   { id:'yield', icon:'cupyield', tone:'a', name:'Cup yield', text:'How much ends up in your cup, and how much water to pour for the cup you want', open:() => goYield() },
   { id:'ratio', icon:'ratio', tone:'g', name:'Ratio and strength calculator', text:'The ratio for the strength you want, and how much water to add to a strong brew', open:() => goRatio() },
   { id:'cost', icon:'cost', tone:'t', name:'Cost of coffee', text:'What a cup costs from the price of a bag, and what you spend a month', open:() => goCost() },
+  { id:'bagcmp', icon:'cost', tone:'a', name:'Compare 2 bags', text:'Two bags from your coffee prices side by side: price, freshness, days to empty and your stars', open:() => go('bagcmp') },
+  { id:'fresh', icon:'drop', tone:'g', name:'Freshness', text:'A month calendar of when each bag is at its best, from its roast date', open:() => go('fresh') },
   { id:'caffeine', icon:'caffeine', tone:'g', name:'Caffeine', text:'The best times for your coffee across the day, and the caffeine in one cup', open:() => goCaffeine() }
 ];
 function screenTools(m){
@@ -18492,6 +18647,106 @@ function prForm(a, p, o){
   box.redraw = draw;
   return box;
 }
+/* ---------- screens: compare 2 bags, and freshness ----------
+   Nothing is saved here. Both read the purchases in your coffee prices (49-screen-prices.js) and your tastings (history), and use the dose and cups a day from the Cost of coffee screen. Numbers come from engine/67-bag-compare.js. */
+let bagc = { a:'', b:'', slot:'a' }, bagf = { key:'', y:0, m:0 }, bagHost = null;
+const bagKey = e => (e.coffee + '|' + e.roaster).toLowerCase();
+/* the dose and cups a day the two screens use: whatever Cost of coffee holds */
+function bagDose(){ if (!cs) csStart(); return { dose:+cs.dose || 20, cups:parseFloat(cs.cups) || 0 }; }
+/* one purchase per coffee (the newest), bags only, newest first; with needRoast, only bags with a roast date that are not finished */
+function bagList(needRoast){
+  const seen = new Set();
+  return priceSort(pr.list, 'new').filter(e => {
+    if (e.kind !== 'bag' || seen.has(bagKey(e))) return false;
+    seen.add(bagKey(e)); return !needRoast || (e.roast && !e.finished && daysSinceRoast(e.roast) != null);
+  });
+}
+const bagRows = e => historyForCoffee(history && history.objs ? history.objs : [], { name:e.coffee, roaster:e.roaster });
+const bagSideOf = e => { const u = bagDose(); return bagSide(e, { dose:u.dose, cups:u.cups, now:new Date(), rows:bagRows(e) }); };
+/* "light roast" for a bag, or "medium roast (assumed)" when no tasting names one */
+const bagWord = f => labelOf(ROASTS, f.roast).toLowerCase() + ' roast' + (f.assumed ? ' (assumed)' : '');
+function bagTile(e, label, on, fn){
+  return h('button', { type:'button', 'aria-pressed':String(on), onclick:fn }, pic('bag'), h('b', { text:e.coffee }), h('small', { text:label + ' \u00b7 ' + prMoney(e.sym, e.price) + ' \u00b7 ' + Math.round(costGrams(e.size, e.unit)) + ' g' }));
+}
+/* when there is nothing to show yet: the mascot says what is missing, with the doors to fill it */
+function bagEmpty(text){
+  return [moneyNote('think', 'thinking', null, text), h('button', { type:'button', class:'btn block', id:'bagOpenPrices', style:'margin-top:12px', text:'Open my coffee prices', onclick:goPrices }),
+    h('button', { type:'button', class:'flink', id:'bagOpenCost', style:'margin:6px 0 0', text:'Open Cost of coffee', onclick:goCost })];
+}
+/* ---- Compare 2 bags ---- */
+function paintBagCmp(){
+  const host = bagHost; host.textContent = '';
+  host.append(toolHero('Compare 2 bags', 'Price, freshness and your own stars, side by side.', 'cost'));
+  const list = bagList(false);
+  if (list.length < 2){ host.append(...bagEmpty('Compare needs two bags in your coffee prices. You have ' + (list.length ? 'one' : 'none') + ' so far.')); return; }
+  const find = k => list.find(e => bagKey(e) === k);
+  if (!find(bagc.a)) bagc.a = bagKey(list[0]);
+  if (!find(bagc.b) || bagc.b === bagc.a) bagc.b = bagKey(list.find(e => bagKey(e) !== bagc.a));
+  const A = find(bagc.a), B = find(bagc.b), on = bagc.slot;
+  const sel = h('select', { id:'bagPick', class:'yc-pick', 'aria-label':'Change Bag ' + on.toUpperCase() }, list.map(e => h('option', { value:bagKey(e), text:e.coffee + (e.roaster ? ' · ' + e.roaster : '') })));
+  sel.value = bagc[on];
+  sel.addEventListener('change', () => { const o = on === 'a' ? 'b' : 'a'; if (sel.value === bagc[o]) bagc[o] = bagc[on]; bagc[on] = sel.value; paintBagCmp(); });
+  host.append(tband('Pick two bags', { tan:'From your coffee prices' }, 'tap a bag, then change it', { pic:'bag' },
+    h('div', { class:'mk-kind', id:'bagTiles', role:'group', 'aria-label':'Pick two bags' }, bagTile(A, 'Bag A', on === 'a', () => { bagc.slot = 'a'; paintBagCmp(); }), bagTile(B, 'Bag B', on === 'b', () => { bagc.slot = 'b'; paintBagCmp(); })),
+    list.length > 2 ? h('div', { class:'yc-f wide' }, sel) : null));
+  const sa = bagSideOf(A), sb = bagSideOf(B), u = bagDose();
+  if (!sa.ok || !sb.ok){ host.append(...bagEmpty('I could not work out one of these bags. Check its price and size in your coffee prices.')); return; }
+  const row = (label, f, bold) => h('tr', { class:bold ? 'bold' : null }, h('th', { scope:'row', text:label }), h('td', null, f(sa)), h('td', null, f(sb)));
+  const ago = s => s.fresh ? s.fresh.days === 0 ? 'today' : s.fresh.days === 1 ? '1 day ago' : s.fresh.days + ' days ago' : 'No roast date';
+  const chip = s => { if (!s.fresh) return '—'; const t = PR_FRESH_TAGS[s.fresh.state]; return h('span', { class:'tag2 ' + t[0], text:t[1] }); };
+  const stars = s => s.stars ? [(Math.round(s.stars.avg * 10) / 10) + ' of 5', h('small', { text:s.stars.count + (s.stars.count === 1 ? ' tasting' : ' tastings') })] : h('small', { text:'Not tasted yet' });
+  const note = [sa, sb].filter(s => s.fresh).map(s => s.name + ': ' + bagWord(s.fresh)).join('; ');
+  host.append(tband('Side by side', { tan:'Your numbers' }, 'nothing is ranked for you', { pic:'scale' },
+    h('table', { class:'bagtab', id:'bagTable' }, h('thead', null, h('tr', null, h('td'), h('th', { scope:'col', text:'Bag A' }), h('th', { scope:'col', text:'Bag B' }))), h('tbody', null,
+      row('Price per 100 g', s => prMoney(s.sym, s.per100)), row('A ' + u.dose + ' g cup', s => prMoney(s.sym, s.perCup), true), row('Cups in the bag', s => String(Math.floor(s.cupsInBag))),
+      row('Roasted', ago), row('Freshness', chip), row('Gone in about', s => s.daysInBag != null ? (Math.round(s.daysInBag * 10) / 10) + ' days' : '—'), row('Your stars', stars))),
+    h('p', { class:'fine', style:'margin:10px 0 0', text:'At ' + u.dose + ' g a cup' + (u.cups > 0 ? ' and ' + u.cups + ' cup' + (u.cups === 1 ? '' : 's') + ' a day' : '') + '. Change either on Cost of coffee.' + (note ? ' Freshness uses the typical filter-coffee windows (rated D): ' + note + '. ' + FRESH_NOTE : '') })));
+  host.append(moneyNote('think', 'thinking', 'bagVerdict', bagVerdict(sa, sb)),
+    h('button', { type:'button', class:'flink', id:'bagOpenCost', style:'margin:10px 0 0', text:'Change the dose or cups a day on Cost of coffee', onclick:goCost }),
+    h('button', { type:'button', class:'flink', id:'bagOpenPrices', style:'margin:6px 0 0', text:'Open my coffee prices', onclick:goPrices }));
+}
+function screenBagCmp(m){ bagHost = h('div', { id:'bagHost' }); m.append(bagHost); paintBagCmp(); }
+/* ---- Freshness ---- */
+/* the month's grid: blanks to the first weekday, one cell a day coloured by its place in the window */
+function fmoGrid(mo){
+  const g = h('div', { class:'fmo', role:'grid', 'aria-label':mo.title });
+  'SMTWTFS'.split('').forEach((d, i) => g.append(h('span', { class:'fmh', 'aria-hidden':'true', text:d })));
+  for (let i = 0; i < mo.lead; i++) g.append(h('span', { class:'fmb', 'aria-hidden':'true' }));
+  const now = today();
+  mo.cells.forEach(c => g.append(h('span', { class:'fmd ' + c.st + (c.iso === now ? ' now' : '') + (c.finish ? ' fin' : ''), role:'gridcell', 'aria-label':c.d + ' ' + mo.title + (c.st ? ', ' + FMO_WORDS[c.st] : '') + (c.iso === now ? ', today' : '') + (c.finish ? ', about when the bag runs out' : ''), text:String(c.d) })));
+  return g;
+}
+const FMO_WORDS = { roast:'roast day', rest:'still resting', sweet:'sweet spot', past:'past the peak', fade:'fading' };
+function fmoMove(n){ let m = bagf.m + n, y = bagf.y; if (m < 1){ m = 12; y--; } if (m > 12){ m = 1; y++; } bagf.y = y; bagf.m = m; paintFresh(); }
+/* each bag on its own bar, the same bar as the Freshness clock on Facts; the dark tick is today */
+function bagBars(items){
+  const rows = items.map(x => {
+    const k = freshClock({ days:x.f.days, roast:x.f.roast }, x.f.roastOn, x.f.assumed), seg = (c, w) => h('i', { class:c, style:'width:' + w + '%' });
+    return h('div', { class:'bgbar' }, h('div', { class:'bgh' }, h('b', { text:x.e.coffee }), h('span', { class:'tag2 ' + PR_FRESH_TAGS[x.f.state][0], text:PR_FRESH_TAGS[x.f.state][1] })),
+      h('div', { class:'fcbar', role:'img', 'aria-label':x.e.coffee + ': day ' + x.f.days + ' of ' + x.f.window.fade + ', ' + FRESH_LABEL[x.f.state].toLowerCase() }, seg('r', k.rest), seg('s', k.sweet), seg('p', k.past), h('span', { class:'fcat', style:'left:' + k.at + '%' })),
+      h('div', { class:'fclab', 'aria-hidden':'true' }, h('span', { style:'width:' + k.rest + '%', text:'rest' }), h('span', { style:'width:' + k.sweet + '%', text:'sweet spot' }), h('span', { style:'width:' + k.past + '%', text:'past peak' })));
+  });
+  return tband('Your bags, today', { tan:'Each bag on its own bar' }, 'the dark tick is today', { pic:'beans' }, ...rows,
+    h('p', { class:'fine', style:'margin:8px 0 0', text:'Only bags with a roast date show here, and not the ones you marked finished. Windows are typical guide values (rated D); roasters differ, so follow the bag if it gives its own advice.' }));
+}
+function paintFresh(){
+  const host = bagHost; host.textContent = '';
+  host.append(toolHero('Freshness', 'When each bag is at its best.', 'drop'));
+  const list = bagList(true).slice(0, 6);
+  if (!list.length){ host.append(...bagEmpty('Freshness needs a bag with a roast date. Add the roast date to a bag in your coffee prices.')); return; }
+  if (!list.some(e => bagKey(e) === bagf.key)) bagf.key = bagKey(list[0]);
+  if (!bagf.y){ const d = new Date(); bagf.y = d.getFullYear(); bagf.m = d.getMonth() + 1; }
+  const items = list.map(e => { const s = bagSideOf(e); return { e, s, f:bagFresh(e, bagRoast(bagRows(e)), new Date()) }; }).filter(x => x.f);
+  const cur = items.find(x => bagKey(x.e) === bagf.key) || items[0], fin = cur.s.ok && cur.s.daysInBag != null ? isoAdd(today(), Math.round(cur.s.daysInBag)) : '';
+  host.append(moneyNote('think', 'thinking', 'fmLine', freshLine(cur.e.coffee, cur.f, fin, phDate)));
+  const mo = freshMonth(cur.f, bagf.y, bagf.m, fin);
+  const tiles = h('div', { class:'mk-kind', id:'fmTiles', role:'group', 'aria-label':'Pick a bag' }, items.map(x => h('button', { type:'button', 'aria-pressed':String(x === cur), onclick:() => { bagf.key = bagKey(x.e); paintFresh(); } }, pic('bag'), h('b', { text:x.e.coffee }), h('small', { text:'day ' + x.f.days + ' · ' + PR_FRESH_TAGS[x.f.state][1].toLowerCase() }))));
+  const legend = h('div', { class:'fmleg', 'aria-hidden':'true' }, h('span', { class:'k roast', text:'Roast day' }), h('span', { class:'k sweet', text:'Sweet spot' }), h('span', { class:'k past', text:'Past the peak' }), h('span', { class:'k fade', text:'Fading' }), fin ? h('span', { class:'k fin', text:'About when it runs out' }) : null);
+  host.append(tband('Month by month', { tan:cur.e.coffee }, bagWord(cur.f) + ', as filter coffee', { pic:'cal' }, tiles,
+    h('div', { class:'fmnav' }, h('button', { type:'button', class:'btn small', id:'fmPrev', 'aria-label':'Last month', text:'‹', onclick:() => fmoMove(-1) }), h('b', { id:'fmTitle', text:mo.title }), h('button', { type:'button', class:'btn small', id:'fmNext', 'aria-label':'Next month', text:'›', onclick:() => fmoMove(1) })),
+    fmoGrid(mo), legend), bagBars(items));
+}
+function screenFresh(m){ bagHost = h('div', { id:'bagHost' }); m.append(bagHost); paintFresh(); }
 /* ---------- screen: cost of coffee ----------
    This is a what-if: nothing here is kept in your saved work or your history file. A bag or box is kept only when the person presses Add to my coffee prices, which records a purchase in the separate prices list (49-screen-prices.js). */
 let cs = null, csHost = null;
@@ -18548,7 +18803,7 @@ function csWorkText(){
   const f = x => String(Math.round(x * 1000) / 1000);
   const tail = c.perDay != null ? ' A day is ' + cs.cups + (c.kind === 'pods' ? ' pods' : ' cups') + ' × ' + csMoney(c.perCup) + ' = ' + csMoney(c.perDay) + '; a week is 7 days; a month is 30.44 days (a year divided by 12).' : '';
   if (c.kind === 'pods') return 'The box holds ' + cs.a.size + ' pods. ' + cs.sym + cs.a.price + ' ÷ ' + cs.a.size + ' = ' + cs.sym + f(c.perCup) + ' a pod, and a pod makes one cup.' + tail;
-  return 'The bag is ' + f(c.grams) + ' g (' + cs.a.size + ' ' + cs.a.unit + (cs.a.unit === 'oz' ? ', at 28.35 g to the ounce' : cs.a.unit === 'lb' ? ', at 453.6 g to the pound' : '') + '). ' + cs.sym + cs.a.price + ' ÷ ' + f(c.grams) + ' g = ' + cs.sym + f(c.perGram) + ' a gram. A ' + cs.dose + ' g dose costs ' + cs.sym + f(c.perGram) + ' × ' + cs.dose + ' = ' + csMoney(c.perCup) + '.' + tail;
+  return 'The bag is ' + f(c.grams) + ' g (' + cs.a.size + ' ' + cs.a.unit + (cs.a.unit === 'kg' ? ', at 1,000 g to the kilogram' : cs.a.unit === 'oz' ? ', at 28.35 g to the ounce' : cs.a.unit === 'lb' ? ', at 453.6 g to the pound' : '') + '). ' + cs.sym + cs.a.price + ' ÷ ' + f(c.grams) + ' g = ' + cs.sym + f(c.perGram) + ' a gram. A ' + cs.dose + ' g dose costs ' + cs.sym + f(c.perGram) + ' × ' + cs.dose + ' = ' + csMoney(c.perCup) + '.' + tail;
 }
 /* the two big tiles that say what is being priced: a bag of beans, or pods */
 function csKindTiles(x, i){
@@ -18924,8 +19179,8 @@ function spShopRow(r, by, first){
   d.open = !!sp.open[d.dataset.k];
   d.addEventListener('toggle', () => { sp.open[d.dataset.k] = d.open; });
   const title = by === 'drink' ? r.label : r.shop, place = by === 'shop' ? shopPlaceText(r) : '';
-  const sub = by === 'drink' ? [r.n + ' logged', r.size ? 'usually ' + (SHOP_SIZES.find(s => s.v === r.size) || { label:r.size }).label.toLowerCase() : null, r.shop ? 'most at ' + r.shop : null].filter(Boolean).join(' · ')
-    : [place, r.n + ' logged', 'mostly ' + r.label.toLowerCase()].filter(Boolean).join(' · ');
+  const sub = by === 'drink' ? [r.size ? 'usually ' + (SHOP_SIZES.find(s => s.v === r.size) || { label:r.size }).label.toLowerCase() : null, r.shop ? 'most at ' + r.shop : null].filter(Boolean).join(' · ')
+    : [place, 'mostly ' + r.label.toLowerCase()].filter(Boolean).join(' · ');
   const kv = by === 'drink' ? [['Range', r.min != null ? (r.min === r.max ? spMoney(r.min) : spMoney(r.min) + ' to ' + spMoney(r.max)) : 'No prices'], ['Average', r.avg != null ? spMoney(r.avg) : 'No prices'], ['Usual size', r.size ? (SHOP_SIZES.find(s => s.v === r.size) || { label:r.size }).label : 'Not set'], ['Last logged', r.last ? phDate(r.last) : 'No date']]
     : [['Average', r.avg != null ? spMoney(r.avg) : 'No prices'], ['Priced drinks', String(r.pricedN)], ['Logged most', r.label], ['Last logged', r.last ? phDate(r.last) : 'No date']];
   const kindOf = x => (SHOP_KINDS.find(k => k.v === x.kind) || { label:'' }).label, sizeOf = x => (SHOP_SIZES.find(s => s.v === x.size) || { label:'' }).label;
@@ -19550,7 +19805,7 @@ function measureBlock(b){
   const brixIn = textInput('Brix reading (\u00b0Bx)', () => tdsPick.brix, v => { tdsPick.brix = v; const t = brixToTds(parseFloat(v)); b.tds = t == null ? '' : t; refreshAll(); }, { type:'number', placeholder:'e.g. 1.6' });
   { const i = brixIn.querySelector('input'); i.setAttribute('inputmode', 'decimal'); i.setAttribute('step', 'any'); i.setAttribute('min', '0'); }
   const brixBox = h('details', { class:'moreinfo', id:'brixBox' }, h('summary', { text:'Does your meter show Brix?' }), brixIn,
-    h('p', { class:'fine', style:'margin:-4px 0 0', text:'Brix is a sugar scale, but your meter reads everything dissolved in the coffee. TDS is about 0.85 times Brix. That is a rule of thumb, so treat it as an estimate. If your meter also shows TDS, use that number.' }));
+    h('p', { class:'fine', style:'margin:-4px 0 0', text:'Brix is a sugar scale, but your meter reads everything dissolved in the coffee. TDS is about 0.85 times Brix. That is a rule of thumb, so treat it as an estimate. If your meter also shows TDS, use that number. Any meter reading is a little off, and at a 1:16 brew each 0.1% of TDS error moves extraction by about 1.6 points, so compare your own brews with each other more than with a chart.' }));
   const ownR = (app.prefs.yieldCal || {})[mt.key], heldG = heldPerG(mt.key, ownR), heldTxt = (Math.round(heldG * 10) / 10) + ' g';
   const expOut = expectedYield(mt.type, +b.water, +b.dose, mt.key, ownR);
   const outHint = h('p', { class:'fine', style:'margin:-4px 0 8px', text:expOut == null ? '' : (mt.type === 'espresso' || mt.type === 'moka') ? 'Weigh the drink in the cup. These settings aim for about ' + expOut + ' g.' : 'Weigh what ended up in your cup, not the water you poured. For this brew that is usually about ' + aboutGrams(expOut, mt.type) + ' g: the ' + b.water + ' g you poured, minus the roughly ' + heldTxt + ' of water each gram of coffee holds back.' });
@@ -19850,7 +20105,7 @@ function cvaReviewBody(){
   else if (!c.cool.done) kids.push(h('p', { class:'cva-warn', text:CVA_LINES.coolOpen }));
   if (t == null) kids.push(h('p', { class:'cva-warn', text:CVA_LINES.noTotal }));
   else kids.push(h('div', { class:'cva-total' }, h('span', { class:'cva-lbl', text:'Cupping score' }), h('b', { text:fmt2(t) })),
-    h('p', { class:'cva-note', text:(c.cool.done && !c.cool.skipped ? 'Uses your final impression where you retasted. ' : '') + '0.65625 × the eight scores + 52.75' + (bad ? ' − 4' : '') + ', to the nearest 0.25. All 9s give 100 and all 5s give 79. Compared with the SCA form this is one cup, so uniformity is not judged.' }));
+    h('p', { class:'cva-note', text:(c.cool.done && !c.cool.skipped ? 'Uses your final impression where you retasted. ' : '') + '0.65625 × the eight scores + 52.75' + (bad ? ' − 4' : '') + ', to the nearest 0.25. All 9s give 100 and all 5s give 79. Compared with the SCA form this is one cup, so uniformity is not judged. The 4 points off for one defective cup is this app\'s adaptation. The SCA takes 4 for each defective cup out of five, and a defective cup also counts as non-uniform.' }));
   if (best && t != null){ const d = t - parseFloat(best.total_score); kids.push(h('p', { class:'cva-note', text:'Your best earlier score for this coffee is ' + fmt2(parseFloat(best.total_score)) + (best.brew_method ? ' (' + unneutralize(best.brew_method) + ')' : '') + '. This cup is ' + (Math.abs(d) < 0.005 ? 'the same.' : fmt2(Math.abs(d)) + (d > 0 ? ' higher.' : ' lower.')) })); }
   const row = (i, name, val) => { const b = h('button', { type:'button', class:'cvasumrow', 'aria-label':name + ', ' + val + ', change it', onclick:() => { c.open = i; cvaChanged(); cvaScrollOpen(); } }, h('span', { class:'cvasumpic' }, pic(CVA_ART[i])), h('span', { class:'cvasumnm', text:name }), h('span', { class:'cvasumval', text:val }), h('span', { class:'hchev', 'aria-hidden':'true' })); return h('li', null, b); };
   kids.push(h('ul', { class:'cvasum' }, CVA_SECTIONS.map((s, i) => row(i, s.name, cvaPair(i).replace('→', ' → ') || 'not scored')),
@@ -21819,7 +22074,7 @@ const MK = (() => {
   MK.poses = POSES; MK.arms = arms;
 })();
 /* each part of the app has its own outfit: lab coat for tasting, little suit for numbers, vest for learning, tweed for history and origins */
-const MASCOT_OUTFITS = { lab:['cup', 'quick', 'sca', 'cva', 'staste', 'dial', 'perfecting', 'wheels', 'tastes'], suit:['tend', 'tpmix', 'tpflavors', 'cost', 'prices', 'yield', 'ratio', 'compare', 'tools', 'files', 'caffeine', 'cafdrink', 'cafresult', 'cafcup'], vest:['learn', 'glossary', 'guide', 'help'], tweed:['history', 'detail', 'tastedit', 'folk', 'facts'] };
+const MASCOT_OUTFITS = { lab:['cup', 'quick', 'sca', 'cva', 'staste', 'dial', 'perfecting', 'wheels', 'tastes'], suit:['tend', 'tpmix', 'tpflavors', 'cost', 'bagcmp', 'fresh', 'prices', 'yield', 'ratio', 'compare', 'tools', 'files', 'caffeine', 'cafdrink', 'cafresult', 'cafcup'], vest:['learn', 'glossary', 'guide', 'help'], tweed:['history', 'detail', 'tastedit', 'folk', 'facts'] };
 function outfitForScreen(){
   const s = app.screen;
   for (const k of Object.keys(MASCOT_OUTFITS)) if (MASCOT_OUTFITS[k].includes(s)) return k;
@@ -23446,7 +23701,7 @@ function shopsFilesRows(){
     h('button', { type:'button', class:'btn', id:'shPasteBtn', style:'margin-top:8px', text:'Use pasted text', onclick:() => { if (paste.value.trim()){ shLoadText(paste.value); say(sh.msg); save.querySelector('.hs').textContent = subText(); } else say('Paste the file contents first.'); } }));
   return [save, load, file, fold, msg, h('p', { class:'fine hubnote', style:'margin:0', text:'The coffee shops file is a file of its own. It is not your tasting history, and your history is never changed by it.' })];
 }
-const SCREENS = { door:screenDoor, loadshared:screenLoadShared, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, perfecting:screenPerfecting, detail:screenDetail, tastedit:screenTastingEdit, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, tpflavors:screenTpFlavors, tpenjoy:screenTpEnjoy, tprate:screenTpRate, tpkinds:screenTpKinds, tpbrews:screenTpBrews, tpshops:screenTpShops, tpbrewers:screenTpBrewers, tpmix:screenTpMix, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, caffeine:screenCaffeine, cafdrink:screenCafDrink, cafresult:screenCafResult, cafcup:screenCafCup, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, glossary:screenGlossary, files:screenFiles };
+const SCREENS = { door:screenDoor, loadshared:screenLoadShared, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, perfecting:screenPerfecting, detail:screenDetail, tastedit:screenTastingEdit, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, tpflavors:screenTpFlavors, tpenjoy:screenTpEnjoy, tprate:screenTpRate, tpkinds:screenTpKinds, tpbrews:screenTpBrews, tpshops:screenTpShops, tpbrewers:screenTpBrewers, tpmix:screenTpMix, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, bagcmp:screenBagCmp, fresh:screenFresh, caffeine:screenCaffeine, cafdrink:screenCafDrink, cafresult:screenCafResult, cafcup:screenCafCup, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, glossary:screenGlossary, files:screenFiles };
 
 syncMenuBtn();
 $('homeBtn').addEventListener('click', () => { if (menuIsOpen()) closeSheet(); else openMenu(); });
