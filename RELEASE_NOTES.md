@@ -4,6 +4,25 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.046.0100: A compact timer that stays at the top
+
+2026-10-16 15:35:13 UTC
+
+- The timer panel is smaller and stays at the top while you scroll: the brew in one line, the Ring or Dripper on the left with the grams, clock and step beside it, and Beanjamin under it.
+- The step you are on has its own card; the other steps sit together in one softer list.
+- Before you press Start, the kettle tip and the stir or swirl card fold away once you have read them.
+- Pouring is now said as slow circles from the center out; a swirl is a stir with no spoon, done after you set the kettle down.
+
+## Version 4.045.0099: Brew it your way: hot, pulse or iced, and a Switch that steeps
+
+2026-10-16 13:59:00 UTC
+
+- Tap a brewer on Method and pick how you will brew it: hot, pulse pours or iced, and how you pour. The Brew page has a The way link to change it. Just Starting picks Hot or iced.
+- The Hario Switch now steeps: valve closed, pour, stir, steep, open the valve. It pours only what your Switch holds, then pours the rest through.
+- The timer's voice says how and when to stir, swirl and put the lid on. Voice is now the starting sound.
+- Where you brew (your altitude) can be kept with your usual gear in My setup.
+- Gear: the filter list now offers V60 papers for the Switch and wedge papers for the Clever; pop-ups stay above the phone keyboard.
+
 ## Version 4.044.0098: A timer you can follow at a glance
 
 2026-10-16 11:11:35 UTC
