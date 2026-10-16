@@ -4,6 +4,26 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.041.0094: The BeanTelligence brew engine
+
+2026-10-16 02:18:30 UTC
+
+- Your starting recipe now comes from the BeanTelligence brew engine: it works back from the cup it aims for to the ratio, grind and steep time, using lab science and two measured brews.
+- Pour-overs and drip start at 1:16.9. Steeped brewers start at 1:16.1 for light roasts and 1:15.4 for others, with steep times worked out for your water temperature. A French press breaks the crust at 4:00 and plunges near 9 to 10 minutes.
+- Phin coffee starts at 1:9, Turkish at 1:10, and cold brew in the fridge at 1:11, with the time set by roast.
+- On a Timemore S3, the grind setting follows one size line anchored on a measured brew (a V60 is about click 49). Other grinders still follow their maker's ranges. The 1Zpresso JX-Pro ranges now match its maker's chart.
+- Your rated cups now help tune your starting strength, and a Hario Switch that is too small for your batch tells you to pour the rest through after the steep.
+
+## Version 4.040.0093: Right numbers for steeped coffee
+
+2026-10-15 18:20:59 UTC
+
+- Build 27, step 1. French press, Clever, Switch, AeroPress and siphon now count extraction from all the water you poured in, because a steeped brew keeps coffee as strong as the cup in its grounds. The old way read about 3 points too low and called a good press under-extracted.
+- The 18 to 22% zone was set for drip coffee, so a steeped brew shows its number and is not called under or over. Strength still has its zone. AeroPress and siphon show a range, because they sit between the two ways of counting.
+- Advice for a steeped brew follows how the cup tastes: sour means steep longer or grind finer; harsh means a shorter steep or a coarser grind.
+- A dry paper filter now takes a different amount for each brewer (Chemex 10 g, Switch 5 g, Clever 4 g, V60 and Kalita 3 g, AeroPress 1 g), and the app says these are estimates.
+- Your saved files do not change. The saved Extraction column stays on the old basis; the new number is worked out on screen from your dose, water and TDS.
+
 ## Version 4.040.0092: Beanjamin speaks only when he has something to say
 
 2026-10-15 17:22:12 UTC
