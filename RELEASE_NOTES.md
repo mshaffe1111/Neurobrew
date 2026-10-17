@@ -4,6 +4,23 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.051.0116: Facts and glossary round two: 16 claims, 135 words, 10 origins
+
+2026-10-17 13:57:49 UTC
+
+- Sixteen new Solid or folklore claims (28 in all), 135 new glossary words and about 70 corrected rows, ten more origin guides (China, Taiwan, Myanmar, Laos, Venezuela, DR Congo, Timor-Leste, Zambia, Malawi, Philippines), the Gold Cup numbers now credited to the 1950s study, about ten overstated lines softened, and four origin-matching fixes. Glossary search is faster.
+
+## Version 4.050.0115: Caffeine wrap-up: pregnancy, sleep sources, Nespresso, strength
+
+2026-10-17 12:22:17 UTC
+
+- Pregnancy note now names the 200 mg a day line from EFSA, the NHS and ACOG, and adds EFSA's 3 mg per kg a day for under 18s.
+- Sleep notes name their sources: Gardiner 2023 (24 studies, about 45 minutes) and Drake 2013 (12 people, 400 mg six hours before bed). The crash note names the 2024 Antonio review.
+- The Careful line is traced to Gardiner 2023. The one-hour window is called our own rule. Half-life wording shows the 2.5 to 5 hour average and the 2.3 to 12 hour spread.
+- Nespresso Original middles now use the lab values 51, 66 and 66 mg, inside Nespresso's own ranges.
+- Weighing the coffee no longer asks how strong you make it, so Stronger cannot count the strength twice.
+- The line saying the sums match three lab measurements is replaced with what the labs show: moka and cold brew agree, and a drip brew came out lower.
+
 ## Version 4.049.0114: Press and AeroPress shares called a guess
 
 2026-10-17 11:48:23 UTC
