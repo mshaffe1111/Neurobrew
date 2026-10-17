@@ -4,6 +4,12 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.052.0117: A bigger timer, one card at a time
+
+2026-10-17 19:30:32 UTC
+
+- The timer takes about two thirds of the screen, shows the dripper, and shows one small card at a time that changes as the brew moves. Sound options is a button that opens a pop-up. A draining bar replaces the second timer. On a Timemore S3, pour-over clicks now come from the maker's own pour-over band.
+
 ## Version 4.051.0116: Facts and glossary round two: 16 claims, 135 words, 10 origins
 
 2026-10-17 13:57:49 UTC

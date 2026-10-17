@@ -95,7 +95,7 @@ html{ scroll-padding-top:calc(env(safe-area-inset-top, 0px) + 60px); background:
 *,*::before,*::after{ box-sizing:inherit; }
 /* the box that wraps what is inside an opened details element does not match * in newer browsers, so it fell back to content-box and made full-width buttons inside folded cards 30 px too wide */
 ::details-content{ box-sizing:inherit; }
-body{ margin:0; background:var(--bg); color:var(--ink); -webkit-text-size-adjust:100%; }
+body{ background:var(--bg); color:var(--ink); -webkit-text-size-adjust:100%; }
 button,input,select,textarea{ font:inherit; color:inherit; }
 button{ cursor:pointer; }
 .wrap{ max-width:600px; margin:0 auto; padding:0 16px calc(32px + env(safe-area-inset-bottom, 0px)); }
@@ -1067,7 +1067,7 @@ details.folk > summary::-webkit-details-marker{ display:none; }
 .scaall summary,.scawater summary,#mount details.fine > summary{ font-weight:600; cursor:pointer; min-height:44px; display:flex; align-items:center; }
 @media (max-width:379px){ .scaclock{ font-size:24px; } .scanav{ flex-direction:column; } }
 /* A solid shape with a hard shadow is something to tap; a dented box is something to type in. Both outlines pass 3:1 against the page and the card (a11y_group7_ui_test). */
-body{ font:400 17px/1.4 var(--ui); }
+body{ margin:0; font:400 17px/1.4 var(--ui); }
 h1,h2,h3,.sheet h3{ font-family:var(--display); font-weight:700; letter-spacing:-0.3px; color:var(--ink); }
 h1{ font-size:32px; line-height:1.08; margin:22px 0 8px; }
 h2{ font-size:24px; line-height:1.15; margin:28px 0 10px; }
@@ -1369,7 +1369,6 @@ body:not([data-screen="start"]) .pstep .pl{ font-size:14px; }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .way[aria-pressed="true"] span{ color:var(--pick-ink); } }
 
 /* the guided timer's sound card and bottom bar (the panel, the steps and the cards are in 88-look-timer.css) */
-.soundbox{ margin:18px 0 18px; }
 .timerdock .btn.primary{ flex-direction:row; justify-content:center; gap:10px; font-size:26px; }
 .timerdock .btn::before{ content:""; flex:none; width:0; height:0; border-left:20px solid currentColor; border-top:12px solid transparent; border-bottom:12px solid transparent; }
 .timerdock .btn.running{ background:#E86F5E; border-color:#22120C; color:#22120C; }
@@ -1684,8 +1683,6 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .flinks.one{ grid-template-columns:1fr; }
 .dock .btn .bi{ display:block; }
 
-.soundfold{ margin:18px 0 12px; }
-.soundfold .soundbox{ margin:0; }
 
 /* ---- Taste (Quick and Cupping): the way tiles, banded cards, thumbs and faces ---- */
 .waybox{ margin:12px 0 14px; }
@@ -2643,112 +2640,93 @@ body[data-screen="shop"] .pstep .pl{ font-size:16px; }
 .tename{ display:block; margin:0 0 6px; font:700 17px/1.2 var(--ui); }
 .tefaces{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)) minmax(0, 1.5fr); gap:8px; }
 .tefaces .ttile{ width:100%; min-width:0; padding-left:4px; padding-right:4px; }
-/* ---- the panel: compact, and it stays just under the top bar while the cards scroll under it ---- */
+/* ---- the screen: the panel takes the room above the card and the bottom bar; nothing scrolls except inside the card ---- */
 body[data-screen="timer"] .progress{ display:none; }
-.timerpanel{ position:sticky; top:var(--stickh, 0px); z-index:4; margin:0 -16px; display:flex; flex-direction:column; gap:4px; padding:6px 16px 8px; background:var(--band); color:#FDFBF7; border-bottom:1px solid var(--hush); border-radius:0 0 22px 22px; }
-.tp-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.tp-sum{ margin:0; min-width:0; font-size:13.5px; line-height:1.2; color:var(--band-ink); }
-.tp-reset{ flex:none; display:flex; align-items:center; justify-content:center; gap:5px; min-width:44px; height:44px; padding:0 10px; border:3px solid #22120C; border-radius:12px; background:#FDFBF7; color:#22120C; box-shadow:0 3px 0 #22120C; cursor:pointer; font:700 14px/1 var(--ui); }
-.tp-reset svg{ width:18px; height:18px; }
-.tp-reset:active{ transform:translateY(3px); box-shadow:0 0 0 #22120C; }
-/* the drawing on the left, the readouts on its right; the same in both views */
-.tstage{ display:grid; grid-template-columns:140px 1fr; align-items:center; gap:12px; }
-.tstage.dripper{ grid-template-columns:118px 1fr; }
-.tstage .tgauge svg{ display:block; width:100%; height:auto; }
-.tread{ display:flex; flex-direction:column; gap:2px; min-width:0; }
-.tgr{ display:flex; align-items:baseline; gap:4px; white-space:nowrap; }
-.tgrams{ font:800 48px/.9 var(--ui); letter-spacing:-1px; color:#FDFBF7; font-variant-numeric:tabular-nums; }
-.tgof{ font:700 18px/1 var(--ui); color:#FDFBF7; }
-.timerpanel .now{ margin:0; min-width:0; text-align:left; }
-.tclk{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
-.timerpanel .bigtime{ margin:0; font:800 28px/1 var(--ui); letter-spacing:0; color:var(--gold); font-variant-numeric:tabular-nums; }
-.tstage.noscale .bigtime{ font-size:52px; color:#FDFBF7; }
-.timerpanel .now .what{ font:700 17px/1.15 var(--ui); color:#FDFBF7; }
-.timerpanel .now .next{ margin-top:1px; font-size:13.5px; line-height:1.2; color:var(--band-ink); }
-/* Ring | Dripper, small, under the readouts */
-.tviewrow{ display:flex; margin-top:2px; }
-.tviewseg{ display:inline-flex; width:auto; gap:2px; padding:2px; border:0; border-radius:999px; background:rgba(253,251,247,.12); box-shadow:none; }
-.tviewseg button{ display:inline-flex; align-items:center; gap:5px; min-height:44px; padding:0 12px; border:0; border-radius:999px; background:transparent; color:#FDFBF7; font:700 14px/1 var(--ui); box-shadow:none; }
-.tviewseg button[aria-pressed="true"]{ background:#FDFBF7; color:#22120C; }
-.tvico{ display:inline-block; width:18px; height:18px; }
-.tvico svg{ display:block; width:18px; height:18px; }
-/* Beanjamin and his line, under the drawing */
-.tcoach{ display:flex; align-items:center; justify-content:center; gap:8px; }
-.tmark{ flex:none; display:block; width:36px; height:36px; }
-.tmark svg{ display:block; width:36px; height:36px; }
-.tbubble{ position:relative; flex:1; min-width:0; padding:4px 10px; border:1px solid var(--hush); border-radius:14px; background:#FDFBF7; color:#22120C; }
-.tbubble::before{ content:""; position:absolute; left:-9px; top:50%; margin-top:-8px; border:8px solid transparent; border-right:9px solid var(--hush); border-left:0; }
-.tbubble::after{ content:""; position:absolute; left:-5.5px; top:50%; margin-top:-6px; border:6px solid transparent; border-right:7px solid #FDFBF7; border-left:0; }
-.timerpanel .pace{ margin:0; min-height:18px; font-size:14.5px; line-height:1.22; font-weight:500; color:#22120C; text-align:left; font-variant-numeric:tabular-nums; }
+body[data-screen="timer"] .wrap{ padding-top:0; padding-bottom:0; }
+body[data-screen="timer"] #mount{ display:flex; flex-direction:column; height:calc(100dvh - var(--stickh, 58px) - 92px - env(safe-area-inset-bottom, 0px)); min-height:360px; overflow:hidden; }
+.timerpanel{ flex:1 1 0; min-height:0; margin:0 -16px; display:flex; flex-direction:column; gap:8px; padding:10px 16px 12px; overflow:hidden; background:var(--band); color:#FDFBF7; border-bottom:1px solid var(--hush); border-radius:0 0 22px 22px; }
+.tp-top{ flex:none; display:flex; justify-content:space-between; gap:8px; }
+.tp-b{ display:flex; align-items:center; justify-content:flex-start; gap:7px; min-width:44px; height:44px; padding:0 12px; border:3px solid #22120C; border-radius:12px; background:#FDFBF7; color:#22120C; box-shadow:0 3px 0 #22120C; cursor:pointer; font:700 14.5px/1 var(--ui); }
+.tp-b:active{ transform:translateY(3px); box-shadow:0 0 0 #22120C; }
+.tp-b svg{ flex:none; width:19px; height:19px; }
+.tp-sound{ background:#F2A93B; }
+.tp-sound .mico{ display:block; width:19px; height:19px; }
+/* the drawing is the hero: it fills what is left, and the readouts and the bar sit under it */
+.tp-art{ flex:1 1 0; min-height:0; position:relative; }
+.tp-art .tgauge{ position:absolute; inset:0; }
+.tp-art .tgauge svg{ display:block; width:100%; height:100%; }
+.tp-read{ flex:none; display:flex; justify-content:space-between; align-items:flex-end; gap:8px; padding:0 4px; }
+.tp-num{ display:flex; flex-direction:column; min-width:0; }
+.tp-num:empty{ display:none; }
+.tp-num small{ font:700 12.5px/1 var(--ui); letter-spacing:.09em; text-transform:uppercase; color:var(--band-ink); }
+.tp-num.t{ text-align:right; }
+.tgr{ display:flex; align-items:baseline; gap:6px; white-space:nowrap; }
+.tgrams{ font:800 58px/.95 var(--ui); letter-spacing:-1px; color:#FDFBF7; font-variant-numeric:tabular-nums; }
+.tgof{ font:700 15px/1.1 var(--ui); color:#FDFBF7; }
+.timerpanel .bigtime{ font:800 58px/.95 var(--ui); letter-spacing:-1px; color:var(--gold); font-variant-numeric:tabular-nums; }
+.timerpanel.noscale .tp-read{ justify-content:center; }
+.timerpanel.noscale .tp-num.t{ text-align:center; }
+/* the bar drains toward the next change, with no numbers, so it cannot be taken for the total time */
+.tp-bar{ flex:none; }
+.tp-lab{ display:block; margin:0 0 6px; font:700 15px/1.1 var(--ui); color:#FDFBF7; }
+.tp-track{ height:16px; border:2px solid #FDFBF7; border-radius:9px; background:rgba(253,251,247,.12); overflow:hidden; }
+.tp-fill{ display:block; height:100%; border-radius:6px; background:var(--gold); transition:width .3s linear; }
 .timerpanel .ok{ margin:0; text-align:center; font-size:14px; font-weight:400; color:var(--band-ink); }
 .timerpanel .ok:empty{ display:none; }
-/* the screen-lock line, under the panel */
-#lockNote{ margin:6px 0 0; text-align:center; font-size:13.5px; }
+/* the screen-lock line, under the card */
+#lockNote{ flex:none; margin:0; padding:2px 0 0; text-align:center; font-size:13.5px; }
 #lockNote:empty{ display:none; }
-/* ---- the step you are on, in its own card ---- */
-.tnowcard{ margin:12px 0 0; border-left:4px solid var(--gold); }
-.tnowcard[hidden]{ display:none; }
-.tnowhead{ display:flex; align-items:center; gap:8px; margin:0 0 4px; }
+/* ---- the one card: small, a gold edge, and it scrolls inside when it is longer than its box ---- */
+.tcards{ flex:none; margin:0 -16px; padding:10px 16px 8px; }
+.tcbox{ position:relative; display:flex; flex-direction:column; height:clamp(124px, 19dvh, 164px); overflow:hidden; border:1px solid var(--hush); border-left:4px solid var(--gold); border-radius:14px; background:var(--surface); }
+.tchead{ flex:none; display:flex; align-items:center; gap:8px; padding:7px 10px 2px; }
 .tnowtag{ padding:2px 10px; border-radius:999px; background:var(--gold); color:#22120C; font:700 13px/1.3 var(--ui); letter-spacing:.06em; text-transform:uppercase; }
-.tnowt{ font:700 15px/1 var(--ui); color:var(--muted); font-variant-numeric:tabular-nums; }
-.tnowcard .sh b{ font-size:20px; }
-.tnowcard .say{ margin-top:2px; font-size:17px; line-height:1.35; }
-.tnowcard .d{ margin-top:4px; font-family:var(--txt); font-size:14.5px; line-height:1.3; color:var(--muted); }
-/* ---- the steps: one quiet list, a soft time chip beside each step, a thin line between them ---- */
+.tcbody{ flex:1 1 auto; min-height:0; overflow-y:auto; padding:2px 12px 8px; }
+.tcbody h3{ margin:0 0 2px; font:700 19px/1.15 var(--ui); }
+.tcbody p{ margin:2px 0; font-size:16px; line-height:1.3; }
+.tcbody .sm{ color:var(--muted); font-size:14.5px; }
+.tcbox.more::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:20px; background:linear-gradient(transparent, var(--surface)); pointer-events:none; }
+.tgrid{ display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; margin-top:4px; }
+.tcbody .tprep{ margin:8px 0 0; padding-left:18px; font:400 15px/1.3 var(--txt); }
+.tcbody .tprep li{ margin:3px 0; }
+.tcbody .moreinfo > summary{ min-height:44px; }
+.tgtile{ display:flex; align-items:center; gap:8px; min-width:0; }
+.tgtile b{ display:block; font:700 15px/1.15 var(--ui); }
+.tgtile small{ display:block; font:400 13px/1.15 var(--txt); color:var(--muted); }
+.tgtile .tgpic, .tgtile .tgico{ flex:none; width:32px; height:32px; background:transparent; }
+.tgtile .tgico svg{ display:block; width:32px; height:32px; }
+.tstirs{ display:flex; gap:10px; margin:2px 0 6px; }
+.tstir{ width:48px; height:48px; padding:0; border:3px dashed var(--muted); border-radius:50%; background:transparent; color:var(--ink); font:800 22px/1 var(--ui); box-shadow:none; }
+.tstir[aria-pressed="true"]{ border:3px solid #22120C; background:var(--band); color:#FDFBF7; }
+.tcdone{ display:flex; align-items:center; gap:12px; }
+.tcmark{ flex:none; display:block; width:64px; height:64px; }
+.tcmark svg{ display:block; width:64px; height:64px; }
+/* ---- the Sound options pop-up ---- */
+.sndlab{ margin:12px 0 6px; font:700 13px/1 var(--ui); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.sndtiles{ display:grid; gap:8px; }
+.sndtiles.three{ grid-template-columns:repeat(3, 1fr); }
+.sndtiles.two{ grid-template-columns:repeat(2, 1fr); }
+.sndtile{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; min-height:84px; padding:8px 6px; border:3px solid var(--btn-edge); border-radius:14px; background:var(--surface); color:var(--ink); box-shadow:0 3px 0 var(--btn-edge); font:700 15px/1.15 var(--ui); text-align:center; cursor:pointer; }
+.sndtile small{ font:400 12.5px/1.15 var(--txt); color:var(--muted); }
+.sndtile[aria-pressed="true"]{ background:#22120C; color:#FDFBF7; }
+.sndtile[aria-pressed="true"] small{ color:#E8DCC4; }
+.sndtile .sndpic, .sndtile .sndico{ width:34px; height:34px; background:transparent; }
+.sndtile .sndico svg{ display:block; width:34px; height:34px; }
+.sndnote{ margin:10px 0 0; }
+.sndrow{ display:flex; gap:10px; margin-top:10px; }
+.sndrow .btn{ flex:1; }
+.sndrow .btn[hidden]{ display:none; }
+/* ---- the plain step list (Brew, for a brew with no timer) ---- */
 .steps{ display:flex; flex-direction:column; margin:0; padding:0; list-style:none; }
 .step{ display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-top:1px solid var(--hush); }
 .step:first-child{ border-top:0; padding-top:2px; }
-.stepswrap .step.active{ display:none; }   /* the step you are on is in the Now card */
-.stepswrap .step.active + .step{ border-top:0; }
 .step .t{ flex:none; min-width:54px; padding:4px 8px; border-radius:999px; background:var(--tint); color:var(--ink); text-align:center; font:700 15px/1.2 var(--ui); font-variant-numeric:tabular-nums; white-space:nowrap; }
 .step > div:last-child{ flex:1; min-width:0; }
-.step .sh{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.step .sh b{ font-size:17px; }
-.step .say{ margin-top:1px; font-size:15.5px; line-height:1.35; }
 .step .d{ margin-top:2px; font-family:var(--txt); font-size:13.5px; line-height:1.3; color:var(--muted); }
-.step .tmeta{ margin:6px 0 0; font-size:14px; line-height:1.25; color:var(--muted); }
-.step.done .t{ background:transparent; color:var(--leaf); }
-.step.done .t::before{ content:"✓ " / ""; }
-.step.done .sh b, .step.done .say{ color:var(--muted); }
-.stepswrap{ margin:14px 0 0; }
-.stepswrap .flabel{ margin:0 0 6px; }
-/* the bar on a pour step: the water already in, then this pour's share */
-.pbar{ display:flex; align-items:center; gap:8px; margin-top:6px; }
-.pbtrack{ position:relative; flex:1; height:12px; border:2px solid #22120C; border-radius:7px; background:#FDFBF7; overflow:hidden; }
-.pbold{ position:absolute; left:0; top:0; bottom:0; background:#CDBF9A; }
-.pbnew{ position:absolute; top:0; bottom:0; background:#F2A93B; }
-.pbl{ flex:none; font-weight:700; font-size:14.5px; color:var(--leaf); font-variant-numeric:tabular-nums; }
-/* ---- the cards under the panel ---- */
-#timerAside:empty, #timerBefore:empty{ display:none; }
-.tready, .tmovecard{ margin:12px 0 0; }
-/* the kettle tip: its own small fold, with the same plus / minus box as the other folds */
-.tkettle > summary{ position:relative; display:grid; grid-template-columns:112px 1fr; gap:10px; align-items:center; min-height:56px; padding-right:40px; list-style:none; cursor:pointer; }
-.tkettle > summary::-webkit-details-marker{ display:none; }
-.tkettle > summary::after{ content:""; position:absolute; right:0; top:50%; width:28px; height:28px; margin-top:-14px; border:3px solid var(--frame); border-radius:8px; box-sizing:border-box; background:linear-gradient(var(--frame), var(--frame)) center/12px 3px no-repeat, var(--field); }
-.tkettle:not([open]) > summary::after{ background:linear-gradient(var(--frame), var(--frame)) center/12px 3px no-repeat, linear-gradient(var(--frame), var(--frame)) center/3px 12px no-repeat, var(--field); }
-.tkettle > summary b{ font:700 18px/1.2 var(--ui); }
-.tkbody{ margin:6px 0 0; }
-.tkbody p{ margin:4px 0 0; font-size:16px; line-height:1.35; }
-.kettlepic2{ display:block; padding:6px; border-radius:12px; background:var(--icon-bg); }
-.kettlepic2 svg{ display:block; width:100px; height:auto; }
-.tneeds{ display:grid; grid-template-columns:repeat(auto-fit, minmax(90px, 1fr)); gap:8px; margin-top:12px; }
-.tneed{ display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 6px; border:1px solid var(--hush); border-radius:12px; text-align:center; }
-.tneed .tnpic{ width:32px; height:32px; background:transparent; }
-.tneed b{ font:700 16px/1.15 var(--ui); }
-.tneed span:last-child{ font-size:14px; color:var(--muted); }
-.tstirs{ display:flex; justify-content:center; gap:14px; margin:4px 0 12px; }
-.tstir{ width:64px; height:64px; border:3px dashed var(--muted); border-radius:50%; background:transparent; color:var(--ink); font:800 26px/1 var(--ui); box-shadow:none; }
-.tstir[aria-pressed="true"]{ border:3px solid #22120C; background:var(--band); color:#FDFBF7; }
-.tmove{ display:grid; grid-template-columns:36px 1fr; gap:10px; align-items:start; padding:8px 0; }
-.tmove + .tmove{ border-top:1px solid var(--hush); }
-.tmove .tmpic{ width:34px; height:34px; background:transparent; }
-.tmove b{ font:700 17px/1.2 var(--ui); }
-.tmove p{ margin:3px 0 0; font-size:15.5px; line-height:1.35; }
 @media (max-width:359px){
-  .tstage{ grid-template-columns:118px 1fr; gap:8px; } .tstage.dripper{ grid-template-columns:100px 1fr; }
-  .tgrams{ font-size:44px; } .tgof{ font-size:16px; } .timerpanel .bigtime{ font-size:26px; } .tstage.noscale .bigtime{ font-size:44px; }
-  .tviewseg button{ padding:0 10px; } .tviewseg .tvword{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
-  .tkettle > summary{ grid-template-columns:88px 1fr; } .kettlepic2 svg{ width:76px; }
+  .tgrams, .timerpanel .bigtime{ font-size:46px; }
+  .tp-b{ padding:0 9px; font-size:13.5px; }
+  .sndtile small{ font-size:11.5px; }
 }
 /* ---- Release 65: Start ---- */
 /* the "More about this coffee" title and line were dark brown on the green band */
@@ -3053,6 +3031,7 @@ details.mfold > .mrows{ margin-top:14px; }
 <symbol id="n-jug" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M31 15 C42 15 42 31 31.500 31" fill="none" stroke-width="3"/><path d="M12 9 H32 L34 40 a3 3 0 0 1-3 3 H14 a3 3 0 0 1-3-3Z" fill="#E5F2F7"/><path d="M11.700 22 H33 L34 40 a3 3 0 0 1-3 3 H14 a3 3 0 0 1-3-3Z" fill="#6FB5D9"/><path d="M12 9 L6 7" fill="none" stroke-width="3"/><path d="M16 29 q2.500-2 5 0 t5 0" fill="none" stroke-width="2" stroke="#FFF8EA"/><path d="M5 15 v3.500 M7 22 v3.500" fill="none" stroke="#6FB5D9" stroke-width="2.800"/></g></symbol>
 <symbol id="art-spoon" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="31" cy="14" rx="7.5" ry="10.5" transform="rotate(35 31 14)" fill="#D9D3C7"/><ellipse cx="31.6" cy="13.2" rx="3.6" ry="6" transform="rotate(35 31.6 13.2)" fill="#F4F0E6" stroke="none"/><path d="M25.6 21.6 L11 40.5 q-2.4 2.9 -4.9 0.9 q-2.2 -2 0.4 -4.6 L22.2 19.2" fill="#D9D3C7"/></g></symbol>
 <symbol id="art-swirl" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="19" fill="#E8D7A8"/><path d="M24 24 a2 2 0 0 1 4 0 a5 5 0 0 1-10 0 a8 8 0 0 1 16 0 a11 11 0 0 1-22 0" fill="none" stroke="#8A5230" stroke-width="3"/></g></symbol>
+<symbol id="art-muted" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 19h8l10-8v26l-10-8H8z" fill="#E8DCC4"/><path d="M33 19l9 10M42 19l-9 10" fill="none" stroke="#C0392B"/></g></symbol>
 <symbol id="art-timer" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="27" r="16" fill="#FFF8EA"/><rect x="19.500" y="4" width="9" height="6" rx="2" fill="#F2A93B"/><path d="M24 10 v4 M38 13 l-3 3" fill="none"/><path d="M24 27 V17 M24 27 l7 4" fill="none" stroke-width="3"/><circle cx="24" cy="27" r="1.800" fill="#22120C"/></g></symbol>
 <symbol id="art-temp" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="19" y="4" width="10" height="28" rx="5" fill="#FFF8EA"/><circle cx="24" cy="36" r="8" fill="#D9503B"/><path d="M24 14 V35" stroke="#D9503B" stroke-width="4" fill="none"/><path d="M34 10 h5 M34 17 h5 M34 24 h5" fill="none"/></g></symbol>
 <symbol id="art-cf-frag" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 33 H42 C42 40 38 43 33 43 H15 C10 43 6 40 6 33Z" fill="#E8D7A8"/><path d="M9 33 C11 24 18 20 24 20 C30 20 37 24 39 33Z" fill="#8A5230"/><path d="M17 28 v.1 M24 25 v.1 M30 29 v.1 M21 31 v.1 M33 26 v.1" stroke="#FFF8EA" stroke-width="2.4"/><path d="M15 5 c-3 3 3 5 0 9 M24 3 c-3 3 3 5 0 9 M33 5 c-3 3 3 5 0 9" fill="none"/></g></symbol>
@@ -11191,7 +11170,9 @@ function grindBase(g, methodKey, um){
   let slope = (c.clicks[1] - c.clicks[0]) / (ref[1] - ref[0]), raw = c.clicks[0] + (um - ref[0]) * slope;
   const hi = g.max == null ? Infinity : g.max;
   /* Build 28 (Matt's choice, 15 Oct 2026): a grinder with a brew-engine size line uses that one line for every method, so the same size always gives the same click */
-  const ln = typeof BE_GRINDERS === 'object' ? BE_GRINDERS[g.key] : null;
+  /* Build 117 (Matt's choice, 17 Oct 2026): the S3 line was fitted on a steep, so a pour-over keeps to Timemore's own pour-over band (50 to 80); a light V60 had come out at click 43 */
+  let ln = typeof BE_GRINDERS === 'object' ? BE_GRINDERS[g.key] : null;
+  if (ln && ln.steepOnly && typeof BE_FLOW === 'object' && BE_FLOW[methodKey]) ln = null;
   if (ln){ slope = 1 / ln.m; raw = (um - ln.D0) / ln.m; }
   return { ck, c, slope, line:!!ln, known:!!own || (ck === prefs[0] && GRIND_EXACT.includes(methodKey)) || (methodKey === 'chemex' && ck === 'filter' && !!g.chemexListed), base:Math.max(lo, Math.min(hi, Math.round(raw))) };   /* a Chemex with no table of its own borrows the V60 range, which it sits at the top of or beyond, so the maker has no figure for it */
 }
@@ -11267,6 +11248,17 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 117,
+  "version": "4.052.0117",
+  "tier": "medium",
+  "at": "2026-10-17T19:30:32Z",
+  "date": "2026-10-17",
+  "title": "A bigger timer, one card at a time",
+  "notes": [
+   "The timer takes about two thirds of the screen, shows the dripper, and shows one small card at a time that changes as the brew moves. Sound options is a button that opens a pop-up. A draining bar replaces the second timer. On a Timemore S3, pour-over clicks now come from the maker's own pour-over band."
+  ]
+ },
  {
   "release": 116,
   "version": "4.051.0116",
@@ -13775,10 +13767,10 @@ const BE_SRC = {
 /* (3) Gear. size(click) = D0 + m x click, on the app's practitioner size scale. Only a grinder whose line is backed by measured brews has one here (Matt's choice, 15 Oct 2026):
    the Timemore S3. Every other grinder uses the maker's published ranges in 76-grinders.js (beClicksFor), so each grinder has one answer. */
 const BE_GRINDERS = {
-  'timemore-s3':{ D0:270, m:8.7, sd:75, max:90, why:'Slope from Timemore\u2019s spec (15 µm of burr travel a click); anchored on the measured Clever brew Matt liked at click 48. Timemore\u2019s pour-over band (50 to 80) starts just above it; Honest Coffee Guide\u2019s chart sits about 7 clicks finer, inside the spread.' },
+  'timemore-s3':{ D0:270, m:8.7, sd:75, max:90, steepOnly:true, why:'Slope from Timemore\u2019s spec (15 µm of burr travel a click); anchored on the measured Clever brew Matt liked at click 48. This line is for steeps. A pour-over uses Timemore\u2019s own pour-over band (50 to 80) instead, because no pour-over has been measured on this grinder.' },
 };
 function beClicksFor(key, methodKey, um, offsetUm){
-  const c = beClicks(key, um, offsetUm); if (c) return c;
+  const ln = BE_GRINDERS[key], c = ln && ln.steepOnly && BE_FLOW[methodKey] ? null : beClicks(key, um, offsetUm); if (c) return c;
   const g = typeof grindGuide === 'function' ? grindGuide(key, methodKey, um, 60, null) : null;
   if (!g || g.kind !== 'computed') return null;
   const st = g.stepClicks || 1;
@@ -14564,7 +14556,7 @@ function loadDraft(){
       a.prefs.calib = calibClean(src.prefs.calib);
       a.prefs.yieldCal = yieldClean(src.prefs.yieldCal);   /* your own cup-yield figures, kept in this browser */
       if (src.prefs.switchSize === '03') a.prefs.switchSize = '03';
-      if (src.prefs.timerView === 'dripper') a.prefs.timerView = 'dripper';   /* the timer view you picked (Ring unless you chose Dripper), this browser only */   /* the Hario Switch you own (02 unless you said 03), kept in this browser, not in the file */
+      /* the Hario Switch you own (02 unless you said 03), kept in this browser, not in the file */
       a.prefs.caffeine = caffeineClean(src.prefs.caffeine);   /* your usual caffeine day, kept in this browser */
       a.prefs.gear = setupClean({ gear:src.prefs.gear }, setupCtx()).gear;   /* the gear defaults of My setup, checked like a file's */
       if (src.prefs.roasterSites && typeof src.prefs.roasterSites === 'object' && !Array.isArray(src.prefs.roasterSites)){   /* the shop address remembered for each roaster */
@@ -18776,58 +18768,20 @@ function timerDetail(d, lv){
   if (lv === 'expert') return d.replace(/\s*\(about [\d.]+ g\/s\)/, '');
   return d;
 }
-/* one step's words: the title, what the voice says, the full instruction, and the pour bar. The list and the Now card both use it. */
-function timerStepBody(s, lv, maxScale, r, cone){
-  const sp = timerSpeed(s), fin = s.scale == null && s.title === 'Finish' && cone && lv === 'expert';
-  return h('div', null, h('div', { class:'sh' }, h('b', { text:s.title }), h('span', { class:'smark', 'aria-hidden':'true' })), h('div', { class:'say', text:'“' + stepVoice(s) + '”' }), h('div', { class:'d', text:timerDetail(s.detail, lv) }),
-    s.scale != null && maxScale > 0 && lv !== 'new' ? pourBar(s, maxScale) : null,
-    lv === 'expert' && sp != null ? h('div', { class:'tmeta', text:'Pour speed about ' + sp + ' g/s' }) : null,
-    fin ? h('div', { class:'tmeta', text:waterShown(r.water, app.prefs.waterUnit) + ' in the brewer' }) : null);
-}
 function screenTimer(m){
   timerScreen = true; holdScreen(); if (app.prefs.sound === 'voice') warmVoice();
   const r = getRecipe(); const steps = r.steps.filter(s => s.t != null);
-  const big = h('div', { class:'bigtime', 'aria-live':'off', text:'0:00' });
-  const nowEl = h('div', { class:'now' });
+  const big = h('b', { class:'bigtime', 'aria-live':'off', text:'0:00' });
   const lockNote = h('p', { class:'fine', id:'lockNote', role:'status' });
-  const paceEl = h('div', { class:'pace', 'aria-live':'off' });
-  const hasGauge = steps.some(x => x.scale != null), cone = r.method.type === 'flow' || r.method.type === 'hybrid';
-  /* Build 29: the Ring or the Dripper (Matt's pick), drawn from one model of where the water is; the grams you should be at are the biggest number */
+  const hasGauge = steps.some(x => x.scale != null);
+  /* Build 117: the dripper drawing, with the grams you should be at and the total time under it; the same one drawing for every brewer */
   const levels = timerLevelsFor(r, steps), viewBox = h('div', { class:'tgauge' }); let gaugeKey = '';
   const gNow = h('b', { class:'tgrams' }), gOf = h('span', { class:'tgof' });
-  const viewBtns = [['ring', 'Ring'], ['dripper', 'Dripper']].map(x => h('button', { type:'button', 'data-v':x[0], 'aria-pressed':'false', onclick:() => { app.prefs.timerView = x[0]; scheduleDraft(); layout(); gaugeKey = ''; tick(); } }, (() => { const ic = h('span', { class:'tvico', 'aria-hidden':'true' }); ic.innerHTML = x[0] === 'ring' ? '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M10 3 A7 7 0 0 1 17 10" fill="none" stroke="#F2A93B" stroke-width="2.6" stroke-linecap="round"/></svg>' : '<svg viewBox="0 0 20 20"><path d="M3 3 H17 L11 11 V15 H9 V11 Z M6 17 H14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></svg>'; return ic; })(), h('span', { class:'tvword', text:x[1] })));
-  const viewSeg = h('div', { class:'seg tviewseg', role:'group', 'aria-label':'Timer view' }, viewBtns);
-  const stage = h('div', { class:'tstage' });
-  const list = h('ol', { class:'steps' });
   const maxScale = steps.reduce((m, s) => Math.max(m, s.scale || 0), 0);
-  /* Just Starting reads one plain sentence per step: no seconds, no pour speed, no gram bars. Comfy Brewer keeps the seconds, the speed and the bar. Bean Scientist moves the speed to its own line, with the running total. */
   const lv = level();
-  const items = steps.map(s => { const li = h('li', { class:'step' }, h('div', { class:'t', text:fmtTime(s.t) }), timerStepBody(s, lv, maxScale, r, cone)); list.append(li); return li; });
-  /* Build 30: the step you are on gets its own card under the panel; the list keeps the others together */
-  const nowCard = h('div', { class:'card tnowcard', id:'stepNow', 'aria-live':'off' }); let nowKey = '';
   const startBtn = h('button', { type:'button', class:'btn primary', id:'timerStartBtn', text:'Start' });
-  const resetBtn = h('button', { type:'button', class:'tp-reset', 'aria-label':'Reset the timer' }); resetBtn.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/></svg><span class="tp-resetword" aria-hidden="true">Reset</span>';
-  const soundNote = h('p', { class:'fine', role:'status', style:'margin:6px 0 0;min-height:18px' });
-  const paintSound = () => {
-    const m2 = app.prefs.sound;
-    testBtn.hidden = m2 === 'off'; coachWrap.hidden = m2 !== 'voice';
-    soundNote.textContent = m2 === 'off' ? (typeof navigator.vibrate === 'function' ? 'Sound is off. You can still watch the screen and feel the buzz.' : 'Sound is off. Watch the screen for the next step.')
-      : m2 === 'chime' ? 'A short beep plays at each step. Tap "Test sound" to check your volume.'
-      : voiceState.ok === false ? "Voice isn't available in this view, so we'll use the beep instead."
-      : app.prefs.coach === 'steps' ? 'A voice reads each step, like "Pour to 180 grams." Tap "Test sound" to check it.'
-      : 'A voice reads each step. It also tells you where you should be along the way, like "About 120 grams" and how long is left, so you do not have to watch the screen. Tap "Test sound" to check it.';
-  };
-  const testBtn = h('button', { type:'button', class:'btn small', style:'margin:8px 0 0', text:'Test sound' });
-  testBtn.addEventListener('click', () => {
-    if (app.prefs.sound === 'chime'){ chime(); return; }
-    const guide = app.prefs.coach !== 'steps';
-    soundNote.textContent = guide ? 'Listen for: "Pour to 150 grams. About 100 grams now."' : 'Listen for: "Pour to 150 grams."';
-    speak(guide ? 'Pour to 150 grams. About 100 grams now.' : 'Pour to 150 grams.', ok => { if (!ok){ chime(); } paintSound(); });
-  });
-  const soundSeg = seg([{ text:'Sound off', value:'off' }, { text:'Beep', value:'chime' }, { text:'Voice', value:'voice' }], () => app.prefs.sound, v => { app.prefs.sound = v; paintSound(); }, 'Sound cues');
-  const coachSeg = seg([{ text:'Guide me', value:'guide' }, { text:'Key steps only', value:'steps' }], () => app.prefs.coach, v => { app.prefs.coach = v; paintSound(); }, 'Voice style');
-  const coachWrap = h('div', { style:'margin:8px 0 0' }, coachSeg);
-  refreshers.push(paintSound);
+  const resetBtn = h('button', { type:'button', class:'tp-b tp-reset', 'aria-label':'Reset the timer' }); resetBtn.innerHTML = '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/></svg><span aria-hidden="true">Reset</span>';
+  const soundBtn = h('button', { type:'button', class:'tp-b tp-sound', id:'timerSoundBtn', onclick:() => { sheet = { step:'sound' }; openSheet(); } }, lineIcon('speaker'), h('span', { text:'Sound options' }));
   const drained = h('p', { class:'ok', role:'status' });
   /* Done brewing: the brew is over. The clock stops at the time recorded, the cues stop, the screen may sleep again, and the bar offers Taste this brew. */
   const doneBtn = h('button', { type:'button', class:'btn primary', id:'timerDoneBtn', text:'Done brewing' });
@@ -18843,32 +18797,24 @@ function screenTimer(m){
     drained.textContent = 'Recorded ' + fmtTime(t) + (r.totalSecs ? ' (target ' + fmtTime(r.totalSecs) + ')' : '') + '. The timer is stopped, and the time is saved with your tasting.';
     persistTimer(); scheduleDraft(); tick();
   });
-  /* Build 30: the panel is compact and stays at the top while the cards scroll under it: the brew in one line and Reset, the drawing on the left with the grams, the clock and the step on its right, then Beanjamin. Start, Pause, Done brewing and Taste this brew live in the bottom bar. */
   const total = Math.max(r.totalSecs || 0, steps.length ? steps[steps.length - 1].t + 1 : 1);
-  const summary = r.method.label + ' · ' + r.dose + ' g coffee, ' + (r.iceShare ? r.hot + ' g hot water + ' + r.ice + ' g ice' : r.water + (r.method.type === 'espresso' ? ' g out' : ' g water')) + (r.temp.f ? ' · ' + r.temp.f + '°F / ' + r.temp.c + '°C' : '');
-  const mark = h('span', { class:'tmark' }); mark.innerHTML = mascotSvg({ view:'bust', face:'happy', outfit:'grad' });
-  const whatEl = h('div', { class:'what', 'aria-live':'polite', 'aria-atomic':'true' }), nextEl = h('div', { class:'next' });   /* the step name is announced when it changes; the clock and the pace line stay silent */
-  nowEl.append(h('div', { class:'tclk' }, big, whatEl), nextEl);
-  m.append(h('h1', { class:'sr-only', text:'Guided brew: ' + r.method.label }));
+  /* the bar that drains toward the next change: no numbers, so it cannot be mistaken for the total time */
+  const barLab = h('span', { class:'tp-lab' }), barFill = h('span', { class:'tp-fill' });
+  const bar = h('div', { class:'tp-bar' }, barLab, h('div', { class:'tp-track', role:'progressbar', 'aria-label':'Time to the next change', 'aria-valuemin':'0', 'aria-valuemax':'100' }, barFill));
+  const grams = hasGauge ? h('div', { class:'tp-num', 'aria-live':'off' }, h('small', { text:'On your scale' }), h('div', { class:'tgr' }, gNow, gOf)) : h('div', { class:'tp-num' });
   const panel = h('div', { class:'timerpanel' },
-    h('div', { class:'tp-head' }, h('p', { class:'tp-sum', text:summary }), resetBtn),
-    stage, h('div', { class:'tcoach' }, mark, h('div', { class:'tbubble' }, paceEl)), drained);
-  m.append(panel);
-  /* one drawing slot, the Ring or the Dripper, and the same readouts beside it in both views */
-  function layout(){
-    const v = timerView(); viewBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
-    stage.className = 'tstage ' + v + (hasGauge ? '' : ' noscale');
-    if (!stage.childNodes.length) stage.append(viewBox, h('div', { class:'tread' }, hasGauge ? h('div', { class:'tgr' }, gNow, gOf) : null, nowEl, h('div', { class:'tviewrow' }, viewSeg)));
-  }
-  layout();
-  const before = h('div', { id:'timerBefore' }), aside = h('div', { id:'timerAside' }); let asideKey = '';
-  m.append(lockNote, before, nowCard, aside);
-  /* the sound choices sit in a closed card: most people set them once */
-  const soundSub = h('span', { class:'gs' }), soundFold = h('details', { class:'card gcard haspico soundfold' }, h('summary', null, h('span', { class:'gdisc' }, lineIcon('speaker')), h('span', { class:'gtx' }, h('span', { class:'gt', text:'Sound' }), soundSub)),
-    h('div', { class:'gbody' }, h('div', { class:'soundbox' }, soundSeg, coachWrap, soundNote, testBtn)));
-  refreshers.push(() => { soundSub.textContent = app.prefs.sound === 'off' ? 'Off. Open to hear each step spoken' : app.prefs.sound === 'chime' ? 'A beep at each step' : (app.prefs.coach === 'steps' ? 'Voice, key steps only' : 'Voice, guides you'); });
-  m.append(h('div', { class:'card stepswrap' }, h('div', { class:'flabel', text:'What the voice says' }), list), brewPrepFold(r), soundFold);
-  requestAnimationFrame(menuTop);   /* the panel sticks just under the top bar (--stickh) */
+    h('div', { class:'tp-top' }, resetBtn, soundBtn),
+    h('div', { class:'tp-art' }, viewBox),
+    h('div', { class:'tp-read' }, grams, h('div', { class:'tp-num t' }, h('small', { text:'Total time' }), big)),
+    bar, drained);
+  panel.classList.toggle('noscale', !hasGauge);
+  m.append(h('h1', { class:'sr-only', text:'Guided brew: ' + r.method.label }), panel);
+  /* the one card: it changes on its own, and scrolls inside when it is longer than its box */
+  const cardTag = h('span', { class:'tnowtag' }), cardBody = h('div', { class:'tcbody' }), cardBox = h('div', { class:'tcbox', id:'stepNow', 'aria-live':'polite', 'aria-atomic':'true' }, h('div', { class:'tchead' }, cardTag), cardBody); let cardKey = '';
+  const cardMore = () => cardBox.classList.toggle('more', cardBody.scrollHeight - cardBody.scrollTop - cardBody.clientHeight > 4);
+  cardBody.addEventListener('scroll', cardMore);
+  m.append(h('section', { class:'tcards' }, cardBox), lockNote);
+  requestAnimationFrame(menuTop);
   const dockInner = h('div', { class:'dock-inner' }); let dockMode = '';
   m.append(h('div', { class:'dock timerdock' }, dockInner));
   /* the bar follows the brew: Start alone; then Pause (smaller) beside Done brewing; then Resume (smaller) beside Taste this brew */
@@ -18886,36 +18832,31 @@ function screenTimer(m){
     if (!timer.running || app.prefs.sound !== 'voice' || app.prefs.coach === 'steps' || voiceState.ok === false) return;
     while (cueIdx < cues.length && cues[cueIdx].t <= t){ const c = cues[cueIdx++]; if (t - c.t <= 2.5) speak(c.text, null, true); }   /* a late cue (after a pause) is skipped, never replayed */
   }
-  let clsIdx = -2, reminded = false;
+  let reminded = false;
   function tick(){
     const t = elapsed(); setT(big, fmtTime(t));
     startBtn.classList.toggle('running', timer.running);
     let idx = -1; steps.forEach((s, i) => { if (t >= s.t) idx = i; });
-    if (idx !== clsIdx){ items.forEach((li, i) => { li.classList.toggle('active', i === idx); li.classList.toggle('done', i < idx); }); clsIdx = idx; }
     const cur = steps[idx], nxt = steps[idx + 1];
-    const fin = timer.done && !timer.running;
-    if (fin){
-      setT(whatEl, 'Brew finished'); setT(nextEl, 'Tap Taste this brew, or Resume if you stopped by mistake.'); 
-    } else if (!timer.running && t === 0){
-      setT(whatEl, 'Ready'); setT(nextEl, 'Weigh your coffee, then tap Start when the water hits the grounds.'); 
-    } else {
-      setT(whatEl, cur ? stageLabel(cur, nxt, t, r.method) : 'Get ready');
-      setT(nextEl, nxt ? 'Next: ' + nxt.title + ' in ' + fmtTime(Math.max(0, Math.ceil(nxt.t - t))) : (idx === steps.length - 1 ? 'All done. Enjoy.' : ''));
-    }
-    const ka = kettleAdvice(r.method), fresh = cur && !(cur.scale != null && cur.pourSecs > 0) && t - cur.t < 10;   /* the first seconds of a step that is not a pour: say the action itself */
-    setT(paceEl, fin ? 'Nice brew! Tap Taste this brew.' : (timer.running || t > 0) ? ((fresh ? stepVoice(cur) : '') || coachLine(steps, t) || (cur ? cur.title + '. Steady hands!' : ''))
-      : ka ? (ka.kind === 'low' ? 'Kettle low for this one: about 2 fingers above the grounds.' : 'Keep the stream smooth: start low, and lift while it stays unbroken.') : 'Ready when you are. Steady hands!');
+    const fin = timer.done && !timer.running, ready = !timer.running && t === 0 && !fin;
+    /* the bar: full before Start, then it drains to the next change; the last step has nothing after it */
+    let left = 1, lab;
+    if (fin){ left = 0; lab = 'Brew finished'; }
+    else if (ready){ left = 1; lab = 'First step: ' + (steps[0] ? steps[0].title : 'Pour'); }
+    else if (nxt && cur){ left = Math.max(0, Math.min(1, (nxt.t - t) / Math.max(1, nxt.t - cur.t))); lab = 'Next: ' + nxt.title; }
+    else if (nxt){ left = 1; lab = 'Next: ' + nxt.title; }
+    else { left = 0; lab = idx === steps.length - 1 && steps.length ? 'All done. Enjoy.' : ''; }
+    setT(barLab, lab); barFill.style.width = (left * 100).toFixed(1) + '%';
+    const track = barFill.parentNode; track.setAttribute('aria-valuenow', String(Math.round(left * 100)));
+    track.setAttribute('aria-valuetext', fin ? 'Brew finished' : ready ? 'Not started' : nxt ? 'About ' + Math.max(1, Math.ceil(nxt.t - t)) + ' seconds to ' + nxt.title : 'No more steps');
     paintDock(fin ? 'fin' : (timer.running || t > 0) ? 'mid' : 'idle');
-    { const lvl = levels(t), g = pourAt(steps, t), v = timerView(), key = v + '|' + Math.round(t) + '|' + lvl.pouring;
+    { const lvl = levels(t), g = pourAt(steps, t), key = Math.round(t) + '|' + lvl.pouring;
       const allIn = hasGauge && g.tgt != null && g.now >= g.tgt && !g.pouring && !steps.slice(idx + 1).some(x => x.scale != null);
       const label = hasGauge ? 'Pour level: ' + (g.tgt != null && !allIn ? 'pouring up to ' + g.tgt + ' grams, ' : 'all poured, ') + 'now about ' + g.now + ' grams' : 'Brew progress ' + Math.min(100, Math.round(100 * t / total)) + ' percent';
-      if (key !== gaugeKey){ gaugeKey = key; viewBox.innerHTML = v === 'ring' ? ringSvg(r, steps, t, lvl, label) : dripperSvg(r, lvl, label); }
+      if (key !== gaugeKey){ gaugeKey = key; viewBox.innerHTML = dripperSvg(r, lvl, label); }
       if (hasGauge){ setT(gNow, String(g.now)); setT(gOf, allIn ? ' g ✓' : g.tgt != null ? ' of ' + g.tgt + ' g' : ' g'); } }
-    const ak = fin ? 'fin' : (!timer.running && t === 0) ? 'ready' : 'step' + idx;
-    if (ak !== asideKey){ asideKey = ak; before.textContent = ''; aside.textContent = ''; if (ak === 'ready') before.append(timerReadyCard(r, steps)); else if (ak.startsWith('step') && cur){ const card = timerMoveCard(cur, steps, r); if (card) aside.append(card); } }
-    { const nk = fin || !cur ? '' : (ak === 'ready' ? 'r' : 's') + idx;   /* the Now card: the step you are on (before Start, the first step) */
-      if (nk !== nowKey){ nowKey = nk; nowCard.textContent = ''; nowCard.hidden = !nk;
-        if (nk) nowCard.append(h('div', { class:'tnowhead' }, h('span', { class:'tnowtag', text:ak === 'ready' ? 'First step' : 'Now' }), h('span', { class:'tnowt', text:fmtTime(cur.t) })), timerStepBody(cur, lv, maxScale, r, cone)); } }
+    { const c = timerCardFor({ r, steps, t, idx, cur, nxt, ready, done:fin, lv, maxScale });
+      if (c.key !== cardKey){ cardKey = c.key; cardTag.textContent = c.tag; cardBody.textContent = ''; cardBody.append(c.body); cardBody.scrollTop = 0; requestAnimationFrame(cardMore); } }
     setT(lockNote, fin ? '' : lockMissing ? 'Your phone may turn the screen off. Keep it awake while you brew.' : (timer.lock && !timer.lock.released) ? 'Your screen stays on until you tap Done brewing.' : '');
     if (idx !== timer.lastIdx){
       if (timer.lastIdx !== -1 && timer.running){ try { if (navigator.vibrate) navigator.vibrate(200); } catch(e){} cue(cur, nxt); }
@@ -18929,7 +18870,7 @@ function screenTimer(m){
       seekCues(elapsed()); timer.running = true; timer.done = false; drained.textContent = ''; timer.startMs = Date.now(); startBtn.textContent = 'Pause'; clearInterval(timer.iv); timer.iv = setInterval(tick, 250);
       const fresh = timer.base < 1, first = steps[0];
       primeAudio();   /* this tap is what lets a later beep play on an iPhone */
-      if (app.prefs.sound === 'chime') chime(); else if (app.prefs.sound === 'voice' && fresh) speak(first && first.t === 0 && first.scale != null ? 'Start. ' + stepSpeech(first, steps[1]) : 'Start', ok => { if (!ok) chime(); paintSound(); });   /* a resume does not say "Start" again: it could cut off a step cue */
+      if (app.prefs.sound === 'chime') chime(); else if (app.prefs.sound === 'voice' && fresh) speak(first && first.t === 0 && first.scale != null ? 'Start. ' + stepSpeech(first, steps[1]) : 'Start', ok => { if (!ok) chime(); });   /* a resume does not say "Start" again: it could cut off a step cue */
       persistTimer(); await holdScreen();
     } else {
       timer.base = elapsed(); timer.running = false; startBtn.textContent = 'Resume'; clearInterval(timer.iv); persistTimer();
@@ -18946,7 +18887,6 @@ function screenTimer(m){
   timerTick = tick;
   tick();
 }
-
 const TA_INK = '#22120C', TA_WATER = '#E3C4A0', TA_BREW = '#9A6640', TA_COFFEE = '#7A4A2D', TA_GLASS = '#E6F2F8', TA_RIM = '#E9705B';
 let taUid = 0;   /* every drawing gets its own clip ids, so two drawings on one page never share one */
 /* which drawing a brewer gets */
@@ -19033,59 +18973,72 @@ function brewerArt(key, o){
   }
   return '<g role="presentation">' + s + '</g>';
 }
-/* the kettle over a brewer, with the height marked: low for a steeper, a little higher for a pour-over */
-function kettlePic(kind){
-  const low = kind === 'low', y = low ? 58 : 34, s = h('span', { class:'kettlepic2', 'aria-hidden':'true' });
-  s.innerHTML = '<svg viewBox="0 0 170 100" aria-hidden="true" focusable="false"><g stroke="#22120C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">'
-    + '<rect x="6" y="' + (y - 18) + '" width="44" height="30" rx="6" fill="#E8DCC4"/><rect x="18" y="' + (y - 24) + '" width="20" height="7" rx="2" fill="#7A4A2D"/>'
-    + '<path d="M50 ' + (y - 4) + ' C68 ' + (y - 4) + ' 74 ' + (y - 22) + ' 92 ' + (y - 22) + '" fill="none" stroke-width="5"/><path d="M50 ' + (y - 4) + ' C68 ' + (y - 4) + ' 74 ' + (y - 22) + ' 92 ' + (y - 22) + '" fill="none" stroke="#E8DCC4" stroke-width="1.6"/>'
-    + '<path d="M93 ' + (y - 21) + ' V74" stroke="#7FB8CC" stroke-width="2.6"/>'
-    + '<path d="M70 74 H118 L108 94 H80 Z" fill="#FFFDF7"/><path d="M78 78 H110" stroke="#7A4A2D" stroke-width="4"/>'
-    + '<path d="M140 ' + (y - 20) + ' V74 M134 ' + (y - 14) + ' l6 -6 l6 6 M134 68 l6 6 l6 -6" fill="none" stroke="#F2A93B" stroke-width="2.6"/></g></svg>';
-  return s;
-}
-/* Before you press Start: the kettle height for this brewer, and the three things to have ready */
-function timerReadyCard(r, steps){
-  const ka = kettleAdvice(r.method), mv = brewerMoves(steps), water = r.temp && r.temp.f ? r.temp.f + '°F' : 'Water';
-  const tile = (art, b, sub) => h('div', { class:'tneed' }, symPic(art, 'tnpic'), h('b', { text:b }), h('span', { text:sub }));
-  const onIt = r.method.type === 'espresso' ? 'cup on it' : r.method.key === 'chemex' || r.method.key === 'press' ? r.method.label.replace(/^Hario /, '') + ' on it' : 'brewer and cup on it';
-  const tiles = h('div', { class:'tneeds' }, tile('art-temp', water, r.temp && r.temp.f ? 'water ready' : 'ready to pour'), tile('art-scale', 'Scale at 0', onIt), mv.stir ? tile('art-spoon', 'A spoon', 'for the stir') : null);
+/* a small tile: a drawing, a bold line and a quiet line under it */
+function timerTile(pic, b, sub){ return h('div', { class:'tgtile' }, pic, h('span', null, h('b', { text:b }), h('small', { text:sub }))); }
+/* Before you brew: what to have ready. A tile for the usual things (only when this brew has that step), then the rest of this brew's own set-up lines, so nothing from the set-up list is lost. */
+const TIMER_PREP_COVERED = { heat:/^Heat water to [^.]*\.$/, grind:/^Weigh and grind /, warm:/^Preheat your (server or mug|mug) with hot water, then empty it\.$/, rinse:/^Rinse the paper filter with hot water, then discard the rinse water\.$/ };
+function timerReadyBody(r, steps){
+  const ka = kettleAdvice(r.method), mv = brewerMoves(steps), c = r.clicks, has = re => r.prep.some(t => re.test(t));
+  const onIt = r.method.type === 'espresso' ? 'Cup on it' : r.method.key === 'chemex' || r.method.key === 'press' ? r.method.label.replace(/^Hario /, '') + ' on it' : 'Brewer and cup on it';
+  const grind = c && c.kind === 'computed' ? 'Ground, about ' + c.unit + ' ' + c.clicks : capFirst(r.grind.name) + ' grind, ' + (level() === 'new' ? 'like ' + r.grind.like : 'about ' + r.grind.um + ' µm');
+  const tiles = [
+    has(TIMER_PREP_COVERED.warm) ? timerTile(lineIcon('mug', 'tgico'), 'Warm the cup', 'Rinse, then tip out') : null,
+    has(TIMER_PREP_COVERED.heat) ? timerTile(symPic('art-temp', 'tgpic'), r.temp && r.temp.f ? 'Water at ' + r.temp.f + '°F' : 'Water ready', 'Hot and ready') : null,
+    timerTile(symPic('art-scale', 'tgpic'), 'Scale at 0', onIt),
+    has(TIMER_PREP_COVERED.grind) ? timerTile(symPic('art-grinder', 'tgpic'), r.dose + ' g coffee', grind) : null,
+    has(TIMER_PREP_COVERED.rinse) ? timerTile(symPic('art-filter', 'tgpic'), 'Rinse the paper', 'Hot water, then tip out') : null,
+    ka ? timerTile(symPic('art-kettle', 'tgpic'), ka.kind === 'low' ? 'Kettle low' : 'Steady stream', ka.kind === 'low' ? 'About 2 fingers up' : 'Low start, lift as it flows') : null,
+    mv.stir ? timerTile(symPic('art-spoon', 'tgpic'), 'A spoon', 'For the stir') : null
+  ].filter(Boolean);
+  const rest = r.prep.filter(t => !Object.values(TIMER_PREP_COVERED).some(re => re.test(t)));
   const sz = r.method.key === 'switch' ? (app.prefs.switchSize || '02') : '', cap = sz ? BE_CAP.switch[sz] : 0, first = sz ? steps.find(s => s.title === 'Pour') : null;
-  const holds = sz ? h('p', { class:'fine tholds', id:'switchHolds', text:'Your Switch ' + sz + ' holds about ' + cap + ' g closed. ' + (first && first.scale < (steps.filter(s => s.scale != null).pop() || {}).scale ? 'So it steeps ' + first.scale + ' g, and the rest goes in after you open the valve.' : 'All of this brew fits.') + ' Change the size in How much? on the Brew page.' }) : null;
-  /* the kettle tip folds on its own too (Matt, Build 30): the picture and its title stay, the reasons and the source tuck away */
-  let tip = null;
-  if (ka){
-    if (foldOpen.kettleTip === undefined) foldOpen.kettleTip = true;
-    tip = h('details', { class:'tkettle', id:'kettleTip' }, h('summary', null, kettlePic(ka.kind), h('b', { text:ka.title })),
-      h('div', { class:'tkbody' }, h('p', { text:ka.text }), h('p', { class:'fine', text:ka.tier === 'C' ? 'Our suggestion: no study gives a height.' : 'Source: ' + ka.src + '. It gives no height in inches.' })));
-    tip.open = foldOpen.kettleTip; tip.addEventListener('toggle', () => { foldOpen.kettleTip = tip.open; });
-  }
-  const body = h('div', null, tip, tiles, holds);
-  /* Build 30: a fold, open the first time; once closed it stays closed for this visit, to give the steps more room */
-  if (foldOpen.timerReady === undefined) foldOpen.timerReady = true;
-  const sums = [], d = foldCard('timerReady', 'Before you press Start', () => ka ? ka.title + ', and what to have ready' : 'What to have ready', [{ el:body }], sums, 'art-kettle');
-  d.classList.add('tready'); sums.forEach(f => f()); return d;
+  const holds = sz ? h('p', { class:'sm', id:'switchHolds', text:'Your Switch ' + sz + ' holds about ' + cap + ' g closed. ' + (first && first.scale < (steps.filter(s => s.scale != null).pop() || {}).scale ? 'So it steeps ' + first.scale + ' g, and the rest goes in after you open the valve.' : 'All of this brew fits.') }) : null;
+  const water = h('details', { class:'moreinfo' }, h('summary', { text:'Water tips' }), h('p', { class:'sm', text:level() === 'new' ? r.water_note_plain : r.water_note }));
+  return h('div', { id:'timerReady' }, h('h3', { text:'Get ready' }), h('div', { class:'tgrid' }, tiles),
+    rest.length ? h('ul', { class:'prep tprep' }, rest.map(t => h('li', { text:t }))) : null, holds, water);
 }
-/* during a stir or a swirl: what it means, and one tap per stir so you can keep count */
-function timerMoveCard(step, steps, r){
-  const n = stirCount(step), swirl = /swirl/i.test(step.detail || ''), mv = brewerMoves(steps), name = r.method.label.replace(/^Hario /, '');
-  if (!n && !swirl) return null;
-  const done = new Set();
-  const dots = n ? h('div', { class:'tstirs', role:'group', 'aria-label':'Stirs: tap each one' }, Array.from({ length:n }, (_, i) => {
+/* a stir: one tap per stir so you can keep count */
+function timerStirBody(step, steps, r){
+  const n = stirCount(step), done = new Set();
+  const dots = h('div', { class:'tstirs', role:'group', 'aria-label':'Stirs: tap each one' }, Array.from({ length:n }, (_, i) => {
     const b = h('button', { type:'button', class:'tstir', 'aria-pressed':'false', 'aria-label':'Stir ' + (i + 1), text:String(i + 1) });
     b.addEventListener('click', () => { if (done.has(i)) done.delete(i); else done.add(i); b.setAttribute('aria-pressed', String(done.has(i))); });
     return b;
-  })) : null;
-  const stirDef = h('div', { class:'tmove' }, symPic('art-spoon', 'tmpic'), h('div', null, h('b', { text:'Stir = a spoon in the coffee' }),
-    h('p', { text:'Dip a spoon into the grounds and move it slowly front to back' + (n > 1 ? ', ' + n + ' times,' : ',') + ' so no dry clumps float. Do not scrape the paper.' })));
-  const swirlDef = h('div', { class:'tmove' }, symPic('art-swirl', 'tmpic'), h('div', null, h('b', { text:n ? 'Not a swirl' : 'Swirl = stir by spinning the brewer' }),
-    h('p', { text:'A swirl is a way to stir with no spoon: once the water is in, set the kettle down and gently spin the whole brewer. It is not how you pour. ' + (mv.stir && mv.swirl ? 'The ' + name + ' uses both.' : mv.stir ? 'Pour-overs like the V60 use a swirl; the ' + name + ' uses the spoon.' : 'The ' + name + ' uses a swirl, not a spoon.') })));
-  const pourDef = swirl && !n ? h('div', { class:'tmove' }, symPic('art-kettle', 'tmpic'), h('div', null, h('b', { text:'Pouring = slow circles from the center out' }),
-    h('p', { text:'Start in the middle, circle out toward the edge and back in, and keep the water on the coffee, not on the paper.' }))) : null;
-  /* Build 30: a fold, open by default; once closed it stays closed for the rest of this visit */
-  if (foldOpen.stirCard === undefined) foldOpen.stirCard = true;
-  const sums = [], d = foldCard('stirCard', n ? (n > 1 ? 'Stir: tap each one' : 'Stir: tap when done') : 'Swirl, and how to pour', () => n ? 'A spoon in the coffee, not a swirl' : 'A swirl stirs; pour from the center out', [{ el:h('div', null, dots, n ? stirDef : swirlDef, n ? swirlDef : pourDef) }], sums, n ? 'art-spoon' : 'art-swirl');
-  d.classList.add('tmovecard'); sums.forEach(f => f()); return d;
+  }));
+  return h('div', null, h('h3', { text:n > 1 ? 'Stir: tap each one' : 'Stir: tap when done' }), dots,
+    h('p', { class:'sm', text:'Spoon in the coffee, slowly, front to back' + (n > 1 ? ', ' + n + ' times' : '') + '. Do not scrape the paper.' }));
+}
+/* a swirl: the plain meaning of the word, since it is not how you pour */
+function timerSwirlBody(){
+  return h('div', null, h('h3', { text:'Swirl' }), h('p', { text:'Set the kettle down. Spin the brewer gently to mix.' }), h('p', { class:'sm', text:'A swirl is a stir with no spoon.' }));
+}
+/* the quiet part of a step, once the action is over */
+function timerWaitWords(title){
+  return /bloom/i.test(title) ? ['Let it bloom', 'Let the coffee puff up and rest. Nothing to do.'] : /steep/i.test(title) ? ['Steep', 'Let it steep. Nothing to do.'] : /drawdown/i.test(title) ? ['Drawdown', 'Let the water drain through. Nothing to do.']
+    : /dripping/i.test(title) ? ['Dripping', 'Let it drip. Nothing to do.'] : ['Wait', 'Hands off for now.'];
+}
+/* The card for this moment: { key, tag, body }. The key changes only when the card should, so a card being read is not redrawn every quarter second. */
+function timerCardFor(x){
+  const { r, steps, t, idx, cur, nxt, ready, done, lv, maxScale } = x;
+  if (done){
+    const mark = h('span', { class:'tcmark' }); mark.innerHTML = mascotSvg({ view:'bust', face:'happy', outfit:'grad' });
+    return { key:'done', tag:'Done', body:h('div', { class:'tcdone' }, mark, h('div', null, h('h3', { text:'Nice brew!' }), h('p', { text:'Tap Taste this brew, or Resume if you stopped by mistake.' }))) };
+  }
+  if (ready) return { key:'ready', tag:'Before you brew', body:timerReadyBody(r, steps) };
+  if (!cur) return { key:'ready', tag:'Before you brew', body:timerReadyBody(r, steps) };
+  const fin = /^finish/i.test(cur.title) && cur.scale == null, ps = cur.scale != null ? (cur.pourSecs || 0) : 0, since = t - cur.t, n = stirCount(cur), swirl = !fin && /swirl/i.test(cur.detail || ''), sp = timerSpeed(cur);
+  const plain = (text, extra) => h('div', null, h('h3', { text:cur.title }), h('p', { text:text }), extra || null);
+  const speed = lv === 'expert' && sp != null ? h('p', { class:'sm', text:'Pour speed about ' + sp + ' g/s' }) : null;
+  let part;
+  if (n) part = { k:'stir', body:timerStirBody(cur, steps, r) };
+  else if (swirl && ps > 0 && since < ps + 1) part = { k:'pour', body:plain(timerDetail(cur.detail.replace(/\s*Then\b[\s\S]*$/, ''), lv), speed) };
+  else if (swirl && (ps === 0 || since < ps + 10)) part = { k:'swirl', body:timerSwirlBody() };
+  else if (!fin && nxt && (ps > 0 ? since >= ps + 2 && nxt.t - (cur.t + ps) > 12 : since >= 10)){
+    const label = stageLabel(cur, nxt, t, r.method), w = timerWaitWords(swirl && /bloom/i.test(cur.title) ? cur.title : label === cur.title && !swirl ? '' : label);
+    part = { k:'wait', body:h('div', null, h('h3', { text:w[0] }), h('p', { text:w[1] })) };
+  }
+  else part = { k:'step', body:plain(timerDetail(swirl ? cur.detail.replace(/\s*Then\b[\s\S]*$/, '') : cur.detail, lv), speed) };
+  return { key:'s' + idx + part.k, tag:'Now', body:part.body };
 }
 /* where the scale should read at time t (seconds): the pour in progress is spread evenly over its pouring time, then the level holds until the next pour */
 function pourAt(steps, t){
@@ -19104,14 +19057,38 @@ function pourAt(steps, t){
   } else { const prev = st.slice(0, idx).filter(s => s.scale != null).pop(); now = prev ? prev.scale : 0; }
   return { has:true, now:Math.round(now), tgt, max, ticks:withScale.map(s => s.scale), idx, pouring };
 }
-/* the bar on a step: the part of the water already in, then this pour's share */
-function pourBar(s, max){
-  const from = s.from == null ? 0 : s.from, pp = max > 0 ? 100 * from / max : 0, tp = max > 0 ? 100 * s.scale / max : 0;
-  return h('div', { class:'pbar' }, h('div', { class:'pbtrack', 'aria-hidden':'true' }, h('span', { class:'pbold', style:'width:' + pp.toFixed(1) + '%' }), h('span', { class:'pbnew', style:'left:' + pp.toFixed(1) + '%;width:' + Math.max(0, tp - pp).toFixed(1) + '%' })),
-    h('span', { class:'pbl', text:(from > 0 ? '+' + (s.scale - from) + ' g → ' + s.scale + ' g' : '+' + s.scale + ' g') }));
+/* the quiet line under the choices, for the choice made now */
+function soundNote(){
+  const m = app.prefs.sound;
+  return m === 'off' ? (typeof navigator.vibrate === 'function' ? 'Sound is off. You can still watch the screen and feel the buzz.' : 'Sound is off. Watch the screen for the next step.')
+    : m === 'chime' ? 'A short beep plays at each step. Tap Test sound to check your volume.'
+    : voiceState.ok === false ? "Voice isn't available in this view, so we'll use the beep instead."
+    : app.prefs.coach === 'steps' ? 'A voice reads each step, like "Pour to 180 grams." Tap Test sound to check it.'
+    : 'A voice reads each step. It also tells you where you should be along the way and how long is left. Tap Test sound to check it.';
 }
-/* which view this person likes, kept in this browser only (app.prefs.timerView, not in the file) */
-const timerView = () => app.prefs.timerView === 'dripper' ? 'dripper' : 'ring';
+function renderSoundSheet(title){
+  title.textContent = 'Sound options';
+  const tile = (pic, name, sub, on, pick) => h('button', { type:'button', class:'sndtile', 'aria-pressed':String(on), onclick:pick }, pic, h('b', { text:name }), h('small', { text:sub }));
+  const set = (key, v) => () => { app.prefs[key] = v; changed(); renderSheet(); };
+  const mode = app.prefs.sound, note = h('p', { class:'fine sndnote', role:'status', text:soundNote() });
+  const how = h('div', { class:'sndtiles three', role:'group', 'aria-label':'How you hear each step' },
+    tile(symPic('art-muted', 'sndpic'), 'Sound off', 'Silent', mode === 'off', set('sound', 'off')),
+    tile(symPic('art-timer', 'sndpic'), 'Beep', 'A tone at each step', mode === 'chime', set('sound', 'chime')),
+    tile(lineIcon('speaker', 'sndico'), 'Voice', 'Says each step', mode === 'voice', set('sound', 'voice')));
+  const much = h('div', { class:'sndtiles two', role:'group', 'aria-label':'How much the voice says' },
+    tile(symPic('art-help', 'sndpic'), 'Guide me', 'Where you should be, and time left', app.prefs.coach !== 'steps', set('coach', 'guide')),
+    tile(symPic('art-note', 'sndpic'), 'Key steps only', 'Just the pours and the finish', app.prefs.coach === 'steps', set('coach', 'steps')));
+  const test = h('button', { type:'button', class:'btn', id:'soundTestBtn', text:'Test sound', hidden:mode === 'off' });
+  test.addEventListener('click', () => {
+    if (app.prefs.sound === 'chime'){ chime(); return; }
+    const guide = app.prefs.coach !== 'steps';
+    note.textContent = guide ? 'Listen for: "Pour to 150 grams. About 100 grams now."' : 'Listen for: "Pour to 150 grams."';
+    speak(guide ? 'Pour to 150 grams. About 100 grams now.' : 'Pour to 150 grams.', ok => { if (!ok) chime(); note.textContent = soundNote(); });
+  });
+  sheetEl.append(h('p', { class:'sndlab', text:'How you hear it' }), how,
+    ...kept(mode === 'voice' ? h('p', { class:'sndlab', text:'How much it says' }) : null, mode === 'voice' ? much : null),
+    note, h('div', { class:'row sndrow' }, test, h('button', { type:'button', class:'btn primary', id:'soundDoneBtn', text:'Done', onclick:closeSheet })));
+}
 /* Where the water is at time t, for the drawing only (the grams on screen come from pourAt, the scale reading). The water poured comes from the steps;
    the cup fills while the brewer drains: from the end of the bloom for a pour-over, from the valve or the plunge for a steeper, through the slow drip of a phin.
    This is a picture, not a measurement, so it is a straight line between those moments. */
@@ -19147,19 +19124,9 @@ function stageLabel(cur, nxt, t, m){
   if (/^finish/i.test(nxt.title)) return m.key === 'phin' ? 'Dripping' : m.type === 'flow' || /valve/i.test(cur.title) ? 'Drawdown' : cur.title;
   return cur.title;
 }
-/* the ring: a track with a dot at each step, the brew so far in amber, and the brewer in a cream disc inside it */
-function ringSvg(r, steps, t, lv, label){
-  const st = steps.filter(s => s.t != null), total = Math.max(r.totalSecs || 0, (st[st.length - 1] || { t:1 }).t, 1), R = 136, C = 2 * Math.PI * R, pct = Math.max(0, Math.min(1, t / total));
-  const dot = s => { const a = (s.t / total) * 2 * Math.PI - Math.PI / 2, x = 150 + R * Math.cos(a), y = 150 + R * Math.sin(a); return '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="8" fill="' + (t > 0 && t >= s.t ? '#F2A93B' : '#1D3E2F') + '" stroke="#FDFBF7" stroke-width="3.4"/>'; };
-  return '<svg class="tring" viewBox="0 0 300 300" role="img" aria-label="' + escHtml(label || 'Brew progress ' + Math.round(pct * 100) + ' percent') + '">'
-    + '<circle cx="150" cy="150" r="' + R + '" fill="none" stroke="rgba(253,251,247,.18)" stroke-width="16"/>'
-    + (pct > 0 ? '<circle cx="150" cy="150" r="' + R + '" fill="none" stroke="#F2A93B" stroke-width="16" stroke-linecap="round" stroke-dasharray="' + (C * pct).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 150 150)"/>' : '')
-    + st.filter(s => s.t < total).map(dot).join('')
-    + '<circle cx="150" cy="150" r="116" fill="#FBF8F0"/><g transform="translate(62 53) scale(.88)">' + brewerArt(r.method.key, lv) + '</g></svg>';
-}
-/* the dripper alone, without the ring */
+/* the brewer alone; the viewBox is trimmed to the drawing so it fills the top of the screen */
 function dripperSvg(r, lv, label){
-  return '<svg class="tdripart" viewBox="0 0 200 220" role="img" aria-label="' + escHtml(label || r.method.label + ', filling as you brew') + '">' + brewerArt(r.method.key, lv) + '</svg>';
+  return '<svg class="tdripart" viewBox="12 0 176 214" role="img" aria-label="' + escHtml(label || r.method.label + ', filling as you brew') + '">' + brewerArt(r.method.key, lv) + '</svg>';
 }
 /* ---------- the rest of the Brew page ---------- */
 /* what to know before you start, what shaped these settings, and the steps: closed cards with one picture each */
@@ -21471,7 +21438,7 @@ const POP_FACE = {
   share:'happy', done:'happy', exportDone:'happy', everyResult:s => s.ok ? 'happy' : 'worried',
   loadErr:'worried', keepFirst:'worried', dlProblem:'worried', cafClear:'worried', delConfirm:'grumpy', noBackup:'sad',
   otherWay:'informing', confirm:'informing', ask:'informing', backup:'informing', fallback:'informing', lesson:'informing', tableGuide:'informing',
-  bagtile:'informing', bagcompare:'informing', term:'informing', releases:'informing', raw:'informing', sheetcopy:'informing', level:'informing', scanChat:'informing', brewadj:'informing', way:'informing', about:'happy'
+  bagtile:'informing', bagcompare:'informing', term:'informing', releases:'informing', raw:'informing', sheetcopy:'informing', level:'informing', scanChat:'informing', brewadj:'informing', way:'informing', sound:'informing', about:'happy'
 };
 function popFace(){ const f = sheet && POP_FACE[sheet.step]; return typeof f === 'function' ? f(sheet) : (f || ''); }
 /* after a sheet is drawn: put the bust beside its title */
@@ -21494,6 +21461,7 @@ function renderSheetBody(){
   const closeRow = label => h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:label || 'Cancel', onclick:closeSheet }));
   if (sheet.step === 'pick'){ renderPickSheet(title); return; }
   if (sheet.step === 'brewadj'){ renderBrewAdjSheet(title); return; }   /* the Brew page's Adjust pop-ups (42-brew-pops.js) */
+  if (sheet.step === 'sound'){ renderSoundSheet(title); return; }   /* the timer's Sound options (46-timer-sound.js) */
   if (sheet.step === 'way'){ renderWaySheet(title); return; }   /* the way to brew it: hot, pulse or iced (36-method-way.js) */
   if (sheet.step === 'machine'){ renderMachineSheet(title); return; }   /* a Philips drink (43-sheet-machine.js) */
   if (sheet.step === 'setup'){ renderSetupSheet(title); return; }   /* My setup (63-sheet-setup.js) */
