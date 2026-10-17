@@ -4,6 +4,102 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.049.0114: Press and AeroPress shares called a guess
+
+2026-10-17 11:48:23 UTC
+
+- Press, Switch, Clever, siphon, Turkish and AeroPress now say no lab measured their share of caffeine, so it is our guess, rated D. Cold brew keeps its own lab note. No number changed.
+
+## Version 4.049.0113: Tea goes under Something else
+
+2026-10-17 11:42:29 UTC
+
+- The Something else screen now says tea and energy drinks go there, because the caffeine tool has no tea figures of its own.
+
+## Version 4.049.0112: Shop table: brewed 260, mocha chocolate, decaf list
+
+2026-10-17 11:00:15 UTC
+
+- Starbucks brewed coffee at 12 oz now reads 260 mg, from a Starbucks article. It was 235.
+- A mocha now adds 15 to 35 mg for its chocolate, so a Grande mocha reads about 175 mg, not 150.
+- Shop brewed decaf now follows the Starbucks list, 15 to 30 mg by size. The drink source text says iced is counted like hot and may read high.
+
+## Version 4.049.0111: K-Cup top capped at 150 mg
+
+2026-10-17 04:15:59 UTC
+
+- Keurig says a K-Cup holds 75 to 150 mg, so no K-Cup in the caffeine tracker goes above 150 mg now.
+- Extra bold K-Cup is now 125 to 150 mg, about 138. It was 125 to 175, from a blog estimate.
+
+## Version 4.049.0110: Instant coffee in the caffeine tool
+
+2026-10-17 03:43:45 UTC
+
+- Caffeine in a cup and Add a drink now have an Instant coffee tile with a new drawn jar picture. You weigh the powder in grams: 2 g reads about 70 mg, range 50 to 90.
+- The numbers come from one lab test that found 48 to 88 mg in 2 g of instant stirred into 125 mL. Bean type does not apply, and the cup-size route is not offered because no source gives the weight of a spoonful. Decaf instant is counted as a small share, our own rule of thumb.
+
+## Version 4.049.0109: Cold brew caffeine: the lab range, and an honest share
+
+2026-10-17 03:08:04 UTC
+
+- The caffeine sums for a home cold brew now show what one lab measured: 0.99 to 1.23 mg of caffeine per mL for a 1:10 brew steeped 24 hours. Our sums give about 1.1 at that ratio, so they sit inside the range.
+- The cold brew share (88 percent) is now called our own guess, because nobody measured it. The numbers did not change.
+
+## Version 4.049.0108: A truer espresso share in the caffeine sums
+
+2026-10-17 02:23:11 UTC
+
+- Caffeine in a cup now counts 65 to 88 percent of a bean's caffeine as reaching an espresso shot, with 70 percent as the middle. It was 69 to 97 percent with 75 as the middle.
+- The lab shots we checked held 65 to 68 percent for a short pull and 84 to 88 percent for a long pull. The old top came from capsule machines, which the pod rows already cover. A typical home shot now reads about 7 percent lower.
+
+## Version 4.049.0107: Independent café espresso on the shop caffeine screen
+
+2026-10-17 01:39:59 UTC
+
+- On the shop drink screen of Caffeine in a cup, you can now pick An independent café. Its espresso shot uses the range measured in 20 Glasgow cafés (51 to 322 mg, middle 140) instead of the chain figure of 75 mg.
+- A chain shop stays the default, so drinks you already saved do not change. A saved café drink says independent café in your day list.
+- New drawn café picture (green and cream awning). Facts and the other caffeine rows are unchanged.
+
+## Version 4.049.0106: More to learn: 12 lessons, 10 origins, 21 varieties
+
+2026-10-17 01:01:46 UTC
+
+- Coffee school grows from 6 to 18 lessons: resting, grinding, strength and extraction, temperature, caffeine, decaf, storage, Liberica, arabica's family, country, altitude and cold brew. Each has linked sources and a rating.
+- Ten more countries have full guides: Yemen, India, Jamaica, Uganda, Papua New Guinea, Bolivia, Ecuador, the Dominican Republic, Thailand and Vietnam.
+- 21 more coffee varieties are explained, from Mundo Novo and Pacas to Batian, Centroamericano and Starmaya.
+- The water check now uses the SCA-102 ranges: alkalinity 40 to 70 and hardness 50 to 175 mg/L as CaCO3. It names the older 2009 SCAA range too.
+- A new Solid or folklore claim: coffee tastes best served very hot. It is rated Not supported.
+- The High elevation guide says the 1,500 m line is our own cut-off and lists country grade words. Freshness windows are labeled as roaster advice, rated D.
+
+## Version 4.048.0105: Facts corrected
+
+2026-10-17 00:04:24 UTC
+
+- Red team of every fact in the app: guides, origins, caffeine, learn text, glossary and the Solid or folklore claims were checked against sources opened again.
+- Origin matching no longer reads everyday words as places (Cup of Java, Hidalgo Roast, Mocha, Liberica), and handles marks in names like Hawai'i and Murang'a.
+- Caffeine: decaf now follows the FDA range (2 to 15 mg in 8 oz) and each pod line's own range; Nespresso Original ranges match the maker.
+- Elevation, roast and process guide wording tightened to what the sources support, with 14 variety entries reworded and Pacamara, Java and several origin ranges corrected.
+- Solid or folklore claims rewritten with more sources (the serving-temperature and extraction-zone claims now cite more studies).
+
+## Version 4.047.0104: Best score stays on one scale
+
+2026-10-16 21:29:10 UTC
+
+- On the Facts screen, your past tastings of a coffee only call a score the best when it is on the same scoring form as your newest tasting. A higher score from another form no longer takes the label.
+
+## Version 4.047.0103: Input bugs and grind fixes
+
+2026-10-16 21:21:31 UTC
+
+- The grind advice only says the maker suggests a range when the maker really gave one for that brewer. A Switch, Clever, siphon or phin now says the maker has no figure, and the Comandante's Chemex range is shown as the maker's.
+- The siphon starts a little finer.
+- A weak cup that was well extracted is now called flat, and its fix is a stronger ratio. A weak steeped cup now gets that advice too.
+- The taste picker says Sour or sharp, because salty is a different thing.
+- The too-strong fix for drip no longer quotes espresso advice.
+- Shop cold brew caffeine is about a third lower, in line with Starbucks' own figures.
+- The water temperature never goes below 165 F or above your local boiling point.
+- If you tap Done brewing while the voice is still saying the Finish line, the time recorded is the Finish time, not the seconds spent listening.
+
 ## Version 4.047.0102: Fixes and checks
 
 2026-10-16 20:37:21 UTC
