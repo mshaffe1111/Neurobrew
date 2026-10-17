@@ -799,6 +799,9 @@ input[type=file]::file-selector-button{ margin:0 10px 0 0; min-height:48px; padd
 /* the shared Reset button under a calculator's hero */
 .tool-reset{ display:flex; justify-content:flex-end; margin:-4px 0 10px; }
 .tool-reset .btn{ margin:0; }
+/* the picture buttons under a tool's answer, each opening a pop-up */
+.tool-tiles{ margin:12px 0; }
+.yc-fnow{ margin:0 0 12px; font-weight:700; font-size:18px; line-height:1.3; }
 .bagtab{ width:100%; border-collapse:collapse; font-size:16px; }
 .bagtab th, .bagtab td{ padding:9px 6px 9px 0; text-align:left; vertical-align:middle; border-top:1px solid var(--hush); line-height:1.25; }
 .bagtab thead th, .bagtab thead td{ border-top:0; font-size:15px; font-weight:800; }
@@ -827,6 +830,7 @@ input[type=file]::file-selector-button{ margin:0 10px 0 0; min-height:48px; padd
 .fmleg .k::before{ content:""; display:inline-block; width:12px; height:12px; margin-right:5px; border-radius:3px; border:1.5px solid #22120C; vertical-align:-1px; }
 .fmleg .roast::before{ background:#22120C; } .fmleg .sweet::before{ background:#8DB45A; } .fmleg .past::before{ background:#E8C26A; } .fmleg .fade::before{ background:#D9B79A; }
 .fmleg .fin::before{ background:#FFF8EA; border-bottom:5px solid #2E5E4E; height:8px; }
+.bagtab thead th small{ display:block; font-size:12.5px; font-weight:700; color:var(--muted); }
 .tgdl{ margin:6px 0 2px; }
 .tgdl dt{ font:600 13px/1.3 ui-monospace, Menlo, Consolas, monospace; margin-top:10px; color:var(--label); overflow-wrap:anywhere; }
 .tgdl dd{ margin:2px 0 0; font-size:14.5px; line-height:1.4; }
@@ -993,6 +997,15 @@ details.folk > summary::-webkit-details-marker{ display:none; }
 #spCard .trip .pic svg{ width:100%; height:100%; }
 #spCard .trip .sub{ font-size:14px; color:var(--muted); }
 @media (max-width:359px){ #spCard .tops{ grid-template-columns:1fr; } #spCard .m-two b{ font-size:19px; white-space:nowrap; } #spCard .m-two .top{ flex-wrap:wrap; gap:2px 8px; } }
+/* Cost of coffee: the bag buttons under the answer, the two big buttons, and the history pop-up's tabs */
+.cs-bags{ margin-top:14px; }
+.cs-bags .yc-rlab{ color:var(--muted); }
+.cs-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+.cs-chip{ min-height:44px; padding:6px 16px; font-weight:700; font-size:17px; color:var(--leaf); background:var(--surface); border:2px solid var(--frame); border-radius:14px; box-shadow:0 3px 0 var(--frame); }
+.cs-chip[aria-pressed="true"]{ background:var(--leaf); color:var(--leaf-ink); }
+.sp-tabs{ display:flex; width:100%; }
+.sp-tabs button{ flex:1; padding-left:4px; padding-right:4px; }
+#spCard{ min-height:340px; }
 .wview .wtop{ display:flex; flex-direction:column; gap:10px; }
 .wview .wtop .seg{ width:100%; }
 .wview .wtop input[type=search]{ width:100%; }
@@ -3002,6 +3015,12 @@ details.mfold > .mrows{ margin-top:14px; }
 <symbol id="ic-tap" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/></g></symbol>
 <symbol id="ic-chev" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></g></symbol>
 <!-- bt-art:start -->
+<symbol id="tl-yield" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 17 H34 L32 38 a4 4 0 0 1-4 4 H14 a4 4 0 0 1-4-4Z" fill="#FFF8EA"/><path d="M8.800 24 H33.200 L32 38 a4 4 0 0 1-4 4 H14 a4 4 0 0 1-4-4Z" fill="#8A5230"/><path d="M34 21 h3 a5 5 0 0 1 0 11 h-3.500" fill="none"/><path d="M21 3.500 c0 0-4 4.500-4 7.300 a4 4 0 0 0 8 0 C25 8 21 3.500 21 3.500Z" fill="#6FB5D9" stroke-width="2"/><path d="M13 30 h3 M13 35 h3" stroke="#FFF8EA" stroke-width="2"/></g></symbol>
+<symbol id="tl-cost" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15 H26 L28 40 C28 43 26.500 44 24.500 44 H9.500 C7.500 44 6 43 6 40Z" fill="#C79A66"/><path d="M6 15 L8 8 H24 L26 15Z" fill="#8A5230"/><path d="M10 22 H22 V32 H10Z" fill="#FFF8EA" stroke-width="2"/><g transform="translate(16 27) rotate(-28) scale(0.45)"><ellipse cx="0" cy="0" rx="7" ry="10" fill="#8A5230"/><path d="M0 -9 C-4 -4 4 -1 0 3 C-3 6 3 8 0 9.500" fill="none" stroke-width="2"/></g><circle cx="33" cy="32" r="11.500" fill="#F2A93B"/><circle cx="33" cy="32" r="7.800" fill="none" stroke-width="1.600"/><path d="M36 29 c-.8-1.800-6.500-2-6.500 1.300 0 4 7 2 7 5.600 0 3.300-6 3-7 .8 M33 25.500 v2 M33 36.500 v2" fill="none" stroke-width="2"/></g></symbol>
+<symbol id="tl-bagcmp" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21 H21 L22.500 42 C22.500 43.800 21.500 44.500 20 44.500 H5 C3.500 44.500 2.500 43.800 2.500 42Z" fill="#C79A66"/><path d="M4 21 L5.500 15 H19.500 L21 21Z" fill="#8A5230"/><path d="M7 27 H18 V35 H7Z" fill="#FFF8EA" stroke-width="2"/><path d="M27 12 H44 L45.500 42 C45.500 43.800 44.500 44.500 43 44.500 H28 C26.500 44.500 25.500 43.800 25.500 42Z" fill="#6FB98A"/><path d="M27 12 L28.500 5 H42.500 L44 12Z" fill="#2F7D4F"/><path d="M30 20 H41 V32 H30Z" fill="#FFF8EA" stroke-width="2"/><g transform="translate(35.5 26) rotate(-28) scale(0.5)"><ellipse cx="0" cy="0" rx="7" ry="10" fill="#8A5230"/><path d="M0 -9 C-4 -4 4 -1 0 3 C-3 6 3 8 0 9.500" fill="none" stroke-width="2"/></g><g transform="translate(12.5 31) rotate(-28) scale(0.4)"><ellipse cx="0" cy="0" rx="7" ry="10" fill="#A8703F"/><path d="M0 -9 C-4 -4 4 -1 0 3 C-3 6 3 8 0 9.500" fill="none" stroke-width="2"/></g></g></symbol>
+<symbol id="tl-fresh" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="9" width="36" height="33" rx="5" fill="#FFF8EA"/><path d="M6 20 V14 a5 5 0 0 1 5-5 H37 a5 5 0 0 1 5 5 V20Z" fill="#6FB98A"/><path d="M16 5 V12 M32 5 V12" stroke-width="3"/><g transform="translate(22 31) rotate(-28) scale(0.8)"><ellipse cx="0" cy="0" rx="7" ry="10" fill="#8A5230"/><path d="M0 -9 C-4 -4 4 -1 0 3 C-3 6 3 8 0 9.500" fill="none" stroke-width="2"/></g><circle cx="37" cy="37" r="7.500" fill="#2F7D4F"/><path d="M33.500 37 l2.800 2.800 l4.500-5" fill="none" stroke="#FFF8EA" stroke-width="2.4"/></g></symbol>
+<symbol id="tl-caffeine" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4 c-2 2.500 2 4 0 6.500 M22 4 c-2 2.500 2 4 0 6.500" fill="none" stroke-width="2"/><path d="M7 15 H33 L31 38 a5 5 0 0 1-5 5 H14 a5 5 0 0 1-5-5Z" fill="#D9503B"/><path d="M33 20 h3.500 a5.500 5.500 0 0 1 0 12 h-4" fill="none"/><path d="M22.500 18.500 L14.500 30 H20 L18 39 L26.500 26.500 H21Z" fill="#F2A93B" stroke-width="2"/></g></symbol>
+<symbol id="tl-ratio" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(11 24) rotate(-28) scale(1.25)"><ellipse cx="0" cy="0" rx="7" ry="10" fill="#8A5230"/><path d="M0 -9 C-4 -4 4 -1 0 3 C-3 6 3 8 0 9.500" fill="none" stroke-width="2"/></g><circle cx="24" cy="18" r="2.800" fill="#F2A93B" stroke-width="2"/><circle cx="24" cy="30" r="2.800" fill="#F2A93B" stroke-width="2"/><path d="M37 8 c0 0-8.500 9.500-8.500 15.500 a8.500 8.500 0 0 0 17 0 C45.500 17.500 37 8 37 8Z" fill="#6FB5D9"/><path d="M33 26 a4.500 4.500 0 0 0 3.500 4.500" fill="none" stroke="#FFF8EA" stroke-width="2"/></g></symbol>
 <symbol id="art-bag" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13 H36 L38 40 C38 43 36 44 34 44 H14 C12 44 10 43 10 40 Z" fill="#C79A66"/><path d="M12 13 L14 6 H34 L36 13 Z" fill="#8A5230"/><path d="M16 20 H32 V34 H16Z" fill="#FFF8EA" stroke-width="2"/><g transform="translate(24 27) rotate(-28) scale(0.6)"><ellipse cx="0" cy="0" rx="7" ry="10" fill="#8A5230"/><path d="M0 -9 C-4 -4 4 -1 0 3 C-3 6 3 8 0 9.500" fill="none" stroke-width="2"/></g></g></symbol>
 <symbol id="art-pod" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 H39 L35 38 C34 41 29 43 24 43 C19 43 14 41 13 38Z" fill="#C79A66"/><ellipse cx="24" cy="14" rx="15" ry="5" fill="#F1E6C8"/><path d="M14 25 H34"/><path d="M24 9 V6"/></g></symbol>
 <symbol id="art-cal" viewBox="0 0 48 48"><g stroke="#22120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="9" width="34" height="32" rx="5" fill="#FFF8EA"/><path d="M7 20 V14 a5 5 0 0 1 5-5 H36 a5 5 0 0 1 5 5 V20Z" fill="#D9503B"/><path d="M16 5 V12 M32 5 V12" stroke-width="3"/><path d="M24 25 C26 28 29 29 29 33 C29 36 27 38 24 38 C21 38 19 36 19 33 C19 31 21 30 21.500 28 C22.500 29 23 29 23 29 C23.500 27 23.500 26 24 25Z" fill="#F2A93B" stroke-width="2"/></g></symbol>
@@ -3070,15 +3089,11 @@ details.mfold > .mrows{ margin-top:14px; }
 <symbol id="mi-bars" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-7M12 20V5M19 20v-10"/></g></symbol>
 <symbol id="mi-flask" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/></g></symbol>
 <symbol id="mi-wheel" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></g></symbol>
-<symbol id="mi-drop" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z"/></g></symbol>
 <symbol id="mi-ask" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.500 9.500a2.500 2.500 0 1 1 3.500 2.300c-.7.4-1 .9-1 1.700M12 17v.01"/></g></symbol>
 <symbol id="mi-cap" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.500V16c0 1.500 3 3 6 3s6-1.500 6-3v-4.500"/></g></symbol>
 <symbol id="mi-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.500v.01"/></g></symbol>
 <symbol id="mi-notes" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h7M9 16h7"/></g></symbol>
 <symbol id="mi-save" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></g></symbol>
-<symbol id="mi-cupyield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14l-2 16H7z"/><path d="M6 10h12"/></g></symbol>
-<symbol id="mi-cost" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.500 9c-.6-1.200-4.500-1.400-4.500 1 0 3 5 1.500 5 4.200 0 2.400-4.200 2.200-5 .6M12 6.500v1.500M12 16v1.500"/></g></symbol>
-<symbol id="mi-ratio" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M5 8h14M7 8l-3 7h6zM17 8l-3 7h6z"/></g></symbol>
 <symbol id="mi-file" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M12 11v6M9.500 14.500L12 17l2.500-2.500"/></g></symbol>
 <symbol id="mi-text" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h14M5 11h14M5 16h9"/></g></symbol>
 <symbol id="mi-cols" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M10 4v16M4 10h16"/></g></symbol>
@@ -8849,7 +8864,7 @@ const GUIDE_SECTIONS = [
     paras:['Just Starting keeps things short, Comfy Brewer explains the reasons, and Bean Scientist shows every number. Change it any time from the start screen or the menu.',
       'My setup in the menu keeps your units, level, timer sound, taste card view and gear (your grinder, water and filter) in one place. New brews start with your gear filled in. The setup is saved inside your history file each time you save, so uploading the file on another device brings it back.',
       'Words with a dotted underline are tappable and give a short definition. The Glossary in the menu lists every term and can be searched.',
-      'Calculators in the menu holds small helpers. Cup yield shows how much ends up in your cup. The Ratio and strength calculator gives the ratio for the strength you want, and how much water to add to a strong brew. The strengths and extractions it starts from are common targets, not rules. The Cost of coffee tool works out what a cup costs from the price and size of a bag, in grams, kilograms, ounces or pounds. It shows the cost per cup, day, week and month, and can compare two bags. It counts the coffee only. Nothing is kept unless you press Add to my coffee prices. Compare 2 bags puts two bags from your coffee prices side by side. It shows the price per 100 g and per cup, how long each bag lasts, how fresh it is, and your own stars. It never picks a winner. Freshness shows a month calendar of when a bag is in its sweet spot, from its roast date. The windows are typical values for filter coffee, and roasters differ.',
+      'Calculators in the menu holds small helpers. Cup yield shows how much ends up in your cup. The Ratio and strength calculator gives the ratio for the strength you want, and how much water to add to a strong brew. The strengths and extractions it starts from are common targets, not rules. The Cost of coffee tool works out what a cup costs from one of your open bags. The answer is on top, with the cost per cup, day, week and month. Press Add a new bag to enter one, in grams, kilograms, ounces or pounds. It is kept in your coffee prices. Press Cost history to see what you spent, by month, year, coffee or shop. It counts the coffee only. Compare 2 bags puts two bags from your coffee prices side by side. It shows the price per 100 g and per cup, how long each bag lasts, how fresh it is, and your own stars. It never picks a winner. Freshness shows a month calendar of when a bag is in its sweet spot, from its roast date. The windows are typical values for filter coffee, and roasters differ.',
       'Coffee prices in the menu is your own list of the bags you have bought. Add a bag there, or from the Cost of coffee tool. The list is kept in this browser. Save it as a file called BeanTelligence Prices.csv, and load it again later. It is a separate file from your tasting history, and it never changes your history. Loading a file only adds bags that are not in the list yet.',
       'SCA cupping in the menu is a guided table session with timers. You choose to describe the coffees or to judge them, then the same coffee or different ones, and how many cups of each. The steps follow the SCA\'s standard 102-2024, in our own words, and the SCA has not reviewed them. Circles at the top stand for your coffees. Tap one to see that coffee. Timers tell you when each crust is ready to break. The session gives no scores and nothing is saved. Your Taste step is a separate, personal way to record a cup.'] },
   { id:'trust', title:'What to trust', lead:'Starting points, not rules.',
@@ -11248,6 +11263,28 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 119,
+  "version": "4.054.0119",
+  "tier": "medium",
+  "at": "2026-10-17T22:55:29Z",
+  "date": "2026-10-17",
+  "title": "The other calculators, simplified, with new icons",
+  "notes": [
+   "Cup yield, Ratio, Caffeine, Compare 2 bags and Freshness now put the answer first and move extras into pop-ups. Six new drawn tool icons."
+  ]
+ },
+ {
+  "release": 118,
+  "version": "4.053.0118",
+  "tier": "medium",
+  "at": "2026-10-17T21:44:09Z",
+  "date": "2026-10-17",
+  "title": "Cost of coffee, simplified",
+  "notes": [
+   "The answer is on top. Add a new bag and Cost history are pop-ups. One fold holds the sums."
+  ]
+ },
  {
   "release": 117,
   "version": "4.052.0117",
@@ -19208,18 +19245,42 @@ const TOOL_SCREENS = ['tools', 'yield', 'ratio', 'cost', 'caffeine', 'cafdrink',
 function goTools(){ if (!TOOL_SCREENS.includes(app.screen)) toolsFrom = app.screen === 'timer' ? 'recipe' : app.screen; go('tools'); }
 /* One row per tool. Add a tool here and it shows up in the list; the Menu stays one row long. */
 const TOOLS = [
-  { id:'yield', icon:'cupyield', tone:'a', name:'Cup yield', text:'How much ends up in your cup, and how much water to pour for the cup you want', open:() => goYield() },
-  { id:'ratio', icon:'ratio', tone:'g', name:'Ratio and strength calculator', text:'The ratio for the strength you want, and how much water to add to a strong brew', open:() => goRatio() },
-  { id:'cost', icon:'cost', tone:'t', name:'Cost of coffee', text:'What a cup costs from the price of a bag, and what you spend a month', open:() => goCost() },
-  { id:'bagcmp', icon:'cost', tone:'a', name:'Compare 2 bags', text:'Two bags from your coffee prices side by side: price, freshness, days to empty and your stars', open:() => go('bagcmp') },
-  { id:'fresh', icon:'drop', tone:'g', name:'Freshness', text:'A month calendar of when each bag is at its best, from its roast date', open:() => go('fresh') },
-  { id:'caffeine', icon:'caffeine', tone:'g', name:'Caffeine', text:'The best times for your coffee across the day, and the caffeine in one cup', open:() => goCaffeine() }
+  { id:'yield', icon:'tl-yield', tone:'a', name:'Cup yield', text:'How much ends up in your cup, and how much water to pour for the cup you want', open:() => goYield() },
+  { id:'ratio', icon:'tl-ratio', tone:'g', name:'Ratio and strength calculator', text:'The ratio for the strength you want, and how much water to add to a strong brew', open:() => goRatio() },
+  { id:'cost', icon:'tl-cost', tone:'t', name:'Cost of coffee', text:'What a cup costs, and what you spend', open:() => goCost() },
+  { id:'bagcmp', icon:'tl-bagcmp', tone:'a', name:'Compare 2 bags', text:'Two bags from your coffee prices side by side: price, freshness, days to empty and your stars', open:() => go('bagcmp') },
+  { id:'fresh', icon:'tl-fresh', tone:'g', name:'Freshness', text:'A month calendar of when each bag is at its best, from its roast date', open:() => go('fresh') },
+  { id:'caffeine', icon:'tl-caffeine', tone:'g', name:'Caffeine', text:'The best times for your coffee across the day, and the caffeine in one cup', open:() => goCaffeine() }
 ];
 function screenTools(m){
   /* the tile, the page and the top bar all say Calculators; the name shows once, in the bar */
   m.append(h('h1', { class:'sr-only', text:'Calculators' }), h('div', { class:'hubhero' }, h('div', { class:'hhtx' }, h('p', { text:'Small helpers for the numbers behind a good cup.' }))),
     h('p', { class:'lede', style:'margin:0 0 10px', text:'Pick a helper. Each one does a single sum for you.' }),
     h('div', { class:'hublist' }, TOOLS.map(t => hubRow(t.icon, t.name, t.text, t.open, { tone:t.tone, id:'tool-' + t.id }))));
+}
+/* ---------- bag pop-ups ----------
+   Picking a bag closes the pop-up and draws the page again. Nothing is saved. */
+function openBagPick(slot){ bagc.slot = slot; sheet = { step:'bagPick' }; openSheet(); }
+function openFreshPick(){ sheet = { step:'freshPick' }; openSheet(); }
+function openFreshBars(){ sheet = { step:'freshBars' }; openSheet(); }
+const bagCancelRow = id => h('div', { class:'row', style:'margin-top:14px' }, h('button', { type:'button', class:'btn block', id, text:'Cancel', onclick:closeSheet }));
+function renderBagPickSheet(title){
+  const on = bagc.slot, list = bagList(false), cur = bagKey(bagPickList(on));
+  title.textContent = 'Change Bag ' + on.toUpperCase();
+  sheetEl.append(h('p', { class:'fine', style:'margin:0 0 10px', text:'Pick a coffee from your coffee prices. Picking the bag that is already in the other place swaps the two.' }),
+    h('div', { class:'mk-kind', id:'bagPickList', role:'group', 'aria-label':'Your bags' }, list.map(e => bagTile(e, e.roaster, bagKey(e) === cur, () => {
+      const o = on === 'a' ? 'b' : 'a'; if (bagKey(e) === bagc[o]) bagc[o] = bagc[on]; bagc[on] = bagKey(e); closeSheet(); paintBagCmp();
+    }))), bagCancelRow('bagPickCancel'));
+}
+function renderFreshPickSheet(title){
+  title.textContent = 'Change bag';
+  const items = fmItems();
+  sheetEl.append(h('div', { class:'mk-kind', id:'fmTiles', role:'group', 'aria-label':'Pick a bag' }, items.map(x => h('button', { type:'button', 'aria-pressed':String(bagKey(x.e) === bagf.key), onclick:() => { bagf.key = bagKey(x.e); closeSheet(); paintFresh(); } },
+    pic('bag'), h('b', { text:x.e.coffee }), h('small', { text:'day ' + x.f.days + ' \u00b7 ' + PR_FRESH_TAGS[x.f.state][1].toLowerCase() })))), bagCancelRow('fmPickCancel'));
+}
+function renderFreshBarsSheet(title){
+  title.textContent = 'All my bags today';
+  sheetEl.append(...bagBars(fmItems()), h('div', { class:'row', style:'margin-top:14px' }, h('button', { type:'button', class:'btn primary block', id:'fmBarsDone', text:'Done', onclick:closeSheet })));
 }
 /* ---------- caffeine: pictures ---------- */
 const CF_INK = '#22120C', CF_TAN = '#C79A66', CF_GREEN = '#2E7D4F', CF_ALERT = '#B3261E';
@@ -19353,7 +19414,7 @@ function cfcPaint(){
   const tile = CF_TILE_OF[cfc.method] || 'drip', res = cfcRes();
   const inst = cfc.method === 'instant';
   const setM = m => { if (CF_TILE_OF[cfc.method] !== m){ if (m === 'instant'){ cfc.prevGrams = cfc.grams; cfc.grams = '2'; } else if (inst){ cfc.grams = cfc.prevGrams || '18'; } cfc.method = m; cfcPaint(); } };
-  host.append(toolHero('Caffeine in a cup', 'Weigh the coffee. I guess the caffeine.', 'caffeine'), toolReset('cfcReset', () => { cfcFresh(cfcSeed); cfcPaint(); }),
+  host.append(toolHero('Caffeine in a cup', 'Weigh the coffee. I guess the caffeine.', 'tl-caffeine'), toolReset('cfcReset', () => { cfcFresh(cfcSeed); cfcPaint(); }),
     tband('Your cup', 'Type or pick', 'a calculator', { pic:'beans' },
       cfQ('How much coffee?'), ycNum('cfcGrams', inst ? 'Instant coffee in grams' : 'Coffee in grams', 'g', cfc.grams, 0.5, v => { cfc.grams = v; cfcLive(); }, inst ? '2' : '18'),
       ...(inst ? [] : [cfQ('Which beans?'), cfGrid(2, [cfTile('bean-3', 'Arabica', 'most specialty coffee', cfc.species !== 'robusta', () => { cfc.species = 'arabica'; cfcPaint(); }, { k:'arabica' }), cfTile('bean-5', 'Robusta', '1.4 to 2 times the caffeine', cfc.species === 'robusta', () => { cfc.species = 'robusta'; cfcPaint(); }, { k:'robusta' })], 'Which beans'),
@@ -19362,7 +19423,7 @@ function cfcPaint(){
       cfQ('Regular or decaf?'), cfGrid(2, [cfTile('bean-3', 'Regular', '', !cfc.decaf, () => { cfc.decaf = false; cfcPaint(); }, { k:'reg' }), cfTile('art-decaf', 'Decaf', 'not zero: a few mg', cfc.decaf, () => { cfc.decaf = true; cfcPaint(); }, { k:'decaf' })], 'Regular or decaf'),
       cfAnswer('About', res, 'cfcAnswer')),
     toolFold(cfc.open, 'work', 'cfcWorkd', 'How this is worked out', 'The sums, with your numbers', 'flask', h('div', { id:'cfcWork' }, ...cfcWorkNodes(res))),
-    hubRow('caffeine', 'Your caffeine day', 'Find the best times for your drinks', goCaffeine, { tone:'t', id:'cfcToDay' }));
+    hubRow('tl-caffeine', 'Your caffeine day', 'Find the best times for your drinks', goCaffeine, { tone:'t', id:'cfcToDay' }));
 }
 function screenCafCup(m){ if (!cfc) cfc = cfcDefaults(); cfcHost = h('div', { id:'cfcHost' }); m.append(cfcHost); cfcPaint(); }
 /* the line on the Brew page, under Coffee, Water and In your cup: the caffeine in this cup, with a way to see the sums */
@@ -19377,50 +19438,35 @@ let cfdayHost = null;
 function goCaffeine(){ go('caffeine'); }
 const CF_LINE_TILES = [['careful', 'cf-moon', 'Careful', '35 mg left at bedtime'], ['relaxed', 'cf-sunrise', 'Relaxed', '57 mg left at bedtime']];
 const CF_SPEED_TILES = [['typical', 'cf-clock', 'Typical', 'half gone in about 5 hours'], ['smoker', 'cf-fast', 'Smoker', 'about 3 hours'], ['pill', 'cf-slow', 'On the pill', 'about 10 hours']];
-/* how many drinks the usual day has; three until the person says */
-const cfCount = D => D.count || 3;
 const cfRepaint = () => { if (cfdayHost) cfDayPaint(); };
+/* draw the page again, and the sleep or speed pop-up too when one is open (its tiles show what is picked) */
+function cfAgain(){ cfRepaint(); if (sheet && (sheet.step === 'cafSleep' || sheet.step === 'cafSpeed')) renderSheet(); }
 function cfRow(e, i){
   const r = cafEntry(e), chip = h('span', { class:'cf-chip' + (e.t === null ? ' none' : '') }, e.t === null ? '?' : cfClock(e.t, true), h('small', { text:e.t === null ? 'time' : cfClock(e.t).slice(-2) }));
   return h('button', { type:'button', class:'cf-row', 'data-i':String(i), 'aria-label':'Change ' + cfTitle(e), onclick:() => goCafDrink(i) }, chip, symPic(cfPicId(e)),
     h('span', { class:'cf-rt' }, h('b', { text:cfTitle(e) }), h('small', { text:cfSub(e) })),
     r.ok ? h('span', { class:'cf-rmg' }, h('b', { text:cfMg(r.mid) }), h('small', { text:'mg' + (cfRangeText(r) ? ' · ' + cfRangeText(r) : '') })) : h('span', { class:'cf-rmg' }, h('small', { text:'unfinished' })));
 }
-const cfEmptyRow = n => h('button', { type:'button', class:'cf-row empty', 'data-empty':String(n), onclick:() => goCafDrink(-1) }, h('span', { class:'cf-chip none' }, '+'), h('span', { class:'cf-rt' }, h('b', { text:'Drink ' + n }), h('small', { text:'tap to add what you usually have' })));
-function cfSleepCard(D){
-  return tband('Your sleep', { tan:'Tap to change' }, '', { pic:'beans' }, h('div', { class:'cf-grid c2' },
-    cfTimeTile('I wake at', 'cf-sunrise', D.wake, m => { D.wake = m; cfSave(); cfRepaint(); }, 'cfWake'), cfTimeTile('I go to bed at', 'cf-moon', D.bed, m => { D.bed = m; cfSave(); cfRepaint(); }, 'cfBed')));
-}
-function cfCountCard(D){
-  return tband('How many times a day?', 'Pick', 'your usual, not your best day', {}, cfStepper('cfCount', cfCount(D), Math.max(1, D.entries.length), 8, v => { const d = cfData(); d.count = v; app.prefs.caffeine = d; cfSave(); cfRepaint(); }),
-    h('p', { class:'cf-fine center', text:'Count the drinks you have most days. You can change this later.' }));
-}
+const cfEmptyRow = () => h('button', { type:'button', class:'cf-row empty', id:'cfAdd', onclick:() => goCafDrink(-1) }, h('span', { class:'cf-chip none' }, '+'), h('span', { class:'cf-rt' }, h('b', { text:'Add a drink' }), h('small', { text:'tap to add what you usually have' })));
 function cfShow(){
   const D = cfData(); if (!cafItems(D).length) return;
   cf.applied = false; go('cafresult');
 }
 function cfListCard(D){
-  const n = Math.max(cfCount(D), D.entries.length), order = D.entries.map((e, i) => i).sort((a, b) => (D.entries[a].t === null ? 9999 : D.entries[a].t) - (D.entries[b].t === null ? 9999 : D.entries[b].t));
+  const order = D.entries.map((e, i) => i).sort((a, b) => (D.entries[a].t === null ? 9999 : D.entries[a].t) - (D.entries[b].t === null ? 9999 : D.entries[b].t));
   const rows = order.map(i => cfRow(D.entries[i], i));
-  for (let k = D.entries.length + 1; k <= n; k++) rows.push(cfEmptyRow(k));
+  if (D.entries.length < CAF_MAX_DRINKS) rows.push(cfEmptyRow());
   const filled = cafItems(D).length, ready = filled > 0;
   const btn = h('button', { type:'button', class:'btn primary block', id:'cfShow', text:'Show my schedule', onclick:cfShow }); btn.disabled = !ready;
-  return tband('What you have, and when', 'Add', filled + ' of ' + n + ' filled in' + (D.entries.length ? ' · tap one to change it' : ''), { pic:'beans' }, h('div', { class:'cf-rows' }, rows),
-    D.entries.length && D.entries.length < 8 && D.entries.length >= n ? h('button', { type:'button', class:'btn block', id:'cfAdd', style:'margin:8px 0 0', text:'Add another drink', onclick:() => { const d = cfData(); d.count = Math.min(8, d.entries.length + 1); app.prefs.caffeine = d; cfSave(); goCafDrink(-1); } }) : null,
-    ready && filled < n ? h('p', { class:'cf-fine center', text:'Empty ones are left out of the schedule.' }) : null, btn);
-}
-function cfSumsFold(D){
-  return toolFold(cf.open, 'sums', 'cfSums', 'Change the sums', 'Your sleep line and how fast you clear caffeine', 'flask', h('div', null,
-    cfQ('How careful about sleep?'), cfGrid(2, CF_LINE_TILES.map(x => cfTile(x[1], x[2], x[3], D.line === x[0], () => { const d = cfData(); d.line = x[0]; app.prefs.caffeine = d; cfSave(); cfRepaint(); }, { k:x[0] })), 'Sleep line'),
-    cfFine('Both lines are our own reading of sleep studies, so they are rated C in the Science Audit. Careful comes from a 2023 review of 24 studies (Gardiner and others). It says a 107 mg coffee should be at least 8.8 hours before bed, which leaves about 35 mg at a 5-hour half-life. Relaxed is 57 mg, what 100 mg four hours before bed leaves. It was said to have no measurable effect, and we could not re-check that trial.'),
-    cfQ('How fast do you clear caffeine?'), cfGrid(3, CF_SPEED_TILES.map(x => cfTile(x[1], x[2], x[3], D.speed === x[0], () => { const d = cfData(); d.speed = x[0]; app.prefs.caffeine = d; cfSave(); cfRepaint(); }, { cls:'sm', k:x[0] })), 'How fast you clear caffeine'),
-    cfFine('About 5 hours is a common half-life. Reviews give 2.5 to 5 hours on average, and 2.3 to 12 hours from person to person. Smoking shortens it by 30 to 50 percent and the pill can nearly double it (rated B). Pregnancy slows it much more, so ask your doctor first.')));
+  return tband('What you have, and when', 'Add', !D.entries.length ? 'your usual drinks' : D.entries.length + (D.entries.length === 1 ? ' drink' : ' drinks') + ' · tap one to change it', { pic:'beans' }, h('div', { class:'cf-rows' }, rows), btn);
 }
 function cfDayPaint(){
   const D = cfData(), host = cfdayHost; host.textContent = '';
-  host.append(toolHero('Your caffeine day', 'Find your best schedule.', 'caffeine'), toolReset('cfdayReset', () => { sheet = { step:'cafClear' }; openSheet(); }, 'Reset my day'),
-    cfSleepCard(D), cfCountCard(D), cfListCard(D), cfSumsFold(D),
-    hubRow('caffeine', 'Caffeine in one cup', 'Weigh the coffee and get the milligrams', goCafCup, { tone:'t', id:'cfToCup' }));
+  const speed = CF_SPEED_TILES.find(x => x[0] === D.speed) || CF_SPEED_TILES[0];
+  host.append(toolHero('Your caffeine day', 'Find your best schedule.', 'tl-caffeine'), toolReset('cfdayReset', () => { sheet = { step:'cafClear' }; openSheet(); }, 'Reset my day'),
+    cfListCard(D),
+    toolTiles(toolTile('cfSleepBtn', 'cf-moon', 'My sleep', 'wake ' + cfClock(D.wake) + ', bed ' + cfClock(D.bed), openCafSleep), toolTile('cfSpeedBtn', 'cf-clock', 'How I clear it', speed[2].toLowerCase() + ', ' + speed[3], openCafSpeed)),
+    hubRow('tl-caffeine', 'Caffeine in one cup', 'Weigh the coffee and get the milligrams', goCafCup, { tone:'t', id:'cfToCup' }));
 }
 /* Reset my day: the usual day is saved in this browser, so a mascot box asks first. Clearing puts back wake 7:00 AM, bed 11:00 PM, no drinks. */
 function cfClearDay(){ app.prefs.caffeine = caffeineClean(null); cf.applied = false; cf.idx = -1; cfSave(); closeSheet(); cfRepaint(); window.scrollTo({ top:0 }); }
@@ -19509,7 +19555,7 @@ function cfdSource(d){
 function cfdPaint(){
   const D = cfData(), d = cf.d, host = cfdHost; host.textContent = '';
   const no = (cf.idx >= 0 ? cf.idx : D.entries.length) + 1;
-  host.append(toolHero('Your caffeine day', 'Drink ' + no + ' of ' + Math.max(cfCount(D), no), 'caffeine'));
+  host.append(toolHero('Your caffeine day', 'Drink ' + no, 'tl-caffeine'));
   const r = cafEntry(d);
   const save = h('button', { type:'button', class:'btn primary block', id:'cfdSave', text:'Save this drink', onclick:cfdSave });
   host.append(tband('Drink ' + no, 'Pick', d.kind ? { pod:'Pod', home:'Home brew', shop:'Shop drink', other:'Something else' }[d.kind] : 'what you have', {}, ...cfdSections(d), d.kind ? cfAnswer('This drink is about', r, 'cfdAnswer') : null, d.kind ? save : null,
@@ -19521,11 +19567,11 @@ function cfdSave(){
   const D = cfData(), e = cafEntryClean(cf.d);
   if (!e || !cafEntry(e).ok || e.t === null) return;
   if (cf.idx >= 0 && D.entries[cf.idx]) D.entries[cf.idx] = e; else D.entries.push(e);
-  D.count = Math.max(cfCount(D), D.entries.length); app.prefs.caffeine = D; cf.applied = false; cfSave(); go('caffeine');
+  app.prefs.caffeine = D; cf.applied = false; cfSave(); go('caffeine');
 }
 function cfdRemove(){
   const D = cfData();
-  if (cf.idx >= 0 && D.entries[cf.idx]){ D.entries.splice(cf.idx, 1); D.count = Math.max(D.entries.length, cfCount(D) - 1); app.prefs.caffeine = D; cf.applied = false; cfSave(); }
+  if (cf.idx >= 0 && D.entries[cf.idx]){ D.entries.splice(cf.idx, 1); app.prefs.caffeine = D; cf.applied = false; cfSave(); }
   go('caffeine');
 }
 function screenCafDrink(m){
@@ -19683,7 +19729,7 @@ function cfDayCard(cmp, D){
 }
 function cfResultPaint(){
   const D = cfData(), host = cfresHost; host.textContent = '';
-  host.append(toolHero('Your caffeine day', 'Your usual schedule, and a better one.', 'caffeine'));
+  host.append(toolHero('Your caffeine day', 'Your usual schedule, and a better one.', 'tl-caffeine'));
   const cmp = cafCompare(D);
   if (!cmp.ok){ host.append(cfNote('ok', 'think', 'thinking', null, 'Add at least one finished drink first.'), h('button', { type:'button', class:'btn primary block', text:'Back to my drinks', onclick:goCaffeine })); return; }
   host.append(cfMugCard(cmp), cfDayCard(cmp, D));
@@ -19693,6 +19739,48 @@ function cfResultPaint(){
     cfNote('warn', 'shrug', 'worried', 'cfPreg', 'Pregnant, planning to be, or under 18? Ask your doctor first. In pregnancy the EFSA, NHS and ACOG line is 200 mg a day. Caffeine also clears much more slowly, so I do not plan for it. For under 18s, EFSA suggests 3 mg per kg of body weight a day, so I do not plan for that either (rated B).'));
 }
 function screenCafResult(m){ cfresHost = h('div', { id:'cfresHost' }); m.append(cfresHost); cfResultPaint(); }
+/* ---------- caffeine pop-ups ----------
+   Each choice is saved at once (cfSave) and the page behind is drawn again (cfAgain), so Done only closes. */
+function openCafSleep(){ sheet = { step:'cafSleep' }; openSheet(); }
+function openCafSpeed(){ sheet = { step:'cafSpeed' }; openSheet(); }
+const cfDoneRow = id => h('div', { class:'row', style:'margin-top:14px' }, h('button', { type:'button', class:'btn primary block', id, text:'Done', onclick:closeSheet }));
+function renderCafSleepSheet(title){
+  title.textContent = 'My sleep';
+  const D = cfData();
+  sheetEl.append(h('div', { class:'cf-grid c2' }, cfTimeTile('I wake at', 'cf-sunrise', D.wake, m => { D.wake = m; cfSave(); cfAgain(); }, 'cfWake'), cfTimeTile('I go to bed at', 'cf-moon', D.bed, m => { D.bed = m; cfSave(); cfAgain(); }, 'cfBed')),
+    cfQ('How careful about sleep?'), cfGrid(2, CF_LINE_TILES.map(x => cfTile(x[1], x[2], x[3], D.line === x[0], () => { const d = cfData(); d.line = x[0]; app.prefs.caffeine = d; cfSave(); cfAgain(); }, { k:x[0] })), 'Sleep line'),
+    cfFine('Both lines are our own reading of sleep studies, so they are rated C in the Science Audit. Careful comes from a 2023 review of 24 studies (Gardiner and others). It says a 107 mg coffee should be at least 8.8 hours before bed, which leaves about 35 mg at a 5-hour half-life. Relaxed is 57 mg, what 100 mg four hours before bed leaves. It was said to have no measurable effect, and we could not re-check that trial.'), cfDoneRow('cfSleepDone'));
+}
+function renderCafSpeedSheet(title){
+  title.textContent = 'How I clear it';
+  const D = cfData();
+  sheetEl.append(cfQ('How fast do you clear caffeine?'), cfGrid(3, CF_SPEED_TILES.map(x => cfTile(x[1], x[2], x[3], D.speed === x[0], () => { const d = cfData(); d.speed = x[0]; app.prefs.caffeine = d; cfSave(); cfAgain(); }, { cls:'sm', k:x[0] })), 'How fast you clear caffeine'),
+    cfFine('About 5 hours is a common half-life. Reviews give 2.5 to 5 hours on average, and 2.3 to 12 hours from person to person. Smoking shortens it by 30 to 50 percent and the pill can nearly double it (rated B). Pregnancy slows it much more, so ask your doctor first.'), cfDoneRow('cfSpeedDone'));
+}
+/* ---------- the Add a new bag pop-up ----------
+   The form is the same one Coffee prices uses (prForm in 49-prices-form.js), in its short shape. The dose and cups a day from the Cost page are saved with a bag of beans, as before. */
+function openCostAdd(){
+  const a = prNewBag(); a.sym = spSym(); a.dose = +cs.dose > 0 ? +cs.dose : null; a.cups = parseFloat(cs.cups) > 0 ? parseFloat(cs.cups) : null;
+  cs.add = a; cs.addMsg = null; sheet = { step:'costAdd' }; openSheet();
+}
+/* Add bag: a bag that cannot be used says what is missing; a new one goes on the list, becomes the bag in use, and the pop-up closes */
+function csAddBag(){
+  const a = cs.add, o = prObj(a), e = priceEntry(o);
+  if (!e){ cs.addMsg = prWhy(o); renderSheet(); return; }
+  const n = prAddBags([o]);
+  if (n.added){ cs.pick = priceKey(e); cs.note = 'Added ' + e.coffee + ' to your coffee prices.'; cs.add = null; cs.addMsg = null; closeSheet(); csPaint(); return; }
+  if (n.same) cs.pick = priceKey(e);
+  cs.addMsg = n.full ? 'Your coffee prices list is full. Delete some first.' : 'That bag is already in your coffee prices, bought the same month. To log it again, use Coffee prices in the Menu.';
+  renderSheet();
+}
+function renderCostAddSheet(title){
+  title.textContent = 'Add a new bag'; sheet.ok = !cs.addMsg;   /* the face: informing, or worried when something is missing */
+  if (!cs.add) cs.add = prNewBag();
+  sheetEl.append(h('p', { class:'fine', style:'margin:0 0 10px', text:'Tell me what you bought. It is kept in your coffee prices.' }),
+    prForm(cs.add, 'csN', { compact:true, actions:() => [
+      cs.addMsg ? h('p', { class:'fine', id:'csAddMsg', role:'status', style:'margin:12px 0 0', text:cs.addMsg }) : null,
+      h('div', { class:'row', style:'margin-top:14px' }, h('button', { type:'button', class:'btn', id:'csAddCancel', text:'Cancel', onclick:closeSheet }), h('button', { type:'button', class:'btn primary', id:'csAddGo', text:'Add bag', onclick:csAddBag }))] }));
+}
 /* ---------- the purchase form and the words around it ----------
    One form serves Add a bag and Edit a purchase. It works on a plain object `a` (see prNewBag) and redraws itself when the kind changes; typing never redraws it.
    A purchase's date is a month and a year (YYYY-MM). A purchase that already has a day keeps it while its month and year are left alone. */
@@ -19775,17 +19863,42 @@ function prForm(a, p, o){
     const fin = h('div', { class:'yc-mini', role:'group', 'aria-label':'Is it finished?' }, [['', 'No, still open'], ['y', 'Yes, finished']].map(x => h('button', { type:'button', 'data-f':x[0], 'aria-pressed':String((x[0] === 'y') === !!a.finished), text:x[1],
       onclick:e => { a.finished = x[0] === 'y' ? (a.finished || today()) : ''; Array.from(e.currentTarget.parentNode.children).forEach(b => b.setAttribute('aria-pressed', String((b.dataset.f === 'y') === !!a.finished))); } })));
     const sym = h('input', { id:p + 'Sym', class:'yc-text', type:'text', maxlength:'3', value:a.sym, style:'width:6em' }); sym.addEventListener('input', () => { a.sym = sym.value; });
-    box.append(tiles, ink(p + 'Name', 'Coffee', 'coffee', 'e.g. Kenya AA', 80), ink(p + 'Roaster', 'Roaster (optional)', 'roaster', '', 80),
-      h('div', { class:'yc-row' }, price, h('div', { class:'yc-f' }, h('label', { for:p + 'Sym', text:'Currency symbol' }), sym)), ...sizeNodes,
-      grp('art-cal', 'Bought in', false, h('div', { class:'fm-two' }, sel(p + 'Month', 'Month', mo, () => a.month, v => { a.month = v; }), sel(p + 'Year', 'Year', yrs, () => a.year, v => { a.year = v; })), h('p', { class:'fm-note', text:'Pick an earlier month to add a purchase you forgot.' })),
-      grp('art-pin', 'Bought from', true, h('div', { class:'fm-two' }, ink(p + 'City', 'City', 'city', '', 60), h('div', { class:'yc-f' }, h('label', { for:p + 'State', text:'State' }), stSel)), regionWrap, h('p', { class:'fm-note', text:'Leave it blank for coffee from your home town. Add it when you buy while traveling.' })),
-      grp('ln-rested', 'Roasted on', true, h('div', { class:'yc-f wide' }, roast), h('p', { class:'fm-note', text:'It is on most bags, near the bag date or best-by date. With it, your list shows how old the coffee is.' })),
-      grp('art-bag', pods ? 'Already all gone?' : 'Already finished?', true, fin, h('p', { class:'fm-note', text:'Finished only tidies your list. It never changes what you bought.' })),
-      ...(o.actions ? o.actions().filter(Boolean) : []));
+    const roasterN = ink(p + 'Roaster', 'Roaster (optional)', 'roaster', '', 80), symN = h('div', { class:'yc-f' }, h('label', { for:p + 'Sym', text:'Currency symbol' }), sym);
+    const bought = grp('art-cal', 'Bought in', false, h('div', { class:'fm-two' }, sel(p + 'Month', 'Month', mo, () => a.month, v => { a.month = v; }), sel(p + 'Year', 'Year', yrs, () => a.year, v => { a.year = v; })), o.compact ? null : h('p', { class:'fm-note', text:'Pick an earlier month to add a purchase you forgot.' }));
+    const from = grp('art-pin', 'Bought from', true, h('div', { class:'fm-two' }, ink(p + 'City', 'City', 'city', '', 60), h('div', { class:'yc-f' }, h('label', { for:p + 'State', text:'State' }), stSel)), regionWrap, h('p', { class:'fm-note', text:'Leave it blank for coffee from your home town. Add it when you buy while traveling.' }));
+    const roastG = grp('ln-rested', 'Roasted on', true, h('div', { class:'yc-f wide' }, roast), h('p', { class:'fm-note', text:'It is on most bags, near the bag date or best-by date. With it, your list shows how old the coffee is.' }));
+    const finG = grp('art-bag', pods ? 'Already all gone?' : 'Already finished?', true, fin, h('p', { class:'fm-note', text:'Finished only tidies your list. It never changes what you bought.' }));
+    const acts = o.actions ? o.actions().filter(Boolean) : [];
+    if (o.compact){
+      /* the short form: the few things every purchase needs, with the rest folded away */
+      box.append(tiles, ink(p + 'Name', 'Coffee', 'coffee', 'e.g. Kenya AA', 80), pods ? price : h('div', { class:'yc-row' }, price, sizeNodes[0]), ...(pods ? sizeNodes : sizeNodes.slice(1)), bought,
+        h('details', { class:'moreinfo', id:p + 'More' }, h('summary', { text:'More details: roaster, currency, where, roast date' }), roasterN, symN, from, roastG, finG), ...acts);
+      return;
+    }
+    box.append(tiles, ink(p + 'Name', 'Coffee', 'coffee', 'e.g. Kenya AA', 80), roasterN, h('div', { class:'yc-row' }, price, symN), ...sizeNodes, bought, from, roastG, finG, ...acts);
   }
   draw();
   box.redraw = draw;
   return box;
+}
+/* ---------- ratio calculator pop-ups ----------
+   Both write straight into the screen's state (rp), and the page behind keeps up as you type (rpLive), so closing needs no redraw. */
+function openRatioOwn(){ sheet = { step:'ratioOwn' }; openSheet(); }
+function openRatioDil(){ sheet = { step:'ratioDil' }; openSheet(); }
+function renderRatioOwnSheet(title){
+  title.textContent = 'Set my own numbers';
+  const out = h('div', { class:'yc-result', id:'rpOwnOut', 'aria-live':'polite' });
+  const live = () => { rpLive(); const r = rpRun(); out.textContent = ''; out.append(...(r.ok ? [h('div', { class:'yc-rlab', text:rpEsp() ? 'Cup per gram of coffee' : 'Water per gram of coffee' }), h('div', { class:'yc-big' }, rpR(rpEsp() ? r.cup : r.water))] : [h('div', { class:'yc-warn', text:'Strength should be between about 0.5 and 15 %, and extraction between about 10 and 30 %.' })])); };
+  sheetEl.append(h('p', { class:'fine', style:'margin:0 0 10px', text:'Type the strength you want and the extraction you aim for. They take the place of Lighter, Usual or Stronger.' }),
+    h('div', { class:'yc-row' },
+      ycNum('rpTdsIn', 'Strength you want', '% TDS', rp.tds, 0.05, v => { rp.tds = parseFloat(v) || 0; rp.preset = ''; live(); }),
+      ycNum('rpEyIn', 'Extraction you aim for', '%', rp.ey, 0.5, v => { rp.ey = parseFloat(v) || 0; rp.preset = ''; live(); })),
+    out, h('div', { class:'row', style:'margin-top:14px' }, h('button', { type:'button', class:'btn primary block', id:'rpOwnDone', text:'Done', onclick:closeSheet })));
+  live();
+}
+function renderRatioDilSheet(title){
+  title.textContent = 'Dilute a strong brew';
+  sheetEl.append(...rpDilNodes(), h('div', { class:'row', style:'margin-top:14px' }, h('button', { type:'button', class:'btn primary block', id:'rpDilDone', text:'Done', onclick:closeSheet })));
 }
 /* ---------- screens: compare 2 bags, and freshness ----------
    Nothing is saved here. Both read the purchases in your coffee prices (49-screen-prices.js) and your tastings (history), and use the dose and cups a day from the Cost of coffee screen. Numbers come from engine/67-bag-compare.js. */
@@ -19806,44 +19919,43 @@ const bagSideOf = e => { const u = bagDose(); return bagSide(e, { dose:u.dose, c
 /* "light roast" for a bag, or "medium roast (assumed)" when no tasting names one */
 const bagWord = f => labelOf(ROASTS, f.roast).toLowerCase() + ' roast' + (f.assumed ? ' (assumed)' : '');
 function bagTile(e, label, on, fn){
-  return h('button', { type:'button', 'aria-pressed':String(on), onclick:fn }, pic('bag'), h('b', { text:e.coffee }), h('small', { text:label + ' \u00b7 ' + prMoney(e.sym, e.price) + ' \u00b7 ' + Math.round(costGrams(e.size, e.unit)) + ' g' }));
+  return h('button', { type:'button', 'aria-pressed':String(on), onclick:fn }, pic('bag'), h('b', { text:e.coffee }), h('small', { text:(label ? label + ' \u00b7 ' : '') + prMoney(e.sym, e.price) + ' \u00b7 ' + Math.round(costGrams(e.size, e.unit)) + ' g' }));
 }
 /* when there is nothing to show yet: the mascot says what is missing, with the doors to fill it */
 function bagEmpty(text){
   return [moneyNote('think', 'thinking', null, text), h('button', { type:'button', class:'btn block', id:'bagOpenPrices', style:'margin-top:12px', text:'Open my coffee prices', onclick:goPrices }),
     h('button', { type:'button', class:'flink', id:'bagOpenCost', style:'margin:6px 0 0', text:'Open Cost of coffee', onclick:goCost })];
 }
+/* Bag A or Bag B: the coffee picked for that slot. Settles the two slots first, so they are never the same bag. Needs two bags in the list. */
+function bagPickList(slot){
+  const list = bagList(false), find = k => list.find(e => bagKey(e) === k);
+  if (!find(bagc.a)) bagc.a = bagKey(list[0]);
+  if (!find(bagc.b) || bagc.b === bagc.a) bagc.b = bagKey(list.find(e => bagKey(e) !== bagc.a));
+  return find(bagc[slot]);
+}
 /* ---- Compare 2 bags ---- */
 function paintBagCmp(){
   const host = bagHost; host.textContent = '';
-  host.append(toolHero('Compare 2 bags', 'Price, freshness and your own stars, side by side.', 'cost'));
+  host.append(toolHero('Compare 2 bags', 'Price, freshness and your own stars, side by side.', 'tl-bagcmp'));
   const list = bagList(false);
   if (list.length < 2){ host.append(...bagEmpty('Compare needs two bags in your coffee prices. You have ' + (list.length ? 'one' : 'none') + ' so far.')); return; }
-  const find = k => list.find(e => bagKey(e) === k);
-  if (!find(bagc.a)) bagc.a = bagKey(list[0]);
-  if (!find(bagc.b) || bagc.b === bagc.a) bagc.b = bagKey(list.find(e => bagKey(e) !== bagc.a));
-  const A = find(bagc.a), B = find(bagc.b), on = bagc.slot;
-  const sel = h('select', { id:'bagPick', class:'yc-pick', 'aria-label':'Change Bag ' + on.toUpperCase() }, list.map(e => h('option', { value:bagKey(e), text:e.coffee + (e.roaster ? ' · ' + e.roaster : '') })));
-  sel.value = bagc[on];
-  sel.addEventListener('change', () => { const o = on === 'a' ? 'b' : 'a'; if (sel.value === bagc[o]) bagc[o] = bagc[on]; bagc[on] = sel.value; paintBagCmp(); });
-  host.append(tband('Pick two bags', { tan:'From your coffee prices' }, 'tap a bag, then change it', { pic:'bag' },
-    h('div', { class:'mk-kind', id:'bagTiles', role:'group', 'aria-label':'Pick two bags' }, bagTile(A, 'Bag A', on === 'a', () => { bagc.slot = 'a'; paintBagCmp(); }), bagTile(B, 'Bag B', on === 'b', () => { bagc.slot = 'b'; paintBagCmp(); })),
-    list.length > 2 ? h('div', { class:'yc-f wide' }, sel) : null));
+  const A = bagPickList('a'), B = bagPickList('b');
   const sa = bagSideOf(A), sb = bagSideOf(B), u = bagDose();
   if (!sa.ok || !sb.ok){ host.append(...bagEmpty('I could not work out one of these bags. Check its price and size in your coffee prices.')); return; }
   const row = (label, f, bold) => h('tr', { class:bold ? 'bold' : null }, h('th', { scope:'row', text:label }), h('td', null, f(sa)), h('td', null, f(sb)));
   const ago = s => s.fresh ? s.fresh.days === 0 ? 'today' : s.fresh.days === 1 ? '1 day ago' : s.fresh.days + ' days ago' : 'No roast date';
-  const chip = s => { if (!s.fresh) return '—'; const t = PR_FRESH_TAGS[s.fresh.state]; return h('span', { class:'tag2 ' + t[0], text:t[1] }); };
+  const chip = s => { if (!s.fresh) return '\u2014'; const t = PR_FRESH_TAGS[s.fresh.state]; return h('span', { class:'tag2 ' + t[0], text:t[1] }); };
   const stars = s => s.stars ? [(Math.round(s.stars.avg * 10) / 10) + ' of 5', h('small', { text:s.stars.count + (s.stars.count === 1 ? ' tasting' : ' tastings') })] : h('small', { text:'Not tasted yet' });
   const note = [sa, sb].filter(s => s.fresh).map(s => s.name + ': ' + bagWord(s.fresh)).join('; ');
+  const head = (e, w) => h('th', { scope:'col' }, h('small', { text:'Bag ' + w }), e.coffee);
   host.append(tband('Side by side', { tan:'Your numbers' }, 'nothing is ranked for you', { pic:'scale' },
-    h('table', { class:'bagtab', id:'bagTable' }, h('thead', null, h('tr', null, h('td'), h('th', { scope:'col', text:'Bag A' }), h('th', { scope:'col', text:'Bag B' }))), h('tbody', null,
+    h('table', { class:'bagtab', id:'bagTable' }, h('thead', null, h('tr', null, h('td'), head(A, 'A'), head(B, 'B'))), h('tbody', null,
       row('Price per 100 g', s => prMoney(s.sym, s.per100)), row('A ' + u.dose + ' g cup', s => prMoney(s.sym, s.perCup), true), row('Cups in the bag', s => String(Math.floor(s.cupsInBag))),
-      row('Roasted', ago), row('Freshness', chip), row('Gone in about', s => s.daysInBag != null ? (Math.round(s.daysInBag * 10) / 10) + ' days' : '—'), row('Your stars', stars))),
+      row('Roasted', ago), row('Freshness', chip), row('Gone in about', s => s.daysInBag != null ? (Math.round(s.daysInBag * 10) / 10) + ' days' : '\u2014'), row('Your stars', stars))),
     h('p', { class:'fine', style:'margin:10px 0 0', text:'At ' + u.dose + ' g a cup' + (u.cups > 0 ? ' and ' + u.cups + ' cup' + (u.cups === 1 ? '' : 's') + ' a day' : '') + '. Change either on Cost of coffee.' + (note ? ' Freshness uses the typical filter-coffee windows (rated D): ' + note + '. ' + FRESH_NOTE : '') })));
-  host.append(moneyNote('think', 'thinking', 'bagVerdict', bagVerdict(sa, sb)),
-    h('button', { type:'button', class:'flink', id:'bagOpenCost', style:'margin:10px 0 0', text:'Change the dose or cups a day on Cost of coffee', onclick:goCost }),
-    h('button', { type:'button', class:'flink', id:'bagOpenPrices', style:'margin:6px 0 0', text:'Open my coffee prices', onclick:goPrices }));
+  host.append(moneyNote('think', 'thinking', 'bagVerdict', bagVerdict(sa, sb)));
+  host.append(toolTiles(list.length > 2 ? toolTile('bagPickA', 'art-bag', 'Change Bag A', A.coffee, () => openBagPick('a')) : null, list.length > 2 ? toolTile('bagPickB', 'art-bag', 'Change Bag B', B.coffee, () => openBagPick('b')) : null,
+    toolTile('bagOpenCost', 'tl-cost', 'Cost of coffee', 'your dose and cups a day', goCost), toolTile('bagOpenPrices', 'art-bag', 'Coffee prices', 'the bags you bought', goPrices)));
 }
 function screenBagCmp(m){ bagHost = h('div', { id:'bagHost' }); m.append(bagHost); paintBagCmp(); }
 /* ---- Freshness ---- */
@@ -19858,6 +19970,8 @@ function fmoGrid(mo){
 }
 const FMO_WORDS = { roast:'roast day', rest:'still resting', sweet:'sweet spot', past:'past the peak', fade:'fading' };
 function fmoMove(n){ let m = bagf.m + n, y = bagf.y; if (m < 1){ m = 12; y--; } if (m > 12){ m = 1; y++; } bagf.y = y; bagf.m = m; paintFresh(); }
+/* the bags with a roast date (the six newest), each with its numbers and its place in the freshness window */
+function fmItems(){ return bagList(true).slice(0, 6).map(e => { const s = bagSideOf(e); return { e, s, f:bagFresh(e, bagRoast(bagRows(e)), new Date()) }; }).filter(x => x.f); }
 /* each bag on its own bar, the same bar as the Freshness clock on Facts; the dark tick is today */
 function bagBars(items){
   const rows = items.map(x => {
@@ -19866,40 +19980,44 @@ function bagBars(items){
       h('div', { class:'fcbar', role:'img', 'aria-label':x.e.coffee + ': day ' + x.f.days + ' of ' + x.f.window.fade + ', ' + FRESH_LABEL[x.f.state].toLowerCase() }, seg('r', k.rest), seg('s', k.sweet), seg('p', k.past), h('span', { class:'fcat', style:'left:' + k.at + '%' })),
       h('div', { class:'fclab', 'aria-hidden':'true' }, h('span', { style:'width:' + k.rest + '%', text:'rest' }), h('span', { style:'width:' + k.sweet + '%', text:'sweet spot' }), h('span', { style:'width:' + k.past + '%', text:'past peak' })));
   });
-  return tband('Your bags, today', { tan:'Each bag on its own bar' }, 'the dark tick is today', { pic:'beans' }, ...rows,
-    h('p', { class:'fine', style:'margin:8px 0 0', text:'Only bags with a roast date show here, and not the ones you marked finished. Windows are typical guide values (rated D); roasters differ, so follow the bag if it gives its own advice.' }));
+  return [h('p', { class:'fine', style:'margin:0 0 6px', text:'Each bag on its own bar. The dark tick is today.' }), ...rows,
+    h('p', { class:'fine', style:'margin:8px 0 0', text:'Only bags with a roast date show here, and not the ones you marked finished. Windows are typical guide values (rated D); roasters differ, so follow the bag if it gives its own advice.' })];
 }
 function paintFresh(){
   const host = bagHost; host.textContent = '';
-  host.append(toolHero('Freshness', 'When each bag is at its best.', 'drop'));
-  const list = bagList(true).slice(0, 6);
-  if (!list.length){ host.append(...bagEmpty('Freshness needs a bag with a roast date. Add the roast date to a bag in your coffee prices.')); return; }
-  if (!list.some(e => bagKey(e) === bagf.key)) bagf.key = bagKey(list[0]);
+  host.append(toolHero('Freshness', 'When each bag is at its best.', 'tl-fresh'));
+  const items = fmItems();
+  if (!items.length){ host.append(...bagEmpty('Freshness needs a bag with a roast date. Add the roast date to a bag in your coffee prices.')); return; }
+  if (!items.some(x => bagKey(x.e) === bagf.key)) bagf.key = bagKey(items[0].e);
   if (!bagf.y){ const d = new Date(); bagf.y = d.getFullYear(); bagf.m = d.getMonth() + 1; }
-  const items = list.map(e => { const s = bagSideOf(e); return { e, s, f:bagFresh(e, bagRoast(bagRows(e)), new Date()) }; }).filter(x => x.f);
   const cur = items.find(x => bagKey(x.e) === bagf.key) || items[0], fin = cur.s.ok && cur.s.daysInBag != null ? isoAdd(today(), Math.round(cur.s.daysInBag)) : '';
   host.append(moneyNote('think', 'thinking', 'fmLine', freshLine(cur.e.coffee, cur.f, fin, phDate)));
   const mo = freshMonth(cur.f, bagf.y, bagf.m, fin);
-  const tiles = h('div', { class:'mk-kind', id:'fmTiles', role:'group', 'aria-label':'Pick a bag' }, items.map(x => h('button', { type:'button', 'aria-pressed':String(x === cur), onclick:() => { bagf.key = bagKey(x.e); paintFresh(); } }, pic('bag'), h('b', { text:x.e.coffee }), h('small', { text:'day ' + x.f.days + ' · ' + PR_FRESH_TAGS[x.f.state][1].toLowerCase() }))));
   const legend = h('div', { class:'fmleg', 'aria-hidden':'true' }, h('span', { class:'k roast', text:'Roast day' }), h('span', { class:'k sweet', text:'Sweet spot' }), h('span', { class:'k past', text:'Past the peak' }), h('span', { class:'k fade', text:'Fading' }), fin ? h('span', { class:'k fin', text:'About when it runs out' }) : null);
-  host.append(tband('Month by month', { tan:cur.e.coffee }, bagWord(cur.f) + ', as filter coffee', { pic:'cal' }, tiles,
-    h('div', { class:'fmnav' }, h('button', { type:'button', class:'btn small', id:'fmPrev', 'aria-label':'Last month', text:'‹', onclick:() => fmoMove(-1) }), h('b', { id:'fmTitle', text:mo.title }), h('button', { type:'button', class:'btn small', id:'fmNext', 'aria-label':'Next month', text:'›', onclick:() => fmoMove(1) })),
-    fmoGrid(mo), legend), bagBars(items));
+  host.append(tband('Month by month', { tan:cur.e.coffee }, bagWord(cur.f) + ', as filter coffee', { pic:'cal' },
+    h('div', { class:'fmnav' }, h('button', { type:'button', class:'btn small', id:'fmPrev', 'aria-label':'Last month', text:'\u2039', onclick:() => fmoMove(-1) }), h('b', { id:'fmTitle', text:mo.title }), h('button', { type:'button', class:'btn small', id:'fmNext', 'aria-label':'Next month', text:'\u203a', onclick:() => fmoMove(1) })),
+    fmoGrid(mo), legend));
+  if (items.length > 1) host.append(toolTiles(toolTile('fmPickBtn', 'art-bag', 'Change bag', cur.e.coffee, openFreshPick), toolTile('fmBarsBtn', 'art-beans', 'All my bags today', 'one bar for each bag', openFreshBars)));
 }
 function screenFresh(m){ bagHost = h('div', { id:'bagHost' }); m.append(bagHost); paintFresh(); }
 /* ---------- screen: cost of coffee ----------
-   This is a what-if: nothing here is kept in your saved work or your history file. A bag or box is kept only when the person presses Add to my coffee prices, which records a purchase in the separate prices list (49-screen-prices.js). */
+   The bags are the open ones in the coffee prices list (49-screen-prices.js), so nothing is typed on this page except the dose and the cups a day. Those two are a what-if: they are not kept in your saved work or your history file.
+   A bag is added from the pop-up (49-cost-add.js), which records a purchase in the prices list. */
 let cs = null, csHost = null;
 function goCost(){ if (!cs) csStart(); go('cost'); }
-const csBag = (name, roaster) => ({ name:name || '', roaster:roaster || '', price:'', size:'', unit:'g', kind:'bag' });
 function csStart(){
   const b = app.brew, dose = b.method && b.water > 0 && b.ratio >= 1.5 && b.ratio <= 20 ? Math.round(b.water / b.ratio * 2) / 2 : 20;
-  cs = { sym:'$', dose, cups:'2', compare:false, a:csBag(app.coffee.name, app.coffee.roaster), b:csBag('', ''), open:{ sym:false, work:false } };
+  cs = { dose, cups:'2', pick:null, note:null, add:null, addMsg:null, open:{ work:false } };
 }
-const csLabel = (i) => { const x = i ? cs.b : cs.a; return x.name.trim() || (i ? (x.kind === 'pods' ? 'Box B' : 'Bag B') : (cs.compare ? (x.kind === 'pods' ? 'Box A' : 'Bag A') : 'Your coffee')); };
-const csMoney = x => cs.sym + (Math.round(x * 100) / 100).toFixed(2);
+/* the open bags, the newest purchase first; a purchase that is the same as one already listed (same coffee, price, size and month) is one bag */
+const csBags = () => { const seen = new Set(); return priceOpenBags(pr.list, today()).sort((x, y) => (y.date || '').localeCompare(x.date || '') || y.i - x.i).filter(e => { const k = priceKey(e); if (seen.has(k)) return false; seen.add(k); return true; }); };
+/* the bag the answer is for: the one picked (kept by its purchase key, so a deleted row cannot shift it), else the newest open bag, else none */
+function csEntry(){ const l = csBags(); return l.find(e => cs.pick && priceKey(e) === cs.pick) || l[0] || null; }
+const csCalc = e => costOne({ kind:e.kind, price:e.price, size:e.size, unit:e.unit, dose:cs.dose, cups:cs.cups });
+/* what one cup costs from the bag in use, or 0 (the Shops view of the history uses it for the swap line) */
+function csCup(){ const e = csEntry(), c = e ? csCalc(e) : null; return c && c.ok ? c.perCup : 0; }
+const csMoney = (x, sym) => (sym || '$') + (Math.round(x * 100) / 100).toFixed(2);
 const csNote = { price:'Enter the price.', size:'Enter the size of the bag, or how many pods are in the box.', dose:'Enter your dose in grams, between 1 and 200.', 'dose-over-bag':'Your dose is bigger than the bag.' };
-const csCalc = x => costOne({ kind:x.kind, price:x.price, size:x.size, unit:x.unit, dose:cs.dose, cups:cs.cups });
 /* the day a bag or box runs out, in words, counting from today */
 function csEmptyOn(days){ const d = new Date(); d.setDate(d.getDate() + Math.round(days)); const p = n => String(n).padStart(2, '0'); return phDate(d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())); }
 /* a row of cups: how many a bag makes, with the first few (a day's worth) filled in. More than 30 cups is drawn as a bar. */
@@ -19910,107 +20028,52 @@ function csCupRow(c){
   else { const f = h('i', { class:'f', style:'flex:0 0 ' + Math.max(2, Math.min(100, day / n * 100)) + '%' }); row.classList.add('solid'); row.append(f, h('i', { style:'flex:1' })); }
   return [row, h('div', { class:'cupcap' }, h('span', { text:day ? 'Today' : '' }), h('span', { text:c.daysInBag != null ? 'Empty about ' + csEmptyOn(c.daysInBag) : '' }))];
 }
-function csOneNodes(x, c){
-  const pods = c.kind === 'pods', out = [h('div', { class:'yc-rlab', text:csLabel(x === cs.b ? 1 : 0) + ' costs' }), h('div', { class:'yc-big', 'data-cup':'1' }, csMoney(c.perCup), h('small', { text:pods ? ' a pod' : ' a cup' }))];
-  if (c.perDay != null) out.push(h('div', { class:'yc-line' }, h('b', { text:csMoney(c.perDay) + ' a day, ' + csMoney(c.perWeek) + ' a week, ' + csMoney(c.perMonth) + ' a month' }), ' at ' + (+cs.cups) + (pods ? ' pod' : ' cup') + (+cs.cups === 1 ? '' : 's') + ' a day.'));
+function csOneNodes(e, c){
+  const pods = c.kind === 'pods', m = x => csMoney(x, e.sym), out = [h('div', { class:'yc-rlab', text:e.coffee + ' costs' }), h('div', { class:'yc-big', 'data-cup':'1' }, m(c.perCup), h('small', { text:pods ? ' a pod' : ' a cup' }))];
+  if (c.perDay != null) out.push(h('div', { class:'yc-line' }, h('b', { text:m(c.perDay) + ' a day, ' + m(c.perWeek) + ' a week, ' + m(c.perMonth) + ' a month' }), ' at ' + (+cs.cups) + (pods ? ' pod' : ' cup') + (+cs.cups === 1 ? '' : 's') + ' a day.'));
   out.push(h('div', { class:'yc-line mute', text:pods ? 'The box has ' + Math.floor(c.cupsInBag) + ' pods' + (c.daysInBag != null ? ' and lasts about ' + (Math.round(c.daysInBag * 10) / 10) + ' days.' : '.') : 'The bag makes about ' + Math.floor(c.cupsInBag) + ' cups' + (c.daysInBag != null ? ' and lasts about ' + (Math.round(c.daysInBag * 10) / 10) + ' days.' : '.') }));
   if (c.daysInBag != null) out.push(...csCupRow(c));
   return out;
 }
+/* the answer for the bag in use: the big figure, or one plain line saying what is missing */
 function csResultNodes(){
-  const bags = cs.compare ? [cs.a, cs.b] : [cs.a], calc = bags.map(csCalc), out = [];
-  if (!cs.compare){
-    return calc[0].ok ? csOneNodes(cs.a, calc[0]) : [h('p', { class:'fine', style:'margin:0', text:csNote[calc[0].why] || 'Check the numbers.' })];
-  }
-  calc.forEach((c, i) => {
-    out.push(h('div', { class:'cs-one', 'data-bag':i ? 'b' : 'a' }, c.ok ? csOneNodes(bags[i], c) : [h('div', { class:'yc-rlab', text:csLabel(i) }), h('p', { class:'fine', style:'margin:0', text:csNote[c.why] || 'Check the numbers.' })]));
-  });
-  const d = costCompare(calc[0], calc[1]);
-  if (d.ok){
-    const w = d.cheaper === 'a' ? 0 : 1;
-    out.push(h('div', { class:'yc-line', id:'csDiff', 'data-cheaper':d.cheaper }, h('b', { text:d.cheaper === 'same' ? 'The two cost about the same a cup.' : csLabel(w) + ' costs ' + csMoney(d.perCup) + ' less a cup, about ' + Math.round(d.pct) + ' % less' + (d.perMonth != null ? ', and ' + csMoney(d.perMonth) + ' less a month.' : '.') }),
-      h('div', { class:'fine', style:'margin-top:4px', text:'This counts cost only. It says nothing about which coffee tastes better.' })));
-  }
-  return out;
+  const e = csEntry();
+  if (!e) return [moneyNote('think', 'thinking', null, 'No open bag yet. Add one and I will work out what a cup costs.')];
+  const c = csCalc(e);
+  return c.ok ? csOneNodes(e, c) : [h('p', { class:'fine', style:'margin:0', text:csNote[c.why] || 'Check the numbers.' })];
 }
 function csLive(){
-  const r = $('csResult'); if (r){ r.textContent = ''; r.append(...csResultNodes()); }
+  const r = $('csResult'), e = csEntry(); if (r){ r.className = e && csCalc(e).ok ? 'yc-result' : ''; r.textContent = ''; r.append(...csResultNodes()); }
   const w = $('csWork'); if (w) w.textContent = csWorkText();
-  spLive();
 }
 function csWorkText(){
-  const c = csCalc(cs.a); if (!c.ok) return cs.a.kind === 'pods' ? 'Enter a price and the number of pods to see the working.' : 'Enter a price, a size and a dose to see the working.';
-  const f = x => String(Math.round(x * 1000) / 1000);
-  const tail = c.perDay != null ? ' A day is ' + cs.cups + (c.kind === 'pods' ? ' pods' : ' cups') + ' × ' + csMoney(c.perCup) + ' = ' + csMoney(c.perDay) + '; a week is 7 days; a month is 30.44 days (a year divided by 12).' : '';
-  if (c.kind === 'pods') return 'The box holds ' + cs.a.size + ' pods. ' + cs.sym + cs.a.price + ' ÷ ' + cs.a.size + ' = ' + cs.sym + f(c.perCup) + ' a pod, and a pod makes one cup.' + tail;
-  return 'The bag is ' + f(c.grams) + ' g (' + cs.a.size + ' ' + cs.a.unit + (cs.a.unit === 'kg' ? ', at 1,000 g to the kilogram' : cs.a.unit === 'oz' ? ', at 28.35 g to the ounce' : cs.a.unit === 'lb' ? ', at 453.6 g to the pound' : '') + '). ' + cs.sym + cs.a.price + ' ÷ ' + f(c.grams) + ' g = ' + cs.sym + f(c.perGram) + ' a gram. A ' + cs.dose + ' g dose costs ' + cs.sym + f(c.perGram) + ' × ' + cs.dose + ' = ' + csMoney(c.perCup) + '.' + tail;
+  const e = csEntry(); if (!e) return 'Add a bag to see the working.';
+  const c = csCalc(e); if (!c.ok) return e.kind === 'pods' ? 'Enter the cups a day to see the working.' : 'Enter a dose and the cups a day to see the working.';
+  const f = x => String(Math.round(x * 1000) / 1000), m = x => csMoney(x, e.sym);
+  const tail = c.perDay != null ? ' A day is ' + cs.cups + (c.kind === 'pods' ? ' pods' : ' cups') + ' × ' + m(c.perCup) + ' = ' + m(c.perDay) + '; a week is 7 days; a month is 30.44 days (a year divided by 12).' : '';
+  if (c.kind === 'pods') return 'The box holds ' + e.size + ' pods. ' + e.sym + e.price + ' ÷ ' + e.size + ' = ' + e.sym + f(c.perCup) + ' a pod, and a pod makes one cup.' + tail;
+  return 'The bag is ' + f(c.grams) + ' g (' + e.size + ' ' + e.unit + (e.unit === 'kg' ? ', at 1,000 g to the kilogram' : e.unit === 'oz' ? ', at 28.35 g to the ounce' : e.unit === 'lb' ? ', at 453.6 g to the pound' : '') + '). ' + e.sym + e.price + ' ÷ ' + f(c.grams) + ' g = ' + e.sym + f(c.perGram) + ' a gram. A ' + cs.dose + ' g dose costs ' + e.sym + f(c.perGram) + ' × ' + cs.dose + ' = ' + m(c.perCup) + '.' + tail;
 }
-/* the two big tiles that say what is being priced: a bag of beans, or pods */
-function csKindTiles(x, i){
-  return h('div', { class:'mk-kind', role:'group', 'aria-label':'What you are pricing', 'data-bag':i ? 'b' : 'a' }, [['bag', 'art-bag', 'Bag of beans', 'priced by weight'], ['pods', 'art-pod', 'Pods or capsules', 'priced each']].map(k =>
-    h('button', { type:'button', 'data-k':k[0], 'aria-pressed':String(x.kind === k[0]), onclick:() => { if (x.kind !== k[0]){ x.kind = k[0]; x.size = ''; x.unit = 'g'; csPaint(); } } }, symPic(k[1]), h('b', { text:k[2] }), h('small', { text:k[3] }))));
-}
-function csBagCard(x, i){
-  const id = i ? 'csB' : 'csA', pods = x.kind === 'pods';
-  const name = h('input', { id:id + 'Name', class:'yc-text', type:'text', maxlength:'80', value:x.name, placeholder:i ? (pods ? 'Box B' : 'Bag B') : 'e.g. Kenya AA' }); name.addEventListener('input', () => { x.name = name.value; csLive(); });
-  let sizeNodes;
-  if (pods){
-    sizeNodes = [h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:'Pods in the box' }), h('div', { class:'yc-mini podtiles', role:'group', 'aria-label':'Pods in the box' }, PRICE_POD_COUNTS.map(n => h('button', { type:'button', 'data-n':String(n), 'aria-pressed':String(String(x.size) === String(n)), text:String(n),
-      onclick:() => { x.size = String(n); csPaint(); } })))), ycNum(id + 'Size', 'Or type how many', '', x.size, 1, v => { x.size = v; Array.from(document.querySelectorAll('#' + id + ' .podtiles button')).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.n === String(x.size)))); csLive(); }, '60')];
-  } else {
-    const unit = h('div', { class:'yc-mini', role:'group', 'aria-label':'Bag size unit' }, COST_UNITS.map(u => h('button', { type:'button', 'data-u':u[0], 'aria-pressed':String(x.unit === u[0]), text:u[0], onclick:e => { x.unit = u[0]; Array.from(e.currentTarget.parentNode.children).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.u === x.unit))); csLive(); } })));
-    sizeNodes = [null, ycNum(id + 'Size', 'Size of the bag', '', x.size, 1, v => { x.size = v; csLive(); }, x.unit === 'g' ? '340' : x.unit === 'oz' ? '12' : '1'), h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:'Size in' }), unit)];
-  }
-  return toolCard(id, pods ? (cs.compare ? (i ? 'Box B' : 'Box A') : 'The box') : (cs.compare ? (i ? 'Bag B' : 'Bag A') : 'The bag'), pods ? 'price and pods from the box' : 'price and size from the bag',
-    csPick(x, id),
-    h('div', { class:'yc-f wide' }, h('label', { for:id + 'Name', text:'Coffee' }), name),
-    h('div', { class:'yc-row' }, ycNum(id + 'Price', pods ? 'Price of the box' : 'Price of the bag', cs.sym, x.price, 0.01, v => { x.price = v; csLive(); }), pods ? null : sizeNodes[1]),
-    pods ? sizeNodes : sizeNodes[2]);
-}
-/* A choice of the coffees already in the prices list (the newest purchase of each, of this kind), to fill this one from. Nothing is shown while there are none. */
-function csPick(x, id){
-  const mine = pr.list.filter(e => e.kind === x.kind); if (!mine.length) return null;
-  const seen = new Set(), list = priceSort(pr.list, 'new').filter(e => { if (e.kind !== x.kind) return false; const k = (e.coffee + '|' + e.roaster).toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
-  const sel = h('select', { id:id + 'Pick', class:'yc-pick', 'aria-label':'Fill from my coffee prices' }, h('option', { value:'', text:'Fill from my coffee prices' }),
-    list.map(e => h('option', { value:String(e.i), text:e.coffee + (e.roaster ? ' · ' + e.roaster : '') + ' · ' + prMoney(e.sym, e.price) + ' for ' + e.size + ' ' + e.unit })));
-  sel.addEventListener('change', () => {
-    const e = pr.list[parseInt(sel.value, 10)]; if (!e) return;
-    cs.sym = e.sym; Object.assign(x, { name:e.coffee, roaster:e.roaster, price:String(e.price), size:String(e.size), unit:e.kind === 'pods' ? 'g' : e.unit, kind:e.kind }); csPaint();
-  });
-  return h('div', { class:'yc-f wide' }, sel);
-}
-/* what the Add button says, with the mascot: tone 'ok', 'warn' or 'info' */
-function csSay(status, tone, text){
-  status.textContent = '';
-  status.append(moneyNote(tone === 'warn' ? 'shrug' : tone === 'info' ? 'think' : 'thumbs', tone === 'warn' ? 'worried' : tone === 'info' ? 'thinking' : 'happy', null, text));
-}
-function csAdd(status){
-  const objs = (cs.compare ? [cs.a, cs.b] : [cs.a]).map(x => ({ kind:x.kind, coffee:x.name, roaster:x.roaster, sym:cs.sym, price:x.price, size:x.size, unit:x.kind === 'pods' ? 'pods' : x.unit, dose:x.kind === 'pods' ? null : cs.dose, cups:x.kind === 'pods' ? null : cs.cups, date:today() }));
-  const usable = objs.filter(o => priceEntry(o));
-  if (!usable.length){ csSay(status, 'warn', prWhy(objs[0])); return; }
-  const n = prAddBags(usable), word = n.added === 1 ? 'purchase' : 'purchases';
-  csSay(status, n.added ? 'ok' : n.full ? 'warn' : 'info', (n.added ? 'Added ' + n.added + ' ' + word + ' to your coffee prices, bought today.' : n.full ? 'Your coffee prices list is full. Delete some first.' : 'That is already in your coffee prices. To add the same coffee again, use Open my coffee prices.') + (usable.length < objs.length ? ' The other one is missing something, so it was left out.' : ''));
+/* which open bag the answer is for: one button for each of the six newest, shown only when there are two or more */
+function csChips(){
+  const list = csBags(), cur = csEntry(), shown = list.slice(0, 6); if (list.length < 2) return null;
+  const same = e => shown.filter(x => x.coffee.toLowerCase() === e.coffee.toLowerCase()).length > 1;
+  return h('div', { class:'cs-bags', id:'csBags' }, h('div', { class:'yc-rlab', text:'Your bag' }),
+    h('div', { class:'cs-chips', role:'group', 'aria-label':'Which bag the answer is for' }, shown.map(e => h('button', { type:'button', class:'cs-chip', 'data-i':String(e.i), 'aria-pressed':String(!!cur && e.i === cur.i),
+      text:e.coffee + (same(e) && e.date ? ' · ' + prWhen(e.date) : ''), onclick:() => { cs.pick = priceKey(e); csPaint(); } }))),
+    list.length > 6 ? h('p', { class:'fine', style:'margin:8px 0 0', text:'These are your 6 newest open bags. Mark a bag finished in Coffee prices to tidy the list.' }) : null);
 }
 function csPaint(){
-  const host = csHost; host.textContent = '';
-  host.append(toolHero('Cost of coffee', 'What a cup costs, at home and at the shop.', 'cost'), toolReset('csReset', () => { csStart(); csPaint(); }));
-  host.append(csKindTiles(cs.a, 0), csBagCard(cs.a, 0));
-  if (cs.compare) host.append(csKindTiles(cs.b, 1), csBagCard(cs.b, 1));
-  const anyBag = (cs.compare ? [cs.a, cs.b] : [cs.a]).some(x => x.kind !== 'pods');
-  host.append(toolCard('csUse', 'How you brew', anyBag ? 'your dose and cups a day' : 'pods a day',
-    h('div', { class:'yc-row' }, anyBag ? ycNum('csDose', 'Coffee per cup', 'g', cs.dose, 0.5, v => { cs.dose = parseFloat(v) || 0; csLive(); }) : null, ycNum('csCups', anyBag ? 'Cups a day' : 'Pods a day', '', cs.cups, 1, v => { cs.cups = v; csLive(); }, '2'))));
-  host.append(h('button', { type:'button', class:'btn', id:'csCompareBtn', 'aria-pressed':String(cs.compare), style:'margin:4px 0 12px', text:cs.compare ? 'Compare with one only' : 'Compare with a second one', onclick:() => { cs.compare = !cs.compare; csPaint(); } }));
-  const status = h('div', { id:'csStatus', role:'status', style:'margin:8px 0 0' });
-  const pods = cs.a.kind === 'pods' && (!cs.compare || cs.b.kind === 'pods');
-  const outCard = tband('What it costs', { tan:'Your answer' }, 'changes as you type', { pic:'beans' }, h('div', { class:'yc-result', id:'csResult', 'aria-live':'polite' }),
-    h('button', { type:'button', class:'btn block', id:'csAdd', style:'margin-top:12px', text:cs.compare ? 'Add these to my coffee prices' : pods ? 'Add this box to my coffee prices' : 'Add this bag to my coffee prices', onclick:() => csAdd(status) }), status,
-    h('button', { type:'button', class:'flink', id:'csPrices', style:'margin:6px 0 0', text:'Open my coffee prices', onclick:goPrices }),
-    h('p', { class:'fine', style:'margin:10px 0 0', text:'This counts the coffee only, not water, filters, milk or power. Nothing here is kept unless you press Add to my coffee prices. That records a purchase, dated today, in your own prices file. It does not touch your history.' }));
-  outCard.id = 'csOut'; host.append(outCard);
-  host.append(spendCard());
-  const sym = h('input', { id:'csSym', class:'yc-text', type:'text', maxlength:'3', value:cs.sym, style:'width:6em' }); sym.addEventListener('change', () => { cs.sym = sym.value.trim().slice(0, 3) || '$'; csPaint(); });
-  host.append(toolFold(cs.open, 'work', 'csWorkd', 'How this is worked out', 'The sums, with your numbers', 'flask', h('p', { class:'fine', id:'csWork', style:'margin:0' })));
-  host.append(toolFold(cs.open, 'sym', 'csSymd', 'Change the currency symbol', 'For example £ or €', 'tag', h('div', { class:'yc-f' }, h('label', { for:'csSym', text:'Symbol' }), sym)));
+  const host = csHost, note = cs.note, e = csEntry(), pods = !!e && e.kind === 'pods'; cs.note = null;
+  host.textContent = '';
+  host.append(toolHero('Cost of coffee', 'What a cup costs, and what you spend.', 'tl-cost'), toolReset('csReset', () => { csStart(); csPaint(); }));
+  if (note) host.append(moneyNote('thumbs', 'happy', 'csNote', note));
+  host.append(tband('What a cup costs', { tan:'Your answer' }, 'for the bag you pick', { pic:'beans' }, h('div', { id:'csResult', 'aria-live':'polite' }), csChips()));
+  if (e) host.append(toolCard('csUse', 'How you brew', pods ? 'pods a day' : 'your dose and cups a day',
+    h('div', { class:'yc-row' }, pods ? null : ycNum('csDose', 'Coffee per cup', 'g', cs.dose, 0.5, v => { cs.dose = parseFloat(v) || 0; csLive(); }), ycNum('csCups', pods ? 'Pods a day' : 'Cups a day', '', cs.cups, 1, v => { cs.cups = v; csLive(); }, '2'))));
+  host.append(toolTiles(toolTile('csAddBtn', 'art-bag', 'Add a new bag', 'price, size, where from', openCostAdd), toolTile('csHistBtn', 'art-cal', 'Cost history', 'by month, year, coffee', openCostHist)));
+  host.append(toolFold(cs.open, 'work', 'csWorkd', 'How this is worked out', 'The sums, with your numbers', 'flask', h('div', null, h('p', { class:'fine', id:'csWork', style:'margin:0' }),
+    h('p', { class:'fine', style:'margin:8px 0 0', text:'This counts the coffee only, not water, filters, milk or power.' }))));
   csLive();
 }
 function screenCost(m){
@@ -20083,8 +20146,8 @@ function prDelete(i){
 }
 function prUse(e){
   if (!cs) csStart();
-  Object.assign(cs, { sym:e.sym, compare:false }); if (e.dose){ cs.dose = e.dose; if (e.cups) cs.cups = String(e.cups); }
-  cs.a = { name:e.coffee, roaster:e.roaster, price:String(e.price), size:String(e.size), unit:e.kind === 'pods' ? 'g' : e.unit, kind:e.kind };
+  if (e.dose){ cs.dose = e.dose; if (e.cups) cs.cups = String(e.cups); }
+  cs.pick = priceKey(e);
   go('cost');
 }
 /* the purchases to show, in the order to show them. Each keeps its place in the list as `i` and has `days` since its roast. 'first' puts the open ones oldest roast first, then the finished ones, latest finished first. */
@@ -20206,7 +20269,7 @@ const rpEsp = () => rp.key === 'espresso';
 const rpSet = () => PLAN_PRESETS[rpEsp() ? 'espresso' : 'filter'];
 function rpStart(){
   const b = app.brew, key = b.method && planMethods().includes(b.method) ? b.method : 'v60', dose = b.method === key && b.water > 0 && b.ratio >= 1.5 && b.ratio <= 20 ? Math.round(b.water / b.ratio * 2) / 2 : (key === 'espresso' ? 18 : 20);
-  rp = { key, dose, preset:'Usual', tds:null, ey:null, open:{ set:false, work:false, sure:false }, dil:{ conc:'', tds:'', mode:'target', target:'', water:'' } };
+  rp = { key, dose, preset:'Usual', tds:null, ey:null, open:{ work:false }, dil:{ conc:'', tds:'', mode:'target', target:'', water:'' } };
   rpPreset('Usual');
 }
 function rpPreset(name){ const p = rpSet().find(x => x[0] === name) || rpSet()[1]; rp.preset = p[0]; rp.tds = p[1]; rp.ey = p[2]; }
@@ -20227,7 +20290,9 @@ function rpResultNodes(res, lvl){
   if (rpOwn()) out.push(h('div', { class:'yc-line mute', text:'This uses the water-kept figure you saved in Cup yield.' }));
   return out;
 }
-function rpLive(){ const r = $('rpResult'); if (r){ r.textContent = ''; r.append(...rpResultNodes(rpRun(), level())); } const w = $('rpWork'); if (w) w.textContent = rpWorkText(); const z = $('rpZone'); if (z) rpZoneFill(z); }
+/* the Lighter, Usual or Stronger buttons show the pick (none lit when your own numbers are in use) */
+function rpMark(){ const c = $('rpPresets'); if (c) Array.from(c.children).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === rp.preset))); }
+function rpLive(){ rpMark(); const r = $('rpResult'); if (r){ r.textContent = ''; r.append(...rpResultNodes(rpRun(), level())); } const w = $('rpWork'); if (w) w.textContent = rpWorkText(); const z = $('rpZone'); if (z) rpZoneFill(z); }
 /* Bean Scientist also sees whether the target sits inside the usual zone (filter methods only: the zone is a filter-coffee convention) */
 function rpZoneFill(z){
   z.textContent = '';
@@ -20258,7 +20323,7 @@ function rpDilNodes(){
       out.append(...(r.ok ? [h('div', { class:'yc-rlab', text:'Strength after' }), h('div', { class:'yc-big' }, (Math.round(r.tds * 100) / 100).toFixed(2), h('small', { text:' % TDS' })), h('div', { class:'yc-line mute', text:'You will have about ' + rpG(r.total) + ' g.' })] : [h('div', { class:'yc-warn', text:'Check the numbers.' })]));
     }
   };
-  const mode = h('div', { class:'yc-mini', role:'group', 'aria-label':'What do you know' }, [['target', 'I know the strength I want'], ['water', 'I know the water I will add']].map(m => h('button', { type:'button', 'data-m':m[0], 'aria-pressed':String(d.mode === m[0]), text:m[1], onclick:() => { d.mode = m[0]; rpPaint(); } })));
+  const mode = h('div', { class:'yc-mini', role:'group', 'aria-label':'What do you know' }, [['target', 'I know the strength I want'], ['water', 'I know the water I will add']].map(m => h('button', { type:'button', 'data-m':m[0], 'aria-pressed':String(d.mode === m[0]), text:m[1], onclick:() => { d.mode = m[0]; renderSheet(); } })));
   box.push(h('p', { class:'fine', style:'margin:0 0 8px', text:'Water added to a brew lowers its strength and changes nothing else: the extraction stays the same.' }), mode,
     h('div', { class:'yc-row' }, ycNum('rpConc', 'Strong brew', 'g', d.conc, 1, v => { d.conc = v; live(); }), ycNum('rpTds', 'Its strength', '% TDS', d.tds, 0.05, v => { d.tds = v; live(); })),
     d.mode === 'target' ? ycNum('rpTarget', 'Strength you want', '% TDS', d.target, 0.05, v => { d.target = v; live(); }, '1.35') : ycNum('rpWater', 'Water to add', 'g', d.water, 1, v => { d.water = v; live(); }), out);
@@ -20268,38 +20333,39 @@ function rpDilNodes(){
 function rpPaint(){
   const host = rpHost, lvl = level(), isNew = lvl === 'new', t = YIELD_TABLE[rp.key];
   host.textContent = '';
-  host.append(toolHero('Ratio and strength calculator', 'Work out how much water to use for the cup you want to drink.', 'ratio'), toolReset('rpReset', () => { rpStart(); rpPaint(); }));
+  host.append(toolHero('Ratio and strength calculator', 'Work out how much water to use for the cup you want to drink.', 'tl-ratio'), toolReset('rpReset', () => { rpStart(); rpPaint(); }));
+  host.append(tband('Your ratio', { tan:'Your answer' }, 'for the cup you pick', { pic:'beans' }, h('div', { class:'yc-result', id:'rpResult', 'aria-live':'polite' }),
+    h('p', { class:'fine', style:'margin:10px 0 0', text:isNew ? 'A starting point to taste and adjust.' : 'A starting point to taste and adjust. The strengths and extractions here are common targets, not rules.' }), h('div', { id:'rpZone' })));
   const sel = h('select', { id:'rpMethod', class:'plain yc-pick' });
   YIELD_GROUPS.forEach(g => { const ks = g[1].filter(k => planMethods().includes(k)); if (ks.length) sel.append(h('optgroup', { label:g[0] }, ks.map(k => h('option', { value:k, text:METHODS.find(x => x.key === k).label, selected:k === rp.key })))); });
   sel.addEventListener('change', () => { rp.key = sel.value; rp.dose = rpEsp() ? 18 : 20; rpPreset('Usual'); rpPaint(); });
   const chips = h('div', { class:'yc-chips', id:'rpPresets', role:'group', 'aria-label':'How strong' });
-  const mark = () => Array.from(chips.children).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === rp.preset)));
-  rpSet().forEach(p => chips.append(h('button', { type:'button', class:'yc-chip', 'data-p':p[0], 'aria-pressed':String(p[0] === rp.preset), onclick:() => { rpPreset(p[0]); if ($('rpTdsIn')){ $('rpTdsIn').value = String(rp.tds); $('rpEyIn').value = String(rp.ey); } mark(); rpLive(); } }, p[0], isNew ? null : h('em', { text:p[1] + ' %' }))));
-  const nums = [ycNum('rpTdsIn', 'Strength you want', '% TDS', rp.tds, 0.05, v => { rp.tds = parseFloat(v) || 0; rp.preset = ''; mark(); rpLive(); }),
-    ycNum('rpEyIn', 'Extraction you aim for', '%', rp.ey, 0.5, v => { rp.ey = parseFloat(v) || 0; rp.preset = ''; mark(); rpLive(); })];
-  const card = toolCard('rpPlan', 'Plan a ratio', 'pick a method and how strong', h('div', { class:'yc-f wide' }, h('label', { for:'rpMethod', text:'Method' }), sel),
-    h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:isNew ? 'How strong' : 'How strong? Strength shown as % of the cup that is dissolved coffee' }), chips), ycNum('rpDose', 'Coffee', 'g', rp.dose, 0.5, v => { rp.dose = parseFloat(v) || 0; rpLive(); }));
-  const cbody = card.querySelector('.tbody');
-  if (!isNew) cbody.append(h('div', { class:'yc-row' }, nums));   /* Just Starting does not see the strength and extraction boxes */
-  cbody.append(h('div', { class:'yc-result', id:'rpResult', 'aria-live':'polite' }), h('p', { class:'fine', style:'margin:10px 0 0', text:isNew ? 'A starting point to taste and adjust.' : 'A starting point to taste and adjust. The strengths and extractions here are common targets, not rules.' }), h('div', { id:'rpZone' }));
-  host.append(card);
-  if (isNew){ rpLive(); return; }   /* Just Starting stops here: no dilute card, no sums, no sources */
-  host.append(gcard('Dilute a strong brew', 'Add water to reach a strength', rpDilNodes(), !isNew, 'drop'));
-  host.append(toolFold(rp.open, 'work', 'rpWorkd', 'How this is worked out', 'The sums, with your numbers', 'flask', h('p', { class:'fine', id:'rpWork', style:'margin:0' })));
-  host.append(toolFold(rp.open, 'sure', 'rpSured', 'How sure are we', 'Where the numbers come from', 'info', h('div', null, h('p', { class:'fine', style:'margin:0 0 8px', text:PLAN_SRC }), h('p', { class:'fine', style:'margin:0' }, h('b', { text:'Water the coffee keeps: ' + YIELD_SURE[t.sure] + '. ' }), t.src))));
+  rpSet().forEach(p => chips.append(h('button', { type:'button', class:'yc-chip', 'data-p':p[0], 'aria-pressed':String(p[0] === rp.preset), onclick:() => { rpPreset(p[0]); rpLive(); } }, p[0], isNew ? null : h('em', { text:p[1] + ' %' }))));
+  host.append(toolCard('rpPlan', 'How you brew', 'method, strength and coffee', h('div', { class:'yc-f wide' }, h('label', { for:'rpMethod', text:'Method' }), sel),
+    h('div', { class:'yc-f wide' }, h('span', { class:'yc-lab', text:isNew ? 'How strong' : 'How strong? Strength shown as % of the cup that is dissolved coffee' }), chips), ycNum('rpDose', 'Coffee', 'g', rp.dose, 0.5, v => { rp.dose = parseFloat(v) || 0; rpLive(); })));
+  if (isNew){ rpLive(); return; }   /* Just Starting stops here: no own numbers, no dilute, no sums, no sources */
+  host.append(toolTiles(toolTile('rpOwnBtn', 'art-tds', 'Set my own numbers', 'strength and extraction', openRatioOwn), toolTile('rpDilBtn', 'art-water', 'Dilute a strong brew', 'add water to reach a strength', openRatioDil)));
+  host.append(toolFold(rp.open, 'work', 'rpWorkd', 'How this is worked out', 'The sums, and where the numbers come from', 'flask', h('div', null, h('p', { class:'fine', id:'rpWork', style:'margin:0 0 8px' }),
+    h('p', { class:'fine', style:'margin:0 0 8px', text:PLAN_SRC }), h('p', { class:'fine', style:'margin:0' }, h('b', { text:'Water the coffee keeps: ' + YIELD_SURE[t.sure] + '. ' }), t.src))));
   rpLive();
 }
 function screenRatio(m){
   if (!rp || !YIELD_TABLE[rp.key]) rpStart();
   rpHost = h('div', { id:'rpHost' }); m.append(rpHost); rpPaint();
 }
-/* ---------- the Home or shop? card ----------
+/* ---------- the Cost history pop-up ----------
    Home money is what was bought, counted in the month it was bought. It is not what was brewed, and nothing here says how much of a bag was used. Shop money is what was logged.
    Counts say "logged" or "bought", never "brewed" or "drank": a box of pods logged once is one row, however many pods were used. */
-let sp = { range:'month', by:'drink', swap:3, month:'', more:{ home:false, shop:false }, open:{} };
+let sp = { view:'month', m:'', y:0, by:'drink', swap:3, month:'', more:{ home:false, shop:false }, open:{} };
 const spSym = () => spendSym(pr.list, sh.store.drinks);
 const spMoney = x => spSym() + (Math.round(x * 100) / 100).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
-const spPeriod = () => spendRange(sp.range, today()) || spendRange('month', today());
+/* every month there is, for the Coffee and Shops views */
+const spAll = { v:'all', from:'0000-01', to:'9999-12', label:'All your purchases' };
+const spMonthName = m => SPEND_MONTH_NAMES[+m.slice(5, 7) - 1] + ' ' + m.slice(0, 4);
+/* the month d months from m (both YYYY-MM) */
+const spMonthAdd = (m, d) => { let y = +m.slice(0, 4), n = +m.slice(5, 7) + d; while (n < 1){ n += 12; y--; } while (n > 12){ n -= 12; y++; } return y + '-' + String(n).padStart(2, '0'); };
+/* draw the pop-up again, keeping the place in it (top = true for a new view, which starts at the top) */
+function spRedraw(top){ const y = sheetEl.scrollTop; renderSheet(); sheetEl.scrollTop = top ? 0 : y; }
 /* one coffee bought for home: its total on the right, and each purchase when it is opened */
 function spHomeRow(r, first){
   const pods = r.kind === 'pods', n = r.n, amount = pods ? r.amount + ' pods' : (r.amount >= 1000 ? Math.round(r.amount / 100) / 10 + ' kg' : Math.round(r.amount) + ' g');
@@ -20310,7 +20376,7 @@ function spHomeRow(r, first){
   d.addEventListener('toggle', () => { sp.open[d.dataset.k] = d.open; });
   d.append(h('summary', null, h('span', null, h('b', { text:r.coffee }), pods ? h('span', { class:'tag2', text:'Pods' }) : null, h('small', null, ...sub)), h('span', { class:'avg', text:spMoney(r.total) }), h('span', { class:'chev', 'aria-hidden':'true', text:'›' })),
     h('div', { class:'gd' }, h('ul', null, r.purchases.map(e => h('li', null, h('span', { text:[e.date ? prWhen(e.date) : 'No date', pods ? e.size + ' pods' : e.size + ' ' + e.unit, [e.city, e.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ') }), h('b', { text:spMoney(e.price) }),
-      h('button', { type:'button', class:'flink spedit', text:'Edit', 'aria-label':'Edit this purchase of ' + r.coffee, onclick:() => { pr.edit = e.i; pr.editA = prFormFrom(pr.list[e.i]); pr.editMsg = ''; pr.note = null; pr.show = 'all'; goPrices(); } }))))));
+      h('button', { type:'button', class:'flink spedit', text:'Edit', 'aria-label':'Edit this purchase of ' + r.coffee, onclick:() => { pr.edit = e.i; pr.editA = prFormFrom(pr.list[e.i]); pr.editMsg = ''; pr.note = null; pr.show = 'all'; closeSheet(); goPrices(); } }))))));
   return d;
 }
 /* one drink or one shop at shops: how many were logged, the total, and the details when it is opened */
@@ -20333,7 +20399,7 @@ function spShopRow(r, by, first){
 function spRows(list, make, key, word){
   const open = sp.more[key], shown = open ? list : list.slice(0, 3);
   const out = [h('div', { class:'g-list' }, shown.map((r, i) => make(r, i === 0)))];
-  if (list.length > 3) out.push(h('button', { type:'button', class:'g-more', id:'spMore' + key, text:open ? 'Show fewer' : 'Show all ' + list.length + ' ' + word, onclick:() => { sp.more[key] = !open; spPaint(); } }));
+  if (list.length > 3) out.push(h('button', { type:'button', class:'g-more', id:'spMore' + key, text:open ? 'Show fewer' : 'Show all ' + list.length + ' ' + word, onclick:() => { sp.more[key] = !open; spRedraw(); } }));
   return out;
 }
 /* twelve months of a year, home and shop stacked. Tap a month, or step with the arrows, to see its numbers. */
@@ -20342,70 +20408,116 @@ function spChart(y){
   if (!sp.month || sp.month.slice(0, 4) !== String(y.year)){ const live = y.months.filter(m => m.home + m.shop > 0); sp.month = (now.slice(0, 4) === String(y.year) && now) || (live.length ? live[live.length - 1].m : y.year + '-01'); }
   const cur = y.months.find(m => m.m === sp.month) || y.months[0], idx = y.months.indexOf(cur), nm = SPEND_MONTH_NAMES;
   const cols = h('div', { class:'cols' }, y.months.map(m => {
-    const fut = m.m > now, b = h('button', { type:'button', class:'col' + (m.m === cur.m ? ' sel' : '') + (fut ? ' fut' : ''), 'data-m':m.m, 'aria-pressed':String(m.m === cur.m), 'aria-label':nm[+m.m.slice(5) - 1] + ': home ' + spMoney(m.home) + ', shop ' + spMoney(m.shop), onclick:() => { sp.month = m.m; spPaint(); } });
+    const fut = m.m > now, b = h('button', { type:'button', class:'col' + (m.m === cur.m ? ' sel' : '') + (fut ? ' fut' : ''), 'data-m':m.m, 'aria-pressed':String(m.m === cur.m), 'aria-label':nm[+m.m.slice(5) - 1] + ': home ' + spMoney(m.home) + ', shop ' + spMoney(m.shop), onclick:() => { sp.month = m.m; spRedraw(); } });
     if (fut && !m.home && !m.shop) b.append(h('i', { class:'nope' })); else b.append(h('i', { class:'ss', style:'height:' + (m.shop / mx * 100) + '%' }), h('i', { class:'hh', style:'height:' + (m.home / mx * 100) + '%' }));
     return b;
   }));
-  const step = (d, label) => h('button', { type:'button', class:'btn small spstep', 'aria-label':label, text:d < 0 ? '‹' : '›', disabled:y.months[idx + d] ? null : true, onclick:() => { sp.month = y.months[idx + d].m; spPaint(); } });
+  const step = (d, label) => h('button', { type:'button', class:'btn small spstep', 'aria-label':label, text:d < 0 ? '‹' : '›', disabled:y.months[idx + d] ? null : true, onclick:() => { sp.month = y.months[idx + d].m; spRedraw(); } });
   return [h('div', { class:'yr' }, cols, h('div', { class:'lab' }, y.months.map(m => h('span', { class:m.m === cur.m ? 'sel' : '', text:nm[+m.m.slice(5) - 1][0] }))), h('div', { class:'key' }, h('span', null, h('i', { style:'background:#8DB45A' }), 'Home'), h('span', null, h('i', { style:'background:#F0A43A' }), 'Shop'), h('span', { text:'Dashed: not yet' }))),
     h('div', { class:'mo', id:'spMonth' }, step(-1, 'Previous month'), h('span', { class:'mt' }, h('b', { text:nm[idx] }), ' · Home ' + spMoney(cur.home) + ' · Shop ' + spMoney(cur.shop) + ' · ', h('b', { text:spMoney(cur.home + cur.shop) })), step(1, 'Next month'))];
 }
-/* what making some shop drinks at home would keep, from the shop average and the cost of a cup in the calculator above */
+/* what making some shop drinks at home would keep, from the shop average and the cost of a cup from your bag */
 function spSwapNodes(avg){
   if (!(avg > 0)) return [h('p', { class:'fm-note', id:'spSwap', text:'Log a few shop drinks with prices to see what making some at home would keep.' })];
-  const c = csCalc(cs.a), cup = c.ok ? c.perCup : 0, s = spendSwap(avg, cup, sp.swap);
-  if (!s) return [h('p', { class:'fm-note', id:'spSwap', text:'Fill in the calculator above to see what a home cup costs, and what swapping some shop drinks would keep.' })];
+  const cup = csCup(), s = spendSwap(avg, cup, sp.swap);
+  if (!s) return [h('p', { class:'fm-note', id:'spSwap', text:'Add a bag on the Cost page to see what a home cup costs, and what swapping some shop drinks would keep.' })];
   const w = Math.abs(s.keepWeek);
-  return [h('p', { class:'mk-save', id:'spSwap' }, h('b', { text:'Your shop drink averages ' + spMoney(avg) + '. A home cup costs ' + spMoney(cup) + ' (from the calculator above). ' + (s.keepWeek > 0 ? sp.swap + (sp.swap === 1 ? ' swap keeps' : ' swaps keep') + ' you about ' + spMoney(s.keepWeek) + ' a week, ' + spMoney(s.keepMonth) + ' a month.' : 'A home cup is not cheaper than your shop drink, so swapping would not keep anything.') }))];
+  return [h('p', { class:'mk-save', id:'spSwap' }, h('b', { text:'Your shop drink averages ' + spMoney(avg) + '. A home cup costs ' + spMoney(cup) + ' (from your bag on the Cost page). ' + (s.keepWeek > 0 ? sp.swap + (sp.swap === 1 ? ' swap keeps' : ' swaps keep') + ' you about ' + spMoney(s.keepWeek) + ' a week, ' + spMoney(s.keepMonth) + ' a month.' : 'A home cup is not cheaper than your shop drink, so swapping would not keep anything.') }))];
 }
 function spLive(){
-  const el = $('spSwap'); if (!el) return;
-  const per = spPeriod(), s = spendShop(sh.store.drinks, per, spSym()); el.replaceWith(...spSwapNodes(s.avg));
+  const el = $('spSwap'); if (el) el.replaceWith(...spSwapNodes(sp.avg));
 }
-function spPaint(){ const old = $('spCard'); if (old) old.replaceWith(spendCard()); }
-function spendCard(){
-  const now = today(), sym = spSym(), per = spPeriod(), years = spendYears(pr.list, sh.store.drinks), yr = String(+now.slice(0, 4));
-  const isYear = !!per.year, home = spendHome(pr.list, per, sym), shop = spendShop(sh.store.drinks, per, sym), total = home.total + shop.total, ydata = isYear ? spendYear(pr.list, sh.store.drinks, per.year, sym) : null;
-  const opts = SPEND_RANGES.map(r => [r.v, (spendRange(r.v, now) || r).label]).concat(years.filter(y => String(y) !== yr).map(y => [String(y), String(y)]));
-  const sel = h('select', { id:'spRange', class:'yc-pick', 'aria-label':'Show this period' }, opts.map(o => h('option', { value:o[0], text:o[1], selected:sp.range === o[0] ? true : null })));
-  sel.addEventListener('change', () => { holdScroll(); sp.range = sel.value; sp.month = ''; sp.more = { home:false, shop:false }; spPaint(); });
-  const card = tband('Home or shop?', { tan:'What you spent' }, 'from what you bought and logged', { pic:'bag' }, h('div', { class:'yc-f wide' }, h('label', { for:'spRange', text:'Showing' }), sel));
-  const dd = card.querySelector('.picdisc'); if (dd){ dd.textContent = ''; dd.append(symPic('s-shop')); }
-  card.id = 'spCard';
-  const body = card.querySelector('.tbody') || card;
-  if (!total && !home.undated){
-    body.append(moneyNote('think', 'thinking', 'spEmpty', 'Nothing bought or logged in ' + per.label.toLowerCase().replace(/ \(.*/, '') + ' yet. Add what you bought for home in Coffee prices, and log shop drinks in Coffee shops.'));
-    return card;
-  }
-  const hp = total > 0 ? Math.round(home.total / total * 100) : 0;
-  body.append(h('div', { class:'m-split' }, h('div', { class:'lab' }, h('span', { text:isYear ? 'Money spent in ' + per.year : 'Money spent' }), h('span', { id:'spTotal', text:spMoney(total) + ' in all' })),
-    h('div', { class:'m-bar', role:'img', 'aria-label':hp + ' percent bought for home, ' + (100 - hp) + ' percent at shops' }, home.total > 0 ? h('i', { class:'h', style:'width:' + hp + '%', text:(hp < 28 ? '' : 'Home ') + spMoney(home.total) }) : null, shop.total > 0 ? h('i', { class:'s', style:'width:' + (100 - hp) + '%', text:(hp > 72 ? '' : 'Shop ') + spMoney(shop.total) }) : null)));
-  const boxes = home.boxes, bagsTxt = home.bags + (home.bags === 1 ? ' bag' : ' bags') + (boxes ? ' and ' + boxes + (boxes === 1 ? ' box of pods' : ' boxes of pods') : '');
-  body.append(h('div', { class:'m-two' },
+/* the split of the money between home and shops: a bar, the two figures, and (when both have money) the share that went to shops. when finishes "of your coffee money went to shop drinks ...". */
+function spSplit(home, shop, heading, when){
+  const total = home.total + shop.total, hp = total > 0 ? Math.round(home.total / total * 100) : 0, boxes = home.boxes;
+  const bagsTxt = home.bags + (home.bags === 1 ? ' bag' : ' bags') + (boxes ? ' and ' + boxes + (boxes === 1 ? ' box of pods' : ' boxes of pods') : '');
+  const out = [h('div', { class:'m-split' }, h('div', { class:'lab' }, h('span', { text:heading }), h('span', { id:'spTotal', text:spMoney(total) + ' in all' })),
+    h('div', { class:'m-bar', role:'img', 'aria-label':hp + ' percent bought for home, ' + (100 - hp) + ' percent at shops' }, home.total > 0 ? h('i', { class:'h', style:'width:' + hp + '%', text:(hp < 28 ? '' : 'Home ') + spMoney(home.total) }) : null, shop.total > 0 ? h('i', { class:'s', style:'width:' + (100 - hp) + '%', text:(hp > 72 ? '' : 'Shop ') + spMoney(shop.total) }) : null)),
+  h('div', { class:'m-two' },
     h('div', { id:'spHome' }, h('div', { class:'top' }, symPic('mn-home'), h('span', null, h('small', { text:'Bought for home' }), h('b', { text:spMoney(home.total) }))), h('div', { class:'ln', text:home.bags || boxes ? bagsTxt : 'Nothing bought' })),
-    h('div', { id:'spShop' }, h('div', { class:'top' }, symPic('s-shop'), h('span', null, h('small', { text:'Shop drinks' }), h('b', { text:spMoney(shop.total) }))), h('div', { class:'ln', text:shop.count ? shop.count + (shop.count === 1 ? ' drink' : ' drinks') + ' logged' + (shop.avg != null ? ' · ' + spMoney(shop.avg) + ' each' : '') : 'Nothing logged' }))));
-  if (home.total > 0 && shop.total > 0) body.append(h('p', { style:'margin:6px 0 0;font-size:16px;line-height:1.3' }, h('b', { text:(100 - hp) + ' % of your coffee money went to shop drinks' + (isYear ? ' in ' + per.year : { month:' this month', last:' last month', three:' in the last 3 months' }[per.v]) + '.' })));
-  if (isYear){
-    body.append(h('div', { class:'m-sec' }, symPic('art-cal'), h('b', { text:'Month by month' }), h('span', { class:'fhint', text:'tap a month' })), ...spChart(ydata));
-    const tops = [ydata.topCoffee ? ['Top coffee', ydata.topCoffee.coffee, spMoney(ydata.topCoffee.total) + ' bought'] : null, ydata.topDrink ? ['Top drink', ydata.topDrink.label, ydata.topDrink.n + ' logged'] : null, ydata.topShop ? ['Top shop', ydata.topShop.shop, ydata.topShop.n + ' logged'] : null].filter(Boolean);
-    if (tops.length) body.append(h('div', { class:'tops', id:'spTops' }, tops.map(t => h('div', null, h('small', { text:t[0] }), h('b', { text:t[1] }), h('span', { text:t[2] })))));
-    if (ydata.placeCount) body.append(h('div', { class:'trip', id:'spPlaces' }, symPic('art-pin'), h('span', null, h('b', { text:ydata.placeCount === 1 ? 'Bought in ' + ydata.places[0] + ' this year.' : 'Bought in ' + ydata.placeCount + (ydata.places.every(p => US_STATES.indexOf(p) >= 0) ? ' states' : ' places') + ' this year.' }), ydata.placeCount > 1 ? h('br') : null, ydata.placeCount > 1 ? h('span', { class:'sub', text:ydata.places.join(', ') + '.' }) : null)));
-  }
-  if (home.rows.length) body.append(h('div', { class:'m-sec' }, symPic('mn-home'), h('b', { text:'Bought for home' }), h('span', { class:'fhint', text:'by coffee · tap to open' })), ...spRows(home.rows, spHomeRow, 'home', home.rows.length === 1 ? 'coffee' : 'coffees'));
-  if (shop.count >= 3){
+    h('div', { id:'spShop' }, h('div', { class:'top' }, symPic('s-shop'), h('span', null, h('small', { text:'Shop drinks' }), h('b', { text:spMoney(shop.total) }))), h('div', { class:'ln', text:shop.count ? shop.count + (shop.count === 1 ? ' drink' : ' drinks') + ' logged' + (shop.avg != null ? ' · ' + spMoney(shop.avg) + ' each' : '') : 'Nothing logged' })))];
+  if (home.total > 0 && shop.total > 0) out.push(h('p', { style:'margin:6px 0 0;font-size:16px;line-height:1.3' }, h('b', { text:(100 - hp) + ' % of your coffee money went to shop drinks' + when + '.' })));
+  return out;
+}
+/* a row with a step back, a label and a step forward (months or years) */
+function spStep(label, canBack, canNext, move, id){
+  const btn = (d, text, name, on) => h('button', { type:'button', class:'btn small spstep', 'aria-label':name, text, disabled:on ? null : true, onclick:() => move(d) });
+  return h('div', { class:'mo', id }, btn(-1, '‹', 'Earlier', canBack), h('span', { class:'mt' }, h('b', { text:label })), btn(1, '›', 'Later', canNext));
+}
+/* the shop drinks, by drink or by shop. few = the least count worth grouping. */
+function spShopBlock(shop, few){
+  if (shop.count >= few){
     const list = sp.by === 'drink' ? shop.byDrink : shop.byShop;
-    body.append(h('div', { class:'m-sec' }, symPic('s-shop'), h('b', { text:'At the shop' }), h('div', { class:'yc-mini', role:'group', 'aria-label':'Group shop drinks', id:'spBy', style:'margin-left:auto' }, [['drink', 'By drink'], ['shop', 'By shop']].map(b => h('button', { type:'button', 'data-b':b[0], 'aria-pressed':String(sp.by === b[0]), text:b[1], onclick:() => { sp.by = b[0]; sp.more.shop = false; spPaint(); } })))),
-      ...spRows(list, (r, f) => spShopRow(r, sp.by, f), 'shop', sp.by === 'drink' ? (list.length === 1 ? 'drink' : 'drinks') : (list.length === 1 ? 'shop' : 'shops')));
-  } else if (shop.count > 0 && shop.avg != null) body.append(h('p', { class:'fm-note', id:'spFew', text:'Your shop drinks average ' + spMoney(shop.avg) + ' so far. Log a few more and they are grouped by drink and by shop.' }));
+    return [h('div', { class:'m-sec' }, symPic('s-shop'), h('b', { text:'At the shop' }), h('div', { class:'yc-mini', role:'group', 'aria-label':'Group shop drinks', id:'spBy', style:'margin-left:auto' }, [['drink', 'By drink'], ['shop', 'By shop']].map(b => h('button', { type:'button', 'data-b':b[0], 'aria-pressed':String(sp.by === b[0]), text:b[1], onclick:() => { sp.by = b[0]; sp.more.shop = false; spRedraw(); } })))),
+      ...spRows(list, (r, f) => spShopRow(r, sp.by, f), 'shop', sp.by === 'drink' ? (list.length === 1 ? 'drink' : 'drinks') : (list.length === 1 ? 'shop' : 'shops'))];
+  }
+  return shop.count > 0 && shop.avg != null ? [h('p', { class:'fm-note', id:'spFew', text:'Your shop drinks average ' + spMoney(shop.avg) + ' so far. Log a few more and they are grouped by drink and by shop.' })] : [];
+}
+/* what was left out: undated rows and money in another currency */
+function spNoteLeft(home, shop){
+  if (!(home.undated || home.otherSym || shop.undated || shop.otherSym)) return [];
+  return [h('p', { class:'fm-note', id:'spLeft' }, [home.undated ? home.undated + (home.undated === 1 ? ' purchase has' : ' purchases have') + ' no date' : null, shop.undated ? shop.undated + (shop.undated === 1 ? ' shop drink has' : ' shop drinks have') + ' no date' : null].filter(Boolean).join(' and ') + (home.undated || shop.undated ? ', so they are left out. ' : '') + (home.otherSym || shop.otherSym ? 'Money in another currency is left out. ' : ''))];
+}
+const spFoot = () => h('p', { class:'fm-note', text:'Home money is what you bought, counted in the month you bought it. It is not what you brewed. Shop money is what you logged. Coffee only: milk, syrup and a seat are extra.' });
+/* Month: one month at a time, with its split, the coffees bought, the shop drinks, and the swap line */
+function spMonthView(sym){
+  const now = today(), cur = now.slice(0, 7), years = spendYears(pr.list, sh.store.drinks), first = (years.length ? Math.min(...years) : +now.slice(0, 4)) + '-01';
+  if (!sp.m || sp.m > cur) sp.m = cur;
+  const per = { v:sp.m, from:sp.m, to:sp.m, label:spMonthName(sp.m) }, home = spendHome(pr.list, per, sym), shop = spendShop(sh.store.drinks, per, sym), total = home.total + shop.total;
+  const out = [spStep(per.label, sp.m > first, sp.m < cur, d => { sp.m = spMonthAdd(sp.m, d); sp.more = { home:false, shop:false }; spRedraw(); }, 'spMonthStep')];
+  sp.avg = shop.avg;
+  if (!total && !home.undated){ out.push(h('p', { class:'fm-note', id:'spEmpty', text:'Nothing bought or logged in ' + per.label + '. Add a bag with Add a new bag, and log shop drinks in Coffee shops.' })); return out; }
+  out.push(...spSplit(home, shop, 'Money spent', sp.m === cur ? ' this month' : ' in ' + per.label));
+  if (home.rows.length) out.push(h('div', { class:'m-sec' }, symPic('mn-home'), h('b', { text:'Bought for home' }), h('span', { class:'fhint', text:'by coffee · tap to open' })), ...spRows(home.rows, spHomeRow, 'home', home.rows.length === 1 ? 'coffee' : 'coffees'));
+  out.push(...spShopBlock(shop, 3));
   if (shop.avg != null){
-    body.append(h('div', { class:'mk-step' }, h('span', { style:'font-weight:700', text:'Shop drinks you would make at home, a week' }), h('span', { class:'stp' },
+    out.push(h('div', { class:'mk-step' }, h('span', { style:'font-weight:700', text:'Shop drinks you would make at home, a week' }), h('span', { class:'stp' },
       h('button', { type:'button', id:'spLess', 'aria-label':'Fewer swaps a week', text:'−', onclick:() => { sp.swap = Math.max(1, sp.swap - 1); const n = $('spSwapN'); if (n) n.textContent = String(sp.swap); spLive(); } }),
       h('span', { class:'n', id:'spSwapN', text:String(sp.swap) }), h('button', { type:'button', id:'spMoreSwaps', 'aria-label':'More swaps a week', text:'+', onclick:() => { sp.swap = Math.min(30, sp.swap + 1); const n = $('spSwapN'); if (n) n.textContent = String(sp.swap); spLive(); } }))),
       ...spSwapNodes(shop.avg));
   }
-  if (home.undated || home.otherSym || shop.undated || shop.otherSym) body.append(h('p', { class:'fm-note', id:'spLeft' }, [home.undated ? home.undated + (home.undated === 1 ? ' purchase has' : ' purchases have') + ' no date' : null, shop.undated ? shop.undated + (shop.undated === 1 ? ' shop drink has' : ' shop drinks have') + ' no date' : null].filter(Boolean).join(' and ') + (home.undated || shop.undated ? ', so they are left out. ' : '') + (home.otherSym || shop.otherSym ? 'Money in another currency is left out. ' : '')));
-  body.append(h('p', { class:'fm-note', text:'Home money is what you bought, counted in the month you bought it. It is not what you brewed. Shop money is what you logged. Coffee only: milk, syrup and a seat are extra.' }));
-  return card;
+  out.push(...spNoteLeft(home, shop), spFoot());
+  return out;
+}
+/* Year: one year at a time, with its split, the month-by-month chart, the tops and the places */
+function spYearView(sym){
+  const now = today(), cy = +now.slice(0, 4), years = spendYears(pr.list, sh.store.drinks), lo = Math.min(cy, ...years), hi = cy;
+  if (!sp.y || sp.y > hi || sp.y < lo) sp.y = cy;
+  const per = spendRange(String(sp.y), now), home = spendHome(pr.list, per, sym), shop = spendShop(sh.store.drinks, per, sym), total = home.total + shop.total;
+  const out = [spStep(sp.y === cy ? 'This year (' + sp.y + ')' : String(sp.y), sp.y > lo, sp.y < hi, d => { sp.y += d; sp.month = ''; spRedraw(); }, 'spYearStep')];
+  if (!total && !home.undated){ out.push(h('p', { class:'fm-note', id:'spEmpty', text:'Nothing bought or logged in ' + sp.y + '. Add a bag with Add a new bag, and log shop drinks in Coffee shops.' })); return out; }
+  const yd = spendYear(pr.list, sh.store.drinks, sp.y, sym);
+  out.push(...spSplit(home, shop, 'Money spent in ' + sp.y, ' in ' + sp.y));
+  out.push(h('div', { class:'m-sec' }, symPic('art-cal'), h('b', { text:'Month by month' }), h('span', { class:'fhint', text:'tap a month' })), ...spChart(yd));
+  const tops = [yd.topCoffee ? ['Top coffee', yd.topCoffee.coffee, spMoney(yd.topCoffee.total) + ' bought'] : null, yd.topDrink ? ['Top drink', yd.topDrink.label, yd.topDrink.n + ' logged'] : null, yd.topShop ? ['Top shop', yd.topShop.shop, yd.topShop.n + ' logged'] : null].filter(Boolean);
+  if (tops.length) out.push(h('div', { class:'tops', id:'spTops' }, tops.map(t => h('div', null, h('small', { text:t[0] }), h('b', { text:t[1] }), h('span', { text:t[2] })))));
+  if (yd.placeCount) out.push(h('div', { class:'trip', id:'spPlaces' }, symPic('art-pin'), h('span', null, h('b', { text:yd.placeCount === 1 ? 'Bought in ' + yd.places[0] + ' this year.' : 'Bought in ' + yd.placeCount + (yd.places.every(p => US_STATES.indexOf(p) >= 0) ? ' states' : ' places') + ' this year.' }), yd.placeCount > 1 ? h('br') : null, yd.placeCount > 1 ? h('span', { class:'sub', text:yd.places.join(', ') + '.' }) : null)));
+  out.push(...spNoteLeft(home, shop), spFoot());
+  return out;
+}
+/* Coffee: every purchase you made, by coffee, biggest spend first */
+function spCoffeeView(sym){
+  const home = spendHome(pr.list, spAll, sym), out = [];
+  if (!home.rows.length){ out.push(h('p', { class:'fm-note', id:'spEmpty', text:'No bags bought yet. Add one with Add a new bag.' })); return out; }
+  out.push(h('div', { class:'m-sec' }, symPic('mn-home'), h('b', { text:spMoney(home.total) + ' bought for home' }), h('span', { class:'fhint', text:'by coffee · tap to open' })), ...spRows(home.rows, spHomeRow, 'home', home.rows.length === 1 ? 'coffee' : 'coffees'));
+  out.push(h('button', { type:'button', class:'flink', id:'spOpenPrices', style:'margin:10px 0 0', text:'Open my coffee prices', onclick:() => { closeSheet(); goPrices(); } }), ...spNoteLeft(home, { undated:0, otherSym:0 }), spFoot());
+  return out;
+}
+/* Shops: every shop drink you logged, by drink or by shop */
+function spShopsView(sym){
+  const shop = spendShop(sh.store.drinks, spAll, sym), out = [];
+  if (!shop.count){ out.push(h('p', { class:'fm-note', id:'spEmpty', text:'No shop drinks logged yet. Log one in Coffee shops.' })); return out; }
+  out.push(h('div', { class:'m-sec' }, symPic('s-shop'), h('b', { text:spMoney(shop.total) + ' at shops' }), h('span', { class:'fhint', text:shop.count + (shop.count === 1 ? ' drink' : ' drinks') + ' logged' + (shop.avg != null ? ' · ' + spMoney(shop.avg) + ' each' : '') })), ...spShopBlock(shop, 1), ...spNoteLeft({ undated:0, otherSym:0 }, shop), spFoot());
+  return out;
+}
+const SP_VIEWS = [['month', 'Month'], ['year', 'Year'], ['coffee', 'Coffee'], ['shops', 'Shops']];
+function openCostHist(){ sheet = { step:'costHist' }; openSheet(); }
+function renderCostHistSheet(title){
+  title.textContent = 'Cost history';
+  const sym = spSym(), body = sp.view === 'year' ? spYearView(sym) : sp.view === 'coffee' ? spCoffeeView(sym) : sp.view === 'shops' ? spShopsView(sym) : spMonthView(sym);
+  sheetEl.append(h('div', { class:'yc-mini sp-tabs', id:'spTabs', role:'group', 'aria-label':'How to look at your costs' }, SP_VIEWS.map(v => h('button', { type:'button', 'data-v':v[0], 'aria-pressed':String(sp.view === v[0]), text:v[1], onclick:() => { sp.view = v[0]; spRedraw(true); } }))),
+    h('div', { class:'card tband', id:'spCard', style:'margin-top:10px' }, h('div', { class:'tbody' }, ...body)),
+    h('div', { class:'row', style:'margin-top:12px' }, h('button', { type:'button', class:'btn primary block', id:'spDone', text:'Done', onclick:closeSheet })));
 }
 /* ---------- screen: cup yield ----------
    The sums are in engine/67-cup-yield.js. Nothing here is saved except a calibration you choose to keep (app.prefs.yieldCal, kept in this browser with your other settings). */
@@ -20451,11 +20563,16 @@ function ycLive(){
       f.append(h('div', { class:'yc-fact' }, h('b', { text:'Water kept: ' + res.r.toFixed(2).replace(/0$/, '') + ' g per g of coffee' }), h('p', { class:'fine', style:'margin:0', text:'Range ' + res.rlo.toFixed(1) + ' to ' + res.rhi.toFixed(1) + '. ' + YIELD_SURE[YIELD_TABLE[yc.key].sure] + '.' })),
         h('div', { class:'yc-fact' }, h('b', { text:'Dissolved coffee counted: ' + res.tds + ' %' }), h('p', { class:'fine', style:'margin:0', text:'Strength of the cup, as total dissolved solids.' }))); } } }
   if (w){ w.textContent = ''; w.append(...ycWorkNodes(res, yc.mode, yc.key)); }
+  { const n = $('ycFineNow'); if (n) n.textContent = ycNowText(res); }   /* the one-line answer at the top of the Fine-tune pop-up */
 }
+/* draw the page again, and the Fine-tune pop-up too when it is the one open */
+function ycAgain(){ ycPaint(); if (sheet && sheet.step === 'yieldFine') renderSheet(); }
 function ycPaint(){
   const key = yc.key, t = YIELD_TABLE[key], meth = METHODS.find(x => x.key === key), host = ycHost, water = yc.mode === 'water';
   host.textContent = '';
-  host.append(toolHero('Cup yield', 'Coffee soaks up some of the water, so your cup weighs less than what you poured.', 'cupyield'), toolReset('ycScreenReset', () => { ycStart(); ycPaint(); }));
+  host.append(toolHero('Cup yield', 'Coffee soaks up some of the water, so your cup weighs less than what you poured.', 'tl-yield'), toolReset('ycScreenReset', () => { ycStart(); ycPaint(); }));
+  host.append(tband(water ? 'What ends up in your cup' : 'How much water to pour', { tan:'Your answer' }, 'changes as you type', { pic:'beans' }, h('div', { class:'yc-result', id:'ycResult', 'aria-live':'polite' }), h('div', { class:'yc-facts', id:'ycFacts' }),
+    t.tip && YC_TIPS[t.tip] ? h('p', { class:'yc-tip', text:YC_TIPS[t.tip] }) : null));
   const inb = h('div', { class:'yc-in' });
   /* method */
   const sel = h('select', { id:'ycMethod', class:'plain yc-pick' });
@@ -20480,23 +20597,17 @@ function ycPaint(){
   }
   if (t.kind === 'moka') inb.append(ycMokaBlock());
   if (t.kind === 'boil') inb.append(h('div', { class:'yc-row' }, ycNum('ycBoil', 'Boils off', '%', yc.boil, 1, v => { yc.boil = parseFloat(v) || 0; ycLive(); }), ycNum('ycSludge', 'Left in the pot', 'g', yc.sludge, 1, v => { yc.sludge = parseFloat(v) || 0; ycLive(); })));
-  host.append(toolCard('ycInputs', 'Your brew', 'pick a method, then type what you know', inb));
-  /* the answer */
-  host.append(h('div', { class:'yc-result', id:'ycResult', 'aria-live':'polite' }));
-  host.append(h('div', { class:'yc-facts', id:'ycFacts' }));
-  host.append(h('button', { type:'button', class:'flink yc-flip', id:'ycFlip', text:water ? 'Start from the cup I want instead' : 'Start from the water I pour instead', onclick:() => {
+  inb.append(h('button', { type:'button', class:'flink yc-flip', id:'ycFlip', text:water ? 'Start from the cup I want instead' : 'Start from the water I pour instead', onclick:() => {
     const r = ycRun();
     if (r.ok){ if (water){ yc.cup = Math.round(r.B); yc.ratio = Math.round((t.outRatio ? r.B / r.D : r.W / r.D) * 10) / 10; } else { yc.water = Math.round(r.W); yc.dose = Math.round(r.D * 2) / 2; } }
     yc.mode = water ? 'cup' : 'water'; ycPaint();
   } }));
-  if (t.tip && YC_TIPS[t.tip]) host.append(h('p', { class:'yc-tip', text:YC_TIPS[t.tip] }));
-  /* the three folds */
-  if (level() === 'new'){   /* Just Starting: one fold holds the three that sit below the answer at the other levels */
+  host.append(toolCard('ycInputs', 'Your brew', 'pick a method, then type what you know', inb));
+  if (level() === 'new'){   /* Just Starting: one fold holds what the two buttons and the fold hold at the other levels */
     host.append(toolFold(yc.open, 'more', 'ycMore', 'More', 'Starting figures, fine-tuning and the sums', 'book', h('div', null,
       h('h3', { class:'yc-mh', text:'Starting figures for every method' }), ycListNode(key), h('h3', { class:'yc-mh', text:'Fine-tune' }), h('div', null, ycFineNodes()), h('h3', { class:'yc-mh', text:'How this is worked out' }), h('div', { id:'ycWork' }))));
   } else {
-    host.append(toolFold(yc.open, 'list', 'ycList', 'Starting figures for every method', 'The usual water kept, method by method', 'book', ycListNode(key)));
-    host.append(toolFold(yc.open, 'fine', 'ycFine', 'Fine-tune', 'Water kept, your own strength, your own kit', 'gear', h('div', null, ycFineNodes())));
+    host.append(toolTiles(toolTile('ycFineBtn', 'art-scale', 'Fine-tune', 'water kept, your own kit', openYieldFine), toolTile('ycListBtn', 'art-note', 'Starting figures', 'every method, side by side', openYieldList)));
     host.append(toolFold(yc.open, 'workd', 'ycWorkd', 'How this is worked out', 'The sums, with your numbers', 'flask', h('div', { id:'ycWork' })));
   }
   ycLive();
@@ -20513,7 +20624,7 @@ function ycMokaBlock(){
 function ycFineNodes(){
   const t = YIELD_TABLE[yc.key], meth = METHODS.find(x => x.key === yc.key), out = [];
   if (t.kind === 'filter'){
-    const val = h('div', { class:'yc-sval', id:'ycRVal' }), cap = h('span'), reset = h('button', { type:'button', class:'btn link', id:'ycReset', text:'Back to the usual ' + t.r.toFixed(2), onclick:() => { yc.r = null; if (app.prefs.yieldCal) delete app.prefs.yieldCal[yc.key]; scheduleDraft(); ycPaint(); } });
+    const val = h('div', { class:'yc-sval', id:'ycRVal' }), cap = h('span'), reset = h('button', { type:'button', class:'btn link', id:'ycReset', text:'Back to the usual ' + t.r.toFixed(2), onclick:() => { yc.r = null; if (app.prefs.yieldCal) delete app.prefs.yieldCal[yc.key]; scheduleDraft(); ycAgain(); } });
     const paint = () => { const d = yieldRetention(yc.key, ycOwn()); val.textContent = d.r.toFixed(2) + ' g per g of coffee'; cap.textContent = d.own ? 'Shaded: your number ± ' + YIELD_RUN_SD : 'Shaded: the usual ' + d.lo.toFixed(1) + ' to ' + d.hi.toFixed(1); reset.hidden = !d.own; return d; };
     const d0 = yieldRetention(yc.key, ycOwn()), sl = ycSlider('ycR', 'Water the coffee keeps, grams per gram of coffee', 0.8, 3.2, 0.05, d0.r, d0.lo, d0.hi, v => { yc.r = v; const d = paint(); sl.setBand(d.lo, d.hi); ycLive(); });
     paint();
@@ -20529,7 +20640,7 @@ function ycCalBlock(){
   if (t.kind === 'boil'){ box.append(h('p', { class:'fine', style:'margin:0', text:'Weigh your cold water and the cup you pour, then set the boil-off and what stays in the pot above until the answer matches.' })); return box; }
   const moka = t.kind === 'moka', out = h('div', { id:'ycCalOut', 'aria-live':'polite' }), saved = ycCal();
   if (saved) box.append(h('p', { class:'fine', style:'margin:0 0 8px', text:'Saved for your ' + meth.label + ': ' + (moka ? Math.round(saved * 100) + ' % of the water' : saved.toFixed(2) + ' g per g') + '. It is kept in this browser with your other settings.' }),
-    h('button', { type:'button', class:'btn link', id:'ycForget', text:'Go back to the usual figure', onclick:() => { delete app.prefs.yieldCal[yc.key]; yc.r = null; yc.f = null; scheduleDraft(); yc.open.fine = true; ycPaint(); } }));
+    h('button', { type:'button', class:'btn link', id:'ycForget', text:'Go back to the usual figure', onclick:() => { delete app.prefs.yieldCal[yc.key]; yc.r = null; yc.f = null; scheduleDraft(); ycAgain(); } }));
   if (yc.cw == null) yc.cw = yc.water > 0 ? yc.water : null;
   if (yc.cd == null && !moka) yc.cd = yc.dose > 0 ? yc.dose : null;
   const upd = () => {
@@ -20542,7 +20653,7 @@ function ycCalBlock(){
       h('p', { class:'fine', style:'margin:0 0 8px', text:(c.inBand ? 'Inside' : 'Outside') + ' the usual range for this method (' + (moka ? '65 to 80 %' : c.lo.toFixed(1) + ' to ' + c.hi.toFixed(1)) + ').' + (c.inBand ? '' : ' That can be real for your kit.') + ' One brew is one data point. Two or three that agree are better.' }),
       h('button', { type:'button', class:'btn primary', id:'ycUseCal', text:'Use ' + (moka ? Math.round(v * 100) + ' %' : v.toFixed(2)) + ' for my ' + meth.label, onclick:() => {
         if (!app.prefs.yieldCal) app.prefs.yieldCal = {};
-        app.prefs.yieldCal[yc.key] = v; yc.r = null; yc.f = null; scheduleDraft(); yc.open.fine = true; ycPaint();
+        app.prefs.yieldCal[yc.key] = v; yc.r = null; yc.f = null; scheduleDraft(); ycAgain();
       } }));
   };
   box.append(h('p', { class:'fine', style:'margin:0 0 8px', text:moka ? 'Weigh the water you put in the base and the coffee you got.' : 'Weigh the water you poured and the coffee you ended up with. Your coffee and water are filled in from above.' }),
@@ -20566,6 +20677,9 @@ const toolReset = (id, onReset, label) => h('div', { class:'tool-reset' }, h('bu
 function toolCard(id, title, sub, ...kids){
   const c = tband(title, 'Start here', sub, { icon:'pen', text:'Type a number' }, ...kids); if (id) c.id = id; return c;
 }
+/* a big picture button that opens a pop-up, and the row of them under a tool's answer (the same two-up look as the Cost of coffee page) */
+const toolTile = (id, art, name, sub, open) => h('button', { type:'button', id, onclick:open }, symPic(art), h('b', { text:name }), h('small', { text:sub }));
+const toolTiles = (...tiles) => h('div', { class:'mk-kind tool-tiles', role:'group', 'aria-label':'More to do' }, ...tiles.filter(Boolean));
 /* a fold that remembers whether it was open (store[key]) while the screen is redrawn */
 function toolFold(store, key, id, name, sub, icon, body){
   const d = plainFold(id, name, sub, icon, body); d.open = !!store[key]; d.addEventListener('toggle', () => { store[key] = d.open; }); return d;
@@ -20631,6 +20745,20 @@ function ycWorkNodes(res, mode, key){
     out.push(box);
   }
   return out;
+}
+/* ---------- cup yield pop-ups ----------
+   Both read and write the screen's state (yc). The page behind keeps up as you type (ycLive), so closing needs no redraw; actions that change the page itself call ycAgain. */
+function openYieldFine(){ sheet = { step:'yieldFine' }; openSheet(); }
+function openYieldList(){ sheet = { step:'yieldList' }; openSheet(); }
+/* the answer in one line, for the top of the Fine-tune pop-up */
+function ycNowText(res){ return !res.ok ? 'Fill in your brew on the page to see the answer.' : yc.mode === 'water' ? 'In your cup: about ' + ycG(res.B) + ' g' : 'Pour about ' + ycG(res.W) + ' g of water'; }
+function renderYieldFineSheet(title){
+  title.textContent = 'Fine-tune';
+  sheetEl.append(h('p', { class:'yc-fnow', id:'ycFineNow', text:ycNowText(ycRun()) }), ...ycFineNodes(), h('div', { class:'row', style:'margin-top:14px' }, h('button', { type:'button', class:'btn primary block', id:'ycFineDone', text:'Done', onclick:closeSheet })));
+}
+function renderYieldListSheet(title){
+  title.textContent = 'Starting figures';
+  sheetEl.append(ycListNode(yc.key), h('div', { class:'row', style:'margin-top:14px' }, h('button', { type:'button', class:'btn primary block', id:'ycListDone', text:'Done', onclick:closeSheet })));
 }
 /* ---------- cupping UI builders ---------- */
 function scaleRow(ticks, min, max, bands){
@@ -21438,7 +21566,7 @@ const POP_FACE = {
   share:'happy', done:'happy', exportDone:'happy', everyResult:s => s.ok ? 'happy' : 'worried',
   loadErr:'worried', keepFirst:'worried', dlProblem:'worried', cafClear:'worried', delConfirm:'grumpy', noBackup:'sad',
   otherWay:'informing', confirm:'informing', ask:'informing', backup:'informing', fallback:'informing', lesson:'informing', tableGuide:'informing',
-  bagtile:'informing', bagcompare:'informing', term:'informing', releases:'informing', raw:'informing', sheetcopy:'informing', level:'informing', scanChat:'informing', brewadj:'informing', way:'informing', sound:'informing', about:'happy'
+  bagtile:'informing', bagcompare:'informing', term:'informing', releases:'informing', raw:'informing', sheetcopy:'informing', level:'informing', scanChat:'informing', brewadj:'informing', way:'informing', sound:'informing', costAdd:s => s.ok ? 'informing' : 'worried', costHist:'informing', ratioOwn:'informing', ratioDil:'informing', yieldFine:'informing', yieldList:'informing', cafSleep:'informing', cafSpeed:'informing', bagPick:'informing', freshPick:'informing', freshBars:'informing', about:'happy'
 };
 function popFace(){ const f = sheet && POP_FACE[sheet.step]; return typeof f === 'function' ? f(sheet) : (f || ''); }
 /* after a sheet is drawn: put the bust beside its title */
@@ -21462,6 +21590,17 @@ function renderSheetBody(){
   if (sheet.step === 'pick'){ renderPickSheet(title); return; }
   if (sheet.step === 'brewadj'){ renderBrewAdjSheet(title); return; }   /* the Brew page's Adjust pop-ups (42-brew-pops.js) */
   if (sheet.step === 'sound'){ renderSoundSheet(title); return; }   /* the timer's Sound options (46-timer-sound.js) */
+  if (sheet.step === 'costAdd'){ renderCostAddSheet(title); return; }   /* Cost of coffee: Add a new bag (49-cost-add.js) */
+  if (sheet.step === 'costHist'){ renderCostHistSheet(title); return; }   /* Cost of coffee: Cost history (49-screen-spend.js) */
+  if (sheet.step === 'ratioOwn'){ renderRatioOwnSheet(title); return; }   /* Ratio calculator: Set my own numbers (49-ratio-sheets.js) */
+  if (sheet.step === 'yieldFine'){ renderYieldFineSheet(title); return; }   /* Cup yield: Fine-tune (49-yield-sheets.js) */
+  if (sheet.step === 'yieldList'){ renderYieldListSheet(title); return; }   /* Cup yield: Starting figures */
+  if (sheet.step === 'cafSleep'){ renderCafSleepSheet(title); return; }   /* Caffeine: My sleep (49-caffeine-sheets.js) */
+  if (sheet.step === 'cafSpeed'){ renderCafSpeedSheet(title); return; }   /* Caffeine: How I clear it */
+  if (sheet.step === 'bagPick'){ renderBagPickSheet(title); return; }   /* Compare 2 bags: Change Bag A or B (49-bags-sheets.js) */
+  if (sheet.step === 'freshPick'){ renderFreshPickSheet(title); return; }   /* Freshness: Change bag */
+  if (sheet.step === 'freshBars'){ renderFreshBarsSheet(title); return; }   /* Freshness: All my bags today */
+  if (sheet.step === 'ratioDil'){ renderRatioDilSheet(title); return; }   /* Ratio calculator: Dilute a strong brew */
   if (sheet.step === 'way'){ renderWaySheet(title); return; }   /* the way to brew it: hot, pulse or iced (36-method-way.js) */
   if (sheet.step === 'machine'){ renderMachineSheet(title); return; }   /* a Philips drink (43-sheet-machine.js) */
   if (sheet.step === 'setup'){ renderSetupSheet(title); return; }   /* My setup (63-sheet-setup.js) */

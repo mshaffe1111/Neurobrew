@@ -4,6 +4,18 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.054.0119: The other calculators, simplified, with new icons
+
+2026-10-17 22:55:29 UTC
+
+- Cup yield, Ratio, Caffeine, Compare 2 bags and Freshness now put the answer first and move extras into pop-ups. Six new drawn tool icons.
+
+## Version 4.053.0118: Cost of coffee, simplified
+
+2026-10-17 21:44:09 UTC
+
+- The answer is on top. Add a new bag and Cost history are pop-ups. One fold holds the sums.
+
 ## Version 4.052.0117: A bigger timer, one card at a time
 
 2026-10-17 19:30:32 UTC
