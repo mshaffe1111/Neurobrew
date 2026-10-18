@@ -4,6 +4,13 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.056.0122: Flavor dots you can read
+
+2026-10-18 05:20:00 UTC
+
+- On the Brew chart, Colour by Flavor now has a Flavor button. It opens a pop-up where you pick one flavor, and the other brews fade. The stars show inside the dots.
+- Tap dots that sit on top of each other and a pop-up lists every brew in that spot, so none are hidden.
+
 ## Version 4.056.0121: Your preferences: boards that mean something
 
 2026-10-18 03:23:53 UTC

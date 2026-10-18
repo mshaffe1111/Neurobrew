@@ -1985,6 +1985,16 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .faimc .seg{ margin:12px 0 0; }
 .faimc .flink, .ecchart .flink{ margin-top:2px; }
 @media (forced-colors:active){ .bcviews button[aria-pressed="true"], .bcchips button[aria-pressed="true"]{ outline:3px solid Highlight; } }
+.bcfade{ pointer-events:none; }
+.bcrow .bcflavbtn{ flex:1; min-width:0; }
+.bcflavbtn{ display:flex; align-items:center; justify-content:flex-start; gap:8px; min-height:48px; text-align:left; }
+.bcflavbtn .pic{ flex:none; width:28px; height:28px; background:none; display:inline-grid; place-items:center; } .bcflavbtn .pic svg{ width:24px; height:24px; display:block; }
+.bcflavbtn b{ font-size:16.5px; } .bcflavn{ margin-left:auto; font-size:14.5px; font-weight:600; } .bcflavgo{ font-size:13px; }
+.bcstack{ grid-template-columns:1fr; } .bcstack button{ flex-direction:row; justify-content:flex-start; gap:10px; min-height:56px; padding:6px 12px; text-align:left; }
+.bcstack .pic{ flex:none; width:36px; height:36px; } .bcstack .pic svg{ width:30px; height:30px; }
+.bcstack .bct{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; } .bcstack .bct b{ font-size:16.5px; overflow-wrap:anywhere; text-align:left; }
+.bcstn{ flex:none; font:800 18px var(--ui); }
+.bckey .bcglyph{ width:22px; height:22px; background:none; display:inline-grid; place-items:center; } .bckey .bcglyph svg{ width:22px; height:22px; display:block; }
 /* Build 17: the Coffee screen, Beanjamin asks one question at a time. */
 /* Build 29: what was answered, one quiet folded card: the coffee, small tags, and "Change an answer" opens a row for each (tap one to change it) */
 .qchat{ margin:6px 0 12px; }
@@ -7618,6 +7628,14 @@ function bcOnMap(pts, kind){
   });
   return list;
 }
+/* the flavor filter: a brew counts under the first flavor family tasted in it ('' is every brew, 'none' is a brew with no flavor words saved) */
+const bcInFamily = (p, fam) => !fam || (fam === 'none' ? !p.fams.length : p.fams[0] === fam);
+/* how many brews sit under each flavor family on a map: { list:[{ fam, n }] in wheel order, none, all } */
+function bcFlavorCounts(pts){
+  const n = {}; let none = 0;
+  (pts || []).forEach(p => { if (p.fams.length) n[p.fams[0]] = (n[p.fams[0]] || 0) + 1; else none++; });
+  return { list:TP_FAMILY_ORDER.filter(f => n[f]).map(f => ({ fam:f, n:n[f] })), none, all:(pts || []).length };
+}
 const bcMedian = a => { const s = a.slice().sort((x, y) => x - y), n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : null; };
 /* groups of brews by one thing they were made with ('brewer', 'filter', 'grinder' or 'water'). A group needs 3 brews to show a middle. Brews with the thing blank are left out. */
 function bcGroups(mp, by){
@@ -11608,6 +11626,18 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 122,
+  "version": "4.056.0122",
+  "tier": "small",
+  "at": "2026-10-18T05:20:00Z",
+  "date": "2026-10-18",
+  "title": "Flavor dots you can read",
+  "notes": [
+   "On the Brew chart, Colour by Flavor now has a Flavor button. It opens a pop-up where you pick one flavor, and the other brews fade. The stars show inside the dots.",
+   "Tap dots that sit on top of each other and a pop-up lists every brew in that spot, so none are hidden."
+  ]
+ },
  {
   "release": 121,
   "version": "4.056.0121",
@@ -16320,30 +16350,36 @@ function bcShape(fam){
 function bcDotLabel(p){
   return (p.coffee || 'Unnamed coffee') + ', ' + p.brewer + '. Strength ' + p.tds.toFixed(2) + ' percent, extraction ' + p.ey.toFixed(1) + ' percent. ' + (p.stars > 0 ? bcStarText(p.stars) + ' beans.' : 'Not rated.');
 }
-/* one brew as a dot in the chosen colour mode at (cx, cy) */
-function bcDot(p, mode, cx, cy, j, dim){
-  const ink = 'stroke:' + bcInk + ';stroke-width:2.4', dash = p.mixed ? ';stroke-dasharray:3 3' : '';
-  let g = '<g class="bcdot" data-j="' + j + '" tabindex="0" role="button" aria-label="' + escHtml(bcDotLabel(p)) + '"' + (dim ? ' opacity=".22"' : '') + '>';
-  g += '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="16" fill="transparent"/>';   /* a bigger target for a finger */
+/* the mark for one brew in the chosen colour mode, centred on (cx, cy). num prints the stars inside a flavor shape. */
+function bcMark(p, mode, cx, cy, num){
+  const ink = 'stroke:' + bcInk + ';stroke-width:2.4', dash = p.mixed ? ';stroke-dasharray:3 3' : '', ring = '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="6" style="fill:var(--surface);stroke:var(--muted);stroke-width:2;stroke-dasharray:2 3"/>';
   if (mode === 'taste'){
     const t = BC_TASTES.find(x => x.key === p.taste);
-    if (t) g += '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="13" style="fill:var(--surface);' + ink + dash + '"/>' + bcFace(t.art, cx, cy, 22);
-    else g += '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="6" style="fill:var(--surface);stroke:var(--muted);stroke-width:2;stroke-dasharray:2 3"/>';
-  } else if (mode === 'flavor'){
-    const sh = p.fams.length ? bcShape(p.fams[0]) : null;
-    if (!sh) g += '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="6" style="fill:var(--surface);stroke:var(--muted);stroke-width:2;stroke-dasharray:2 3"/>';
-    else {
-      const st = 'style="fill:' + sh.fill + ';' + ink + dash + '"', r = 11;
-      g += sh.shape === 'circle' ? '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="' + r + '" ' + st + '/>'
-        : sh.shape === 'square' ? '<rect x="' + bcF(cx - r) + '" y="' + bcF(cy - r) + '" width="' + 2 * r + '" height="' + 2 * r + '" rx="3" ' + st + '/>'
-        : sh.shape === 'triangle' ? '<path d="M' + bcF(cx) + ' ' + bcF(cy - r - 2) + ' L' + bcF(cx + r + 2) + ' ' + bcF(cy + r - 1) + ' L' + bcF(cx - r - 2) + ' ' + bcF(cy + r - 1) + ' Z" stroke-linejoin="round" ' + st + '/>'
-        : '<path d="M' + bcF(cx) + ' ' + bcF(cy - r - 3) + ' L' + bcF(cx + r + 3) + ' ' + bcF(cy) + ' L' + bcF(cx) + ' ' + bcF(cy + r + 3) + ' L' + bcF(cx - r - 3) + ' ' + bcF(cy) + ' Z" stroke-linejoin="round" ' + st + '/>';
-    }
-  } else {
-    g += '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="12.5" style="fill:' + bcStarFill(p.stars) + ';' + (p.stars > 0 ? ink : 'stroke:var(--muted);stroke-width:2;stroke-dasharray:2 3') + dash + '"/>';
-    if (p.stars > 0) g += bcTx(cx, cy + 4, bcStarText(p.stars), { size:p.stars % 1 ? 10 : 12, weight:800 });
+    return t ? '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="13" style="fill:var(--surface);' + ink + dash + '"/>' + bcFace(t.art, cx, cy, 22) : ring;
   }
-  return g + '</g>';
+  if (mode === 'flavor'){
+    const sh = p.fams.length ? bcShape(p.fams[0]) : null;
+    if (!sh) return ring;
+    const st = 'style="fill:' + sh.fill + ';' + ink + dash + '"', r = 11;
+    const body = sh.shape === 'circle' ? '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="' + r + '" ' + st + '/>'
+      : sh.shape === 'square' ? '<rect x="' + bcF(cx - r) + '" y="' + bcF(cy - r) + '" width="' + 2 * r + '" height="' + 2 * r + '" rx="3" ' + st + '/>'
+      : sh.shape === 'triangle' ? '<path d="M' + bcF(cx) + ' ' + bcF(cy - r - 2) + ' L' + bcF(cx + r + 2) + ' ' + bcF(cy + r - 1) + ' L' + bcF(cx - r - 2) + ' ' + bcF(cy + r - 1) + ' Z" stroke-linejoin="round" ' + st + '/>'
+      : '<path d="M' + bcF(cx) + ' ' + bcF(cy - r - 3) + ' L' + bcF(cx + r + 3) + ' ' + bcF(cy) + ' L' + bcF(cx) + ' ' + bcF(cy + r + 3) + ' L' + bcF(cx - r - 3) + ' ' + bcF(cy) + ' Z" stroke-linejoin="round" ' + st + '/>';
+    return body + (num && p.stars > 0 ? bcTx(cx, cy + (sh.shape === 'triangle' ? 6 : 4), bcStarText(p.stars), { size:p.stars % 1 ? 9.5 : 11.5, weight:800 }) : '');
+  }
+  return '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="12.5" style="fill:' + bcStarFill(p.stars) + ';' + (p.stars > 0 ? ink : 'stroke:var(--muted);stroke-width:2;stroke-dasharray:2 3') + dash + '"/>'
+    + (p.stars > 0 ? bcTx(cx, cy + 4, bcStarText(p.stars), { size:p.stars % 1 ? 10 : 12, weight:800 }) : '');
+}
+/* one brew as a dot at (cx, cy). state: 0 normal, 1 faded (still tappable), 2 faded out of the way (a flavor that is not picked: it cannot be tapped). */
+function bcDot(p, mode, cx, cy, j, state, num){
+  const out = state === 2, g = out
+    ? '<g class="bcdot bcfade" data-j="' + j + '" aria-hidden="true" opacity=".18">'
+    : '<g class="bcdot" data-j="' + j + '" tabindex="0" role="button" aria-label="' + escHtml(bcDotLabel(p)) + '"' + (state ? ' opacity=".22"' : '') + '>';
+  return g + '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="16" fill="transparent"/>' + bcMark(p, mode, cx, cy, num) + '</g>';   /* the clear circle is a bigger target for a finger */
+}
+/* the same mark on its own, for a list or a tile */
+function bcGlyph(p, mode, size){
+  const s = h('span', { class:'pic bcglyph' }); s.innerHTML = '<svg viewBox="-16 -16 32 32" width="' + (size || 30) + '" height="' + (size || 30) + '" aria-hidden="true" focusable="false">' + bcMark(p, mode, 0, 0, true) + '</svg>'; return s;
 }
 /* a small rounded label with words in it, centred on (cx, cy); fill is optional */
 function bcPill(cx, cy, txt, fill, w){
@@ -16351,7 +16387,7 @@ function bcPill(cx, cy, txt, fill, w){
   return '<rect x="' + bcF(cx - width / 2) + '" y="' + bcF(cy - 11) + '" width="' + bcF(width) + '" height="22" rx="11" style="fill:' + (fill || 'var(--surface)') + ';stroke:' + bcInk + ';stroke-width:2.2"/>' + bcTx(cx, cy + 4.2, txt, { size:11.5 });
 }
 /* the map as an svg string.
-   o = { kind ('all','filter','espresso','steeped'), pts (from bcOnMap), colour ('stars','taste','flavor'), uid, mini, dim (p => bool),
+   o = { kind ('all','filter','espresso','steeped'), pts (from bcOnMap), colour ('stars','taste','flavor'), uid, mini, dim (p => bool), off (p => bool: faded and not tappable), numbers (stars inside flavor shapes),
          sweet, groups, aim [{x,y,label}], forecast {x,y,label}, measured {x,y,label}, trails [bcTrails rows], place {x,y,off}, research, noRatios, label } */
 function bcSvg(o){
   const G = BC_G, L = G.L, T = G.T, PW = G.PW, PH = G.PH, kind = o.kind || 'filter', Fk = kind === 'all' ? 'filter' : kind, F = BC_FRAMES[Fk], mini = !!o.mini, uid = o.uid || 'bc';
@@ -16428,7 +16464,8 @@ function bcSvg(o){
     q.forEach((c, i) => { const last = i === q.length - 1; s += '<circle cx="' + bcF(c.x) + '" cy="' + bcF(c.y) + '" r="13" style="fill:' + (last ? 'color-mix(in srgb, var(--mint) 62%, var(--surface))' : 'var(--surface)') + ';stroke:' + bcInk + ';stroke-width:2.6"/>' + bcTx(c.x, c.y + 4.5, String(i + 1), { size:12.5, weight:800 }); });
   });
   /* the brews: a dot each */
-  (o.pts || []).forEach((p, j) => { s += bcDot(p, o.colour || 'stars', px(p.x), py(p.y), j, o.dim ? o.dim(p) : false); });
+  const stateOf = p => o.off && o.off(p) ? 2 : o.dim && o.dim(p) ? 1 : 0, pts = o.pts || [];
+  [true, false].forEach(back => pts.forEach((p, j) => { const st = stateOf(p); if ((st > 0) === back) s += bcDot(p, o.colour || 'stars', px(p.x), py(p.y), j, st, o.numbers); }));   /* faded ones first, so the ones you picked sit on top */
   /* a group's middle, as a labelled pill */
   (o.groups || []).forEach(g => { if (g.enough) s += bcPill(bcClamp(px(g.x), L + 44, L + PW - 44), py(g.y), g.label.length > 14 ? g.label.slice(0, 13) + '…' : g.label, g.on ? 'color-mix(in srgb, var(--gold) 55%, var(--surface))' : null); });
   /* aim, forecast, measured and your own brew */
@@ -16437,6 +16474,47 @@ function bcSvg(o){
   if (o.forecast){ const cx = px(o.forecast.x), cy = py(o.forecast.y); s += '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="12" style="fill:color-mix(in srgb, var(--gold) 55%, var(--surface));stroke:' + bcInk + ';stroke-width:3;stroke-dasharray:5 4"/>' + (o.forecast.label ? tag(o.forecast.x, o.forecast.y, o.forecast.label) : ''); }
   [o.measured, o.place].forEach((m, k) => { if (!m) return; const cx = px(m.x), cy = py(m.y); s += '<g class="' + (k ? 'bcplace' : 'bcmeasured') + '"><circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="20" style="fill:var(--surface);stroke:' + bcInk + ';stroke-width:2.6"/>' + bcFace('bean-3', cx, cy, 30) + (m.label ? tag(m.x, m.y, m.label) : '') + '</g>'; });
   return s + '</svg>';
+}
+/* ---------- the Brew chart's pop-ups ----------
+   Matt, 18 Oct 2026: flavor dots stacked on top of each other and their details could not be seen. The fix is two pop-ups, not more on the page: pick one flavor and the rest fade; tap a spot where dots sit together and every brew there is listed. */
+const BC_STACK = 14;   /* dots whose centres are this close (in drawing units) count as one spot */
+const bcFamLabel = fam => fam === 'none' ? 'No flavor words' : fam || 'All flavors';
+const bcFamPic = (fam, size) => bcGlyph({ fams:fam && fam !== 'none' ? [fam] : [], stars:0 }, 'flavor', size);
+/* the Flavor row's button: the flavor on now and how many brews it holds */
+function bcFlavorBtn(counts, onOpen){
+  const fam = bcUi.fam, n = !fam ? counts.all : fam === 'none' ? counts.none : (counts.list.find(x => x.fam === fam) || { n:0 }).n;
+  return h('button', { type:'button', class:'btn bcflavbtn', id:'bcFlavorBtn', 'aria-haspopup':'dialog', onclick:onOpen },
+    fam ? bcFamPic(fam, 24) : symPic('mn-wheel', 'bcflavall'), h('b', { text:bcFamLabel(fam) }), h('span', { class:'bcflavn', text:n + (n === 1 ? ' brew' : ' brews') }), h('span', { class:'bcflavgo', 'aria-hidden':'true', text:'▾' }));
+}
+function openBcFlavor(counts, pick){ sheet = { step:'bcflavor', counts, pick }; openSheet(); }
+function renderBcFlavorSheet(title){
+  title.textContent = 'Show which flavor?';
+  const c = sheet.counts, items = [{ key:'', label:'All flavors', n:c.all, pic:symPic('mn-wheel') }].concat(c.list.map(x => ({ key:x.fam, label:x.fam, n:x.n, pic:bcFamPic(x.fam, 30) })));
+  if (c.none || bcUi.fam === 'none') items.push({ key:'none', label:'No flavor words', n:c.none, pic:bcFamPic('none', 30) });
+  sheetEl.append(h('p', { class:'fine', text:'Pick one to see only those brews on the map. The rest fade. A brew counts under the first flavor family you tasted in it.' }),
+    bcChips(items, bcUi.fam, v => { sheet.pick(v); renderSheet(); }, 'Show one flavor'),
+    h('div', { class:'row' }, h('button', { type:'button', class:'btn primary', id:'bcFlavorDone', text:'Done', onclick:closeSheet })));
+}
+/* the numbers of every drawn dot (their data-j) that sits within BC_STACK of the one tapped, the tapped one included */
+function bcStackOf(plot, g){
+  const at = e => { const c = e.firstElementChild; return { x:+c.getAttribute('cx'), y:+c.getAttribute('cy') }; }, a = at(g);
+  return Array.from(plot.querySelectorAll('.bcdot:not(.bcfade)')).filter(e => { const b = at(e); return Math.hypot(b.x - a.x, b.y - a.y) <= BC_STACK; }).map(e => +e.getAttribute('data-j'));
+}
+function openBcStack(pts, mode, pick){ sheet = { step:'bcstack', pts, mode, pick }; openSheet(); }
+function renderBcStackSheet(title){
+  const all = sheet.pts.slice().sort((a, b) => b.stars - a.stars || (a.coffee < b.coffee ? -1 : 1)), show = all.slice(0, 12);
+  const span = (f, d) => { const v = all.map(f), lo = Math.min.apply(null, v).toFixed(d), hi = Math.max.apply(null, v).toFixed(d); return lo === hi ? lo : lo + ' to ' + hi; };
+  title.textContent = all.length + ' brews at this spot';
+  const rows = show.map(p => {
+    const b = h('button', { type:'button', onclick:() => { const pick = sheet.pick; closeSheet(); pick(p); } }, bcGlyph(p, sheet.mode, 28),
+      h('span', { class:'bct' }, h('b', { text:p.coffee || 'Unnamed coffee' }), h('small', { text:[p.brewer, p.fams[0]].filter(Boolean).join(' · ') })),
+      h('span', { class:'bcstn', text:p.stars > 0 ? bcStarText(p.stars) : '–' }));
+    b.setAttribute('aria-label', (p.coffee || 'Unnamed coffee') + ', ' + (p.stars > 0 ? bcStarText(p.stars) + ' beans' : 'not rated')); return b;
+  });
+  sheetEl.append(h('p', { class:'fine', text:'Strength ' + span(p => p.tds, 2) + ' %. Extraction ' + span(p => p.x, 1) + ' %. Tap one to see it.' }),
+    h('div', { class:'mk-kind bcstack', role:'group', 'aria-label':'Brews at this spot' }, rows),
+    ...kept(all.length > show.length ? h('p', { class:'fine', text:(all.length - show.length) + ' more with fewer beans are not listed.' }) : null),
+    h('div', { class:'row' }, h('button', { type:'button', class:'btn primary', id:'bcStackDone', text:'Done', onclick:closeSheet })));
 }
 /* ---------- the Brew chart views ----------
    Each view gets ctx = { all, mp (the brews on the map picked), map, cur (the brew on the Brew page), plain, lv, espressoN, repaint, drawPlot } and returns
@@ -16926,7 +17004,7 @@ function scaSetupView(host){
    The numbers come from engine/53-brew-chart.js (bcMeasured and friends) and the words from judgeBrew and judgeSteeped, so this chart can never say more than the Extraction page does.
    Everything here lives in memory only: what is picked, and what is typed under Place a brew. The dots come from the brews you saved. */
 let chartFrom = '';
-let bcUi = { map:'all', colour:'stars', by:'', view:'', group:'', chip:'', sel:-1, trail:0, place:{ tds:'', ey:'', dose:'', out:'' } };
+let bcUi = { map:'all', colour:'stars', fam:'', by:'', view:'', group:'', chip:'', sel:-1, trail:0, place:{ tds:'', ey:'', dose:'', out:'' } };
 const BC_VIEWS = [
   { k:'this', art:'tl-ratio', name:'This brew', sub:'aim, forecast, result' }, { k:'mine', art:'art-beans', name:'My brews', sub:'what you liked' }, { k:'brewer', art:'m-v60', name:'By brewer', sub:'V60, Chemex, more' },
   { k:'trail', art:'art-timer', name:'Your tries', sub:'change by change' }, { k:'study', art:'art-globe', name:'The research', sub:'two kinds of drinker' }, { k:'place', art:'art-tds', name:'Place a brew', sub:'type your numbers' }];
@@ -16941,7 +17019,7 @@ const BC_ZONES = [
 /* open the chart, remembering where Back goes. view is optional: it opens on that view. */
 function goChart(view){
   if (app.screen !== 'chart') chartFrom = app.screen === 'timer' ? 'recipe' : app.screen;
-  bcUi.view = view || ''; bcUi.sel = -1; bcUi.chip = ''; bcUi.group = ''; bcUi.trail = 0;
+  bcUi.view = view || ''; bcUi.sel = -1; bcUi.chip = ''; bcUi.group = ''; bcUi.fam = ''; bcUi.trail = 0;
   go('chart');
 }
 /* the brew on the Brew page right now, read for the chart: which map it is on, the cup we aim for, the forecast and (from the cup screen) the numbers just measured. null when no coffee and method are picked. */
@@ -16972,16 +17050,17 @@ const bcRowOf = (label, seg) => h('div', { class:'bcrow' }, h('b', { text:label 
 /* tap tiles for brewers, trails or groups: a picture, a name and how many. Tapping the one that is on turns it off. */
 function bcChips(items, cur, onPick, label){
   return h('div', { class:'mk-kind bcchips', role:'group', 'aria-label':label }, items.map(it => {
-    const b = h('button', { type:'button', 'aria-pressed':String(it.key === cur), onclick:() => onPick(it.key === cur ? '' : it.key) }, symPic(it.art), h('b', { text:it.label }), h('small', { text:String(it.n) }));
+    const b = h('button', { type:'button', 'aria-pressed':String(it.key === cur), onclick:() => onPick(it.key === cur ? '' : it.key) }, it.pic || symPic(it.art), h('b', { text:it.label }), h('small', { text:String(it.n) }));
     b.setAttribute('aria-label', it.label + ', ' + it.n + (it.n === 1 ? ' brew' : ' brews')); return b;
   }));
 }
 /* what the dots mean in the colour that is on */
-function bcLegend(mode, pts){
+function bcLegend(mode, pts, fam){
   const k = (mark, text) => h('span', { class:'bckey' }, mark, h('span', { text }));
   if (!pts.length) return null;
   const dash = pts.some(p => p.mixed) ? k(h('i', { class:'bcdash', 'aria-hidden':'true', text:'○' }), 'Dashed ring: steeped, drawn on the cup basis') : null;
   if (mode === 'taste') return h('div', { class:'bclegend', id:'bcLegend' }, BC_TASTES.map(t => k(symPic(t.art, 'bckp'), t.label)), k(h('i', { 'aria-hidden':'true', text:'◌' }), 'No taste saved'), dash);
+  if (mode === 'flavor' && fam) return h('div', { class:'bclegend', id:'bcLegend' }, k(bcFamPic(fam, 20), bcFamLabel(fam) + '. The number is your beans.'), k(h('i', { 'aria-hidden':'true', text:'◌' }), 'Faded: the other brews'), dash);
   if (mode === 'flavor'){
     const seen = []; pts.forEach(p => { if (p.fams.length && seen.indexOf(p.fams[0]) < 0) seen.push(p.fams[0]); });
     seen.sort((a, b) => TP_FAMILY_ORDER.indexOf(a) - TP_FAMILY_ORDER.indexOf(b));
@@ -17027,23 +17106,35 @@ function screenChart(m){
     return { this:bcViewThis, mine:bcViewMine, brewer:bcViewBrewer, trail:bcViewTrail, study:bcViewStudy, place:bcViewPlace }[bcUi.view](ctx);
   }
   let cs = null;
+  /* the Flavor row and the fading of the other flavors belong to the two views about your brews */
+  const famOn = () => bcUi.colour === 'flavor' && (bcUi.view === 'mine' || bcUi.view === 'brewer');
+  let plotColour = 'stars';
   function drawPlot(){
-    const o = typeof cs.opts === 'function' ? cs.opts() : cs.opts;
-    pts = o.pts || [];
+    const o = Object.assign({}, typeof cs.opts === 'function' ? cs.opts() : cs.opts);
+    if (famOn() && bcUi.fam){ o.off = p => !bcInFamily(p, bcUi.fam); o.numbers = true; }
+    pts = o.pts || []; plotColour = o.colour || 'stars';
     plot.innerHTML = bcSvg(o);
+  }
+  /* a tap on a dot: one brew opens its card; dots sitting together open the list of them */
+  function tapDot(g){
+    const p = pts[+g.getAttribute('data-j')]; if (!p) return;
+    const near = bcStackOf(plot, g).map(j => pts[j]).filter(Boolean);
+    if (near.length > 1){ openBcStack(near, plotColour, q => { bcUi.sel = q.i; paintAll(); try { const el = $('bcPick'); if (el) el.scrollIntoView({ block:'nearest' }); } catch(e){} }); return; }
+    bcUi.sel = bcUi.sel === p.i ? -1 : p.i; paintAll();
   }
   function paintAll(){
     cs = spec();
     const view = BC_VIEWS.find(v => v.k === bcUi.view), body = [];
     const colourOk = !plain && (bcUi.view === 'mine' || bcUi.view === 'brewer' || bcUi.view === 'this' || bcUi.view === 'place');
     if (colourOk) body.push(bcRowOf('Colour by', bcSeg('Colour the dots by', [{ v:'stars', label:'Stars' }, { v:'taste', label:'Taste' }, { v:'flavor', label:'Flavor' }], bcUi.colour, v => { bcUi.colour = v; paintAll(); }, 'bcColour')));
+    if (colourOk && famOn()) body.push(bcRowOf('Flavor', bcFlavorBtn(bcFlavorCounts(ctx.mp), () => openBcFlavor(bcFlavorCounts(ctx.mp), v => { bcUi.fam = v; bcUi.sel = -1; paintAll(); }))));
     body.push(bcSeg('Which map', MAPS, bcUi.map, v => { bcUi.map = v; bcUi.group = ''; bcUi.chip = ''; bcUi.sel = -1; bcUi.trail = 0; paintAll(); }, 'bcMap'));
     plot = h('div', { class:'bcplot', id:'bcPlot' });
-    plot.addEventListener('click', e => { const g = e.target.closest ? e.target.closest('.bcdot') : null; if (!g) return; const p = pts[+g.getAttribute('data-j')]; if (!p) return; bcUi.sel = bcUi.sel === p.i ? -1 : p.i; paintAll(); });
-    plot.addEventListener('keydown', e => { if (e.key !== 'Enter' && e.key !== ' ') return; const g = e.target.closest ? e.target.closest('.bcdot') : null; if (!g) return; e.preventDefault(); const p = pts[+g.getAttribute('data-j')]; if (!p) return; bcUi.sel = bcUi.sel === p.i ? -1 : p.i; paintAll(); });
+    plot.addEventListener('click', e => { const g = e.target.closest ? e.target.closest('.bcdot:not(.bcfade)') : null; if (g) tapDot(g); });
+    plot.addEventListener('keydown', e => { if (e.key !== 'Enter' && e.key !== ' ') return; const g = e.target.closest ? e.target.closest('.bcdot:not(.bcfade)') : null; if (!g) return; e.preventDefault(); tapDot(g); });
     body.push(plot);
     drawPlot();
-    if (cs.legend !== false){ const lg = bcLegend(bcUi.colour, pts); if (lg) body.push(lg); }
+    if (cs.legend !== false){ const lg = bcLegend(bcUi.colour, pts, famOn() ? bcUi.fam : ''); if (lg) body.push(lg); }
     const pk = pts.find(p => p.i === bcUi.sel); if (pk) body.push(bcPickCard(pk));
     (cs.nodes || []).forEach(n => { if (n) body.push(n); });
     if (cs.say) body.push(sayRow(cs.say[1], '', cs.say[0]));
@@ -22138,7 +22229,7 @@ const POP_FACE = {
   share:'happy', done:'happy', exportDone:'happy', everyResult:s => s.ok ? 'happy' : 'worried',
   loadErr:'worried', keepFirst:'worried', dlProblem:'worried', cafClear:'worried', delConfirm:'grumpy', noBackup:'sad',
   otherWay:'informing', confirm:'informing', ask:'informing', backup:'informing', fallback:'informing', lesson:'informing', tableGuide:'informing',
-  bagtile:'informing', bagcompare:'informing', term:'informing', releases:'informing', raw:'informing', sheetcopy:'informing', level:'informing', scanChat:'informing', brewadj:'informing', way:'informing', sound:'informing', costAdd:s => s.ok ? 'informing' : 'worried', costHist:'informing', ratioOwn:'informing', ratioDil:'informing', yieldFine:'informing', yieldList:'informing', cafSleep:'informing', cafSpeed:'informing', bagPick:'informing', freshPick:'informing', freshBars:'informing', about:'happy'
+  bagtile:'informing', bagcompare:'informing', term:'informing', releases:'informing', raw:'informing', sheetcopy:'informing', level:'informing', scanChat:'informing', brewadj:'informing', way:'informing', sound:'informing', bcflavor:'informing', bcstack:'informing', costAdd:s => s.ok ? 'informing' : 'worried', costHist:'informing', ratioOwn:'informing', ratioDil:'informing', yieldFine:'informing', yieldList:'informing', cafSleep:'informing', cafSpeed:'informing', bagPick:'informing', freshPick:'informing', freshBars:'informing', about:'happy'
 };
 function popFace(){ const f = sheet && POP_FACE[sheet.step]; return typeof f === 'function' ? f(sheet) : (f || ''); }
 /* after a sheet is drawn: put the bust beside its title */
@@ -22161,6 +22252,8 @@ function renderSheetBody(){
   const closeRow = label => h('div', { class:'row' }, h('button', { type:'button', class:'btn', text:label || 'Cancel', onclick:closeSheet }));
   if (sheet.step === 'pick'){ renderPickSheet(title); return; }
   if (sheet.step === 'brewadj'){ renderBrewAdjSheet(title); return; }   /* the Brew page's Adjust pop-ups (42-brew-pops.js) */
+  if (sheet.step === 'bcflavor'){ renderBcFlavorSheet(title); return; }   /* Brew chart: Show which flavor? (35-chart-sheets.js) */
+  if (sheet.step === 'bcstack'){ renderBcStackSheet(title); return; }   /* Brew chart: the brews at one spot */
   if (sheet.step === 'sound'){ renderSoundSheet(title); return; }   /* the timer's Sound options (46-timer-sound.js) */
   if (sheet.step === 'costAdd'){ renderCostAddSheet(title); return; }   /* Cost of coffee: Add a new bag (49-cost-add.js) */
   if (sheet.step === 'costHist'){ renderCostHistSheet(title); return; }   /* Cost of coffee: Cost history (49-screen-spend.js) */
