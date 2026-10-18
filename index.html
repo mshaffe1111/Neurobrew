@@ -302,7 +302,6 @@ details.mgroup > summary .mgt{ font-weight:700; font-size:17px; }
 .tpgname{ flex:1; min-width:0; } .tpgname b{ display:block; font:700 20px/1.1 var(--display); } .tpgname small{ display:block; font-size:15px; color:var(--muted); }
 .tpgmid{ font:700 16px var(--ui); text-align:right; }
 .tpheapart{ display:block; width:100%; } .tpheapart svg{ width:100%; }
-.tpkey2{ display:flex; align-items:center; gap:10px; margin-top:10px; font-size:15px; font-weight:600; }
 /* coffee street */
 .tpscroll{ overflow-x:auto; padding:0 6px 4px; -webkit-overflow-scrolling:touch; }
 .tpscroll:focus-visible{ outline:3px solid var(--focus); outline-offset:-3px; }
@@ -1025,17 +1024,9 @@ details.folk > summary::-webkit-details-marker{ display:none; }
 .wlicon::after{ content:''; position:absolute; inset:14px; border-radius:50%; background:var(--surface); border:2px solid #22120C; }
 .wlicon.chart{ border-radius:12px; background:var(--tint); }
 .wlicon.chart::after{ inset:12px 9px 13px 15px; border-radius:3px; background:color-mix(in srgb, var(--leaf) 25%, transparent); border:2px solid var(--leaf); }
-.chartwrap svg{ width:100%; height:auto; display:block; max-width:520px; margin:0 auto; }
-.chartin{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
-.chartfield{ display:flex; flex-direction:column; gap:4px; }
-.chartfield input{ min-height:44px; font-size:16px; }
-.chartfold{ margin-top:12px; }
-.chartfold summary{ min-height:44px; display:flex; align-items:center; cursor:pointer; font-weight:600; }
 .wedge:focus, .hub:focus{ outline:none; }
 .hub:focus-visible{ outline:none; stroke:var(--focus) !important; stroke-width:3.5 !important; }
 .hub{ cursor:pointer; }
-.chartfold summary::before{ content:'\25B8'; display:inline-block; margin-right:8px; transition:none; }
-.chartfold[open] summary::before{ transform:rotate(90deg); }
 /* the circles: the progress bar, with a name under each number that may be long */
 .progress.sca .pstep{ min-width:0; }
 .progress.sca .pl{ overflow:hidden; text-overflow:ellipsis; max-width:100%; }
@@ -1983,6 +1974,52 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .cf-sc small{ font-size:13px; line-height:1.15; color:var(--muted); }
 .cf-op{ font:700 24px/1 var(--ui); color:var(--ink); }
 @media (max-width:359px){ .cf-grid.c3{ gap:6px; } .cf-tile b{ font-size:15px; } .cf-chip{ width:58px; } .cf-sbtn{ width:64px; } }
+.bcholder{ scroll-margin-top:64px; }
+.bcplot svg, .bcmini svg{ width:100%; height:auto; display:block; max-width:520px; margin:0 auto; }
+.bcmini{ margin:12px 0 4px; }
+.bcdot{ cursor:pointer; outline:none; }
+.bcdot:focus-visible circle:nth-child(2), .bcdot:focus-visible rect, .bcdot:focus-visible path{ stroke:var(--focus); stroke-width:4; }
+.bcseg{ margin:0 0 10px; }
+.bcrow{ display:flex; align-items:center; gap:10px; margin:0 0 10px; }
+.bcrow > b{ flex:none; font-size:15px; }
+.bcrow .bcseg{ flex:1; margin:0; }
+.bcseg button{ min-height:44px; font-weight:700; }
+.bcviews{ grid-template-columns:repeat(3, 1fr); margin-top:12px; }
+.bcviews button{ min-height:100px; }
+.bcviews small{ font-size:12.5px; line-height:1.2; }
+.bcchips{ grid-template-columns:repeat(auto-fit, minmax(76px, 1fr)); margin:12px 0 10px; }
+.bcchips button{ min-height:76px; padding:6px 4px; }
+.bcchips b{ font-size:14.5px; line-height:1.1; overflow-wrap:anywhere; }
+.bcchips .pic{ width:34px; height:34px; } .bcchips .pic svg{ width:30px; height:30px; }
+.bclegend{ display:flex; flex-wrap:wrap; gap:6px 14px; margin:8px 0 10px; font-size:14px; font-weight:600; }
+.bckey{ display:inline-flex; align-items:center; gap:5px; }
+.bckey i{ font-style:normal; font-size:17px; line-height:1; -webkit-text-stroke:1.3px var(--ink); }
+.bckey i.bcstar{ display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; font:800 12px var(--ui); border:2px solid var(--ink); background:color-mix(in srgb, var(--mint) 62%, var(--surface)); -webkit-text-stroke:0; }
+.bckey i.bcdash{ -webkit-text-stroke:0; font-size:19px; }
+.bckp{ width:24px; height:24px; display:inline-block; } .bckp svg{ width:24px; height:24px; display:block; }
+.bcpick, .bcsweet, .bcl{ display:flex; flex-direction:column; gap:2px; padding:10px 12px; margin:8px 0; background:var(--tint); border:1px solid var(--hush); border-radius:14px; font-size:15.5px; line-height:1.3; }
+.bcpick b, .bcsweet b{ font:700 19px/1.15 var(--display); }
+.bclines{ margin:8px 0; }
+.bcl{ flex-direction:row; align-items:center; gap:10px; margin:6px 0; }
+.bcl b{ flex:none; min-width:78px; }
+.bclp{ width:30px; height:30px; flex:none; } .bclp svg{ width:28px; height:28px; display:block; }
+.bctable{ margin:10px 0; border:1px solid var(--hush); border-radius:14px; overflow:hidden; }
+.bctr{ display:grid; grid-template-columns:1fr auto; gap:0 10px; padding:9px 12px; border-top:2px solid var(--line); font-size:15.5px; }
+.bctr:first-child{ border-top:0; }
+.bctr.on{ background:var(--pick); }
+.bctr b{ font-weight:700; } .bctr span{ text-align:right; }
+.bctr small{ grid-column:1 / -1; color:var(--muted); font-size:13.5px; }
+.bcin{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+.bcfield{ display:flex; flex-direction:column; gap:4px; }
+.bcfield input{ min-height:44px; font-size:16px; }
+.bclab{ display:flex; align-items:center; gap:6px; }
+.bcfold{ margin-top:12px; }
+.bcfold summary{ min-height:44px; display:flex; align-items:center; cursor:pointer; font-weight:600; }
+.bcfold summary::before{ content:'\25B8'; display:inline-block; margin-right:8px; }
+.bcfold[open] summary::before{ transform:rotate(90deg); }
+.faimc .seg{ margin:12px 0 0; }
+.faimc .flink, .ecchart .flink{ margin-top:2px; }
+@media (forced-colors:active){ .bcviews button[aria-pressed="true"], .bcchips button[aria-pressed="true"]{ outline:3px solid Highlight; } }
 /* Build 17: the Coffee screen, Beanjamin asks one question at a time. */
 /* Build 29: what was answered, one quiet folded card: the coffee, small tags, and "Change an answer" opens a row for each (tap one to change it) */
 .qchat{ margin:6px 0 12px; }
@@ -2207,15 +2244,6 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .faimx{ font-size:13px; line-height:1.2; color:var(--muted); margin:0 0 6px; }
 .faim b{ display:block; font:800 20px/1 var(--ui); }
 .faim small{ font:600 12px/1.2 var(--ui); color:var(--muted); }
-.faimc svg{ display:block; width:100%; height:auto; margin:12px 0 4px; }
-.faimchart .zone{ fill:rgba(46,125,91,.13); stroke:var(--mint); stroke-width:1.5; stroke-dasharray:4 3; }
-.faimchart .zt{ font:700 11px var(--ui); fill:var(--mint); }
-.faimchart .ax{ font:600 11px var(--ui); fill:var(--muted); }
-.faimchart .an{ font:700 11px var(--ui); fill:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
-.faimchart .axl{ stroke:var(--line); stroke-width:1.5; }
-.faimchart .d1{ fill:#7A4A2D; stroke:var(--surface); stroke-width:2; }
-.faimchart .d2{ fill:#F2A93B; stroke:var(--ink); stroke-width:1.5; }
-.faimchart .dl{ font:700 12px var(--ui); fill:var(--ink); }
 /* what is in your cup */
 /* the Freshness clock */
 .fclock{ padding:12px; }
@@ -2877,9 +2905,6 @@ details.mfold > .mrows{ margin-top:14px; }
 .kettlebox .kettlepic{ width:40px; height:40px; flex:0 0 auto; }
 .kettlebox .kettlenum{ font-size:clamp(24px, 7vw, 30px); font-weight:800; }
 
-.chartlab{ display:flex; align-items:center; gap:6px; }
-.chartlab .chartpic{ width:28px; height:28px; flex:0 0 auto; }
-.chartlab .chartpic svg{ width:28px; height:28px; display:block; }
 .shopsteps{ display:flex; flex-direction:column; gap:10px; margin-top:8px; }
 .shopstep{ display:flex; gap:10px; align-items:flex-start; }
 .shopnum{ flex:0 0 auto; width:28px; height:28px; border-radius:50%; background:var(--primary); color:var(--primary-ink); display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; border:2px solid var(--primary-edge); }
@@ -5328,7 +5353,7 @@ const WHEELS = {
    Mouthfeel: the five words in the SCA's descriptive standard (SCA-103, 2024, section 5.3: rough, oily, smooth, mouth-drying, metallic) are used as they are; the rest are everyday words of our own.
    The list is short on purpose, so each word is one people use.
    What to change: every label is a plain reading of the dial-in advice already in engine/16-dialin.js (fixFor). Each pick carries a pattern its advice text must match, so a wheel label can never drift from the advice.
-   Brew control chart: the 1.15-1.35 % strength and 18-22 % extraction box and the zones are the ones judgeBrew (engine/50-extraction.js) already reports, with the same hedged wording. */
+   Brew chart: its frame, zones and words are in engine/53-brew-chart.js, built on the zones judgeBrew (engine/50-extraction.js) already reports. */
 const MOUTH_WHEEL = [
   { name:'Weight', short:'Weight', hue:205, groups:[['Light', ['watery', 'thin', 'light']], ['Medium', ['medium', 'round']], ['Full', ['full', 'heavy', 'thick', 'syrupy']]] },
   { name:'Smooth', short:'Smooth', hue:35, groups:[['Smooth', ['smooth', 'silky', 'velvety', 'creamy']], ['Coating', ['oily', 'buttery', 'sticky']]] },
@@ -5361,20 +5386,6 @@ function fixWheelPanel(sym, label){
   const f = fixFor(sym, null, { plainGrind:true });
   return { label:label || '', primary:f.primary || '', secondary:f.secondary || '', why:f.why || '' };
 }
-/* the chart's frame and the box (the conventional zone); judgeBrew supplies the words */
-const CHART = { ey:[14, 26], tds:[0.8, 2.0], box:{ ey:[18, 22], tds:[1.15, 1.35] }, high:[22, 24] };
-/* a brew read against the chart, or null when a number is missing or silly. { tds, ey, strength, extraction, lines, off (the point is outside the frame) } */
-function chartRead(tds, ey){
-  const t = parseFloat(tds), e = parseFloat(ey);
-  if (!(t > 0 && t <= 5) || !(e > 0 && e <= 40)) return null;
-  const j = judgeBrew('filter', Math.round(t * 100) / 100, Math.round(e * 10) / 10);
-  return { tds:t, ey:e, strength:j.strength, extraction:j.extraction, lines:j.lines, off:t < CHART.tds[0] || t > CHART.tds[1] || e < CHART.ey[0] || e > CHART.ey[1] };
-}
-/* where a brew sits in the frame, 0 to 1 across and 0 to 1 up, held at the edge when it is outside */
-function chartPos(tds, ey){
-  const c = v => Math.max(0, Math.min(1, v));
-  return { x:c((ey - CHART.ey[0]) / (CHART.ey[1] - CHART.ey[0])), y:c((tds - CHART.tds[0]) / (CHART.tds[1] - CHART.tds[0])) };
-}
 /* what the Wheels area lists, in order. data = the families; flat = two rings only, with no zooming; chart = a chart, not a wheel */
 const WHEEL_LIST = [
   { key:'smell', title:'Smell wheel', center:'Smell', blurb:'What the dry grounds and the brewed coffee remind you of', data:AROMA_WHEEL, guide:WHEELS.fragrance_aroma.guide, note:WHEEL_OWN },
@@ -5382,7 +5393,7 @@ const WHEEL_LIST = [
   { key:'finish', title:'Finish wheel', center:'Finish', blurb:'What is left after you swallow', data:AFTER_WHEEL, guide:WHEELS.aftertaste.guide, note:WHEEL_OWN },
   { key:'mouth', title:'Mouthfeel wheel', center:'Feel', blurb:'Weight, smoothness, roughness and dryness', data:MOUTH_WHEEL, guide:'Press the coffee against the roof of your mouth. Notice how it feels, not how it tastes.', note:MOUTH_NOTE },
   { key:'fix', title:'What do I change?', center:'Fix', blurb:'Pick what the cup tastes like, then see what to try', data:FIX_WHEEL, flat:true, guide:'Change one thing at a time, then taste again.' },
-  { key:'chart', title:'Brew control chart', blurb:'Strength against extraction, and what each part tends to taste like', chart:true },
+  { key:'chart', title:'Brew chart', blurb:'Strength against extraction: your brews, your aim and what you liked', chart:true },
   { key:'kit', title:'Aroma kit wheel', center:'Kit', blurb:'For the 36-vial coffee kit', data:KIT_WHEEL, guide:KIT_GUIDE, note:KIT_CREDIT }
 ];
 /* ---------- Piece 3A: experience levels, field labels, progress ---------- */
@@ -6390,20 +6401,9 @@ function tpGroups(cs){
 }
 /* The method a saved row was brewed with. The app saves the method's label ("Hario V60"); older or hand-made files may hold its key ("v60"). Both count; cupping sessions and unknown machines give null. */
 function tpMethodOf(o){ const v = unneutralize(String(o && o.brew_method || '')).trim(); return v ? METHODS.find(x => x.key === v || x.label === v) || null : null; }
-/* Measured brews: a dot per brew with both a TDS and an extraction. Filter brews and espresso have different charts. */
-function tpMap(objs){
-  const pts = [];
-  (objs || []).forEach(o => {
-    const tds = tendNum(o.brew_tds_pct), ey = tendNum(o.brew_ey_pct); if (!(tds > 0) || !(ey > 0)) return;
-    const mt = tpMethodOf(o); if (!mt || mt.type === 'cold' || STEEPED_TYPES[mt.type]) return;   /* a steeped brew is counted another way, so it stays off the drip chart (Build 27) */
-    pts.push({ kind:mt.type === 'espresso' ? 'espresso' : 'filter', tds, ey, stars:validStars(o.my_rating_stars), name:unneutralize(o.coffee_name || '') });
-  });
-  const kinds = ['filter', 'espresso'].map(k => ({ kind:k, pts:pts.filter(p => p.kind === k) })).filter(g => g.pts.length);
-  return { n:pts.length, kinds, ready:pts.length >= TP_MIN.map };
-}
 /* which pictures can be drawn now, and how many more coffees the others need */
 function tpAvailable(objs){
-  const cs = tpCoffees(objs), r = tpRating(cs), f = tpFlavors(cs), e = tpEnjoy(cs), g = tpGroups(cs), m = tpMap(objs);
+  const cs = tpCoffees(objs), r = tpRating(cs), f = tpFlavors(cs), e = tpEnjoy(cs), g = tpGroups(cs), pts = bcMeasured(objs), m = { n:pts.length, ready:pts.length >= TP_MIN.map };
   const list = [
     { id:'flavors', ready:f.ready, n:f.n, need:Math.max(0, TP_MIN.flavors - f.n), noun:'coffees with flavors saved' },
     { id:'enjoy', ready:e.ready, n:e.n, need:Math.max(0, TP_MIN.enjoy - e.n), noun:'Quick tastings' },
@@ -7487,6 +7487,108 @@ const GL_TASTING = [
   ['Sweet acidity', 'A bright sourness that tastes juicy and fruity, like ripe fruit. The SCA\'s 2023 descriptive form lists juicy, fruit-like and bright as sweet acidity.', 'juicy acidity', 'sweet acid; sweet acidity coffee; juicy acid; fruity acidity; bright and sweet; good acidity'],
   ['Dry acidity', 'A sourness that tastes herby, grassy or tart rather than fruity. The SCA\'s 2023 descriptive form lists these as dry acidity.', 'tart acidity', 'dry acid; dry acidity coffee; herby acidity; grassy acidity; sharp acidity; tart acid'],
 ];
+/* ---------- the Brew chart ----------
+   One chart for strength (TDS) against extraction, drawn three ways because the numbers mean different things:
+   filter (a pour-over or a drip machine: extraction counts the coffee in the cup), espresso (strength 8 to 12 %, a ratio of drink to coffee) and steeped (extraction counts the water poured, Liang, Chan and Ristenpart 2021).
+   The zones are the conventions judgeBrew already reports (18 to 22 % extraction, 1.15 to 1.35 % strength for filter, 8 to 12 % for espresso), so this chart can never say more than the Extraction page does.
+   The same honesty rules as the Tendencies pictures: the unit is a measured brew, stars are the person's own, counts not averages, and a middle or a spot needs 3 brews (TP_FLAG_MIN). */
+const BC_KINDS = ['filter', 'espresso', 'steeped'];
+/* every frame shares the extraction axis (15 to 25 %), so a person can switch maps without relearning the picture. ratios = the diagonal lines. */
+const BC_FRAMES = {
+  filter:{ key:'filter', label:'Filter', blurb:'V60, Kalita, Chemex and drip machines', ey:[15, 25], tds:[0.9, 1.8], eyTicks:[15, 17, 19, 21, 23, 25], tdsTicks:[0.9, 1.2, 1.5, 1.8], dp:2, zones:true, box:{ ey:[18, 22], tds:[1.15, 1.35] }, ratios:[15, 16, 17, 18, 19], ratioWord:'water to coffee',
+    xLabel:'Extraction (% of the coffee that dissolved)', basis:'the coffee in your cup' },
+  espresso:{ key:'espresso', label:'Espresso', blurb:'Espresso and the moka pot', ey:[15, 25], tds:[6, 14], eyTicks:[15, 17, 19, 21, 23, 25], tdsTicks:[6, 8, 10, 12, 14], dp:1, zones:true, box:{ ey:[18, 22], tds:[8, 12] }, ratios:[1.5, 2, 2.5, 3], ratioWord:'drink to coffee',
+    xLabel:'Extraction (% of the coffee that dissolved)', basis:'the coffee in your cup' },
+  steeped:{ key:'steeped', label:'Steeped', blurb:'French press, AeroPress, Clever, Switch, siphon, cold brew, Turkish and phin', ey:[15, 25], tds:[0.9, 1.8], eyTicks:[15, 17, 19, 21, 23, 25], tdsTicks:[0.9, 1.2, 1.5, 1.8], dp:2, zones:false, box:{ ey:[15, 25], tds:[1.15, 1.35] }, settle:[19.6, 21.8], ratios:[12, 14, 15, 16, 17], ratioWord:'water to coffee',
+    xLabel:'Extraction (% of the water poured)', basis:'the water poured' }
+};
+/* the taste words a saved cup can carry, grouped the way the Perfect step groups its sixteen answers */
+const BC_TASTES = [{ key:'sour', label:'Sour or thin', art:'p-sour' }, { key:'bitter', label:'Bitter or harsh', art:'p-bitter' }, { key:'odd', label:'Odd', art:'p-both' }, { key:'great', label:'Tastes great', art:'bean-3' }];
+const BC_BY = [{ key:'brewer', label:'Brewer' }, { key:'filter', label:'Filter' }, { key:'grinder', label:'Grinder' }, { key:'water', label:'Water' }];
+/* which map a method belongs on */
+function bcKindOf(mt){
+  if (!mt) return null;
+  if (mt.type === 'espresso' || mt.type === 'moka') return 'espresso';
+  if (mt.type === 'flow' || mt.type === 'machine') return 'filter';
+  return 'steeped';
+}
+/* strength at an extraction along one ratio line: a pour-over loses about 2.1 g of water to each gram of grounds, a steep counts the whole pour, an espresso ratio is drink over coffee */
+function bcRatioTds(kind, ey, ratio){
+  if (kind === 'espresso') return ratio > 0 ? Math.round(ey / ratio * 100) / 100 : null;
+  return beTdsFromEy(kind === 'steeped' ? 'steep' : 'flow', ey, ratio);
+}
+/* the taste group for one of the sixteen answers: sour or thin, bitter or harsh, odd, or tastes great. "Not to my taste" says nothing about the brew, so it is left out. */
+function bcTasteOf(sym){
+  const s = SYMPTOMS.find(x => x.v === String(sym || '').trim()); if (!s || s.v === 'notforme') return '';
+  return s.g === 'weak' ? 'sour' : s.g === 'harsh' ? 'bitter' : s.g === 'odd' ? 'odd' : 'great';
+}
+const bcText = v => unneutralize(String(v == null ? '' : v)).trim();
+/* every saved brew that has a strength and an extraction, read once: where it sits, what the person thought and tasted, and what they brewed it with.
+   ey is on the map's own basis (a steeped brew counts the water poured); eyCup is the saved cup basis, which the All map uses so every brew sits on one footing. */
+function bcMeasured(objs){
+  const rows = objs || [], told = {}, pts = [];
+  rows.forEach(o => { const d = o ? dialNoteOf(o) : null; if (d && d.fromId && d.symptom) told[d.fromId] = d.symptom; });   /* a later brew says what was wrong with the cup it started from */
+  rows.forEach((o, i) => {
+    if (!o) return;
+    const tds = tendNum(o.brew_tds_pct), eyCup = tendNum(o.brew_ey_pct); if (!(tds > 0)) return;
+    const mt = tpMethodOf(o); if (!mt) return;
+    const kind = bcKindOf(mt); let ey = eyCup, basis = 'cup';
+    if (kind === 'steeped'){ const rd = steepRead(mt.key, tds, tendNum(o.brew_out_g), tendNum(o.brew_dose_g), tendNum(o.brew_water_g)); if (rd.basis !== 'cup' && rd.ey > 0){ ey = rd.ey; basis = rd.basis; } }
+    if (!(ey > 0)) return;
+    const q = quickAnswers(o), fams = Array.from(new Set(q.liked.map(w => tpFamilyOf(w)).filter(f => f !== TP_OTHER)));
+    pts.push({ i, id:String(o.id || ''), at:String(o.saved_at || ''), kind, tds, ey, eyCup:eyCup > 0 ? eyCup : null, basis, judged:!(NO_TARGET_METHODS[mt.type] || mt.type === 'cold'),
+      stars:validStars(o.my_rating_stars), taste:bcTasteOf(o.fix_symptom || told[o.id] || ''), fams, coffee:bcText(o.coffee_name), coffeeKey:String(o.coffee_id || '') || (norm(bcText(o.coffee_name)) + '|' + norm(bcText(o.roaster))),
+      method:mt.key, brewer:mt.label, filter:bcText(o.brew_filter), grinder:bcText(o.brew_grinder_name), water:bcText(o.brew_water_type), row:o });
+  });
+  return pts;
+}
+/* the brews that belong on one map, each with x (extraction) and y (strength) for it. All is the filter and the steeped brews together on the cup basis; espresso is not on it because its strength runs about ten times higher. */
+function bcOnMap(pts, kind){
+  const list = [];
+  (pts || []).forEach(p => {
+    if (kind === 'all'){ if (p.kind === 'espresso' || !(p.eyCup > 0)) return; list.push(Object.assign({}, p, { x:p.eyCup, y:p.tds, mixed:p.kind === 'steeped' })); }
+    else if (p.kind === kind) list.push(Object.assign({}, p, { x:p.ey, y:p.tds, mixed:false }));
+  });
+  return list;
+}
+const bcMedian = a => { const s = a.slice().sort((x, y) => x - y), n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : null; };
+/* groups of brews by one thing they were made with ('brewer', 'filter', 'grinder' or 'water'). A group needs 3 brews to show a middle. Brews with the thing blank are left out. */
+function bcGroups(mp, by){
+  const g = {};
+  mp.forEach(p => { const k = p[by]; if (!k) return; (g[k] || (g[k] = { key:k, label:k, pts:[] })).pts.push(p); });
+  return Object.keys(g).map(k => {
+    const q = g[k], n = q.pts.length, enough = n >= TP_FLAG_MIN, rated = q.pts.filter(p => p.stars > 0);
+    return { key:k, label:q.label, n, enough, x:enough ? Math.round(bcMedian(q.pts.map(p => p.x)) * 10) / 10 : null, y:enough ? Math.round(bcMedian(q.pts.map(p => p.y)) * 100) / 100 : null, rated:rated.length, liked:q.pts.filter(p => p.stars >= 4).length, mixed:q.pts.some(p => p.mixed), pts:q.pts };
+  }).sort((a, b) => b.n - a.n || (a.label < b.label ? -1 : 1));
+}
+/* the spot where your liked cups land: the middle half of the brews you rated 4 beans or more, in both directions. It needs 5 measured brews and 3 liked ones, and it is a range, not an average. */
+function bcSweet(mp){
+  const liked = mp.filter(p => p.stars >= 4);
+  if (mp.length < TP_MIN.map || liked.length < TP_FLAG_MIN) return null;
+  const q = (arr, f) => { const s = arr.slice().sort((a, b) => a - b), k = (s.length - 1) * f, lo = Math.floor(k), hi = Math.ceil(k); return s[lo] + (s[hi] - s[lo]) * (k - lo); };
+  const xs = liked.map(p => p.x), ys = liked.map(p => p.y), pad = 0.4, x0 = q(xs, 0.25), x1 = q(xs, 0.75), y0 = q(ys, 0.25), y1 = q(ys, 0.75), spanY = Math.max.apply(null, ys) - Math.min.apply(null, ys), py = Math.max(spanY * 0.12, Math.abs(y1 + y0) * 0.02);
+  const box = { x0:Math.round((x0 - pad / 2) * 10) / 10, x1:Math.round((x1 + pad / 2) * 10) / 10, y0:Math.round((y0 - py) * 100) / 100, y1:Math.round((y1 + py) * 100) / 100 };
+  const inside = liked.filter(p => p.x >= box.x0 && p.x <= box.x1 && p.y >= box.y0 && p.y <= box.y1).length;
+  return Object.assign(box, { n:liked.length, of:mp.length, inside });
+}
+/* The tries of one coffee on one method, in the order they were saved, with what changed between neighbours. A trail needs 2 measured brews. */
+function bcTrails(mp){
+  const by = {};
+  mp.forEach(p => { const k = p.coffeeKey + '|' + p.method; (by[k] || (by[k] = [])).push(p); });
+  return Object.keys(by).map(k => {
+    const t = by[k].slice().sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : a.i - b.i)); if (t.length < 2) return null;
+    const steps = []; for (let i = 1; i < t.length; i++) steps.push({ from:i, to:i + 1, changes:trailChanges(trailAttempt(t[i - 1].row), trailAttempt(t[i].row)), a:t[i - 1], b:t[i] });
+    return { key:k, coffee:t[0].coffee || 'Unnamed coffee', brewer:t[0].brewer, method:t[0].method, pts:t, steps, last:t[t.length - 1].at };
+  }).filter(Boolean).sort((a, b) => (a.last < b.last ? 1 : a.last > b.last ? -1 : 0));
+}
+/* a brew you type in, read against the map's own zones. kind is 'filter', 'espresso' or 'steeped' ('all' reads as filter). null when a number is missing or silly. { tds, ey, kind, lines, off } */
+function bcPlace(kind, tds, ey){
+  const t = parseFloat(tds), e = parseFloat(ey), k = BC_FRAMES[kind] ? kind : 'filter', F = BC_FRAMES[k];
+  if (!(t > 0 && t <= (k === 'espresso' ? 30 : 5)) || !(e > 0 && e <= 40)) return null;
+  const a = Math.round(t * 100) / 100, b = Math.round(e * 10) / 10;
+  const j = k === 'steeped' ? judgeSteeped('immersion', a, b, '', null) : judgeBrew(k === 'espresso' ? 'espresso' : 'filter', a, b);
+  return { tds:t, ey:e, kind:k, strength:j.strength, extraction:j.extraction, lines:j.lines, off:t < F.tds[0] || t > F.tds[1] || e < F.ey[0] || e > F.ey[1] };
+}
 /* ---------- understanding coffee bag details ----------
    Each card says what the detail is, what it tells you about the cup, what it does NOT tell you, and what to look for when buying.
    Researched from the Specialty Coffee Association, Coffee Quality Institute, World Coffee Research, Coffee Review and trade sources (links on each card).
@@ -7665,11 +7767,11 @@ function tpStand(h){
 }
 /* everything the Tendencies home needs. tiles say what each picture needs when it is not ready. */
 function tpHub(objs, store, bags){
-  const a = tpAvailable(objs), cs = a.cs, units = tpUnits(cs), garden = tpGarden(a.flavors, cs), glow = tpGlow(a.enjoy), jar = tpJar(a.rating), kinds = tpKinds(cs), rings = tpRings(a.map), rack = tpRack(units), mix = tpMix(units, 'all', null), shops = tpShops(store, cs, bags);
-  const ready = { flavors:garden.ready, enjoy:glow.ready, rate:jar.ready, kinds:kinds.ready, brews:rings.ready, shops:shops.ready, brewers:rack.ready, mix:mix.ready && mix.splits.length > 0 };
+  const a = tpAvailable(objs), cs = a.cs, units = tpUnits(cs), garden = tpGarden(a.flavors, cs), glow = tpGlow(a.enjoy), jar = tpJar(a.rating), kinds = tpKinds(cs), rack = tpRack(units), mix = tpMix(units, 'all', null), shops = tpShops(store, cs, bags);
+  const ready = { flavors:garden.ready, enjoy:glow.ready, rate:jar.ready, kinds:kinds.ready, brews:a.map.ready, shops:shops.ready, brewers:rack.ready, mix:mix.ready && mix.splits.length > 0 };
   const need = { flavors:Math.max(0, TP_MIN.flavors - a.flavors.n) + ' more coffees with flavors saved', enjoy:Math.max(0, TP_MIN.enjoy - a.enjoy.n) + ' more Quick tastings', rate:Math.max(0, TP_MIN.rate - a.rating.n) + ' more rated coffees', kinds:a.groups.n >= TP_MIN.groups ? 'rated coffees from at least two different roasts, processes or elevations' : (TP_MIN.groups - a.groups.n) + ' more rated coffees',
     brews:Math.max(0, TP_MIN.map - a.map.n) + ' more measured brews', shops:'a coffee shop drink', brewers:Math.max(0, TP_MIN_MORE.rack - rack.n) + ' more coffees with a brewer', mix:mix.looks[0].n >= TP_MIN_MORE.mix ? 'rated coffees from at least two different roasts, processes or elevations' : (TP_MIN_MORE.mix - mix.looks[0].n) + ' more rated coffees' };
-  const h = { a, cs, units, garden, glow, jar, kinds, rings, rack, mix, shops, ready, need, freckles:tpFreckles(a.flavors), line:tpBeanLine(a.flavors) };
+  const h = { a, cs, units, garden, glow, jar, kinds, rack, mix, shops, ready, need, freckles:tpFreckles(a.flavors), line:tpBeanLine(a.flavors) };
   h.stand = tpStand(h); h.any = a.any || shops.ready || rack.ready;
   return h;
 }
@@ -7741,18 +7843,6 @@ function tpKinds(cs){
     return { key:f.key, label:f.label, rows, hidden:f.hidden, unit:tpUnit(Math.max(...rows.map(r => r.heap.max))) };
   });
   return { n:g.n, ready:g.ready, feats, ghost:all.median };
-}
-/* the common target on the strength and extraction chart (the same box as the Dial-in chart) */
-function tpMapBox(kind){ return kind === 'espresso' ? { x0:18, x1:22, y0:8, y1:12 } : { x0:18, x1:22, y0:1.15, y1:1.35 }; }
-/* Brews as cup rings. Brews that land in the same small square share one ring that grows with the count. Each ring keeps its stars so a bean can sit on it. */
-function tpRings(m){
-  return { n:m.n, ready:m.ready, kinds:m.kinds.map(k => {
-    const bx = tpMapBox(k.kind), sx = 1, sy = k.kind === 'espresso' ? 0.5 : 0.05, cells = {};
-    k.pts.forEach(p => { const a = Math.round(p.ey / sx), b = Math.round(p.tds / sy), id = a + ',' + b; (cells[id] || (cells[id] = { ey:0, tds:0, stars:[], names:[] })); const c = cells[id]; c.ey += p.ey; c.tds += p.tds; c.stars.push(p.stars); c.names.push(p.name); });
-    const rings = Object.keys(cells).map(id => { const c = cells[id], n = c.stars.length, rated = c.stars.filter(x => x > 0); return { ey:c.ey / n, tds:c.tds / n, count:n, stars:c.stars, rated:rated.length, names:c.names, mid:rated.length ? tpMedian(rated) : null }; });
-    const inBox = k.pts.filter(p => p.ey >= bx.x0 && p.ey <= bx.x1 && p.tds >= bx.y0 && p.tds <= bx.y1), liked = k.pts.filter(p => p.stars >= 4);
-    return { kind:k.kind, n:k.pts.length, rings, box:bx, inBox:inBox.length, inBoxLiked:inBox.filter(p => p.stars >= 4).length, liked:liked.length, rated:k.pts.filter(p => p.stars > 0).length };
-  }) };
 }
 /* ---------- wheel colors: every family gets its own clear color ---------- */
 const FAM_COLORS = {
@@ -11264,6 +11354,17 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 120,
+  "version": "4.055.0120",
+  "tier": "medium",
+  "at": "2026-10-18T01:12:25Z",
+  "date": "2026-10-18",
+  "title": "The Brew chart: one chart for every method",
+  "notes": [
+   "Four old charts became one Brew chart. A map row (All, Filter, Espresso, Steeped), Colour by stars, taste or flavor, and six views: This brew, My brews, By brewer, Your tries, The research and Place a brew. The Facts, cup and Tendencies charts now use it."
+  ]
+ },
+ {
   "release": 119,
   "version": "4.054.0119",
   "tier": "medium",
@@ -14667,12 +14768,12 @@ const PARENT = {
   cup:() => app.cupBrew ? 'recipe' : 'coffee', dial:() => (dialFrom === 'detail' || dialFrom === 'start' || dialFrom === 'history' || dialFrom === 'perfecting' || dialFrom === 'recipe') ? dialFrom : 'coffee', history:'start', perfecting:'door', detail:'history', tastedit:'detail',
   learn:() => (learnFrom && learnFrom !== 'learn' && learnFrom !== 'timer') ? learnFrom : (app.coffee.name ? 'coffee' : 'door'),
   prices:() => (pricesFrom && pricesFrom !== 'prices' && pricesFrom !== 'timer') ? pricesFrom : (app.coffee.name ? 'coffee' : 'door'),
-  wheels:() => (wheelsFrom && wheelsFrom !== 'wheels' && wheelsFrom !== 'wheel' && wheelsFrom !== 'chart' && wheelsFrom !== 'timer') ? wheelsFrom : (app.coffee.name ? 'coffee' : 'door'), wheel:'wheels', chart:'wheels',
+  wheels:() => (wheelsFrom && wheelsFrom !== 'wheels' && wheelsFrom !== 'wheel' && wheelsFrom !== 'chart' && wheelsFrom !== 'timer') ? wheelsFrom : (app.coffee.name ? 'coffee' : 'door'), wheel:'wheels', chart:() => (chartFrom && chartFrom !== 'chart' && chartFrom !== 'timer') ? chartFrom : 'wheels',
   sca:() => (scaFrom && scaFrom !== 'sca' && scaFrom !== 'timer') ? scaFrom : (app.coffee.name ? 'coffee' : 'door'),
   tastes:() => (tastesFrom && tastesFrom !== 'tastes' && tastesFrom !== 'timer') ? tastesFrom : (app.coffee.name ? 'coffee' : 'door'),
   folk:() => (folkFrom && folkFrom !== 'folk' && folkFrom !== 'timer') ? folkFrom : (app.coffee.name ? 'coffee' : 'door'),
   tend:() => (tendFrom && tendFrom !== 'tend' && tendFrom !== 'timer') ? tendFrom : (app.coffee.name ? 'coffee' : 'door'),
-  tpflavors:'tend', tpenjoy:'tend', tprate:'tend', tpkinds:'tend', tpbrews:'tend', tpshops:'tend', tpbrewers:'tend', tpmix:() => tpMixFrom === 'tpbrewers' ? 'tpbrewers' : 'tend',
+  tpflavors:'tend', tpenjoy:'tend', tprate:'tend', tpkinds:'tend', tpshops:'tend', tpbrewers:'tend', tpmix:() => tpMixFrom === 'tpbrewers' ? 'tpbrewers' : 'tend',
   guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'door'),
   compare:() => (cmpFrom && cmpFrom !== 'compare' && cmpFrom !== 'timer') ? cmpFrom : (app.coffee.name ? 'coffee' : 'door'),
   tools:() => (toolsFrom && !TOOL_SCREENS.includes(toolsFrom) && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'door'), yield:'tools', ratio:'tools', cost:'tools', bagcmp:'tools', fresh:'tools', caffeine:'tools', cafdrink:'caffeine', cafresult:'caffeine', cafcup:() => cf.from === 'recipe' ? 'recipe' : 'caffeine',
@@ -14726,7 +14827,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', perfecting:'Still perfecting', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Calculators', yield:'Cup yield', ratio:'Ratio calculator', cost:'Cost of coffee', bagcmp:'Compare 2 bags', fresh:'Freshness', caffeine:'Caffeine', cafdrink:'Add a drink', cafresult:'Your caffeine day', cafcup:'Caffeine in a cup', prices:'Coffee prices', tastes:'Train your palate', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew control chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', tastedit:'Edit tasting', about:'About', glossary:'Glossary', files:'My files' };
+  const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', perfecting:'Still perfecting', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Calculators', yield:'Cup yield', ratio:'Ratio calculator', cost:'Cost of coffee', bagcmp:'Compare 2 bags', fresh:'Freshness', caffeine:'Caffeine', cafdrink:'Add a drink', cafresult:'Your caffeine day', cafcup:'Caffeine in a cup', prices:'Coffee prices', tastes:'Train your palate', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', tastedit:'Edit tasting', about:'About', glossary:'Glossary', files:'My files' };
   Object.assign(titles, TP_TITLES);
   $('topTitle').textContent = sc === 'start' || sc === 'door' || sc === 'shop' || sc === 'loadshared' ? '' : (titles[sc] || 'BeanTelligence');
   SCREENS[sc](m);
@@ -15647,18 +15748,17 @@ function factsAims(c, now){
   const st = beTarget(q, '', 'steep'), fl = beTarget(q, '', 'flow'); st.tdsT = st.tds.toFixed(2); fl.tdsT = fl.tds.toFixed(2);
   return { steep:st, flow:fl, roast:p.roast, roastSet:!p.assumed.some(x => /^roast level/.test(x)), shift:BE_TARGET.roastEy[p.roast] || 0 };
 }
-/* a small brewing chart: extraction across, strength up, the SCA box, and our two aims */
+/* the shared Brew chart, small: our aim for a poured cup or a steeped one, inside the usual zone */
 function aimChart(A){
-  const W = 330, H = 160, x0 = 16, x1 = 24, y0 = 1.0, y1 = 1.6, X = v => 34 + (v - x0) / (x1 - x0) * (W - 44), Y = v => H - 26 - (v - y0) / (y1 - y0) * (H - 40), f = v => v.toFixed(1);
-  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="faimchart" role="img" aria-label="Our aims sit inside the usual zone: steeped ' + A.steep.tdsT + ' percent strength at ' + A.steep.ey + ' percent extraction, poured ' + A.flow.tdsT + ' percent at ' + A.flow.ey + ' percent.">';
-  s += '<rect x="' + f(X(18)) + '" y="' + f(Y(1.35)) + '" width="' + f(X(22) - X(18)) + '" height="' + f(Y(1.15) - Y(1.35)) + '" rx="6" class="zone"/><text x="' + f(X(22) - 6) + '" y="' + f(Y(1.15) - 6) + '" text-anchor="end" class="zt">Usual zone</text>';
-  [16, 18, 20, 22, 24].forEach(v => { s += '<text x="' + f(X(v)) + '" y="' + (H - 8) + '" text-anchor="middle" class="ax">' + v + '%</text>'; });
-  [1.0, 1.2, 1.4, 1.6].forEach(v => { s += '<text x="28" y="' + f(Y(v) + 4) + '" text-anchor="end" class="ax">' + v.toFixed(1) + '</text>'; });
-  s += '<line x1="34" y1="' + (H - 26) + '" x2="' + (W - 10) + '" y2="' + (H - 26) + '" class="axl"/><line x1="34" y1="10" x2="34" y2="' + (H - 26) + '" class="axl"/>';
-  s += '<text x="' + (W - 10) + '" y="' + (H - 30) + '" text-anchor="end" class="an">extraction</text><text x="40" y="16" class="an">strength (TDS)</text>';
-  s += '<circle cx="' + f(X(A.steep.ey)) + '" cy="' + f(Y(A.steep.tds)) + '" r="7" class="d1"/><text x="' + f(X(A.steep.ey) - 12) + '" y="' + f(Y(A.steep.tds) + 4) + '" text-anchor="end" class="dl">Steeped ' + A.steep.tdsT + '%</text>';
-  s += '<circle cx="' + f(X(A.flow.ey)) + '" cy="' + f(Y(A.flow.tds)) + '" r="7" class="d2"/><text x="' + f(X(A.flow.ey) + 10) + '" y="' + f(Y(A.flow.tds) - 10) + '" class="dl">Poured ' + A.flow.tdsT + '%</text>';
-  const el = h('div', { class:'faimc' }); el.innerHTML = s + '</svg>'; return el;
+  const host = h('div', { class:'faimc', id:'factsAimChart' }); let k = 'filter';
+  const draw = () => {
+    const a = k === 'steeped' ? A.steep : A.flow, word = k === 'steeped' ? 'Steeped ' : 'Poured ';
+    host.textContent = '';
+    host.append(bcSeg('Which kind of brew', [{ v:'filter', label:'Poured' }, { v:'steeped', label:'Steeped' }], k, v => { k = v; draw(); }, 'factsAimSeg'),
+      bcMini({ kind:k, mini:true, aim:[{ x:a.ey, y:a.tds, label:word + a.tdsT + '%' }], label:'Our aim sits inside the usual zone: ' + word.toLowerCase() + a.tdsT + ' percent strength at ' + a.ey + ' percent extraction' }),
+      h('button', { type:'button', class:'flink', id:'factsChartLink', text:'Open the Brew chart', onclick:() => goChart('') }));
+  };
+  draw(); return host;
 }
 function cupCard(c, now){
   const F = cupFacts('filter'), X = cupFacts('espresso'), K = CUP_FACTS, A = factsAims(c || app.coffee, now || new Date()), rl = labelOf(ROASTS, A.roast) || 'Medium';
@@ -15929,6 +16029,268 @@ function prepCupEntry(){
   else if (!cupTouched() && !quickTouched() && !state.stars) state.way = tasteChoice() === 'cuppingfirst' ? 'cup' : 'quick';
 }
 
+/* ---------- the Brew chart drawing ----------
+   Drawn like the app's own pictures: thick dark outlines, flat colors and our bean faces. The frame, the zones and the box come from BC_FRAMES (engine/53-brew-chart.js).
+   Colour is never the only clue: stars print their number, tastes use the bean faces, and flavors use a shape as well as a colour. */
+const BC_G = { W:360, H:322, L:46, T:12, PW:300, PH:240 };
+const BC_SHAPES = ['circle', 'square', 'triangle', 'diamond'];
+const bcClamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const bcF = n => (Math.round(n * 10) / 10).toString();
+const bcInk = 'var(--ink)';
+const bcTx = (x, y, txt, o) => '<text x="' + bcF(x) + '" y="' + bcF(y) + '" font-size="' + ((o && o.size) || 12.5) + '" font-weight="' + ((o && o.weight) || 700) + '" text-anchor="' + ((o && o.anchor) || 'middle') + '" style="fill:' + ((o && o.fill) || bcInk) + '">' + escHtml(txt) + '</text>';
+const bcFace = (id, cx, cy, sz) => '<use href="#' + id + '" x="' + bcF(cx - sz / 2) + '" y="' + bcF(cy - sz / 2) + '" width="' + sz + '" height="' + sz + '"/>';
+/* the fill behind a brew's stars: none, under 3, 3, and 4 or more */
+function bcStarFill(s){
+  if (!(s > 0)) return 'var(--surface)';
+  return s >= 4 ? 'color-mix(in srgb, var(--mint) 62%, var(--surface))' : s >= 3 ? 'color-mix(in srgb, var(--gold) 55%, var(--surface))' : 'color-mix(in srgb, var(--accent) 40%, var(--surface))';
+}
+const bcStarText = s => s > 0 ? (Math.round(s * 2) / 2).toString() : '';
+/* a flavor family's shape and color; a brew with no flavor words is a small open ring */
+function bcShape(fam){
+  const i = TP_FAMILY_ORDER.indexOf(fam), hue = tpHue(fam);
+  return i < 0 ? null : { shape:BC_SHAPES[i % BC_SHAPES.length], fill:hue == null ? 'var(--press)' : 'hsl(' + hue + ',62%,70%)' };
+}
+/* what a screen reader hears for a dot */
+function bcDotLabel(p){
+  return (p.coffee || 'Unnamed coffee') + ', ' + p.brewer + '. Strength ' + p.tds.toFixed(2) + ' percent, extraction ' + p.ey.toFixed(1) + ' percent. ' + (p.stars > 0 ? bcStarText(p.stars) + ' beans.' : 'Not rated.');
+}
+/* one brew as a dot in the chosen colour mode at (cx, cy) */
+function bcDot(p, mode, cx, cy, j, dim){
+  const ink = 'stroke:' + bcInk + ';stroke-width:2.4', dash = p.mixed ? ';stroke-dasharray:3 3' : '';
+  let g = '<g class="bcdot" data-j="' + j + '" tabindex="0" role="button" aria-label="' + escHtml(bcDotLabel(p)) + '"' + (dim ? ' opacity=".22"' : '') + '>';
+  g += '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="16" fill="transparent"/>';   /* a bigger target for a finger */
+  if (mode === 'taste'){
+    const t = BC_TASTES.find(x => x.key === p.taste);
+    if (t) g += '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="13" style="fill:var(--surface);' + ink + dash + '"/>' + bcFace(t.art, cx, cy, 22);
+    else g += '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="6" style="fill:var(--surface);stroke:var(--muted);stroke-width:2;stroke-dasharray:2 3"/>';
+  } else if (mode === 'flavor'){
+    const sh = p.fams.length ? bcShape(p.fams[0]) : null;
+    if (!sh) g += '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="6" style="fill:var(--surface);stroke:var(--muted);stroke-width:2;stroke-dasharray:2 3"/>';
+    else {
+      const st = 'style="fill:' + sh.fill + ';' + ink + dash + '"', r = 11;
+      g += sh.shape === 'circle' ? '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="' + r + '" ' + st + '/>'
+        : sh.shape === 'square' ? '<rect x="' + bcF(cx - r) + '" y="' + bcF(cy - r) + '" width="' + 2 * r + '" height="' + 2 * r + '" rx="3" ' + st + '/>'
+        : sh.shape === 'triangle' ? '<path d="M' + bcF(cx) + ' ' + bcF(cy - r - 2) + ' L' + bcF(cx + r + 2) + ' ' + bcF(cy + r - 1) + ' L' + bcF(cx - r - 2) + ' ' + bcF(cy + r - 1) + ' Z" stroke-linejoin="round" ' + st + '/>'
+        : '<path d="M' + bcF(cx) + ' ' + bcF(cy - r - 3) + ' L' + bcF(cx + r + 3) + ' ' + bcF(cy) + ' L' + bcF(cx) + ' ' + bcF(cy + r + 3) + ' L' + bcF(cx - r - 3) + ' ' + bcF(cy) + ' Z" stroke-linejoin="round" ' + st + '/>';
+    }
+  } else {
+    g += '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="12.5" style="fill:' + bcStarFill(p.stars) + ';' + (p.stars > 0 ? ink : 'stroke:var(--muted);stroke-width:2;stroke-dasharray:2 3') + dash + '"/>';
+    if (p.stars > 0) g += bcTx(cx, cy + 4, bcStarText(p.stars), { size:p.stars % 1 ? 10 : 12, weight:800 });
+  }
+  return g + '</g>';
+}
+/* a small rounded label with words in it, centred on (cx, cy); fill is optional */
+function bcPill(cx, cy, txt, fill, w){
+  const width = w || Math.max(30, txt.length * 6.9 + 16);
+  return '<rect x="' + bcF(cx - width / 2) + '" y="' + bcF(cy - 11) + '" width="' + bcF(width) + '" height="22" rx="11" style="fill:' + (fill || 'var(--surface)') + ';stroke:' + bcInk + ';stroke-width:2.2"/>' + bcTx(cx, cy + 4.2, txt, { size:11.5 });
+}
+/* the map as an svg string.
+   o = { kind ('all','filter','espresso','steeped'), pts (from bcOnMap), colour ('stars','taste','flavor'), uid, mini, dim (p => bool),
+         sweet, groups, aim [{x,y,label}], forecast {x,y,label}, measured {x,y,label}, trails [bcTrails rows], place {x,y,off}, research, noRatios, label } */
+function bcSvg(o){
+  const G = BC_G, L = G.L, T = G.T, PW = G.PW, PH = G.PH, kind = o.kind || 'filter', Fk = kind === 'all' ? 'filter' : kind, F = BC_FRAMES[Fk], mini = !!o.mini, uid = o.uid || 'bc';
+  const X = e => L + (e - F.ey[0]) / (F.ey[1] - F.ey[0]) * PW, Y = t => T + (1 - (t - F.tds[0]) / (F.tds[1] - F.tds[0])) * PH;
+  const px = e => bcClamp(X(e), L + 10, L + PW - 10), py = t => bcClamp(Y(t), T + 10, T + PH - 10);
+  const steeped = Fk === 'steeped', fmt = v => F.dp === 1 ? v.toFixed(0) : v.toFixed(2).replace(/0$/, '');
+  let s = '<svg viewBox="0 0 ' + G.W + ' ' + G.H + '" role="img" aria-label="' + escHtml(o.label || 'Brew chart') + '" xmlns="http://www.w3.org/2000/svg" style="font-family:inherit">';
+  s += '<defs><clipPath id="' + uid + 'Clip"><rect x="' + L + '" y="' + T + '" width="' + PW + '" height="' + PH + '" rx="16"/></clipPath></defs>';
+  s += '<rect x="' + (L + 4) + '" y="' + (T + 4) + '" width="' + PW + '" height="' + PH + '" rx="16" style="fill:var(--press)"/>';
+  s += '<g clip-path="url(#' + uid + 'Clip)">';
+  s += '<rect x="' + L + '" y="' + T + '" width="' + PW + '" height="' + PH + '" style="fill:var(--surface)"/>';
+  const x18 = X(18), x22 = X(22), x24 = X(24), xr = L + PW;
+  if (F.zones){
+    s += '<rect x="' + L + '" y="' + T + '" width="' + bcF(x18 - L) + '" height="' + PH + '" style="fill:color-mix(in srgb, var(--gold) 38%, var(--surface))"/>';
+    s += '<rect x="' + bcF(x22) + '" y="' + T + '" width="' + bcF(x24 - x22) + '" height="' + PH + '" style="fill:color-mix(in srgb, var(--gold) 20%, var(--surface))"/>';
+    s += '<rect x="' + bcF(x24) + '" y="' + T + '" width="' + bcF(xr - x24) + '" height="' + PH + '" style="fill:color-mix(in srgb, var(--accent) 34%, var(--surface))"/>';
+  } else if (F.settle){
+    s += '<rect x="' + bcF(X(F.settle[0])) + '" y="' + T + '" width="' + bcF(X(F.settle[1]) - X(F.settle[0])) + '" height="' + PH + '" style="fill:color-mix(in srgb, var(--leaf) 16%, var(--surface))"/>';
+  }
+  s += '</g>';
+  if (F.zones) [x18, x22, x24].forEach(x => { s += '<line x1="' + bcF(x) + '" y1="' + T + '" x2="' + bcF(x) + '" y2="' + (T + PH) + '" style="stroke:' + bcInk + ';stroke-width:2;stroke-dasharray:1 6;stroke-linecap:round"/>'; });
+  if (steeped && F.settle) [F.settle[0], F.settle[1]].forEach(v => { s += '<line x1="' + bcF(X(v)) + '" y1="' + T + '" x2="' + bcF(X(v)) + '" y2="' + (T + PH) + '" style="stroke:var(--leaf);stroke-width:2;stroke-dasharray:1 6;stroke-linecap:round"/>'; });
+  /* the ratio lines: the strength a cup lands on for each water-to-coffee ratio, at every extraction */
+  if (!mini && !o.noRatios){
+    const rk = Fk === 'espresso' ? 'espresso' : Fk === 'steeped' ? 'steeped' : 'filter';
+    F.ratios.forEach(r => {
+      let d = '', last = null;
+      for (let e = F.ey[0]; e <= F.ey[1] + 1e-9; e += 0.5){ const t = bcRatioTds(rk, e, r); if (t == null) continue; const y = Y(t); if (y < T + 1 || y > T + PH - 1) continue; d += (d ? 'L' : 'M') + bcF(X(e)) + ' ' + bcF(y); last = { x:X(e), y }; }
+      if (!d || !last) return;
+      s += '<path d="' + d + '" style="fill:none;stroke:var(--muted);stroke-width:1.6;stroke-dasharray:5 4;opacity:.7"/>';
+      s += bcTx(Math.min(last.x - 3, L + PW - 4), last.y - 5, '1:' + r, { size:10.5, weight:700, anchor:'end', fill:'var(--muted)' });
+    });
+  }
+  /* the box: the usual strength inside the usual extraction (a convention) */
+  const b = F.box, bx = steeped ? L + 3 : X(b.ey[0]) + 3, bw = steeped ? PW - 6 : X(b.ey[1]) - X(b.ey[0]) - 6, by = Y(b.tds[1]), bh = Y(b.tds[0]) - by;
+  s += '<rect x="' + bcF(bx) + '" y="' + bcF(by) + '" width="' + bcF(bw) + '" height="' + bcF(bh) + '" rx="10" style="fill:color-mix(in srgb, var(--mint) ' + (steeped ? 26 : 50) + '%, transparent);stroke:' + bcInk + ';stroke-width:' + (steeped ? 2 : 3) + (steeped ? ';stroke-dasharray:6 5' : '') + '"/>';
+  if (!mini){
+    if (F.zones){
+      const cx1 = (L + x18) / 2;
+      s += bcFace('art-cf-acid', cx1, T + 30, 34) + bcTx(cx1, T + 62, 'Under 18 %', { size:11.5 }) + bcTx(cx1, T + 76, 'often sour', { size:11, weight:500 });
+      s += bcTx((x18 + x22) / 2, T + 16, 'Usual zone', { size:11.5 });
+      const side = (x0, x1, id) => bcFace(id, (x0 + x1) / 2, T + 28, 28);
+      s += side(x22, x24, 'bf-okay') + side(x24, xr, 'bf-bad');
+    } else if (F.settle){
+      s += bcTx((X(F.settle[0]) + X(F.settle[1])) / 2, T + PH - 8, 'steeped brews settle here', { size:10.5, weight:600, fill:'var(--leaf)' });
+    }
+  }
+  s += '<rect x="' + L + '" y="' + T + '" width="' + PW + '" height="' + PH + '" rx="16" style="fill:none;stroke:' + bcInk + ';stroke-width:3"/>';
+  F.eyTicks.forEach(e => { s += bcTx(X(e), T + PH + 18, String(e), { size:12, weight:600 }); });
+  F.tdsTicks.forEach(t => { s += bcTx(L - 7, Y(t) + 4.5, fmt(t), { size:12, weight:600, anchor:'end' }); });
+  s += bcTx(L + PW / 2, 316, o.xLabel || F.xLabel, { size:12 });
+  s += '<text transform="translate(11 ' + bcF(T + PH / 2) + ') rotate(-90)" font-size="12" font-weight="700" text-anchor="middle" style="fill:' + bcInk + '">Strength (% TDS)</text>';
+  /* the Guinard 2023 groups, drawn from the paper's words: a rough sketch, not its data */
+  if (o.research){
+    const blob = (e0, e1, t0, t1, col) => '<ellipse cx="' + bcF(X((e0 + e1) / 2)) + '" cy="' + bcF(Y((t0 + t1) / 2)) + '" rx="' + bcF((X(e1) - X(e0)) / 2) + '" ry="' + bcF((Y(t0) - Y(t1)) / 2) + '" style="fill:color-mix(in srgb, ' + col + ' 32%, transparent);stroke:' + col + ';stroke-width:3"/>';
+    s += blob(16.4, 19.8, 0.95, 1.18, 'var(--leaf)') + blob(15.8, 18.6, 1.24, 1.56, 'var(--accent)') + blob(21.2, 24.4, 1.24, 1.56, 'var(--accent)');
+    s += bcPill(X(18.1), Y(1.06), 'Group 1 · 57 %', 'color-mix(in srgb, var(--leaf) 30%, var(--surface))', 104) + bcPill(X(17.2), Y(1.4), 'Group 2 · 43 %', 'color-mix(in srgb, var(--accent) 30%, var(--surface))', 104) + bcPill(X(22.8), Y(1.4), 'Group 2', 'color-mix(in srgb, var(--accent) 30%, var(--surface))', 58);
+  }
+  /* the sweet spot: the middle half of the cups you rated 4 beans or more */
+  if (o.sweet){
+    const w = o.sweet, x0 = bcClamp(X(w.x0), L + 3, L + PW - 3), x1 = bcClamp(X(w.x1), L + 3, L + PW - 3), y0 = bcClamp(Y(w.y1), T + 3, T + PH - 3), y1 = bcClamp(Y(w.y0), T + 3, T + PH - 3);
+    s += '<rect x="' + bcF(x0) + '" y="' + bcF(y0) + '" width="' + bcF(Math.max(8, x1 - x0)) + '" height="' + bcF(Math.max(8, y1 - y0)) + '" rx="12" style="fill:color-mix(in srgb, var(--gold) 26%, transparent);stroke:' + bcInk + ';stroke-width:2.6;stroke-dasharray:8 5"/>';
+    if (!mini) s += bcPill(bcClamp((x0 + x1) / 2, L + 58, L + PW - 58), Math.max(T + 14, y0 - 12), 'Your sweet spot', null, 112);
+  }
+  /* the dial-in trails: numbered tries joined by arrows */
+  (o.trails || []).forEach(tr => {
+    const q = tr.pts.map(p => ({ x:px(p.x), y:py(p.y) }));
+    for (let i = 0; i < q.length - 1; i++){
+      const a = q[i], c = q[i + 1], dx = c.x - a.x, dy = c.y - a.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len, sx = a.x + ux * 16, sy = a.y + uy * 16, ex = c.x - ux * 18, ey2 = c.y - uy * 18;
+      if (len < 30) continue;
+      if (len < 62){ const mx = (a.x + c.x) / 2, my = (a.y + c.y) / 2; s += '<path d="M' + bcF(mx + ux * 8) + ' ' + bcF(my + uy * 8) + ' L' + bcF(mx - ux * 4 - uy * 7) + ' ' + bcF(my - uy * 4 + ux * 7) + ' L' + bcF(mx - ux * 4 + uy * 7) + ' ' + bcF(my - uy * 4 - ux * 7) + ' Z" style="fill:' + bcInk + '"/>'; continue; }
+      s += '<line x1="' + bcF(sx) + '" y1="' + bcF(sy) + '" x2="' + bcF(ex) + '" y2="' + bcF(ey2) + '" style="stroke:' + bcInk + ';stroke-width:2.6"/><path d="M' + bcF(ex + ux * 7) + ' ' + bcF(ey2 + uy * 7) + ' L' + bcF(ex - uy * 5) + ' ' + bcF(ey2 + ux * 5) + ' L' + bcF(ex + uy * 5) + ' ' + bcF(ey2 - ux * 5) + ' Z" style="fill:' + bcInk + '"/>';
+    }
+    q.forEach((c, i) => { const last = i === q.length - 1; s += '<circle cx="' + bcF(c.x) + '" cy="' + bcF(c.y) + '" r="13" style="fill:' + (last ? 'color-mix(in srgb, var(--mint) 62%, var(--surface))' : 'var(--surface)') + ';stroke:' + bcInk + ';stroke-width:2.6"/>' + bcTx(c.x, c.y + 4.5, String(i + 1), { size:12.5, weight:800 }); });
+  });
+  /* the brews: a dot each */
+  (o.pts || []).forEach((p, j) => { s += bcDot(p, o.colour || 'stars', px(p.x), py(p.y), j, o.dim ? o.dim(p) : false); });
+  /* a group's middle, as a labelled pill */
+  (o.groups || []).forEach(g => { if (g.enough) s += bcPill(bcClamp(px(g.x), L + 44, L + PW - 44), py(g.y), g.label.length > 14 ? g.label.slice(0, 13) + '…' : g.label, g.on ? 'color-mix(in srgb, var(--gold) 55%, var(--surface))' : null); });
+  /* aim, forecast, measured and your own brew */
+  const tag = (x, y, txt) => { const cx = px(x), cy = py(y), w = txt.length * 6.9 + 16, right = cx + 14 + w < L + PW - 2, lx = right ? cx + 14 + w / 2 : cx - 14 - w / 2; return bcPill(lx, cy, txt, null, w); };
+  (o.aim || []).forEach(a => { const cx = px(a.x), cy = py(a.y); s += '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="11" style="fill:var(--surface);stroke:' + bcInk + ';stroke-width:3"/><circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="4" style="fill:' + bcInk + '"/>' + (a.label ? tag(a.x, a.y, a.label) : ''); });
+  if (o.forecast){ const cx = px(o.forecast.x), cy = py(o.forecast.y); s += '<circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="12" style="fill:color-mix(in srgb, var(--gold) 55%, var(--surface));stroke:' + bcInk + ';stroke-width:3;stroke-dasharray:5 4"/>' + (o.forecast.label ? tag(o.forecast.x, o.forecast.y, o.forecast.label) : ''); }
+  [o.measured, o.place].forEach((m, k) => { if (!m) return; const cx = px(m.x), cy = py(m.y); s += '<g class="' + (k ? 'bcplace' : 'bcmeasured') + '"><circle cx="' + bcF(cx) + '" cy="' + bcF(cy) + '" r="20" style="fill:var(--surface);stroke:' + bcInk + ';stroke-width:2.6"/>' + bcFace('bean-3', cx, cy, 30) + (m.label ? tag(m.x, m.y, m.label) : '') + '</g>'; });
+  return s + '</svg>';
+}
+/* ---------- the Brew chart views ----------
+   Each view gets ctx = { all, mp (the brews on the map picked), map, cur (the brew on the Brew page), plain, lv, espressoN, repaint, drawPlot } and returns
+   { opts (what bcSvg draws, or a function that makes it), nodes (shown under the map), say ([face, words]), legend }.
+   Counts, not averages: a middle needs 3 brews and a sweet spot needs 5 measured brews and 3 you liked. */
+const bcS = n => n === 1 ? '' : 's';
+/* the one line about the map that is on: what it counts and what it leaves out */
+function bcMapNote(ctx){
+  if (ctx.map === 'steeped') return ['informing', 'Steeped brews are not judged under or over. The usual zone was set for drip. A long steep settles near 20.7 % whatever you do.'];
+  if (ctx.map === 'espresso') return ['informing', 'Espresso is drawn on its own scale. Strength runs about 8 to 12 %, ten times a filter cup, and 18 to 22 % extraction is the common café target.'];
+  if (ctx.map === 'all') return ['informing', ctx.espressoN ? 'All shows your filter and steeped brews together, on the cup basis. Your ' + ctx.espressoN + ' espresso brew' + bcS(ctx.espressoN) + (ctx.espressoN === 1 ? ' has' : ' have') + ' their own map, because strength runs about ten times higher.' : 'All shows your filter and steeped brews together, on the cup basis. Espresso has its own map.'];
+  return null;
+}
+const bcNeed = 'A brew counts when it has a strength (TDS) and an extraction saved.';
+function bcNums(a, b, dp){ return a.toFixed(dp) + ' → ' + b.toFixed(dp); }
+/* ---- This brew: the cup we aim for, what we forecast, and what you measured ---- */
+function bcViewThis(ctx){
+  const c = ctx.cur, mp = ctx.mp, onMap = c && (c.kind === ctx.map || (ctx.map === 'all' && c.kind === 'filter'));
+  if (!c) return { opts:{ kind:ctx.map, pts:mp, colour:bcUi.colour, uid:'bcMain', label:'Brew chart with your measured brews', dim:() => true }, nodes:[],
+    say:['normal', 'Pick a coffee and a brew method on the Brew page and the cup we aim for shows here. Until then, these are your measured brews, dimmed.'] };
+  const marks = onMap ? { aim:c.aim ? [c.aim] : [], forecast:c.forecast, measured:c.measured } : {};
+  const rows = [];
+  const line = (name, art, txt) => rows.push(h('div', { class:'bcl' }, symPic(art, 'bclp'), h('b', { text:name }), h('span', { text:txt })));
+  if (onMap){
+    const dp = c.kind === 'espresso' ? 1 : 2;
+    if (c.aim) line(c.machine ? 'Golden Cup' : c.forecast ? 'Aim' : 'Common target', 'art-tds', c.aim.y.toFixed(dp) + ' % strength · ' + c.aim.x.toFixed(1) + ' % extraction' + (c.machine ? '. The SCA Golden Cup zone, for a drip machine.' : ''));
+    if (c.forecast) line('Forecast', 'tl-ratio', 'about ' + c.forecast.y.toFixed(2) + ' % · ' + c.forecast.x.toFixed(1) + ' %. An estimate, not a promise.' + (c.grindMoved ? ' Your own grind step is not in it.' : ''));
+    if (c.measured) line('Measured', 'bean-3', c.measured.y.toFixed(dp) + ' % · ' + c.measured.x.toFixed(1) + ' %');
+  }
+  const saying = !onMap ? ['informing', c.label + ' sits on the ' + (c.kind === 'filter' ? 'Filter' : c.kind === 'espresso' ? 'Espresso' : 'Steeped') + ' map. Pick it above to see your aim there.']
+    : c.noTarget ? ['informing', c.label + ' has no agreed target, so nothing is drawn as an aim and nothing is called weak or strong.']
+    : c.machine ? ['informing', 'A drip machine sets its own water temperature, so the chart gives no temperature advice. The ring is the SCA Golden Cup zone.']
+    : c.forecast && c.measured ? ['informing', Math.abs(c.measured.x - c.forecast.x) < 1 && Math.abs(c.measured.y - c.forecast.y) < 0.1 ? 'Close to the forecast. The forecast is an estimate, so a small gap is normal.' : 'Your measured cup landed away from the forecast. That is useful: change one thing and measure again.']
+    : c.forecast ? ['informing', 'We aim for the ring and forecast the dashed dot. Measure your cup and it joins them.'] : ['informing', 'We do not estimate this brew yet. The map still shows where the usual zone is.'];
+  return { opts:Object.assign({ kind:ctx.map, pts:mp, colour:bcUi.colour, uid:'bcMain', label:'Brew chart: the cup we aim for, the forecast and what you measured', dim:() => true }, marks), nodes:[rows.length ? h('div', { class:'bclines', id:'bcLines' }, rows) : null, onMap && !ctx.plain ? h('p', { class:'fine', style:'margin:8px 0 0', text:'The dashed lines are brew ratios: for each ratio, the strength a cup lands on as extraction changes.' }) : null], say:saying };
+}
+/* ---- My brews: every measured brew, and the spot where your liked cups land ---- */
+function bcViewMine(ctx){
+  const mp = ctx.mp, n = mp.length, rated = mp.filter(p => p.stars > 0).length, sw = bcSweet(mp), nodes = [];
+  const by = {}; mp.forEach(p => { (by[p.method] || (by[p.method] = { key:p.method, label:p.brewer, art:bcArt('m-' + p.method, 'art-beans'), n:0 })).n++; });
+  const chips = Object.keys(by).map(k => by[k]).sort((a, b) => b.n - a.n || (a.label < b.label ? -1 : 1));
+  if (!chips.some(c => c.key === bcUi.chip)) bcUi.chip = '';
+  if (chips.length > 1) nodes.push(bcChips(chips, bcUi.chip, k => { bcUi.chip = k; ctx.repaint(); }, 'Show one brewer'));
+  if (n) nodes.push(h('div', { class:'bcsweet', id:'bcSweet' }, h('b', { text:'Your sweet spot' }), h('span', { text:sw ? 'Extraction ' + sw.x0 + ' to ' + sw.x1 + ' %, strength ' + sw.y0.toFixed(2) + ' to ' + sw.y1.toFixed(2) + ' %. ' + sw.inside + ' of the ' + sw.n + ' cups you rated 4 beans or more sit inside it. It is a range from your cups, not a rule.' : 'It shows once you have 5 measured brews and 3 of them rated 4 beans or more. You have ' + n + ' measured and ' + mp.filter(p => p.stars >= 4).length + ' liked.' })));
+  const note = bcMapNote(ctx);
+  const say = !n ? ['normal', 'No measured brews on this map yet. ' + bcNeed] : note && ctx.map !== 'all' ? note : ['think', n + ' measured brew' + bcS(n) + ', ' + rated + ' rated. Tap a dot to see the coffee.' + (note ? ' ' + note[1] : '')];
+  return { opts:{ kind:ctx.map, pts:mp, colour:bcUi.colour, uid:'bcMain', sweet:sw, label:'Brew chart with your ' + n + ' measured brews', dim:p => !!bcUi.chip && p.method !== bcUi.chip }, nodes, say };
+}
+/* ---- By brewer, filter, grinder or water ---- */
+const bcByArt = { brewer:null, filter:'art-filter', grinder:'art-grinder', water:'art-water' };
+function bcViewBrewer(ctx){
+  const mp = ctx.mp, by = bcUi.by, nodes = [];
+  nodes.push(bcRowOf('Group by', bcSeg('Group your brews by', [{ v:'', label:'All' }].concat(BC_BY.map(x => ({ v:x.key, label:x.label }))), by, v => { bcUi.by = v; bcUi.group = ''; ctx.repaint(); }, 'bcBy')));
+  let groups = [], say;
+  if (!by) say = ['informing', mp.length ? 'All your brews are drawn together. Pick Brewer, Filter, Grinder or Water to compare them.' : 'No measured brews on this map yet. ' + bcNeed];
+  else {
+    groups = bcGroups(mp, by);
+    if (!groups.some(g => g.key === bcUi.group)) bcUi.group = '';
+    groups.forEach(g => { g.on = g.key === bcUi.group; });
+    if (!groups.length) say = ['normal', 'None of these brews has a ' + by + ' saved. Add it when you save a tasting and the groups appear.'];
+    else {
+      nodes.push(bcChips(groups.map(g => ({ key:g.key, label:g.label, n:g.n, art:by === 'brewer' ? bcArt('m-' + g.pts[0].method, 'art-beans') : bcArt(bcByArt[by], 'art-beans') })), bcUi.group, k => { bcUi.group = k; ctx.repaint(); }, 'Pick one ' + by));
+      const rows = groups.map(g => h('div', { class:'bctr' + (g.on ? ' on' : '') }, h('b', { text:g.label }), h('span', { text:g.enough ? 'Middle ' + g.x.toFixed(1) + ' % · ' + g.y.toFixed(ctx.map === 'espresso' ? 1 : 2) + ' %' : 'Needs ' + TP_FLAG_MIN + ', has ' + g.n }), h('small', { text:g.n + ' brew' + bcS(g.n) + (g.rated ? ', ' + g.liked + ' of ' + g.rated + ' rated 4+' : '') })));
+      nodes.push(h('div', { class:'bctable', id:'bcTable' }, rows));
+      const ok = groups.filter(g => g.enough), sel = groups.find(g => g.on);
+      if (sel) say = ['informing', sel.label + ': ' + sel.n + ' measured brew' + bcS(sel.n) + '. ' + (sel.enough ? 'Middle ' + sel.x.toFixed(1) + ' % extraction and ' + sel.y.toFixed(2) + ' % strength.' : 'It needs ' + TP_FLAG_MIN + ' for a middle.')];
+      else if (ok.length >= 2){
+        const a = ok[0], b = ok[1], dx = a.x - b.x, dy = a.y - b.y, dpy = ctx.map === 'espresso' ? 1 : 2;
+        say = Math.abs(dx) < 0.3 && Math.abs(dy) < (ctx.map === 'espresso' ? 0.3 : 0.03) ? ['informing', a.label + ' and ' + b.label + ' land close together.'] : ['informing', a.label + ' runs about ' + Math.abs(dx).toFixed(1) + ' points ' + (dx < 0 ? 'lower' : 'higher') + ' in extraction than ' + b.label + ', and about ' + Math.abs(dy).toFixed(dpy) + ' ' + (dy < 0 ? 'lower' : 'higher') + ' in strength. Other things differ too, so treat it as a hint.'];
+      } else say = ['informing', 'A group needs ' + TP_FLAG_MIN + ' measured brews to show its middle.'];
+    }
+  }
+  const note = bcMapNote(ctx); if (note && ctx.map === 'steeped' && say) say = [say[0], say[1] + ' ' + note[1]];
+  return { opts:{ kind:ctx.map, pts:mp, colour:bcUi.colour, uid:'bcMain', groups:by ? groups : [], label:'Brew chart grouped by ' + (by || 'nothing'), dim:p => !!by && !!bcUi.group && p[by] !== bcUi.group }, nodes, say };
+}
+/* ---- Dial-in trail: one coffee on one method, try by try ---- */
+function bcViewTrail(ctx){
+  const tr = bcTrails(ctx.mp), nodes = [];
+  if (!tr.length) return { opts:{ kind:ctx.map, pts:[], uid:'bcMain', label:'Brew chart, no dial-in trail yet' }, nodes, say:['normal', 'A trail needs one coffee brewed twice on the same method, with a strength and an extraction measured both times.'] };
+  if (bcUi.trail >= tr.length) bcUi.trail = 0;
+  const t = tr[bcUi.trail];
+  if (tr.length > 1) nodes.push(bcChips(tr.map((x, i) => ({ key:String(i), label:x.coffee, n:x.pts.length, art:bcArt('m-' + x.method, 'art-beans') })), String(bcUi.trail), k => { bcUi.trail = k === '' ? 0 : +k; ctx.repaint(); }, 'Pick a coffee'));
+  const dp = ctx.map === 'espresso' ? 1 : 2;
+  nodes.push(h('div', { class:'bctable', id:'bcSteps' }, t.steps.map(s => h('div', { class:'bctr' }, h('b', { text:'Try ' + s.from + ' → ' + s.to }), h('span', { text:s.changes.length ? s.changes.map(c => c.plain || c.text).join(', ') : 'nothing noted' }),
+    h('small', { text:'strength ' + bcNums(s.a.y, s.b.y, dp) + ' · extraction ' + bcNums(s.a.x, s.b.x, 1) })))));
+  const last = t.pts[t.pts.length - 1], first = t.pts[0];
+  return { opts:{ kind:ctx.map, pts:[], trails:[t], uid:'bcMain', colour:'stars', label:'Brew chart: ' + t.pts.length + ' tries of ' + t.coffee }, nodes, legend:false,
+    say:['think', t.coffee + ' on ' + t.brewer + ': ' + t.pts.length + ' tries. Extraction went from ' + first.x.toFixed(1) + ' % to ' + last.x.toFixed(1) + ' %. Each arrow is a change you made.'] };
+}
+/* ---- The research: what a big taste test found, next to your own cups ---- */
+function bcViewStudy(ctx){
+  const mp = bcOnMap(ctx.all, 'filter'), sw = bcSweet(mp);
+  return { legend:false, opts:{ kind:'filter', pts:[], uid:'bcMain', research:true, sweet:sw, noRatios:true, label:'Brew chart: where two groups of drinkers liked their coffee in one 2023 study' },
+    nodes:[h('p', { class:'fine', style:'margin:8px 0 0', text:'Guinard and others 2023, drip coffee, about 118 mostly young adults in Northern California, tasting one washed Honduran coffee. The blobs are a rough sketch from the paper’s words, not its data. It says nothing about you.' }),
+      sw ? null : h('p', { class:'fine', style:'margin:6px 0 0', text:'Your own sweet spot shows here once you have 5 measured filter brews and 3 rated 4 beans or more.' })],
+    say:['wink', (ctx.map === 'espresso' || ctx.map === 'steeped' ? 'The study used drip coffee, so it always shows on the Filter map. ' : '') + 'People differ. In that test, 57 % liked a weaker cup with low to medium extraction, peaking near 18 %. The other 43 % liked two different styles of cup. The 18 to 22 % zone is a start, not a rule.'] };
+}
+/* ---- Place a brew: type a strength and an extraction ---- */
+function bcViewPlace(ctx){
+  const kind = ctx.map === 'all' ? 'filter' : ctx.map, P = bcUi.place, out = h('div', { id:'chartOut', 'aria-live':'polite' }), steeped = kind === 'steeped', esp = kind === 'espresso';
+  const read = () => bcPlace(kind, P.tds, P.ey);
+  function fill(){
+    out.textContent = ''; const r = read();
+    if (r){ r.lines.forEach(t => out.append(h('p', { class:'serif', style:'margin:6px 0', text:t }))); out.append(h('p', { class:'fine', style:'margin:6px 0', text:r.tds.toFixed(esp ? 1 : 2) + ' % strength and ' + r.ey.toFixed(1) + ' % extraction. The bean on the chart shows where.' + (r.off ? ' It is off the edge of this map, so the bean sits at the edge.' : '') })); }
+    else if (P.tds || P.ey) out.append(h('p', { class:'fine', style:'margin:6px 0', text:esp ? 'Enter a strength between 0 and 30 % and an extraction between 0 and 40 % to place your brew.' : 'Enter a strength between 0 and 5 % and an extraction between 0 and 40 % to place your brew.' }));
+    else out.append(h('p', { class:'fine', style:'margin:6px 0', text:'Type your brew’s strength and extraction to see where it falls.' }));
+  }
+  const num = (key, label, hint, id, art, after) => { const inp = h('input', { type:'text', inputmode:'decimal', class:'plain', id, 'aria-label':label, placeholder:hint, value:P[key], style:'width:100%' }); inp.addEventListener('input', () => { P[key] = inp.value.replace(',', '.'); after(); }); return h('label', { class:'bcfield' }, h('span', { class:'bclab' }, symPic(art, 'bclp'), h('span', { class:'fine', style:'margin:0', text:label })), inp); };
+  const again = () => { fill(); ctx.drawPlot(); };
+  const tdsF = num('tds', 'Strength (% TDS)', esp ? 'for example 9.5' : 'for example 1.3', 'chartTds', 'art-water', again), eyF = num('ey', 'Extraction (%)', 'for example 20', 'chartEy', 'art-filter', again);
+  const calc = h('p', { class:'serif', id:'chartCalc', style:'margin:8px 0 0' }), use = h('button', { type:'button', class:'btn small', id:'chartUse', text:'Use this extraction', onclick:() => { const ey = extractionYield(parseFloat(P.tds), parseFloat(P.out), parseFloat(P.dose)); if (ey != null){ P.ey = String(ey); const el = $('chartEy'); if (el) el.value = String(ey); again(); } } });
+  function calcPaint(){ const ey = extractionYield(parseFloat(P.tds), parseFloat(P.out), parseFloat(P.dose)); calc.textContent = ey == null ? 'Fill in the strength above and both weights to work it out.' : 'Extraction = strength × drink weight ÷ coffee weight = ' + ey + ' %.'; use.hidden = ey == null; }
+  const doseF = num('dose', 'Coffee (g)', 'for example 20', 'chartDose', 'art-beans', calcPaint), outF = num('out', 'Drink in the cup (g)', 'for example 320', 'chartOut2', 'art-cf-aroma', calcPaint);
+  const work = steeped ? h('p', { class:'fine', style:'margin:8px 0 0', text:'For a steeped brew, extraction counts the water you poured in: strength × water ÷ coffee, with a small correction. The Brew page and the cup screen work it out for you.' })
+    : h('details', { class:'bcfold', id:'chartFold' }, h('summary', { text:'Not sure of your extraction? Work it out' }), h('p', { class:'fine', style:'margin:6px 0', text:'Weigh the coffee you used and the drink you made, and use the strength you typed above.' }), h('div', { class:'bcin' }, doseF, outF),
+      h('p', { class:'fine', style:'margin:6px 0', text:'Extraction = strength × drink in the cup ÷ coffee. For example, 1.30 × 300 ÷ 20 = 19.5 %. Extraction counts the coffee in your cup. Coffee left in the grounds is not counted.' }), calc, use);
+  fill(); calcPaint();
+  const opts = () => { const r = read(); return { kind:ctx.map, pts:ctx.mp, colour:bcUi.colour, uid:'bcMain', label:'Brew chart with your typed brew', dim:() => true, place:r ? { x:r.ey, y:r.tds, label:r.tds.toFixed(esp ? 1 : 2) + ' % · ' + r.ey.toFixed(1) + ' %' } : null }; };
+  return { opts, legend:false, nodes:[h('div', { class:'bcin', id:'chartCard' }, tdsF, eyF), work, out], say:ctx.map === 'all' ? ['informing', 'On All your brew is read like a filter brew. Pick Espresso or Steeped to read it on that map.'] : bcMapNote(ctx) };
+}
 /* ---------- SCA cupping: state and the circles ----------
    The session lives in `sca` and nowhere else: nothing is saved, and a reload starts it again. Leaving the screen keeps it, so a timer started here is still right on return.
    stage 'setup' = choosing; 'run' = the steps. cur = the coffee being looked at; step = the step number; ticks['id:i'] = coffee i done with step id; poured[i] and broke[i] = times in ms. */
@@ -16211,94 +16573,142 @@ function scaSetupView(host){
   scaSetupRefresh();
   host.append(h('p', { class:'fine', text:SCA_NOTICE }), issues, h('div', { class:'dock' }, h('div', { class:'dock-inner' }, go1)));
 }
-/* ---------- screen: brew control chart ----------
-   The frame, the box and the words come from engine/39-wheels-extra.js (CHART, chartRead, chartPos), and the words from judgeBrew, so this chart can never say more than the Extraction page does.
-   chartIn holds what was typed. It lives only in memory. */
-let chartIn = { tds:'', ey:'', dose:'', out:'' };
-function chartSvg(read){
-  /* drawn like the app's own pictures: thick dark outlines, flat colors, and our bean faces for how each part tends to taste */
-  const W = 360, L = 46, T = 12, PW = 300, PH = 240, C = CHART, INK = 'var(--ink)';
-  const X = e => L + (e - C.ey[0]) / (C.ey[1] - C.ey[0]) * PW, Y = t => T + (1 - (t - C.tds[0]) / (C.tds[1] - C.tds[0])) * PH;
-  const f = n => n.toFixed(1), q = n => String(Math.round(n * 10) / 10);
-  const tx = (x, y, txt, o) => '<text x="' + f(x) + '" y="' + f(y) + '" font-size="' + ((o && o.size) || 13) + '" font-weight="' + ((o && o.weight) || 700) + '" text-anchor="' + ((o && o.anchor) || 'middle') + '" style="fill:' + ((o && o.fill) || INK) + '">' + escHtml(txt) + '</text>';
-  const face = (id, cx, cy, sz) => '<use href="#' + id + '" x="' + f(cx - sz / 2) + '" y="' + f(cy - sz / 2) + '" width="' + sz + '" height="' + sz + '"/>';
-  const x18 = X(C.box.ey[0]), x22 = X(C.box.ey[1]), x24 = X(C.high[1]), xr = L + PW, b = C.box;
-  let s = '<svg viewBox="0 0 ' + W + ' 322" role="img" aria-label="Brew control chart: strength up the side and extraction along the bottom. Under 18 percent often tastes sour or thin, 18 to 22 is the usual zone, 22 to 24 is liked by many, and above 24 can be harsher. A list of what each part means follows." xmlns="http://www.w3.org/2000/svg" style="font-family:inherit">';
-  s += '<defs><clipPath id="chartClip"><rect x="' + L + '" y="' + T + '" width="' + PW + '" height="' + PH + '" rx="16"/></clipPath></defs>';
-  s += '<rect x="' + (L + 4) + '" y="' + (T + 4) + '" width="' + PW + '" height="' + PH + '" rx="16" style="fill:var(--press)"/>';
-  s += '<g clip-path="url(#chartClip)">';
-  s += '<rect x="' + L + '" y="' + T + '" width="' + (x18 - L) + '" height="' + PH + '" style="fill:color-mix(in srgb, var(--gold) 38%, var(--surface))"/>';
-  s += '<rect x="' + f(x18) + '" y="' + T + '" width="' + f(x22 - x18) + '" height="' + PH + '" style="fill:var(--surface)"/>';
-  s += '<rect x="' + f(x22) + '" y="' + T + '" width="' + f(x24 - x22) + '" height="' + PH + '" style="fill:color-mix(in srgb, var(--gold) 20%, var(--surface))"/>';
-  s += '<rect x="' + f(x24) + '" y="' + T + '" width="' + f(xr - x24) + '" height="' + PH + '" style="fill:color-mix(in srgb, var(--accent) 34%, var(--surface))"/>';
-  s += '</g>';
-  [x18, x22, x24].forEach(x => { s += '<line x1="' + f(x) + '" y1="' + T + '" x2="' + f(x) + '" y2="' + (T + PH) + '" style="stroke:' + INK + ';stroke-width:2;stroke-dasharray:1 6;stroke-linecap:round"/>'; });
-  /* the target box: strength 1.15 to 1.35 inside 18 to 22 % */
-  const bx = x18 + 3, bw = x22 - x18 - 6, by = Y(b.tds[1]), bh = Y(b.tds[0]) - by;
-  s += '<rect x="' + f(bx) + '" y="' + f(by) + '" width="' + f(bw) + '" height="' + f(bh) + '" rx="10" style="fill:color-mix(in srgb, var(--mint) 55%, var(--surface));stroke:' + INK + ';stroke-width:3"/>';
-  const inBox = read && read.ey >= b.ey[0] && read.ey <= b.ey[1] && read.tds >= b.tds[0] && read.tds <= b.tds[1];
-  if (!inBox) s += face('bf-good', (x18 + x22) / 2, by + bh / 2, 34);
-  s += tx((x18 + x22) / 2, by - 36, 'Usual zone') + tx((x18 + x22) / 2, by - 21, '(a convention)', { size:12, weight:500 });
-  /* the other parts: a face, then the words */
-  const cx1 = (L + x18) / 2;
-  s += face('art-cf-acid', cx1, T + 32, 38) + tx(cx1, T + 74, 'Under 18 %') + tx(cx1, T + 90, 'often sour', { weight:500 }) + tx(cx1, T + 105, 'or thin', { weight:500 });
-  const side = (x0, x1, id, words) => { const cx = (x0 + x1) / 2; return face(id, cx, T + 28, 34) + '<text transform="translate(' + f(cx + 5) + ' ' + f(T + 150) + ') rotate(-90)" font-size="13" font-weight="700" text-anchor="middle" style="fill:' + INK + '">' + escHtml(words) + '</text>'; };
-  s += side(x22, x24, 'bf-okay', '22 to 24 %: many like it') + side(x24, xr, 'bf-bad', 'Above 24 %: can be harsher');
-  s += '<rect x="' + L + '" y="' + T + '" width="' + PW + '" height="' + PH + '" rx="16" style="fill:none;stroke:' + INK + ';stroke-width:3"/>';
-  /* the numbers along the edges */
-  for (let e = C.ey[0]; e <= C.ey[1]; e += 2) s += tx(X(e), T + PH + 18, String(e), { size:12.5, weight:600 });
-  for (let t = 0.8; t <= C.tds[1] + 1e-9; t += 0.4) s += tx(L - 7, Y(t) + 4.5, q(t).replace(/^(\d)$/, '$1.0'), { size:12.5, weight:600, anchor:'end' });
-  s += tx(L + PW / 2, 316, 'Extraction (% of the coffee\'s weight that dissolved)', { size:12.5 });
-  s += '<text transform="translate(11 ' + f(T + PH / 2) + ') rotate(-90)" font-size="12.5" font-weight="700" text-anchor="middle" style="fill:' + INK + '">Strength (% TDS)</text>';
-  s += tx(L + 8, T + PH - 9, '↓ weaker', { size:12, weight:600, anchor:'start', fill:'var(--muted)' });
-  if (read){
-    const p = chartPos(read.tds, read.ey), px = L + p.x * PW, py = T + (1 - p.y) * PH;
-    s += '<circle cx="' + f(px) + '" cy="' + f(py) + '" r="22" style="fill:var(--surface);stroke:' + INK + ';stroke-width:2.4"/><use id="chartDot" href="#bean-3" x="' + f(px - 17) + '" y="' + f(py - 17) + '" width="34" height="34"/>';
-    if (read.off){ const lw = 150, lx = Math.max(L + 4, Math.min(px - lw / 2, L + PW - lw - 4)), ly = py + 48 > T + PH - 2 ? py - 52 : py + 26; s += '<rect x="' + f(lx) + '" y="' + f(ly) + '" width="' + lw + '" height="24" rx="12" style="fill:var(--surface);stroke:' + INK + ';stroke-width:2.4"/>' + tx(lx + lw / 2, ly + 16.5, 'Your brew (off the chart)', { size:12.5 }); }
-  }
-  return s + '</svg>';
-}
-function chartFill(host, outHost){
-  const read = chartRead(chartIn.tds, chartIn.ey);
-  host.innerHTML = chartSvg(read);
-  outHost.textContent = '';
-  if (read){ read.lines.forEach(t => outHost.append(h('p', { class:'serif', style:'margin:6px 0', text:t }))); outHost.append(h('p', { class:'fine', style:'margin:6px 0', text:read.tds.toFixed(2) + ' % strength and ' + read.ey.toFixed(1) + ' % extraction. The bean on the chart shows where.' })); }
-  else if (chartIn.tds || chartIn.ey) outHost.append(h('p', { class:'fine', style:'margin:6px 0', text:'Enter a strength between 0 and 5 % and an extraction between 0 and 40 % to place your brew.' }));
-  else outHost.append(h('p', { class:'fine', style:'margin:6px 0', text:'Optional: type your brew\'s strength and extraction to see where it falls.' }));
-}
-const CHART_ZONES = [
+/* ---------- screen: Brew chart ----------
+   The numbers come from engine/53-brew-chart.js (bcMeasured and friends) and the words from judgeBrew and judgeSteeped, so this chart can never say more than the Extraction page does.
+   Everything here lives in memory only: what is picked, and what is typed under Place a brew. The dots come from the brews you saved. */
+let chartFrom = '';
+let bcUi = { map:'all', colour:'stars', by:'', view:'', group:'', chip:'', sel:-1, trail:0, place:{ tds:'', ey:'', dose:'', out:'' } };
+const BC_VIEWS = [
+  { k:'this', art:'tl-ratio', name:'This brew', sub:'aim, forecast, result' }, { k:'mine', art:'art-beans', name:'My brews', sub:'what you liked' }, { k:'brewer', art:'m-v60', name:'By brewer', sub:'V60, Chemex, more' },
+  { k:'trail', art:'art-timer', name:'Your tries', sub:'change by change' }, { k:'study', art:'art-globe', name:'The research', sub:'two kinds of drinker' }, { k:'place', art:'art-tds', name:'Place a brew', sub:'type your numbers' }];
+const BC_ZONES = [
   'Under 18 % extraction is below the low edge of the zone people usually aim for. It often goes with a sour or thin cup, but 18 % is a convention, not a cliff.',
   '18 to 22 % is the usual zone. It is usually credited to Lockhart\'s 1950s work. It is a convention, not a law, and people differ on where they like it.',
   '22 to 24 % is a little above the zone. Many people like this. A 2013 SCAE study of 641 European drinkers found 22 % the most popular cup, and tastes varied by city, from 20 % in Dublin to 24 % in Milan.',
   'Above 24 % is beyond the usual zone. That can mean a harsher cup, but taste decides: bitterness also follows how strong the coffee is.',
-  'Strength of 1.15 to 1.35 % TDS is the usual zone for filter coffee. Lower is weaker and higher is stronger.'];
-function screenChart(m){
-  const lvl = level(), plain = lvl === 'new';
-  m.append(hubHero('Brew control chart', plain ? 'A map for filter coffee. It shows how strong your cup is and how much came out of the coffee.' : 'Strength against extraction for filter coffee, and where the usual zone sits. Look at it while you taste, or place your own brew on it.', false, 'art-ratio'));
-  if (plain) m.append(h('p', { class:'fine', id:'chartBox', style:'margin:0 0 10px', text:'The green box is a common target, not a rule.' }));
-  const plot = h('div', { class:'chartwrap', id:'chartPlot' }), out = h('div', { id:'chartOut', 'aria-live':'polite' });
-  const num = (key, label, hint, id, art) => { const inp = h('input', { type:'text', inputmode:'decimal', class:'plain', id:id, 'aria-label':label, placeholder:hint, value:chartIn[key], style:'width:100%' }); inp.addEventListener('input', () => { chartIn[key] = inp.value.replace(',', '.'); chartFill(plot, out); calcPaint(); }); return h('label', { class:'chartfield' }, h('span', { class:'chartlab' }, symPic(art, 'chartpic'), h('span', { class:'fine', style:'margin:0', text:label })), inp); };
-  const tdsF = num('tds', 'Strength (% TDS)', 'for example 1.3', 'chartTds', 'art-water'), eyF = num('ey', 'Extraction (%)', 'for example 20', 'chartEy', 'art-filter');
-  const doseF = num('dose', 'Coffee (g)', 'for example 20', 'chartDose', 'art-beans'), outF = num('out', 'Drink in the cup (g)', 'for example 320', 'chartOut2', 'art-cf-aroma');
-  const calc = h('p', { class:'serif', id:'chartCalc', style:'margin:8px 0 0' }), use = h('button', { type:'button', class:'btn small', id:'chartUse', text:'Use this extraction', onclick:() => { const ey = extractionYield(parseFloat(chartIn.tds), parseFloat(chartIn.out), parseFloat(chartIn.dose)); if (ey != null){ chartIn.ey = String(ey); $('chartEy').value = String(ey); chartFill(plot, out); } } });
-  function calcPaint(){
-    const ey = extractionYield(parseFloat(chartIn.tds), parseFloat(chartIn.out), parseFloat(chartIn.dose));
-    calc.textContent = ey == null ? 'Fill in the strength above and both weights to work it out.' : 'Extraction = strength × drink weight ÷ coffee weight = ' + ey + ' %.';
-    use.hidden = ey == null;
+  'Strength of 1.15 to 1.35 % TDS is the usual zone for filter coffee. Lower is weaker and higher is stronger.',
+  'Espresso is different: 8 to 12 % strength is the common café target, also a convention.',
+  'Steeped coffee (a press, an AeroPress, a Clever) is counted from the water you poured in, so the usual zone is not used to call it under or over. A long steep settles near 20.7 % (Liang, Chan and Ristenpart 2021).'];
+/* open the chart, remembering where Back goes. view is optional: it opens on that view. */
+function goChart(view){
+  if (app.screen !== 'chart') chartFrom = app.screen === 'timer' ? 'recipe' : app.screen;
+  bcUi.view = view || ''; bcUi.sel = -1; bcUi.chip = ''; bcUi.group = ''; bcUi.trail = 0;
+  go('chart');
+}
+/* the brew on the Brew page right now, read for the chart: which map it is on, the cup we aim for, the forecast and (from the cup screen) the numbers just measured. null when no coffee and method are picked. */
+function bcCurrent(){
+  try {
+    const key = app.brew && app.brew.method, c = app.coffee; if (!key || !c || !String(c.name || '').trim()) return null;
+    const mt = METHODS.find(x => x.key === key); if (!mt) return null;
+    const o = { key, label:mt.label, kind:bcKindOf(mt), aim:null, forecast:null, measured:null, grindMoved:false, noTarget:!!NO_TARGET_METHODS[mt.type] || mt.type === 'cold', machine:mt.type === 'machine' };
+    if (o.machine) o.aim = { x:20, y:1.25, label:'Golden Cup' };
+    else if (!isMachine(key) && !o.noTarget){
+      const now = brewCupNow(getRecipe());
+      if (now){ o.forecast = { x:now.ey, y:now.tds, label:'Forecast' }; if (now.aimTds && now.aimEy) o.aim = { x:now.aimEy, y:now.aimTds, label:'Aim' }; o.grindMoved = now.grindMoved; }
+      else if (o.kind === 'espresso') o.aim = { x:20, y:10, label:'Café target' };
+    } else if (isMachine(key) && o.kind === 'espresso') o.aim = { x:20, y:10, label:'Café target' };
+    const b = app.cupBrew;
+    if (b && b.key === key && +b.tds > 0){ const rd = steepRead(key, +b.tds, +b.out_g, +b.dose, +b.water); if (rd && rd.ey > 0) o.measured = { x:rd.ey, y:+b.tds, label:'Measured' }; }
+    return o;
+  } catch(e){ return null; }
+}
+const bcArt = (id, fallback) => document.getElementById(id) ? id : fallback;
+/* a row of buttons where one is picked (a real group of buttons, so a screen reader says which is on) */
+function bcSeg(label, opts, cur, onPick, id){
+  const g = h('div', { class:'seg bcseg', role:'group', 'aria-label':label, id:id || null });
+  opts.forEach(o => g.append(h('button', { type:'button', id:id ? id + '_' + (o.v || 'all') : null, 'aria-pressed':String(o.v === cur), text:o.label, onclick:() => onPick(o.v) })));
+  return g;
+}
+const bcRowOf = (label, seg) => h('div', { class:'bcrow' }, h('b', { text:label }), seg);
+/* tap tiles for brewers, trails or groups: a picture, a name and how many. Tapping the one that is on turns it off. */
+function bcChips(items, cur, onPick, label){
+  return h('div', { class:'mk-kind bcchips', role:'group', 'aria-label':label }, items.map(it => {
+    const b = h('button', { type:'button', 'aria-pressed':String(it.key === cur), onclick:() => onPick(it.key === cur ? '' : it.key) }, symPic(it.art), h('b', { text:it.label }), h('small', { text:String(it.n) }));
+    b.setAttribute('aria-label', it.label + ', ' + it.n + (it.n === 1 ? ' brew' : ' brews')); return b;
+  }));
+}
+/* what the dots mean in the colour that is on */
+function bcLegend(mode, pts){
+  const k = (mark, text) => h('span', { class:'bckey' }, mark, h('span', { text }));
+  if (!pts.length) return null;
+  const dash = pts.some(p => p.mixed) ? k(h('i', { class:'bcdash', 'aria-hidden':'true', text:'○' }), 'Dashed ring: steeped, drawn on the cup basis') : null;
+  if (mode === 'taste') return h('div', { class:'bclegend', id:'bcLegend' }, BC_TASTES.map(t => k(symPic(t.art, 'bckp'), t.label)), k(h('i', { 'aria-hidden':'true', text:'◌' }), 'No taste saved'), dash);
+  if (mode === 'flavor'){
+    const seen = []; pts.forEach(p => { if (p.fams.length && seen.indexOf(p.fams[0]) < 0) seen.push(p.fams[0]); });
+    seen.sort((a, b) => TP_FAMILY_ORDER.indexOf(a) - TP_FAMILY_ORDER.indexOf(b));
+    return h('div', { class:'bclegend', id:'bcLegend' }, seen.map(f => { const sh = bcShape(f); return k(h('i', { 'aria-hidden':'true', style:'color:' + (sh ? sh.fill : 'var(--press)'), text:{ circle:'●', square:'■', triangle:'▲', diamond:'◆' }[sh ? sh.shape : 'circle'] }), f); }), k(h('i', { 'aria-hidden':'true', text:'◌' }), 'No flavor words saved'), h('span', { class:'fine', style:'margin:0', text:'A dot shows the first family you tasted in that cup.' }), dash);
   }
-  const work = h('details', { class:'chartfold', id:'chartFold' }, h('summary', { text:'Not sure of your extraction? Work it out' }),
-    h('p', { class:'fine', style:'margin:6px 0', text:'Weigh the coffee you used and the drink you made, and use the strength you typed above.' }), h('div', { class:'chartin' }, doseF, outF),
-    h('p', { class:'fine', style:'margin:6px 0', text:'Extraction = strength × drink in the cup ÷ coffee. For example, 1.30 × 300 ÷ 20 = 19.5 %. Extraction counts the coffee in your cup. Coffee left in the grounds is not counted.' }), calc, use);
-  const zoneList = plain ? h('ul', { class:'prep', id:'chartMeaning', style:'margin:10px 0 0' }, [['Under 18 %', 'Often sour or thin.'], ['18 to 22 %', 'The usual zone. It is a convention.'], ['Above 22 %', 'A little above, and many like it. Above 24 %, it can be harsher.']].map(z => h('li', null, h('b', { text:z[0] + ': ' }), z[1]))) : null;
-  m.append(tband('The map', { tan:'Look' }, 'where the usual zone sits', null, plot, zoneList));
-  const inputs = [h('div', { class:'chartin' }, tdsF, eyF), work, out];
-  const place = plain ? plainFold('chartCard', 'Place your own brew', 'Optional. Needs a coffee refractometer.', 'art-scale', ...inputs)
-    : tband('Place your own brew', { tan:'Optional' }, 'type strength and extraction', null, ...inputs);
-  if (!plain) place.id = 'chartCard';
-  m.append(place);
-  chartFill(plot, out); calcPaint();
-  if (!plain) m.append(plainFold('chartMeaning', 'What the parts mean', 'Five zones, in plain words', 'art-cf-tip', h('ul', { class:'prep', style:'margin:4px 0' }, CHART_ZONES.map(t => h('li', { text:t })))));
-  m.append(h('p', { class:'fine', id:'chartFine', text:'This chart is for filter coffee. ' + (plain ? 'Espresso aims for 8 to 12 % TDS, so the box does not apply. Nothing here is saved.' : 'For espresso, 8 to 12 % TDS is the common café target, so the box does not apply. You need a coffee refractometer to measure TDS. Nothing here is saved.') }));
+  return h('div', { class:'bclegend', id:'bcLegend' }, k(h('i', { class:'bcstar', 'aria-hidden':'true', text:'4' }), 'The number is your beans'), k(h('i', { 'aria-hidden':'true', text:'◌' }), 'Not rated yet'), dash);
+}
+/* the small chart for the cup screen and Facts: the same drawing with fewer words. o = bcSvg options. */
+let bcMiniN = 0;
+function bcMini(o){
+  const el = h('div', { class:'bcmini' }); el.innerHTML = bcSvg(Object.assign({ pts:[], mini:true, uid:'bcMini' + (++bcMiniN) }, o)); return el;
+}
+/* one tapped brew, in words */
+function bcPickCard(p){
+  const t = BC_TASTES.find(x => x.key === p.taste), bits = [p.brewer, p.filter, p.grinder, p.water].filter(Boolean);
+  return h('div', { class:'bcpick', id:'bcPick' }, h('b', { text:p.coffee || 'Unnamed coffee' }),
+    h('span', { text:bits.join(' · ') }),
+    h('span', { text:'Strength ' + p.tds.toFixed(2) + ' % · extraction ' + p.ey.toFixed(1) + ' %' + (p.basis !== 'cup' ? ' (of the water poured)' : '') }),
+    h('span', { text:(p.stars > 0 ? bcStarText(p.stars) + ' beans' : 'Not rated') + (t ? ' · ' + t.label : '') + (p.fams.length ? ' · ' + p.fams.slice(0, 3).join(', ') : '') }),
+    p.judged ? null : h('span', { class:'fine', style:'margin:0', text:'There is no agreed target for this method, so it is plotted and not judged.' }));
+}
+function screenChart(m){
+  const lv = level(), plain = lv === 'new', all = bcMeasured(history && history.objs ? history.objs : []), cur = bcCurrent();
+  const views = BC_VIEWS.filter(v => !plain || v.k === 'this' || v.k === 'mine' || v.k === 'place' || v.k === 'study');
+  if (!views.some(v => v.k === bcUi.view)) bcUi.view = cur ? 'this' : 'mine';
+  if (plain) { bcUi.colour = 'stars'; bcUi.by = ''; }
+  if (bcUi.view === 'this' && cur && !(bcUi.map === 'all' && cur.kind === 'filter') && bcUi.map !== cur.kind) bcUi.map = cur.kind;
+  m.append(hubHero('Brew chart', plain ? 'A map of your coffee. It shows how strong your cup is and how much came out of the coffee.' : 'Strength against extraction for every way you brew. See the cup you aim for, the brews you made, and what you liked.', false, 'art-ratio'));
+  const holder = h('div', { id:'bcHolder', class:'bcholder' });
+  m.append(holder);
+  let plot = null, panel = null, pts = [];
+  const MAPS = [{ v:'all', label:'All' }, { v:'filter', label:'Filter' }, { v:'espresso', label:'Espresso' }, { v:'steeped', label:'Steeped' }];
+  const mapName = k => (MAPS.find(x => x.v === k) || MAPS[0]).label;
+  /* the placing of the Brew page's own brew: it asks for the map it lives on */
+  function setView(k){
+    bcUi.view = k; bcUi.sel = -1;
+    if (k === 'this' && cur && !(bcUi.map === 'all' && cur.kind === 'filter') && bcUi.map !== cur.kind) bcUi.map = cur.kind;
+    paintAll(); try { holder.scrollIntoView({ block:'start' }); } catch(e){}
+  }
+  const ctx = { all, cur, plain, lv, repaint:() => paintAll(), drawPlot:() => drawPlot() };
+  function spec(){
+    const mp = bcOnMap(all, bcUi.map); ctx.mp = mp; ctx.map = bcUi.map; ctx.espressoN = bcOnMap(all, 'espresso').length;
+    return { this:bcViewThis, mine:bcViewMine, brewer:bcViewBrewer, trail:bcViewTrail, study:bcViewStudy, place:bcViewPlace }[bcUi.view](ctx);
+  }
+  let cs = null;
+  function drawPlot(){
+    const o = typeof cs.opts === 'function' ? cs.opts() : cs.opts;
+    pts = o.pts || [];
+    plot.innerHTML = bcSvg(o);
+  }
+  function paintAll(){
+    cs = spec();
+    const view = BC_VIEWS.find(v => v.k === bcUi.view), body = [];
+    const colourOk = !plain && (bcUi.view === 'mine' || bcUi.view === 'brewer' || bcUi.view === 'this' || bcUi.view === 'place');
+    if (colourOk) body.push(bcRowOf('Colour by', bcSeg('Colour the dots by', [{ v:'stars', label:'Stars' }, { v:'taste', label:'Taste' }, { v:'flavor', label:'Flavor' }], bcUi.colour, v => { bcUi.colour = v; paintAll(); }, 'bcColour')));
+    body.push(bcSeg('Which map', MAPS, bcUi.map, v => { bcUi.map = v; bcUi.group = ''; bcUi.chip = ''; bcUi.sel = -1; bcUi.trail = 0; paintAll(); }, 'bcMap'));
+    plot = h('div', { class:'bcplot', id:'bcPlot' });
+    plot.addEventListener('click', e => { const g = e.target.closest ? e.target.closest('.bcdot') : null; if (!g) return; const p = pts[+g.getAttribute('data-j')]; if (!p) return; bcUi.sel = bcUi.sel === p.i ? -1 : p.i; paintAll(); });
+    plot.addEventListener('keydown', e => { if (e.key !== 'Enter' && e.key !== ' ') return; const g = e.target.closest ? e.target.closest('.bcdot') : null; if (!g) return; e.preventDefault(); const p = pts[+g.getAttribute('data-j')]; if (!p) return; bcUi.sel = bcUi.sel === p.i ? -1 : p.i; paintAll(); });
+    body.push(plot);
+    drawPlot();
+    if (cs.legend !== false){ const lg = bcLegend(bcUi.colour, pts); if (lg) body.push(lg); }
+    const pk = pts.find(p => p.i === bcUi.sel); if (pk) body.push(bcPickCard(pk));
+    (cs.nodes || []).forEach(n => { if (n) body.push(n); });
+    if (cs.say) body.push(sayRow(cs.say[1], '', cs.say[0]));
+    const card = tband('The map', { tan:'Look' }, null, null, ...body), meta = card.querySelector('.tmeta');
+    if (meta){ meta.textContent = ''; meta.append(h('b', { text:view.name }), ' · ' + (bcUi.view === 'study' ? 'Filter coffee' : mapName(bcUi.map))); }
+    const tiles = h('div', { class:'mk-kind bcviews', role:'group', 'aria-label':'Choose a view' }, views.map(v => {
+      const b = h('button', { type:'button', id:'bcView_' + v.k, 'aria-pressed':String(v.k === bcUi.view), onclick:() => setView(v.k) }, symPic(v.art), h('b', { text:v.name }), h('small', { text:v.sub }));
+      return b;
+    }));
+    holder.textContent = ''; holder.append(card, tiles);
+  }
+  paintAll();
+  if (!plain) m.append(plainFold('chartMeaning', 'What the parts mean', 'Zones, in plain words', 'art-cf-tip', h('ul', { class:'prep', style:'margin:4px 0' }, BC_ZONES.map(t => h('li', { text:t })))));
+  m.append(h('p', { class:'fine', id:'chartFine', text:'The dots come from the brews you saved with a strength (TDS) and an extraction. You need a coffee refractometer to measure TDS. ' + (plain ? 'The green box is a common target, not a rule. Nothing here is saved.' : 'The zones are conventions, not rules, and the forecasts are estimates. Nothing you type here is saved.') }));
 }
 /* ---------- screen: solid or folklore ---------- */
 let folkFrom = '';
@@ -16560,7 +16970,7 @@ function tpTiles(d){
     { id:'tpTileEnjoy', go:'tpenjoy', title:'What you enjoy', ready:d.ready.enjoy, need:t.enjoy, line:d.glow.best ? d.glow.best.label + ' glows brightest.' : 'Which part of the cup glows.', pic:tpMiniCup(d.glow) },
     { id:'tpTileRate', go:'tprate', title:'Bean jar', ready:d.ready.rate, need:t.rate, line:d.jar.top ? 'The best beans float up. Most sit at ' + d.jar.top.star + '.' : 'The best beans float up.', pic:tpMiniJar(d.jar) },
     { id:'tpTileKinds', go:'tpkinds', title:'Kinds of coffee', ready:d.ready.kinds, need:t.kinds, line:'A heap for each kind, a flag at the middle.', pic:tpMiniHeaps(d.kinds) },
-    { id:'tpTileBrews', go:'tpbrews', title:'Your brews', ready:d.ready.brews, need:t.brews, line:'Where your cups land, stained like a cup ring.', pic:tpMiniRings() },
+    { id:'tpTileBrews', go:'chart', open:() => goChart('mine'), title:'Your brews', ready:d.ready.brews, need:t.brews, line:'Where your cups land on the Brew chart.', pic:tpMiniRings() },
     { id:'tpTileShops', go:'tpshops', title:'Coffee street', ready:d.ready.shops, need:t.shops, line:'Home against the shops, one storefront each.', pic:tpMiniStreet() }
   ].map(tpTile);
 }
@@ -16733,30 +17143,6 @@ function screenTpKinds(m){
     tpNumbers(k.feats.find(f => f.key === tpSel.feat).rows.map(r => r.label + ': ' + r.n + ' coffees, ratings ' + r.heap.counts.map((c, i) => (i + 1) + ' star ' + c).join(', ') + (r.heap.enough ? '; middle ' + r.heap.median + ', middle half ' + r.heap.band[0] + ' to ' + r.heap.band[1] : ''))));
   m.append(tpFoot('Piles are rounded when one bean stands for more than one coffee.'), tpDone());
 }
-function screenTpBrews(m){
-  const d = tpNow(), rg = d.rings;
-  tpHead(m, 'Your cup rings', 'Every measured brew leaves a mark, like a cup on paper. Where marks pile up, the ring gets darker.', rg.ready ? rg.kinds.map(q => q.n + ' measured ' + (q.kind === 'espresso' ? 'espresso' : 'filter') + ' brews, ' + q.inBox + ' inside the common target').join('. ') + '. Tap a ring.' : 'Measure the strength of a few brews and the paper starts to fill.');
-  tpLookRow(m);
-  if (!rg.ready){ tpNeed(m, 'tpEmpty', 'The paper needs ' + d.need.brews + '. You have ' + rg.n + ' so far. A brew counts when it has both a TDS reading and an extraction.'); m.append(tpFoot(''), tpDone()); return; }
-  if (!tpSel.kind || !rg.kinds.some(q => q.kind === tpSel.kind)) tpSel.kind = rg.kinds[0].kind;
-  const holder = h('div', { id:'tpRings' });
-  if (rg.kinds.length > 1) m.append(h('div', { class:'tprow2', style:'margin-top:14px' }, rg.kinds.map(q => tpBtn({ art:tpIcon(q.kind === 'espresso' ? 'm-espresso' : 'm-v60', 40), label:q.kind === 'espresso' ? 'Espresso' : 'Filter', n:q.n, on:q.kind === tpSel.kind, onclick:() => { tpSel.kind = q.kind; tpSel.ring = 0; paint(); } }))));
-  m.append(holder);
-  function paint(){
-    const q = rg.kinds.find(x => x.kind === tpSel.kind), p = tpRingsG(q), cur = p.boxes[tpSel.ring] || p.boxes[0], R = cur.ring, one = R.count === 1;
-    const plot = h('div', { class:'tpplot' }, tpArt(p.svg));
-    p.boxes.forEach((b, i) => plot.append(h('button', { type:'button', class:'tphit round' + (b === cur ? ' on' : ''), style:'left:' + b.left.toFixed(2) + '%;top:' + b.top.toFixed(2) + '%;width:' + b.width.toFixed(2) + '%;height:' + b.height.toFixed(2) + '%', 'aria-pressed':b === cur ? 'true' : 'false', 'aria-label':b.ring.count + (b.ring.count === 1 ? ' brew' : ' brews') + ' near ' + tpFx(b.ring.ey) + ' % extraction and ' + (Math.round(b.ring.tds * 100) / 100) + ' % TDS', onclick:() => { tpSel.ring = i; paint(); } })));
-    const key = h('div', { class:'tpkey2' }, tpArt('<svg width="96" height="30" viewBox="0 0 96 30"><ellipse cx="16" cy="15" rx="12" ry="9" fill="#6B3E22" fill-opacity=".14" stroke="#6B3E22" stroke-opacity=".5" stroke-width="2.4"/><ellipse cx="48" cy="15" rx="13" ry="10" fill="#6B3E22" fill-opacity=".30" stroke="#6B3E22" stroke-opacity=".6" stroke-width="2.8"/><ellipse cx="80" cy="15" rx="14" ry="11" fill="#6B3E22" fill-opacity=".55" stroke="#6B3E22" stroke-opacity=".8" stroke-width="3.2"/></svg>'), h('span', { text:'A darker ring means more brews landed there. A drop is one brew; the tiny bean is your rating.' }));
-    const rows = R.names.map((nm, i) => ({ name:nm || 'Unnamed coffee', stars:R.stars[i] > 0 ? R.stars[i] : null, sub:R.stars[i] > 0 ? '' : 'Not rated' }));
-    tpPaint(holder, h('div', { class:'tpcard paper' }, plot, key),
-      h('div', { class:'tpcard', id:'tpPanel' }, tpPanelHead(tpIcon('art-water', 44), one ? 'One brew' : 'A ring of ' + R.count + ' brews', (R.mid != null ? 'Middle rating: ' + tpHalf(R.mid) + (R.mid === 1 ? ' bean.' : ' beans.') : 'Not rated.'), 'Strength ' + (Math.round(R.tds * 100) / 100) + ' % TDS, extraction about ' + tpFx(R.ey) + ' %.'), tpCoffeeRows(rows, 'The brews')),
-      h('div', { class:'tpnote' }, h('span', { text:'In the common target: ' + q.inBox + ' of ' + q.n + ' brews' + (q.inBox ? ', and ' + q.inBoxLiked + ' of those were rated 4 beans or more' : '') + '. The target is a convention, not a rule. People differ in where they like coffee.' })));
-  }
-  paint();
-  m.append(tpWhy('Each mark is one brew that has both a TDS reading (how strong) and an extraction (how much came out). Brews that land very close together share one ring. The dashed box is a common target for ' + (tpSel.kind === 'espresso' ? 'espresso' : 'filter coffee') + '. Brews without measurements stay off the paper.'),
-    tpNumbers(rg.kinds.map(q => (q.kind === 'espresso' ? 'Espresso' : 'Filter') + ': ' + q.n + ' brews, ' + q.rated + ' rated, ' + q.liked + ' rated 4 or more, ' + q.inBox + ' in the target')));
-  m.append(tpFoot('Strength and extraction are worked out from your measured brews only.'), tpDone());
-}
 /* ---------- Tendencies: brew rack and mix and match ---------- */
 let tpMixFrom = '';
 const TP_SPLIT_ART = { density:'art-elev', process:'art-proc', roast:'art-roaster', origin:'art-globe', variety:'art-var' };
@@ -16856,7 +17242,7 @@ function screenTpShops(m){
    wheelKey (which wheel is open) lives only in memory. After a reload the list is what comes back. */
 let wheelsFrom = '', wheelKey = 'taste';
 function goWheels(){ if (app.screen !== 'wheels' && app.screen !== 'wheel' && app.screen !== 'chart') wheelsFrom = app.screen === 'timer' ? 'recipe' : app.screen; go('wheels'); }
-function goWheel(key){ const w = WHEEL_LIST.find(x => x.key === key); if (!w) return; wheelKey = key; go(w.chart ? 'chart' : 'wheel'); }
+function goWheel(key){ const w = WHEEL_LIST.find(x => x.key === key); if (!w) return; wheelKey = key; if (w.chart) goChart(''); else go('wheel'); }
 const wheelDef = () => WHEEL_LIST.find(x => x.key === wheelKey) || WHEEL_LIST[1];
 function wheelTitle(){ return wheelDef().title; }
 /* the advice for one pick on the what-do-I-change wheel: the sentence the label stands for first, then the whole advice */
@@ -17049,24 +17435,6 @@ function tpDropG(cx, cy, r, seed, rating){
   const tone = '#6B3E22';
   return '<path d="' + tpBlob(cx, cy, r, r, seed, 0.07) + '" fill="' + tone + '" fill-opacity=".22"/><path d="' + tpBlob(cx, cy, r, r, seed, 0.07) + '" fill="none" stroke="' + tone + '" stroke-opacity=".7" stroke-width="2.4"/>' + (rating ? tpBeanG(cx, cy, 70, Math.min(5, Math.max(1, Math.ceil(rating - 1e-9))), 0.34) : '');
 }
-/* The cup-ring paper. k = one entry of tpRings(...).kinds. x is how much comes out (extraction), y is how strong (TDS). Returns the svg plus a box for each ring, in percent of the picture, so a real button can sit on it. */
-function tpRingsG(k){
-  const W = 334, H = 318, px = 30, py = 6, pw = 298, ph = 268, bx = k.box, esp = k.kind === 'espresso';
-  const x0 = 14, x1 = 26, y0 = esp ? 4 : 0.9, y1 = esp ? 16 : 1.7, X = v => px + (Math.min(x1, Math.max(x0, v)) - x0) / (x1 - x0) * pw, Y = v => py + (1 - (Math.min(y1, Math.max(y0, v)) - y0) / (y1 - y0)) * ph;
-  let o = '<rect x="' + px + '" y="' + py + '" width="' + pw + '" height="' + ph + '" rx="14" style="fill:var(--tp-paper)" stroke="#D3C59C" stroke-width="2.4"/>';
-  const bxx = X(bx.x0), byy = Y(bx.y1), bw = X(bx.x1) - X(bx.x0), bh = Y(bx.y0) - Y(bx.y1);
-  o += '<rect x="' + tpFx(bxx) + '" y="' + tpFx(byy) + '" width="' + tpFx(bw) + '" height="' + tpFx(bh) + '" rx="16" fill="#F2A93B" fill-opacity=".10" stroke="' + TP_INK + '" stroke-width="2.8" stroke-dasharray="7 6"/>';
-  o += '<g transform="translate(' + tpFx(bxx + 1) + ' ' + tpFx(byy + bh + 16) + ')"><rect x="0" y="-12" width="120" height="24" rx="8" fill="#F2A93B" stroke="' + TP_INK + '" stroke-width="2.4"/><text x="60" y="5" text-anchor="middle" font-size="14" font-weight="700" fill="#22120C">Common target</text></g>';
-  const boxes = [];
-  k.rings.slice().sort((a, b) => b.count - a.count).forEach((r, i) => {
-    const cx = X(r.ey), cy = Y(r.tds), seed = 11 + i * 17;
-    if (r.count === 1){ o += tpDropG(cx, cy, 13, seed, r.mid); boxes.push({ x:cx - 17, y:cy - 17, w:34, h:34, ring:r }); }
-    else { const rad = Math.min(46, 12 + 6 * Math.sqrt(r.count)); o += tpStainG(cx, cy, rad, rad * 0.78, seed, r.count > 10 ? 3 : 2); boxes.push({ x:cx - rad, y:cy - rad * 0.78, w:2 * rad, h:1.56 * rad, ring:r }); }
-  });
-  o += '<text x="' + px + '" y="302" font-size="15" font-weight="700" style="fill:var(--muted)">Less comes out</text><text x="328" y="302" text-anchor="end" font-size="15" font-weight="700" style="fill:var(--muted)">More comes out</text>';
-  o += '<text transform="translate(18 274) rotate(-90)" font-size="15" font-weight="700" style="fill:var(--muted)">Weaker</text><text transform="translate(18 8) rotate(90)" font-size="15" font-weight="700" style="fill:var(--muted)">Stronger</text>';
-  return { svg:'<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true" focusable="false" style="display:block">' + o + '</svg>', boxes:boxes.map(b => ({ left:b.x / W * 100, top:b.y / H * 100, width:b.w / W * 100, height:b.h / H * 100, ring:b.ring })), W, H };
-}
 /* a shop front: an awning, a door, windows. Taller and wider means more visits. */
 function tpFrontG(x, y, wd, ht, awn, door){
   let o = '<rect x="' + tpFx(x) + '" y="' + tpFx(y + 14) + '" width="' + tpFx(wd) + '" height="' + tpFx(ht - 14) + '" fill="#FFF8EA" stroke="' + TP_INK + '" stroke-width="3.2" stroke-linejoin="round"/>';
@@ -17166,7 +17534,7 @@ function tpMiniRings(){
 function tpMiniStreet(){ return tpArt(tpSvg(150, 82, '<path d="M4 76 H146" stroke="' + TP_INK + '" stroke-width="3" stroke-linecap="round"/>' + tpFrontG(8, 22, 38, 54, TP_AWN[0], TP_DOOR[1]) + tpFrontG(52, 6, 46, 70, TP_AWN[1], TP_DOOR[0]) + tpFrontG(104, 32, 38, 44, TP_AWN[2], TP_DOOR[2]))); }
 /* ---------- Tendencies pages: shared pieces ---------- */
 const TP_CAUTION = 'These pictures describe what you rated and wrote. They are not rules about coffee. A few coffees is a small sample, and details overlap.';
-const TP_TITLES = { tend:'Your tendencies', tpflavors:'Flavors', tpenjoy:'What you enjoy', tprate:'How you rate', tpkinds:'Kinds of coffee', tpbrews:'Your brews', tpshops:'Coffee street', tpbrewers:'Your brew rack', tpmix:'Mix and match' };
+const TP_TITLES = { tend:'Your tendencies', tpflavors:'Flavors', tpenjoy:'What you enjoy', tprate:'How you rate', tpkinds:'Kinds of coffee', tpshops:'Coffee street', tpbrewers:'Your brew rack', tpmix:'Mix and match' };
 let tpLook = 'all';   /* which coffees the pictures look at: all, the last 12 months or the last 3 months. Not saved. */
 function tpIso(look){ if (look === 'all') return ''; const d = new Date(); d.setMonth(d.getMonth() - (look === '3m' ? 3 : 12)); const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
 const tpObjs = () => tpSince(history && history.objs ? history.objs : [], tpIso(tpLook));
@@ -17229,7 +17597,7 @@ function tpFoot(text){ return h('p', { class:'fine', id:'tpCaution', text:(text 
 function tpDone(){ return h('div', { class:'dock' }, h('div', { class:'dock-inner' }, h('button', { type:'button', class:'btn primary block', id:'tpDoneBtn', text:'Done', onclick:() => navBack(typeof PARENT[app.screen] === 'function' ? PARENT[app.screen]() : PARENT[app.screen]) }))); }
 /* a tile on the home: picture, name, one line, chevron. Not-ready tiles are dimmed and say what they need. */
 function tpTile(o){
-  const b = h('button', { type:'button', class:'tpt' + (o.ready ? '' : ' off'), id:o.id, onclick:() => go(o.go) });
+  const b = h('button', { type:'button', class:'tpt' + (o.ready ? '' : ' off'), id:o.id, onclick:() => o.open ? o.open() : go(o.go) });
   b.append(h('div', { class:'pic' }, o.pic), h('b', { text:o.title }), h('span', { class:'ts', text:o.ready ? o.line : 'Needs ' + o.need + '.' }), h('span', { class:'go', 'aria-hidden':'true' }, h('i')));
   return b;
 }
@@ -18161,11 +18529,12 @@ function cupBar(id, label, valText, v, lo, hi, zlo, zhi, ends, zoneText){
 function inCupCard(r, rows){
   const now = brewCupNow(r), lv = level(), kids = [];
   if (now){
-    const zEy = now.kind === 'steep' ? [18, 22] : [18, 22];
+    const zEy = [18, 22];
     kids.push(cupBar('cupStrength', 'Strength', 'about ' + now.tds.toFixed(2) + '%', now.tds, 0.9, 1.7, 1.15, 1.35, ['lighter', 'stronger'], 'usual 1.15 to 1.35%'),
       cupBar('cupExtraction', 'Extraction', 'about ' + now.ey + '%', now.ey, 15, 25, zEy[0], zEy[1], ['sour side', 'bitter side'], zEy[0] + ' to ' + zEy[1] + '%'));
     if (lv !== 'new') kids.push(h('p', { class:'fine cupnote' }, 'Have a refractometer? Expect about ' + now.tds.toFixed(2) + '% TDS, give or take a little.' + (now.kind === 'steep' ? ' Extraction here counts the water you pour, as a steep is measured.' : '') + (now.grindMoved ? ' Your own grind step is not in this estimate.' : '')));
     else kids.push(h('p', { class:'fine cupnote', text:'Strength is how much coffee is in the drink. Extraction is how much came out of the grounds. Ours sit in the middle of the usual zone.' }));
+    kids.push(h('button', { type:'button', class:'flink', id:'cupChartOpen', text:'See it on the Brew chart', onclick:() => goChart('this') }));
   } else kids.push(h('p', { class:'fine cupnote', text:'We do not estimate the cup for this brew yet. The rows below say how we chose each setting.' }));
   const cupG = r.yield != null ? aboutGrams(r.yield, r.method.type) : null;
   if (cupG != null) kids.unshift(h('p', { class:'cupgrams', id:'cupGrams' }, 'About ', h('b', { text:waterShown(cupG, app.prefs.waterUnit) }), r.iceShare ? ' in the glass. After the ice melts, that is the finished drink.' : ' lands in your cup. The grounds keep the rest of the water.'));
@@ -21050,20 +21419,6 @@ function cvaPeek(){
 }
 /* Not saved: the taste you pick next to the TDS box and the Brix number you typed. They only steer the advice on this screen. */
 const tdsPick = { taste:'', brix:'' };
-function ecChartSvg(kind, tds, ey){
-  const W = 300, H = 170, L = 34, R = 8, T = 8, B = 26, x0 = 14, x1 = 26, y0 = kind === 'espresso' ? 4 : 0.9, y1 = kind === 'espresso' ? 16 : 1.7;
-  const X = v => L + (Math.min(x1, Math.max(x0, v)) - x0) / (x1 - x0) * (W - L - R), Y = v => T + (1 - (Math.min(y1, Math.max(y0, v)) - y0) / (y1 - y0)) * (H - T - B);
-  const lo = kind === 'espresso' ? 8 : 1.15, hi = kind === 'espresso' ? 12 : 1.35;
-  let g = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Brewing control chart: your coffee is at ' + escHtml(ey) + ' percent extraction and ' + escHtml(tds) + ' percent TDS" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">';
-  g += '<rect x="' + X(14) + '" y="' + Y(y1) + '" width="' + (X(26) - X(14)) + '" height="' + (Y(y0) - Y(y1)) + '" rx="6" style="fill:var(--tint)"/>';
-  g += '<rect x="' + X(22) + '" y="' + Y(hi) + '" width="' + (X(24) - X(22)) + '" height="' + (Y(lo) - Y(hi)) + '" style="fill:var(--leaf);opacity:.18"/>';
-  g += '<rect x="' + X(18) + '" y="' + Y(hi) + '" width="' + (X(22) - X(18)) + '" height="' + (Y(lo) - Y(hi)) + '" rx="3" style="fill:var(--leaf);opacity:.45"/>';
-  [14, 18, 22, 26].forEach(v => { g += '<text x="' + X(v) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" style="fill:var(--muted)">' + v + '%</text>'; });
-  [lo, hi].forEach(v => { g += '<text x="' + (L - 4) + '" y="' + (Y(v) + 4) + '" text-anchor="end" font-size="11" style="fill:var(--muted)">' + v + '</text>'; });
-  g += '<text x="' + X(14.4) + '" y="' + (T + 14) + '" font-size="11" style="fill:var(--muted)">weak and sour</text><text x="' + X(25.6) + '" y="' + (T + 14) + '" text-anchor="end" font-size="11" style="fill:var(--muted)">strong and bitter</text>';
-  g += '<circle cx="' + X(ey) + '" cy="' + Y(tds) + '" r="7" style="fill:var(--accent);stroke:var(--surface);stroke-width:2.5"/></svg>';
-  return g;
-}
 function measureBlock(b){
   const mt = METHODS.find(x => x.key === b.key); if (!mt) return null;
   const cold = mt.type === 'cold';
@@ -21083,7 +21438,7 @@ function measureBlock(b){
   const warnLine = h('p', { class:'fine warnline', role:'status', style:'margin:6px 0 0' });
   const res = h('div', { class:'measure' }), chart = h('div', { class:'ecchart' });
   refreshers.push(() => {
-    res.textContent = ''; chart.innerHTML = ''; warnLine.textContent = '';
+    res.textContent = ''; chart.textContent = ''; warnLine.textContent = '';
     const rd = steepRead(mt.key, +b.tds, +b.out_g, +b.dose, +b.water), ey = rd.ey, steeped = !!STEEPED_TYPES[mt.type];
     const yc = yieldCheck(mt.type, +b.water, +b.dose, +b.out_g, rd.cup, mt.key, ownR);
     if (yc.status === 'water-in') warnLine.textContent = 'That is almost as much as the water you poured. The grounds hold back about ' + heldTxt + ' of water per gram of coffee, so the coffee in your cup should be nearer ' + aboutGrams(yc.expected, mt.type) + ' g. If you entered the water you poured, extraction reads about ' + yc.pctHigh + '% too high.';
@@ -21094,7 +21449,8 @@ function measureBlock(b){
     if (cold) res.append(h('p', { class:'serif', style:'margin:4px 0;font-size:15.5px', text:'Saved with this cold brew. There is no agreed target range for cold brew, so we do not call it weak or strong.' }));
     if (b.out_est) res.append(h('p', { class:'serif', style:'margin:4px 0;font-size:15.5px', text:'The finished weight is an estimate, so this extraction is an estimate too. Weigh your cup for a real number.' }));
     j.lines.forEach(t => res.append(h('p', { class:'serif', style:'margin:4px 0;font-size:15.5px', text:t })));
-    chart.innerHTML = cold || j.kind === 'none' ? '' : ecChartSvg(j.kind, +b.tds, ey);
+    const ck = cold ? '' : j.kind === 'espresso' ? 'espresso' : j.kind === 'filter' ? 'filter' : steeped && !NO_TARGET_METHODS[mt.type] ? 'steeped' : '';
+    if (ck) chart.append(bcMini({ kind:ck, mini:true, measured:{ x:ey, y:+b.tds }, label:'Brew chart: your coffee is at ' + ey + ' percent extraction and ' + b.tds + ' percent TDS' }), h('button', { type:'button', class:'flink', id:'cupChartLink', text:'See it on the Brew chart', onclick:() => goChart('this') }));
   });
   const intro = 'Read your refractometer, then type the numbers. Strength (TDS) and extraction are different things. A cup can be strong but under-extracted, or weak but well extracted. Measuring both tells you whether to change the grind or the ratio. Nothing else needs it, so skip this if you did not measure.';
   const tasteFold = cold ? null : h('details', { class:'moreinfo' }, h('summary', { text:'How did the cup taste? (optional)' }),
@@ -24981,7 +25337,7 @@ function shopsFilesRows(){
     h('button', { type:'button', class:'btn', id:'shPasteBtn', style:'margin-top:8px', text:'Use pasted text', onclick:() => { if (paste.value.trim()){ shLoadText(paste.value); say(sh.msg); save.querySelector('.hs').textContent = subText(); } else say('Paste the file contents first.'); } }));
   return [save, load, file, fold, msg, h('p', { class:'fine hubnote', style:'margin:0', text:'The coffee shops file is a file of its own. It is not your tasting history, and your history is never changed by it.' })];
 }
-const SCREENS = { door:screenDoor, loadshared:screenLoadShared, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, perfecting:screenPerfecting, detail:screenDetail, tastedit:screenTastingEdit, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, tpflavors:screenTpFlavors, tpenjoy:screenTpEnjoy, tprate:screenTpRate, tpkinds:screenTpKinds, tpbrews:screenTpBrews, tpshops:screenTpShops, tpbrewers:screenTpBrewers, tpmix:screenTpMix, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, bagcmp:screenBagCmp, fresh:screenFresh, caffeine:screenCaffeine, cafdrink:screenCafDrink, cafresult:screenCafResult, cafcup:screenCafCup, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, glossary:screenGlossary, files:screenFiles };
+const SCREENS = { door:screenDoor, loadshared:screenLoadShared, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, perfecting:screenPerfecting, detail:screenDetail, tastedit:screenTastingEdit, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, tpflavors:screenTpFlavors, tpenjoy:screenTpEnjoy, tprate:screenTpRate, tpkinds:screenTpKinds, tpshops:screenTpShops, tpbrewers:screenTpBrewers, tpmix:screenTpMix, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, bagcmp:screenBagCmp, fresh:screenFresh, caffeine:screenCaffeine, cafdrink:screenCafDrink, cafresult:screenCafResult, cafcup:screenCafCup, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, glossary:screenGlossary, files:screenFiles };
 
 syncMenuBtn();
 $('homeBtn').addEventListener('click', () => { if (menuIsOpen()) closeSheet(); else openMenu(); });

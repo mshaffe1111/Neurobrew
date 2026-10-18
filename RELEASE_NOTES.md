@@ -4,6 +4,12 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.055.0120: The Brew chart: one chart for every method
+
+2026-10-18 01:12:25 UTC
+
+- Four old charts became one Brew chart. A map row (All, Filter, Espresso, Steeped), Colour by stars, taste or flavor, and six views: This brew, My brews, By brewer, Your tries, The research and Place a brew. The Facts, cup and Tendencies charts now use it.
+
 ## Version 4.054.0119: The other calculators, simplified, with new icons
 
 2026-10-17 22:55:29 UTC
