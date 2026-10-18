@@ -4,6 +4,12 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.056.0121: Your preferences: boards that mean something
+
+2026-10-18 03:23:53 UTC
+
+- Your preferences replaces Your tendencies. Six dartboards (Roast, Origin, Flavor, Process, Elevation, Gear) show which kinds you rate high in red and which you rate low in blue, drill down to the coffees, and switch between Stars and Scores. The old flower garden, cup glow, bean jar and kinds pictures are gone.
+
 ## Version 4.055.0120: The Brew chart: one chart for every method
 
 2026-10-18 01:12:25 UTC

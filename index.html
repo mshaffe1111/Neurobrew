@@ -228,7 +228,7 @@ details.mgroup > summary .mgt{ font-weight:700; font-size:17px; }
 .tpcard{ background:var(--surface); border:1px solid var(--hush); border-radius:16px; padding:12px; margin:0 0 12px; }
 .tpcard.paper{ padding:10px; }
 .tpsel{ width:100%; min-height:52px; padding:6px 44px 6px 14px; font:600 18px var(--ui); color:var(--pick-ink); background:var(--pick) var(--chev) no-repeat right 8px center; border:2px solid var(--frame); border-radius:14px; box-shadow:0 3px 0 var(--frame); appearance:none; -webkit-appearance:none; }
-.tpsel:focus-visible, .tpbtn:focus-visible, .tpt:focus-visible, .tpwide:focus-visible, .tphero:focus-visible, .tpstand:focus-visible, .tphit:focus-visible, .tpfold summary:focus-visible{ outline:3px solid var(--focus); outline-offset:3px; }
+.tpsel:focus-visible, .tpbtn:focus-visible, .tpt:focus-visible, .tpwide:focus-visible, .tphit:focus-visible, .tpfold summary:focus-visible{ outline:3px solid var(--focus); outline-offset:3px; }
 .tpbtn{ position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:60px; padding:8px 4px; text-align:center; font:700 15px/1.1 var(--ui); background:var(--surface); color:var(--ink); border:2px solid var(--frame); border-radius:14px; box-shadow:0 3px 0 var(--frame); }
 .tpbtn.on{ background:var(--gold); color:#22120C; border-color:#22120C; box-shadow:0 3px 0 #22120C; }
 .tpbtn:active{ transform:translateY(3px); box-shadow:none; }
@@ -237,18 +237,10 @@ details.mgroup > summary .mgt{ font-weight:700; font-size:17px; }
 .tpbtn.zero{ opacity:.55; }
 .tprow3{ display:grid; gap:10px; grid-template-columns:repeat(3, minmax(0, 1fr)); } .tprow4{ display:grid; gap:10px; grid-template-columns:repeat(4, minmax(0, 1fr)); } .tprow2{ display:grid; gap:10px; grid-template-columns:repeat(2, minmax(0, 1fr)); }
 /* the home */
-.tphero{ display:flex; align-items:center; gap:6px; width:100%; text-align:left; margin:16px 0 0; padding:12px 12px 14px 6px; color:var(--pick-ink); background:var(--pick); border:2px solid var(--frame); border-radius:16px; box-shadow:0 4px 0 var(--frame); }
-.tphero h2{ margin:0; font:700 30px/1.05 var(--display); } .tphero p{ margin:6px 0 0; font-size:17px; line-height:1.3; }
-.tpkey{ display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:10px; font-size:15px; font-weight:600; }
-.tpkey i{ display:inline-block; width:14px; height:14px; margin-right:5px; vertical-align:-2px; border:2px solid #22120C; border-radius:50%; }
-.tpstands{ padding:0; overflow:hidden; }
-.tpstand{ display:flex; align-items:center; gap:12px; width:100%; min-height:72px; padding:10px 12px; text-align:left; font-size:17px; line-height:1.3; color:var(--ink); background:transparent; border:0; }
-.tpstand + .tpstand{ border-top:2px solid var(--line); }
-.tpstand span.tx{ flex:1; }
 .tpchev{ flex:none; width:16px; height:16px; background:currentColor; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5l7 7-7 7'/%3E%3C/svg%3E") center/contain no-repeat; }
 .tpgrid{ display:grid; gap:12px; grid-template-columns:repeat(2, minmax(0, 1fr)); }
 .tpt{ position:relative; display:flex; flex-direction:column; gap:4px; min-height:206px; padding:10px 12px 12px; text-align:left; color:var(--ink); background:var(--surface); border:2px solid var(--frame); border-radius:16px; box-shadow:0 4px 0 var(--frame); }
-.tpt:active, .tpwide:active, .tphero:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--frame); }
+.tpt:active, .tpwide:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--frame); }
 .tpt .pic{ box-sizing:border-box; display:block; align-self:stretch; width:auto; height:88px; margin:0 -4px 6px; overflow:hidden; background:var(--tp-paper); border-radius:10px; }
 .tpt .pic .tpart{ display:block; width:100%; height:100%; }
 .tpt .pic svg{ display:block !important; width:100% !important; height:100% !important; max-width:none !important; }
@@ -262,38 +254,12 @@ details.mgroup > summary .mgt{ font-weight:700; font-size:17px; }
 .tpfold{ margin-top:14px; } .tpfold summary{ min-height:44px; display:flex; align-items:center; gap:10px; cursor:pointer; font:700 17px var(--ui); }
 .tpnote{ display:flex; gap:10px; align-items:flex-start; padding:12px; margin-top:14px; font-size:15px; line-height:1.35; color:var(--muted); border:2px solid var(--line); border-radius:14px; }
 @media (max-width:359px){ .tpt{ min-height:196px; } .tpwide .wp{ width:104px; } .tph1{ font-size:25px; } }
-.tpshelf, .tpcupbox, .tpplot, .tpjar{ position:relative; }
+.tpplot{ position:relative; }
 .tphit{ position:absolute; top:0; bottom:0; padding:0; margin:0; background:transparent; border:3px solid transparent; border-radius:16px; }
 .tphit.on{ border:3px dashed var(--frame); }
 .tphit.round{ bottom:auto; border-radius:50%; }
-.tplegend{ display:flex; gap:10px; }
-.tplegend div{ flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; font-size:14px; line-height:1.2; color:var(--muted); }
-.tpsw{ flex:none; width:30px; height:30px; border-radius:50%; border:2px solid #22120C; }
-.tpglass{ position:relative; flex:none; width:46px; height:56px; overflow:hidden; background:#FFF8EA; border:3px solid #22120C; border-radius:6px 6px 14px 14px; }
-.tpglass i{ position:absolute; left:0; right:0; bottom:0; background:linear-gradient(#FFC15A, #F2A93B); border-top:3px solid #22120C; }
-.tpglass.big{ width:70px; height:86px; border-width:4px; border-radius:8px 8px 20px 20px; }
-.tpbtn.tppt{ flex-direction:row; justify-content:flex-start; gap:10px; min-height:68px; padding:8px 10px; text-align:left; }
-.tpbtn.tppt small{ display:block; }
 .tptx{ display:flex; flex-direction:column; min-width:0; }
-.tpbtn.tppt .tptx{ align-items:flex-start; }
-.tpbtn.tppt .tptx small{ margin-top:2px; }
-.tpshelf .tpart, .tpplot .tpart, .tpcupbox .tpart, .tpjarsvg .tpart{ display:block; width:100%; }
-.tpcup{ width:100%; height:auto; }
-.tpG{ opacity:var(--o, 1); }
-.tpcup.has .tpG{ opacity:calc(var(--o, 1) * .4); }
-.tpcup.sel-smell .tpg-aroma, .tpcup.sel-acidity .tpg-acid, .tpcup.sel-sweetness .tpg-sweet, .tpcup.sel-aftertaste .tpg-after, .tpcup.sel-body .tpg-body{ opacity:1; }
-/* the jar: the labels sit level with their layers */
-.tpjar .tpjarsvg{ width:56%; }
-.tpjarside{ position:absolute; top:0; bottom:0; left:58%; right:0; }
-.tpjl{ position:absolute; left:0; right:0; display:flex; align-items:center; gap:4px; padding:0 4px; text-align:left; white-space:nowrap; color:var(--ink); background:var(--surface); border:2px solid var(--frame); border-radius:12px; box-shadow:0 3px 0 var(--frame); }
-.tpjl.on{ background:var(--gold); color:#22120C; border-color:#22120C; box-shadow:0 3px 0 #22120C; }
-.tpjl b{ display:block; font:700 16px/1.05 var(--ui); } .tpjl small{ display:block; font-size:14px; line-height:1.05; }
-.tpjl .tpart{ width:28px; height:28px; flex:none; } .tpjl .tpart svg{ width:100%; height:100%; }
-.tpjarsvg.has .tpL{ opacity:.32; }
-.tpjarsvg.sel-1 .tpl1, .tpjarsvg.sel-2 .tpl2, .tpjarsvg.sel-3 .tpl3, .tpjarsvg.sel-4 .tpl4, .tpjarsvg.sel-5 .tpl5{ opacity:1; }
-.tplegs{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; margin-top:8px; padding-top:10px; border-top:2px solid var(--line); font-size:15px; font-weight:600; }
-.tplegs2{ display:flex; flex-direction:column; gap:8px; padding:12px 14px; margin-top:14px; }
-.tplegs2 div{ display:flex; align-items:center; gap:10px; font-size:16px; }
+.tpplot .tpart{ display:block; width:100%; }
 /* a group of coffees: picture, name, middle, heap */
 .tpgroup{ display:block; width:100%; margin:0 0 12px; padding:10px 12px 6px; text-align:left; color:var(--ink); background:var(--surface); border:2px solid var(--frame); border-radius:16px; box-shadow:0 3px 0 var(--frame); }
 .tpgroup.on{ background:var(--pick); }
@@ -311,7 +277,6 @@ details.mgroup > summary .mgt{ font-weight:700; font-size:17px; }
 .tpusual{ display:flex; align-items:center; gap:10px; min-height:60px; padding:8px 10px; background:var(--surface); border:1px solid var(--hush); border-radius:12px; }
 .tpusual b{ display:block; font:700 17px/1.1 var(--ui); } .tpusual small{ font-size:14px; color:var(--muted); }
 .tpjoin{ display:flex; justify-content:center; margin:14px 0 2px; }
-.tppt .tpglass{ width:40px; height:50px; }
 /* scoring sliders (cupping) */
 .nudges{ display:flex; gap:6px; justify-content:flex-end; margin-top:6px; }
 .slider{ -webkit-appearance:none; appearance:none; width:100%; height:44px; margin:0; background:transparent; --f:.5; touch-action:pan-y; display:block; }
@@ -2545,6 +2510,45 @@ body.kb .brandslot, body.kb .progress, body.kb .progressmsg{ display:none; }
   .rec, .phtile, .pst, .rw, .phsay, .chipb, .tg{ border:2px solid ButtonText; box-shadow:none; }
   .meter i{ border-color:CanvasText; } .meter i.f{ background:Highlight; }
 }
+/* ---------- Your preferences (Build 121): the home, the boards and their tiles ---------- */
+.pfboards{ grid-template-columns:repeat(3, minmax(0, 1fr)); margin:0 0 8px; }
+.pfboards button{ padding:6px 4px 7px; }
+.pfboards .pic{ width:44px; height:44px; }
+.pfboards .pic svg{ width:40px; height:40px; }
+.pfboards b{ font-size:15px; }
+.pfstands{ margin:0; }
+.pfrow{ display:flex; align-items:center; gap:12px; width:100%; min-height:60px; margin:0 0 10px; padding:10px 12px; text-align:left; color:var(--ink); background:var(--surface); border:2px solid var(--frame); border-radius:14px; box-shadow:0 3px 0 var(--frame); font:inherit; }
+.pfrow:active, .pft:active{ transform:translateY(3px); box-shadow:none; }
+.pfrow.strong{ outline:3px dashed var(--frame); outline-offset:2px; }
+.pfbar{ flex:none; align-self:stretch; width:14px; min-height:40px; border-radius:7px; background:#8C7F6A; }
+.pfrow.hot .pfbar, .pfsw.hot{ background:#C62F1F; }
+.pfrow.warm .pfbar{ background:#E58A2F; }
+.pfrow.cool .pfbar{ background:#5B9BD5; }
+.pfrow.cold .pfbar, .pfsw.cold{ background:#2F6FB5; }
+.pftx{ flex:1; min-width:0; }
+.pftx b{ display:block; font-size:17px; line-height:1.15; }
+.pftx small{ display:block; margin-top:2px; font-size:14.5px; line-height:1.25; opacity:.88; }
+.pfplot{ margin:6px -6px 2px; }
+.pfplot svg{ display:block; width:100%; height:auto; }
+.pfsec{ cursor:pointer; }
+.pfsw{ display:inline-block; width:14px; height:14px; border:2px solid var(--frame); border-radius:50%; }
+.pflegend{ margin:4px 0 8px; }
+.pfsweet{ margin:0 0 6px; font-size:14.5px; font-weight:700; }
+.pfcrumb{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:0 0 8px; }
+.pfcrumb .btn{ min-height:44px; padding:8px 14px; }
+.pftiles{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; margin:8px 0 6px; }
+.pft{ display:flex; align-items:center; gap:8px; min-height:60px; padding:8px 10px; text-align:left; color:var(--ink); background:var(--surface); border:2.4px solid var(--frame); border-radius:14px; box-shadow:0 3px 0 var(--frame); font:inherit; }
+.pft.hot{ background:color-mix(in srgb, #C62F1F 38%, var(--surface)); }
+.pft.warm{ background:color-mix(in srgb, #E58A2F 40%, var(--surface)); }
+.pft.cool{ background:color-mix(in srgb, #5B9BD5 30%, var(--surface)); }
+.pft.cold{ background:color-mix(in srgb, #2F6FB5 34%, var(--surface)); }
+.pft.faint{ background:transparent; border-style:dashed; box-shadow:none; }
+.pft.strong{ outline:3px dashed var(--frame); outline-offset:2px; }
+.pfm{ flex:none; width:18px; font-size:14px; text-align:center; }
+.pfx{ flex:1; min-width:0; }
+.pfx b{ display:block; font-size:16px; line-height:1.15; overflow-wrap:anywhere; }
+.pfx small{ display:block; margin-top:2px; font-size:14px; line-height:1.25; opacity:.9; }
+@media (max-width:359px){ .pftiles{ grid-template-columns:1fr; } }
 /* four cups on the dashed line, not six; big on the Shop step like the Coffee step */
 .progress.shopbar::before{ left:calc(14px + (100% - 28px) / 8); right:calc(14px + (100% - 28px) / 8); }
 body[data-screen="shop"] .progress{ --pcs:44px; padding:8px 14px 8px; }
@@ -6181,6 +6185,61 @@ function judgeBrew(type, tds, ey, taste, rd){
   else out.lines.push('Mixed signal: low extraction does not usually taste bitter. Check the reading first. Filter the sample, remove bubbles and zero the meter on clean water.');
   return out;
 }
+/* ---------- The bag-word table (Build 121, requirement R20) ----------
+   What this is: our own list of common bag and menu words, each with a family (the same families the tendency pictures use)
+   and a sub-group inside it, so "dark chocolate" (bitter) and "milk chocolate" (sweet) can be told apart.
+   What it rests on: the family and sub-group names come from the three wheels in 38-wheels-data.js where the wheels name the word;
+   every other placement is our own judgement (rated D). Which words to include was chosen from how bags are written; the only
+   count of real bags we found is one retailer's own tally of 19,060 coffees with notes (Beans with Beanie, 2026, rated C):
+   caramel, chocolate, dark chocolate, milk chocolate, brown sugar, honey, vanilla, sweet, citrus, floral, cherry, smooth, cocoa, plum, toffee.
+   No word here is a claim about coffee; it only says which family a word belongs to.
+   Words that describe how a coffee feels or balances (smooth, juicy, syrupy) are NOT flavors, so they sit in BAG_FEEL_WORDS and
+   never count toward a flavor family.
+   Rules: lower case, a straight apostrophe, one place per word (a test fails on a repeat); the families match TP_FAMILY_ORDER. */
+const BAG_NOTE_TABLE = [
+  ['Fruit', 'Citrus', 'lemon, lime, orange, grapefruit, bergamot, tangerine, mandarin, clementine, blood orange, yuzu, pomelo, kumquat, citrus, citrusy, citrus fruit, lemonade, lemon zest, lemon peel, orange zest, orange peel, orange juice, key lime, meyer lemon, lemon-lime, limeade, citrus zest, sweet orange'],
+  ['Fruit', 'Berry', 'blueberry, blackberry, raspberry, strawberry, blackcurrant, black currant, red currant, redcurrant, cranberry, boysenberry, mulberry, gooseberry, huckleberry, elderberry, wild berry, mixed berry, berry, berries, berry jam, blueberry jam, strawberry jam, raspberry jam, blackberry jam, jammy, berry compote, blueberry muffin, strawberry shortcake'],
+  ['Fruit', 'Stone fruit', 'cherry, black cherry, red cherry, sour cherry, cherries, maraschino, peach, apricot, nectarine, plum, plum jam, stone fruit, peach ring, peaches, apricots, dark cherry, cherry cola, cherry pie, ripe plum, red plum, black plum'],
+  ['Fruit', 'Orchard', 'apple, green apple, red apple, baked apple, pear, quince, apple cider, apple juice, apple pie, asian pear, honeycrisp, fuji apple, orchard fruit, applesauce'],
+  ['Fruit', 'Tropical', 'pineapple, mango, papaya, passion fruit, passionfruit, lychee, guava, banana, coconut, tropical, tropical fruit, kiwi, dragon fruit, melon, honeydew, cantaloupe, watermelon, starfruit, jackfruit, tropical punch, ripe banana, mangosteen'],
+  ['Fruit', 'Dried fruit', 'raisin, prune, fig, date, dates, dried fruit, dried cherry, dried apricot, currant, sultana, dried mango, tamarind, fruit leather, dried cranberry, dried fig, golden raisin, fruitcake, stewed fruit'],
+  ['Fruit', 'Grape and tart', 'grape, red grape, white grape, concord grape, muscat, pomegranate, rhubarb, tart cherry, grape juice, grapefruit pith'],
+  ['Fruit', 'Fruit, general', 'fruity, fruit, fruit forward, fruit-forward, ripe fruit, fresh fruit, fruit salad, fruit punch, fruit candy, fruit notes, juicy fruit'],
+
+  ['Floral', 'Blossom', 'floral, florals, flowers, floral notes, jasmine, rose, rose petal, rosewater, rose water, honeysuckle, orange blossom, lavender, hibiscus, elderflower, violet, lilac, chamomile, geranium, magnolia, coffee blossom, tea rose, perfumed, floral aroma, wildflower, flower'],
+  ['Floral', 'Tea', 'black tea, green tea, earl grey, oolong, white tea, tea, iced tea, peach tea, jasmine tea, darjeeling, tea notes, sweet tea, lemon tea'],
+
+  ['Sweet', 'Sugar', 'caramel, brown sugar, toffee, molasses, maple syrup, maple, honey, panela, piloncillo, cane sugar, raw sugar, demerara, turbinado, butterscotch, caramelized sugar, candy, hard candy, cotton candy, sugar, syrup, dulce de leche, candied, jaggery, agave, cola, root beer, wildflower honey, orange honey, honeycomb, caramel apple, salted caramel, sugary, simple syrup, sweetness'],
+  ['Sweet', 'Creamy and baked', 'vanilla, butter, buttery, cream, marshmallow, custard, cream soda, shortbread, graham cracker, cookie, sugar cookie, pastry, pie crust, cake, vanilla bean, whipped cream, cinnamon roll, pudding, creme brulee, crème brûlée, vanilla cream, french toast, pancake, waffle, pound cake, cupcake, brown butter'],
+
+  ['Nutty and cocoa', 'Sweet chocolate', 'milk chocolate, brownie, fudge, hot chocolate, chocolate milk, nutella, chocolate cake, chocolate chip, chocolate truffle, chocolate syrup, chocolate-covered, chocolate covered, sweet chocolate, malted chocolate, chocolate bar, chocolate pudding, chocolate ice cream, s\'mores'],
+  ['Nutty and cocoa', 'Bitter chocolate', 'dark chocolate, baker\'s chocolate, bakers chocolate, bittersweet chocolate, bittersweet, cacao, cacao nib, cacao nibs, cocoa nib, cocoa nibs, cocoa powder, unsweetened chocolate, 70% chocolate, extra dark chocolate, semisweet chocolate, semi-sweet chocolate, raw cacao, dark cocoa'],
+  ['Nutty and cocoa', 'Chocolate, general', 'chocolate, chocolatey, chocolaty, cocoa, mocha, chocolate notes, hot cocoa'],
+  ['Nutty and cocoa', 'Nuts', 'almond, hazelnut, peanut, walnut, pecan, cashew, pistachio, macadamia, brazil nut, nutty, nuts, nut, marzipan, praline, nougat, peanut butter, almond butter, toasted almond, chestnut, roasted nuts, toasted nuts, toasted hazelnut, roasted almond, roasted peanut, nut butter, mixed nuts, pine nut, almond milk, toasted walnut'],
+
+  ['Spice', 'Warm spice', 'cinnamon, clove, cloves, nutmeg, cardamom, anise, star anise, allspice, mace, chai, gingerbread, baking spice, baking spices, spice, spicy, spices, licorice, liquorice, cassia, pumpkin spice, mulling spice, spice cake, vanilla chai, fennel seed'],
+  ['Spice', 'Sharp spice', 'black pepper, pepper, white pepper, ginger, coriander, cumin, peppercorn, pink peppercorn, mustard, chili, chilli, cayenne, paprika, szechuan, sichuan pepper, turmeric, candied ginger, crystallized ginger, ginger snap'],
+
+  ['Roasted', 'Toast and grain', 'toast, toasted, toasty, malt, malty, cereal, biscuit, bread, bread crust, brown bread, granola, oat, oats, oatmeal, cracker, popcorn, roasted grain, barley, rye, wheat, pretzel, toasted bread, sourdough toast, multigrain, graham, grain, grainy, cornflake, cornbread'],
+  ['Roasted', 'Smoke and roast', 'smoke, smoky, tobacco, pipe tobacco, charred, burnt sugar, roasty, roasted, ashy, ash, carbon, charcoal, campfire, cigar, burnt, roasted coffee, bbq, barbecue, toasted marshmallow, burnt toast, scorched, roasty toasty'],
+
+  ['Green and earthy', 'Green', 'grass, grassy, hay, herbal, herbs, green pepper, pea pod, cucumber, green, fresh cut grass, sage, thyme, basil, mint, peppermint, spearmint, eucalyptus, fennel, dill, bell pepper, vegetal, tomato, sun-dried tomato, rosemary, parsley, straw, herb, green bean, snap pea, garden'],
+  ['Green and earthy', 'Earthy', 'earth, earthy, cedar, wood, woody, mushroom, leather, soil, forest floor, damp earth, moss, sandalwood, pine, oak, potato, beet, cedarwood, oakwood, sandal, musk, dirt, loam, petrichor, tobacco leaf'],
+
+  ['Fermented', 'Winey', 'wine, red wine, white wine, winey, boozy, rum, whiskey, whisky, bourbon, brandy, sherry, port, cognac, liquor, champagne, sake, vermouth, rum raisin, wine-like, winelike, bordeaux, merlot, pinot, sparkling wine, spiced rum, barrel, barrel-aged, bourbon barrel'],
+  ['Fermented', 'Funky', 'funky, funk, yeasty, overripe, vinegar, kombucha, fermented, fermented fruit, fruit wine, hard cider, brett, tropical funk, lactic, cheesy, ripe funk']
+];
+/* feel and balance words: how the coffee sits in the mouth or hangs together, not a taste */
+const BAG_FEEL_WORDS = 'smooth, silky, velvety, creamy, syrupy, juicy, round, rounded, balanced, balance, clean, crisp, bright, complex, full-bodied, full body, heavy, rich, thick, chewy, lively, vibrant, delicate, light-bodied, light body, medium body, bold, mellow, long finish, lingering, structured, elegant, refreshing, sparkling, effervescent, zesty, acidic, bright acidity, juicy acidity, low acidity, silky body, tea-like body, soft, gentle, sweet finish, clean finish, easy drinking, approachable, lush, layered, cohesive, harmonious, polished';
+const BAG_NOTE_CACHE = { index:null };
+/* word -> { family, sub } for every table word, and the feel words. Built once. */
+function bagNoteIndex(){
+  if (BAG_NOTE_CACHE.index) return BAG_NOTE_CACHE.index;
+  const words = {}, feel = {};
+  BAG_NOTE_TABLE.forEach(row => row[2].split(',').forEach(w => { const k = w.trim().toLowerCase(); if (k && !words[k]) words[k] = { family:row[0], sub:row[1] }; }));
+  BAG_FEEL_WORDS.split(',').forEach(w => { const k = w.trim().toLowerCase(); if (k && !words[k]) feel[k] = true; });
+  return (BAG_NOTE_CACHE.index = { words, feel });
+}
 /* ---------- tendencies ----------
    Every saved cupping has a total score and the coffee's details. Brewing the same coffee five times must not count as five coffees,
    so the cups of one coffee are averaged first. A detail (for example "Natural") counts as a tendency only when at least
@@ -6318,22 +6377,30 @@ function wilson(k, n){
   const z = 1.959964, p = k / n, d = 1 + z * z / n, c = p + z * z / (2 * n), m = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n));
   return { lo:Math.max(0, (c - m) / d), hi:Math.min(1, (c + m) / d) };
 }
-/* word -> family, from the three wheels (taste wheel first). A phrase such as "blackberry jam" finds the longest wheel word inside it; "chocolate" finds "dark chocolate". */
-const TP_CACHE = { words:null };
+/* word -> family. The bag-word table is read first (it knows plain "floral", "fruity", "cacao nib"), then the three wheels (taste wheel first).
+   A phrase such as "blackberry jam" finds the longest known word inside it; "chocolate" finds "dark chocolate". The lookup lists are built once. */
+const TP_CACHE = { words:null, subs:null, keys:null };
 function tpWordMap(){
   if (TP_CACHE.words) return TP_CACHE.words;
-  const m = {}; [FLAVOR_WHEEL, AROMA_WHEEL, AFTER_WHEEL].forEach(w => w.forEach(f => { const fam = TP_AFTER_TO_MAIN[f.name] || f.name; f.groups.forEach(g => g[1].forEach(x => { const k = String(x).toLowerCase(); if (!m[k]) m[k] = fam; })); }));
+  const m = {}, subs = {}, idx = bagNoteIndex();
+  Object.keys(idx.words).forEach(k => { m[k] = idx.words[k].family; subs[k] = idx.words[k].sub; });
+  [FLAVOR_WHEEL, AROMA_WHEEL, AFTER_WHEEL].forEach(w => w.forEach(f => { const fam = TP_AFTER_TO_MAIN[f.name] || f.name; f.groups.forEach(g => g[1].forEach(x => { const k = String(x).toLowerCase(); if (!m[k]){ m[k] = fam; subs[k] = g[0]; } })); }));
+  TP_CACHE.subs = subs; TP_CACHE.keys = Object.keys(m).sort((a, b) => b.length - a.length || (a < b ? -1 : 1));
   return (TP_CACHE.words = m);
 }
-function tpFamilyOf(word){
-  const w = String(word || '').toLowerCase().trim().replace(/\s+/g, ' '), m = tpWordMap();
-  if (!w) return TP_OTHER;
-  if (m[w]) return m[w];
-  const keys = Object.keys(m).sort((a, b) => b.length - a.length), has = (hay, needle) => (' ' + hay + ' ').indexOf(' ' + needle + ' ') >= 0;
-  const inside = keys.find(k => has(w, k)); if (inside) return m[inside];
-  const part = keys.find(k => has(k, w)); if (part) return m[part];
-  return TP_OTHER;
+/* the one place a word is looked up: its family, its sub-group, and whether it only describes feel (smooth, juicy), which is no flavor */
+function tpWordInfo(word){
+  const w = String(word || '').toLowerCase().replace(/[’‘]/g, "'").trim().replace(/\s+/g, ' '), m = tpWordMap(), subs = TP_CACHE.subs, keys = TP_CACHE.keys;
+  const none = { family:TP_OTHER, sub:'', feel:false };
+  if (!w) return none;
+  if (m[w]) return { family:m[w], sub:subs[w], feel:false };
+  if (bagNoteIndex().feel[w]) return { family:TP_OTHER, sub:'', feel:true };
+  const has = (hay, needle) => (' ' + hay + ' ').indexOf(' ' + needle + ' ') >= 0;
+  const inside = keys.find(k => has(w, k)); if (inside) return { family:m[inside], sub:subs[inside], feel:false };
+  const part = keys.find(k => has(k, w)); if (part) return { family:m[part], sub:subs[part], feel:false };
+  return none;
 }
+function tpFamilyOf(word){ return tpWordInfo(word).family; }
 /* one entry per coffee. objs = the saved rows. */
 function tpCoffees(objs){
   const by = {}, order = [];
@@ -7689,6 +7756,258 @@ function compareThings(kind, aKey, bKey){
     return { aName:labelOf(ROASTS, aKey) + ' roast', bName:labelOf(ROASTS, bKey) + ' roast', rows:[['What it is', a.what, b.what], ['In the cup', a.cup, b.cup], ['Brewing', a.brew, b.brew]], why:[] }; }
   return null;
 }
+/* ---------- Your preferences (Build 121, requirements R8 to R17, R21 to R23) ----------
+   What this is: the numbers behind the Preferences boards. It reads saved tastings and answers "which kinds of coffee do I rate high,
+   and which low", in the person's own terms. It says nothing about what is true of coffee: taste is personal, and a handful of coffees is a small sample.
+   Two units (R17). A BEAN trait (roast, origin, process, elevation, variety, flavors) counts a coffee once, by its BEST cup: if done properly
+   the person would like this coffee, so the best cup shows what the coffee can be. A BREW trait (brewer, temperature, grinder) counts every cup on its own,
+   because each cup is a different way of brewing it.
+   Liked means 4 stars or more, or (Tasting scores view) the top third of the person's own scores of one score kind. Score kinds are never pooled
+   (home_1cup, sca_5cup and cva_affective are different scales); the view needs 6 scored coffees of one kind.
+   Colour is relative to the person's own average (R16). The share of liked coffees in a group is pulled toward the person's overall share by PREF_PRIOR
+   imaginary coffees, so two lucky coffees cannot turn a group bright red. The pull is then read against the room left: a generous rater who likes 80 % can
+   only rise a little, a harsh one only fall a little. Someone who likes nearly everything (or nearly nothing), or rates everything alike, gets "flat": nothing to separate yet.
+   Where the numbers come from: the thresholds are our own rule (rated D). The only evidence behind them is the Build 48 simulation (a real effect is found
+   about 53 % of the time at 6 rated cups, 89 % at 8, 99 % at 10; that test is for a different rule, the one-thing rule); the 3-coffee colour minimum and the 8-wedge cap are design choices Matt agreed on 2026-10-17. */
+const PREF_LIKED_STARS = 4, PREF_STRONG_N = 5, PREF_STRONG_Z = 2.5, PREF_MIN_COFFEES = 3, PREF_SCORE_MIN = 6, PREF_FULL = 6, PREF_PRIOR = 2, PREF_FLAT_LO = 0.15, PREF_FLAT_HI = 0.85, PREF_MAX_WEDGES = 8;
+const PREF_KIND_ORDER = ['cva_affective', 'home_1cup', 'sca_5cup'];
+/* ORIGINS puts all of Latin America in one region; a board needs wedges people know, so it is split here. A test fails if an origin is added without a region. */
+const PREF_REGION_OF = {
+  ethiopia:'Africa', kenya:'Africa', rwanda:'Africa', burundi:'Africa', tanzania:'Africa', uganda:'Africa', drcongo:'Africa', zambia:'Africa', malawi:'Africa', africa:'Africa',
+  guatemala:'Central America & Mexico', costarica:'Central America & Mexico', panama:'Central America & Mexico', honduras:'Central America & Mexico', elsalvador:'Central America & Mexico', nicaragua:'Central America & Mexico', mexico:'Central America & Mexico',
+  colombia:'South America', brazil:'South America', peru:'South America', bolivia:'South America', ecuador:'South America', venezuela:'South America',
+  jamaica:'Caribbean & islands', dominicanrepublic:'Caribbean & islands',
+  indonesia:'Asia-Pacific', hawaii:'Asia-Pacific', india:'Asia-Pacific', papuanewguinea:'Asia-Pacific', thailand:'Asia-Pacific', vietnam:'Asia-Pacific', china:'Asia-Pacific', taiwan:'Asia-Pacific', myanmar:'Asia-Pacific', laos:'Asia-Pacific', timorleste:'Asia-Pacific', philippines:'Asia-Pacific',
+  yemen:'Arabian Peninsula'
+};
+/* countries that have no guide of their own (COFFEE_COUNTRIES); anything else falls back to its broad region */
+const PREF_COUNTRY_REGION = {
+  'Haiti':'Caribbean & islands', 'Cuba':'Caribbean & islands', 'Puerto Rico':'Caribbean & islands', 'Trinidad and Tobago':'Caribbean & islands',
+  'Belize':'Central America & Mexico', 'Paraguay':'South America', 'Argentina':'South America', 'Guyana':'South America', 'Suriname':'South America'
+};
+const PREF_BROAD_REGION = { africa:'Africa', asia:'Asia-Pacific', latam:'Latin America' };
+/* named growing areas inside a country, as bags print them. First match wins, so a more specific name comes before the one it sits inside. The placement of
+   each name is our own reading of how bags are labelled (rated D); it makes no claim about taste. Ethiopia first; other countries are added the same way. */
+const PREF_AREAS = {
+  ethiopia:[
+    ['Yirgacheffe', 'yirgacheffe, yirgachefe, yirga cheffe, yirgachef, kochere, gedeb, gedeo, konga, aricha'],
+    ['Guji', 'guji, uraga, hambela, shakiso, bule hora, odo shakiso, kercha'],
+    ['Sidama', 'sidama, sidamo, bensa, daye bensa, aleta wondo, bona zuria, chire'],
+    ['Harrar', 'harrar, harar, hararghe, harrer'],
+    ['Limu', 'limu'],
+    ['Jimma', 'jimma, jimmah, djimmah'],
+    ['Western Ethiopia', 'nekemte, wollega, welega, lekempti, kaffa, keffa, bench maji, sheka, gimbi, illubabor, yayu']
+  ]
+};
+/* a trait is a way to sort coffees: which unit it counts, the names of its drill-down levels, and a function that returns every path of keys a unit sits on */
+const PREF_TRAITS = {
+  roast:{ unit:'coffee', levels:['Roast'], order:['light', 'medium-light', 'medium', 'medium-dark', 'dark'], tuples:u => u.roast ? [[u.roast]] : [] },
+  origin:{ unit:'coffee', levels:['Region', 'Country', 'Area'], tuples:u => u.place ? [u.place.area ? [u.place.region, u.place.country, u.place.area] : u.place.country ? [u.place.region, u.place.country] : [u.place.region]] : [] },
+  process:{ unit:'coffee', levels:['Process'], tuples:u => u.process ? [[u.process]] : [] },
+  elevation:{ unit:'coffee', levels:['Elevation'], order:['low', 'mid', 'high'], tuples:u => u.density ? [[u.density]] : [] },
+  variety:{ unit:'coffee', levels:['Variety'], tuples:u => u.variety ? [[u.variety]] : [] },
+  flavor:{ unit:'coffee', levels:['Family', 'Kind', 'Word'], tuples:u => u.words.map(w => [w.family, w.sub || w.family, w.word]) },
+  brewer:{ unit:'cup', levels:['Brewer'], tuples:u => u.brewer ? [[u.brewer]] : [] },
+  temperature:{ unit:'cup', levels:['Temperature'], tuples:u => u.tempBand ? [[u.tempBand]] : [] },
+  grinder:{ unit:'cup', levels:['Grinder'], tuples:u => u.grinder ? [[u.grinder]] : [] }
+};
+/* what to print for a key at a level */
+function prefLabel(trait, key){
+  if (trait === 'roast') return labelOf(ROASTS, key) || key;
+  if (trait === 'process') return labelOf(PROCESSES, key) || key;
+  if (trait === 'elevation') return labelOf(DENSITIES, key) || key;
+  if (trait === 'brewer'){ const m = METHODS.find(x => x.key === key); return m ? m.label : key; }
+  return key;
+}
+/* region, country and (where the bag names one) area for the text in a coffee's Origin box. A blend or an unreadable box has no place. */
+function prefPlace(raw){
+  const text = unneutralize(String(raw || '')); if (!text.trim()) return null;
+  const m = originMatch(text); let region = '', country = '', key = '';
+  if (m.origin){ key = m.origin.key; region = PREF_REGION_OF[key] || ''; country = key === 'africa' ? '' : m.origin.name; }
+  else if (m.country){
+    const nm = m.country.name; region = PREF_COUNTRY_REGION[nm] || PREF_BROAD_REGION[m.country.region] || '';
+    country = /^(Africa|Asia-Pacific|Latin America|East Africa)$/.test(nm) ? '' : nm;
+  }
+  if (!region) return null;
+  let area = '';
+  if (key && PREF_AREAS[key]){
+    const t = String(norm(text)).replace(/['’`]/g, '').replace(/[-_]+/g, ' ');
+    const hit = PREF_AREAS[key].find(a => a[1].split(',').some(w => new RegExp('(^|[^a-z])' + escRe(w.trim()) + '([^a-z]|$)').test(t)));
+    if (hit) area = hit[0];
+  }
+  return { region, country, area };
+}
+/* the flavor words printed on a bag, each with its family and kind; feel words (smooth, juicy) are returned apart and never count as flavors */
+function prefBagWords(text){
+  const seen = new Set(), words = [], feel = [];
+  String(text || '').split(/[,;\/&|•·]|\band\b|\s[-–—]\s/i).forEach(p => {
+    const w = p.trim().replace(/\s+/g, ' ').toLowerCase(); if (w.length < 3 || w.length > 30 || seen.has(w) || seen.size >= 16) return;
+    seen.add(w); const info = tpWordInfo(w);
+    if (info.feel) feel.push(w); else if (info.family !== TP_OTHER) words.push({ word:w, family:info.family, sub:info.sub });
+  });
+  return { words, feel };
+}
+/* a unit's scores of each kind: { kind: best total } (quick cups have no total, so no kind) */
+function prefScoreMap(rows){
+  const s = {}; rows.forEach(o => { const v = tendNum(o.total_score), k = String(o.score_kind || ''); if (v != null && v > 0 && k && k !== 'quick' && (!s[k] || v > s[k])) s[k] = v; }); return s;
+}
+/* one unit per coffee (a bean trait counts it once, by its best cup) */
+function prefCoffees(objs){
+  return tpCoffees(objs).map(c => {
+    const stars = c.objs.map(o => validStars(o.my_rating_stars)).filter(x => x > 0), first = f => { const r = c.objs.find(o => String(o[f] || '').trim()); return r ? r[f] : ''; };
+    return { key:c.key, name:c.name, roaster:c.roaster, kind:'coffee', cups:c.cups, stars:stars.length ? Math.max.apply(null, stars) : 0, scores:prefScoreMap(c.objs),
+      roast:c.roast, process:c.process, density:c.density, variety:c.variety, place:prefPlace(first('origin')), words:prefBagWords(first('bag_notes')).words, areas:c.areas, objs:c.objs };
+  });
+}
+/* one unit per cup (a brew trait counts every cup on its own) */
+function prefCups(objs){
+  const out = [];
+  tpCoffees(objs).forEach(c => c.objs.forEach((o, i) => {
+    const m = tpMethodOf(o), f = tendNum(o.brew_temp_f), cc = tendNum(o.brew_temp_c), t = f != null && f > 0 ? f : cc != null && cc > 0 ? cc * 9 / 5 + 32 : null, lo = t == null ? 0 : Math.floor(t / 5) * 5;
+    out.push({ key:c.key + '#' + i, coffeeKey:c.key, name:c.name, kind:'cup', stars:validStars(o.my_rating_stars), scores:prefScoreMap([o]), brewer:m ? m.key : '',
+      tempBand:t == null ? '' : lo + '–' + (lo + 4) + '°F', grinder:unneutralize(String(o.brew_grinder_name || '')).trim() });
+  }));
+  return out;
+}
+/* which units count under a lens, and which of them are "liked". lens 'stars' (4 or more) or 'scores' (own top third of one score kind) */
+function prefRated(units, lens, kind){
+  const out = { lens:lens === 'scores' ? 'scores' : 'stars', kind:'', kinds:[], n:0, liked:0, base:0, lo:0, hi:0, cut:null, enough:false, flat:'', items:[] };
+  let vals;
+  if (out.lens === 'scores'){
+    const counts = {}; units.forEach(u => Object.keys(u.scores).forEach(k => { counts[k] = (counts[k] || 0) + 1; }));
+    const rank = k => { const i = PREF_KIND_ORDER.indexOf(k); return i < 0 ? 99 : i; };
+    out.kinds = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || rank(a) - rank(b)).map(k => ({ kind:k, n:counts[k] }));
+    out.kind = kind && counts[kind] ? kind : out.kinds.length ? out.kinds[0].kind : '';
+    vals = units.filter(u => u.scores[out.kind] > 0).map(u => ({ u, value:u.scores[out.kind] }));
+    out.n = vals.length; out.enough = vals.length >= PREF_SCORE_MIN;
+    if (out.enough) out.cut = vals.map(x => x.value).sort((a, b) => b - a)[Math.ceil(vals.length / 3) - 1];
+    out.items = vals.map(x => ({ u:x.u, value:x.value, liked:out.enough && x.value >= out.cut }));
+  } else {
+    vals = units.filter(u => u.stars > 0).map(u => ({ u, value:u.stars }));
+    out.n = vals.length; out.enough = vals.length >= 2;
+    out.items = vals.map(x => ({ u:x.u, value:x.value, liked:x.value >= PREF_LIKED_STARS }));
+  }
+  out.liked = out.items.filter(x => x.liked).length; out.base = out.n ? out.liked / out.n : 0;
+  const vs = out.items.map(x => x.value); out.lo = vs.length ? Math.min.apply(null, vs) : 0; out.hi = vs.length ? Math.max.apply(null, vs) : 0;
+  out.items.forEach(x => { x.dist = prefDist(out, x.value); });
+  if (out.enough){
+    const distinct = new Set(out.items.map(x => x.value)).size;
+    out.flat = distinct < 2 ? 'alike' : out.base > PREF_FLAT_HI ? 'generous' : out.base < PREF_FLAT_LO ? 'harsh' : '';
+  }
+  return out;
+}
+/* how far from the middle of the board a rating sits, 0 (the centre: 5 beans, or your highest score) to 1 (the edge). Scores are read against the person's own lowest and highest. */
+function prefDist(rated, value){
+  if (rated.lens === 'scores') return rated.hi > rated.lo ? Math.max(0, Math.min(1, (rated.hi - value) / (rated.hi - rated.lo))) : 0.5;
+  return Math.max(0, Math.min(1, (5 - value) / 4));
+}
+/* colour for a group of n units with k liked, against the person's own share of liked */
+function prefHeat(k, n, base){
+  const shrunk = (k + PREF_PRIOR * base) / (n + PREF_PRIOR);
+  let rel = shrunk >= base ? (base < 1 ? (shrunk - base) / (1 - base) : 0) : (base > 0 ? (shrunk - base) / base : 0);
+  rel = Math.round(rel * 1e6) / 1e6;   /* so 0.1999999 counts as the 0.2 it is */
+  const level = rel >= 0.5 ? 'hot' : rel >= 0.2 ? 'warm' : rel <= -0.5 ? 'cold' : rel <= -0.2 ? 'cool' : 'neutral';
+  /* "strong" is the only word that claims a tendency, so it has a bar of its own: at least PREF_STRONG_N coffees, and the group's share must differ from the
+     person's own share by PREF_STRONG_Z times the ordinary scatter (z). Colour alone is only a picture of the counts. Simulated 17 Oct 2026 (our own test, rated D):
+     in noise-only histories of 20 to 80 coffees a strong group showed up in 0 to 2 % of them (z 2 gave 3 to 11 %); with a real effect (light roasts liked 85 % of the time,
+     others 40 %) it was found in about 25 % of histories at 40 coffees, 70 % at 80 and 90 % at 150. So strong is slow to appear on purpose. */
+  const sd = base > 0 && base < 1 && n > 0 ? Math.sqrt(base * (1 - base) / n) : 0, z = sd ? (k / n - base) / sd : 0;
+  return { shrunk, rel, z, level, faint:n < PREF_MIN_COFFEES, bright:Math.min(1, n / PREF_FULL), strong:n >= PREF_STRONG_N && Math.abs(z) >= PREF_STRONG_Z && (level === 'hot' || level === 'cold') };
+}
+/* one board: the groups at one level of a trait, below the keys already chosen in `path`. When the path is complete, the units themselves.
+   At most PREF_MAX_WEDGES groups are returned; the rest come back in `more`, never lost. */
+function prefBoard(rated, traitKey, path){
+  const T = PREF_TRAITS[traitKey]; path = path || [];
+  const res = { trait:traitKey, levels:T.levels, depth:path.length, path, level:T.levels[path.length] || '', groups:[], more:[], units:[], missing:0, shallow:0, considered:rated.items.length, flat:rated.flat, enough:rated.enough };
+  const by = {}, leaves = [];
+  rated.items.forEach(it => {
+    const tuples = T.tuples(it.u); if (!tuples.length){ res.missing++; return; }
+    const seen = {}, done = {};
+    tuples.forEach(t => {
+      for (let i = 0; i < path.length; i++) if (t[i] !== path[i]) return;
+      if (t.length < T.levels.length && t.length <= path.length){ if (path.length < T.levels.length && !done[it.u.key]){ done[it.u.key] = true; res.shallow++; } return; }
+      if (path.length >= T.levels.length){ if (!done[it.u.key]){ done[it.u.key] = true; leaves.push(it); } return; }
+      const key = t[path.length]; if (key === undefined || seen[key]) return; seen[key] = true;
+      (by[key] = by[key] || { key, items:[] }).items.push(it);
+    });
+  });
+  if (path.length >= T.levels.length){ res.units = leaves.sort((a, b) => b.value - a.value); return res; }
+  let groups = Object.keys(by).map(k => {
+    const g = by[k], n = g.items.length, liked = g.items.filter(x => x.liked).length, mean = g.items.reduce((a, x) => a + x.value, 0) / n;
+    return Object.assign({ key:k, label:prefLabel(traitKey, k), n, liked, mean, dist:prefDist(rated, mean), dists:g.items.map(x => x.dist).sort((a, b) => a - b), hasMore:path.length + 1 < T.levels.length }, rated.enough ? prefHeat(liked, n, rated.base) : { shrunk:0, rel:0, level:'neutral', faint:true, bright:Math.min(1, n / PREF_FULL), strong:false });
+  });
+  const ord = T.order;
+  const byOrder = (a, b) => ord ? ord.indexOf(a.key) - ord.indexOf(b.key) : b.n - a.n || (a.label < b.label ? -1 : a.label > b.label ? 1 : 0);
+  groups.sort((a, b) => b.n - a.n || (a.label < b.label ? -1 : 1));
+  if (groups.length > PREF_MAX_WEDGES){ res.more = groups.slice(PREF_MAX_WEDGES - 1); groups = groups.slice(0, PREF_MAX_WEDGES - 1); }
+  res.groups = groups.sort(byOrder);
+  return res;
+}
+/* ---------- Preferences: words and the home (Build 121, requirements R8, R14, R16, R24 to R25) ----------
+   Everything said here is a count of the person's own coffees ("8 of 10 rated 4 beans or more"). Nothing is said about coffee itself.
+   The boards are listed in the order of the tiles on the home. */
+const PREF_BOARDS = [
+  { k:'roast', name:'Roast', art:'art-roaster', traits:['roast'] }, { k:'origin', name:'Origin', art:'art-globe', traits:['origin'] }, { k:'flavor', name:'Flavor', art:'art-cf-aroma', traits:['flavor'] },
+  { k:'process', name:'Process', art:'art-proc', traits:['process', 'variety'] }, { k:'elevation', name:'Elevation', art:'art-elev', traits:['elevation'] }, { k:'gear', name:'Gear', art:'art-grinder', traits:['brewer', 'temperature', 'grinder'] }
+];
+const PREF_LENS = [{ v:'stars', label:'Stars' }, { v:'scores', label:'Scores' }];
+/* what a group is called in a sentence ("Light roasts", "Bags with fruit notes"); depth is how far down the drill-down it sits */
+function prefName(trait, key, depth, label){
+  label = label || prefLabel(trait, key);
+  if (trait === 'roast') return label + ' roasts';
+  if (trait === 'elevation') return label + ' elevation coffees';
+  if (trait === 'flavor') return 'Bags with ' + label.toLowerCase() + (depth ? '' : ' notes');
+  if (trait === 'brewer') return label + ' cups';
+  if (trait === 'temperature') return 'Cups brewed at ' + label;
+  if (trait === 'grinder') return 'Cups from the ' + label;
+  return label + ' coffees';
+}
+/* "8 of 10 rated 4 beans or more", or in the scores view "5 of 6 in your top third" */
+function prefCount(g, lens){ return g.liked + ' of ' + g.n + (lens === 'scores' ? ' in your top third' : ' rated 4 beans or more'); }
+/* "Sweet spot: your top third, 86 and up" (scores view only, and only once there are enough scores) */
+function prefSweet(rated){ return rated.lens === 'scores' && rated.enough && rated.cut != null ? 'Sweet spot: your top third, ' + (Math.round(rated.cut * 100) / 100) + ' and up' : ''; }
+/* the mascot's line under a board: { face, text } */
+function prefLine(board, rated){
+  const lens = rated.lens, shown = board.groups.concat(board.more), by = shown.filter(g => !g.faint);
+  if (!rated.n) return { face:'informing', text:lens === 'scores' ? 'No scored coffees yet. Score a coffee on a tasting form and this fills in.' : 'Rate a few coffees and this fills in.' };
+  if (!rated.enough) return { face:'informing', text:lens === 'scores' ? 'Scores need ' + PREF_SCORE_MIN + ' scored coffees of one kind before they show a pattern. You have ' + rated.n + '.' : 'Rate one more coffee and the colours start.' };
+  if (rated.flat === 'alike') return { face:'informing', text:'You rate everything alike, so there is nothing to separate yet. One coffee you did not like would show where the lines are.' };
+  if (rated.flat === 'generous') return { face:'informing', text:'You like almost every coffee, so every kind looks about the same. Rate a few you liked less and this sharpens.' };
+  if (rated.flat === 'harsh') return { face:'informing', text:'You rate almost every coffee low, so every kind looks about the same. A coffee you loved would show where the lines are.' };
+  if (!by.length) return { face:'informing', text:'Not enough yet: a kind needs ' + PREF_MIN_COFFEES + ' coffees before it shows colour.' };
+  const top = by.slice().sort((a, b) => b.rel - a.rel)[0], low = by.slice().sort((a, b) => a.rel - b.rel)[0], nm = g => prefName(board.trait, g.key, board.depth, g.label), parts = [];
+  if (top.rel >= 0.2) parts.push(nm(top) + ' lead: ' + prefCount(top, lens) + '.');
+  if (low !== top && low.rel <= -0.2) parts.push(nm(low) + ' are where you rate low: ' + prefCount(low, lens) + '.');
+  if (!parts.length) return { face:'informing', text:'Nothing stands out yet. Your coffees land about the same whatever the kind.' };
+  return { face:top.rel >= 0.2 ? 'happy' : 'informing', text:parts.join(' ') };
+}
+/* the biggest reds and blues across the bean boards: up to two of each, strongest first */
+function prefStands(rated){
+  const all = [];
+  ['roast', 'origin', 'process', 'elevation', 'variety', 'flavor'].forEach(trait => {
+    const b = prefBoard(rated, trait);
+    b.groups.concat(b.more).forEach(g => {
+      if (g.faint || g.level === 'neutral') return;
+      all.push({ id:trait + ':' + g.key, trait, key:g.key, title:prefName(trait, g.key, 0, g.label), sub:prefCount(g, rated.lens), side:g.rel > 0 ? 'hot' : 'cold', level:g.level, strong:g.strong, n:g.n, weight:Math.abs(g.rel) * Math.min(1, g.n / PREF_FULL) });
+    });
+  });
+  all.sort((a, b) => b.weight - a.weight || b.n - a.n || (a.id < b.id ? -1 : 1));
+  return all.filter(x => x.side === 'hot').slice(0, 2).concat(all.filter(x => x.side === 'cold').slice(0, 2)).sort((a, b) => b.weight - a.weight);
+}
+/* the parts of a coffee marked on a Quick tasting, as one short line: "Liked: Taste, Body. Not liked: Acidity." (empty when none were marked) */
+function prefParts(u){
+  const a = u.areas || {}, name = k => (QUICK_AREAS.find(x => x.key === k) || {}).label || k, ks = Object.keys(a), good = ks.filter(k => a[k] === 'good').map(name), bad = ks.filter(k => a[k] === 'notgood').map(name), out = [];
+  if (good.length) out.push('Liked: ' + good.join(', ')); if (bad.length) out.push('Not liked: ' + bad.join(', '));
+  return out.join('. ');
+}
+/* everything the Preferences home needs, from the saved tastings and the lens the person picked */
+function prefHome(objs, lens, kind){
+  const coffees = prefCoffees(objs), cups = prefCups(objs), scoreView = prefRated(coffees, 'scores', kind);
+  const rated = lens === 'scores' ? prefRated(coffees, 'scores', kind) : prefRated(coffees, 'stars'), ratedCups = prefRated(cups, rated.lens, rated.kind);
+  const counts = {};
+  PREF_BOARDS.forEach(B => { const U = PREF_TRAITS[B.traits[0]].unit === 'cup' ? ratedCups : rated; counts[B.k] = U.items.filter(it => B.traits.some(t => PREF_TRAITS[t].tuples(it.u).length)).length; });
+  return { coffees, cups, rated, ratedCups, kinds:scoreView.kinds, starsN:coffees.filter(c => c.stars > 0).length, scoresReady:scoreView.enough, scoresN:scoreView.n, counts, stands:rated.enough && !rated.flat ? prefStands(rated) : [] };
+}
 /* ---------- Tendencies pictures, part three ----------
    For the brew rack and mix and match the unit is a coffee made with one brewer (a coffee brewed on two brewers is two units); its stars are the average of those cups.
    A usual setting is the middle of at least 3 brews. A group's middle needs 3 coffees. These are your ratings, not rules about coffee. */
@@ -7755,78 +8074,22 @@ function tpShops(store, cs, bags){
     kinds, worths, favs:ds.filter(d => d.fav).length, street:list.slice(0, 5).map(detail), more:Math.max(0, list.length - 5), moreVisits:list.slice(5).reduce((a, x) => a + x.visits, 0), rest:list.slice(5).map(detail), shops:list.length,
     places:Object.keys(places).map(k => places[k]).sort((a, b) => b.visits - a.visits || (a.place < b.place ? -1 : 1)), top:list[0] || null };
 }
-/* the three sentences under "What stands out": what you liked most, your best-rated group, your most visited shop */
-function tpStand(h){
-  const out = [];
-  if (h.garden.ready && h.garden.best){ const b = h.garden.best; out.push({ art:'art-cf-flavor', go:'flavors', text:'You liked ' + b.family.toLowerCase() + ' in ' + b.liked + ' of ' + h.garden.n + ' coffees, more than any other flavor family.' }); }
-  let top = null;
-  if (h.kinds.ready) h.kinds.feats.forEach(f => f.rows.forEach(r => { if (r.heap.enough && (!top || r.heap.median > top.r.heap.median || (r.heap.median === top.r.heap.median && r.n > top.r.n))) top = { f, r }; }));
-  if (top) out.push({ art:'art-proc', go:'kinds', text:'Your ' + top.f.label.toLowerCase() + ' group with the highest middle is ' + top.r.label + ': ' + top.r.heap.median + (top.r.heap.median === 1 ? ' bean' : ' beans') + ' across ' + top.r.n + ' coffees.' });
-  if (h.shops.ready && h.shops.top) out.push({ art:'s-shop', go:'shops', text:'You went to ' + h.shops.top.name + ' most: ' + h.shops.top.visits + (h.shops.top.visits === 1 ? ' time.' : ' times.') });
-  return out;
-}
-/* everything the Tendencies home needs. tiles say what each picture needs when it is not ready. */
+/* what the Mix and match, brew rack and Coffee street pages and the tiles on the Preferences home need. tiles say what each picture needs when it is not ready. */
 function tpHub(objs, store, bags){
-  const a = tpAvailable(objs), cs = a.cs, units = tpUnits(cs), garden = tpGarden(a.flavors, cs), glow = tpGlow(a.enjoy), jar = tpJar(a.rating), kinds = tpKinds(cs), rack = tpRack(units), mix = tpMix(units, 'all', null), shops = tpShops(store, cs, bags);
-  const ready = { flavors:garden.ready, enjoy:glow.ready, rate:jar.ready, kinds:kinds.ready, brews:a.map.ready, shops:shops.ready, brewers:rack.ready, mix:mix.ready && mix.splits.length > 0 };
-  const need = { flavors:Math.max(0, TP_MIN.flavors - a.flavors.n) + ' more coffees with flavors saved', enjoy:Math.max(0, TP_MIN.enjoy - a.enjoy.n) + ' more Quick tastings', rate:Math.max(0, TP_MIN.rate - a.rating.n) + ' more rated coffees', kinds:a.groups.n >= TP_MIN.groups ? 'rated coffees from at least two different roasts, processes or elevations' : (TP_MIN.groups - a.groups.n) + ' more rated coffees',
-    brews:Math.max(0, TP_MIN.map - a.map.n) + ' more measured brews', shops:'a coffee shop drink', brewers:Math.max(0, TP_MIN_MORE.rack - rack.n) + ' more coffees with a brewer', mix:mix.looks[0].n >= TP_MIN_MORE.mix ? 'rated coffees from at least two different roasts, processes or elevations' : (TP_MIN_MORE.mix - mix.looks[0].n) + ' more rated coffees' };
-  const h = { a, cs, units, garden, glow, jar, kinds, rack, mix, shops, ready, need, freckles:tpFreckles(a.flavors), line:tpBeanLine(a.flavors) };
-  h.stand = tpStand(h); h.any = a.any || shops.ready || rack.ready;
-  return h;
+  const cs = tpCoffees(objs), units = tpUnits(cs), measured = bcMeasured(objs), rack = tpRack(units), mix = tpMix(units, 'all', null), shops = tpShops(store, cs, bags);
+  const ready = { brews:measured.length >= TP_MIN.map, shops:shops.ready, brewers:rack.ready, mix:mix.ready && mix.splits.length > 0 };
+  const need = { brews:Math.max(0, TP_MIN.map - measured.length) + ' more measured brews', shops:'a coffee shop drink', brewers:Math.max(0, TP_MIN_MORE.rack - rack.n) + ' more coffees with a brewer',
+    mix:mix.looks[0].n >= TP_MIN_MORE.mix ? 'rated coffees from at least two different roasts, processes or elevations' : (TP_MIN_MORE.mix - mix.looks[0].n) + ' more rated coffees' };
+  return { cs, units, rack, mix, shops, ready, need };
 }
 /* ---------- Tendencies pictures, part two ----------
    Same honesty rules as 51-tendency-pictures.js: the unit is a coffee, stars are the person's own, counts not averages, and a flag (the middle) needs 3 coffees. The numbers here only say what was rated and written; they are not rules about coffee. */
 const TP_FLAG_MIN = 3;
 const TP_UNITS = [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000];
-const TP_ADJ = { 'Basic tastes':'clean', Fruit:'fruity', Floral:'floral', Sweet:'sweet', 'Nutty and cocoa':'nutty', Spice:'spicy', Roasted:'roasty', 'Green and earthy':'earthy', Fermented:'winey' };
 const TP_FAMILY_ORDER = ['Fruit', 'Floral', 'Sweet', 'Nutty and cocoa', 'Spice', 'Roasted', 'Green and earthy', 'Fermented', 'Basic tastes', 'Off-flavors'];
 /* the smallest unit (1 bean = unit coffees) that keeps the tallest pile at cap beans or fewer */
 function tpUnit(max, cap){ cap = cap || 12; return TP_UNITS.find(u => max / u <= cap) || 1000; }
 function tpHue(family){ const f = FLAVOR_WHEEL.find(x => x.name === family); return f ? f.hue : null; }
-/* One flower for each family. tasted = coffees that had any word in the family; the face says how often the words were on the liked side (smile from 60 %, flat from 40 %, droop below). */
-function tpGarden(fl, cs){
-  const by = {}; fl.rows.forEach(r => { by[r.family] = r; });
-  const flowers = TP_FAMILY_ORDER.map(name => {
-    const r = by[name] || { family:name, liked:0, notLiked:0, tasted:0, topLiked:[], topNot:[] }, said = r.liked + r.notLiked, share = said ? r.liked / said : null;
-    const coffees = (cs || []).filter(c => c.hasFlavors).map(c => ({ name:c.name, stars:c.stars, liked:c.liked.filter(w => tpFamilyOf(w) === name), not:c.notLiked.filter(w => tpFamilyOf(w) === name) })).filter(c => c.liked.length || c.not.length);
-    return { family:name, hue:tpHue(name), tasted:r.tasted, liked:r.liked, notLiked:r.notLiked, share, mood:share == null ? 'none' : share >= 0.6 ? 'smile' : share >= 0.4 ? 'flat' : 'droop', topLiked:r.topLiked, topNot:r.topNot, coffees };
-  });
-  const other = by[TP_OTHER] || null;
-  return { n:fl.n, ready:fl.ready, flowers, maxTasted:Math.max(1, ...flowers.map(f => f.tasted)), other:other ? other.tasted : 0, best:flowers.filter(f => f.liked > 0).sort((a, b) => b.liked - a.liked || b.tasted - a.tasted)[0] || null };
-}
-/* the freckles on your bean: the families you tasted most, biggest first (at most 7) */
-function tpFreckles(fl){
-  const rows = fl.rows.filter(r => r.family !== TP_OTHER && r.tasted > 0).slice().sort((a, b) => b.tasted - a.tasted || (a.family < b.family ? -1 : 1)).slice(0, 7), mx = Math.max(1, ...rows.map(r => r.tasted));
-  return rows.map(r => ({ family:r.family, hue:tpHue(r.family), tasted:r.tasted, size:r.tasted / mx }));
-}
-/* "Fruity and sweet, mostly": the two families with the most liked coffees */
-function tpBeanLine(fl){
-  const top = fl.rows.filter(r => r.liked > 0 && TP_ADJ[r.family]).sort((a, b) => b.liked - a.liked || b.tasted - a.tasted).slice(0, 2).map(r => TP_ADJ[r.family]);
-  if (!top.length) return '';
-  const s = top.join(' and ') + ', mostly';
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-/* The cup glow: how many coffees you said Good about each part of the cup. share = Good out of the coffees where you answered (Couldn't tell counts as answered). */
-function tpGlow(e){
-  const parts = e.rows.map(r => ({ key:r.key, label:r.label, good:r.good, okay:r.okay, notgood:r.notgood, unsure:r.unsure, answered:r.answered, share:r.answered ? r.good / r.answered : 0 }));
-  const best = parts.filter(p => p.good > 0).sort((a, b) => b.share - a.share || b.good - a.good)[0] || null, weak = parts.filter(p => p.notgood > 0).sort((a, b) => b.notgood - a.notgood)[0] || null;
-  return { n:e.n, ready:e.ready, parts, best, weak };
-}
-/* How big one bean in the jar is. One bean is one coffee until the jar would pass 10 rows; then a big bean is a unit of coffees and a small bean is one. */
-function tpJarUnit(counts){
-  const vals = [5, 4, 3, 2, 1].map(s => counts[s] || 0);
-  if (vals.reduce((a, c) => a + Math.ceil(c / 5), 0) <= 10) return 1;
-  return TP_UNITS.slice(1).find(u => vals.reduce((a, c) => a + Math.ceil(Math.floor(c / u) / 4) + (c % u ? 1 : 0), 0) <= 10) || 1000;
-}
-/* the jar: layers from 5 stars down to 1, each with its coffees, big beans and small beans */
-function tpJar(r){
-  const counts = {}; r.bars.forEach(b => { counts[b.star] = b.n; });
-  const unit = tpJarUnit(counts);
-  const layers = [5, 4, 3, 2, 1].map(s => { const n = counts[s] || 0; return { star:s, n, big:unit === 1 ? n : Math.floor(n / unit), small:unit === 1 ? 0 : n % unit }; });
-  const top = layers.slice().sort((a, b) => b.n - a.n || b.star - a.star)[0];
-  return { n:r.n, ready:r.ready, narrow:r.narrow, unit, layers, top:top && top.n ? top : null };
-}
 /* One pile of beans for each whole star. Half stars count with the whole star above in the piles (the counts), as everywhere else. The middle (the flag) and the middle half are worked out on the real ratings,
    so a 2.5 is not pushed up to a 3 before the middle is found. They show from 3 coffees. */
 function tpHeap(stars){
@@ -7834,15 +8097,6 @@ function tpHeap(stars){
   bin.forEach(b => { counts[b - 1]++; });
   const n = raw.length, s = raw.slice().sort((a, b) => a - b), enough = n >= TP_FLAG_MIN;
   return { counts, n, enough, median:enough ? tpMedian(s) : null, band:enough ? [s[Math.floor((n - 1) * 0.25)], s[Math.min(n - 1, Math.round((n - 1) * 0.75))]] : null, max:Math.max(0, ...counts) };
-}
-/* Ratings by roast, process, elevation, origin and variety as heaps. One unit for the whole feature so the piles can be compared; the dashed flag is the middle of all your rated coffees. */
-function tpKinds(cs){
-  const g = tpGroups(cs), all = tpHeap(cs.filter(c => c.stars != null).map(c => c.stars));
-  const feats = g.feats.map(f => {
-    const rows = f.rows.map(r => ({ value:r.value, label:r.label, n:r.n, heap:tpHeap(r.stars), names:r.names }));
-    return { key:f.key, label:f.label, rows, hidden:f.hidden, unit:tpUnit(Math.max(...rows.map(r => r.heap.max))) };
-  });
-  return { n:g.n, ready:g.ready, feats, ghost:all.median };
 }
 /* ---------- wheel colors: every family gets its own clear color ---------- */
 const FAM_COLORS = {
@@ -8941,10 +9195,11 @@ const GUIDE_SECTIONS = [
       'Shop: pick one of your spots, or add a new one with its city and state. A new shop starts from your home town or your last shop, so you rarely retype a place. Set your home town under Menu, My setup. Drink: choose what you ordered, hot or iced, the milk and any extra shots. Add a flavor, the size, how you ordered and the cost. Taste: pick a face and rate the beans if you like. Say if it was too weak or too sweet. Say if it was worth the price and if you would order it again. Perfect: see what was saved, next to your home tastings.',
       'The Coffee shops screen in the Menu lists every drink, your shops with how many times you went, and your Favorites, with a search. Your drinks are kept in this browser and in a small file of their own under Menu, My files. It is not your tasting history, and loading it only adds drinks. Open a drink and tap Share this drink to send it as text. Your note stays private.'],
     tips:['Your home coffee waits while you log a shop drink. Starting a fresh coffee is what throws it away, and it asks twice.', 'A draft left alone for 3 hours opens on the first screen next time. It is not deleted.'] },
-  { id:'learn', title:'Your tendencies and understanding coffee', lead:'What you like, and how to shop for it.',
-    paras:['Your tendencies is its own tile in the menu, under About me. It opens on your bean, a drawing that grows a freckle for every flavor family you taste. The pictures come from your saved history and your coffee shop drinks. "Look at" at the top lets you read all your coffees, or only the newest ones.',
-      'Flavor garden is one flower for each flavor family: taller for more coffees, and the face shows how often you liked it. What you enjoy is a cup that glows brighter for the parts you called Good. Bean jar holds one bean for each coffee you rated, the best on top. Kinds of coffee piles beans into a heap for each roast, process, elevation, origin or varietal, with a flag at the middle rating. Your brews stains a sheet of paper with a ring for each measured brew. Coffee street sets your cups at home beside your cups in shops. Your brew rack counts how often you used each brewer. Mix and match asks questions such as whether your V60 coffees did better at higher elevations.',
-      'Every picture counts coffees, not cups, and every flower, part, bean, ring and shop can be tapped to see the coffees behind it. A picture appears when there is enough to draw, and the home says what each one still needs. A flag at the middle needs 3 coffees. Just Starting keeps each page short. Comfy Brewer adds a Why? note to each page. Bean Scientist adds the exact numbers and a table you can save.',
+  { id:'learn', title:'Your preferences and understanding coffee', lead:'What you like, and how to shop for it.',
+    paras:['Your preferences is its own tile in the menu, under About me. It shows which kinds of coffee you rate high and which you rate low, in red and blue. "Look at" at the top reads all your coffees, or only the newest ones.',
+      'Look closer opens a board for Roast, Origin, Flavor, Process, Elevation or Gear. A board is a dartboard with a wedge for each kind. Each spot is one coffee. The nearer the middle, the higher you rated it. Red means you rate that kind above your own average, and blue means below. A dashed circle means fewer than three coffees. A dashed ring means a strong tendency. Tap a wedge to open it. Origin goes from region to country to area, and Flavor from family to kind to word. The last step lists the coffees.',
+      'Rate by switches between Stars and Scores. Stars counts 4 beans or more. Scores needs six scored coffees of one scoring form, and counts your top third. Each coffee counts once, by its best cup. Gear counts every cup, because each cup is brewed differently. Just Starting keeps each page short. Comfy Brewer adds a Why? note. Bean Scientist adds the exact numbers and a table you can save.',
+      'More ways to look has Your brews, which opens the Brew chart, and Coffee street, which sets home cups beside shop cups. Your brew rack counts how often you used each brewer. Mix and match asks questions such as whether your V60 coffees did better at higher elevations.',
       'Bean Scientist also reads your cupping scores. After five different coffees with scores, it shows which details your higher-scored coffees share. These are roast, process, elevation, origin and varietal. It also says how sure that is and what to look for on a bag. Just Starting and Comfy Brewer show the counts from your ratings instead, with one line about the flavor you liked most. Cups of the same coffee are averaged first, so brewing one coffee five times does not count as five coffees.',
       'This describes what you scored, not what is true of the coffee. Taste is personal, and a handful of coffees is a small sample. The same screen explains what every detail on a bag means, and compares two things side by side.',
       'Solid or folklore? is in the menu under Learn. It takes common brewing advice and gives each claim one verdict: Solid, Partly supported, Practice only or Not supported. Tap a claim to see what the research found, what it does not show, what BeanTelligence does about it, and the sources. A verdict is about the claim as people phrase it. One study is never treated as proof, and a verdict can change when new research appears.',
@@ -11353,6 +11608,17 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 121,
+  "version": "4.056.0121",
+  "tier": "medium",
+  "at": "2026-10-18T03:23:53Z",
+  "date": "2026-10-18",
+  "title": "Your preferences: boards that mean something",
+  "notes": [
+   "Your preferences replaces Your tendencies. Six dartboards (Roast, Origin, Flavor, Process, Elevation, Gear) show which kinds you rate high in red and which you rate low in blue, drill down to the coffees, and switch between Stars and Scores. The old flower garden, cup glow, bean jar and kinds pictures are gone."
+  ]
+ },
  {
   "release": 120,
   "version": "4.055.0120",
@@ -14773,7 +15039,7 @@ const PARENT = {
   tastes:() => (tastesFrom && tastesFrom !== 'tastes' && tastesFrom !== 'timer') ? tastesFrom : (app.coffee.name ? 'coffee' : 'door'),
   folk:() => (folkFrom && folkFrom !== 'folk' && folkFrom !== 'timer') ? folkFrom : (app.coffee.name ? 'coffee' : 'door'),
   tend:() => (tendFrom && tendFrom !== 'tend' && tendFrom !== 'timer') ? tendFrom : (app.coffee.name ? 'coffee' : 'door'),
-  tpflavors:'tend', tpenjoy:'tend', tprate:'tend', tpkinds:'tend', tpshops:'tend', tpbrewers:'tend', tpmix:() => tpMixFrom === 'tpbrewers' ? 'tpbrewers' : 'tend',
+  tpboard:'tend', tpshops:'tend', tpbrewers:'tend', tpmix:() => tpMixFrom === 'tpbrewers' ? 'tpbrewers' : 'tend',
   guide:() => (guideFrom && guideFrom !== 'guide' && guideFrom !== 'timer') ? guideFrom : (app.coffee.name ? 'coffee' : 'door'),
   compare:() => (cmpFrom && cmpFrom !== 'compare' && cmpFrom !== 'timer') ? cmpFrom : (app.coffee.name ? 'coffee' : 'door'),
   tools:() => (toolsFrom && !TOOL_SCREENS.includes(toolsFrom) && toolsFrom !== 'timer') ? toolsFrom : (app.coffee.name ? 'coffee' : 'door'), yield:'tools', ratio:'tools', cost:'tools', bagcmp:'tools', fresh:'tools', caffeine:'tools', cafdrink:'caffeine', cafresult:'caffeine', cafcup:() => cf.from === 'recipe' ? 'recipe' : 'caffeine',
@@ -14827,7 +15093,7 @@ function render(){
   const parent = typeof PARENT[sc] === 'function' ? PARENT[sc]() : PARENT[sc];
   $('backBtn').hidden = !parent;
   $('backBtn').onclick = () => { if (sc === 'timer') stopTimer(); navBack(parent); };
-  const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', perfecting:'Still perfecting', learn:'Understanding coffee', tend:'Your tendencies', guide:'User guide', tools:'Calculators', yield:'Cup yield', ratio:'Ratio calculator', cost:'Cost of coffee', bagcmp:'Compare 2 bags', fresh:'Freshness', caffeine:'Caffeine', cafdrink:'Add a drink', cafresult:'Your caffeine day', cafcup:'Caffeine in a cup', prices:'Coffee prices', tastes:'Train your palate', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', tastedit:'Edit tasting', about:'About', glossary:'Glossary', files:'My files' };
+  const titles = { door:'', start:'', shop:'', sdrink:STEP_SHOP.drink, staste:STEP_SHOP.taste, sperfect:STEP_SHOP.perfect, shops:'Coffee shops', coffee:STEP_NAME.facts, brew:STEP_NAME.method, gear:STEP_NAME.method, recipe:STEP_NAME.brew, change:STEP_NAME.brew, ready:STEP_NAME.brew, timer:'Timer', cup:STEP_NAME.taste, dial:STEP_NAME.perfect, history:'Your tastings', perfecting:'Still perfecting', learn:'Understanding coffee',  guide:'User guide', tools:'Calculators', yield:'Cup yield', ratio:'Ratio calculator', cost:'Cost of coffee', bagcmp:'Compare 2 bags', fresh:'Freshness', caffeine:'Caffeine', cafdrink:'Add a drink', cafresult:'Your caffeine day', cafcup:'Caffeine in a cup', prices:'Coffee prices', tastes:'Train your palate', wheels:'Wheels', sca:'SCA cupping', wheel:wheelTitle(), chart:'Brew chart', folk:'Solid or folklore?', compare:'Compare cups', detail:'Tasting details', tastedit:'Edit tasting', about:'About', glossary:'Glossary', files:'My files' };
   Object.assign(titles, TP_TITLES);
   $('topTitle').textContent = sc === 'start' || sc === 'door' || sc === 'shop' || sc === 'loadshared' ? '' : (titles[sc] || 'BeanTelligence');
   SCREENS[sc](m);
@@ -16291,6 +16557,89 @@ function bcViewPlace(ctx){
   const opts = () => { const r = read(); return { kind:ctx.map, pts:ctx.mp, colour:bcUi.colour, uid:'bcMain', label:'Brew chart with your typed brew', dim:() => true, place:r ? { x:r.ey, y:r.tds, label:r.tds.toFixed(esp ? 1 : 2) + ' % · ' + r.ey.toFixed(1) + ' %' } : null }; };
   return { opts, legend:false, nodes:[h('div', { class:'bcin', id:'chartCard' }, tdsF, eyF), work, out], say:ctx.map === 'all' ? ['informing', 'On All your brew is read like a filter brew. Pick Espresso or Steeped to read it on that map.'] : bcMapNote(ctx) };
 }
+/* ---------- Preferences: the board ----------
+   Drawn like the app's own pictures: thick dark outline, flat colours, a hard shadow. The numbers come from engine/53-preference-data.js (prefBoard) and the words from
+   53-preference-views.js, so this picture can never say more than the counts do. Distance from the middle is how much a coffee was liked (the middle is 5 beans, or
+   your highest score). Red means you rate that kind high, blue low, both against your OWN average. A spot is brighter the more coffees stand behind it; a dashed
+   circle means fewer than three coffees; a dashed ring means a strong tendency. Colour is never the only clue: every wedge is named, counted and written out in a tile. */
+const PF_G = { CX:180, CY:168, R:140, RIM:144, LABEL:152, INNER:24, SPAN:112, MAXSPOTS:14 };
+const PF_SHORT = { 'Central America & Mexico':'C. America & Mexico', 'Caribbean & islands':'Caribbean', 'Arabian Peninsula':'Arabia', 'Western Ethiopia':'W. Ethiopia', 'Dominican Republic':'Dominican Rep.', 'Papua New Guinea':'Papua N. Guinea' };
+/* a spot's fill by heat level: the stops run from the middle of the spot to its soft edge */
+const PF_HEAT = {
+  hot:['#C62F1F', '#E5612F', '#F2A93B', 0.95], warm:['#E58A2F', '#F2B54B', '#F6D27A', 0.85], cold:['#2F6FB5', '#5B9BD5', '#9CC4E8', 0.9],
+  cool:['#2F6FB5', '#5B9BD5', '#9CC4E8', 0.6], neutral:['#8C7F6A', '#B8AD97', '#D6CDB8', 0.55]
+};
+const PF_MARK = { hot:'▲', warm:'△', neutral:'●', cool:'▽', cold:'▼', faint:'◌' };
+const PF_WORDS = { hot:'rated high', warm:'rated fairly high', neutral:'about your average', cool:'rated fairly low', cold:'rated low', faint:'not enough coffees yet' };
+const pfShort = s => { s = String(s); return PF_SHORT[s] || s.replace(/ and /g, ' & '); };
+/* a name split over at most two lines of about `w` letters (a hyphen or a space may break a line); a longer word is cut with an ellipsis */
+function pfWrap(s, w){
+  w = w || 11; const parts = pfShort(s).replace(/-/g, '- ').split(' ').filter(Boolean), lines = [''];
+  parts.forEach(t => { const cur = lines[lines.length - 1], joiner = cur && /-$/.test(cur) ? '' : ' '; if (!cur) lines[lines.length - 1] = t; else if ((cur + joiner + t).length <= w || lines.length >= 2) lines[lines.length - 1] = cur + joiner + t; else lines.push(t); });
+  return lines.map(l => l.length > w + 3 ? l.slice(0, w + 2) + '\u2026' : l);
+}
+/* the groups drawn as wedges: the board's own, and one More wedge standing for the rest */
+function pfWedges(board){
+  const gs = board.groups.slice();
+  if (board.more.length){
+    const dists = [].concat.apply([], board.more.map(g => g.dists)).sort((a, b) => a - b), n = board.more.reduce((a, g) => a + g.n, 0), liked = board.more.reduce((a, g) => a + g.liked, 0);
+    gs.push({ key:'__more', label:'More', n, liked, mean:0, dist:dists.length ? dists[Math.floor(dists.length / 2)] : 0.5, dists, level:'neutral', faint:false, strong:false, bright:1, rel:0, isMore:true });
+  }
+  return gs;
+}
+/* where the j-th spot of wedge k sits sideways: the same every time, so a picture does not shimmer when it is drawn again */
+const pfSpotAngle = (j, k, n) => -Math.PI / 2 + 2 * Math.PI * k / n + (((j * 37 + k * 17 + 5) % 11) / 10 - 0.5) * (2 * Math.PI / n) * 0.62;
+const pfPol = (a, r) => [PF_G.CX + r * Math.cos(a), PF_G.CY + r * Math.sin(a)];
+const pfRad = d => PF_G.INNER + Math.max(0, Math.min(1, d)) * PF_G.SPAN;
+/* the board as an svg string. board = prefBoard result, o = { uid, label } */
+function pfBoardSvg(board, o){
+  o = o || {}; const uid = o.uid || 'pf', gs = pfWedges(board), n = Math.max(1, gs.length), C = PF_G.CX, M = PF_G.CY, f = bcF;
+  let s = '<svg viewBox="-70 -22 500 380" role="img" aria-label="' + escHtml(o.label || 'Preferences board') + '" xmlns="http://www.w3.org/2000/svg" style="font-family:inherit;width:100%">';
+  s += '<defs>' + Object.keys(PF_HEAT).map(k => { const c = PF_HEAT[k]; return '<radialGradient id="' + uid + k + '"><stop offset="0" stop-color="' + c[0] + '" stop-opacity="' + c[3] + '"/><stop offset=".55" stop-color="' + c[1] + '" stop-opacity="' + f(c[3] * 0.58) + '"/><stop offset="1" stop-color="' + c[2] + '" stop-opacity="0"/></radialGradient>'; }).join('') + '</defs>';
+  s += '<circle cx="' + C + '" cy="' + M + '" r="' + PF_G.RIM + '" style="fill:var(--press)" transform="translate(4 4)"/>';
+  [[30, 'color-mix(in srgb, var(--mint) 55%, var(--surface))'], [68, 'color-mix(in srgb, var(--mint) 28%, var(--surface))'], [104, 'color-mix(in srgb, var(--gold) 22%, var(--surface))'], [PF_G.R, 'color-mix(in srgb, var(--accent) 22%, var(--surface))']].reverse().forEach(r => {
+    s += '<circle cx="' + C + '" cy="' + M + '" r="' + r[0] + '" style="fill:' + r[1] + ';stroke:' + bcInk + ';stroke-width:2.4"/>';
+  });
+  if (gs.length > 1) gs.forEach((g, k) => { const a = -Math.PI / 2 + 2 * Math.PI * k / n - Math.PI / n, p = pfPol(a, PF_G.R); s += '<line x1="' + C + '" y1="' + M + '" x2="' + f(p[0]) + '" y2="' + f(p[1]) + '" style="stroke:' + bcInk + ';stroke-width:1.6;stroke-dasharray:4 4;opacity:.6"/>'; });
+  s += '<circle cx="' + C + '" cy="' + M + '" r="' + PF_G.RIM + '" style="fill:none;stroke:' + bcInk + ';stroke-width:3"/>';
+  /* a quiet sector over each wedge so a finger on the picture opens the same thing as its tile (the tiles stay the keyboard and screen-reader way in) */
+  gs.forEach((g, k) => {
+    const a0 = -Math.PI / 2 + 2 * Math.PI * k / n - Math.PI / n, a1 = a0 + 2 * Math.PI / n, p0 = pfPol(a0, PF_G.RIM), p1 = pfPol(a1, PF_G.RIM);
+    s += gs.length === 1 ? '<circle class="pfsec" data-k="' + k + '" cx="' + C + '" cy="' + M + '" r="' + PF_G.RIM + '" fill="transparent"/>'
+      : '<path class="pfsec" data-k="' + k + '" d="M ' + C + ' ' + M + ' L ' + f(p0[0]) + ' ' + f(p0[1]) + ' A ' + PF_G.RIM + ' ' + PF_G.RIM + ' 0 ' + (n === 2 ? 1 : 0) + ' 1 ' + f(p1[0]) + ' ' + f(p1[1]) + ' Z" fill="transparent"/>';
+  });
+  gs.forEach((g, k) => {
+    const lvl = g.level === 'neutral' || g.level === 'cool' || g.level === 'cold' || g.level === 'warm' || g.level === 'hot' ? g.level : 'neutral', ca = -Math.PI / 2 + 2 * Math.PI * k / n;
+    if (g.faint){
+      const p = pfPol(ca, pfRad(g.dist)); s += '<circle cx="' + f(p[0]) + '" cy="' + f(p[1]) + '" r="20" style="fill:none;stroke:' + bcInk + ';stroke-width:2.4;stroke-dasharray:4 5;opacity:.7" pointer-events="none"/>';
+      return;
+    }
+    const ds = g.dists.length > PF_G.MAXSPOTS ? Array.from({ length:PF_G.MAXSPOTS }, (_, i) => g.dists[Math.floor(i * (g.dists.length - 1) / (PF_G.MAXSPOTS - 1))]) : g.dists, size = 27 - Math.min(9, g.n / 3), op = f(0.3 + 0.7 * g.bright);
+    ds.forEach((d, j) => { const p = pfPol(pfSpotAngle(j, k, n), pfRad(d) + (((j * 13 + k * 7) % 7) - 3) * 2); s += '<circle cx="' + f(p[0]) + '" cy="' + f(p[1]) + '" r="' + f(size) + '" fill="url(#' + uid + lvl + ')" opacity="' + op + '" pointer-events="none"/>'; });
+    if (g.strong){ const p = pfPol(ca, pfRad(g.dist)); s += '<circle cx="' + f(p[0]) + '" cy="' + f(p[1]) + '" r="34" style="fill:none;stroke:' + bcInk + ';stroke-width:3;stroke-dasharray:7 5" pointer-events="none"/>'; }
+  });
+  gs.forEach((g, k) => {
+    const a = -Math.PI / 2 + 2 * Math.PI * k / n, p = pfPol(a, PF_G.LABEL), mid = Math.abs(p[0] - C) < 22, anchor = mid ? 'middle' : p[0] > C ? 'start' : 'end', lines = pfWrap(g.label, mid ? 16 : 11), dx = anchor === 'start' ? 5 : anchor === 'end' ? -5 : 0, cnt = String(g.n);
+    /* the count sits at the end of the last line when it fits, else on a line of its own */
+    const own = lines[lines.length - 1].length + 1 + cnt.length > (mid ? 17 : 11), L = lines.length + (own ? 1 : 0);
+    const y0 = mid ? (p[1] < M ? p[1] - 6 - (L - 1) * 17 : p[1] + 16) : p[1] + 5 - (L - 1) * 8.5, num = '<tspan style="font-weight:600;opacity:.75">' + (own ? '' : ' ') + cnt + '</tspan>';
+    s += '<text text-anchor="' + anchor + '" style="font-size:15.5px;font-weight:700;fill:' + bcInk + '" pointer-events="none">' + lines.map((l, i) => '<tspan x="' + f(p[0] + dx) + '" y="' + f(y0 + i * 17) + '">' + escHtml(l) + (i === lines.length - 1 && !own ? num : '') + '</tspan>').join('') + (own ? '<tspan x="' + f(p[0] + dx) + '" y="' + f(y0 + lines.length * 17) + '">' + num + '</tspan>' : '') + '</text>';
+  });
+  return s + '</svg>';
+}
+/* a tap tile for one group: its name, the count in words, and a mark for the colour (the mark and the words say it too, so colour is never the only clue) */
+function pfTile(g, name, sub, onPick){
+  const lvl = g.faint ? 'faint' : g.level, b = h('button', { type:'button', class:'pft ' + lvl + (g.strong ? ' strong' : ''), onclick:onPick, 'data-key':g.key });
+  b.append(h('span', { class:'pfm', 'aria-hidden':'true', text:PF_MARK[lvl] || PF_MARK.neutral }), h('span', { class:'pfx' }, h('b', { text:g.label }), h('small', { text:sub })));
+  b.setAttribute('aria-label', name + ', ' + sub + ', ' + (g.strong ? 'a strong tendency, ' : '') + PF_WORDS[lvl]);
+  return b;
+}
+/* what the colours and marks mean */
+function pfLegend(lens, anyStrong, anyFaint){
+  const k = (mark, text) => h('span', { class:'bckey' }, mark, h('span', { text })), sw = c => h('i', { class:'pfsw ' + c, 'aria-hidden':'true' });
+  return h('div', { class:'bclegend pflegend', id:'pfLegend' }, k(h('i', { 'aria-hidden':'true', text:'◎' }), lens === 'scores' ? 'Centre: your highest scores' : 'Centre: 5 beans'), k(sw('hot'), 'Red: you rate it high'), k(sw('cold'), 'Blue: you rate it low'),
+    anyFaint ? k(h('i', { 'aria-hidden':'true', text:'◌' }), 'Dashed: not enough yet') : null, anyStrong ? k(h('i', { 'aria-hidden':'true', text:'◯' }), 'Dashed ring: a strong tendency') : null);
+}
 /* ---------- SCA cupping: state and the circles ----------
    The session lives in `sca` and nowhere else: nothing is saved, and a reload starts it again. Leaving the screen keeps it, so a timer started here is still right on return.
    stage 'setup' = choosing; 'run' = the steps. cur = the coffee being looked at; step = the step number; ticks['id:i'] = coffee i done with step id; poured[i] and broke[i] = times in ms. */
@@ -16757,9 +17106,9 @@ function tendencyRow(gr){
 function picturesCard(){
   const sm = tpSummary(history && history.objs ? history.objs : []);
   return h('div', { class:'card', id:'learnPics' }, h('h3', { text:'From your ratings and Quick tastings' }),
-    sm.lines.length ? sm.lines.map(l => h('p', { class:'serif', style:'margin:6px 0 0', text:l })) : h('p', { class:'serif', style:'margin:4px 0 0', text:'Pictures of your flavors, ratings, brews and shops appear as you rate coffees.' }),
+    sm.lines.length ? sm.lines.map(l => h('p', { class:'serif', style:'margin:6px 0 0', text:l })) : h('p', { class:'serif', style:'margin:4px 0 0', text:'Your preferences appear as you rate coffees.' }),
     h('p', { class:'fine', style:'margin:6px 0 8px', text:'So far, from the coffees you have saved. These are counts, not rules.' }),
-    h('button', { type:'button', class:'btn block', id:'tendOpen', text:'See your tendencies', onclick:goTend }));
+    h('button', { type:'button', class:'btn block', id:'tendOpen', text:'See your preferences', onclick:goTend }));
 }
 function tendencySection(t){
   const lvl = level(), sec = h('div', { class:'lbody' }, picturesCard());
@@ -16878,6 +17227,80 @@ function screenLearn(m){
   /* Just Starting keeps the bag checker, the bag details and the comparisons behind one fold */
   m.append(h('div', { class:'lfolds' }, tend, sh.shop, ...(lvl === 'new' ? [plainFold('learnMore', 'More about bags', 'Check a coffee, what a bag tells you, compare', 'art-beans', h('div', { class:'lfolds' }, ...more))] : more)));
 }
+/* ---------- screen: one Preferences board ----------
+   Everything here lives in memory only: which lens, which board, how far down the person has drilled. Reloading comes back to the Preferences home. */
+let pfUi = { lens:'stars', kind:'', board:'roast', trait:'roast', path:[], more:false };
+const PF_BLURB = { roast:'Light, medium or dark: which do you rate high?', origin:'From region to country to growing area, where your best coffees come from.', flavor:'The notes printed on your bags, grouped by family, kind and word.',
+  process:'How the coffee was processed, and its variety.', elevation:'Grown low, mid or high.', gear:'Your brewers, water temperatures and grinders, cup by cup.' };
+/* what to call the thing that is missing when a coffee is left off a board */
+const PF_WHAT = { roast:'roast level', origin:'origin', process:'process', elevation:'elevation', variety:'variety', flavor:'bag notes', brewer:'brewer', temperature:'water temperature', grinder:'grinder' };
+const pfBoardOf = k => PREF_BOARDS.find(b => b.k === k) || PREF_BOARDS[0];
+const pfRatedFor = (home, trait) => PREF_TRAITS[trait].unit === 'cup' ? home.ratedCups : home.rated;
+/* open a board (optionally already drilled to a path) */
+function goBoard(k, path, trait){
+  const B = pfBoardOf(k); pfUi.board = B.k; pfUi.trait = trait && B.traits.indexOf(trait) >= 0 ? trait : B.traits[0]; pfUi.path = path || []; pfUi.more = false;
+  go('tpboard');
+}
+/* Rate by Stars | Scores, and which score form when there are several. Not shown to Just Starting, who sees stars only. */
+function pfLensRow(home, again){
+  if (level() === 'new'){ pfUi.lens = 'stars'; return []; }
+  const out = [bcRowOf('Rate by', bcSeg('Rate the boards by', PREF_LENS.map(l => ({ v:l.v, label:l.label })), pfUi.lens, v => { pfUi.lens = v; pfUi.kind = ''; pfUi.path = []; pfUi.more = false; again(); }, 'pfLens'))];
+  if (pfUi.lens === 'scores' && home.kinds.length > 1) out.push(bcRowOf('Score form', bcSeg('Which score form', home.kinds.map(k => ({ v:k.kind, label:scoreFormName(k.kind) + ' (' + k.n + ')' })), home.rated.kind, v => { pfUi.kind = v; pfUi.path = []; again(); }, 'pfKind')));
+  if (pfUi.lens === 'scores' && !home.scoresReady) out.push(h('p', { class:'fine', id:'pfScoreNote', style:'margin:0 0 8px', text:'Scores need ' + PREF_SCORE_MIN + ' scored coffees of one form before they show a pattern. You have ' + home.scoresN + '.' }));
+  return out;
+}
+/* "10 coffees, stars" under the card title */
+const pfSub = (rated, trait) => rated.n + (PREF_TRAITS[trait].unit === 'cup' ? (rated.n === 1 ? ' cup' : ' cups') : (rated.n === 1 ? ' coffee' : ' coffees')) + ' · ' + (rated.lens === 'scores' ? 'scores' : 'stars');
+/* the coffees at the end of a drill-down: name, the maker, the parts you marked, and the stars or score */
+function pfLeafRows(board, rated, title){
+  const items = board.units.map(it => {
+    const u = it.u, parts = u.kind === 'coffee' ? prefParts(u) : '';
+    return { name:u.name || 'Unnamed coffee', sub:[u.roaster, rated.lens === 'scores' ? 'Score ' + (Math.round(it.value * 100) / 100) : '', parts].filter(Boolean).join(' · '), stars:rated.lens === 'scores' ? null : it.value };
+  });
+  return tpCoffeeRows(items, title);
+}
+function screenTpBoard(m){
+  const plain = level() === 'new', B = pfBoardOf(pfUi.board);
+  if (B.traits.indexOf(pfUi.trait) < 0) pfUi.trait = B.traits[0];
+  m.append(hubHero(B.name, PF_BLURB[B.k], false, B.art));
+  const holder = h('div', { id:'pfHolder' });
+  m.append(holder);
+  function paint(){
+    const home = prefHome(tpObjs(), pfUi.lens, pfUi.kind), trait = pfUi.trait, T = PREF_TRAITS[trait], rated = pfRatedFor(home, trait), board = prefBoard(rated, trait, pfUi.path), lens = rated.lens;
+    pfUi.kind = rated.kind;
+    const kids = [].concat(pfLensRow(home, paint));
+    if (B.traits.length > 1) kids.push(bcSeg('Look at', B.traits.map(t => ({ v:t, label:PREF_TRAITS[t].levels[0] })), trait, v => { pfUi.trait = v; pfUi.path = []; pfUi.more = false; paint(); }, 'pfTrait'));
+    const sweet = prefSweet(rated); if (sweet && !plain) kids.push(h('p', { class:'pfsweet', id:'pfSweet', text:sweet }));
+    const crumb = [B.name].concat(T.levels[0] === B.name ? [] : [T.levels[0]]).concat(pfUi.path.map(k => prefLabel(trait, k))).join(' › ');
+    if (pfUi.path.length || pfUi.more) kids.push(h('div', { class:'pfcrumb' }, h('button', { type:'button', class:'btn', id:'pfBack', text:'‹ Back', onclick:() => { if (pfUi.more) pfUi.more = false; else pfUi.path = pfUi.path.slice(0, -1); paint(); } }), h('b', { text:crumb })));
+    const pick = g => { if (g.isMore){ pfUi.more = true; } else { pfUi.path = pfUi.path.concat(g.key); pfUi.more = false; } paint(); try { holder.scrollIntoView({ block:'start' }); } catch(e){} };
+    const nameOf = g => prefName(trait, g.key, board.depth, g.label), subOf = g => g.faint ? 'Only ' + g.n + (g.n === 1 ? ' coffee' : ' coffees') + ' so far' : prefCount(g, lens);
+    if (board.units.length || pfUi.path.length >= T.levels.length){
+      const rows = pfLeafRows(board, rated, board.units.length + ' ' + (T.unit === 'cup' ? (board.units.length === 1 ? 'cup' : 'cups') : (board.units.length === 1 ? 'coffee' : 'coffees')));
+      if (rows) kids.push(rows);
+    } else if (!rated.n || !board.groups.length){
+      kids.push(sayRow(prefLine(board, rated).text + (rated.n && !board.groups.length ? ' Your ' + (T.unit === 'cup' ? 'cups' : 'coffees') + ' have no ' + PF_WHAT[trait] + ' saved yet.' : ''), '', 'informing'));
+    } else {
+      const wedges = pfWedges(board), shown = pfUi.more ? board.more : board.groups.slice();
+      if (!pfUi.more){
+        const plot = h('div', { class:'pfplot', id:'pfPlot' }); plot.innerHTML = pfBoardSvg(board, { uid:'pfB', label:B.name + ' board: ' + wedges.map(g => g.label + ' ' + g.n).join(', ') });
+        plot.addEventListener('click', e => { const s = e.target.closest ? e.target.closest('.pfsec') : null; if (!s) return; const g = wedges[+s.getAttribute('data-k')]; if (g) pick(g); });
+        kids.push(plot, pfLegend(lens, !plain && wedges.some(g => g.strong), wedges.some(g => g.faint)));
+      }
+      kids.push(h('div', { class:'pftiles', id:'pfTiles' }, shown.map(g => pfTile(g, nameOf(g), subOf(g), () => pick(g))), !pfUi.more && board.more.length ? pfTile({ key:'__more', label:'More', level:'neutral', faint:false, strong:false, isMore:true }, 'More', board.more.reduce((a, g) => a + g.n, 0) + ' coffees in ' + board.more.length + ' more', () => pick({ isMore:true })) : null));
+      const left = board.missing + board.shallow;
+      if (left > 0) kids.push(h('p', { class:'fine', id:'pfLeft', style:'margin:6px 0 0', text:left + (left === 1 ? ' ' + (T.unit === 'cup' ? 'cup names' : 'coffee names') : ' ' + (T.unit === 'cup' ? 'cups name' : 'coffees name')) + ' no ' + (board.shallow && !board.missing ? T.levels[board.depth].toLowerCase() : PF_WHAT[trait]) + ', so ' + (left === 1 ? 'it is' : 'they are') + ' not on this board.' }));
+      if (!plain) kids.push(sayRow(prefLine(board, rated).text, '', prefLine(board, rated).face));
+      kids.push(tpWhy('Each spot is one coffee. The nearer the middle, the higher you rated it. A kind turns red when you rate it above your own average and blue when below, and it needs ' + PREF_MIN_COFFEES + ' coffees before it gets a colour. A dashed ring is only drawn at ' + PREF_STRONG_N + ' coffees with a clear gap, and even then it describes what you rated, not coffee itself.'));
+      kids.push(tpNumbers(['Your own share rated high: ' + Math.round(rated.base * 100) + '% (' + rated.liked + ' of ' + rated.n + ').', rated.cut != null ? 'Your top third starts at ' + (Math.round(rated.cut * 100) / 100) + '.' : 'Rated high means ' + PREF_LIKED_STARS + ' beans or more.']));
+    }
+    const card = tband('The board', { tan:'Look' }, null, null, ...kids.filter(Boolean)), meta = card.querySelector('.tmeta');
+    if (meta){ meta.textContent = ''; meta.append(h('b', { text:crumb }), ' · ' + pfSub(rated, trait)); }
+    holder.textContent = ''; holder.append(card);
+  }
+  paint();
+  m.append(tpFoot(''), tpDone());
+}
 /* ---------- screen: taste your tastes ----------
    tastesOrder is the helper's pouring order for the mix-up round. It lives only in memory: leaving the screen or reloading forgets it, and nothing about this page is saved or put in a file. */
 let tastesFrom = '', tastesOrder = { cups:null, shown:false };
@@ -16952,7 +17375,7 @@ function screenTastes(m){
   tsOrderPaint();
   m.append(h('p', { class:'fine', id:'ttSource', text:'Source: SCA Standard 103-2024, Descriptive Assessment, Specialty Coffee Association. This page paraphrases it. It is not the standard and the SCA has not reviewed it.' }));
 }
-/* ---------- screen: tendencies ---------- */
+/* ---------- screen: Your preferences ---------- */
 let tendFrom = '';
 function goTend(){ if (app.screen !== 'tend') tendFrom = app.screen === 'timer' ? 'recipe' : app.screen; go('tend'); }
 async function tpDownload(status){
@@ -16963,35 +17386,45 @@ async function tpDownload(status){
     status.textContent = 'Saved ' + name + '.';
   } catch(e){ status.textContent = 'This view could not save the table. Open BeanTelligence in your browser and try again.'; }
 }
-function tpTiles(d){
-  const tall = d.garden.flowers.slice().sort((a, b) => b.tasted - a.tasted)[0], t = d.need;
+/* the two pictures that stay from the old Tendencies home, now under More ways to look */
+function pfMoreTiles(d){
+  const t = d.need;
   return [
-    { id:'tpTileFlavors', go:'tpflavors', title:'Flavor garden', ready:d.ready.flavors, need:t.flavors, line:tall && tall.tasted ? 'One flower per family. ' + tall.family + ' grows tallest.' : 'One flower per flavor family.', pic:tpMiniGarden(d.garden) },
-    { id:'tpTileEnjoy', go:'tpenjoy', title:'What you enjoy', ready:d.ready.enjoy, need:t.enjoy, line:d.glow.best ? d.glow.best.label + ' glows brightest.' : 'Which part of the cup glows.', pic:tpMiniCup(d.glow) },
-    { id:'tpTileRate', go:'tprate', title:'Bean jar', ready:d.ready.rate, need:t.rate, line:d.jar.top ? 'The best beans float up. Most sit at ' + d.jar.top.star + '.' : 'The best beans float up.', pic:tpMiniJar(d.jar) },
-    { id:'tpTileKinds', go:'tpkinds', title:'Kinds of coffee', ready:d.ready.kinds, need:t.kinds, line:'A heap for each kind, a flag at the middle.', pic:tpMiniHeaps(d.kinds) },
     { id:'tpTileBrews', go:'chart', open:() => goChart('mine'), title:'Your brews', ready:d.ready.brews, need:t.brews, line:'Where your cups land on the Brew chart.', pic:tpMiniRings() },
     { id:'tpTileShops', go:'tpshops', title:'Coffee street', ready:d.ready.shops, need:t.shops, line:'Home against the shops, one storefront each.', pic:tpMiniStreet() }
   ].map(tpTile);
 }
+/* one "what stands out" row: a bar the colour of the heat, the name, the count in words */
+function pfStandRow(s){
+  const b = h('button', { type:'button', class:'pfrow ' + s.level + (s.strong ? ' strong' : ''), id:'pfStand_' + s.id.replace(/[^a-z0-9]+/gi, '_'), onclick:() => { const B = PREF_BOARDS.find(x => x.traits.indexOf(s.trait) >= 0); goBoard(B.k, [], s.trait); } },
+    h('span', { class:'pfbar', 'aria-hidden':'true' }), h('span', { class:'pftx' }, h('b', { text:s.title }), h('small', { text:s.sub })), h('i', { class:'tpchev', 'aria-hidden':'true' }));
+  b.setAttribute('aria-label', s.title + ', ' + s.sub + ', ' + PF_WORDS[s.level] + (s.strong ? ', a strong tendency' : ''));
+  return b;
+}
 function screenTend(m){
   const lvl = level(), d = tpNow(), n = d.cs.length, wide = (id, to, pic, title, line) => h('button', { type:'button', class:'tpwide', id, onclick:() => go(to) }, h('div', { class:'wp' }, pic), h('div', { style:'flex:1;min-width:0' }, h('b', { text:title }), h('span', { class:'ts2', text:line })), h('span', { class:'go', 'aria-hidden':'true' }, h('i')));
-  m.append(h('h1', { class:'sr-only', text:'Your tendencies' }));
-  /* your bean */
-  const keyDots = d.freckles.slice(0, 3).map(f => h('span', null, h('i', { style:'background:' + tpHsl(f.hue, 62, 66) }), f.family));
-  m.append(h('button', { type:'button', class:'tphero', id:'tpHero', onclick:() => go('tpflavors') }, tpArt(tpYourBean(lvl === 'new' ? 138 : 158, d.freckles)),
-    h('div', { style:'flex:1;min-width:0' }, h('h2', { text:'Your bean' }), h('p', { text:(d.line ? d.line + '. ' : '') + 'Your bean grows a freckle for every flavor family you taste.' }), keyDots.length ? h('div', { class:'tpkey', 'aria-label':'Your biggest freckles' }, keyDots) : null)));
-  m.append(h('div', { style:'height:14px' }), sayRow(n ? 'That is what ' + n + (n === 1 ? ' coffee says' : ' coffees say') + ' about you so far. Tap a freckle, a flower, a bean or a stain. Every picture opens up.' : 'Rate a few coffees and tick the flavors you liked. Your bean fills in, and a picture opens up as soon as it has enough.'));
-  if (history && history.objs && history.objs.length){
-    tpLookRow(m);
+  m.append(hubHero('Your preferences', lvl === 'new' ? 'What your coffees say about you.' : 'Which kinds of coffee you rate high, and which you rate low.', false, 'art-ratio'));
+  const hasHistory = !!(history && history.objs && history.objs.length);
+  if (hasHistory) tpLookRow(m);
+  const holder = h('div', { id:'pfHome' });
+  m.append(holder);
+  function paint(){
+    const home = prefHome(tpObjs(), pfUi.lens, pfUi.kind), kids = [];
+    pfUi.kind = home.rated.kind;
+    kids.push(...pfLensRow(home, paint));
+    if (!home.stands.length) kids.push(sayRow(!n ? 'Rate a few coffees and tick the flavors you liked. Your boards fill in as you go.' : prefLine({ groups:[], more:[] }, home.rated).text, '', 'informing'));
+    if (home.stands.length) kids.push(h('h2', { class:'tph2', text:'What stands out' }), h('div', { class:'pfstands', id:'pfStands' }, home.stands.map(pfStandRow)), h('p', { class:'fine', style:'margin:6px 0 0', text:'Red: you rate it high. Blue: you rate it low. Tap one to open it.' }));
+    kids.push(h('h2', { class:'tph2', text:'Look closer' }), h('div', { class:'mk-kind pfboards', id:'pfBoards', role:'group', 'aria-label':'Pick a board' }, PREF_BOARDS.map(B => {
+      const c = home.counts[B.k], unit = B.k === 'gear' ? (c === 1 ? 'cup' : 'cups') : (c === 1 ? 'coffee' : 'coffees');
+      return h('button', { type:'button', id:'pfTile_' + B.k, 'aria-label':B.name + ', ' + (c ? c + ' ' + unit : 'nothing yet'), onclick:() => goBoard(B.k) }, symPic(B.art), h('b', { text:B.name }), h('small', { text:c ? c + ' ' + unit : 'none yet' }));
+    })));
+    holder.textContent = ''; holder.append(...kept(...kids.flat()));
   }
-  if (d.stand.length){
-    m.append(h('h2', { class:'tph2', text:'What stands out' }), h('div', { class:'tpcard tpstands', id:'tpStands' }, d.stand.map(s => h('button', { type:'button', class:'tpstand', onclick:() => go(s.go === 'flavors' ? 'tpflavors' : s.go === 'kinds' ? 'tpkinds' : 'tpshops') }, tpIcon(s.art, 44), h('span', { class:'tx', text:s.text }), h('i', { class:'tpchev', 'aria-hidden':'true' })))));
-  }
-  m.append(h('h2', { class:'tph2', text:'Look closer' }), h('div', { class:'tpgrid', id:'tpTiles' }, tpTiles(d)));
+  paint();
   const rack = '<div style="display:flex;gap:2px;align-items:flex-end;padding-bottom:6px;border-bottom:5px solid #C79A66">' + ['v60', 'aeropress', 'chemex'].map(k => '<svg width="32" height="32" viewBox="0 0 64 64" aria-hidden="true"><use href="#m-' + k + '"/></svg>').join('') + '</div>';
   const mix = '<div style="display:flex;align-items:center;gap:4px"><svg width="40" height="40" viewBox="0 0 64 64" aria-hidden="true"><use href="#m-v60"/></svg><svg width="26" height="14" viewBox="0 0 26 14" aria-hidden="true"><path d="M2 7 H24" stroke="#22120C" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 6"/></svg><svg width="40" height="40" viewBox="0 0 48 48" aria-hidden="true"><use href="#art-elev"/></svg></div>';
-  m.append(h('h2', { class:'tph2', text:'Ask your coffees' }), wide('tpWideRack', 'tpbrewers', tpArt(rack), 'Your brew rack', d.ready.brewers && d.rack.top ? 'You reach for the ' + d.rack.top.label + ' most: ' + d.rack.top.n + ' of ' + d.rack.n + ' coffees.' : 'How many times you used each brewer, and how it did.'),
+  m.append(h('h2', { class:'tph2', text:'More ways to look' }), h('div', { class:'tpgrid', id:'tpTiles' }, pfMoreTiles(d)));
+  m.append(wide('tpWideRack', 'tpbrewers', tpArt(rack), 'Your brew rack', d.ready.brewers && d.rack.top ? 'You reach for the ' + d.rack.top.label + ' most: ' + d.rack.top.n + ' of ' + d.rack.n + ' coffees.' : 'How many times you used each brewer, and how it did.'),
     wide('tpWideMix', 'tpmix', tpArt(mix), 'Mix and match', 'Did my V60 do better with higher elevations? Pick two things and see.'));
   const status = h('p', { class:'fine', id:'tpDlStatus', role:'status', style:'margin:6px 0 0' });
   m.append(gcard('The numbers behind these pictures', 'One row per coffee, as a spreadsheet file', [h('p', { class:'fine', style:'margin:0 0 8px', text:'Coffee, stars, bag details, liked and not liked flavors, and the six Quick answers. You can open it in any spreadsheet.' }),
@@ -17021,127 +17454,6 @@ function tpDots(feat, expert){
   });
   wrap.append(h('div', { class:'tpdrow tpaxis', 'aria-hidden':'true' }, h('span'), h('span', { class:'tpticks' }, ['1', '2', '3', '4', '5'].map(s => h('span', { text:s + '★' })))));
   return wrap;
-}
-/* ---------- Tendencies: flavors, enjoy, rate ---------- */
-const TP_SHORT = { 'Basic tastes':'Basic', 'Nutty and cocoa':'Nutty', 'Green and earthy':'Green', Fermented:'Ferment', 'Off-flavors':'Off' };
-const TP_PART_TEXT = { smell:'How it smelled before and during the first sip.', taste:'What you tasted while it was in your mouth.', aftertaste:'What stayed with you after you swallowed.', acidity:'The bright, lively part. Think of a squeeze of lemon.', sweetness:'How sweet it tasted, with no sugar added.', body:'How heavy or light it felt in your mouth.' };
-/* where each part of the cup is in the 300 by 240 picture: x, y, width, height */
-const TP_CUP_HITS = { body:[62, 122, 176, 84], taste:[60, 86, 180, 36], smell:[100, 22, 100, 70], acidity:[206, 58, 70, 62], sweetness:[28, 180, 56, 52], aftertaste:[232, 178, 50, 52] };
-function tpGlass(pct, big){ return h('span', { class:'tpglass' + (big ? ' big' : ''), 'aria-hidden':'true' }, h('i', { style:'height:' + Math.round(pct * 100) + '%' })); }
-/* one shelf of five flowers; per = height of a stem for each coffee; the chosen family has a halo and the others fade */
-function tpShelf(items, sel, per, pad, onPick){
-  const W = 354, top = Math.max(...items.map(f => 12 + f.tasted * per)), base = top + pad, H = Math.round(base + 74), box = h('div', { class:'tpshelf' });
-  let o = '';
-  items.forEach((f, k) => {
-    const cx = W / 10 + k * W / 5, hg = 12 + f.tasted * per, name = TP_SHORT[f.family] || f.family;
-    const on = sel === f.family;
-    o += (on ? '<rect x="' + tpFx(cx - 32) + '" y="' + tpFx(base - hg - 24) + '" width="64" height="' + tpFx(hg + 24 + 92) + '" rx="16" fill="#F7DDB6" stroke="#1D3E2F" stroke-width="2.4"/>' : '') + '<g opacity="' + (on ? 1 : 0.7) + '">' + tpFlowerG(cx, base, hg, f.hue, f.mood, 1, true) + '</g>'
-      + '<text x="' + tpFx(cx) + '" y="' + tpFx(base + 52) + '" text-anchor="middle" font-size="16" font-weight="700" style="fill:' + (on ? '#22120C' : 'var(--ink)') + '">' + escHtml(name) + '</text><text x="' + tpFx(cx) + '" y="' + tpFx(base + 68) + '" text-anchor="middle" font-size="14" style="fill:' + (on ? '#5C4A3E' : 'var(--muted)') + '">' + f.liked + ' of ' + f.tasted + '</text>';
-  });
-  o = tpPlankG(4, base + 22, W - 8, 10) + o;
-  box.append(tpArt(tpSvg('100%', H, o, W, H)));
-  items.forEach((f, k) => box.append(h('button', { type:'button', class:'tphit', style:'left:' + ((W / 10 + k * W / 5 - 34) / W * 100).toFixed(2) + '%;width:' + (68 / W * 100).toFixed(2) + '%', 'aria-pressed':sel === f.family ? 'true' : 'false', 'aria-label':f.family + ': tasted in ' + f.tasted + (f.tasted === 1 ? ' coffee' : ' coffees') + ', liked in ' + f.liked, onclick:() => onPick(f.family) })));
-  return box;
-}
-function screenTpFlavors(m){
-  const d = tpNow(), g = d.garden, lvl = level();
-  tpHead(m, 'Your flavor garden', 'One flower for each flavor family you have written down. Taller means more coffees. The face shows how often you liked it.', g.ready ? 'Tap a flower to open it.' : 'Tick flavors in a few tastings and your garden starts to grow.');
-  tpLookRow(m);
-  if (!g.ready){ tpNeed(m, 'tpEmpty', 'The garden needs ' + d.need.flavors + '. You have ' + g.n + ' so far.'); m.append(tpFoot(''), tpDone()); return; }
-  const fams = g.flowers, per = 7.4 * Math.min(1, 12 / g.maxTasted), holder = h('div', { id:'tpGarden' });
-  if (!tpSel.fam || !fams.some(f => f.family === tpSel.fam)) tpSel.fam = (g.best || fams.find(f => f.tasted) || fams[0]).family;
-  const notesFor = fam => { const r = d.a.flavors.rows.find(x => x.family === fam), out = {}; if (r){ Object.keys(r.likedWords).forEach(w => { (out[w] = out[w] || { word:w, liked:0, not:0 }).liked = r.likedWords[w]; }); Object.keys(r.notWords).forEach(w => { (out[w] = out[w] || { word:w, liked:0, not:0 }).not = r.notWords[w]; }); } return Object.keys(out).map(k => out[k]).sort((a, b) => (b.liked + b.not) - (a.liked + a.not) || (a.word < b.word ? -1 : 1)).slice(0, 8); };
-  const legend = h('div', { class:'tpcard' }, h('div', { class:'tplegend' }, [['smile', 350, 'Smile: liked it in most coffees'], ['flat', 8, 'Straight: about half'], ['droop', 28, 'Droop: liked it in fewer']].map(x => h('div', null, tpArt(tpSvg(46, 52, tpFlowerG(23, 48, 22, x[1], x[0], 0.8, false))), x[2]))));
-  function paint(){
-    const f = fams.find(x => x.family === tpSel.fam), notes = notesFor(f.family), note = tpSel.note && notes.some(n => n.word === tpSel.note) ? tpSel.note : '';
-    const pick = fam => { tpSel.fam = fam; tpSel.note = ''; paint(); };
-    const card = h('div', { class:'tpcard paper', style:'padding:10px 4px 0' }, tpShelf(fams.slice(0, 5), f.family, per, 34, pick), h('div', { style:'height:6px' }), tpShelf(fams.slice(5), f.family, per, 30, pick));
-    const rows = f.coffees.filter(c => !note || c.liked.concat(c.not).some(w => w === note)).map(c => ({ name:c.name, stars:c.stars, sub:[c.liked.length ? 'Liked: ' + c.liked.join(', ') : '', c.not.length ? 'Not liked: ' + c.not.join(', ') : ''].filter(Boolean).join('. ') }));
-    const panel = h('div', { class:'tpcard', id:'tpPanel' }, tpPanelHead(h('span', { class:'tpsw', style:'background:' + (f.hue == null ? '#C9BFA8' : tpHsl(f.hue, 62, 66)) }), f.family, f.tasted ? 'Tasted in ' + f.tasted + ' of ' + g.n + ' coffees. Liked in ' + f.liked + '.' : 'Not tasted in any of your ' + g.n + ' coffees yet.', null));
-    if (notes.length) panel.append(h('span', { class:'tplab', text:'Notes you wrote' }), h('div', { class:'tprow2' }, notes.map(n => tpBtn({ label:n.word, sub:n.liked && n.not ? 'liked and not liked' : n.not ? 'not liked' : 'liked', n:n.liked + n.not, on:note === n.word, onclick:() => { tpSel.note = note === n.word ? '' : n.word; paint(); } }))));
-    const list = tpCoffeeRows(rows, note ? 'Coffees with ' + note.toLowerCase() : 'Coffees with ' + f.family.toLowerCase()); if (list) panel.append(list);
-    tpPaint(holder, card, legend, panel);
-  }
-  paint(); m.append(holder);
-  if (g.other) m.append(h('p', { class:'fine', text:g.other + (g.other === 1 ? ' coffee has' : ' coffees have') + ' words that match none of the families, so they are not drawn.' }));
-  m.append(tpWhy('Each flower counts coffees, not cups or words. A coffee counts once for a family, even if you ticked several words in it. Words are grouped into the families on the flavor wheels. The face shows how often the words in that family were on your liked side: a smile from 60 %, straight from 40 %.'),
-    tpNumbers(d.a.flavors.rows.filter(r => r.family !== TP_OTHER).map(r => r.family + ': tasted in ' + r.tasted + ', liked in ' + r.liked + ' of ' + r.total + ' coffees (95% range ' + Math.round(r.likedCI.lo * 100) + ' to ' + Math.round(r.likedCI.hi * 100) + ' %), not liked in ' + r.notLiked + '.')));
-  m.append(tpFoot('Flavors come from the newest cup that has them.'), tpDone());
-}
-function screenTpEnjoy(m){
-  const d = tpNow(), gl = d.glow;
-  tpHead(m, 'Your cup glow', 'Each part of the cup glows more the more often you marked it Good.', gl.ready && gl.best ? gl.best.label + ' glows brightest: Good in ' + gl.best.good + ' of ' + gl.best.answered + ' coffees.' + (gl.weak && gl.weak.key !== gl.best.key ? ' ' + gl.weak.label + ' got the most Not good.' : '') : 'Do a few Quick tastings and the cup starts to glow.');
-  tpLookRow(m);
-  if (!gl.ready){ tpNeed(m, 'tpEmpty', 'The cup needs ' + d.need.enjoy + '. You have ' + gl.n + ' so far.'); m.append(tpFoot(''), tpDone()); return; }
-  if (!tpSel.part || !gl.parts.some(p => p.key === tpSel.part)) tpSel.part = (gl.best || gl.parts[0]).key;
-  const holder = h('div', { id:'tpCup' }), share = {}; gl.parts.forEach(p => { share[p.key] = p.share; });
-  function paint(){
-    const p = gl.parts.find(x => x.key === tpSel.part), pick = k => { tpSel.part = k; paint(); }, cupBox = h('div', { class:'tpcupbox' }, tpArt(tpCupG(share, 354)));
-    const svg = cupBox.querySelector('svg'); svg.classList.add('has', 'sel-' + p.key);
-    Object.keys(TP_CUP_HITS).forEach(k => { const b = TP_CUP_HITS[k], part = gl.parts.find(x => x.key === k); cupBox.append(h('button', { type:'button', class:'tphit' + (k === p.key ? ' on' : ''), style:'left:' + (b[0] / 3).toFixed(2) + '%;top:' + (b[1] / 2.4).toFixed(2) + '%;width:' + (b[2] / 3).toFixed(2) + '%;height:' + (b[3] / 2.4).toFixed(2) + '%', 'aria-pressed':k === p.key ? 'true' : 'false', 'aria-label':part.label + ': Good in ' + part.good + ' of ' + part.answered + ' coffees', onclick:() => pick(k) })); });
-    const rows = d.cs.filter(c => c.hasAreas && c.areas[p.key]).sort((a, b) => ['good', 'okay', 'unsure', 'notgood'].indexOf(a.areas[p.key]) - ['good', 'okay', 'unsure', 'notgood'].indexOf(b.areas[p.key])).map(c => ({ name:c.name, stars:c.stars, sub:{ good:'Good', okay:'Okay', notgood:'Not good', unsure:'Could not tell' }[c.areas[p.key]] }));
-    const tiles = h('div', { class:'tprow2' }, gl.parts.map(q => tpBtn({ art:tpGlass(q.share), label:q.label, sub:q.good + ' of ' + q.answered + ' Good', on:q.key === p.key, cls:'tppt', onclick:() => pick(q.key) })));
-    const panel = h('div', { class:'tpcard', id:'tpPanel' }, tpPanelHead(tpGlass(p.share, true), p.label, 'Good in ' + p.good + ' of ' + p.answered + ' coffees', TP_PART_TEXT[p.key]), tpCoffeeRows(rows));
-    tpPaint(holder, h('div', { class:'tpcard paper' }, cupBox), h('span', { class:'tplab', text:'Tap a part' }), tiles, h('div', { style:'height:14px' }), panel);
-  }
-  paint(); m.append(holder);
-  m.append(tpWhy('Each part counts coffees where you answered it in a Quick tasting. Good, Okay, Not good and Could not tell all count as answered; the glow is the share that said Good. Each coffee uses the newest tasting that has answers.'),
-    tpNumbers(gl.parts.map(p => p.label + ': Good ' + p.good + ', Okay ' + p.okay + ', Not good ' + p.notgood + ', Could not tell ' + p.unsure + ' (' + p.answered + ' answered)')));
-  m.append(tpFoot('Quick answers come from the newest cup that has them, one set for each coffee.'), tpDone());
-}
-function screenTpRate(m){
-  const d = tpNow(), jar = d.jar, r = d.a.rating;
-  tpHead(m, 'Your bean jar', 'One bean for each coffee you rated. The best ones float to the top.', jar.ready && jar.top ? 'Most of your coffees sit at ' + jar.top.star + (jar.top.star === 1 ? ' bean' : ' beans') + ': ' + jar.top.n + ' of ' + jar.n + '.' + (jar.unit > 1 ? ' One big bean stands for ' + jar.unit + ' coffees, so the jar never overflows.' : '') + (jar.narrow ? ' Your ratings sit in a narrow band so far.' : '') : 'Rate a few coffees and the jar starts to fill.');
-  tpLookRow(m);
-  if (!jar.ready){ tpNeed(m, 'tpEmpty', 'The jar needs ' + d.need.rate + '. You have ' + jar.n + ' so far.'); m.append(tpFoot(''), tpDone()); return; }
-  if (!tpSel.star) tpSel.star = jar.top ? jar.top.star : 5;
-  const holder = h('div', { id:'tpJar' }), art = tpJarG(jar), bin = c => Math.min(5, Math.max(1, Math.ceil(c.stars - 1e-9)));
-  function paint(){
-    const L = jar.layers.find(x => x.star === tpSel.star), pick = s => { tpSel.star = s; paint(); }, box = h('div', { class:'tpjar' }), side = h('div', { class:'tpjarside' });
-    box.append(h('div', { class:'tpjarsvg has sel-' + L.star }, tpArt(art.svg)), side);
-    art.bands.forEach(b => side.append(h('button', { type:'button', class:'tpjl' + (b.star === L.star ? ' on' : ''), style:'top:' + (b.y0 / art.h * 100).toFixed(2) + '%;height:' + ((b.y1 - b.y0) / art.h * 100).toFixed(2) + '%', 'aria-pressed':b.star === L.star ? 'true' : 'false', 'aria-label':b.star + (b.star === 1 ? ' bean' : ' beans') + ', ' + b.n + (b.n === 1 ? ' coffee' : ' coffees'), onclick:() => pick(b.star) }, tpIcon('bean-' + b.star, 28), h('span', null, h('b', { text:b.star + (b.star === 1 ? ' bean' : ' beans') }), h('small', { text:b.n + (b.n === 1 ? ' coffee' : ' coffees') })))));
-    const legend = jar.unit === 1 ? [tpIcon('bean-3', 28), 'Each bean is one coffee.'] : [tpIcon('bean-3', 40), 'Big bean = ' + jar.unit + ' coffees. ', tpIcon('bean-3', 22), 'Small bean = 1 coffee.'];
-    const rows = d.cs.filter(c => c.stars != null && bin(c) === L.star).map(c => ({ name:c.name, stars:c.stars, sub:[c.roaster, c.cups + (c.cups === 1 ? ' cup' : ' cups')].filter(Boolean).join(', ') }));
-    tpPaint(holder, h('div', { class:'tpcard' }, box, h('div', { class:'tplegs' }, legend)), h('div', { class:'tpcard', id:'tpPanel' }, tpPanelHead(tpIcon('bean-' + L.star, 44), L.star + (L.star === 1 ? ' bean' : ' beans'), L.n + ' of ' + jar.n + ' coffees', null), tpCoffeeRows(rows)));
-  }
-  paint(); m.append(holder);
-  m.append(tpWhy('This counts coffees by their star rating. When a coffee has several tastings, its stars are averaged. A half star is counted with the whole star above it. Coffees without a rating stay out of the jar.'),
-    tpNumbers(r.bars.slice().reverse().map(b => b.star + (b.star === 1 ? ' star' : ' stars') + ': ' + b.n + (b.n === 1 ? ' coffee' : ' coffees'))));
-  m.append(tpFoot('Ratings are your own stars. Each bean is a coffee, not a cup.'), tpDone());
-}
-/* ---------- Tendencies: kinds and brews ---------- */
-/* one group: its picture, name, how many coffees, its middle, and a heap with a flag at the middle */
-function tpGroupCard(feat, row, unit, ghost, on, onPick){
-  const mid = row.heap.enough ? 'Middle ' + row.heap.median : row.n ? 'Too few (' + row.n + ')' : 'None yet';
-  const b = h('button', { type:'button', class:'tpgroup' + (on ? ' on' : ''), 'aria-pressed':on ? 'true' : 'false', 'aria-label':row.label + ': ' + row.n + (row.n === 1 ? ' coffee' : ' coffees') + ', ' + mid, onclick:onPick },
-    h('span', { class:'tpghead' }, tpGroupIcon(feat, row.value, 40), h('span', { class:'tpgname' }, h('b', { text:row.label }), h('small', { text:row.n + (row.n === 1 ? ' coffee' : ' coffees') })), h('span', { class:'tpgmid', text:mid })));
-  b.append(tpArt(tpHeapG(row.heap, unit, row.heap.enough ? ghost : null, row.label.length), 'tpheapart'));
-  return b;
-}
-function screenTpKinds(m){
-  const d = tpNow(), k = d.kinds;
-  tpHead(m, 'Your bean heaps', 'One heap for each kind. Beans pile up where you rated them. A flag marks the middle.', k.ready ? 'Pick how to group your coffees, then tap a heap.' : 'Rate a few coffees from different roasts, processes or elevations and the heaps appear.');
-  tpLookRow(m);
-  if (!k.ready){ tpNeed(m, 'tpEmpty', 'The heaps need ' + d.need.kinds + '. You have ' + k.n + ' rated so far.'); m.append(tpFoot(''), tpDone()); return; }
-  if (!tpSel.feat || !k.feats.some(f => f.key === tpSel.feat)) tpSel.feat = k.feats[0].key;
-  const holder = h('div', { id:'tpKinds' });
-  m.append(...tpSelect('Group by', 'tpFeat', k.feats.map(f => ({ v:f.key, label:f.label })), tpSel.feat, v => { tpSel.feat = v; tpSel.group = ''; paint(); }), holder);
-  function paint(){
-    const f = k.feats.find(x => x.key === tpSel.feat), sel = f.rows.find(r => r.value === tpSel.group) || f.rows[0], unit = f.unit;
-    const top = f.rows.filter(r => r.heap.enough).sort((a, b) => b.heap.median - a.heap.median || b.n - a.n)[0];
-    const legend = h('div', { class:'tpcard tplegs2' },
-      h('div', null, tpArt('<svg width="34" height="30" viewBox="0 0 34 30"><path d="M8 28 V3" stroke="#22120C" stroke-width="3.4" stroke-linecap="round"/><path d="M9.5 3 L31 10 L9.5 17 Z" fill="#F2A93B" stroke="#22120C" stroke-width="2.8" stroke-linejoin="round"/></svg>'), h('span', { text:'The flag stands at the middle rating.' })),
-      h('div', null, tpArt('<svg width="34" height="30" viewBox="0 0 34 30"><rect x="2" y="10" width="30" height="9" rx="4.5" fill="#3F7A57" stroke="#22120C" stroke-width="2.2"/></svg>'), h('span', { text:'The green bar holds the middle half of your coffees.' })),
-      h('div', null, tpIcon('bean-3', 30), h('span', { text:(unit === 1 ? 'One bean is one coffee.' : 'One bean stands for about ' + unit + ' coffees. Tap a heap for the exact count.') + (k.ghost != null ? ' The dashed flag is the middle of all your rated coffees.' : '') })));
-    const rows = d.cs.filter(c => c.stars != null && c[f.key] === sel.value).map(c => ({ name:c.name, stars:c.stars, sub:[c.roaster, c.origin].filter(Boolean).join(', ') }));
-    tpPaint(holder, top ? sayRow(top.label + ' sits highest: middle ' + top.heap.median + (top.heap.median === 1 ? ' bean' : ' beans') + ' across ' + top.n + ' coffees.') : sayRow('Each group needs 3 rated coffees to get a flag.'),
-      f.rows.map(r => tpGroupCard(f.key, r, unit, k.ghost, r.value === sel.value, () => { tpSel.group = r.value; paint(); })), f.hidden ? h('p', { class:'fine', text:f.hidden + ' smaller ' + (f.hidden === 1 ? 'group is' : 'groups are') + ' not shown.' }) : null, legend,
-      h('div', { class:'tpcard', id:'tpPanel' }, tpPanelHead(tpGroupIcon(f.key, sel.value, 44), sel.label, sel.n + (sel.n === 1 ? ' coffee. ' : ' coffees. ') + (sel.heap.enough ? 'Middle ' + sel.heap.median + ' beans.' : 'Too few for a middle.'), null), tpCoffeeRows(rows)));
-  }
-  paint();
-  m.append(tpWhy('Each heap counts coffees by their star rating, with the half stars counted with the whole star above. The flag is the middle rating (the median) and the green bar holds the middle half of the coffees. Both show from 3 coffees. Details overlap: a natural is often also a lighter roast or a higher elevation.'),
-    tpNumbers(k.feats.find(f => f.key === tpSel.feat).rows.map(r => r.label + ': ' + r.n + ' coffees, ratings ' + r.heap.counts.map((c, i) => (i + 1) + ' star ' + c).join(', ') + (r.heap.enough ? '; middle ' + r.heap.median + ', middle half ' + r.heap.band[0] + ' to ' + r.heap.band[1] : ''))));
-  m.append(tpFoot('Piles are rounded when one bean stands for more than one coffee.'), tpDone());
 }
 /* ---------- Tendencies: brew rack and mix and match ---------- */
 let tpMixFrom = '';
@@ -17283,11 +17595,9 @@ function screenWheel(m){
    Every picture here is drawn in the same hand as the rest of the app (thick ink outline, flat color, a small face). Strings of SVG go into a span, so one word of text describes each picture (aria-label) and the shapes inside are hidden from a screen reader. */
 const TP_INK = '#22120C';
 const TP_BEANS = ['#C9A468', '#A97B4B', '#865730', '#643C22', '#3E2516'];   /* bean shades for 1 to 5 stars */
-let tpSeq = 0;
 const tpFx = n => (Math.round(n * 10) / 10).toString();
 /* a small steady random number maker, so a heap draws the same way every time */
 function tpRnd(seed){ let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-const tpHsl = (hue, s, l) => 'hsl(' + hue + ' ' + s + '% ' + l + '%)';
 /* a picture span: svg markup in, an element out. label gives the picture its spoken description; without one it is decoration. */
 function tpArt(svg, cls, label){ const s = h('span', { class:'tpart' + (cls ? ' ' + cls : ''), role:label ? 'img' : null, 'aria-label':label || null, 'aria-hidden':label ? null : 'true' }); s.innerHTML = svg; return s; }
 function tpSvg(w, hh, inner, vw, vh){
@@ -17311,85 +17621,7 @@ function tpFaceG(cx, cy, kind, s){
   else o += path('M' + P(-3.6, 5.4) + ' Q' + P(0, 1.8) + ' ' + P(3.6, 5.4));
   return o;
 }
-/* A flavor-family flower. h = stem height (more coffees, taller); mood = smile, flat or droop (how often you liked the family); 'none' draws a small closed bud with no face. */
-function tpFlowerG(cx, base, hgt, hue, mood, s, pot){
-  s = s || 1;
-  const droop = mood === 'droop', bud = mood === 'none', top = base - hgt, hx = cx + (droop ? 7 * s : 0), hy = top + (droop ? 8 * s : 0), col = hue == null ? '#C9BFA8' : tpHsl(hue, 62, 66);
-  let o = '';
-  const stem = droop ? 'M' + cx + ' ' + base + ' C' + cx + ' ' + tpFx(base - hgt * .5) + ' ' + tpFx(cx + 2 * s) + ' ' + tpFx(top + 10 * s) + ' ' + tpFx(hx) + ' ' + tpFx(hy) : 'M' + cx + ' ' + base + ' L' + cx + ' ' + tpFx(top);
-  o += '<path d="' + stem + '" fill="none" stroke="' + TP_INK + '" stroke-width="' + tpFx(7 * s) + '" stroke-linecap="round"/><path d="' + stem + '" fill="none" stroke="#5FA06E" stroke-width="' + tpFx(3.2 * s) + '" stroke-linecap="round"/>';
-  const leaf = (y, sg) => '<path d="M' + cx + ' ' + tpFx(y) + ' q' + tpFx(sg * 12 * s) + ' ' + tpFx(-3 * s) + ' ' + tpFx(sg * 14 * s) + ' ' + tpFx(-13 * s) + ' q' + tpFx(-sg * 12 * s) + ' ' + tpFx(1 * s) + ' ' + tpFx(-sg * 14 * s) + ' ' + tpFx(13 * s) + ' z" fill="#7DBB86" stroke="' + TP_INK + '" stroke-width="' + tpFx(2 * s) + '" stroke-linejoin="round"/>';
-  if (hgt > 26) o += leaf(base - hgt * .38, 1) + leaf(base - hgt * .62, -1);
-  if (bud) o += '<ellipse cx="' + cx + '" cy="' + tpFx(top) + '" rx="' + tpFx(7 * s) + '" ry="' + tpFx(9 * s) + '" fill="' + col + '" stroke="' + TP_INK + '" stroke-width="' + tpFx(2.1 * s) + '"/>';
-  else {
-    for (let k = 0; k < 6; k++){ const a = (k * 60 + (droop ? 10 : 0)) * Math.PI / 180; o += '<circle cx="' + tpFx(hx + Math.cos(a) * 11.5 * s) + '" cy="' + tpFx(hy + Math.sin(a) * 11.5 * s) + '" r="' + tpFx(8.6 * s) + '" fill="' + (droop ? tpHsl(hue, 30, 62) : col) + '" stroke="' + TP_INK + '" stroke-width="' + tpFx(2.1 * s) + '"/>'; }
-    o += '<circle cx="' + tpFx(hx) + '" cy="' + tpFx(hy) + '" r="' + tpFx(9.4 * s) + '" fill="#FFF8EA" stroke="' + TP_INK + '" stroke-width="' + tpFx(2.1 * s) + '"/>' + tpFaceG(hx, hy, mood, 1.12 * s);
-  }
-  if (pot) o += '<path d="M' + tpFx(cx - 15 * s) + ' ' + base + ' h' + tpFx(30 * s) + ' l' + tpFx(-4 * s) + ' ' + tpFx(20 * s) + ' h' + tpFx(-22 * s) + ' z" fill="#B0703A" stroke="' + TP_INK + '" stroke-width="' + tpFx(2.3 * s) + '" stroke-linejoin="round"/>'
-    + '<rect x="' + tpFx(cx - 17 * s) + '" y="' + tpFx(base - 3 * s) + '" width="' + tpFx(34 * s) + '" height="' + tpFx(8 * s) + '" rx="' + tpFx(3 * s) + '" fill="#C98A52" stroke="' + TP_INK + '" stroke-width="' + tpFx(2.3 * s) + '"/>' + tpBeanG(cx, base + 12 * s, 90, 3, .42 * s);
-  return o;
-}
-/* a wooden shelf */
-function tpPlankG(x, y, w, hh){ hh = hh || 10; return '<rect x="' + tpFx(x) + '" y="' + tpFx(y) + '" width="' + tpFx(w) + '" height="' + hh + '" rx="4" fill="#C79A66" stroke="' + TP_INK + '" stroke-width="2.6"/><path d="M' + tpFx(x + 8) + ' ' + tpFx(y + 3.5) + ' h' + tpFx(w - 16) + '" stroke="#E6C493" stroke-width="2" stroke-linecap="round" opacity=".8"/>'; }
-/* Your bean. freckles = [{ hue, size 0..1 }] biggest first: each family you taste is a freckle, and the more often, the bigger. */
-const TP_FRECKLE_SPOTS = [[67, 150], [136, 146], [143, 92], [58, 96], [88, 166], [100, 68], [116, 168]];
-function tpYourBean(w, freckles){
-  const id = 'tpyb' + (++tpSeq);
-  let o = '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9A5C38"/><stop offset="1" stop-color="#6A3C24"/></linearGradient></defs>';
-  o += '<ellipse cx="100" cy="188" rx="46" ry="6" fill="#22120C" opacity=".18"/>';
-  o += '<path d="M100 52 C 138 52 158 86 158 120 C 158 156 134 178 100 178 C 66 178 42 156 42 120 C 42 86 62 52 100 52 Z" fill="url(#' + id + ')" stroke="' + TP_INK + '" stroke-width="5" stroke-linejoin="round"/>';
-  o += '<path d="M100 58 C 91 70 108 79 100 90" fill="none" stroke="#3A2013" stroke-width="4" stroke-linecap="round" opacity=".6"/><path d="M60 104 C 60 90 66 80 74 72" fill="none" stroke="#C99872" stroke-width="5" stroke-linecap="round" opacity=".6"/>';
-  (freckles || []).slice(0, 7).forEach((f, i) => { const sp = TP_FRECKLE_SPOTS[i], r = 5 + 11 * f.size; o += '<circle cx="' + sp[0] + '" cy="' + sp[1] + '" r="' + tpFx(r) + '" fill="' + (f.hue == null ? '#C9BFA8' : tpHsl(f.hue, 62, 66)) + '" stroke="' + TP_INK + '" stroke-width="3"/><circle cx="' + tpFx(sp[0] - r * .35) + '" cy="' + tpFx(sp[1] - r * .38) + '" r="' + tpFx(Math.max(1.6, r * .2)) + '" fill="#fff" opacity=".55"/>'; });
-  [80, 120].forEach(ex => { o += '<circle cx="' + ex + '" cy="108" r="14" fill="#FFF8EA" stroke="' + TP_INK + '" stroke-width="4"/><circle cx="' + (ex + 1) + '" cy="110" r="6.5" fill="' + TP_INK + '"/><circle cx="' + (ex + 3) + '" cy="107.5" r="2.2" fill="#fff"/>'; });
-  o += '<path d="M88 132 Q100 143 112 132" fill="none" stroke="' + TP_INK + '" stroke-width="4.5" stroke-linecap="round"/><ellipse cx="64" cy="126" rx="8" ry="5" fill="#E58F7A" opacity=".55"/><ellipse cx="136" cy="126" rx="8" ry="5" fill="#E58F7A" opacity=".55"/>';
-  o += '<ellipse cx="80" cy="182" rx="12" ry="7" fill="#7A4A2D" stroke="' + TP_INK + '" stroke-width="4.5"/><ellipse cx="120" cy="182" rx="12" ry="7" fill="#7A4A2D" stroke="' + TP_INK + '" stroke-width="4.5"/>';
-  return tpSvg(w, w, o, 200, 200);
-}
 /* ---------- Tendencies art, part two ---------- */
-/* the six Quick answers and the part of the cup each one glows on: [Quick key, glow name, color] */
-const TP_CUP_GLOWS = [['smell', 'aroma', '#FFE08A'], ['acidity', 'acid', '#FFF1A0'], ['taste', 'flavor', '#FFB454'], ['body', 'body', '#FFCB7A'], ['sweetness', 'sweet', '#FFD0A0'], ['aftertaste', 'after', '#FFB454']];
-/* The cup. share = { smell: 0..1, ... } is the share of Good for each part. Brighter means more Good. Each part has a class so a chosen part can stand out (see the CSS). */
-function tpCupG(share, w){
-  const id = ++tpSeq, g = {}; TP_CUP_GLOWS.forEach(x => { g[x[1]] = share[x[0]] || 0; });
-  let o = '<defs>' + TP_CUP_GLOWS.map(x => '<radialGradient id="tpgl' + x[1] + id + '"><stop offset="0" stop-color="' + x[2] + '" stop-opacity=".95"/><stop offset="1" stop-color="' + x[2] + '" stop-opacity="0"/></radialGradient>').join('') + '</defs>';
-  const G = (k, cx, cy, rx, ry) => '<ellipse class="tpG tpg-' + k + '" cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '" fill="url(#tpgl' + k + id + ')" style="--o:' + (0.25 + 0.75 * g[k]).toFixed(2) + '"/>';
-  o += G('aroma', 150, 52, 76, 60) + G('acid', 238, 88, 44, 44) + G('sweet', 54, 206, 46, 36) + G('after', 252, 206, 44, 34);
-  o += '<ellipse cx="150" cy="214" rx="118" ry="19" fill="#F2A93B" stroke="' + TP_INK + '" stroke-width="3.5"/><ellipse cx="150" cy="210" rx="82" ry="10" fill="#FFD27A" stroke="' + TP_INK + '" stroke-width="2.2"/>';
-  const hd = 'M238 120 h18 a24 24 0 0 1 0 48 h-28', body = 'M62 104 H238 V140 A66 66 0 0 1 172 206 H128 A66 66 0 0 1 62 140 Z';
-  o += '<path d="' + hd + '" fill="none" stroke="' + TP_INK + '" stroke-width="12" stroke-linecap="round"/><path d="' + hd + '" fill="none" stroke="#FDFBF7" stroke-width="5.5" stroke-linecap="round"/>';
-  o += '<path d="' + body + '" fill="#FDFBF7" stroke="' + TP_INK + '" stroke-width="3.8" stroke-linejoin="round"/><path d="M76 130 C76 160 92 186 120 196" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".8"/><path d="M222 150 C220 170 210 186 196 194" fill="none" stroke="#E6D9BE" stroke-width="5" stroke-linecap="round" opacity=".8"/>';
-  o += '<path class="tpG tpg-body" d="' + body + '" fill="#FFB43A" style="--o:1" fill-opacity="' + (0.12 + 0.5 * g.body).toFixed(2) + '"/>';
-  o += '<ellipse cx="150" cy="104" rx="88" ry="15" fill="#8A5230" stroke="' + TP_INK + '" stroke-width="3.8"/><ellipse cx="150" cy="106" rx="70" ry="9" fill="#6B3E22" opacity=".6"/><path d="M104 100 Q130 94 158 98" fill="none" stroke="#C99872" stroke-width="3" stroke-linecap="round" opacity=".8"/>';
-  o += '<ellipse class="tpg-flavor" cx="150" cy="104" rx="88" ry="15" fill="none" stroke="#FFC15A" stroke-width="7" stroke-opacity="' + (0.1 + 0.85 * g.flavor).toFixed(2) + '"/>';
-  o += '<circle cx="124" cy="150" r="9" fill="#fff" stroke="' + TP_INK + '" stroke-width="3"/><circle cx="176" cy="150" r="9" fill="#fff" stroke="' + TP_INK + '" stroke-width="3"/><circle cx="125.5" cy="152" r="4" fill="' + TP_INK + '"/><circle cx="177.5" cy="152" r="4" fill="' + TP_INK + '"/>';
-  o += '<path d="M138 166 Q150 177 162 166" fill="none" stroke="' + TP_INK + '" stroke-width="3.4" stroke-linecap="round"/><ellipse cx="106" cy="166" rx="7" ry="4.5" fill="#E58F7A" opacity=".55"/><ellipse cx="194" cy="166" rx="7" ry="4.5" fill="#E58F7A" opacity=".55"/>';
-  [-22, 0, 22].forEach(dx => { const d = 'M' + (150 + dx) + ' 92 c-12 -10 12 -20 0 -32 c-11 -10 11 -20 0 -30'; o += '<path d="' + d + '" fill="none" stroke="' + TP_INK + '" stroke-width="9" stroke-linecap="round"/><path d="' + d + '" fill="none" stroke="#FDFBF7" stroke-width="3.6" stroke-linecap="round"/>'; });
-  o += '<path d="M236 64 L242 82 L260 88 L242 94 L236 112 L230 94 L212 88 L230 82 Z" fill="#FFE96B" stroke="' + TP_INK + '" stroke-width="3" stroke-linejoin="round"/><path d="M264 62 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" fill="#FFE96B" stroke="' + TP_INK + '" stroke-width="2.2" stroke-linejoin="round"/>';
-  o += '<path d="M34 196 L64 196 L64 224 L34 224 Z" fill="#FFF8EA" stroke="' + TP_INK + '" stroke-width="3" stroke-linejoin="round"/><path d="M34 196 L44 188 L74 188 L64 196 Z" fill="#fff" stroke="' + TP_INK + '" stroke-width="3" stroke-linejoin="round"/><path d="M64 196 L74 188 L74 216 L64 224 Z" fill="#E6D9BE" stroke="' + TP_INK + '" stroke-width="3" stroke-linejoin="round"/><circle cx="42" cy="204" r="1.8" fill="#BDA77E"/><circle cx="54" cy="214" r="1.8" fill="#BDA77E"/>';
-  o += '<ellipse cx="252" cy="218" rx="22" ry="5" fill="none" stroke="#8A5230" stroke-width="2.6" opacity=".75"/><ellipse cx="252" cy="218" rx="11" ry="3" fill="none" stroke="#8A5230" stroke-width="2.6" opacity=".9"/>';
-  o += '<path d="M252 186 C 262 200 266 207 266 212 A14 14 0 0 1 238 212 C 238 207 242 200 252 186 Z" fill="#6B3E22" stroke="' + TP_INK + '" stroke-width="3" stroke-linejoin="round"/><path d="M246 208 C246 212 248 215 251 216" fill="none" stroke="#C99872" stroke-width="3" stroke-linecap="round"/>';
-  return '<svg class="tpcup" width="' + w + '" height="' + Math.round(w * 0.8) + '" viewBox="0 0 300 240" aria-hidden="true" focusable="false" style="display:block;max-width:100%;height:auto">' + o + '</svg>';
-}
-/* The jar: layers from 5 stars at the top to 1 star at the bottom. unit 1 = one bean is one coffee; a bigger unit = a big bean is that many coffees and a small bean is one. Returns { svg, bands:[{ star, y0, y1, n }], h } so labels can sit level with each layer. */
-function tpJarG(jar){
-  const rnd = tpRnd(5), u = jar.unit, bigS = u === 1 ? 0.8 : 1, smallS = u === 1 ? 0.8 : 0.62, bigW = u === 1 ? 28 : 34, bigH = u === 1 ? 22 : 28, per = u === 1 ? 5 : 4, smW = 22, smH = 18, minH = 58, cx = 100, shades = [62, 78, 96, 112, 70, 104];
-  let y = 30, body = '', seps = '';
-  const bands = jar.layers.map(L => {
-    const rows = L.big ? Math.ceil(L.big / per) : 0, ch = rows * bigH + (L.small ? smH : 0), band = Math.max(minH, ch + 12);
-    let yy = y + (band - ch) / 2, grp = '<g class="tpL tpl' + L.star + '">';
-    for (let r = 0; r < rows; r++){ const k = Math.min(per, L.big - r * per), x0 = cx - (k - 1) * bigW / 2; for (let j = 0; j < k; j++) grp += tpBeanG(x0 + j * bigW + (rnd() * 4 - 2), yy + bigH / 2 + (rnd() * 3 - 1.5), shades[Math.floor(rnd() * 6)], L.star, bigS); yy += bigH; }
-    if (L.small){ const x0 = cx - (L.small - 1) * smW / 2; for (let j = 0; j < L.small; j++) grp += tpBeanG(x0 + j * smW + (rnd() * 4 - 2), yy + smH / 2, shades[Math.floor(rnd() * 4)], L.star, smallS); }
-    body += grp + '</g>';
-    const out = { star:L.star, y0:y, y1:y + band, n:L.n };
-    y += band; if (L.star !== 1) seps += '<path d="M16 ' + y + ' H184" stroke="' + TP_INK + '" stroke-width="2" stroke-dasharray="2 6" stroke-linecap="round" opacity=".35"/>';
-    return out;
-  });
-  const hj = y + 14, H = hj + 4;
-  let o = '<path d="M24 22 H176 Q192 22 192 40 V' + (hj - 18) + ' Q192 ' + hj + ' 174 ' + hj + ' H26 Q8 ' + hj + ' 8 ' + (hj - 18) + ' V40 Q8 22 24 22 Z" fill="#DDF1F7" fill-opacity=".55" stroke="' + TP_INK + '" stroke-width="4" stroke-linejoin="round"/>' + seps + body;
-  o += '<path d="M19 44 V' + Math.max(60, hj - 40) + '" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".7"/>';
-  o += '<rect x="22" y="6" width="156" height="22" rx="7" fill="#F2A93B" stroke="' + TP_INK + '" stroke-width="4"/><path d="M34 12 H166" stroke="#FFD27A" stroke-width="3" stroke-linecap="round"/>';
-  return { svg:'<svg class="tpjarart" width="100%" viewBox="0 0 200 ' + H + '" aria-hidden="true" focusable="false" style="display:block">' + o + '</svg>', bands, h:H };
-}
 /* One pile of beans for each whole star (1 to 5). Each bean is `unit` coffees. The flag stands at the middle (heap.median, from 3 coffees) and the green bar is the middle half of the coffees. ghost = the middle of everything, drawn as a dashed flag to compare. */
 function tpHeapG(heap, unit, ghost, uid){
   const W = 330, colW = 62, x0 = (W - 5 * colW) / 2, ground = 112, X = v => x0 + (v - 1) * colW + colW / 2;
@@ -17511,22 +17743,6 @@ function tpGroupIcon(feat, value, size){
   const sp = h('span', { class:'tpart tpgi', 'aria-hidden':'true', style:st }); sp.innerHTML = '<svg viewBox="0 0 48 48" width="' + size + '" height="' + size + '" focusable="false"><use href="#' + id + '"/></svg>'; return sp;
 }
 /* ---------- Tendencies tiles: small pictures ---------- */
-function tpMiniGarden(g){
-  const fl = g.flowers.filter(f => f.tasted > 0).sort((a, b) => b.tasted - a.tasted).slice(0, 4), use = fl.length ? fl : [{ hue:350, tasted:4, mood:'smile' }, { hue:35, tasted:3, mood:'smile' }, { hue:315, tasted:2, mood:'flat' }, { hue:28, tasted:1, mood:'droop' }];
-  const mx = Math.max(1, ...use.map(f => f.tasted));
-  let o = tpPlankG(6, 70, 138, 9);
-  use.forEach((f, i) => { o += tpFlowerG(26 + i * 31, 69, 14 + 32 * f.tasted / mx, f.hue, f.mood === 'none' ? 'flat' : f.mood, 0.52, false); });
-  return tpArt(tpSvg(150, 82, o));
-}
-function tpMiniCup(gl){ const sh = {}; gl.parts.forEach(p => { sh[p.key] = p.answered ? p.share : 0.5; }); return tpArt(tpCupG(sh, 112)); }
-function tpMiniJar(jar){
-  const j = tpJarG(jar.n ? jar : tpJar({ n:12, ready:false, narrow:false, bars:[1, 2, 3, 4, 5].map((s, i) => ({ star:s, n:[1, 1, 3, 5, 2][i] })) }));
-  return tpArt(j.svg.replace('width="100%"', 'height="84"'));
-}
-function tpMiniHeaps(k){
-  const row = k.feats.length ? k.feats[0].rows[0].heap : tpHeap([2, 3, 3, 4, 4, 4, 5, 5]);
-  return tpArt(tpHeapG(row, tpUnit(row.max), null, 3).replace('width="100%"', 'width="150"'));
-}
 function tpMiniRings(){
   const o = '<rect x="30" y="12" width="76" height="58" rx="12" fill="none" stroke="' + TP_INK + '" stroke-width="2.6" stroke-dasharray="6 5"/>' + tpStainG(66, 42, 30, 22, 11, 3) + tpStainG(104, 30, 16, 12, 23, 2) + tpDropG(22, 58, 7, 5) + tpDropG(128, 62, 6, 6) + tpDropG(120, 12, 5, 7) + tpDropG(14, 24, 5, 8);
   return tpArt(tpSvg(150, 82, o));
@@ -17534,7 +17750,7 @@ function tpMiniRings(){
 function tpMiniStreet(){ return tpArt(tpSvg(150, 82, '<path d="M4 76 H146" stroke="' + TP_INK + '" stroke-width="3" stroke-linecap="round"/>' + tpFrontG(8, 22, 38, 54, TP_AWN[0], TP_DOOR[1]) + tpFrontG(52, 6, 46, 70, TP_AWN[1], TP_DOOR[0]) + tpFrontG(104, 32, 38, 44, TP_AWN[2], TP_DOOR[2]))); }
 /* ---------- Tendencies pages: shared pieces ---------- */
 const TP_CAUTION = 'These pictures describe what you rated and wrote. They are not rules about coffee. A few coffees is a small sample, and details overlap.';
-const TP_TITLES = { tend:'Your tendencies', tpflavors:'Flavors', tpenjoy:'What you enjoy', tprate:'How you rate', tpkinds:'Kinds of coffee', tpshops:'Coffee street', tpbrewers:'Your brew rack', tpmix:'Mix and match' };
+const TP_TITLES = { tend:'Your preferences', tpboard:'Your preferences', tpshops:'Coffee street', tpbrewers:'Your brew rack', tpmix:'Mix and match' };
 let tpLook = 'all';   /* which coffees the pictures look at: all, the last 12 months or the last 3 months. Not saved. */
 function tpIso(look){ if (look === 'all') return ''; const d = new Date(); d.setMonth(d.getMonth() - (look === '3m' ? 3 : 12)); const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
 const tpObjs = () => tpSince(history && history.objs ? history.objs : [], tpIso(tpLook));
@@ -21994,7 +22210,7 @@ function renderSheetBody(){
     sheetEl.append(band, h('div', { class:'menubody' }, hero, tile('', 'Coffee shops', () => { closeSheet(); goShops(); }, { cls:'mshops', art:'s-shop', sub:'Drinks you bought, and where' }),
       lab('Tools'), h('div', { class:grid('g3', 'gt') }, tile('', 'Calculators', () => { closeSheet(); goTools(); }, Object.assign({ art:'mn-calc' }, say('How much coffee, and how strong.'))), tile('', 'Coffee prices', () => { closeSheet(); goPrices(); }, Object.assign({ art:'s-tag' }, say('What a cup of your coffee costs.'))), tile('', 'SCA cupping', () => { closeSheet(); goSca(); }, Object.assign({ art:'mn-cupping' }, say('The pros\u2019 way to taste side by side.')))),
       lab('Learn'), h('div', { class:grid('g2', 'gl') }, tile('', 'Understanding coffee', () => { closeSheet(); goLearn(); }, Object.assign({ art:'ab-book' }, say('How coffee works, in plain words.'))), tile('', 'Solid or folklore?', () => { closeSheet(); goFolk(); }, Object.assign({ art:'mn-folk' }, say('Which coffee tips hold up.'))), tile('', 'Wheels', () => { closeSheet(); goWheels(); }, Object.assign({ art:'mn-wheel' }, say('Flavor words, and what to change.'))), tile('', 'Train your palate', () => { closeSheet(); goTastes(); }, Object.assign({ art:'mn-palate' }, say('Tips to taste more in a cup.')))),
-      lab('About me'), h('div', { class:grid('g2', 'gm') }, tile('', 'Your tastings', tastings, Object.assign({ art:'mn-tastings' }, say('Every cup you have rated.'))), tile('peak', 'Still perfecting', () => { closeSheet(); go('perfecting'); }, Object.assign({}, say('Coffees you are still improving.'))), tile('', 'Your tendencies', () => { closeSheet(); goTend(); }, Object.assign({ art:'tp-bean' }, say('Patterns in what you like.'))), tile('', 'My files', () => { closeSheet(); goFiles(); }, Object.assign({ art:'fl-folder' }, say('Save or load your history.')))),
+      lab('About me'), h('div', { class:grid('g2', 'gm') }, tile('', 'Your tastings', tastings, Object.assign({ art:'mn-tastings' }, say('Every cup you have rated.'))), tile('peak', 'Still perfecting', () => { closeSheet(); go('perfecting'); }, Object.assign({}, say('Coffees you are still improving.'))), tile('', 'Your preferences', () => { closeSheet(); goTend(); }, Object.assign({ art:'art-ratio' }, say('What you rate high and low.'))), tile('', 'My files', () => { closeSheet(); goFiles(); }, Object.assign({ art:'fl-folder' }, say('Save or load your history.')))),
       h('button', { type:'button', class:'menuitem mabout', onclick:() => { closeSheet(); goAbout(); } }, mark.cloneNode(true), h('span', { class:'mtx' }, h('span', { class:'mi-t', text:'About BeanTelligence' }), h('span', { class:'mi-s', text:'How it works, what it is for, glossary, what changed' })))));
     return;
   }
@@ -23710,7 +23926,7 @@ const MK = (() => {
   MK.poses = POSES; MK.arms = arms;
 })();
 /* each part of the app has its own outfit: lab coat for tasting, little suit for numbers, vest for learning, tweed for history and origins */
-const MASCOT_OUTFITS = { lab:['cup', 'quick', 'sca', 'cva', 'staste', 'dial', 'perfecting', 'wheels', 'tastes'], suit:['tend', 'tpmix', 'tpflavors', 'cost', 'bagcmp', 'fresh', 'prices', 'yield', 'ratio', 'compare', 'tools', 'files', 'caffeine', 'cafdrink', 'cafresult', 'cafcup'], vest:['learn', 'glossary', 'guide', 'help'], tweed:['history', 'detail', 'tastedit', 'folk', 'facts'] };
+const MASCOT_OUTFITS = { lab:['cup', 'quick', 'sca', 'cva', 'staste', 'dial', 'perfecting', 'wheels', 'tastes'], suit:['tend', 'tpmix', 'tpboard', 'cost', 'bagcmp', 'fresh', 'prices', 'yield', 'ratio', 'compare', 'tools', 'files', 'caffeine', 'cafdrink', 'cafresult', 'cafcup'], vest:['learn', 'glossary', 'guide', 'help'], tweed:['history', 'detail', 'tastedit', 'folk', 'facts'] };
 function outfitForScreen(){
   const s = app.screen;
   for (const k of Object.keys(MASCOT_OUTFITS)) if (MASCOT_OUTFITS[k].includes(s)) return k;
@@ -25337,7 +25553,7 @@ function shopsFilesRows(){
     h('button', { type:'button', class:'btn', id:'shPasteBtn', style:'margin-top:8px', text:'Use pasted text', onclick:() => { if (paste.value.trim()){ shLoadText(paste.value); say(sh.msg); save.querySelector('.hs').textContent = subText(); } else say('Paste the file contents first.'); } }));
   return [save, load, file, fold, msg, h('p', { class:'fine hubnote', style:'margin:0', text:'The coffee shops file is a file of its own. It is not your tasting history, and your history is never changed by it.' })];
 }
-const SCREENS = { door:screenDoor, loadshared:screenLoadShared, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, perfecting:screenPerfecting, detail:screenDetail, tastedit:screenTastingEdit, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, tpflavors:screenTpFlavors, tpenjoy:screenTpEnjoy, tprate:screenTpRate, tpkinds:screenTpKinds, tpshops:screenTpShops, tpbrewers:screenTpBrewers, tpmix:screenTpMix, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, bagcmp:screenBagCmp, fresh:screenFresh, caffeine:screenCaffeine, cafdrink:screenCafDrink, cafresult:screenCafResult, cafcup:screenCafCup, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, glossary:screenGlossary, files:screenFiles };
+const SCREENS = { door:screenDoor, loadshared:screenLoadShared, shop:screenShop, sdrink:screenSdrink, staste:screenStaste, sperfect:screenSperfect, shops:screenShops, history:screenHistory, perfecting:screenPerfecting, detail:screenDetail, tastedit:screenTastingEdit, start:screenStart, coffee:screenCoffee, brew:screenBrew, gear:screenGear, recipe:screenRecipe, change:screenChange, ready:screenReady, timer:screenTimer, cup:screenCup, tastes:screenTastes, sca:screenSca, wheels:screenWheels, wheel:screenWheel, chart:screenChart, dial:screenDial, learn:screenLearn, tend:screenTend, tpboard:screenTpBoard, tpshops:screenTpShops, tpbrewers:screenTpBrewers, tpmix:screenTpMix, guide:screenGuide, tools:screenTools, yield:screenYield, ratio:screenRatio, cost:screenCost, bagcmp:screenBagCmp, fresh:screenFresh, caffeine:screenCaffeine, cafdrink:screenCafDrink, cafresult:screenCafResult, cafcup:screenCafCup, prices:screenPrices, folk:screenFolk, compare:screenCompare, about:screenAbout, glossary:screenGlossary, files:screenFiles };
 
 syncMenuBtn();
 $('homeBtn').addEventListener('click', () => { if (menuIsOpen()) closeSheet(); else openMenu(); });
