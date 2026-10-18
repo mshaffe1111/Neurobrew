@@ -4,6 +4,25 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.058.0125: Back everywhere and a heat map at every step
+
+2026-10-18 14:17:12 UTC
+
+- Back retraces each step in the Buying guide and on every Your preferences board, then leaves
+- Your preferences draws a heat map at the coffee list, in More and on an empty board
+- A group with no deeper detail now shows its coffees instead of a dead end
+- The result page button now reads Clear and check another coffee
+
+## Version 4.058.0124: Buying guide
+
+2026-10-18 11:22:19 UTC
+
+- The Menu has a new tile, Buying guide, right after Your preferences.
+- Beanjamin asks what the bag or menu says, one question at a time. He asks only roast, process, elevation, origin, variety and tasting notes. Nothing is required, and there is no roaster or roast date.
+- You see the chance you would rate that coffee 4 beans or more, on a target. A tab for each answer opens your real Preferences board with this coffee marked in gold.
+- The way in is rose, so it looks different from the rest of the app. Clear is on that first page only. A This visit list shows the coffees you checked, and nothing about them is saved.
+- Needs 10 rated coffees; until then it shows how many more. Use AI to fill in works here too, and fills only these six things.
+
 ## Version 4.056.0122: Flavor dots you can read
 
 2026-10-18 05:20:00 UTC
