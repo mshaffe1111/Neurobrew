@@ -1855,6 +1855,14 @@ details.mgroup.mpoor > .mgs{ margin:10px 0 10px 2px; }
 .adjsize .adjk{ margin:0 0 4px; }
 .sizeseg button{ display:flex; flex-direction:column; align-items:center; gap:2px; min-height:52px; }
 .sizeseg button span{ font:500 13px/1.2 var(--ui); }
+/* Keep the same cup: the grind match, right under the temperature slider (Build 126) */
+.keepcup{ margin:12px 0 0; padding:10px 12px; background:var(--surface); border:1px solid var(--hush); border-radius:14px; }
+.keepcup > b{ display:block; font:800 17px/1.2 var(--ui); color:var(--ink); }
+.keepcup > p{ margin:6px 0 0; font-size:16px; }
+.keepcup > .choice{ margin:10px 0 0; width:100%; }
+.keepcup > .tempcomp{ margin:8px 0 0; font-size:15px; font-weight:600; color:var(--leaf); }
+.keepcup.off{ padding:0 2px; background:none; border:0; }
+.keepcup.off > .fine{ margin:6px 0 0; }
 /* ---------- Buying guide (Build 124) ---------- */
 /* the way in is rose, so it looks different from the rest of the app; the result goes back to the usual colours */
 /* :root twice, so it also beats the dark token blocks, which are written :root:not([data-theme]) */
@@ -11853,6 +11861,19 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 /* ---------- releases ---------- */
 const RELEASES = [
  {
+  "release": 126,
+  "version": "4.058.0126",
+  "tier": "small",
+  "at": "2026-10-18T19:18:15Z",
+  "date": "2026-10-18",
+  "title": "Typed amounts register, and the grind match is back",
+  "notes": [
+   "Typing the coffee amount now moves the water on every key, and again when the keyboard closes or you leave the box, on the Brew pop-up and on Change settings",
+   "Tapping into an amount box and out again changes nothing",
+   "The Adjust grind to match button now sits right under the water temperature slider in a Keep the same cup box, instead of deep inside the explanation"
+  ]
+ },
+ {
   "release": 125,
   "version": "4.058.0125",
   "tier": "small",
@@ -18978,6 +18999,12 @@ function screenGear(m){
 /* ---------- the amounts ---------- */
 /* which amount you type on Change settings; the other follows from it and the ratio. Coffee first, like the Brew page. Kept while the page is open, not saved. */
 let amountFrom = 'coffee';
+/* A number box tells its screen on every key and again when the keyboard closes or the field is left, because some phone keyboards send only the last of these (Matt, 18 Oct: typed coffee did not move the water).
+   shown() is what the box holds with nothing typed: the same text means nothing was typed, so tapping in and out never moves an amount. The handlers it calls must do nothing when the amount is already set. */
+function onTyped(input, shown, fn){
+  const go = () => { const v = parseFloat(input.value); if (!(v > 0) || input.value === shown()) return; fn(v); };
+  ['input', 'keyup', 'change', 'blur', 'compositionend'].forEach(ev => input.addEventListener(ev, go));
+}
 function amountCard(meth, onChange){
   const waterIn = h('input', { type:'number', inputmode:'decimal', step:'any', min:'0', class:'plain', 'aria-label':'Water amount' });
   const waterSel = h('select', { class:'plain unitsel', 'aria-label':'Water unit' }, WATER_UNITS.map(u => h('option', { value:u.v, text:u.label })));
@@ -18991,20 +19018,22 @@ function amountCard(meth, onChange){
   /* the least a method can brew: a single espresso shot is about 14 to 18 g in the cup, every other method needs 20 g */
   const minWater = meth.type === 'espresso' ? 10 : 20, rangeNote = h('p', { class:'fine', id:'amountRange', role:'status', style:'margin:4px 0 0' });
   const outOfRange = g => { const bad = g < minWater || g > 6000; rangeNote.textContent = bad ? 'That amount is outside what this method can use (' + waterShown(minWater, app.prefs.waterUnit) + ' to ' + waterShown(6000, app.prefs.waterUnit) + ' of water), so it was not changed.' : ''; return bad; };
-  waterIn.addEventListener('input', () => {
-    const v = parseFloat(waterIn.value); if (!(v > 0)){ rangeNote.textContent = ''; return; }
+  waterIn.addEventListener('input', () => { if (!(parseFloat(waterIn.value) > 0)) rangeNote.textContent = ''; });
+  coffeeIn.addEventListener('input', () => { if (!(parseFloat(coffeeIn.value) > 0)) rangeNote.textContent = ''; });
+  onTyped(waterIn, () => fmtWater(getRecipe().water, app.prefs.waterUnit), v => {
     const g = waterToG(v, app.prefs.waterUnit); if (outOfRange(g)) return;
-    app.brew.water = Math.round(g * 10) / 10; onChange('water');
+    const w = Math.round(g * 10) / 10; if (w === app.brew.water) return;
+    app.brew.water = w; onChange('water');
   });
-  coffeeIn.addEventListener('input', () => {
-    const v = parseFloat(coffeeIn.value); if (!(v > 0)){ rangeNote.textContent = ''; return; }
+  onTyped(coffeeIn, () => fmtCoffee(getRecipe().dose, app.prefs.coffeeUnit), v => {
     const cg = coffeeToG(v, app.prefs.coffeeUnit), r = getRecipe(), w = Math.round(cg * r.ratio * 10) / 10;   /* one decimal, so 18.3 g at 1:2 stays 18.3 g */
-    if (outOfRange(w)) return;
+    if (outOfRange(w) || w === app.brew.water) return;
     app.brew.water = w; onChange('coffee');
   });
-  ratioIn.addEventListener('input', () => {
-    const v = parseFloat(ratioIn.value), rb = ratioBounds(meth); if (!(v >= rb[0] && v <= rb[1])) return;
-    const rec = getRecipe().ratioRec; app.brew.ratio = Math.abs(v - rec) < 0.001 ? null : v; onChange('ratio');
+  onTyped(ratioIn, () => String(getRecipe().ratio), v => {
+    const rb = ratioBounds(meth); if (!(v >= rb[0] && v <= rb[1])) return;
+    const rec = getRecipe().ratioRec, nr = Math.abs(v - rec) < 0.001 ? null : v; if (nr === app.brew.ratio) return;
+    app.brew.ratio = nr; onChange('ratio');
   });
   resetRatio.addEventListener('click', () => { app.brew.ratio = null; onChange('ratio-reset'); });
   const STR = [['Lighter', 1], ['Standard', 0], ['Stronger', -1]], sStep = meth.type === 'espresso' ? 0.5 : 1;
@@ -19159,12 +19188,13 @@ function tempCard(onChange, lim){
   const rg = r0.temp.range || [recF, recF];
   const wrapSl = h('div', { class:'slwrap' }, h('div', { class:'sweetband', style:'--a:' + ((rg[0] - MIN) / (MAX - MIN)) + ';--b:' + ((rg[1] - MIN) / (MAX - MIN)) }), input, h('div', { class:'recmark', style:'--p:' + ((recF - MIN) / (MAX - MIN)) }),
     scaleRow((lim ? [MIN, recF, MAX] : MIN === 165 ? [165, 175, 190, 205] : [185, 195, 205, 212]).filter(v => v <= MAX).map(v => ({ v })), MIN, MAX));
+  const keepBox = h('div', { class:'keepcup', id:'keepCup' });
   const rangeLine = h('p', { class:'fine', style:'margin:6px 0 0', text:'Shaded: the sweet spot for this coffee, ' + rg[0] + '–' + rg[1] + '°F (' + Math.round(fToC(rg[0])) + '–' + Math.round(fToC(rg[1])) + '°C). The tick is our pick.' });
   const layerBox = h('details', { class:'layerbox' }, h('summary', { text:'How we chose ' + recF + '°F' }));
   const heatBox = h('details', { class:'layerbox' }, h('summary', { text:'Why the coffee runs cooler than your kettle' }), h('p', { class:'serif', style:'margin:8px 0 0;font-size:15.5px;line-height:1.4', text:HEAT_NOTE }));
   const card = h('div', { class:'card' }, h('h3', { text:'Water temperature' }),
     h('div', { style:'display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-top:4px' }, h('div', null, val, recLine, evBox), h('div', { class:'nudges', style:'margin:0' }, minus, plus)),
-    wrapSl, rangeLine, layerBox, fxBox, heatBox);
+    wrapSl, rangeLine, keepBox, layerBox, fxBox, heatBox);
   function refresh(){
     const r = getRecipe(), f = r.temp.f, e = r.tempFx;
     while (layerBox.children.length > 1) layerBox.removeChild(layerBox.lastChild);
@@ -19188,13 +19218,14 @@ function tempCard(onChange, lim){
     }
     if (e.risk) fx.append(h('div', { class:'watch', style:'margin:12px 0 0' }, h('b', { text:e.risk.level === 'high' ? 'Careful: ' : e.risk.level === 'low' ? 'Note: ' : 'Watch for: ' }), e.risk.text));
     if (e.fruit) fx.append(h('p', { class:'serif', style:'margin:12px 0 0;font-size:16px', text:e.fruit }));
-    if (e.comp){
-      const cp = r.compPreview, stepTxt = cp ? (cp.steps === 1 ? 'one step ' : cp.steps + ' steps ') + cp.dir : '';
-      fx.append(...kept(h('p', { class:'serif', style:'margin:12px 0 8px;font-size:16px', text:e.comp }),
-        h('button', { type:'button', class:'choice', 'aria-pressed':String(!!app.brew.tempComp), text:'Adjust grind to match', onclick:() => { app.brew.tempComp = !app.brew.tempComp; app.flashGrind = !!app.brew.tempComp; onChange('comp'); } }),
-        cp ? h('p', { class:'tempcomp', style:'margin:8px 0 0;font-size:15px;font-weight:600;color:var(--leaf)', text:cp.applied ? '✓ Applied. Your grind changed from ' + cp.off + ' µm to ' + cp.on + ' µm (' + stepTxt + '). See the Grind row on the Brew page. Tap the button again to undo.' : 'Not applied yet. Tapping it changes your grind from ' + cp.off + ' µm to ' + cp.on + ' µm (' + stepTxt + ').' }) : null));
-    }
     fx.append(h('p', { class:'fine', text:e.note }));
+    /* Keep the same cup: right under the slider, because moving the grind to match is what a person who runs cooler or hotter reaches for (Matt, 18 Oct). Offered from 4°F off ours; nearer than that it says when it will appear, so it never seems gone. */
+    const cp = r.compPreview, stepTxt = cp ? (cp.steps === 1 ? 'one step ' : cp.steps + ' steps ') + cp.dir : '';
+    keepBox.textContent = ''; keepBox.classList.toggle('off', !(e.comp && cp));
+    if (e.comp && cp) keepBox.append(...kept(h('b', { text:'Keep the same cup' }), h('p', { class:'serif', text:e.comp }),
+      h('button', { type:'button', class:'choice', id:'keepGrindBtn', 'aria-pressed':String(!!app.brew.tempComp), text:'Adjust grind to match', onclick:() => { app.brew.tempComp = !app.brew.tempComp; app.flashGrind = !!app.brew.tempComp; onChange('comp'); } }),
+      h('p', { class:'tempcomp', text:cp.applied ? '✓ Applied. Your grind changed from ' + cp.off + ' µm to ' + cp.on + ' µm (' + stepTxt + '). See the Grind row on the Brew page. Tap the button again to undo.' : 'Not applied yet. Tapping it changes your grind from ' + cp.off + ' µm to ' + cp.on + ' µm (' + stepTxt + ').' })));
+    else keepBox.append(h('p', { class:'fine', text:'Go 4°F or more away from ' + recF + '°F and a button here moves the grind to keep the same cup.' }));
   }
   return { el:card, refresh };
 }
@@ -19473,13 +19504,13 @@ function brewAmountPop(meth, sync){
   const wrap = h('div', { id:'amountPop' }), wu = () => app.prefs.waterUnit, cu = () => app.prefs.coffeeUnit;
   const minWater = meth.type === 'espresso' ? 10 : 20;
   const say = brewSay('', ''), sub = h('p', { class:'fine adjsub' }), rangeNote = h('p', { class:'fine', id:'amountRange', role:'status' });
-  const setWater = g => { if (!(g > 0)) return; if (g < minWater || g > 6000){ rangeNote.textContent = 'That is outside what this method can use (' + waterShown(minWater, wu()) + ' to ' + waterShown(6000, wu()) + ' of water), so it was not changed.'; return; } rangeNote.textContent = ''; app.brew.water = Math.round(g * 10) / 10; sync('amount'); paintPop(); };
+  const setWater = g => { if (!(g > 0)) return; if (g < minWater || g > 6000){ rangeNote.textContent = 'That is outside what this method can use (' + waterShown(minWater, wu()) + ' to ' + waterShown(6000, wu()) + ' of water), so it was not changed.'; return; } rangeNote.textContent = ''; const w = Math.round(g * 10) / 10; if (w === app.brew.water) return; app.brew.water = w; sync('amount'); paintPop(); };
   const setCoffee = g => { if (!(g > 0)) return; const r = getRecipe(); setWater(Math.round(g * r.ratio * 10) / 10); };
   const seg = h('div', { class:'seg adjseg', role:'group', 'aria-label':'Set the amount of' });
   const segBtns = [['coffee', 'Coffee', 'art-beans'], ['water', waterWord(meth), 'art-water']].map(x => h('button', { type:'button', 'data-k':x[0], 'aria-pressed':'false', onclick:() => { amountFrom = x[0]; paintPop(true); } }, symPic(x[2], 'segpic'), h('span', { text:x[1] })));
   seg.append(...segBtns);
   const input = h('input', { type:'number', inputmode:'decimal', step:'any', min:'0', class:'adjnum', id:'amountIn', 'aria-label':'Amount' });
-  input.addEventListener('input', () => { const v = parseFloat(input.value); if (!(v > 0)) return; if (amountFrom === 'coffee') setCoffee(coffeeToG(v, cu())); else setWater(waterToG(v, wu())); });
+  onTyped(input, () => amountFrom === 'coffee' ? fmtCoffee(getRecipe().dose, cu()) : fmtWater(getRecipe().water, wu()), v => { if (amountFrom === 'coffee') setCoffee(coffeeToG(v, cu())); else setWater(waterToG(v, wu())); });
   const units = h('div', { class:'seg unitseg', role:'group', 'aria-label':'Unit' });
   const steps = h('div', { class:'adjsteps' }), quick = h('div', { class:'adjquick', id:'amountQuick' });
   const follow = h('div', { class:'adjfollow' });

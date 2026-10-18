@@ -4,6 +4,14 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.058.0126: Typed amounts register, and the grind match is back
+
+2026-10-18 19:18:15 UTC
+
+- Typing the coffee amount now moves the water on every key, and again when the keyboard closes or you leave the box, on the Brew pop-up and on Change settings
+- Tapping into an amount box and out again changes nothing
+- The Adjust grind to match button now sits right under the water temperature slider in a Keep the same cup box, instead of deep inside the explanation
+
 ## Version 4.058.0125: Back everywhere and a heat map at every step
 
 2026-10-18 14:17:12 UTC
@@ -17,7 +25,7 @@ Version numbers read major.medium.change, for example 3.025.0072. The first coun
 
 2026-10-18 11:22:19 UTC
 
-- The Menu has a new tile, Buying guide, right after Your preferences.
+- The Menu has a new tile, Buying guide, right after Your preferences. It replaces the Is this coffee for you? card, the fourth door and Check mode from the withdrawn Release 123. Facts is back to how it was.
 - Beanjamin asks what the bag or menu says, one question at a time. He asks only roast, process, elevation, origin, variety and tasting notes. Nothing is required, and there is no roaster or roast date.
 - You see the chance you would rate that coffee 4 beans or more, on a target. A tab for each answer opens your real Preferences board with this coffee marked in gold.
 - The way in is rose, so it looks different from the rest of the app. Clear is on that first page only. A This visit list shows the coffees you checked, and nothing about them is saved.
