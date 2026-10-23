@@ -4,6 +4,181 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.069.0143: Your preferences, rebuilt as rows you can drill into
+
+2026-10-23 23:50:00 UTC
+
+- The dartboards are gone. Each kind is one row: a dot where its likely rating sits, a band for how sure that is, and a dashed line at your own average. Tap a row to go one level down, all the way to the coffees, where each dot is one cup
+- Each coffee now counts once by the average of its cups, not its best cup, so a coffee you brewed often no longer gets more chances to look good
+- A kind's rating is pulled toward your own average by two make-believe coffees, so two lucky coffees cannot make it look great. It leans once it has 3 coffees and sits a third of your spread from your average; it says you rate it higher or lower when the whole band is on one side
+- What leans so far replaces What stands out, and says so when two leaning kinds are mostly the same coffees
+- The same coffee saved twice under different ids (same name and roaster) now counts as one
+
+## Version 4.068.0142: Learning across similar coffees
+
+2026-10-23 23:20:00 UTC
+
+- Your stars now count across similar coffees, not only within the same coffee: each coffee's own level is pulled toward coffees like it (roast, process, origin, flavor families on the bag), so one coffee rated once still says whether that cup beat or missed the usual for its kind
+- The science start weighs most at first. One coffee moves it little; 4s and 5s that cluster in one area pull it there; low stars push away; scattered ratings leave it near the science start
+- Origins are matched through the app's origin finder (Columbia, Colombia and Colombia with a space are one place) and flavor notes split on new lines too
+- A meter reading no brew of that kind can reach (above 24% or under 12% extraction) is set aside as a likely meter or sample slip; the cup still counts by its stars
+
+## Version 4.067.0141: One calibration for your grinder
+
+2026-10-23 22:45:00 UTC
+
+- Timemore S3: one size line for every brewer (about 8.7 µm of grind size a click, Timemore's 15 µm burr step, anchored on Matt's Clever at click 48). Before, steeps and pour-overs read the same grinder two different ways
+- The engine keeps the grind inside the grinder maker's own range for that brew: French press 80 to 90 and pour-over 50 to 80 on the S3
+- French press: about click 80 on the S3, stirred, about 8 minutes; it no longer grinds finer than the press range (900 µm and up) on any grinder
+- No steep runs more than two minutes past the point the brew has cooled about 10°C
+- AeroPress on the S3 stays around clicks 32 to 36, inside published S3 guides (BrewMark 24 to 47)
+
+## Version 4.066.0140: Decaf, bean gas and similar coffees
+
+2026-10-23 22:30:00 UTC
+
+- Decaf: about 1.5 points less to extract (Liang 2021), so the engine aims for that and the ratio keeps the strength
+- Freshness: darker roasts hold three to four times the gas of light roasts (Smrke 2018), so the fresh-bean slow-down now scales with the roast
+- Learning: past cups count more when the coffee is alike: roast, process, the flavor families on the bag (from the app's own taste wheel) and now origin too
+- Elevation, process, origin, variety and flavor notes do not change the recipe itself: no study measured an effect on grinding or extraction. They shape the taste preview and which of your cups count
+
+## Version 4.065.0139: Grind fixed, and the engine learns from your taste
+
+2026-10-23 21:30:00 UTC
+
+- Fixed: the engine pushed grinds far too fine (AeroPress near click 18 and Clever near 38 on a Timemore S3). It now treats the extraction target as a zone of one point either way and changes as little as it can: the usual grind first, then the water up to the roast's usual temperature, then stirs, then a finer grind (never under 580 µm), then a little more time
+- The Clever now lands around click 44 to 48 on the S3, next to Matt's own best brew (click 48, 4:00), and the AeroPress around 32 to 37 with hotter water instead of an espresso grind
+- The engine learns your favourite cup from your stars (compared within each coffee) and from the one thing you said was wrong. In a simulation of 150 people, each new coffee's first cup landed about half as far from their favourite after 20 cups, and stars rose from 3.9 to 4.7
+- Every tasting now saves the extraction the engine predicted for that brew (a new column, brew_ey_model), so later cups can learn from it. Older files load as before
+- Your measured brews correct each brewer: if your Clever measures a point above the forecast, the engine allows for it
+- Perfect: for bitter or dry cups the first step is now a weaker ratio, then a coarser grind. UC Davis taste panels found bitterness and dryness follow strength more than extraction
+- The cup strength shown follows a Dial it in ratio step
+
+## Version 4.064.0138: A new brew engine: physics first, then the ratio
+
+2026-10-23 23:40:00 UTC
+
+- Every steep and pour-over now lands on its strength target: the engine works out how much this brew will extract, then sets the ratio from that
+- Roast is in the physics: lighter roasts have more to extract and darker roasts less (UC Davis, Batali 2022), instead of three stacked habits
+- Stirred and still time are modelled apart: a stirred minute extracts fast and depends strongly on grind; sitting still is slow and hardly depends on grind. Each stir in your steps counts
+- The brew cools as it steeps, so the engine grinds finer rather than steeping past the point the brew has cooled about 10°C
+- French press: about 840 µm with stirs at 1:00 and 2:00, ready in about 6 minutes, then press only to the top of the coffee
+- Your Dial it in grind steps now show in the predicted cup
+- Siphon: turn the flame down once the coffee is in
+- The lab speeds are scaled to Matt's two measured Clever brews; the pour-over model is not measured yet, so its numbers are estimates until your own cups correct them
+
+## Version 4.063.0137: The engine learns from your saved cups
+
+2026-10-23 22:30:00 UTC
+
+- Fixed: the engine never learned from your cuppings. Saved cups hold the brewer's name and the learning looked for a short code, so every cup was skipped. Rated cups now tune the recipe, and the recipe says Tuned to you when they do
+- Every recipe learns from the same history: the recipe screen, Dial it in, quick tries, Brew again and share
+- One water temperature: the one on screen, capped at your altitude's boil, is the one the steep math uses. A cooler kettle on a steep now lengthens the steep only, instead of also grinding finer
+- Espresso shows the temperature the shot is worked out at (about 194 to 201°F by roast)
+- Light roasts no longer get a weaker ratio from a rule that was meant to be switched off; dark roasts no longer lose extraction twice once your cups tune them
+- The process suggestion is now in proportion on every method (it had pushed espresso from 1:2 to 1:3)
+- Brew again starts from your locked or best try, not just the last one
+- The warning card follows the engine's own forecast: if the recipe is expected to fall short, it warns of a sour cup whatever the roast
+- Grinder: a note when the size is past your grinder's coarsest or finest setting
+- Corrected the new-bag note: the steep time can move a little with the age of the beans
+
+## Version 4.062.0136: Brew steps checked: Chemex, moka, drip, Kalita, cold brew
+
+2026-10-23 20:30:00 UTC
+
+- Chemex: open the filter with the thick side toward the spout, pour the rinse out through the spout, and lift the filter out by its thick side at the end. A note shows when the water is more than a 6-cup or 8-cup Chemex holds
+- Grind words now match real things: medium-fine is like granulated sugar, medium like coarse sand, medium-coarse like kosher salt, coarse like coarse sea salt
+- Moka pot: hold the hot base with a towel, and take it off the heat when the stream turns pale, before it sputters
+- Drip machine: swirl the carafe before pouring, because the first coffee through is stronger than the last
+- Kalita Wave: a note shows when the water is more than the 155 or the 185 makes
+- Cold brew: strain through a mesh first, then paper, and an honest line when the steep runs past the point where strength stops rising
+
+## Version 4.061.0135: Your coffee card when no history is loaded
+
+2026-10-23 18:55:00 UTC
+
+- When this browser has no history yet, the first screen shows a small Your coffee card with Load my history. Load your file and it turns into your numbers, the bag to brew first and your next try
+- Each browser keeps its own copy, so the test link in Claude and the website each need your file loaded once
+
+## Version 4.061.0134: Taste in an order that flows
+
+2026-10-23 21:40:00 UTC
+
+- Taste asks the two required questions first, then the flavors and each part, then Compared with what we expected. Nothing was removed, and everything is saved as before
+- In a cupping, the comparison comes after the scores
+- At Just Starting, the extras stay in More about this cup, and the comparison sits right under it so it stays in view
+
+## Version 4.061.0133: A shorter Brew page, recipe first
+
+2026-10-23 21:10:00 UTC
+
+- Brew opens on your recipe, then Fill your kettle, your gear and any warning about the beans. It is about two phone screens tall instead of four or five
+- Tap a number tile to change it: the Coffee tile opens How much?, and the Water temp tile opens the temperature where your level allows it
+- The explanations are in Why these numbers, and the way, the strength and your past tries are in More for this brew. Nothing was removed
+
+## Version 4.061.0132: Brew and learn as you go
+
+2026-10-23 20:30:00 UTC
+
+- Five steps instead of six: Coffee, Method, Brew, Taste, Perfect. After the coffee questions you go straight to Method
+- Learning comes in three moments. Method opens with What to expect: how bright, how heavy and how sweet this coffee should be
+- Taste asks Did it taste like we said? Tap Less, As expected or More for brightness, body and sweetness. It is optional and saved with your tasting
+- After you save, Beanjamin says what the cup taught you: why it tasted as expected, or what a surprise may mean
+- The full Facts page is one tap away from all three, and Back returns you to where you were
+- Your tasting file gains three columns, vs_acidity, vs_body and vs_sweetness. Older files load as before
+
+## Version 4.060.0131: Bean Scientist: the bag on one page
+
+2026-10-23 19:10:00 UTC
+
+- At Bean Scientist, the six bag questions sit on one page: roaster, coffee name, roast date, roast level, process and elevation, each marked Required
+- Roast level, process and elevation are drop-downs. Elevation keeps its three choices, Lower, Mid and High, with the meters and feet
+- Not on the bag is in each drop-down, and a tick box under the roaster and the roast date
+- Next: Facts says how many answers are still needed, and points to them if you tap it early
+- Just Starting and Comfy Brewer keep the guided questions, one at a time
+
+## Version 4.060.0130: Perfect follows your level
+
+2026-10-23 18:20:00 UTC
+
+- Just Starting sees the six most common problems, plus Tastes great and Not to my taste. The other eight are under Something else?
+- Bean Scientist sees the likely cause under each choice, such as Often low extraction or Fines through the filter. They are worded as tendencies, because strength affects sour and bitter too
+- Comfy Brewer is unchanged. The end of a cupping uses the same picker, so it follows your level too
+
+## Version 4.060.0129: A home screen that knows you
+
+2026-10-23 17:30:00 UTC
+
+- Once you have tastings, the first screen opens with Your coffee: how many bags are open, how many coffees you have tried, and your average beans (worked out per coffee, so one coffee brewed many times does not outweigh the rest). Tap a number to open it
+- Brew first names the open bag that fades soonest, with how many days it has left
+- Next try names a coffee you are still perfecting and which try is next
+- The three doors sit in one row, so it all fits on one screen. A new user still sees the big doors
+- Freshness now shows every open bag with a roast date, the most urgent first. It showed only the six newest, which hid the oldest bags
+
+## Version 4.059.0128: One tap to save a tasting
+
+2026-10-23 16:40:00 UTC
+
+- When your browser remembers your history file, Save tasting writes straight into it. No questions first
+- The Saved pop-up offers Undo, which takes the tasting back out of your file and puts it back on screen as it was
+- After a quick tasting, the Saved pop-up offers Cup it too, instead of asking before you save
+- If anything is unusual (no remembered file, the file changed, or it holds tastings this browser does not have), you get the full save steps, which explain why, and nothing is overwritten
+- Writing straight into a file works on the website in Chrome and Edge. Inside Claude, a page cannot write your files, so the Claude link keeps the save steps
+
+## Version 4.059.0127: Polish, part 1: one look for empty screens, names, banners and icons
+
+2026-10-23 15:50:00 UTC
+
+- Empty screens share one look: Beanjamin, a short line, and one button to the next step. Freshness, Compare 2 bags, Your caffeine day, Compare cups, Still perfecting and Coffee shops
+- No more pill-shaped buttons: the Facts jump buttons are one bar, and the Glossary kinds and starter words are square tiles with their own pictures
+- Each screen has one name: the big title is the name you tapped, and a fun phrase, where there is one, leads the line under it
+- The guide is called How it works everywhere
+- Your tastings, Still perfecting and Calculators open with the green banner and their own picture
+- New pictures for Brew chart and Still perfecting
+- The guide now says six answers are needed, not five, and no longer mentions the old Check a coffee door
+- Coffee street names the right button, At a coffee shop
+- Understanding coffee calls Your preferences by its name
+
 ## Version 4.058.0126: Typed amounts register, and the grind match is back
 
 2026-10-18 19:18:15 UTC
