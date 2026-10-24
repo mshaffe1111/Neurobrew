@@ -908,6 +908,8 @@ details.folk > summary::-webkit-details-marker{ display:none; }
 .pr-name{ font-size:19px; line-height:1.3; overflow-wrap:anywhere; }
 .pr-acts{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
 .pr-acts .btn{ margin:0; }
+.pr-acts.grid{ display:grid; grid-template-columns:1fr 1fr; }   /* a bag's buttons in two even columns, so none sits alone on a row */
+.pr-acts.grid .btn{ width:100%; }
 #prFile{ width:100%; min-width:0; }
 #prPaste{ width:100%; min-height:90px; box-sizing:border-box; }
 #prSort{ flex-wrap:wrap; }
@@ -3814,7 +3816,7 @@ const fToC = f => (f - 32) * 5 / 9;
 const G_PER_OZ = 28.3495, ML_PER_FLOZ = 29.5735, ML_PER_CUP = 236.588, G_PER_TBSP = 5;
 function fmtTime(sec){ sec = Math.max(0, Math.round(sec)); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
 function fmtRatio(r){ return '1:' + (Math.round(r * 10) / 10); }
-function tbspText(g){ const t = Math.round(g / G_PER_TBSP * 2) / 2; return t < 0.5 ? 'under 1 tbsp' : 'about ' + t + ' tbsp'; }
+function tbspText(g){ const t = Math.round(g / G_PER_TBSP * 2) / 2; return t < 0.5 ? 'under half a tbsp' : 'about ' + t + ' tbsp'; }
 /* a date written YYYY-MM-DD that is a real calendar day: 2026-02-30 and 2026-04-31 are not (Date.parse alone would roll them into the next month) */
 function validIsoDate(s){
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); if (!m) return false;
@@ -10007,7 +10009,7 @@ const FRESH_WINDOWS = {
 };
 const FRESH_NOTE = 'These are typical windows from roaster and barista guides, rated D because no study has measured them. Roasters differ, so follow the bag if it gives its own advice.';
 function freshMethodClass(m){ const k = m && m.key; return k === 'espresso' ? 'espresso' : (k === 'press' || k === 'aeropress' || k === 'clever') ? 'immersion' : k === 'cold' ? 'cold' : 'filter'; }
-function freshWindowFor(cls, roast){ const t = (FRESH_WINDOWS[cls] || FRESH_WINDOWS.filter)[roast] || FRESH_WINDOWS[cls || 'filter'].medium; return { cls, ready:t[0], best:t[1], fade:t[2] }; }
+function freshWindowFor(cls, roast){ const w = FRESH_WINDOWS[cls] || FRESH_WINDOWS.filter, t = w[roast] || w.medium; return { cls, ready:t[0], best:t[1], fade:t[2] }; }
 function freshWindow(m, roast){ return freshWindowFor(freshMethodClass(m), roast); }
 function freshState(d, w){ return d < w.ready ? 'resting' : d <= w.best ? 'sweet' : d <= w.fade ? 'past' : 'fading'; }
 const FRESH_LABEL = { resting:'Still resting', sweet:'In the sweet spot', past:'Past the peak', fading:'Fading' };
@@ -10138,7 +10140,7 @@ function bagSide(e, o){
   const c = costOne({ price:e.price, size:e.size, unit:e.unit, dose:o.dose, cups:o.cups });
   if (!c.ok) return { ok:false, why:c.why };
   const rows = o.rows || [];
-  return { ok:true, name:e.coffee, sym:e.sym, price:e.price, grams:c.grams, per100:c.perGram * 100, perCup:c.perCup, cupsInBag:c.cupsInBag, daysInBag:c.daysInBag, fresh:bagFresh(e, bagRoast(rows), o.now), stars:bagStars(rows) };
+  return { ok:true, name:e.coffee, sym:e.sym, price:e.price, grams:c.grams, per100:c.perGram * 100, perCup:c.perCup, cupsInBag:c.cupsInBag, daysInBag:c.daysInBag, fresh:bagFresh(e, e.rlevel || bagRoast(rows), o.now), stars:bagStars(rows) };
 }
 /* the line under the table, from two bags' columns (the cost gap, a bag past its best, whether both are gone before they fade). Plain restatement; it never names a winner. Empty when either column is not ok. */
 function bagVerdict(a, b){
@@ -10158,7 +10160,7 @@ function bagVerdict(a, b){
 const BAG_DAY = { resting:'rest', sweet:'sweet', past:'past', fading:'fade' };
 /* the line above the calendar: where one bag is today and when it runs out. f is a bagFresh result, finishOn the day the bag runs out (or ''), fmt turns YYYY-MM-DD into words. */
 function freshLine(name, f, finishOn, fmt){
-  const end = finishOn && finishOn <= f.fadeOn ? ' At your pace the bag is gone by ' + fmt(finishOn) + ', before it fades.' : finishOn ? ' At your pace the bag lasts until ' + fmt(finishOn) + '.' : '';
+  const end = finishOn && finishOn <= f.fadeOn ? ' Opened today, a full bag is gone by ' + fmt(finishOn) + ' at your pace, before it fades.' : finishOn ? ' Opened today, a full bag lasts until ' + fmt(finishOn) + ' at your pace.' : '';
   if (f.state === 'resting') return name + ' is still resting. It reaches its sweet spot on ' + fmt(f.readyOn) + ' and is at its best through ' + fmt(f.bestOn) + '.' + end;
   if (f.state === 'sweet') return name + ' is in its sweet spot and at its best through ' + fmt(f.bestOn) + '.' + end;
   if (f.state === 'past') return name + ' is past its peak but still good. Its flavor starts to fade after ' + fmt(f.fadeOn) + '.' + end;
@@ -10213,8 +10215,8 @@ function costOne(o){
 /* two bags at the same dose and cups per day. out: { ok, cheaper: 'a' | 'b' | 'same', perCup (a gap, always >= 0), perMonth (or null), pct (how much less the cheaper one costs, % of the dearer) } */
 function costCompare(a, b){
   if (!a || !b || !a.ok || !b.ok) return { ok:false };
-  const gap = Math.abs(a.perCup - b.perCup), same = gap < 0.005;   /* under half a cent a cup counts as the same */
-  const lo = a.perCup <= b.perCup ? a : b, hi = lo === a ? b : a;
+  const lo = a.perCup <= b.perCup ? a : b, hi = lo === a ? b : a, gap = hi.perCup - lo.perCup;
+  const same = gap < 0.005 || (lo.perCup > 0 && gap / lo.perCup < 0.01);   /* under half a cent, or under 1 %, a cup counts as the same (the price-change rule), so it never says "0% more" */
   return { ok:true, cheaper:same ? 'same' : (lo === a ? 'a' : 'b'), perCup:gap, perMonth:a.perMonth != null && b.perMonth != null ? Math.abs(a.perMonth - b.perMonth) : null, pct:hi.perCup > 0 ? (hi.perCup - lo.perCup) / hi.perCup * 100 : 0 };
 }
 /* ---------- coffee prices ----------
@@ -10223,7 +10225,7 @@ function costCompare(a, b){
    The first eleven columns are the same as the Release 49 "Save costs" file, so a file saved then still loads. The dose, cost per cup, cups per day and cost per month columns describe how the person drinks, not the purchase,
    so they are kept when a file has them and left empty when a purchase is added here. Buying the same coffee again is a new row, so a file keeps every row it has.
    Plain arithmetic: price per gram = price / bag grams; per 100 g is that times 100; a pod costs price / count. Nothing is estimated. A coffee is "the same coffee" when its name and roaster match, ignoring capitals and spaces. */
-const PRICE_COLUMNS = ['coffee', 'roaster', 'currency', 'bag price', 'bag size', 'size unit', 'dose (g)', 'cost per cup', 'cups per day', 'cost per month', 'date', 'kind', 'roast date', 'finished', 'city', 'state'];
+const PRICE_COLUMNS = ['coffee', 'roaster', 'currency', 'bag price', 'bag size', 'size unit', 'dose (g)', 'cost per cup', 'cups per day', 'cost per month', 'date', 'kind', 'roast date', 'finished', 'city', 'state', 'roast level'];   /* roast level added in Release 145; older files without it still load */
 const PRICE_MAX_ROWS = 2000;
 const PRICE_MAX_TEXT = 2000000;   /* characters of a file read; a bigger file is refused */
 const PRICE_POD_COUNTS = [10, 12, 16, 24, 36, 50];   /* the box sizes offered as tiles; any whole number up to COST_MAX_PODS can be typed */
@@ -10251,7 +10253,8 @@ function priceEntry(o){
   const dose = pods ? null : priceNum(o.dose, 1), cups = pods ? null : priceNum(o.cups, 1);
   return { kind:pods ? 'pods' : 'bag', coffee, roaster:priceText(o.roaster, 80), sym:priceText(o.sym, 3) || '$', price, size, unit:pods ? 'pods' : unit0, date:priceDate(o.date, true),
     dose:dose > 0 && dose <= 200 ? dose : null, cups:cups > 0 && cups <= 100 ? cups : null,
-    roast:priceDate(o.roast, false), finished:priceDate(o.finished, false), city:priceText(o.city, 60), state:priceText(o.state, 60) };
+    roast:priceDate(o.roast, false), finished:priceDate(o.finished, false), city:priceText(o.city, 60), state:priceText(o.state, 60),
+    rlevel:pods ? '' : (tendKey(ROASTS, o.rlevel) || '') };
 }
 /* two purchases are the same row when coffee, roaster, price, size, unit and date all match (capitals and spaces ignored in the names). The roast date, finished day and place are not part of it, so they can be added later. */
 function priceKey(e){ return [e.coffee, e.roaster].map(s => String(s).toLowerCase()).concat([e.price, e.size, e.unit, e.date]).join('|'); }
@@ -10299,7 +10302,7 @@ function priceRead(text){
   const list = []; let skipped = 0;
   p.rows.forEach(r => {
     const e = priceEntry({ kind:String(get(r, 'kind')).trim().toLowerCase(), coffee:unneutralize(get(r, 'coffee')), roaster:unneutralize(get(r, 'roaster')), sym:get(r, 'currency'), price:get(r, 'bag price'), size:get(r, 'bag size'), unit:get(r, 'size unit'),
-      dose:get(r, 'dose (g)'), cups:get(r, 'cups per day'), date:get(r, 'date'), roast:get(r, 'roast date'), finished:get(r, 'finished'), city:unneutralize(get(r, 'city')), state:unneutralize(get(r, 'state')) });
+      dose:get(r, 'dose (g)'), cups:get(r, 'cups per day'), date:get(r, 'date'), roast:get(r, 'roast date'), finished:get(r, 'finished'), city:unneutralize(get(r, 'city')), state:unneutralize(get(r, 'state')), rlevel:get(r, 'roast level') });
     if (e && list.length < PRICE_MAX_ROWS) list.push(e); else skipped++;
   });
   return { list, skipped };
@@ -10319,7 +10322,7 @@ function priceCsv(list){
   (Array.isArray(list) ? list : []).forEach(e => {
     const c = e.dose && e.kind !== 'pods' ? costOne({ price:e.price, size:e.size, unit:e.unit, dose:e.dose, cups:e.cups }) : { ok:false };
     const n = (x, dp) => x == null ? '' : String(Math.round(x * Math.pow(10, dp)) / Math.pow(10, dp));
-    lines.push([neutralize(e.coffee), neutralize(e.roaster), neutralize(e.sym), n(e.price, 2), n(e.size, 2), e.unit, c.ok ? n(e.dose, 1) : '', c.ok ? n(c.perCup, 2) : '', c.ok && c.perDay != null ? n(e.cups, 1) : '', c.ok && c.perMonth != null ? n(c.perMonth, 2) : '', e.date || '', e.kind || 'bag', e.roast || '', e.finished || '', neutralize(e.city || ''), neutralize(e.state || '')]);
+    lines.push([neutralize(e.coffee), neutralize(e.roaster), neutralize(e.sym), n(e.price, 2), n(e.size, 2), e.unit, c.ok ? n(e.dose, 1) : '', c.ok ? n(c.perCup, 2) : '', c.ok && c.perDay != null ? n(e.cups, 1) : '', c.ok && c.perMonth != null ? n(c.perMonth, 2) : '', e.date || '', e.kind || 'bag', e.roast || '', e.finished || '', neutralize(e.city || ''), neutralize(e.state || ''), e.rlevel || '']);
   });
   return toCSV(lines);
 }
@@ -10456,7 +10459,7 @@ function spendYears(list, drinks){
 function spendSwap(shopAvg, homeCup, perWeek){
   if (!(shopAvg > 0 && homeCup > 0 && perWeek > 0)) return null;
   const keepWeek = perWeek * (shopAvg - homeCup);
-  return { keepWeek, keepMonth:keepWeek * COST_DAYS_PER_MONTH / 7, keepYear:keepWeek * 52 };
+  return { keepWeek, keepMonth:keepWeek * COST_DAYS_PER_MONTH / 7, keepYear:keepWeek * 365.25 / 7 };   /* a year is 12 of the same months, so the year and the month always agree */
 }
 /* ---------- cup yield ----------
    The sum (exact, one conservation of mass):  cup = (water in − water the coffee keeps) ÷ (1 − TDS of the cup),  where TDS is the dissolved coffee as a fraction of the cup.
@@ -10507,6 +10510,8 @@ function yieldMokaShare(own){
   return { f:t.f, lo:t.flo, hi:t.fhi, own:false };
 }
 /* From water in to cup. p: { key, dose, water, own (retention or moka share you set), tds (percent, optional), boil (percent), sludge (g) }. */
+/* a number the person typed; a blank field means "use the usual figure", never 0 */
+const yGiven = v => v !== '' && v !== null && v !== undefined && yFin(+v);
 function yieldCup(p){
   const t = YIELD_TABLE[p.key]; if (!t) return { ok:false };
   const W = +p.water, D = +p.dose, o = { ok:false, key:p.key, kind:t.kind, W, D };
@@ -10516,7 +10521,7 @@ function yieldCup(p){
     o.held = W - o.B; o.ok = o.B > 0; return o;
   }
   if (t.kind === 'boil'){
-    const b = (yFin(+p.boil) ? +p.boil : t.boil) / 100, s = yFin(+p.sludge) ? +p.sludge : t.sludge;
+    const b = (yGiven(p.boil) ? +p.boil : t.boil) / 100, s = yGiven(p.sludge) ? +p.sludge : t.sludge;
     o.B = W * (1 - b) - s; o.Blo = o.Bhi = o.B; o.boil = b; o.sludge = s; o.held = W - o.B; o.ok = o.B > 0; return o;
   }
   if (!(D > 0)) return o;
@@ -10536,7 +10541,7 @@ function yieldWater(p){
     o.held = o.W - B; o.ok = true; return o;
   }
   if (t.kind === 'boil'){
-    const b = (yFin(+p.boil) ? +p.boil : t.boil) / 100, s = yFin(+p.sludge) ? +p.sludge : t.sludge;
+    const b = (yGiven(p.boil) ? +p.boil : t.boil) / 100, s = yGiven(p.sludge) ? +p.sludge : t.sludge;
     o.W = (B + s) / (1 - b); o.Wlo = o.Whi = o.W; o.D = o.Dlo = o.Dhi = o.W / rho; o.boil = b; o.sludge = s; o.held = o.W - B; o.ok = true; return o;
   }
   const rr = yieldRetention(p.key, p.own), tds = yFin(+p.tds) && +p.tds > 0 ? +p.tds : t.tds, tf = tds / 100;
@@ -11987,6 +11992,38 @@ function grindGuide(key, methodKey, um, stepUm, calib){
 }
 /* ---------- releases ---------- */
 const RELEASES = [
+ {
+  "release": 145,
+  "version": "4.071.0145",
+  "tier": "small",
+  "at": "2026-10-23T23:59:00Z",
+  "date": "2026-10-23",
+  "title": "A bag can carry its roast level",
+  "notes": [
+   "Add a bag and Edit have an optional Roast level beside the roast date",
+   "Freshness, Compare 2 bags and the Coffee prices tags use the bag's own roast level, then the coffee's level from your tastings, and assume medium only when neither is known. A light roast now shows Still resting where a medium would already be in its sweet spot",
+   "The prices file gains a roast level column at the end; files saved before still load"
+  ]
+ },
+ {
+  "release": 144,
+  "version": "4.070.0144",
+  "tier": "large",
+  "at": "2026-10-23T23:55:00Z",
+  "date": "2026-10-23",
+  "title": "Calculator sums checked and fixed, and a simpler bag form",
+  "notes": [
+   "Ratio calculator: the French press, Clever and Switch now count extraction from all the water poured, as the Brew screen does, so the Usual strength gives 1:14.6, not 1:17.1 (which brewed about 1.16%). AeroPress and siphon show a range between the two ways",
+   "The engine's pour-over ratio now counts the coffee dissolved in the cup and each brewer's own water kept, the same sum as the Ratio calculator and Cup yield (1:16.7, not 1:16.9, at the Usual strength)",
+   "Caffeine: a drink after midnight now counts toward that night's bedtime instead of the morning before",
+   "Caffeine by cup size now works out the coffee with Cup yield's sum, so it no longer reads 12 to 25% low",
+   "Compare 2 bags says the two cost about the same when they are less than 1% apart, never '0% more'",
+   "Cost history: a year of savings is now 12 of the months shown",
+   "Add a bag is one layout everywhere: the roast date comes right after the size, and roaster, currency, where and finished fold under More details",
+   "Each bag's buttons sit in two even columns; the prices file loads from a matching button; My setup asks for the Elevation where you brew",
+   "Smaller: Cup yield says fl oz, a blank Turkish field uses the usual figure, and a bag's run-out day says it counts from a full bag opened today"
+  ]
+ },
  {
   "release": 143,
   "version": "4.069.0143",
@@ -14666,7 +14703,9 @@ function cafHomeGrams(o){
   if (m === 'instant') return null;
   if (m === 'espresso'){ const s = cafNum(o.shots, 1, 6); return s === null ? null : s * CAF_SHOT_G; }
   const ml = cafNum(o.ml, 20, 3000); if (ml === null) return null;
-  const mm = METHODS.find(x => x.key === m); return ml / (mm ? mm.ratio : 16);
+  /* the cup is smaller than the water poured (the grounds keep some), so the coffee comes from Cup yield's own sum for this cup, not cup ÷ ratio (calculator audit, 23 Oct 2026) */
+  const mm = METHODS.find(x => x.key === m), ratio = mm ? mm.ratio : 16, y = YIELD_TABLE[m] ? yieldWater({ key:m, cup:ml, ratio }) : null;
+  return y && y.ok && y.D > 0 ? y.D : ml / ratio;
 }
 /* caffeine in one home brew made from this much coffee: { ok, lo, mid, hi, grams } */
 function cafBrew(o){
@@ -14790,7 +14829,9 @@ function cafBedHours(d){ const w = d.wake / 60, b = d.bed / 60; return b <= w ? 
 /* the finished drinks of a day as [{ i, t, mg, lo, hi, n }], oldest first */
 function cafItems(d){
   const a = [];
-  d.entries.forEach((e, i) => { if (e.t === null) return; const r = cafEntry(e); if (r.ok) a.push({ i:i, t:e.t / 60, mg:r.mid, lo:r.lo, hi:r.hi, n:r.n }); });
+  /* a drink timed before wake-up was had after midnight, at the end of this day, so it counts toward bedtime (calculator audit, 23 Oct 2026) */
+  const wake = d.wake / 60;
+  d.entries.forEach((e, i) => { if (e.t === null) return; const r = cafEntry(e), t = e.t / 60; if (r.ok) a.push({ i:i, t:t < wake ? t + 24 : t, mg:r.mid, lo:r.lo, hi:r.hi, n:r.n }); });
   return a.sort((x, y) => x.t - y.t);
 }
 /* highest body level between the first drink and bedtime: { h, mg } */
@@ -14927,8 +14968,10 @@ function beTarget(p, notes, kind){
 /* ratio (water per gram of coffee) that gives the target strength at the target extraction.
    Steeped: extraction counts the water poured, EY = c/(1-c) x R, so R = EY(1-c)/c. Drained: EY = c x (R - r), so R = EY/c + r. */
 const BE_RET = 2.1;
-function beRatio(kind, ey, tds){ const e = ey / 100, c = tds / 100; if (!(c > 0 && c < 0.1 && e > 0)) return null; return Math.round((kind === 'steep' ? e * (1 - c) / c : e / c + BE_RET) * 10) / 10; }
-function beTdsFromEy(kind, ey, ratio){ const e = ey / 100; if (!(ratio > 0)) return null; if (kind !== 'steep' && !(ratio > BE_RET + 1)) return null; const x = kind === 'steep' ? e / ratio : e / (ratio - BE_RET); return Math.round((kind === 'steep' ? x / (1 + x) : x) * 10000) / 100; }
+/* water per gram for a target. Steep: all the water is the brew, R = EY(1 - TDS)/TDS. Pour-through: the cup plus the water the grounds keep (r, g per g),
+   less the coffee that dissolved into the cup: R = EY(1 - TDS)/TDS + r. The same mass balance as the Ratio calculator and Cup yield (calculator audit, 23 Oct 2026). */
+function beRatio(kind, ey, tds, r){ const e = ey / 100, c = tds / 100, k = r > 0 ? r : BE_RET; if (!(c > 0 && c < 0.1 && e > 0)) return null; return Math.round((e * (1 - c) / c + (kind === 'steep' ? 0 : k)) * 10) / 10; }
+function beTdsFromEy(kind, ey, ratio, r){ const e = ey / 100, k = kind === 'steep' ? 0 : (r > 0 ? r : BE_RET); if (!(ratio > 0)) return null; if (kind !== 'steep' && !(ratio > k + 1)) return null; return Math.round(e / (ratio - k + e) * 10000) / 100; }
 /* (2) Physics of a steep, version 2 (engine inspection, 23 Oct 2026; sources in Build 33 of the build list).
    Ceiling: Eeq = 26.2 - 0.0055 x + roast (Liang, Chan and Ristenpart 2021, supplement Fig. S4B, laser x50 579 to 1311 µm, A). Roast moves the ceiling:
    Batali et al. 2022 (Foods 11:2440) brewed three origins to equilibrium at 92 °C: light 22.96, medium 22.30, dark 21.59% (A). The base line is taken as a medium roast.
@@ -15107,7 +15150,8 @@ function beRecipe(coffee, methodKey, opt, now){
   } else {
         /* pour-over: the grind stays on practice and the pours on expert drawdown times; the extraction comes from the pour-over model (built from the lab speeds, not yet measured on a
        pour-over, D), and the ratio is then set from it so the strength lands on target, as for a steep. The person's own pour-over cups will correct the model's speed. */
-    const dose = Math.round(water / beRatio('flow', BE_TARGET.flowEy, target.tds) * 10) / 10;   /* only to size the bloom pour */
+    out.retention = heldPerG(methodKey);   /* the water this brewer's grounds keep, the same figure Cup yield and the Ratio calculator use */
+    const dose = Math.round(water / beRatio('flow', BE_TARGET.flowEy, target.tds, out.retention) * 10) / 10;   /* only to size the bloom pour */
     const dd = BE_FLOW[methodKey].drawdown, end = (dd[0] + dd[1]) / 2 / 60, bloom = Math.round(dose * 2.5);
     const pours = [{ at:0, g:bloom }, { at:0.75, g:Math.round(water * 0.6) - bloom }, { at:1.25, g:water - Math.round(water * 0.6) }];
     out.drawdown = dd; out.tEff = Math.round(beFlowEffTime(pours, end) * 100) / 100;
@@ -15124,7 +15168,7 @@ function beRecipe(coffee, methodKey, opt, now){
             out.eyModel = shift ? beFlowExtraction(Math.max(150, um + shift), temp.f, out.tEff, fr, p.roast, p.decaf) : ey;
     out.eyPredicted = Math.round((out.eyModel + offF) * 10) / 10; out.eyOffset = offF;
     target.aimEy = out.eyPredicted;
-    ratio = beRatio('flow', out.eyPredicted, target.tds); target.aimTds = target.tds;
+    ratio = beRatio('flow', out.eyPredicted, target.tds, out.retention); target.aimTds = target.tds;
     /* brewer sizes (makers' listings via Seattle Coffee Gear): Chemex 6-cup 30 oz, 8-cup 40 oz, 10-cup 50 oz; Kalita Wave 155 makes 12 to 16 oz, the 185 up to 24 oz */
     if (methodKey === 'chemex' && water > 850) out.capNote = water > 1150 ? 'That is more than an 8-cup Chemex holds (about 40 oz); use the 10-cup or brew in two goes.' : 'A 6-cup Chemex holds about 30 oz (887 mL) up to the collar. For this much, use the 8-cup or brew in two goes.';
     if (methodKey === 'kalita' && water > 475) out.capNote = water > 710 ? 'That is more than a Kalita 185 makes (up to about 24 oz); brew in two goes.' : 'A Kalita 155 makes about 12 to 16 oz. For this much, use the 185 (up to about 24 oz).';
@@ -15133,7 +15177,7 @@ function beRecipe(coffee, methodKey, opt, now){
   if (out.clicks && out.clicks.outside) out.grindNote = 'This size is outside what this grinder is set up for; check it by taste.';
   out.ratio = ratio; out.dose = Math.round(water / ratio * 10) / 10;
   out.eyBasis = kind === 'steep' ? 'water poured' : 'cup';
-  out.tdsPredicted = beTdsFromEy(kind, out.eyPredicted, ratio);
+  out.tdsPredicted = beTdsFromEy(kind, out.eyPredicted, ratio, out.retention);
   if (methodKey === 'siphon') out.heatNote = 'The burner sets the siphon temperature: keep the top chamber at a gentle simmer, about 194 to 205 °F.';
   out.water_notes = opt.alkalinity != null || opt.hardness != null ? beWaterNote(opt.alkalinity, opt.hardness, methodKey).notes : [];
   out.source = target.preference ? { label:'Tuned to you', share:target.preference.weight, cups:target.preference.n } : { label:'Science start', share:0, cups:0 };
@@ -15331,7 +15375,7 @@ function beMethodRecipe(coffee, methodKey, opt, now){
     const water = water0 || m.water, dose = Math.round(water / ratio * 10) / 10, x = e / ratio, tds = Math.round(x / (1 + x) * 10000) / 100;
     Object.assign(out, { target:{ tds:BE_COLD.readyTds, ey:ce.ey, why:['Ready-to-drink cold brew is usually about ' + BE_COLD.readyTds + '% strength.'] },
       ratio, water, dose, temp:{ c:BE_COLD.tempC[where], f:Math.round(BE_COLD.tempC[where] * 9 / 5 + 32), why:where === 'fridge' ? 'In the fridge it extracts a little less and more slowly.' : 'Room temperature water.' },
-      time:{ hours, doneHours:ce.doneH }, eyPredicted:ce.ey, eyBasis:'water poured', tdsPredicted:tds, cupGrams:Math.round(water - BE_RET * dose),
+      time:{ hours, doneHours:ce.doneH }, eyPredicted:ce.ey, eyBasis:'water poured', tdsPredicted:tds, cupGrams:Math.round((water - heldPerG('cold') * dose) / (1 - tds / 100)),
       steps:['Stir in all the coffee so every ground is wet.', 'Steep ' + hours + ' hours ' + (where === 'fridge' ? 'in the fridge' : 'on the counter') + '. Strength stops rising after about ' + Math.round(ce.doneH) + ' hours for this roast' + (hours > Math.ceil(ce.doneH) ? '; most brewers steep longer for flavor.' : '.'), 'Filter, then keep it cold.'],
       confidence:'ceiling and speed measured in the lab at one grind; your strength may vary by about 0.3%', src:[BE_MSRC.cold, BE_MSRC.coldTime, BE_MSRC.coldPractice] });
     if (conc){ const parts = Math.max(0, Math.round((tds / BE_COLD.readyTds - 1) * 2) / 2);
@@ -15384,12 +15428,12 @@ function beCupsFromRows(rows, now){
     if (!kind || !(score > 0 || BE_SYM_DIR[sym]) || !(R > 5 && R < 30)) return null;
     let measured = +o.brew_tds_pct > 0 && +o.brew_tds_pct < 5; const eyModel = +o.brew_ey_model > 5 && +o.brew_ey_model < 30 ? +o.brew_ey_model : null, out = +o.brew_out_g;
     let tds = null, ey = null, eyKnown = true;
-    if (measured){ tds = +o.brew_tds_pct; const c = tds / 100; ey = Math.round((kind === 'steep' ? c / (1 - c) * R : (out > 0 && out < water ? c * out / dose : c * (R - BE_RET))) * 1000) / 10;
+    if (measured){ tds = +o.brew_tds_pct; const c = tds / 100; ey = Math.round((kind === 'steep' ? c / (1 - c) * R : (out > 0 && out < water ? c * out / dose : c * (R - heldPerG(key)) / (1 - c))) * 1000) / 10;
       /* a reading no brew of this kind can reach (above 24% extraction, or under 12%) is most likely the meter or the sample (unfiltered, or read hot): set aside; the cup still counts by its stars */
       if (ey > 24 || ey < 12){ measured = false; tds = null; ey = null; } }
     if (!measured){
-      if (eyModel){ ey = eyModel; tds = beTdsFromEy(kind, ey, R); }
-      else { eyKnown = false; ey = kind === 'flow' ? BE_TARGET.flowEy : BE_TARGET.ey; tds = beTdsFromEy(kind, ey, R); } }
+      if (eyModel){ ey = eyModel; tds = beTdsFromEy(kind, ey, R, heldPerG(key)); }
+      else { eyKnown = false; ey = kind === 'flow' ? BE_TARGET.flowEy : BE_TARGET.ey; tds = beTdsFromEy(kind, ey, R, heldPerG(key)); } }
     const when = Date.parse(o.cupping_date || o.saved_at || ''), daysAgo = isFinite(when) ? Math.max(0, (t0 - when) / 86400000) : 30;
     if (!(tds > 0) || !(ey > 0)) return null;
     return { coffeeId:o.coffee_id || '', roast:val(ROASTS, o.roast_level), process:val(PROCESSES, o.process), density:val(DENSITIES, o.elevation_class), notes:o.bag_notes || '', origin:o.origin || '',
@@ -15399,7 +15443,7 @@ function beCupsFromRows(rows, now){
 /* unmeasured cups take the brewer's measured offset onto their predicted extraction, so every cup sits where this person's brewer really lands */
 function beCupsWithOffset(cups){
   const offs = {}; (cups || []).forEach(c => { if (!(c.key in offs)) offs[c.key] = beBrewerOffset(cups, c.key).offset; });
-  return (cups || []).map(c => { if (c.measured || !c.eyModel) return c; const ey = Math.round((c.eyModel + offs[c.key]) * 10) / 10; return Object.assign({}, c, { ey, tds:beTdsFromEy(c.kind, ey, c.ratio) || c.tds }); });
+  return (cups || []).map(c => { if (c.measured || !c.eyModel) return c; const ey = Math.round((c.eyModel + offs[c.key]) * 10) / 10; return Object.assign({}, c, { ey, tds:beTdsFromEy(c.kind, ey, c.ratio, heldPerG(c.key)) || c.tds }); });
 }
 /* The engine's numbers for one brew of the app's recipe, or null when the engine does not lead (the 4:6 method keeps its own recipe). Iced brews use the same strength as hot ones.
    The app's temperature (or the person's) drives the physics, so the steep time matches the water they actually use. */
@@ -19460,7 +19504,7 @@ function gearFields(){
     waterRead, h('p', { class:'fine', style:'margin:4px 0 0', text:lv === 'new' ? 'Find these on your water company\'s report or a test strip. Not sure? Skip this. It only changes our advice if the cup tastes flat or sour.' : 'Find these on your water company\'s report or a test strip. The SCA-102 tasting standard asks for alkalinity of 40 to 70 mg/L and hardness of 50 to 175 mg/L, both as CaCO3. The older 2009 SCAA standard used calcium hardness of 17 to 85 mg/L. Check your report\'s units before you compare.' }));
   numbers.open = lv === 'expert' || !!(b.waterAlk || b.waterGH);
   const altMsg = h('p', { class:'fine', id:'altitudeNote', role:'status', style:'margin:4px 0 0' });
-  const altField = textInput('Where you brew (optional)', () => b.altitudeFt != null ? String(b.altitudeFt) : '', v => { b.altitudeFt = parseAltitude(v); altMsg.textContent = altitudeNote(v); refreshAll(); }, { placeholder:'e.g. 5300 (feet), or 1600 m' });
+  const altField = textInput('Elevation where you brew (optional)', () => b.altitudeFt != null ? String(b.altitudeFt) : '', v => { b.altitudeFt = parseAltitude(v); altMsg.textContent = altitudeNote(v); refreshAll(); }, { placeholder:'e.g. 5300 (feet), or 1600 m' });
   const altBody = [altField, altMsg, h('p', { class:'fine', style:'margin:-4px 0 0', text:'Water boils about 1.8°F lower for every 1,000 ft (300 m) you climb. If the setting is hotter than your water can get, we cap it just off the boil. Tap Make this my usual to keep it for every brew. We show feet.' })];
   const card = (id, title, tan, sub, art, ...kids) => { const c = tband(title, { tan }, sub, { pic:art }, ...kids); c.id = id; return c; };
   const cards = [card('gearGrinderCard', 'Grinder', 'Sets your grind', '', 'grinder', ...grinderBody)];
@@ -19879,7 +19923,7 @@ function brewKind(r){ return r && r.engine && r.engine.eyBasis === 'water poured
 function brewCupNow(r){
   const e = r && r.engine; if (!e || !(e.eyPredicted > 0) || !(r.ratio > 0)) return null;
     /* the ratio on screen (the engine's, a Dial it in ratio step on top, or the person's own) sets the strength from the predicted extraction */
-  const kind = brewKind(r), tds = Math.abs(r.ratio - (e.r && e.r.ratio || 0)) > 0.001 ? beTdsFromEy(kind, e.eyPredicted, r.ratio) : e.tdsPredicted;
+  const kind = brewKind(r), tds = Math.abs(r.ratio - (e.r && e.r.ratio || 0)) > 0.001 ? beTdsFromEy(kind, e.eyPredicted, r.ratio, e.retention) : e.tdsPredicted;
   if (!(tds > 0)) return null;
   const tg = e.r && e.r.target ? e.r.target : null;
   return { tds:Math.round(tds * 100) / 100, ey:Math.round(e.eyPredicted * 10) / 10, kind, aimTds:tg ? (tg.aimTds || tg.tds) : null, aimEy:tg ? (tg.aimEy || tg.ey) : null, grindMoved:!!app.brew.grindEdited };   /* Dial it in's grind steps are in the forecast; a grinder setting typed by hand is not */
@@ -21578,7 +21622,7 @@ function renderCostAddSheet(title){
   title.textContent = 'Add a new bag'; sheet.ok = !cs.addMsg;   /* the face: informing, or worried when something is missing */
   if (!cs.add) cs.add = prNewBag();
   sheetEl.append(h('p', { class:'fine', style:'margin:0 0 10px', text:'Tell me what you bought. It is kept in your coffee prices.' }),
-    prForm(cs.add, 'csN', { compact:true, actions:() => [
+    prForm(cs.add, 'csN', { actions:() => [
       cs.addMsg ? h('p', { class:'fine', id:'csAddMsg', role:'status', style:'margin:12px 0 0', text:cs.addMsg }) : null,
       h('div', { class:'row', style:'margin-top:14px' }, h('button', { type:'button', class:'btn', id:'csAddCancel', text:'Cancel', onclick:closeSheet }), h('button', { type:'button', class:'btn primary', id:'csAddGo', text:'Add bag', onclick:csAddBag }))] }));
 }
@@ -21600,25 +21644,25 @@ function prWhen(d){
 }
 const prAgo = n => n == null ? '' : n === 0 ? 'today' : n === 1 ? '1 day ago' : n + ' days ago';
 /* the freshness tag for a roast that is `days` old: the usual window for a medium roast made as filter coffee. { cls, text }, or null with no roast date. */
-function prRoastTag(days){
+function prRoastTag(days, level){
   if (days == null) return null;
-  const t = PR_FRESH_TAGS[freshState(days, freshWindowFor('filter', 'medium'))]; return { cls:t[0], text:t[1] };
+  const t = PR_FRESH_TAGS[freshState(days, freshWindowFor('filter', level || 'medium'))]; return { cls:t[0], text:t[1] };
 }
 /* a blank purchase for the form: this month and year, a bag in grams, nothing else */
 function prNewBag(){
   const t = today();
-  return { kind:'bag', coffee:'', roaster:'', price:'', size:'', unit:'g', sym:'$', month:String(+t.slice(5, 7)), year:t.slice(0, 4), dateFull:'', roast:'', finished:'', city:'', state:'', dose:null, cups:null };
+  return { kind:'bag', coffee:'', roaster:'', price:'', size:'', unit:'g', sym:'$', month:String(+t.slice(5, 7)), year:t.slice(0, 4), dateFull:'', roast:'', rlevel:'', finished:'', city:'', state:'', dose:null, cups:null };
 }
 /* the form's object for a purchase on the list, to edit it */
 function prFormFrom(e){
   return { kind:e.kind, coffee:e.coffee, roaster:e.roaster, price:String(e.price), size:String(e.size), unit:e.kind === 'pods' ? 'g' : e.unit, sym:e.sym, month:e.date ? String(+e.date.slice(5, 7)) : '', year:e.date ? e.date.slice(0, 4) : '',
-    dateFull:e.date.length > 7 ? e.date : '', roast:e.roast, finished:e.finished, city:e.city, state:e.state, dose:e.dose, cups:e.cups };
+    dateFull:e.date.length > 7 ? e.date : '', roast:e.roast, rlevel:e.rlevel || '', finished:e.finished, city:e.city, state:e.state, dose:e.dose, cups:e.cups };
 }
 /* loose values for priceEntry from the form's object */
 function prObj(a){
   const ym = a.year && a.month ? a.year + '-' + String(a.month).padStart(2, '0') : '';
   return { kind:a.kind, coffee:a.coffee, roaster:a.roaster, sym:String(a.sym || '').trim() || '$', price:a.price, size:a.size, unit:a.kind === 'pods' ? 'pods' : a.unit,
-    date:ym && a.dateFull && a.dateFull.slice(0, 7) === ym ? a.dateFull : ym, roast:a.roast, finished:a.finished, city:a.city, state:a.state, dose:a.dose, cups:a.cups };
+    date:ym && a.dateFull && a.dateFull.slice(0, 7) === ym ? a.dateFull : ym, roast:a.roast, rlevel:a.rlevel, finished:a.finished, city:a.city, state:a.state, dose:a.dose, cups:a.cups };
 }
 /* what is missing from a purchase that cannot be added, in plain words */
 function prWhy(o){
@@ -21665,18 +21709,20 @@ function prForm(a, p, o){
       onclick:e => { a.finished = x[0] === 'y' ? (a.finished || today()) : ''; Array.from(e.currentTarget.parentNode.children).forEach(b => b.setAttribute('aria-pressed', String((b.dataset.f === 'y') === !!a.finished))); } })));
     const sym = h('input', { id:p + 'Sym', class:'yc-text', type:'text', maxlength:'3', value:a.sym, style:'width:6em' }); sym.addEventListener('input', () => { a.sym = sym.value; });
     const roasterN = ink(p + 'Roaster', 'Roaster (optional)', 'roaster', '', 80), symN = h('div', { class:'yc-f' }, h('label', { for:p + 'Sym', text:'Currency symbol' }), sym);
-    const bought = grp('art-cal', 'Bought in', false, h('div', { class:'fm-two' }, sel(p + 'Month', 'Month', mo, () => a.month, v => { a.month = v; }), sel(p + 'Year', 'Year', yrs, () => a.year, v => { a.year = v; })), o.compact ? null : h('p', { class:'fm-note', text:'Pick an earlier month to add a purchase you forgot.' }));
+    const bought = grp('art-cal', 'Bought in', false, h('div', { class:'fm-two' }, sel(p + 'Month', 'Month', mo, () => a.month, v => { a.month = v; }), sel(p + 'Year', 'Year', yrs, () => a.year, v => { a.year = v; })), h('p', { class:'fm-note', text:'This month unless you pick another, for a purchase you forgot.' }));
     const from = grp('art-pin', 'Bought from', true, h('div', { class:'fm-two' }, ink(p + 'City', 'City', 'city', '', 60), h('div', { class:'yc-f' }, h('label', { for:p + 'State', text:'State' }), stSel)), regionWrap, h('p', { class:'fm-note', text:'Leave it blank for coffee from your home town. Add it when you buy while traveling.' }));
-    const roastG = grp('ln-rested', 'Roasted on', true, h('div', { class:'yc-f wide' }, roast), h('p', { class:'fm-note', text:'It is on most bags, near the bag date or best-by date. With it, your list shows how old the coffee is.' }));
+    const lvl = pods ? null : sel(p + 'Level', 'Roast level', [['', 'Not sure']].concat(ROASTS.map(x => [x.v, x.label])), () => a.rlevel || '', v => { a.rlevel = v; });
+    const roastG = grp('ln-rested', 'Roasted on', true, h('div', { class:'fm-two' }, h('div', { class:'yc-f' }, h('label', { for:p + 'Roast', text:'Date' }), roast), lvl),
+      h('p', { class:'fm-note', text:'Both are on most bags. Freshness and Compare 2 bags work from them: lighter roasts need longer to rest.' }));
     const finG = grp('art-bag', pods ? 'Already all gone?' : 'Already finished?', true, fin, h('p', { class:'fm-note', text:'Finished only tidies your list. It never changes what you bought.' }));
     const acts = o.actions ? o.actions().filter(Boolean) : [];
-    if (o.compact){
-      /* the short form: the few things every purchase needs, with the rest folded away */
-      box.append(tiles, ink(p + 'Name', 'Coffee', 'coffee', 'e.g. Kenya AA', 80), pods ? price : h('div', { class:'yc-row' }, price, sizeNodes[0]), ...(pods ? sizeNodes : sizeNodes.slice(1)), bought,
-        h('details', { class:'moreinfo', id:p + 'More' }, h('summary', { text:'More details: roaster, currency, where, roast date' }), roasterN, symN, from, roastG, finG), ...acts);
-      return;
-    }
-    box.append(tiles, ink(p + 'Name', 'Coffee', 'coffee', 'e.g. Kenya AA', 80), roasterN, h('div', { class:'yc-row' }, price, symN), ...sizeNodes, bought, from, roastG, finG, ...acts);
+    /* One layout for Add a bag (Cost of coffee and Coffee prices) and Edit: what every bag needs first, then its roast date (Freshness and Compare 2 bags run on it),
+       then the month, and the rest folded away. The fold opens by itself when an edit already has something in it. */
+    const extra = !!(a.roaster || a.city || a.state || a.finished || (a.sym && a.sym !== '$') || (pods && a.roast));
+    const more = h('details', { class:'moreinfo', id:p + 'More', open:extra ? true : null }, h('summary', { text:pods ? 'More details: roaster, currency, where, roast date, finished' : 'More details: roaster, currency, where, finished' }),
+      roasterN, symN, from, pods ? roastG : null, finG);
+    box.append(tiles, ink(p + 'Name', 'Coffee', 'coffee', 'e.g. Kenya AA', 80), pods ? price : h('div', { class:'yc-row' }, price, sizeNodes[0]), ...(pods ? sizeNodes : sizeNodes.slice(1)),
+      pods ? null : roastG, bought, more, ...acts);
   }
   draw();
   box.redraw = draw;
@@ -21751,7 +21797,7 @@ function paintBagCmp(){
   host.append(tband('Side by side', { tan:'Your numbers' }, 'nothing is ranked for you', { pic:'scale' },
     h('table', { class:'bagtab', id:'bagTable' }, h('thead', null, h('tr', null, h('td'), head(A, 'A'), head(B, 'B'))), h('tbody', null,
       row('Price per 100 g', s => prMoney(s.sym, s.per100)), row('A ' + u.dose + ' g cup', s => prMoney(s.sym, s.perCup), true), row('Cups in the bag', s => String(Math.floor(s.cupsInBag))),
-      row('Roasted', ago), row('Freshness', chip), row('Gone in about', s => s.daysInBag != null ? (Math.round(s.daysInBag * 10) / 10) + ' days' : '\u2014'), row('Your stars', stars))),
+      row('Roasted', ago), row('Freshness', chip), row('A full bag lasts', s => s.daysInBag != null ? (Math.round(s.daysInBag * 10) / 10) + ' days' : '\u2014'), row('Your stars', stars))),
     h('p', { class:'fine', style:'margin:10px 0 0', text:'At ' + u.dose + ' g a cup' + (u.cups > 0 ? ' and ' + u.cups + ' cup' + (u.cups === 1 ? '' : 's') + ' a day' : '') + '. Change either on Cost of coffee.' + (note ? ' Freshness uses the typical filter-coffee windows (rated D): ' + note + '. ' + FRESH_NOTE : '') })));
   host.append(moneyNote('think', 'thinking', 'bagVerdict', bagVerdict(sa, sb)));
   host.append(toolTiles(list.length > 2 ? toolTile('bagPickA', 'art-bag', 'Change Bag A', A.coffee, () => openBagPick('a')) : null, list.length > 2 ? toolTile('bagPickB', 'art-bag', 'Change Bag B', B.coffee, () => openBagPick('b')) : null,
@@ -21772,7 +21818,7 @@ const FMO_WORDS = { roast:'roast day', rest:'still resting', sweet:'sweet spot',
 function fmoMove(n){ let m = bagf.m + n, y = bagf.y; if (m < 1){ m = 12; y--; } if (m > 12){ m = 1; y++; } bagf.y = y; bagf.m = m; paintFresh(); }
 /* the bags with a roast date (the six newest), each with its numbers and its place in the freshness window */
 /* Build 32: every open bag with a roast date, the one that fades soonest first (it was the six newest, which hid the oldest bags, the ones most likely to fade) */
-function fmItems(){ return bagList(true).map(e => { const s = bagSideOf(e); return { e, s, f:bagFresh(e, bagRoast(bagRows(e)), new Date()) }; }).filter(x => x.f).sort((a, b) => a.f.fadeOn.localeCompare(b.f.fadeOn)); }
+function fmItems(){ return bagList(true).map(e => { const s = bagSideOf(e); return { e, s, f:bagFresh(e, e.rlevel || bagRoast(bagRows(e)), new Date()) }; }).filter(x => x.f).sort((a, b) => a.f.fadeOn.localeCompare(b.f.fadeOn)); }
 /* each bag on its own bar, the same bar as the Freshness clock on Facts; the dark tick is today */
 function bagBars(items){
   const rows = items.map(x => {
@@ -21961,7 +22007,7 @@ function prRows(){
   return priceFilter(rows, pr.q);
 }
 function prRowNode(e, useFirst){
-  const pods = e.kind === 'pods', ch = priceChange(pr.list, e), uc = priceUnitCost(e), tag = !pods && !e.finished ? prRoastTag(e.days) : null;
+  const pods = e.kind === 'pods', ch = priceChange(pr.list, e), uc = priceUnitCost(e), tag = !pods && !e.finished ? prRoastTag(e.days, e.rlevel || bagRoast(bagRows(e))) : null;
   const line = [prMoney(e.sym, e.price) + ' for ' + e.size + ' ' + e.unit, uc ? prMoney(e.sym, uc.value) + (pods ? ' a pod' : ' per 100 g') : null].filter(Boolean).join(' · ');
   const move = ch.ok && ch.now.i === e.i ? (ch.dir === 'same' ? 'About the same ' + (pods ? 'per pod' : 'per gram') + ' as the one before' : Math.abs(ch.pct) + ' % ' + (ch.dir === 'up' ? 'more' : 'less') + (pods ? ' per pod' : ' per gram') + ' than the one before') + (ch.before.date ? ' (' + prWhen(ch.before.date) + ')' : '') + '.' : '';
   const bought = [e.date ? 'Bought ' + prWhen(e.date) : 'No date', [e.city, e.state].filter(Boolean).join(', '), move].filter(Boolean).join(' · ');
@@ -21972,10 +22018,10 @@ function prRowNode(e, useFirst){
   const acts = e.finished
     ? [h('button', { type:'button', class:'btn small pr-open', text:'Still have it', 'aria-label':'Still have ' + e.coffee, onclick:() => prFinish(e.i, false) })]
     : [h('button', { type:'button', class:'btn small primary pr-fin', text:pods ? 'All gone' : 'Mark finished', 'aria-label':(pods ? 'All gone: ' : 'Mark finished: ') + e.coffee, onclick:() => prFinish(e.i, true) })];
-  acts.push(h('button', { type:'button', class:'btn small pr-edit', text:'Edit', 'aria-label':'Edit ' + e.coffee, onclick:() => { pr.edit = e.i; pr.editA = prFormFrom(pr.list[e.i]); pr.editMsg = ''; pr.note = null; prPaint(); } }));
   if (!e.finished && !pods) acts.push(h('button', { type:'button', class:'btn small pr-use', text:'Use in Cost tool', onclick:() => prUse(e) }));
+  acts.push(h('button', { type:'button', class:'btn small pr-edit', text:'Edit', 'aria-label':'Edit ' + e.coffee, onclick:() => { pr.edit = e.i; pr.editA = prFormFrom(pr.list[e.i]); pr.editMsg = ''; pr.note = null; prPaint(); } }));
   if (!e.finished) acts.push(h('button', { type:'button', class:'btn small pr-del', text:'Delete', 'aria-label':'Delete ' + e.coffee, onclick:() => prDelete(e.i) }));
-  return h('div', { class:'pr-row' + (e.finished ? ' done' : ''), 'data-i':String(e.i) }, nm, h('div', { class:'yc-line', text:line }), h('div', { class:'yc-line mute', text:bought }), roast, h('div', { class:'pr-acts' }, acts));
+  return h('div', { class:'pr-row' + (e.finished ? ' done' : ''), 'data-i':String(e.i) }, nm, h('div', { class:'yc-line', text:line }), h('div', { class:'yc-line mute', text:bought }), roast, h('div', { class:'pr-acts' + (acts.length > 1 ? ' grid' : '') }, acts));
 }
 /* the row, opened as a form, to fix a typo or add what was left out */
 function prEditNode(e){
@@ -22002,7 +22048,7 @@ function prListNodes(){
   return rows.map(e => pr.edit === e.i && pr.editA ? prEditNode(e) : prRowNode(e, e.i === firstI));
 }
 function prFileCard(){
-  const n = pr.list.length, file = h('input', { type:'file', id:'prFile', accept:'.csv,text/csv,text/plain', 'aria-label':'Coffee prices file (CSV)' });
+  const n = pr.list.length, file = h('input', { type:'file', id:'prFile', accept:'.csv,text/csv,text/plain', 'aria-label':'Coffee prices file (CSV)', hidden:true });
   file.addEventListener('change', async () => {
     const f = file.files && file.files[0]; if (!f) return;
     try { prLoadText(f.text ? await f.text() : await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsText(f); })); }
@@ -22017,7 +22063,7 @@ function prFileCard(){
   const face = pr.tone === 'warn' ? ['shrug', 'worried'] : pr.tone === 'info' ? ['think', 'thinking'] : ['thumbs', 'happy'];
   const fc = tband('Your file', { tan:'Kept on this device' }, null, { pic:'clip' }, h('p', { class:'fine', id:'prCount', style:'margin:0 0 10px', text:sub }),
     h('button', { type:'button', class:'btn primary block', id:'prSaveBtn', text:'Save my prices file', onclick:prSave }),
-    h('div', { class:'yc-f wide' }, h('label', { for:'prFile', text:'Load a prices file' }), file), pd,
+    file, h('button', { type:'button', class:'btn block', id:'prLoadBtn', style:'margin:10px 0', text:'Load a prices file', onclick:() => file.click() }), pd,
     pr.msg ? moneyNote(face[0], face[1], 'prStatus', pr.msg) : h('p', { class:'fine', id:'prStatus', role:'status', style:'margin:0' }),
     pr.failed ? h('p', { class:'fine warnline', role:'status', style:'margin:8px 0 0', text:'This browser could not keep your prices. Save the file before you leave.' }) : null,
     h('p', { class:'fine', style:'margin:10px 0 0', text:'This is a file of its own. It is not your tasting history, and your history is never changed by it. Loading a file only adds purchases that are not here yet.' }));
@@ -22056,7 +22102,7 @@ function prPaint(){
   const open = pr.list.filter(e => !e.finished).length, done = pr.list.length - open;
   const bags = tband('Your bags', { tan:done ? open + ' open' : pr.list.length + (pr.list.length === 1 ? ' bag' : ' bags') }, done ? done + ' finished' : null, { pic:'beans' }, head,
     pr.list.length > 1 && pr.show === 'open' && pr.sort === 'first' ? h('p', { class:'fine', style:'margin:6px 0 0', text:'Open bags, the oldest roast first, so you can see which to use up.' }) : null, undo, note, q, h('div', { id:'prList', class:'pr-list', style:'margin-top:10px' }, prListNodes()),
-    pr.list.some(e => e.roast) ? h('p', { class:'fine', style:'margin:10px 0 0', text:'Roast age uses the usual window for a medium roast made as filter coffee. Roasters differ, so follow the bag if it gives its own advice. Finished only tidies this list. It never changes what you bought.' }) : null);
+    pr.list.some(e => e.roast) ? h('p', { class:'fine', style:'margin:10px 0 0', text:'Roast age uses the usual window for filter coffee at the bag\'s roast level (medium when it is not set and not in your tastings). Roasters differ, so follow the bag if it gives its own advice. Finished only tidies this list. It never changes what you bought.' }) : null);
   bags.id = 'prCard';
   host.append(bags, prAddCard(), prFileCard());
 }
@@ -22076,7 +22122,15 @@ function rpStart(){
 function rpPreset(name){ const p = rpSet().find(x => x[0] === name) || rpSet()[1]; rp.preset = p[0]; rp.tds = p[1]; rp.ey = p[2]; }
 /* your own saved water-kept figure for this method, if you made one in Cup yield */
 const rpOwn = () => (app.prefs.yieldCal && app.prefs.yieldCal[rp.key]) || null;
-function rpRun(){ const d = yieldRetention(rp.key, rpOwn()); return Object.assign(planRatio({ tds:rp.tds, ey:rp.ey, r:d.r, rlo:d.lo, rhi:d.hi }), { d }); }
+/* Steeped brewers (press, Clever, Switch) count extraction from all the water poured, as the Brew screen and the engine do: the liquid left in the grounds is as strong as
+   the cup (Liang, Chan and Ristenpart 2021, eq. 17), so no water-kept term goes into the ratio. AeroPress and siphon sit between the two ways, so the band spans both. */
+const rpBasis = () => STEEP_BASIS[rp.key] || 'flow';
+function rpRun(){
+  const d = yieldRetention(rp.key, rpOwn()), b = rpBasis(), steep = b === 'steep' || b === 'range';
+  const o = planRatio(steep ? { tds:rp.tds, ey:rp.ey, r:0, rlo:0, rhi:b === 'range' ? d.hi : 0 } : { tds:rp.tds, ey:rp.ey, r:d.r, rlo:d.lo, rhi:d.hi });
+  if (o.ok && steep) o.cup = (o.water - d.r) / (1 - rp.tds / 100);   /* the cup you pour off: the water less what the grounds keep, plus the coffee in it */
+  return Object.assign(o, { d, basis:b });
+}
 const rpG = x => !isFinite(x) ? '–' : Math.abs(x) >= 100 ? String(Math.round(x)) : String(Math.round(x * 10) / 10);
 const rpR = x => '1:' + (Math.round(x * 10) / 10).toFixed(1);
 function rpResultNodes(res, lvl){
@@ -22087,7 +22141,7 @@ function rpResultNodes(res, lvl){
     out.push(h('div', { class:'yc-line' }, h('b', { text:esp ? 'About ' + rpG(dose * res.cup) + ' g out for ' + rpG(dose) + ' g of coffee' : 'About ' + rpG(dose * res.water) + ' g of water for ' + rpG(dose) + ' g of coffee' })));
     out.push(h('div', { class:'yc-line mute', text:esp ? 'About ' + rpG(dose * res.water) + ' g of water goes through the puck, and the coffee keeps the rest.' : 'Your cup will weigh about ' + rpG(dose * res.cup) + ' g (' + ycOz(dose * res.cup) + ' fl oz).' }));
   }
-  if (!esp && lvl !== 'new' && Math.abs(hi - lo) > 0.05) out.push(h('div', { class:'yc-line mute', id:'rpBand', text:'From ' + rpR(lo) + ' to ' + rpR(hi) + ', depending on how much water your grounds keep.' }));
+  if (!esp && lvl !== 'new' && Math.abs(hi - lo) > 0.05) out.push(h('div', { class:'yc-line mute', id:'rpBand', text:'From ' + rpR(lo) + ' to ' + rpR(hi) + (res.basis === 'range' ? ', depending on how much of the brew you push through the grounds.' : ', depending on how much water your grounds keep.') }));
   if (rpOwn()) out.push(h('div', { class:'yc-line mute', text:'This uses the water-kept figure you saved in Cup yield.' }));
   return out;
 }
@@ -22105,6 +22159,9 @@ function rpZoneFill(z){
 function rpWorkText(){
   const res = rpRun(); if (!res.ok) return 'Enter a strength and an extraction to see the working.';
   const t = rp.tds / 100, e = rp.ey / 100, r = res.d.r, f = x => (Math.round(x * 100) / 100), esp = rpEsp();
+  if (res.basis !== 'flow' && !esp) return 'In a steep, the extraction counts all the water poured, because the liquid left in the grounds is as strong as the cup. For every 1 g of coffee, ' + f(e) + ' g dissolves (extraction ' + rp.ey + ' %). '
+    + rp.tds + ' % strength means ' + f(e) + ' g of coffee in ' + f(e / t) + ' g of liquid, and that liquid is ' + f(e / t - e) + ' g of water (' + rpR(res.water) + '). Written as one formula: R = EY × (1 − TDS) ÷ TDS. '
+    + 'The grounds then keep about ' + f(r) + ' g of that liquid per g, so the cup you pour off is a little smaller than the brew.' + (res.basis === 'range' ? ' The AeroPress and siphon push or pull some of that liquid through, so the band runs from a steep to a pour-over sum.' : '');
   return 'For every 1 g of coffee, ' + f(rp.ey) / 100 + ' g dissolves (extraction ' + rp.ey + ' %). The grounds keep ' + f(r) + ' g of water. The cup then holds ' + f(e) + ' g of dissolved coffee in ' + f(e / t) + ' g of liquid, because ' + rp.tds + ' % strength means ' + f(e) + ' ÷ ' + f(t) + '. '
     + 'Water in = liquid in the cup + water kept − coffee dissolved: ' + f(e / t) + ' + ' + f(r) + ' − ' + f(e) + ' = ' + f(res.water) + ' g per g of coffee (' + rpR(res.water) + '). Written as one formula: R = r + EY × (1 − TDS) ÷ TDS.'
     + (esp ? ' For espresso the cup ratio, ' + rpR(res.cup) + ', is what people quote: extraction ÷ strength.' : '');
@@ -22387,8 +22444,8 @@ function ycPaint(){
       ycNum('ycWater', key === 'moka' ? 'Water in base' : key === 'turkish' ? 'Cold water' : 'Water', 'g', yc.water, 1, v => { yc.water = parseFloat(v) || 0; ycLive(); })));
   } else {
     const oz = yc.unit === 'oz', mult = oz ? ML_PER_FLOZ : 1;
-    const inp = ycNum('ycCup', 'Cup I want', oz ? 'oz' : 'g', oz ? fmtNum(yc.cup / ML_PER_FLOZ, 1) : String(Math.round(yc.cup * 10) / 10), oz ? 0.5 : 1, v => { yc.cup = (parseFloat(v) || 0) * mult; ycLive(); markChips(); });
-    const unit = h('div', { class:'yc-mini', role:'group', 'aria-label':'Units' }, ['g', 'oz'].map(u => h('button', { type:'button', 'aria-pressed':String(yc.unit === u), text:u, onclick:() => { yc.unit = u; ycPaint(); } })));
+    const inp = ycNum('ycCup', 'Cup I want', oz ? 'fl oz' : 'g', oz ? fmtNum(yc.cup / ML_PER_FLOZ, 1) : String(Math.round(yc.cup * 10) / 10), oz ? 0.5 : 1, v => { yc.cup = (parseFloat(v) || 0) * mult; ycLive(); markChips(); });
+    const unit = h('div', { class:'yc-mini', role:'group', 'aria-label':'Units' }, ['g', 'oz'].map(u => h('button', { type:'button', 'aria-pressed':String(yc.unit === u), text:u === 'oz' ? 'fl oz' : u, onclick:() => { yc.unit = u; ycPaint(); } })));
     const chips = h('div', { class:'yc-chips', id:'ycSizes' }), markChips = () => Array.from(chips.children).forEach(b => b.setAttribute('aria-pressed', String(Math.abs(yc.cup - parseFloat(b.dataset.g)) < 0.5)));
     yieldPresets(key).forEach(p => chips.append(h('button', { type:'button', class:'yc-chip', 'data-g':String(p[1]), 'aria-pressed':String(Math.abs(yc.cup - p[1]) < 0.5), onclick:() => { yc.cup = p[1]; $('ycCup').value = oz ? fmtNum(p[1] / ML_PER_FLOZ, 1) : String(p[1]); ycLive(); markChips(); } }, ycIcon(p[1]), h('span', null, p[0] + ' ', h('em', { text:oz ? fmtNum(p[1] / ML_PER_FLOZ, p[1] / ML_PER_FLOZ < 10 ? 1 : 0) + ' oz' : p[1] + ' g' })))));
     inb.append(h('div', { class:'yc-f wide' }, h('div', { class:'yc-lrow' }, h('span', { class:'yc-lab', text:'Cup size' }), unit), inp, chips));
@@ -23965,7 +24022,7 @@ function renderSetupSheet(title){
       const before = g.altitudeFt; g.altitudeFt = ft == null ? '' : ft;
       if (app.brew.altitudeFt == null || String(app.brew.altitudeFt) === String(before)) app.brew.altitudeFt = ft;
       scheduleDraft(); });
-    gearKids.push(field('Where you brew (optional)', alt), altNote, h('p', { class:'fine', style:'margin:0', text:'Water boils cooler up high, so we cap the temperature to what your kettle can reach. Each new brew starts with it.' })); }
+    gearKids.push(field('Elevation where you brew (optional)', alt), altNote, h('p', { class:'fine', style:'margin:0', text:'Water boils cooler up high, so we cap the temperature to what your kettle can reach. Each new brew starts with it.' })); }
   /* the home town is kept with the coffee shops (their own file), not in the preferences or the history file */
   const hm = sh.store.home, setHome = (k, v) => { const o = Object.assign({}, sh.store.home); o[k] = v; if (k === 'country') o.region = ''; shSetHome(o); };
   const homeKids = kept(field('Country', sel('Country', [{ v:'', label:'Not set' }].concat(SHOP_COUNTRIES.map(c => ({ v:c, label:c }))), () => sh.store.home.country, v => setHome('country', v))),

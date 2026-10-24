@@ -4,6 +4,28 @@ Newest first. Each release is one tested build; the time is when the release was
 
 Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
 
+## Version 4.071.0145: A bag can carry its roast level
+
+2026-10-23 23:59:00 UTC
+
+- Add a bag and Edit have an optional Roast level beside the roast date
+- Freshness, Compare 2 bags and the Coffee prices tags use the bag's own roast level, then the coffee's level from your tastings, and assume medium only when neither is known. A light roast now shows Still resting where a medium would already be in its sweet spot
+- The prices file gains a roast level column at the end; files saved before still load
+
+## Version 4.070.0144: Calculator sums checked and fixed, and a simpler bag form
+
+2026-10-23 23:55:00 UTC
+
+- Ratio calculator: the French press, Clever and Switch now count extraction from all the water poured, as the Brew screen does, so the Usual strength gives 1:14.6, not 1:17.1 (which brewed about 1.16%). AeroPress and siphon show a range between the two ways
+- The engine's pour-over ratio now counts the coffee dissolved in the cup and each brewer's own water kept, the same sum as the Ratio calculator and Cup yield (1:16.7, not 1:16.9, at the Usual strength)
+- Caffeine: a drink after midnight now counts toward that night's bedtime instead of the morning before
+- Caffeine by cup size now works out the coffee with Cup yield's sum, so it no longer reads 12 to 25% low
+- Compare 2 bags says the two cost about the same when they are less than 1% apart, never '0% more'
+- Cost history: a year of savings is now 12 of the months shown
+- Add a bag is one layout everywhere: the roast date comes right after the size, and roaster, currency, where and finished fold under More details
+- Each bag's buttons sit in two even columns; the prices file loads from a matching button; My setup asks for the Elevation where you brew
+- Smaller: Cup yield says fl oz, a blank Turkish field uses the usual figure, and a bag's run-out day says it counts from a full bag opened today
+
 ## Version 4.069.0143: Your preferences, rebuilt as rows you can drill into
 
 2026-10-23 23:50:00 UTC
