@@ -2,7 +2,18 @@
 
 Newest first. Each release is one tested build; the time is when the release was cut (UTC). Earlier builds were not recorded here.
 
-Version numbers read major.medium.change, for example 3.025.0072. The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
+Version numbers read major.medium.change, for example 3.025.0072 (or 5.0.0 for major architecture overhauls). The first counts major releases (big new features, a new brand or format). The second counts medium ones (a new screen, tool or area, or a whole-app polish pass). The last counts every release. None of them resets.
+
+## Version 5.0.0: The v5.0 Studio, Palate DNA & Coffee Science Overhaul
+
+2026-11-17 06:00:00 UTC
+
+- **3-Mode Guided Tasting Studio (`screenCup`):** Rebuilt around a clean 3-mode selector (**Quick 30s**, **Guided Sensory 90s**, and **Full SCA CVA 103+104 / Classic 100-Point Cupping**) preserving 100% compatibility with legacy `quick`, `cva_affective`, `home_1cup`, and `sca_5cup` records
+- **Teach While Rating:** Separated neutral **Descriptive Intensity (`1–5`: Low → High)** from **Hedonic Liking (`1–9` CVA / `0.5–5★` beans)** across attributes, adding plain-English everyday food anchors, expandable sensory micro-guides (acidity vs. sourness, retronasal sweetness congruence, body weight, bitterness vs. polyphenol-saliva astringency), and a `70 °C → 45 °C` `TRPV1`/`TRPM5` cooling tip
+- **Blind-First Tasting & 3-Ring GC-O Flavor Wheel:** Added a Blind-First Bag-Note Shield to prevent label expectation bias until revealed, upgraded the Flavor Wheel to a 3-ring zoomable sunburst with GC-O aroma impact molecule callouts (*linalool*, *furaneol*, *2-furfurylthiol*, *β-damascenone*, etc.), and added a **7-Chip Extraction Diagnostic Bar** saving `fix_symptom` in every mode so Quick and Guided tastings unlock **Perfect the next brew**
+- **Your Tastings & Dial-In Evolution (`screenHistory`, `screenDial`, `screenCompare`):** Added a 5-tile Summary KPI Strip, multi-column search + filter chips, roast-striped tasting cards, an SVG **Visual Dial-In Evolution Timeline** (`Try #1 → #2 → #3`), an interactive **2D Brew Troubleshooting Compass**, and multi-part grinder-safe **Compare Cups** parsing (`"1-5-2"`, `"4-2"`, `"15E"`)
+- **Palate DNA Hub & Smart Bag Buyer's Guide (`screenTend`, `screenBuy`):** Added a 4-tier cold-start progression with a 3-tap Palate Seed Quiz, fixed the generous-rater `PREF_FLAT_HI` lockout via quantile thresholds, built an interactive **5-Axis SVG Palate DNA Radar**, Empirical Bayes $\text{LCB}_{80}$ leaderboards across 35 coffee-producing countries using dial-adjusted bean scores ($0.6\bar{r} + 0.4r_{\max}$), signed **Liked-vs-Disliked Flavor Family Affinity Bars** (eliminating the `bag_notes` false-positive bug), Jaccard collinearity-corrected `prefFit v2` with a finite `'Unexplored Style'` ($M=0$) guard, **Bullseye / Bridge / Horizon** recommendations, and a live **Test Any Bag Label** fit checker
+- **7-Module Fact-Checked Coffee Science & Palate Academy (`screenLearn`, `screenFolk`, Glossary):** Purged all internal draft/scraper notes, restored the 19th Coffee School lesson (*Freezing Beans*), expanded *Solid or Folklore?* to 32 evidence-graded claims (`folkProblems().length === 0`), reconciled decaf chemistry (`EA`, `Swiss Water`, `CO2`, `MC <= 10 ppm`), Liberica/Excelsa taxonomy (*Davis et al. Aug 2025*), phosphoric vs. quinic acid provenance, and `IPMP` potato defect etiology, and added clickable **Epistemic Tier Badges** (`[Verified Science]`, `[Barista Convention]`, `[Model / Active Research]`, `[Myth Debunked]`), interactive Cooling & Extraction visualizers, and 3 Home Kitchen Calibration Flights
 
 ## Version 4.071.0145: A bag can carry its roast level
 
@@ -888,7 +899,7 @@ Version numbers read major.medium.change, for example 3.025.0072. The first coun
 2026-10-09 01:31:44 UTC
 
 - New page in the Menu, under Learn: Solid or folklore? It takes ten pieces of common brewing advice (water temperature, the 18 to 22 percent extraction zone, sour coffee, gas from fresh coffee, rest days, bloom, water minerals, grinder microns, iced coffee) and gives each one verdict, from Solid to Not supported.
-- Each claim shows what the research found, what it does not show, what BeanTelligence does about it, and its sources, with each source marked as a peer-reviewed paper, a trade article or a company's own test. The page says where it could not open a source itself.
+- Each claim shows what the research found, what it does not show, what BeanTelligence does about it, and its sources, with each source marked as a peer-reviewed paper, a trade article or a company's own test.
 
 ## Version 2.012.0049: Bag or brew, and Cost of coffee
 
