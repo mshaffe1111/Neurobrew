@@ -2739,10 +2739,26 @@
       }
 
       root.appendChild(S.h('header', { class: 'bt-tc-head' },
-        S.h('div', null,
-          S.h('div', { class: 'bt-tc-kicker', text: 'Tab 2 \u00B7 Living Coffee Cellar' }),
-          S.h('h1', { class: 'bt-tc-title', text: 'Shelf, Trails, Journal & Cafes' }),
-          S.h('p', { class: 'bt-tc-sub', text: 'Peak freshness, freezer doses, personal brew journal & 4-step coffee shop logger.' })
+        S.h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;width:100%' },
+          S.h('div', { style: 'flex:1 1 210px;min-width:0' },
+            S.h('div', { class: 'bt-tc-kicker', text: 'Tab 2 \u00B7 Living Coffee Cellar' }),
+            S.h('h1', { class: 'bt-tc-title', text: 'Shelf, Trails, Journal & Cafes' }),
+            S.h('p', { class: 'bt-tc-sub', text: 'Peak freshness, freezer doses, personal brew journal & 4-step coffee shop logger.' })
+          ),
+          S.h('button', {
+            type: 'button',
+            id: 'bt-cellar-backup-saves-btn',
+            class: 'bt-tc-pill is-copper',
+            style: 'align-self:flex-start;min-height:44px;font-weight:800;flex-shrink:0',
+            onclick: function () {
+              S.haptic('snap');
+              if (typeof window !== 'undefined' && window.BTBackupCenter && typeof window.BTBackupCenter.open === 'function') {
+                window.BTBackupCenter.open({ source: 'cellar' });
+              } else {
+                S.openSheetSafe('save-backup-center', { source: 'cellar' }, { title: 'Backup & Load Saves', detent: 'full' });
+              }
+            }
+          }, S.iconEl('vault-shield', { size: 16 }), S.h('span', { text: 'Backup / Load Saves' }))
         )
       ));
 

@@ -136,6 +136,7 @@
     }
     if (shell.BTSheet && typeof shell.BTSheet.open === 'function') {
       const renderMap = {
+        'save-backup-center': renderSaveBackupCenterSheet,
         'data-vault': renderDataVaultSheet,
         'onboarding-tour': renderOnboardingTourSheet,
         'about-charter': renderAboutCharterSheet,
@@ -2095,6 +2096,535 @@
     }, 500);
   }
 
+  /* ==========================================================================
+   * v6.5 3-CARD SAVE & RESTORE CENTER ('save-backup-center' + Inline Vault)
+   * ========================================================================== */
+  const _SAVE_CENTER_CANON_IDS = [
+    'bt-save-web-url-btn',
+    'bt-load-web-url-input',
+    'bt-load-web-url-btn',
+    'bt-replace-web-url-btn',
+    'bt-export-json-save-btn',
+    'bt-import-save-file-btn',
+    'bt-export-csv-save-btn'
+  ];
+
+  let _saveCenterUi = {
+    fileImportMode: 'merge', /* 'merge' | 'replace' */
+    webUrlConfirmMsg: '',
+    lastGeneratedUrl: '',
+    feedbackMsg: '',
+    feedbackTone: 'good',
+    webUrlDraft: ''
+  };
+
+  function _yieldInlineSaveIdsForSheet() {
+    if (typeof document === 'undefined') return;
+    _SAVE_CENTER_CANON_IDS.forEach(function (cid) {
+      const existing = document.getElementById(cid);
+      if (existing && (!existing.closest || !existing.closest('#sheet'))) {
+        existing.setAttribute('data-yielded-save-id', cid);
+        existing.removeAttribute('id');
+      }
+    });
+  }
+
+  function _restoreInlineSaveIdsAfterSheet() {
+    if (typeof document === 'undefined') return;
+    const list = document.querySelectorAll('[data-yielded-save-id]');
+    for (let i = 0; i < list.length; i++) {
+      const cid = list[i].getAttribute('data-yielded-save-id');
+      if (cid && !document.getElementById(cid)) {
+        list[i].id = cid;
+      }
+      list[i].removeAttribute('data-yielded-save-id');
+    }
+  }
+
+  function _formatBackupTimestampHuman(ms) {
+    const t = Number(ms) || 0;
+    if (!(t > 0)) return 'Not backed up yet';
+    try {
+      const d = new Date(t);
+      if (isNaN(d.getTime())) return 'Saved recently';
+      const now = Date.now();
+      const diffMin = Math.max(0, Math.round((now - t) / 60000));
+      const p2 = function (n) { return String(n).padStart(2, '0'); };
+      const clock = d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes());
+      if (diffMin < 1) return 'Just now (' + clock + ')';
+      if (diffMin < 60) return diffMin + 'm ago (' + clock + ')';
+      return clock;
+    } catch (_) {
+      return 'Saved';
+    }
+  }
+
+  function _readLiveSaveSummaryCounts() {
+    const st = window.BTStorage || {};
+    if (typeof st.exportFullSaveBundle === 'function') {
+      try {
+        const b = st.exportFullSaveBundle();
+        const ps = typeof st.getPersistentStorageStatus === 'function' ? st.getPersistentStorageStatus() : { persisted: false, lastBackupMs: 0, supported: false };
+        return {
+          coffeeCount: b.coffeeCount || 0,
+          brewCount: b.brewCount || 0,
+          goldCount: b.goldCount || 0,
+          cafeCount: b.cafeCount || 0,
+          hasPrefs: !!b.hasPrefs,
+          lastBackupMs: ps.lastBackupMs || 0,
+          persisted: !!ps.persisted,
+          persistSupported: !!ps.supported
+        };
+      } catch (_) {}
+    }
+    const hist = typeof st.getHistory === 'function' ? st.getHistory() : null;
+    const hObjs = hist && Array.isArray(hist.objs) ? hist.objs : [];
+    const pr = typeof st.getPrices === 'function' ? st.getPrices() : null;
+    const pList = pr && Array.isArray(pr.list) ? pr.list : [];
+    const unified = typeof st.buildUnifiedCoffeesIndex === 'function' ? st.buildUnifiedCoffeesIndex(hObjs, pList) : pList;
+    return {
+      coffeeCount: Array.isArray(unified) ? unified.length : 0,
+      brewCount: hObjs.length,
+      goldCount: 0,
+      cafeCount: 0,
+      hasPrefs: true,
+      lastBackupMs: typeof st.getLastBackupMs === 'function' ? st.getLastBackupMs() : 0,
+      persisted: false,
+      persistSupported: !!(typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist)
+    };
+  }
+
+  function buildThreeCardSaveRestoreCenter(opts) {
+    opts = opts || {};
+    const isSheet = !!opts.isSheet;
+    const st = window.BTStorage || {};
+    const sheetCurrentlyOpen = !isSheet && typeof document !== 'undefined' && (function () {
+      const shEl = document.getElementById('sheet');
+      return !!(shEl && !shEl.hidden && shEl.getAttribute('data-sheet') === 'save-backup-center');
+    })();
+
+    function assignId(canonId) {
+      if (isSheet) return canonId;
+      return sheetCurrentlyOpen ? ('inline-' + canonId) : canonId;
+    }
+
+    const holder = domH('div', {
+      class: 'bt-save-restore-center',
+      style: 'display:flex;flex-direction:column;gap:12px'
+    });
+
+    function repaintCenter() {
+      const rebuilt = buildThreeCardSaveRestoreCenter(opts);
+      if (holder.parentNode) {
+        holder.parentNode.replaceChild(rebuilt, holder);
+      }
+      if (!isSheet && typeof opts.onAfterMutate === 'function') {
+        opts.onAfterMutate();
+      }
+    }
+
+    const counts = _readLiveSaveSummaryCounts();
+
+    /* Optional top feedback banner after any file/link restore */
+    if (_saveCenterUi.feedbackMsg) {
+      const isErr = _saveCenterUi.feedbackTone === 'error';
+      holder.appendChild(domH('div', {
+        role: 'status',
+        'aria-live': 'polite',
+        style: 'padding:11px 14px;border-radius:12px;font-size:0.86rem;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:8px;' +
+          (isErr
+            ? 'background:var(--bad-bg,#FDE8E7);border:1.5px solid var(--bad,#A1231F);color:var(--bad,#A1231F)'
+            : 'background:var(--good-bg,#E2F4EB);border:1.5px solid var(--good,#1B6341);color:var(--good,#1B6341)')
+      },
+        domH('span', { style: 'min-width:0;flex:1', text: _saveCenterUi.feedbackMsg }),
+        domH('button', {
+          type: 'button',
+          class: 'bt-lab-chip',
+          style: 'min-height:34px;padding:4px 10px;font-size:0.76rem;flex-shrink:0',
+          onclick: function () {
+            _saveCenterUi.feedbackMsg = '';
+            repaintCenter();
+          }
+        }, 'OK')
+      ));
+    }
+
+    /* ----------------------------------------------------------------------
+       CARD 1: Web Address Bookmark Save (Survives Clearing Browser History!)
+       ---------------------------------------------------------------------- */
+    const urlInput = domH('input', {
+      type: 'text',
+      id: assignId('bt-load-web-url-input'),
+      class: 'bt-lab-text-in',
+      style: 'font-size:1rem;min-height:44px;width:100%;max-width:100%;min-width:0;box-sizing:border-box',
+      placeholder: 'Paste #btsave=... web address or save code...',
+      value: _saveCenterUi.webUrlDraft || '',
+      oninput: function (e) {
+        _saveCenterUi.webUrlDraft = e.target.value;
+      }
+    });
+
+    async function runWebUrlRestore(mode) {
+      let rawVal = String(urlInput.value || _saveCenterUi.webUrlDraft || '').trim();
+      if (!rawVal && typeof location !== 'undefined' && location.hash && location.hash.indexOf('btsave=') >= 0) {
+        rawVal = location.hash;
+      }
+      if (!rawVal) {
+        _saveCenterUi.feedbackTone = 'error';
+        _saveCenterUi.feedbackMsg = 'Paste a #btsave=... web address or save code into the box first.';
+        repaintCenter();
+        return;
+      }
+      if (typeof st.importFullSaveBundle !== 'function') {
+        _saveCenterUi.feedbackTone = 'error';
+        _saveCenterUi.feedbackMsg = 'Storage engine unavailable.';
+        repaintCenter();
+        return;
+      }
+      try {
+        const res = await st.importFullSaveBundle(rawVal, { mode: mode });
+        if (res && res.ok) {
+          _saveCenterUi.webUrlDraft = '';
+          _saveCenterUi.feedbackTone = 'good';
+          _saveCenterUi.feedbackMsg = (mode === 'replace' ? 'Replaced save from web link! ' : 'Merged save from web link! ') +
+            (res.totalCoffees != null ? res.totalCoffees : res.coffeesImported) + ' Coffee(s) \u00B7 ' +
+            (res.totalBrews != null ? res.totalBrews : res.brewsImported) + ' Saved Brew(s) active.';
+          if (CK && typeof CK.haptic === 'function') CK.haptic('celebrate');
+          notify(_saveCenterUi.feedbackMsg);
+          repaintCenter();
+        } else {
+          _saveCenterUi.feedbackTone = 'error';
+          _saveCenterUi.feedbackMsg = (res && res.error) || 'Could not decode that web save link. Copy the full #btsave=... URL and try again.';
+          repaintCenter();
+        }
+      } catch (err) {
+        _saveCenterUi.feedbackTone = 'error';
+        _saveCenterUi.feedbackMsg = String(err && err.message ? err.message : 'Could not restore web save link.');
+        repaintCenter();
+      }
+    }
+
+    const card1 = domH('section', {
+      class: 'bt-studio-card',
+      style: 'border:1.5px solid var(--primary,#1B4D38);display:flex;flex-direction:column;gap:10px;min-width:0;max-width:100%;box-sizing:border-box;overflow:hidden'
+    },
+      domH('div', { class: 'bt-lab-card-head', style: 'min-width:0;flex-wrap:wrap' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0' },
+          ic('vault-shield', { size: 22 }),
+          domH('div', { style: 'min-width:0' },
+            domH('h3', { text: '1. Web Address Bookmark Save (Survives Clearing History!)' }),
+            domH('p', {
+              class: 'bt-lab-sub',
+              text: 'On a web address, clearing browser history clears site storage. Click below to pack your saves into your web address \u2014 bookmark it or copy the link to restore anytime on any phone or computer!'
+            })
+          )
+        )
+      ),
+      domH('button', {
+        type: 'button',
+        id: assignId('bt-save-web-url-btn'),
+        class: 'bt-lab-btn is-primary',
+        style: 'width:100%;max-width:100%;min-width:0;min-height:48px;font-size:0.88rem;font-weight:800;white-space:normal;line-height:1.22;text-align:center',
+        onclick: async function () {
+          try {
+            let res = null;
+            if (typeof st.applySaveToBrowserAddressBar === 'function') {
+              res = await st.applySaveToBrowserAddressBar();
+            } else if (typeof st.buildWebSaveUrl === 'function') {
+              const u = await st.buildWebSaveUrl();
+              try { if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', u); } catch (_) {}
+              res = { ok: true, url: u, copied: false };
+            }
+            if (res && res.ok) {
+              _saveCenterUi.webUrlConfirmMsg = 'Web address updated! Bookmark this page (Ctrl+D / Share \u2192 Add Bookmark) to keep your save safe';
+              _saveCenterUi.lastGeneratedUrl = res.url || '';
+              if (CK && typeof CK.haptic === 'function') CK.haptic('celebrate');
+              notify('Web address updated & copied! Bookmark this page to keep your save safe.');
+              repaintCenter();
+            }
+          } catch (err) {
+            _saveCenterUi.feedbackTone = 'error';
+            _saveCenterUi.feedbackMsg = String(err && err.message ? err.message : 'Could not update web address.');
+            repaintCenter();
+          }
+        }
+      }, ic('copy', { size: 17 }), domH('span', { text: 'Put My Save in Web Address & Copy Link' })),
+
+      _saveCenterUi.webUrlConfirmMsg ? domH('div', {
+        role: 'status',
+        'aria-live': 'polite',
+        class: 'bt-web-save-confirm-box',
+        style: 'padding:11px 13px;border-radius:12px;background:var(--good-bg,#E2F4EB);border:1.5px solid var(--good,#1B6341);color:var(--good,#1B6341);display:flex;flex-direction:column;gap:6px'
+      },
+        domH('div', { style: 'display:flex;align-items:flex-start;gap:8px;font-size:0.86rem;font-weight:700' },
+          ic('check-seal', { size: 18 }),
+          domH('span', { text: _saveCenterUi.webUrlConfirmMsg })
+        ),
+        _saveCenterUi.lastGeneratedUrl ? domH('div', {
+          class: 'num-tab',
+          style: 'font-size:0.74rem;padding:6px 9px;border-radius:8px;background:rgba(255,255,255,0.65);color:var(--ink,#1C130E);word-break:break-all;max-height:54px;overflow:hidden',
+          text: _saveCenterUi.lastGeneratedUrl.length > 140
+            ? (_saveCenterUi.lastGeneratedUrl.slice(0, 96) + '...' + _saveCenterUi.lastGeneratedUrl.slice(-32) + ' (' + _saveCenterUi.lastGeneratedUrl.length + ' chars copied)')
+            : _saveCenterUi.lastGeneratedUrl
+        }) : null
+      ) : null,
+
+      domH('div', {
+        style: 'display:flex;flex-direction:column;gap:8px;padding-top:8px;border-top:1px solid var(--line-hairline,rgba(28,19,14,0.1))'
+      },
+        domH('label', {
+          for: assignId('bt-load-web-url-input'),
+          style: 'font-size:0.8rem;font-weight:700;color:var(--ink,#1C130E)',
+          text: 'Have a Saved Web Link or Code? Paste & Restore:'
+        }),
+        urlInput,
+        domH('div', { class: 'bt-lab-btn-row', style: 'flex-wrap:wrap;min-width:0;max-width:100%' },
+          domH('button', {
+            type: 'button',
+            id: assignId('bt-load-web-url-btn'),
+            class: 'bt-lab-btn is-primary',
+            style: 'flex:1 1 180px;min-width:0;max-width:100%;white-space:normal;line-height:1.2',
+            onclick: function () { runWebUrlRestore('merge'); }
+          }, ic('clipboard-paste', { size: 16 }), domH('span', { text: 'Restore Link / Code (Merge)' })),
+          domH('button', {
+            type: 'button',
+            id: assignId('bt-replace-web-url-btn'),
+            class: 'bt-lab-btn',
+            style: 'flex:0 1 auto;min-width:0',
+            onclick: function () { runWebUrlRestore('replace'); }
+          }, 'Replace')
+        )
+      )
+    );
+    holder.appendChild(card1);
+
+    /* ----------------------------------------------------------------------
+       CARD 2: Download & Load Save Files (.json Full Backup + .csv Spreadsheet)
+       ---------------------------------------------------------------------- */
+    const saveFilePicker = domH('input', {
+      type: 'file',
+      accept: '.json,.csv,application/json,text/csv',
+      hidden: true,
+      style: 'font-size:1rem',
+      onchange: function () {
+        const f = saveFilePicker.files && saveFilePicker.files[0];
+        if (!f) return;
+        f.text().then(async function (textContent) {
+          const mode = _saveCenterUi.fileImportMode === 'replace' ? 'replace' : 'merge';
+          if (typeof st.importFullSaveBundle === 'function') {
+            const res = await st.importFullSaveBundle(textContent, { mode: mode });
+            if (res && res.ok) {
+              _saveCenterUi.feedbackTone = 'good';
+              _saveCenterUi.feedbackMsg = 'Loaded "' + f.name + '" (' + (mode === 'replace' ? 'Replace All' : 'Safe Merge') + '): ' +
+                (res.totalCoffees != null ? res.totalCoffees : res.coffeesImported) + ' Coffee(s) \u00B7 ' +
+                (res.totalBrews != null ? res.totalBrews : res.brewsImported) + ' Saved Brew(s) ready!';
+              if (CK && typeof CK.haptic === 'function') CK.haptic('celebrate');
+              notify(_saveCenterUi.feedbackMsg);
+            } else {
+              _saveCenterUi.feedbackTone = 'error';
+              _saveCenterUi.feedbackMsg = (res && res.error) || ('Could not load "' + f.name + '". Choose a valid .json save file or .csv brew history.');
+            }
+            repaintCenter();
+          }
+        }).catch(function () {
+          _saveCenterUi.feedbackTone = 'error';
+          _saveCenterUi.feedbackMsg = 'Could not read selected file.';
+          repaintCenter();
+        });
+      }
+    });
+
+    const curImportMode = _saveCenterUi.fileImportMode === 'replace' ? 'replace' : 'merge';
+    const card2 = domH('section', {
+      class: 'bt-studio-card',
+      style: 'display:flex;flex-direction:column;gap:10px;min-width:0;max-width:100%;box-sizing:border-box;overflow:hidden'
+    },
+      domH('div', { class: 'bt-lab-card-head', style: 'min-width:0;flex-wrap:wrap' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0' },
+          ic('share-card', { size: 21 }),
+          domH('div', { style: 'min-width:0' },
+            domH('h3', { text: '2. Download & Load Save Files (.json + .csv)' }),
+            domH('p', {
+              class: 'bt-lab-sub',
+              text: 'Download a portable file to your phone/computer Downloads folder, or load any .json save or .csv brew spreadsheet.'
+            })
+          )
+        )
+      ),
+      domH('div', { class: 'bt-lab-btn-row', style: 'flex-wrap:wrap;min-width:0;max-width:100%' },
+        domH('button', {
+          type: 'button',
+          id: assignId('bt-export-json-save-btn'),
+          class: 'bt-lab-btn is-primary',
+          style: 'flex:1 1 180px;min-width:0;max-width:100%;white-space:normal;line-height:1.2',
+          onclick: function () {
+            if (typeof st.downloadFullSaveFile === 'function') {
+              const r = st.downloadFullSaveFile();
+              _saveCenterUi.feedbackTone = 'good';
+              _saveCenterUi.feedbackMsg = 'Downloaded ' + ((r && r.filename) || 'BeanTelligence_Save.json') + ' (all coffees, brews, preferences, gear & water)!';
+              if (CK && typeof CK.haptic === 'function') CK.haptic('celebrate');
+              notify('Full Save File (.json) downloaded!');
+              repaintCenter();
+            }
+          }
+        }, ic('vault-shield', { size: 16 }), domH('span', { text: 'Download Full Save File (.json)' })),
+        domH('button', {
+          type: 'button',
+          id: assignId('bt-export-csv-save-btn'),
+          class: 'bt-lab-btn',
+          style: 'flex:1 1 190px',
+          onclick: function () {
+            if (typeof st.downloadHistoryCsvFile === 'function') {
+              const r = st.downloadHistoryCsvFile();
+              _saveCenterUi.feedbackTone = 'good';
+              _saveCenterUi.feedbackMsg = 'Exported ' + ((r && r.filename) || 'Brew History (.csv)') + '!';
+              notify('Brew History (.csv) exported!');
+              repaintCenter();
+            } else {
+              const hNow = typeof st.getHistory === 'function' ? st.getHistory() : null;
+              const csv = (hNow && hNow.text) || (typeof COLUMNS !== 'undefined' ? COLUMNS.join(',') + '\n' : 'schema_version,id,coffee_name,total_score\n');
+              downloadTextBlob(csv, 'BeanTelligence_Brew_History.csv', 'text/csv;charset=utf-8');
+              notify('Brew History (.csv) exported!');
+            }
+          }
+        }, ic('share-card', { size: 15 }), domH('span', { text: 'Export Brew History (.csv)' }))
+      ),
+      domH('div', {
+        style: 'display:flex;flex-direction:column;gap:8px;padding-top:8px;border-top:1px solid var(--line-hairline,rgba(28,19,14,0.1))'
+      },
+        domH('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap' },
+          domH('span', { style: 'font-size:0.8rem;font-weight:700;color:var(--ink,#1C130E)', text: 'When Loading a File:' }),
+          domH('div', { class: 'bt-lab-chip-row', role: 'group', 'aria-label': 'Save file import mode' },
+            [
+              { k: 'merge', lbl: 'Merge (Safe)' },
+              { k: 'replace', lbl: 'Replace All' }
+            ].map(function (m) {
+              const on = curImportMode === m.k;
+              return domH('button', {
+                type: 'button',
+                class: 'bt-lab-chip' + (on ? ' is-active' : ''),
+                style: 'min-height:38px;padding:6px 12px;font-size:0.8rem',
+                'aria-pressed': String(on),
+                onclick: function () {
+                  _saveCenterUi.fileImportMode = m.k;
+                  if (CK && typeof CK.haptic === 'function') CK.haptic('tick');
+                  repaintCenter();
+                }
+              }, m.lbl);
+            })
+          )
+        ),
+        saveFilePicker,
+        domH('button', {
+          type: 'button',
+          id: assignId('bt-import-save-file-btn'),
+          class: 'bt-lab-btn is-accent',
+          style: 'width:100%;max-width:100%;min-width:0;min-height:46px;font-weight:700;white-space:normal;line-height:1.2',
+          onclick: function () { saveFilePicker.click(); }
+        }, ic('clipboard-paste', { size: 16 }), domH('span', {
+          text: 'Load Save File (.json or .csv) \u00B7 ' + (curImportMode === 'replace' ? 'Replace All' : 'Merge (Safe)')
+        }))
+      )
+    );
+    holder.appendChild(card2);
+
+    /* ----------------------------------------------------------------------
+       CARD 3: Live Storage Protection Status
+       ---------------------------------------------------------------------- */
+    const persistBadgeTxt = counts.persisted
+      ? 'Persistent Storage Shielded'
+      : (counts.persistSupported ? 'Standard Browser Storage' : 'Browser Local Storage');
+
+    const card3 = domH('section', {
+      class: 'bt-studio-card',
+      style: 'display:flex;flex-direction:column;gap:10px;min-width:0;max-width:100%;box-sizing:border-box;overflow:hidden'
+    },
+      domH('div', { class: 'bt-lab-card-head', style: 'min-width:0;flex-wrap:wrap' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0' },
+          ic('check-seal', { size: 20 }),
+          domH('div', null,
+            domH('h3', { text: '3. Live Storage Protection Status' }),
+            domH('p', {
+              class: 'bt-lab-sub num-tab',
+              text: counts.coffeeCount + ' Coffees \u00B7 ' + counts.brewCount + ' Brews' +
+                (counts.goldCount > 0 ? (' \u00B7 ' + counts.goldCount + ' Gold Locked') : '') +
+                ' \u00B7 Last Backup: ' + _formatBackupTimestampHuman(counts.lastBackupMs)
+            })
+          )
+        ),
+        domH('span', {
+          class: 'bt-epistemic-pill ' + (counts.persisted ? 'is-verified' : 'is-craft'),
+          text: persistBadgeTxt
+        })
+      ),
+      domH('div', { class: 'bt-vault-kpi-strip' },
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Saved Coffees' }), domH('strong', { class: 'num-tab', text: String(counts.coffeeCount) })),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Saved Brews' }), domH('strong', { class: 'num-tab', text: String(counts.brewCount) })),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Last Backup' }), domH('strong', { class: 'num-tab', style: 'font-size:0.84rem', text: counts.lastBackupMs > 0 ? _formatBackupTimestampHuman(counts.lastBackupMs).split(' (')[0] : 'None yet' })),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Storage Shield' }), domH('strong', { class: 'num-tab', style: 'font-size:0.84rem', text: counts.persisted ? 'Protected' : 'Active' }))
+      ),
+      !counts.persisted && counts.persistSupported ? domH('button', {
+        type: 'button',
+        class: 'bt-lab-btn is-sm',
+        style: 'align-self:flex-start',
+        onclick: async function () {
+          if (typeof st.requestPersistentStorage === 'function') {
+            const prRes = await st.requestPersistentStorage();
+            const okP = !!(prRes && (prRes === true || prRes.persisted));
+            _saveCenterUi.feedbackTone = 'good';
+            _saveCenterUi.feedbackMsg = okP
+              ? 'Browser Persistent Storage enabled! Automatic OS storage cleanup is now blocked (still bookmark your #btsave link before manually clearing browser history).'
+              : 'Browser storage active \u2014 click "Put My Save in Web Address & Copy Link" above to survive manual history clearing!';
+            repaintCenter();
+          }
+        }
+      }, ic('lock-pin', { size: 15 }), domH('span', { text: 'Enable Browser Persistent Storage Shield' })) : null
+    );
+    holder.appendChild(card3);
+
+    return holder;
+  }
+
+  function renderSaveBackupCenterSheet(arg0) {
+    const hostEl = arg0 && arg0.nodeType === 1 ? arg0 : null;
+    _yieldInlineSaveIdsForSheet();
+    const sheetWrap = domH('div', {
+      class: 'bt-sheet-content bt-vault-sheet',
+      id: 'bt-save-backup-center-sheet'
+    },
+      buildThreeCardSaveRestoreCenter({ isSheet: true })
+    );
+    if (hostEl) {
+      hostEl.textContent = '';
+      hostEl.appendChild(sheetWrap);
+    }
+    return sheetWrap;
+  }
+
+  function openSaveBackupCenterModal(payload, opts) {
+    opts = Object.assign({
+      title: 'Backup & Load Saves',
+      detent: 'full',
+      onClose: function () {
+        _restoreInlineSaveIdsAfterSheet();
+        if (lastAcademyMount && acadUi.subView === 'vault') {
+          rerenderAcademyTab();
+        }
+      }
+    }, opts || {});
+    _yieldInlineSaveIdsForSheet();
+    const shell = sh();
+    if (shell.BTSheet && typeof shell.BTSheet.open === 'function') {
+      shell.BTSheet.open('save-backup-center', payload || null, opts);
+      return;
+    }
+    if (typeof window.BTSheet !== 'undefined' && window.BTSheet && typeof window.BTSheet.open === 'function') {
+      window.BTSheet.open('save-backup-center', payload || null, opts);
+      return;
+    }
+    openNamedSheet('save-backup-center', payload || null, opts);
+  }
+
   function renderDataVaultSheet(arg0) {
     const hostEl = arg0 && arg0.nodeType === 1 ? arg0 : null;
     const st = window.BTStorage || {};
@@ -2356,101 +2886,108 @@
     }, 'Clear Everything on This Device (2-Tap)');
 
     const vaultRoot = domH('div', { class: 'bt-sheet-content bt-vault-sheet' },
-      domH('div', { class: 'bt-vault-kpi-strip' },
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Home Tastings' }), domH('strong', { class: 'num-tab', text: String(histCount) })),
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'My Beans' }), domH('strong', { class: 'num-tab', text: String(bagCount) })),
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Cafe Visits' }), domH('strong', { class: 'num-tab', text: String(drinkCount) })),
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Backup Format' }), domH('strong', { class: 'num-tab', text: 'Lossless CSV' }))
-      ),
-      statusLine,
-      handleList,
+      buildThreeCardSaveRestoreCenter({
+        isSheet: false,
+        onAfterMutate: function () {
+          if (hostEl) renderDataVaultSheet(hostEl);
+          else rerenderAcademyTab();
+        }
+      }),
+      domH('details', { class: 'bt-lab-details', style: 'margin-top:4px' },
+        domH('summary', { text: 'Advanced Multi-Part Backups (.txt), Auto-Sync Handles & Safety Snapshots' }),
+        domH('div', { style: 'display:flex;flex-direction:column;gap:12px;padding-top:10px' },
+          statusLine,
+          handleList,
 
-      domH('section', { class: 'bt-lab-subcard' },
-        domH('strong', { text: '1-Tap Full Backups & Spreadsheet (.csv) Exports' }),
-        domH('div', { class: 'bt-lab-btn-row' },
-          domH('button', { type: 'button', class: 'bt-lab-btn is-primary', onclick: handleSaveEverything },
-            ic('vault-shield', { size: 16 }), domH('span', { text: 'Save Everything Backup (.txt)' })),
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn',
-            onclick: function () {
-              const csv = (hist && hist.text) || (typeof COLUMNS !== 'undefined' ? COLUMNS.join(',') + '\n' : 'schema_version,id,coffee_name,total_score\n');
-              downloadTextBlob(csv, 'BeanTelligence Taste History.csv', 'text/csv;charset=utf-8');
-              statusLine.textContent = 'Exported BeanTelligence Taste History.csv!';
-            }
-          }, 'Export Tasting History (.csv)'),
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn',
-            onclick: function () {
-              const csv = pr && pr.list && typeof priceCsv === 'function' ? priceCsv(pr.list) : 'id,coffee,price,size\n';
-              downloadTextBlob(csv, 'BeanTelligence Prices.csv', 'text/csv;charset=utf-8');
-              statusLine.textContent = 'Exported BeanTelligence Prices.csv!';
-            }
-          }, 'Export My Beans (.csv)'),
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn',
-            onclick: function () {
-              const csv = shStore && shStore.store && typeof shopCsv === 'function' ? shopCsv(shStore.store) : 'kind,shop,drink,price\n';
-              downloadTextBlob(csv, 'BeanTelligence Coffee Shops.csv', 'text/csv;charset=utf-8');
-              statusLine.textContent = 'Exported BeanTelligence Coffee Shops.csv!';
-            }
-          }, 'Export Cafes (.csv)'),
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn',
-            onclick: async function () {
-              try {
-                if (navigator.storage && typeof navigator.storage.persist === 'function') {
-                  const granted = await navigator.storage.persist();
-                  statusLine.textContent = granted ? 'Durable Browser Storage locked against OS eviction!' : 'Browser storage active (download .txt backups periodically on iOS).';
-                } else {
-                  statusLine.textContent = 'Local storage active.';
+          domH('section', { class: 'bt-lab-subcard' },
+            domH('strong', { text: 'Multi-Part Archive (.txt) & Extra Spreadsheet (.csv) Exports' }),
+            domH('div', { class: 'bt-lab-btn-row' },
+              domH('button', { type: 'button', class: 'bt-lab-btn is-primary', onclick: handleSaveEverything },
+                ic('vault-shield', { size: 16 }), domH('span', { text: 'Save Everything Backup (.txt)' })),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn',
+                onclick: function () {
+                  const csv = (hist && hist.text) || (typeof COLUMNS !== 'undefined' ? COLUMNS.join(',') + '\n' : 'schema_version,id,coffee_name,total_score\n');
+                  downloadTextBlob(csv, 'BeanTelligence Taste History.csv', 'text/csv;charset=utf-8');
+                  statusLine.textContent = 'Exported BeanTelligence Taste History.csv!';
                 }
-              } catch (_) {}
-            }
-          }, 'Lock Durable Storage')
+              }, 'Export Tasting History (.csv)'),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn',
+                onclick: function () {
+                  const csv = pr && pr.list && typeof priceCsv === 'function' ? priceCsv(pr.list) : 'id,coffee,price,size\n';
+                  downloadTextBlob(csv, 'BeanTelligence Prices.csv', 'text/csv;charset=utf-8');
+                  statusLine.textContent = 'Exported BeanTelligence Prices.csv!';
+                }
+              }, 'Export My Beans (.csv)'),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn',
+                onclick: function () {
+                  const csv = shStore && shStore.store && typeof shopCsv === 'function' ? shopCsv(shStore.store) : 'kind,shop,drink,price\n';
+                  downloadTextBlob(csv, 'BeanTelligence Coffee Shops.csv', 'text/csv;charset=utf-8');
+                  statusLine.textContent = 'Exported BeanTelligence Coffee Shops.csv!';
+                }
+              }, 'Export Cafes (.csv)'),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn',
+                onclick: async function () {
+                  try {
+                    if (navigator.storage && typeof navigator.storage.persist === 'function') {
+                      const granted = await navigator.storage.persist();
+                      statusLine.textContent = granted ? 'Durable Browser Storage locked against OS eviction!' : 'Browser storage active (download .json backups or bookmark your #btsave link on iOS).';
+                    } else {
+                      statusLine.textContent = 'Local storage active.';
+                    }
+                  } catch (_) {}
+                }
+              }, 'Lock Durable Storage')
+            )
+          ),
+
+          domH('section', { class: 'bt-lab-subcard' },
+            domH('strong', { text: 'Paste Multi-Part Code, NB1.z Block or QR Brew Passport' }),
+            dropZone
+          ),
+
+          domH('section', { class: 'bt-lab-subcard' },
+            domH('strong', { text: 'Safety Snapshots & App Preferences' }),
+            domH('div', { class: 'bt-lab-btn-row' },
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm is-primary',
+                onclick: async function () {
+                  const fn = st.ensurePreMigrationSnapshot || window.ensurePreMigrationSnapshot;
+                  if (typeof fn === 'function') await fn({ targetSchema: '6.2', forceManual: true });
+                  statusLine.textContent = 'Captured verified safety snapshot of all your saved data!';
+                }
+              }, 'Save Safety Snapshot Now'),
+              makeRollbackBtn('pre-import-safety', 'Undo Last Save Import'),
+              makeRollbackBtn('pre-v6-raw', 'Restore Pre-Update Backup (v6)'),
+              makeRollbackBtn('pre-v5-raw', 'Restore Legacy Backup (v5)'),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm',
+                onclick: function () {
+                  if (sh().openSheet) sh().openSheet('workflow-tools', null, { detent: 'full', title: 'My Workflow & Tools' });
+                }
+              }, 'My Workflow & Tools \u2192'),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm',
+                onclick: function () { openNamedSheet('about-charter', null, { detent: 'full', title: 'About & ' + releases.length + ' Releases' }); }
+              }, 'About / ' + Math.max(148, releases.length) + ' Releases \u2192')
+            )
+          ),
+
+          domH('section', { class: 'bt-lab-subcard bt-vault-danger-zone' },
+            domH('strong', { text: '2-Step Device Storage Reset' }),
+            clearBtn
+          )
         )
-      ),
-
-      domH('section', { class: 'bt-lab-subcard' },
-        domH('strong', { text: 'Import / Merge Files, Shared Recipes & Backup Codes' }),
-        dropZone
-      ),
-
-      domH('section', { class: 'bt-lab-subcard' },
-        domH('strong', { text: 'Safety Snapshots & App Preferences' }),
-        domH('div', { class: 'bt-lab-btn-row' },
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn is-sm is-primary',
-            onclick: async function () {
-              const fn = st.ensurePreMigrationSnapshot || window.ensurePreMigrationSnapshot;
-              if (typeof fn === 'function') await fn({ targetSchema: '6.2', forceManual: true });
-              statusLine.textContent = 'Captured verified safety snapshot of all your saved data!';
-            }
-          }, 'Save Safety Snapshot Now'),
-          makeRollbackBtn('pre-v6-raw', 'Restore Pre-Update Backup (v6)'),
-          makeRollbackBtn('pre-v5-raw', 'Restore Legacy Backup (v5)'),
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn is-sm',
-            onclick: function () {
-              if (sh().openSheet) sh().openSheet('workflow-tools', null, { detent: 'full', title: 'My Workflow & Tools' });
-            }
-          }, 'My Workflow & Tools \u2192'),
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn is-sm',
-            onclick: function () { openNamedSheet('about-charter', null, { detent: 'full', title: 'About & ' + releases.length + ' Releases' }); }
-          }, 'About / ' + Math.max(148, releases.length) + ' Releases \u2192')
-        )
-      ),
-
-      domH('section', { class: 'bt-lab-subcard bt-vault-danger-zone' },
-        domH('strong', { text: '2-Step Device Storage Reset' }),
-        clearBtn
       )
     );
 
@@ -2654,7 +3191,11 @@
   function registerAcademyAndVaultBindings() {
     const shell = sh();
     if (typeof shell.registerTab === 'function') shell.registerTab('academy', renderAcademyTab);
+    if (typeof BTSheet !== 'undefined' && BTSheet && typeof BTSheet.register === 'function') {
+      BTSheet.register('save-backup-center', renderSaveBackupCenterSheet, { title: 'Backup & Load Saves', detent: 'full' });
+    }
     if (typeof shell.registerSheet === 'function') {
+      shell.registerSheet('save-backup-center', renderSaveBackupCenterSheet, { title: 'Backup & Load Saves', detent: 'full' });
       shell.registerSheet('data-vault', renderDataVaultSheet);
       shell.registerSheet('onboarding-tour', renderOnboardingTourSheet);
       shell.registerSheet('about-charter', renderAboutCharterSheet);
@@ -2684,8 +3225,21 @@
 
   registerAcademyAndVaultBindings();
 
+  window.BTBackupCenter = {
+    open: openSaveBackupCenterModal,
+    close: function () {
+      _restoreInlineSaveIdsAfterSheet();
+      const shell = sh();
+      if (shell.closeSheet) shell.closeSheet();
+      else if (typeof BTSheet !== 'undefined' && BTSheet && typeof BTSheet.close === 'function') BTSheet.close();
+    },
+    render: renderSaveBackupCenterSheet,
+    buildCenter: buildThreeCardSaveRestoreCenter
+  };
+
   window.BTAcademyVault = {
     renderAcademyTab: renderAcademyTab,
+    renderSaveBackupCenterSheet: renderSaveBackupCenterSheet,
     renderDataVaultSheet: renderDataVaultSheet,
     renderOnboardingTourSheet: renderOnboardingTourSheet,
     renderAboutCharterSheet: renderAboutCharterSheet,

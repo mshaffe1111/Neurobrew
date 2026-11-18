@@ -2983,6 +2983,37 @@
       a.justSavedTasting = null;
     }
 
+    const palateHeadRow = domH('header', {
+      class: 'bt-palate-top-head',
+      style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px'
+    },
+      domH('div', { style: 'flex:1 1 200px;min-width:0' },
+        domH('span', {
+          style: 'display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent,#9A4212)',
+          text: 'Tab 4 \u00B7 Preferences & Palate'
+        }),
+        domH('h1', {
+          style: 'margin:2px 0 0;font-size:1.18rem;line-height:1.22',
+          text: 'Your Taste DNA, Origins & Bag Guide'
+        })
+      ),
+      domH('button', {
+        type: 'button',
+        id: 'bt-prefs-backup-saves-btn',
+        class: 'bt-lab-btn is-accent',
+        style: 'min-height:44px;font-weight:700;flex-shrink:0',
+        onclick: function () {
+          if (CK && typeof CK.haptic === 'function') CK.haptic('snap');
+          if (typeof window !== 'undefined' && window.BTBackupCenter && typeof window.BTBackupCenter.open === 'function') {
+            window.BTBackupCenter.open({ source: 'palate' });
+          } else if (sh().openSheet) {
+            sh().openSheet('save-backup-center', { source: 'palate' }, { title: 'Backup & Load Saves', detent: 'full' });
+          }
+        }
+      }, ic('vault-shield', { size: 16 }), domH('span', { text: 'Backup / Load Saves' }))
+    );
+    page.appendChild(palateHeadRow);
+
     const segNav = domH('nav', { class: 'bt-studio-pill-nav', 'aria-label': 'Preferences & Palate Views' },
       [
         { id: 'dna', lbl: 'Preferences & Palate DNA', icon: 'origin-globe' },

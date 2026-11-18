@@ -4153,7 +4153,7 @@ function buildStaticChrome() {
       const t = e && e.target;
       if (!t || !t.tagName) return;
       const tag = t.tagName.toUpperCase();
-      if (tag === 'TEXTAREA' || (tag === 'INPUT' && !/^(checkbox|radio|button|submit|range|file|color)$/i.test(t.type || 'text'))) {
+      if (tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable || (tag === 'INPUT' && !/^(checkbox|radio|button|submit|range|file|color)$/i.test(t.type || 'text'))) {
         clearTimeout(kbBlurTimer);
         if (typeof window !== 'undefined' && window.innerWidth < 1024) {
           document.documentElement.classList.add('bt-kb-open');
@@ -4932,6 +4932,8 @@ var BTStorage;
     });
     if (['new', 'comfortable', 'expert'].includes(src.cupHelp)) out.cupHelp = src.cupHelp;
     if (src.switchSize === '03' || src.switchSize === '02') out.switchSize = src.switchSize;
+    if (src.experienceLens === 'starter' || src.experienceLens === 'scientist') out.experienceLens = src.experienceLens;
+    if (src.timerAudioMode === 'chimes' || src.timerAudioMode === 'silent') out.timerAudioMode = src.timerAudioMode;
     /* Strip any accidental credentials */
     delete out.difluidAuth; delete out.apiKey; delete out[DIFLUID_AUTH_LS_KEY];
     return out;
@@ -4952,12 +4954,30 @@ var BTStorage;
   function applyFullPrefs(raw){
     if (!raw || typeof raw !== 'object') return false;
     const a = _getApp();
-    a.prefs = cleanFullPrefs(Object.assign({}, a.prefs || {}, raw));
-    if (_g.BTPlatform && _g.BTPlatform.theme && typeof _g.BTPlatform.theme.apply === 'function'){
+    const cleaned = cleanFullPrefs(Object.assign({}, a.prefs || {}, raw));
+    if (raw.experienceLens === 'starter' || raw.experienceLens === 'comfy' || raw.experienceLens === 'scientist'){
+      cleaned.experienceLens = raw.experienceLens;
+    } else if (cleaned.scienceLens === 'xray' || cleaned.level === 'expert'){
+      cleaned.experienceLens = 'scientist';
+    } else if (cleaned.level === 'new'){
+      cleaned.experienceLens = 'starter';
+    } else if (!cleaned.experienceLens){
+      cleaned.experienceLens = 'comfy';
+    }
+    if (raw.timerAudioMode === 'voice' || raw.timerAudioMode === 'chimes' || raw.timerAudioMode === 'silent'){
+      cleaned.timerAudioMode = raw.timerAudioMode;
+    } else {
+      cleaned.timerAudioMode = cleaned.sound === 'off' ? 'silent' : (cleaned.sound === 'chime' ? 'chimes' : 'voice');
+    }
+    a.prefs = cleaned;
+    _g.__btPrefs = a.prefs;
+    if (_g.BTShell && typeof _g.BTShell.applyTheme === 'function'){
+      try { _g.BTShell.applyTheme(a.prefs.theme || 'light'); } catch(e){}
+    } else if (_g.BTPlatform && _g.BTPlatform.theme && typeof _g.BTPlatform.theme.apply === 'function'){
       try { _g.BTPlatform.theme.apply(a.prefs.theme || 'light'); } catch(e){}
     }
-    if (typeof BTScienceLens !== 'undefined' && BTScienceLens && typeof BTScienceLens.setMode === 'function' && a.prefs.scienceLens){
-      try { BTScienceLens.setMode(a.prefs.scienceLens, { silent:true }); } catch(e){}
+    if (typeof BTScienceLens !== 'undefined' && BTScienceLens && typeof BTScienceLens.setMode === 'function' && (a.prefs.scienceLens || a.prefs.experienceLens)){
+      try { BTScienceLens.setMode(a.prefs.scienceLens || a.prefs.experienceLens, { silent:true }); } catch(e){}
     }
     mirrorPrefsNow();
     _scheduleNativeVaultMirror();
@@ -5711,10 +5731,39 @@ var BTStorage;
     _unifiedIndexCache.key = '';
     _scheduleNativeVaultMirror();
   }
+  function _parsePricesAnyFormat(rawText){
+    const s = String(rawText == null ? '' : rawText).trim();
+    if (!s) return { list:[], error:'' };
+    if (s[0] === '[' || s[0] === '{'){
+      try {
+        const pj = JSON.parse(s);
+        const arr = Array.isArray(pj) ? pj : (pj && Array.isArray(pj.list) ? pj.list : []);
+        const mapped = arr.map(item => {
+          if (!item || typeof item !== 'object') return null;
+          return priceEntry(Object.assign({}, item, {
+            coffee: item.coffee || item.name || item.coffee_name || '',
+            roaster: item.roaster || '',
+            size: item.size != null ? item.size : (item.grams != null ? item.grams : 250),
+            unit: item.unit || 'g',
+            price: item.price != null ? item.price : 20,
+            sym: item.sym || item.currency || '$',
+            roast: item.roast || item.roast_date || '',
+            rlevel: item.rlevel || item.roast_level || ''
+          }));
+        }).filter(Boolean).slice(0, PRICE_MAX_ROWS);
+        return { list:mapped, error:'' };
+      } catch(e){ return { list:[], error:'Invalid JSON bag list.' }; }
+    }
+    const r = priceRead(s);
+    return r.error ? { list:[], error:r.error } : { list:r.list || [], error:'' };
+  }
   function _loadPricesImpl(){
     try {
-      const t = localStorage.getItem(PRICES_LS_KEY), r = t ? priceRead(t) : null;
-      if (r && !r.error) prState.list = r.list;
+      const t = localStorage.getItem(PRICES_LS_KEY);
+      if (t){
+        const parsed = _parsePricesAnyFormat(t);
+        if (!parsed.error) prState.list = parsed.list;
+      }
       prState.changes = Math.min(prState.list.length, Math.max(0, parseInt(localStorage.getItem(PRICES_CHANGES_LS_KEY), 10) || 0));
     } catch(e){}
     _unifiedIndexCache.key = '';
@@ -7260,6 +7309,1001 @@ var BTStorage;
     return targetCoffee;
   }
 
+  /* ==========================================================================
+     v6.5 PORTABLE 18-KEY FULL SAVE BUNDLE & BOOKMARKABLE WEB-ADDRESS ENGINE
+     ========================================================================== */
+  const EXTRA_VAULT_COFFEES_KEY = 'brew-and-cup-coffees-v1';
+  const EXTRA_AROMA_KIT_KEY = 'brew-and-cup-aroma-kit-v1';
+
+  function _makeThenableResult(resObj){
+    const plain = Object.assign({}, resObj);
+    try {
+      Object.defineProperty(resObj, 'then', {
+        enumerable:false,
+        configurable:true,
+        value:function(onFulfilled, onRejected){
+          return Promise.resolve(plain).then(onFulfilled, onRejected);
+        }
+      });
+      Object.defineProperty(resObj, 'catch', {
+        enumerable:false,
+        configurable:true,
+        value:function(onRejected){
+          return Promise.resolve(plain).catch(onRejected);
+        }
+      });
+    } catch(e){}
+    return resObj;
+  }
+
+  async function _requestPersistentStorageImpl(){
+    const hasApi = !!(typeof navigator !== 'undefined' && navigator && navigator.storage && typeof navigator.storage.persist === 'function');
+    if (!hasApi){
+      return { ok:true, persisted:false, supported:false, status:'unsupported' };
+    }
+    try {
+      if (typeof navigator.storage.persisted === 'function'){
+        storagePersisted = await navigator.storage.persisted();
+      }
+      if (!storagePersisted){
+        storagePersisted = await navigator.storage.persist();
+      }
+      return {
+        ok:true,
+        persisted:!!storagePersisted,
+        supported:true,
+        status:storagePersisted ? 'persisted' : 'standard'
+      };
+    } catch(e){
+      return { ok:false, persisted:!!storagePersisted, supported:true, status:'standard' };
+    }
+  }
+
+  function _getPersistentStorageStatusImpl(){
+    const hasApi = !!(typeof navigator !== 'undefined' && navigator && navigator.storage && typeof navigator.storage.persist === 'function');
+    let ts = lastBackupMs || 0;
+    if (!ts){
+      try { ts = parseInt(localStorage.getItem(LASTBACKUP_LS_KEY), 10) || 0; } catch(e){}
+    }
+    return {
+      persisted:storagePersisted === true,
+      checked:storagePersisted !== null,
+      supported:hasApi,
+      lastBackupMs:ts
+    };
+  }
+
+  function _parseCoffeesVaultArray(rawStr){
+    if (!rawStr) return [];
+    try {
+      const p = typeof rawStr === 'string' ? JSON.parse(rawStr) : rawStr;
+      const arr = Array.isArray(p) ? p : (p && Array.isArray(p.coffees) ? p.coffees : (p && Array.isArray(p.list) ? p.list : []));
+      return arr.filter(x => x && typeof x === 'object' && !Array.isArray(x));
+    } catch(e){ return []; }
+  }
+
+  function _summarizeKeysCounts(keysMap, extraMap){
+    const km = keysMap || {};
+    const xm = extraMap || {};
+    let hObjs = [];
+    if (km[HISTORY_LS_KEY]){
+      const ex = readExisting(String(km[HISTORY_LS_KEY]));
+      if (!ex.error) hObjs = rowsToObjects(ex);
+    }
+    let pList = [];
+    if (km[PRICES_LS_KEY]){
+      const pr = _parsePricesAnyFormat(km[PRICES_LS_KEY]);
+      if (!pr.error) pList = pr.list;
+    }
+    const unified = _buildUnifiedCoffeesIndexImpl(hObjs, pList);
+    const seenCoffeeNorm = new Set(unified.map(u => u.normKey || (_normKeyPart(u.name) + '|' + _normKeyPart(u.roaster))));
+    const extraCoffees = _parseCoffeesVaultArray(xm[EXTRA_VAULT_COFFEES_KEY] || km[EXTRA_VAULT_COFFEES_KEY]);
+    extraCoffees.forEach(c => {
+      const nm = _normKeyPart(c.name || c.coffee || c.coffee_name || '');
+      const rs = _normKeyPart(c.roaster || '');
+      if (nm) seenCoffeeNorm.add(nm + '|' + rs);
+    });
+    let hasPrefs = false;
+    if (km[DRAFT_LS_KEY]){
+      try {
+        const d = JSON.parse(String(km[DRAFT_LS_KEY]));
+        if (d && d.app){
+          if (d.app.coffee && d.app.coffee.name){
+            const dnm = _normKeyPart(d.app.coffee.name);
+            const drs = _normKeyPart(d.app.coffee.roaster || '');
+            if (dnm) seenCoffeeNorm.add(dnm + '|' + drs);
+          }
+          if (d.app.prefs && !prefsIsDefault(d.app.prefs)) hasPrefs = true;
+        }
+      } catch(e){}
+    }
+    if (!hasPrefs && km[PREFS_MIRROR_LS_KEY]){
+      try {
+        const pm = JSON.parse(String(km[PREFS_MIRROR_LS_KEY]));
+        if (pm && !prefsIsDefault(pm)) hasPrefs = true;
+      } catch(e){}
+    }
+    let goldCount = 0;
+    for (let i = 0; i < hObjs.length; i++){
+      const dl = String((hObjs[i] && hObjs[i].dial_locked) || '').trim().toLowerCase();
+      if (dl === 'yes' || dl === '1') goldCount++;
+    }
+    let cafeCount = 0;
+    if (km[SHOPS_LS_KEY]){
+      const sr = shopRead(String(km[SHOPS_LS_KEY]));
+      if (!sr.error && sr.store && Array.isArray(sr.store.drinks)) cafeCount = sr.store.drinks.length;
+    }
+    return {
+      coffeeCount:seenCoffeeNorm.size,
+      brewCount:hObjs.length,
+      goldCount,
+      cafeCount,
+      hasPrefs
+    };
+  }
+
+  function _exportFullSaveBundleImpl(opts){
+    opts = opts || {};
+    const a = _getApp();
+    const st = _getState();
+    try {
+      if (_g.BTShell && typeof _g.BTShell.flushDraft === 'function' && (
+        (a && a.coffee && a.coffee.name) ||
+        (a && a.prefs && !prefsIsDefault(a.prefs)) ||
+        localStorage.getItem(DRAFT_LS_KEY) !== null
+      )){
+        _g.BTShell.flushDraft();
+      }
+    } catch(e){}
+
+    const keys = {};
+    ALL_18_LS_KEYS.forEach(k => {
+      let val = null;
+      try { val = localStorage.getItem(k); } catch(e){ val = null; }
+      keys[k] = val !== null ? String(val) : null;
+    });
+
+    /* Overlay live in-memory stores if not yet flushed to localStorage */
+    if (!keys[HISTORY_LS_KEY] && historyState && historyState.text){
+      keys[HISTORY_LS_KEY] = historyState.text;
+    }
+    if (!keys[PRICES_LS_KEY] && prState.list && prState.list.length > 0){
+      keys[PRICES_LS_KEY] = priceCsv(prState.list);
+    }
+    if (!keys[SHOPS_LS_KEY] && !_shEmpty()){
+      keys[SHOPS_LS_KEY] = shopCsv(shState.store);
+    }
+    if (a && a.prefs && (!prefsIsDefault(a.prefs) || keys[PREFS_MIRROR_LS_KEY] !== null)){
+      const cleanP = cleanFullPrefs(a.prefs);
+      if (a.prefs.experienceLens) cleanP.experienceLens = a.prefs.experienceLens;
+      if (a.prefs.timerAudioMode) cleanP.timerAudioMode = a.prefs.timerAudioMode;
+      keys[PREFS_MIRROR_LS_KEY] = JSON.stringify(cleanP);
+    }
+    if ((a && a.coffee && a.coffee.name) || (a && a.prefs && !prefsIsDefault(a.prefs)) || keys[DRAFT_LS_KEY] !== null){
+      try {
+        const safeApp = Object.assign({}, a);
+        if (safeApp.prefs){
+          const cp = cleanFullPrefs(safeApp.prefs);
+          if (safeApp.prefs.experienceLens) cp.experienceLens = safeApp.prefs.experienceLens;
+          if (safeApp.prefs.timerAudioMode) cp.timerAudioMode = safeApp.prefs.timerAudioMode;
+          safeApp.prefs = cp;
+        }
+        keys[DRAFT_LS_KEY] = JSON.stringify({ app:safeApp, state:st, at:Date.now() });
+      } catch(e){}
+    }
+
+    const extraKeys = {};
+    [EXTRA_VAULT_COFFEES_KEY, EXTRA_AROMA_KIT_KEY].forEach(xk => {
+      try {
+        const xv = localStorage.getItem(xk);
+        if (xv !== null && xv !== '') extraKeys[xk] = String(xv);
+      } catch(e){}
+    });
+
+    const counts = _summarizeKeysCounts(keys, extraKeys);
+    const out = {
+      schema:'beantelligence-save-v6',
+      version:6,
+      exportedAt:new Date().toISOString(),
+      coffeeCount:counts.coffeeCount,
+      brewCount:counts.brewCount,
+      goldCount:counts.goldCount,
+      cafeCount:counts.cafeCount,
+      hasPrefs:counts.hasPrefs,
+      keys
+    };
+    if (Object.keys(extraKeys).length) out.extraKeys = extraKeys;
+    return out;
+  }
+
+  function _downloadFullSaveFileImpl(){
+    const bundle = _exportFullSaveBundleImpl();
+    const filename = 'BeanTelligence_Save_' + _todayIso() + '.json';
+    const text = JSON.stringify(bundle, null, 2);
+    _downloadText(text, filename, 'application/json;charset=utf-8');
+    _noteBackup();
+    return {
+      ok:true,
+      filename,
+      bundle,
+      text,
+      coffeeCount:bundle.coffeeCount,
+      brewCount:bundle.brewCount
+    };
+  }
+
+  function _downloadHistoryCsvFileImpl(){
+    let csv = (historyState && historyState.text) || '';
+    if (!csv){
+      try { csv = localStorage.getItem(HISTORY_LS_KEY) || ''; } catch(e){}
+    }
+    if (!csv){
+      csv = (typeof COLUMNS !== 'undefined' && Array.isArray(COLUMNS) ? COLUMNS.join(',') : 'schema_version,id,coffee_name,brew_method,my_rating_stars') + '\n';
+    }
+    const filename = 'BeanTelligence_Brew_History_' + _todayIso() + '.csv';
+    _downloadText(csv, filename, 'text/csv;charset=utf-8');
+    _noteBackup();
+    return {
+      ok:true,
+      filename,
+      csv,
+      brewCount:historyState && historyState.objs ? historyState.objs.length : 0
+    };
+  }
+
+  function _resolveWebSaveBaseUrl(){
+    try {
+      if (typeof location !== 'undefined' && location){
+        if (location.origin && location.origin !== 'null'){
+          return location.origin + (location.pathname || '/');
+        }
+        if (location.href){
+          return String(location.href).split('#')[0];
+        }
+      }
+    } catch(e){}
+    return 'https://mshaffe1111.github.io/Neurobrew/';
+  }
+
+  function _packWireFromBundle(bundleInput){
+    const b = (bundleInput && typeof bundleInput === 'object' && bundleInput.keys) ? bundleInput : _exportFullSaveBundleImpl();
+    const compactKeys = {};
+    ALL_18_LS_KEYS.forEach(k => {
+      if (k === SNAPSHOT_DATA_LS_KEY || k === SNAPSHOT_META_LS_KEY || k === DIFLUID_AUTH_LS_KEY) return;
+      const v = b.keys && b.keys[k];
+      if (v !== null && v !== undefined && v !== '') compactKeys[k] = String(v);
+    });
+    const compactExtra = {};
+    if (b.extraKeys && typeof b.extraKeys === 'object'){
+      Object.keys(b.extraKeys).forEach(xk => {
+        if (/auth|apikey|secret|token/i.test(xk)) return;
+        const xv = b.extraKeys[xk];
+        if (xv !== null && xv !== undefined && xv !== '') compactExtra[xk] = String(xv);
+      });
+    }
+    const wire = {
+      s:'beantelligence-save-v6',
+      t:b.exportedAt || new Date().toISOString(),
+      k:compactKeys
+    };
+    if (Object.keys(compactExtra).length) wire.x = compactExtra;
+    return wire;
+  }
+
+  function _unpackWireToBundle(parsed){
+    if (!parsed || typeof parsed !== 'object') return null;
+    const srcKeys = (parsed.keys && typeof parsed.keys === 'object') ? parsed.keys : ((parsed.k && typeof parsed.k === 'object') ? parsed.k : null);
+    if (!srcKeys) return null;
+    const fullKeys = {};
+    ALL_18_LS_KEYS.forEach(k => {
+      const v = srcKeys[k];
+      fullKeys[k] = (v !== null && v !== undefined && v !== '') ? String(v) : null;
+    });
+    const extraKeys = {};
+    const srcExtra = parsed.extraKeys || parsed.x || {};
+    [EXTRA_VAULT_COFFEES_KEY, EXTRA_AROMA_KIT_KEY].forEach(xk => {
+      const xv = srcExtra[xk] != null ? srcExtra[xk] : srcKeys[xk];
+      if (xv !== null && xv !== undefined && xv !== '') extraKeys[xk] = String(xv);
+    });
+    const counts = _summarizeKeysCounts(fullKeys, extraKeys);
+    const out = {
+      schema:'beantelligence-save-v6',
+      version:6,
+      exportedAt:String(parsed.exportedAt || parsed.t || new Date().toISOString()),
+      coffeeCount:counts.coffeeCount,
+      brewCount:counts.brewCount,
+      goldCount:counts.goldCount,
+      cafeCount:counts.cafeCount,
+      hasPrefs:counts.hasPrefs,
+      keys:fullKeys
+    };
+    if (Object.keys(extraKeys).length) out.extraKeys = extraKeys;
+    return out;
+  }
+
+  function _extractWebSaveToken(urlOrCode){
+    let s = String(urlOrCode == null ? '' : urlOrCode).trim();
+    if (!s) return '';
+    const mHash = /(?:[#?&]|^)(?:btsave|btsave_v6)=([A-Za-z0-9._~%-]+)/i.exec(s);
+    if (mHash && mHash[1]){
+      s = mHash[1];
+    } else if (/^btsave:/i.test(s)){
+      s = s.slice(7).trim();
+    }
+    if (s.indexOf('%') >= 0){
+      try { s = decodeURIComponent(s); } catch(e){}
+    }
+    s = s.replace(/[\s"'<>]+/g, '');
+    if (/^[zj]\.[A-Za-z0-9+/=_-]+$/.test(s)) return s;
+    return '';
+  }
+
+  function _inflateRawDeflateSync(rawDeflateBytes){
+    if (typeof _btPureGzipDecompress !== 'function') throw new Error('no-sync-inflate');
+    const wrapped = new Uint8Array(10 + rawDeflateBytes.length + 8);
+    wrapped[0] = 0x1f; wrapped[1] = 0x8b; wrapped[2] = 0x08;
+    wrapped.set(rawDeflateBytes, 10);
+    return _btPureGzipDecompress(wrapped, 30000000);
+  }
+
+  function _decodeWebSaveSync(urlOrCode){
+    const tok = _extractWebSaveToken(urlOrCode);
+    if (!tok) return null;
+    const prefix = tok.slice(0, 2);
+    const b64Body = tok.slice(2);
+    const rawBytes = bkB64Decode(b64Body);
+    let jsonStr = '';
+    if (prefix === 'j.'){
+      jsonStr = _btUtf8Decode(rawBytes);
+    } else if (prefix === 'z.'){
+      const inflated = _inflateRawDeflateSync(rawBytes);
+      jsonStr = _btUtf8Decode(inflated);
+    } else {
+      return null;
+    }
+    const parsed = JSON.parse(jsonStr);
+    return _unpackWireToBundle(parsed);
+  }
+
+  function _buildWebSaveUrlSync(optionalBundle){
+    const wire = _packWireFromBundle(optionalBundle);
+    const jsonBytes = _utf8Bytes(JSON.stringify(wire));
+    return _resolveWebSaveBaseUrl() + '#btsave=j.' + bkB64Encode(jsonBytes);
+  }
+
+  async function _buildWebSaveUrlImpl(optionalBundle){
+    const wire = _packWireFromBundle(optionalBundle);
+    const jsonBytes = _utf8Bytes(JSON.stringify(wire));
+    let payload = '';
+    if (typeof CompressionStream === 'function'){
+      try {
+        const deflated = await bkPipe(jsonBytes, new CompressionStream('deflate-raw'));
+        if (deflated && deflated.length > 0 && deflated.length < jsonBytes.length){
+          payload = 'z.' + bkB64Encode(deflated);
+        }
+      } catch(e){
+        payload = '';
+      }
+    }
+    if (!payload){
+      payload = 'j.' + bkB64Encode(jsonBytes);
+    }
+    return _resolveWebSaveBaseUrl() + '#btsave=' + payload;
+  }
+
+  async function _decodeWebSaveUrlImpl(urlOrCode){
+    if (urlOrCode && typeof urlOrCode === 'object' && urlOrCode.keys){
+      return _unpackWireToBundle(urlOrCode);
+    }
+    const tok = _extractWebSaveToken(urlOrCode);
+    if (!tok) throw new Error('No valid #btsave=... link or save code found.');
+    const prefix = tok.slice(0, 2);
+    const compBytes = bkB64Decode(tok.slice(2));
+    let utf8BytesOut = null;
+    if (prefix === 'j.'){
+      utf8BytesOut = compBytes;
+    } else if (prefix === 'z.'){
+      if (typeof DecompressionStream === 'function'){
+        try {
+          utf8BytesOut = await bkPipeLimit(compBytes, new DecompressionStream('deflate-raw'), 30000000);
+        } catch(e){
+          utf8BytesOut = null;
+        }
+      }
+      if (!utf8BytesOut){
+        utf8BytesOut = _inflateRawDeflateSync(compBytes);
+      }
+    } else {
+      throw new Error('Unsupported web save prefix.');
+    }
+    const parsed = JSON.parse(_btUtf8Decode(utf8BytesOut));
+    const bundle = _unpackWireToBundle(parsed);
+    if (!bundle) throw new Error('Save link decoded, but did not contain valid BeanTelligence data.');
+    return bundle;
+  }
+
+  async function _copyTextUniversal(str){
+    let syncCopied = false;
+    if (typeof document !== 'undefined' && document.body){
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = str;
+        ta.setAttribute('readonly', '');
+        ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;font-size:16px;opacity:0';
+        document.body.appendChild(ta);
+        ta.select();
+        syncCopied = !!(document.execCommand && document.execCommand('copy'));
+        document.body.removeChild(ta);
+      } catch(e){}
+    }
+    const raceTimeout = (p, ms) => new Promise(resolve => {
+      let done = false;
+      const tm = setTimeout(() => { if (!done){ done = true; resolve(false); } }, ms || 50);
+      Promise.resolve(p).then(v => {
+        if (!done){ done = true; clearTimeout(tm); resolve(v !== false); }
+      }).catch(() => {
+        if (!done){ done = true; clearTimeout(tm); resolve(false); }
+      });
+    });
+    if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function'){
+      const asyncOk = await raceTimeout(navigator.clipboard.writeText(str), 50);
+      if (asyncOk) return true;
+    } else if (_g.BTPlatform && _g.BTPlatform.clipboard && typeof _g.BTPlatform.clipboard.writeText === 'function'){
+      const platOk = await raceTimeout(_g.BTPlatform.clipboard.writeText(str), 50);
+      if (platOk) return true;
+    }
+    return syncCopied;
+  }
+
+  async function _applySaveToBrowserAddressBarImpl(){
+    const webUrl = await _buildWebSaveUrlImpl();
+    const hashIdx = webUrl.indexOf('#');
+    const hashPart = hashIdx >= 0 ? webUrl.slice(hashIdx) : '';
+    _g.__btSelfAppliedSaveHash = hashPart;
+    let updatedBar = false;
+    try {
+      if (typeof history !== 'undefined' && history && typeof history.replaceState === 'function'){
+        history.replaceState(null, '', webUrl);
+        updatedBar = true;
+      } else if (typeof location !== 'undefined' && hashPart){
+        location.hash = hashPart;
+        updatedBar = true;
+      }
+    } catch(e){
+      try {
+        if (typeof history !== 'undefined' && history && typeof history.replaceState === 'function' && hashPart){
+          history.replaceState(null, '', hashPart);
+          updatedBar = true;
+        } else if (typeof location !== 'undefined' && hashPart){
+          location.hash = hashPart;
+          updatedBar = true;
+        }
+      } catch(e2){}
+    }
+    const copied = await _copyTextUniversal(webUrl);
+    _noteBackup();
+    return {
+      ok:true,
+      url:webUrl,
+      hash:hashPart,
+      updatedBar,
+      copied,
+      length:webUrl.length
+    };
+  }
+
+  function _capturePreImportVaultSnapshot(){
+    try {
+      const snapKeys = {}, snapCrcs = {};
+      ALL_18_LS_KEYS.concat([EXTRA_VAULT_COFFEES_KEY, EXTRA_AROMA_KIT_KEY]).forEach(k => {
+        let v = null;
+        try { v = localStorage.getItem(k); } catch(e){ v = null; }
+        if (v !== null && v !== ''){
+          snapKeys[k] = v;
+          snapCrcs[k] = bkCrc32(_utf8Bytes(v));
+        }
+      });
+      if (Object.keys(snapKeys).length > 0){
+        const payloadObj = {
+          v:1,
+          schema:'6.0',
+          vaultKey:'pre-import-safety',
+          createdAt:new Date().toISOString(),
+          keys:snapKeys,
+          crcs:snapCrcs
+        };
+        const vp = _vaultPut('pre-import-safety', payloadObj);
+        if (vp && typeof vp.catch === 'function') vp.catch(() => {});
+        _ensurePreMigrationSnapshotImpl({ targetSchema:'6.0', forceManual:true });
+      }
+    } catch(e){}
+  }
+
+  function _rowDedupSignature(r){
+    if (!r || typeof r !== 'object') return '';
+    const cn = _normKeyPart(r.coffee_name || '');
+    const bm = (typeof resolveMethod === 'function' ? resolveMethod(r.brew_method) : '') || String(r.brew_method || '').trim().toLowerCase();
+    const savedTs = String(r.saved_at || r.timestamp || '').trim().toLowerCase();
+    if (savedTs && cn) return 'ts:' + savedTs + '|' + cn + '|' + bm;
+    const cupDate = String(r.cupping_date || '').trim().toLowerCase();
+    if (cupDate && cn) return 'dt:' + cupDate + '|try:' + String(r.brew_attempt || '') + '|' + cn + '|' + bm;
+    return '';
+  }
+
+  function _mergePriceBagsNonDestructive(curList, incomingList){
+    const merged = Array.isArray(curList) ? curList.slice() : [];
+    let added = 0;
+    const seenKeys = new Set(merged.map(priceKey));
+    const findOpenMatchIdx = cand => {
+      const cId = String(cand.coffee_id || '').trim();
+      const cNorm = _normKeyPart(cand.coffee) + '|' + _normKeyPart(cand.roaster);
+      for (let i = 0; i < merged.length; i++){
+        const m = merged[i];
+        if (!m) continue;
+        if (cId && m.coffee_id && m.coffee_id === cId && (m.date || '') === (cand.date || '') && (m.roast || '') === (cand.roast || '')) return i;
+        if (!m.finished && !cand.finished && (_normKeyPart(m.coffee) + '|' + _normKeyPart(m.roaster)) === cNorm && (m.roast || '') === (cand.roast || '')) return i;
+      }
+      return -1;
+    };
+    (incomingList || []).forEach(rawItem => {
+      const e = priceEntry(rawItem);
+      if (!e) return;
+      const pk = priceKey(e);
+      if (seenKeys.has(pk)) return;
+      const matchIdx = findOpenMatchIdx(e);
+      if (matchIdx >= 0){
+        const cur = merged[matchIdx];
+        merged[matchIdx] = Object.assign({}, e, cur, {
+          coffee_id:cur.coffee_id || e.coffee_id || '',
+          rlevel:cur.rlevel || e.rlevel || '',
+          roast:cur.roast || e.roast || '',
+          is_frozen:cur.is_frozen || e.is_frozen || '',
+          frozen_date:cur.frozen_date || e.frozen_date || '',
+          tubes_json:cur.tubes_json || e.tubes_json || ''
+        });
+        return;
+      }
+      if (merged.length < PRICE_MAX_ROWS){
+        merged.push(e);
+        seenKeys.add(pk);
+        added++;
+      }
+    });
+    return { list:merged, added };
+  }
+
+  function _normalizeIncomingSaveToBundleSync(inputStrOrObj){
+    if (inputStrOrObj == null) return { error:'Empty save input.' };
+
+    /* 1. Object input */
+    if (typeof inputStrOrObj === 'object'){
+      if (Array.isArray(inputStrOrObj)){
+        const csvArr = objectsToHistoryCsv(inputStrOrObj);
+        if (!csvArr) return { error:'No valid brew rows found in JSON array.' };
+        return { bundle:_unpackWireToBundle({ keys:{ [HISTORY_LS_KEY]:csvArr } }) };
+      }
+      if (inputStrOrObj.keys && typeof inputStrOrObj.keys === 'object'){
+        const b = _unpackWireToBundle(inputStrOrObj);
+        if (b) return { bundle:b };
+      }
+      if (inputStrOrObj.k && typeof inputStrOrObj.k === 'object'){
+        const b2 = _unpackWireToBundle(inputStrOrObj);
+        if (b2) return { bundle:b2 };
+      }
+      if (inputStrOrObj.format === 'beantelligence-backup' || inputStrOrObj.historyCsv || inputStrOrObj.pricesCsv || inputStrOrObj.shopsCsv || inputStrOrObj.prefs || inputStrOrObj.academy){
+        const kMap = {};
+        if (typeof inputStrOrObj.historyCsv === 'string' && inputStrOrObj.historyCsv.trim()) kMap[HISTORY_LS_KEY] = inputStrOrObj.historyCsv;
+        else if (Array.isArray(inputStrOrObj.history)){
+          const hc = objectsToHistoryCsv(inputStrOrObj.history);
+          if (hc) kMap[HISTORY_LS_KEY] = hc;
+        }
+        if (typeof inputStrOrObj.pricesCsv === 'string' && inputStrOrObj.pricesCsv.trim()) kMap[PRICES_LS_KEY] = inputStrOrObj.pricesCsv;
+        if (typeof inputStrOrObj.shopsCsv === 'string' && inputStrOrObj.shopsCsv.trim()) kMap[SHOPS_LS_KEY] = inputStrOrObj.shopsCsv;
+        if (inputStrOrObj.prefs && typeof inputStrOrObj.prefs === 'object') kMap[PREFS_MIRROR_LS_KEY] = JSON.stringify(cleanFullPrefs(inputStrOrObj.prefs));
+        if (inputStrOrObj.academy && typeof inputStrOrObj.academy === 'object') kMap[ACADEMY_LS_KEY] = JSON.stringify(inputStrOrObj.academy);
+        return { bundle:_unpackWireToBundle({ exportedAt:inputStrOrObj.madeAt || '', keys:kMap }) };
+      }
+      return { error:'Unrecognized save object format.' };
+    }
+
+    /* 2. String input: #btsave URL/code, .json, .csv, or #BEANTELLIGENCE-PARTS / NB1.z */
+    const txt = String(inputStrOrObj).replace(/^\uFEFF/, '').trim();
+    if (!txt) return { error:'Empty save file or link.' };
+
+    /* 2a. Web-Address #btsave=... URL or btsave: / z. / j. code */
+    if (_extractWebSaveToken(txt)){
+      try {
+        const bUrl = _decodeWebSaveSync(txt);
+        if (bUrl) return { bundle:bUrl };
+      } catch(e){
+        return { needsAsyncUrlDecode:true, rawText:txt };
+      }
+    }
+
+    /* 2b. JSON Save Bundle / Backup File */
+    if (txt[0] === '{' || txt[0] === '['){
+      try {
+        const obj = JSON.parse(txt);
+        return _normalizeIncomingSaveToBundleSync(obj);
+      } catch(e){
+        return { error:'Invalid JSON file: ' + (e && e.message ? e.message : 'syntax error') };
+      }
+    }
+
+    /* 2c. Multi-Part #BEANTELLIGENCE-PARTS 1 or BEGIN BEANTELLIGENCE BACKUP (NB1.z) */
+    if (/^#(?:BEANTELLIGENCE|NEUROBREW)-PARTS 1/i.test(txt) || /BEGIN (?:BEANTELLIGENCE|NEUROBREW) BACKUP/i.test(txt)){
+      let pk = bkpUnpack(txt);
+      let singleCsv = '';
+      if (!pk && typeof readBackupCodeSync === 'function'){
+        const rb = readBackupCodeSync(txt);
+        if (!rb.error){
+          if (rb.parts) pk = rb.parts;
+          else if (rb.csv) singleCsv = rb.csv;
+        }
+      }
+      if (pk && pk.parts){
+        const kMap = {};
+        if (pk.parts.history && pk.parts.history.ok) kMap[HISTORY_LS_KEY] = pk.parts.history.text;
+        if (pk.parts.prices && pk.parts.prices.ok) kMap[PRICES_LS_KEY] = pk.parts.prices.text;
+        if (pk.parts.shops && pk.parts.shops.ok) kMap[SHOPS_LS_KEY] = pk.parts.shops.text;
+        if (pk.parts.prefs && pk.parts.prefs.ok){
+          try {
+            const po = JSON.parse(pk.parts.prefs.text);
+            if (po && po.prefs) kMap[PREFS_MIRROR_LS_KEY] = JSON.stringify(cleanFullPrefs(po.prefs));
+          } catch(e){}
+        }
+        if (pk.parts.academy && pk.parts.academy.ok) kMap[ACADEMY_LS_KEY] = pk.parts.academy.text;
+        return { bundle:_unpackWireToBundle({ exportedAt:pk.made || '', keys:kMap }) };
+      }
+      if (singleCsv){
+        return { bundle:_unpackWireToBundle({ keys:{ [HISTORY_LS_KEY]:singleCsv } }) };
+      }
+    }
+
+    /* 2d. Raw 129-Column (or multi-era) Brew History CSV */
+    const exHist = readExisting(txt);
+    if (!exHist.error){
+      return { bundle:_unpackWireToBundle({ keys:{ [HISTORY_LS_KEY]:txt } }) };
+    }
+
+    /* 2e. Prices CSV or Shops CSV */
+    const prTry = priceRead(txt);
+    if (!prTry.error && Array.isArray(prTry.list)){
+      return { bundle:_unpackWireToBundle({ keys:{ [PRICES_LS_KEY]:txt } }) };
+    }
+    const shTry = shopRead(txt);
+    if (!shTry.error && shTry.store){
+      return { bundle:_unpackWireToBundle({ keys:{ [SHOPS_LS_KEY]:txt } }) };
+    }
+
+    return { error:'Unrecognized file or code. Choose a BeanTelligence Save (.json), Brew History (.csv), or #btsave=... web link.' };
+  }
+
+  function _refreshLiveUiAfterImport(opts){
+    opts = opts || {};
+    _bumpHistoryRev();
+    _unifiedIndexCache.key = '';
+    try {
+      if (_g.BTShell){
+        if (typeof _g.BTShell.loadShopDraft === 'function') _g.BTShell.loadShopDraft();
+        if (typeof _g.BTShell.applyTheme === 'function'){
+          const th = (_getApp().prefs && _getApp().prefs.theme) || 'light';
+          _g.BTShell.applyTheme(th);
+        }
+        if (typeof _g.BTShell.paintChrome === 'function') _g.BTShell.paintChrome();
+        if (typeof _g.BTShell.render === 'function') _g.BTShell.render();
+        if (typeof _g.BTShell.refreshAll === 'function') _g.BTShell.refreshAll();
+        if (typeof _g.BTShell.paintStudioAside === 'function') _g.BTShell.paintStudioAside();
+      } else {
+        _triggerRender();
+      }
+    } catch(e){ _triggerRender(); }
+    if (opts.reloadPage === true && typeof location !== 'undefined' && typeof location.reload === 'function'){
+      try { location.reload(); } catch(e){}
+    }
+  }
+
+  function _coffeeVaultObjToPriceCandidate(c){
+    if (!c || typeof c !== 'object') return null;
+    return Object.assign({}, c, {
+      kind:c.kind || 'bag',
+      coffee:c.coffee || c.name || c.coffee_name || '',
+      roaster:c.roaster || '',
+      coffee_id:c.coffee_id || c.id || '',
+      sym:c.sym || c.currency || '$',
+      price:(+c.price > 0) ? +c.price : 20,
+      size:(+c.size > 0) ? +c.size : ((+c.grams > 0) ? +c.grams : 250),
+      unit:c.unit || 'g',
+      date:c.date || _todayIso(),
+      roast:c.roast || c.roast_date || '',
+      rlevel:c.rlevel || c.roast_level || ''
+    });
+  }
+
+  function _executeBundleImportSync(bundle, opts){
+    opts = opts || {};
+    const mode = opts.mode === 'replace' ? 'replace' : 'merge';
+    const km = (bundle && bundle.keys) || {};
+    const xm = (bundle && bundle.extraKeys) || {};
+
+    _capturePreImportVaultSnapshot();
+
+    let brewsImported = 0;
+    let coffeesImported = 0;
+
+    if (mode === 'replace'){
+      /* Cleanly replace data keys while keeping safety snapshot metadata intact */
+      const preserveOnNull = new Set([SNAPSHOT_DATA_LS_KEY, SNAPSHOT_META_LS_KEY]);
+      ALL_18_LS_KEYS.forEach(k => {
+        const v = km[k];
+        try {
+          if (v !== null && v !== undefined && v !== ''){
+            localStorage.setItem(k, String(v));
+          } else if (!preserveOnNull.has(k)){
+            localStorage.removeItem(k);
+          }
+        } catch(e){}
+      });
+      [EXTRA_VAULT_COFFEES_KEY, EXTRA_AROMA_KIT_KEY].forEach(xk => {
+        const xv = xm[xk] != null ? xm[xk] : km[xk];
+        try {
+          if (xv !== null && xv !== undefined && xv !== '') localStorage.setItem(xk, String(xv));
+          else localStorage.removeItem(xk);
+        } catch(e){}
+      });
+
+      /* Reset live in-memory state cleanly before re-hydrating */
+      historyState = null;
+      prState.list = []; prState.changes = 0;
+      shState = { store:shopStore(), changes:0, failed:false, msg:'', q:'', tab:'drinks' };
+      sdState = _sdBlank();
+
+      const a = _getApp();
+      a.prefs = cleanFullPrefs(null);
+      if (a.coffee){
+        Object.keys(a.coffee).forEach(ck => { a.coffee[ck] = ''; });
+        a.coffee.id = _newUid();
+        a.coffee.species = 'arabica';
+        a.coffee.agtron_scale = 'gourmet';
+      }
+      _resetCupState();
+
+      _loadHistoryImpl();
+      _loadPricesImpl();
+      /* Fold any extra brew-and-cup-coffees-v1 bags into prState if present */
+      const extraBagsReplace = _parseCoffeesVaultArray(xm[EXTRA_VAULT_COFFEES_KEY] || km[EXTRA_VAULT_COFFEES_KEY]);
+      if (extraBagsReplace.length){
+        const folded = _mergePriceBagsNonDestructive(prState.list, extraBagsReplace.map(_coffeeVaultObjToPriceCandidate).filter(Boolean));
+        if (folded.added > 0){ prState.list = folded.list; _persistPrices(); }
+      }
+      _loadShopsImpl();
+      _loadShopDraftImpl();
+      loadDraftIntoApp();
+
+      /* Apply preferences from mirror, draft, or newest history row setup_json */
+      let appliedP = false;
+      if (km[PREFS_MIRROR_LS_KEY]){
+        try { const pm = JSON.parse(km[PREFS_MIRROR_LS_KEY]); if (pm && typeof pm === 'object') appliedP = applyFullPrefs(pm); } catch(e){}
+      }
+      if (!appliedP && km[DRAFT_LS_KEY]){
+        try { const d = JSON.parse(km[DRAFT_LS_KEY]); if (d && d.app && d.app.prefs) appliedP = applyFullPrefs(d.app.prefs); } catch(e){}
+      }
+      if (!appliedP && historyState && historyState.ex){
+        const stRow = setupRead(historyState.ex.header, historyState.ex.rows, _setupCtx());
+        if (stRow) applyFullPrefs(stRow);
+      }
+
+      const unifiedAfter = _buildUnifiedCoffeesIndexImpl(historyState ? historyState.objs : [], prState.list);
+      if ((!a.coffee || !a.coffee.name) && unifiedAfter.length > 0){
+        _selectSavedCoffeeImpl(unifiedAfter[0], { silent:true });
+      }
+      brewsImported = historyState && historyState.objs ? historyState.objs.length : 0;
+      coffeesImported = unifiedAfter.length;
+    } else {
+      /* NON-DESTRUCTIVE MERGE MODE */
+      const beforeUnified = _buildUnifiedCoffeesIndexImpl(historyState ? historyState.objs : [], prState.list);
+      const beforeCoffeeKeys = new Set(beforeUnified.map(u => u.normKey || (_normKeyPart(u.name) + '|' + _normKeyPart(u.roaster))));
+
+      /* 1. Merge CSV Brew History (deduplicating by row id OR timestamp + coffee_name + brew_method) */
+      if (km[HISTORY_LS_KEY]){
+        const incCsv = String(km[HISTORY_LS_KEY]);
+        const incEx = readExisting(incCsv);
+        if (!incEx.error){
+          const incObjs = rowsToObjects(incEx);
+          if (!historyState || !historyState.ex || !historyState.objs.length){
+            _setHistoryImpl(incEx, incCsv);
+            brewsImported = incObjs.length;
+          } else {
+            const curObjs = historyState.objs;
+            const seenIds = new Set();
+            const seenSigs = new Set();
+            for (let i = 0; i < curObjs.length; i++){
+              const cid = String(curObjs[i].id || '').trim();
+              if (cid) seenIds.add(cid);
+              const sig = _rowDedupSignature(curObjs[i]);
+              if (sig) seenSigs.add(sig);
+            }
+            const toAdd = [];
+            for (let j = 0; j < incObjs.length; j++){
+              const cand = incObjs[j];
+              const cid = String(cand.id || '').trim();
+              const sig = _rowDedupSignature(cand);
+              if ((cid && seenIds.has(cid)) || (sig && seenSigs.has(sig))) continue;
+              if (cid) seenIds.add(cid);
+              if (sig) seenSigs.add(sig);
+              toAdd.push(cand);
+            }
+            if (toAdd.length > 0){
+              const mergedEx = addRowsToExisting(historyState.ex, toAdd);
+              const mergedCsv = toCSV([mergedEx.header].concat(mergedEx.rows));
+              _setHistoryImpl(mergedEx, mergedCsv);
+              brewsImported = toAdd.length;
+            }
+          }
+        }
+      }
+
+      /* 2. Merge Vault Bags from brew-and-cup-prices-v1 & brew-and-cup-coffees-v1 */
+      let bagCandidates = [];
+      if (km[PRICES_LS_KEY]){
+        const prInc = _parsePricesAnyFormat(km[PRICES_LS_KEY]);
+        if (!prInc.error && prInc.list.length) bagCandidates = bagCandidates.concat(prInc.list);
+      }
+      const incCoffeesArr = _parseCoffeesVaultArray(xm[EXTRA_VAULT_COFFEES_KEY] || km[EXTRA_VAULT_COFFEES_KEY]);
+      if (incCoffeesArr.length){
+        /* Also merge brew-and-cup-coffees-v1 key directly by id or name+roaster */
+        try {
+          const curCv = _parseCoffeesVaultArray(localStorage.getItem(EXTRA_VAULT_COFFEES_KEY));
+          const cvSeen = new Set(curCv.map(x => (x.id || x.coffee_id || '') + '::' + _normKeyPart(x.name || x.coffee || '') + '|' + _normKeyPart(x.roaster || '')));
+          const cvByNr = new Set(curCv.map(x => _normKeyPart(x.name || x.coffee || '') + '|' + _normKeyPart(x.roaster || '')));
+          incCoffeesArr.forEach(item => {
+            const idKey = String(item.id || item.coffee_id || '').trim();
+            const nrKey = _normKeyPart(item.name || item.coffee || item.coffee_name || '') + '|' + _normKeyPart(item.roaster || '');
+            if (!cvSeen.has(idKey + '::' + nrKey) && !cvByNr.has(nrKey)){
+              curCv.push(item);
+              cvSeen.add(idKey + '::' + nrKey);
+              cvByNr.add(nrKey);
+            }
+          });
+          localStorage.setItem(EXTRA_VAULT_COFFEES_KEY, JSON.stringify(curCv));
+        } catch(e){}
+        bagCandidates = bagCandidates.concat(incCoffeesArr.map(_coffeeVaultObjToPriceCandidate).filter(Boolean));
+      }
+      if (bagCandidates.length){
+        const pmRes = _mergePriceBagsNonDestructive(prState.list, bagCandidates);
+        if (pmRes.list.length !== prState.list.length || pmRes.added > 0){
+          prState.list = pmRes.list;
+          prState.changes++;
+          _persistPrices();
+        }
+      }
+
+      /* 3. Merge Coffee Shops & Shop Draft */
+      if (km[SHOPS_LS_KEY]){
+        _shLoadText(String(km[SHOPS_LS_KEY]));
+      }
+      if (km[SHOP_DRAFT_LS_KEY] && (!sdState || !sdState.on)){
+        try {
+          const incSd = JSON.parse(String(km[SHOP_DRAFT_LS_KEY]));
+          if (incSd && incSd.on){ sdState = Object.assign(_sdBlank(), incSd, { on:true }); _persistShopDraft(); }
+        } catch(e){}
+      }
+
+      /* 4. Merge Academy Progress & 36-Vial Aroma Kit */
+      if (km[ACADEMY_LS_KEY]){
+        const ap = _everyPart('academy');
+        if (ap && ap.apply) ap.apply(String(km[ACADEMY_LS_KEY]));
+      }
+      const incKitRaw = xm[EXTRA_AROMA_KIT_KEY] || km[EXTRA_AROMA_KIT_KEY];
+      if (incKitRaw){
+        try {
+          const curKit = JSON.parse(localStorage.getItem(EXTRA_AROMA_KIT_KEY) || '{}') || {};
+          const incKit = JSON.parse(String(incKitRaw)) || {};
+          localStorage.setItem(EXTRA_AROMA_KIT_KEY, JSON.stringify(Object.assign({}, curKit, incKit)));
+        } catch(e){}
+      }
+
+      /* 5. Restore & Merge Preferences, Owned Gear, Grinder Calibrations & Water Profile */
+      let incPrefs = null;
+      if (km[PREFS_MIRROR_LS_KEY]){
+        try { incPrefs = JSON.parse(String(km[PREFS_MIRROR_LS_KEY])); } catch(e){ incPrefs = null; }
+      }
+      let incDraft = null;
+      if (km[DRAFT_LS_KEY]){
+        try { incDraft = JSON.parse(String(km[DRAFT_LS_KEY])); } catch(e){ incDraft = null; }
+      }
+      if (!incPrefs && incDraft && incDraft.app && incDraft.app.prefs){
+        incPrefs = incDraft.app.prefs;
+      }
+      if (!incPrefs && historyState && historyState.ex){
+        incPrefs = setupRead(historyState.ex.header, historyState.ex.rows, _setupCtx());
+      }
+      if (incPrefs && typeof incPrefs === 'object'){
+        const a = _getApp();
+        const curP = a.prefs || cleanFullPrefs(null);
+        const extras = setupMergeExtras(curP, incPrefs);
+        const curOwned = Array.isArray(curP.ownedBrewers) ? curP.ownedBrewers : [];
+        const incOwned = Array.isArray(incPrefs.ownedBrewers)
+          ? incPrefs.ownedBrewers
+          : (incPrefs.gear && Array.isArray(incPrefs.gear.ownedBrewers) ? incPrefs.gear.ownedBrewers : []);
+        const unionOwned = cleanOwnedBrewers(curOwned.concat(incOwned));
+        const mergedGear = Object.assign({}, curP.gear || {}, incPrefs.gear || {});
+        if (unionOwned.length) mergedGear.ownedBrewers = unionOwned;
+        const mergedPrefs = Object.assign({}, curP, incPrefs, {
+          calib:extras.calib,
+          roasterSites:extras.roasterSites,
+          yieldCal:Object.assign({}, curP.yieldCal || {}, incPrefs.yieldCal || {}),
+          brewerMaterials:Object.assign({}, curP.brewerMaterials || {}, incPrefs.brewerMaterials || {}),
+          ownedBrewers:unionOwned.length ? unionOwned : curOwned,
+          gear:mergedGear
+        });
+        applyFullPrefs(mergedPrefs);
+      }
+
+      /* Hydrate active coffee/brew draft if current coffee is empty */
+      const aNow = _getApp();
+      if ((!aNow.coffee || !aNow.coffee.name) && incDraft && incDraft.app){
+        if (incDraft.app.coffee && incDraft.app.coffee.name){
+          aNow.coffee = Object.assign(aNow.coffee || {}, incDraft.app.coffee);
+        }
+        if (incDraft.app.brew && typeof incDraft.app.brew === 'object'){
+          aNow.brew = Object.assign(aNow.brew || {}, incDraft.app.brew);
+        }
+      }
+
+      const afterUnified = _buildUnifiedCoffeesIndexImpl(historyState ? historyState.objs : [], prState.list);
+      let newCoffeeCount = 0;
+      afterUnified.forEach(u => {
+        const nk = u.normKey || (_normKeyPart(u.name) + '|' + _normKeyPart(u.roaster));
+        if (!beforeCoffeeKeys.has(nk)) newCoffeeCount++;
+      });
+      if ((!aNow.coffee || !aNow.coffee.name) && afterUnified.length > 0){
+        _selectSavedCoffeeImpl(afterUnified[0], { silent:true });
+      }
+      coffeesImported = newCoffeeCount;
+    }
+
+    _noteBackup();
+    _triggerScheduleDraft();
+    _refreshLiveUiAfterImport(opts);
+
+    const finalUnified = _buildUnifiedCoffeesIndexImpl(historyState ? historyState.objs : [], prState.list);
+    const finalBrews = historyState && historyState.objs ? historyState.objs.length : 0;
+    return {
+      ok:true,
+      mode,
+      brewsImported,
+      coffeesImported,
+      totalBrews:finalBrews,
+      totalCoffees:finalUnified.length
+    };
+  }
+
+  function _importFullSaveBundleImpl(inputStrOrObj, opts){
+    opts = opts || {};
+    const norm = _normalizeIncomingSaveToBundleSync(inputStrOrObj);
+    if (norm && norm.needsAsyncUrlDecode){
+      return _decodeWebSaveUrlImpl(norm.rawText).then(bundle => _executeBundleImportSync(bundle, opts)).catch(err => ({
+        ok:false,
+        mode:opts.mode === 'replace' ? 'replace' : 'merge',
+        brewsImported:0,
+        coffeesImported:0,
+        error:String(err && err.message ? err.message : err)
+      }));
+    }
+    if (!norm || norm.error || !norm.bundle){
+      return _makeThenableResult({
+        ok:false,
+        mode:opts.mode === 'replace' ? 'replace' : 'merge',
+        brewsImported:0,
+        coffeesImported:0,
+        error:(norm && norm.error) || 'Could not read save data.'
+      });
+    }
+    const res = _executeBundleImportSync(norm.bundle, opts);
+    return _makeThenableResult(res);
+  }
+
   /* ---------- Unified Boot Hydration Helper ---------- */
   async function hydrateAll(opts){
     opts = opts || {};
@@ -7391,7 +8435,24 @@ var BTStorage;
     /* Directive #132 — Zero Re-Entry Past Coffee Vault (<2 ms for 500+ rows) */
     buildUnifiedCoffeesIndex:_buildUnifiedCoffeesIndexImpl,
     selectSavedCoffee:_selectSavedCoffeeImpl,
-    applyFreshBagRoastDate:_applyFreshBagRoastDateImpl
+    applyFreshBagRoastDate:_applyFreshBagRoastDateImpl,
+
+    /* v6.5 All-18-Key Portable Save Bundle & Bookmarkable Web-Address Save Engine */
+    exportFullSaveBundle:_exportFullSaveBundleImpl,
+    downloadFullSaveFile:_downloadFullSaveFileImpl,
+    downloadHistoryCsvFile:_downloadHistoryCsvFileImpl,
+    importFullSaveBundle:_importFullSaveBundleImpl,
+    buildWebSaveUrl:_buildWebSaveUrlImpl,
+    buildWebSaveUrlSync:_buildWebSaveUrlSync,
+    decodeWebSaveUrl:_decodeWebSaveUrlImpl,
+    decodeWebSaveUrlSync:_decodeWebSaveSync,
+    applySaveToBrowserAddressBar:_applySaveToBrowserAddressBarImpl,
+    requestPersistentStorage:_requestPersistentStorageImpl,
+    getPersistentStorageStatus:_getPersistentStorageStatusImpl,
+    getLastBackupMs:() => {
+      if (lastBackupMs > 0) return lastBackupMs;
+      try { return parseInt(localStorage.getItem(LASTBACKUP_LS_KEY), 10) || 0; } catch(e){ return 0; }
+    }
   };
 
   _g.BTStorage = BTStorage;
@@ -22025,7 +23086,22 @@ if (typeof window !== 'undefined') {
           type: 'button',
           class: 'bt-chip-v6 bt-chip-soft',
           onclick: function () { openSheet('workflow-tools', {}, { title: 'My Workflow & Tools', detent: 'half' }); }
-        }, ico('grinder-burr', 16), dom('span', { text: 'My Workflow & Tools' }))
+        }, ico('grinder-burr', 16), dom('span', { text: 'My Workflow & Tools' })),
+        dom('button', {
+          type: 'button',
+          id: 'bt-door-backup-saves-btn',
+          class: 'bt-chip-v6 bt-chip-soft',
+          style: 'border-color:var(--accent);color:var(--ink);font-weight:700',
+          onclick: function () {
+            haptic('tick');
+            if (typeof window !== 'undefined' && window.BTBackupCenter && typeof window.BTBackupCenter.open === 'function') {
+              window.BTBackupCenter.open();
+            } else {
+              var sh = getShell();
+              if (sh && sh.go) sh.go('vault');
+            }
+          }
+        }, ico('vault', 16), dom('span', { text: 'Backup / Load Saves & Web Link' }))
       )
     ));
 
@@ -23584,6 +24660,11 @@ if (typeof window !== 'undefined') {
     lastStepIdx: -1,
     lastPipKey: '',
     midSpoken: {},
+    spokenGramBuckets: {},
+    pourReachedSpoken: {},
+    drawdownBuckets: {},
+    lastSpeechAtS: -99,
+    lastSpokenCue: '',
     finishFired: false,
     lastAudioNote: 'Voice + 880 Hz Chimes ready \u2014 tap Test Sound or Start'
   };
@@ -23665,6 +24746,11 @@ if (typeof window !== 'undefined') {
       _timerSession.lastStepIdx = -1;
       _timerSession.lastPipKey = '';
       _timerSession.midSpoken = {};
+      _timerSession.spokenGramBuckets = {};
+      _timerSession.pourReachedSpoken = {};
+      _timerSession.drawdownBuckets = {};
+      _timerSession.lastSpeechAtS = -99;
+      _timerSession.lastSpokenCue = '';
       _timerSession.finishFired = false;
       _timerSession.liveWeightG = 0;
       _timerSession.prevSimG = 0;
@@ -23832,16 +24918,36 @@ if (typeof window !== 'undefined') {
     if (!a.prefs.timerCollapsed || typeof a.prefs.timerCollapsed !== 'object') {
       a.prefs.timerCollapsed = {};
     }
+    if (a.prefs.timerGramCalloutSec === undefined) {
+      a.prefs.timerGramCalloutSec = 10;
+    }
     var tcPref = a.prefs.timerCollapsed;
     var isAudioCollapsed = tcPref.audio !== undefined ? !!tcPref.audio : true;
+    var isDialRingCollapsed = tcPref.dialRing !== undefined ? !!tcPref.dialRing : (winW < 640 || winH < 760);
     var isWavesCollapsed = tcPref.waves !== undefined ? !!tcPref.waves : false;
     var isActiveStepCollapsed = tcPref.activeStep !== undefined ? !!tcPref.activeStep : false;
     var isAllStepsCollapsed = tcPref.allSteps !== undefined ? !!tcPref.allSteps : (winW < 640);
+    var gramCalloutSec = (a.prefs.timerGramCalloutSec === 0 || a.prefs.timerGramCalloutSec === '0' || a.prefs.timerGramCalloutSec === 'off')
+      ? 0
+      : (+a.prefs.timerGramCalloutSec === 15 ? 15 : 10);
 
     function persistTimerCollapse(key, nextVal) {
       a.prefs.timerCollapsed = a.prefs.timerCollapsed || {};
       a.prefs.timerCollapsed[key] = !!nextVal;
       saveDraft();
+    }
+
+    function gramVoiceBtnLabel(sec) {
+      return sec > 0 ? ('Spoken ~Grams: Every ' + sec + 's') : 'Spoken ~Grams: Off';
+    }
+
+    function fmtSpokenClock(secWhole) {
+      var w = Math.max(1, Math.round(secWhole));
+      if (w < 60) return w + ' seconds';
+      var m = Math.floor(w / 60);
+      var r = w % 60;
+      var mLbl = m === 1 ? '1 minute' : (m + ' minutes');
+      return r === 0 ? mLbl : (mLbl + ' ' + r);
     }
 
     /* 1. Collapsible Sound, Voice & Scale Card (#bt-timer-audio-card — compact 1-line summary by default) */
@@ -23853,6 +24959,72 @@ if (typeof window !== 'undefined') {
     };
     var curAudioMeta = audioMetaMap[curAudioMode] || audioMetaMap.voice;
     var wakeBadgeTxt = dom('span', { text: isWakeLockActive() ? 'Wake ON' : 'Wake' });
+    var audioNoteEl = dom('span', { class: 'bt-timer-audio-note', text: _timerSession.lastAudioNote || 'Ready' });
+
+    function speakGramCoach(text, opts) {
+      if (gramCalloutSec <= 0 || AudioCoach.mode() === 'silent' || !text) return false;
+      _timerSession.lastSpeechAtS = _timerSession.elapsedS;
+      _timerSession.lastSpokenCue = text;
+      _timerSession.lastAudioNote = text;
+      if (audioNoteEl) audioNoteEl.textContent = text;
+      if (AudioCoach.mode() === 'voice') {
+        AudioCoach.speak(text, opts);
+        return true;
+      }
+      try {
+        if (typeof window !== 'undefined' && window.speechSynthesis && typeof window.SpeechSynthesisUtterance === 'function') {
+          window.speechSynthesis.cancel();
+          var utt = new window.SpeechSynthesisUtterance(String(text));
+          utt.rate = (opts && opts.rate) || 1.04;
+          utt.pitch = 1.0;
+          window.speechSynthesis.speak(utt);
+        }
+      } catch (_) {}
+      return true;
+    }
+
+    var gramVoiceTxtEl = dom('span', { text: gramVoiceBtnLabel(gramCalloutSec) });
+    var gramVoiceBtn = dom('button', {
+      type: 'button',
+      class: 'bt-gram-voice-btn' + (gramCalloutSec > 0 && curAudioMode !== 'silent' ? ' is-active' : ''),
+      id: 'bt-timer-gram-voice-btn',
+      'aria-pressed': String(gramCalloutSec > 0 && curAudioMode !== 'silent'),
+      title: 'Hands-free spoken approximate gram checkpoints (Every 10s / 15s / Off)',
+      onclick: function (ev) {
+        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+        AudioCoach.unlock();
+        var nextSec;
+        if (AudioCoach.mode() === 'silent') {
+          nextSec = gramCalloutSec > 0 ? gramCalloutSec : 10;
+          AudioCoach.setMode('voice');
+          curAudioMode = 'voice';
+        } else {
+          nextSec = gramCalloutSec === 10 ? 15 : (gramCalloutSec === 15 ? 0 : 10);
+          if (nextSec > 0 && AudioCoach.mode() !== 'voice') {
+            AudioCoach.setMode('voice');
+            curAudioMode = 'voice';
+          }
+        }
+        gramCalloutSec = nextSec;
+        a.prefs.timerGramCalloutSec = nextSec;
+        _timerSession.spokenGramBuckets = {};
+        saveDraft();
+        curAudioMeta = audioMetaMap[AudioCoach.mode()] || audioMetaMap.voice;
+        audioToggleLblEl.textContent = (winW < 540 ? curAudioMeta.short : curAudioMeta.full) + ' · Sound';
+        if (nextSec > 0) {
+          var nowApprox5 = Math.round(computeGhostTargetAt(_timerSession.elapsedS, rec, bestLockedBrew) / 5) * 5;
+          speakGramCoach('Spoken grams every ' + nextSec + ' seconds.' + (_timerSession.elapsedS > 1 ? (' Currently around ' + nowApprox5 + ' grams.') : ''));
+          showToast('Spoken ~Grams: Every ' + nextSec + 's');
+        } else {
+          _timerSession.lastAudioNote = 'Spoken ~Grams callouts Off';
+          audioNoteEl.textContent = _timerSession.lastAudioNote;
+          showToast('Spoken ~Grams: Off');
+        }
+        haptic('tick');
+        syncTimerDom();
+      }
+    }, ico('voice-sound', 12), gramVoiceTxtEl);
+
     var flowPillTxt = dom('span', { text: 'Aim ~3.2 g/s' });
     var flowPillEl = dom('span', { class: 'bt-flow-rate-pill is-idle', id: 'bt-timer-flow-pill' }, ico('droplet', 12), flowPillTxt);
     var demoScaleTxt = dom('span', { text: _timerSession.simOn ? 'Demo Scale ON' : 'Demo Scale' });
@@ -23912,7 +25084,6 @@ if (typeof window !== 'undefined') {
       }
     }, ico(curAudioMeta.ico, 14), audioToggleLblEl, audioChevronEl);
 
-    var audioNoteEl = dom('span', { class: 'bt-timer-audio-note', text: _timerSession.lastAudioNote || 'Ready' });
     var audioBodyEl = dom('div', {
       class: 'bt-timer-audio-body',
       id: 'bt-timer-audio-body',
@@ -23965,6 +25136,7 @@ if (typeof window !== 'undefined') {
     },
       dom('div', { class: 'bt-timer-audio-head' },
         audioToggleBtn,
+        gramVoiceBtn,
         dom('div', { class: 'bt-timer-audio-pills' },
           flowPillEl,
           demoScaleBtn
@@ -23974,13 +25146,29 @@ if (typeof window !== 'undefined') {
     );
     container.appendChild(audioBar);
 
-    /* 2. GIANT Kitchen-Counter Clock Readout (#bt-timer-giant-clock) + Enlarged BTChronoDial (168px mobile / 204px desktop) */
+    /* 2. FULL-WIDTH STADIUM KITCHEN STOPWATCH (#bt-timer-giant-clock) + LIVE APPROX GRAMS PACER (#bt-timer-approx-grams-hero) + Collapsible BTChronoDial */
     var initElapsedS = _timerSession.stopped && _timerSession.actualStoppedS != null ? _timerSession.actualStoppedS : _timerSession.elapsedS;
+    var giantClockMmssEl = dom('span', { class: 'bt-timer-giant-mmss' });
+    var giantClockTenthsEl = dom('span', { class: 'bt-timer-giant-tenths' });
+    function setGiantClockText(secVal, withTenths) {
+      var fullTxt = fmtClock(secVal, withTenths);
+      var dotPos = withTenths ? fullTxt.indexOf('.') : -1;
+      if (dotPos > 0) {
+        giantClockMmssEl.textContent = fullTxt.slice(0, dotPos);
+        giantClockTenthsEl.textContent = fullTxt.slice(dotPos);
+        giantClockTenthsEl.hidden = false;
+      } else {
+        giantClockMmssEl.textContent = fullTxt;
+        giantClockTenthsEl.textContent = '';
+        giantClockTenthsEl.hidden = true;
+      }
+    }
+    setGiantClockText(initElapsedS, !_timerSession.stopped);
     var giantClockEl = dom('div', {
       class: 'bt-timer-giant-clock bt-num',
-      id: 'bt-timer-giant-clock',
-      text: fmtClock(initElapsedS, true)
-    });
+      id: 'bt-timer-giant-clock'
+    }, giantClockMmssEl, giantClockTenthsEl);
+
     var giantPhaseEl = dom('div', {
       class: 'bt-timer-giant-phase',
       id: 'bt-timer-giant-phase',
@@ -23996,19 +25184,115 @@ if (typeof window !== 'undefined') {
       id: 'bt-timer-giant-flow',
       text: 'Aim ~3.2 g/s'
     });
+    var overtimeBadgeEl = dom('div', {
+      class: 'bt-timer-overtime-badge',
+      id: 'bt-timer-overtime-badge',
+      hidden: true
+    });
+
+    var dialRingToggleBtn = dom('button', {
+      type: 'button',
+      class: 'bt-card-collapse-btn bt-timer-dial-ring-toggle',
+      id: 'bt-timer-dial-ring-toggle',
+      'data-timer-collapse': 'dialRing',
+      'aria-expanded': String(!isDialRingCollapsed),
+      'aria-controls': 'bt-timer-dial-wrap',
+      text: 'Circular Dial Ring ' + (isDialRingCollapsed ? '\u25B8' : '\u25BE'),
+      onclick: function (ev) {
+        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+        isDialRingCollapsed = !isDialRingCollapsed;
+        persistTimerCollapse('dialRing', isDialRingCollapsed);
+        dialCardEl.classList.toggle('is-dial-collapsed', isDialRingCollapsed);
+        dialWrapEl.hidden = isDialRingCollapsed;
+        dialRingToggleBtn.setAttribute('aria-expanded', String(!isDialRingCollapsed));
+        dialRingToggleBtn.textContent = 'Circular Dial Ring ' + (isDialRingCollapsed ? '\u25B8' : '\u25BE');
+        haptic('tick');
+      }
+    });
+
     var giantHeroEl = dom('div', { class: 'bt-timer-giant-hero', id: 'bt-timer-giant-hero' },
+      dom('div', { class: 'bt-timer-giant-topline' },
+        giantPhaseEl,
+        dialRingToggleBtn
+      ),
       giantClockEl,
       dom('div', { class: 'bt-timer-giant-meta' },
-        giantPhaseEl,
         giantWeightEl,
-        giantFlowEl
+        giantFlowEl,
+        overtimeBadgeEl
       )
+    );
+
+    /* 2A. Prominent Full-Width Visual 'Approx Grams Right Now' Pacer Banner (#bt-timer-approx-grams-hero) */
+    var seenTickPct = {};
+    var gramTickEls = [];
+    for (var ti = 0; ti < steps.length; ti++) {
+      var stTickG = steps[ti] && steps[ti].targetG != null ? +steps[ti].targetG : 0;
+      if (stTickG > 1 && stTickG < rec.hotPourG - 1 && rec.hotPourG > 0) {
+        var tPct = Math.max(4, Math.min(96, Math.round((stTickG / rec.hotPourG) * 1000) / 10));
+        var tKey = String(Math.round(tPct));
+        if (!seenTickPct[tKey]) {
+          seenTickPct[tKey] = 1;
+          gramTickEls.push(dom('span', {
+            class: 'bt-timer-grams-tick',
+            style: 'left:' + tPct + '%',
+            title: (steps[ti].title || ('Step ' + (ti + 1))) + ': ' + Math.round(stTickG) + ' g'
+          }));
+        }
+      }
+    }
+    var approxGramsKickerTxt = dom('span', { text: 'APPROX GRAMS RIGHT NOW' });
+    var approxGramsPctEl = dom('span', {
+      class: 'bt-timer-approx-grams-pct bt-num',
+      text: '0% · 0 / ' + Math.round(rec.hotPourG) + ' g'
+    });
+    var approxGramsMainEl = dom('div', {
+      class: 'bt-timer-approx-grams-main bt-num',
+      id: 'bt-timer-approx-grams-readout',
+      text: 'BE AT ~0 g NOW'
+    });
+    var approxGramsSubEl = dom('div', {
+      class: 'bt-timer-approx-grams-sub',
+      id: 'bt-timer-approx-grams-sub',
+      text: 'Pouring to ' + Math.round((steps[0] && steps[0].targetG) || rec.hotPourG) + ' g step target · ' + Math.round(rec.hotPourG) + ' g total'
+    });
+    var approxGramsFillEl = dom('div', {
+      class: 'bt-timer-grams-fill',
+      id: 'bt-timer-grams-fill',
+      style: 'width:0%'
+    });
+    var approxGramsScalePinEl = dom('span', {
+      class: 'bt-timer-grams-scale-pin',
+      hidden: true,
+      style: 'left:0%'
+    });
+    var approxGramsTrackEl = dom('div', {
+      class: 'bt-timer-grams-track',
+      id: 'bt-timer-grams-track',
+      role: 'progressbar',
+      'aria-label': 'Approximate grams poured progress',
+      'aria-valuemin': '0',
+      'aria-valuemax': String(Math.round(rec.hotPourG)),
+      'aria-valuenow': '0'
+    }, approxGramsFillEl, gramTickEls, approxGramsScalePinEl);
+
+    var approxGramsHeroEl = dom('div', {
+      class: 'bt-timer-approx-grams-hero is-pouring bt-num',
+      id: 'bt-timer-approx-grams-hero'
+    },
+      dom('div', { class: 'bt-timer-approx-grams-top' },
+        dom('span', { class: 'bt-timer-approx-grams-kicker' }, ico('droplet', 11), approxGramsKickerTxt),
+        approxGramsPctEl
+      ),
+      approxGramsMainEl,
+      approxGramsSubEl,
+      approxGramsTrackEl
     );
 
     var dialPhases = steps.map(function (s) {
       return { label: s.title, startS: s.t, endS: s.endS, waterG: s.targetG };
     });
-    var dialSizePx = winW < 640 ? 168 : 204;
+    var dialSizePx = winW < 640 ? 156 : 168;
     var chronoNode = (tac && typeof tac.BTChronoDial === 'function')
       ? tac.BTChronoDial({
           size: dialSizePx,
@@ -24024,11 +25308,11 @@ if (typeof window !== 'undefined') {
         })
       : dom('div', { class: 'bt-num', style: 'font-size:2.85rem;font-weight:800;padding:16px 0', text: fmtClock(initElapsedS, true) });
 
-    var overtimeBadgeEl = dom('div', {
-      class: 'bt-timer-overtime-badge',
-      id: 'bt-timer-overtime-badge',
-      hidden: true
-    });
+    var dialWrapEl = dom('div', {
+      class: 'bt-timer-dial-wrap',
+      id: 'bt-timer-dial-wrap',
+      hidden: isDialRingCollapsed
+    }, chronoNode);
 
     /* 2B. Collapsible Live 3-Line Extraction Wave Graph (#bt-timer-waves-card) */
     var wavesNode = (tac && typeof tac.BTExtractionWavesLive === 'function')
@@ -24270,27 +25554,29 @@ if (typeof window !== 'undefined') {
       )
     );
 
-    /* Above-the-fold order: Giant Clock + Dial + Pause/Stop Brew first, then 3-Wave & Active Step */
+    /* Above-the-fold order: Full-Width Giant Clock + Live Approx Grams Pacer + Collapsible Dial + Pause/Stop Brew first */
     var isMobileStage = winW < 640;
-    container.appendChild(dom('section', { class: 'bt-timer-dial-card' },
+    var dialCardEl = dom('section', {
+      class: 'bt-timer-dial-card' + (isDialRingCollapsed ? ' is-dial-collapsed' : '')
+    },
       giantHeroEl,
-      dom('div', { class: 'bt-timer-dial-wrap' }, chronoNode, overtimeBadgeEl),
+      approxGramsHeroEl,
+      dialWrapEl,
       dom('div', { class: 'bt-timer-dial-rhs' },
         lockedBannerEl,
         transportWrap,
         isMobileStage ? wavesCard : null,
         activeStepCard
       )
-    ));
+    );
+    container.appendChild(dialCardEl);
     if (!isMobileStage && wavesCard) {
       container.appendChild(wavesCard);
     }
 
-    /* 5. Dynamic Sticky Bottom Bar */
+    /* 5. Collapsible All Pour Steps Jump Card (#bt-timer-steps-card — collapsed by default on <640px mobile) */
     var stickyHost = dom('div', { style: 'display:contents' });
-    container.appendChild(stickyHost);
 
-    /* 6. Collapsible All Pour Steps Jump Card (#bt-timer-steps-card — collapsed by default on <640px mobile) */
     var allStepsBodyEl = dom('div', {
       class: 'bt-pour-schedule',
       id: 'bt-timer-steps-body',
@@ -24307,6 +25593,7 @@ if (typeof window !== 'undefined') {
             _timerSession.actualStoppedS = null;
             _timerSession.elapsedS = st.t;
             _timerSession.lastStepIdx = idx - 1;
+            _timerSession.lastSpeechAtS = -99;
             triggerStepCuesIfNeeded(idx);
             syncTimerDom();
           }
@@ -24358,6 +25645,9 @@ if (typeof window !== 'undefined') {
       allStepsBodyEl
     );
     container.appendChild(allStepsCardEl);
+
+    /* 6. Bottom-Flow Primary Save & Move Bar (Always at the very bottom below all cards) */
+    container.appendChild(stickyHost);
 
     stageEl.appendChild(container);
 
@@ -24417,8 +25707,86 @@ if (typeof window !== 'undefined') {
       if (_timerSession.lastStepIdx === idx || !steps[idx]) return;
       _timerSession.lastStepIdx = idx;
       AudioCoach.playStepChime();
-      AudioCoach.speak(steps[idx].say || ('Pour steadily to ' + steps[idx].targetG + ' grams.'));
+      var stCue = steps[idx];
+      var prevCueG = stCue.startG != null ? +stCue.startG : (idx > 0 && steps[idx - 1] ? (+steps[idx - 1].targetG || 0) : 0);
+      var tgtCueG = Math.round(stCue.targetG != null ? +stCue.targetG : rec.hotPourG);
+      var deltaCueG = tgtCueG - prevCueG;
+      if (gramCalloutSec > 0 && AudioCoach.mode() !== 'silent') {
+        var stepSpeech = deltaCueG > 1
+          ? ('Step ' + (idx + 1) + ', ' + stCue.title + '. Pour steadily to about ' + tgtCueG + ' grams.')
+          : ('Step ' + (idx + 1) + ', ' + stCue.title + '. Hold at about ' + tgtCueG + ' grams and let drain.');
+        speakGramCoach(stepSpeech);
+      } else {
+        AudioCoach.speak(stCue.say || ('Pour steadily to ' + tgtCueG + ' grams.'));
+      }
       haptic('snap');
+    }
+
+    function evaluateSpokenGramCues(elS, activeIdx) {
+      if (gramCalloutSec <= 0 || AudioCoach.mode() === 'silent' || elS >= totalTargetS - 2.5) return;
+      var nearStepOrPip = false;
+      for (var si = 0; si < steps.length; si++) {
+        var stT = steps[si].t || 0;
+        if (Math.abs(elS - stT) < 2.5 || (stT > elS && (stT - elS) <= 3.5)) {
+          nearStepOrPip = true;
+          break;
+        }
+      }
+      var curStepObj = steps[activeIdx];
+      if (!curStepObj || nearStepOrPip) return;
+
+      var s0P = curStepObj.t || 0;
+      var s1P = Math.max(s0P + 4, curStepObj.endS || totalTargetS);
+      var prevGP = curStepObj.startG != null
+        ? +curStepObj.startG
+        : (activeIdx > 0 && steps[activeIdx - 1] ? (+steps[activeIdx - 1].targetG || 0) : 0);
+      var tgtGP = curStepObj.targetG != null ? +curStepObj.targetG : rec.hotPourG;
+      var deltaGP = Math.max(0, tgtGP - prevGP);
+      var pourWinP = (curStepObj.pourEndS != null && curStepObj.pourEndS > s0P + 2 && curStepObj.pourEndS < s1P)
+        ? (curStepObj.pourEndS - s0P)
+        : Math.max(5, (s1P - s0P) * 0.65);
+      var pourEndP = s0P + pourWinP;
+      var liveFlowInfo = computeTargetStepFlow(elS, curStepObj, activeIdx, steps, rec, totalTargetS);
+      var rawGhostP = computeGhostTargetAt(elS, rec, bestLockedBrew);
+      var approx5G = Math.round(rawGhostP / 5) * 5;
+
+      /* A. Pour window inside current step just reached curSt.targetG */
+      if (deltaGP > 1 && (s1P - pourEndP) >= 3.5 && elS >= pourEndP && !_timerSession.pourReachedSpoken[activeIdx]) {
+        _timerSession.pourReachedSpoken[activeIdx] = 1;
+        var curBucketSkip = Math.floor(elS / gramCalloutSec);
+        if (curBucketSkip >= 1) _timerSession.spokenGramBuckets[curBucketSkip] = 1;
+        speakGramCoach('About ' + Math.round(tgtGP) + ' grams reached \u2014 hold and let drain.');
+        return;
+      }
+
+      if (elS - (_timerSession.lastSpeechAtS || -99) < 3.8) return;
+
+      /* B. Final drawdown every 20s once all water has been poured */
+      var allWaterIn = Math.round(rawGhostP) >= Math.max(1, Math.round(rec.hotPourG) - 1) && liveFlowInfo.rate <= 0;
+      if (allWaterIn) {
+        var ddBucket = Math.floor(elS / 20);
+        if (ddBucket >= 1 && !_timerSession.drawdownBuckets[ddBucket]) {
+          _timerSession.drawdownBuckets[ddBucket] = 1;
+          var remDrawS = Math.max(5, Math.round((totalTargetS - elS) / 5) * 5);
+          speakGramCoach('Draining at ' + Math.round(rec.hotPourG) + ' grams \u2014 ' + remDrawS + ' seconds to target.');
+        }
+        return;
+      }
+
+      /* C. Live periodic approx-gram callouts every 10s (or 15s) right on the checkpoint mark */
+      var gBucket = Math.floor(elS / gramCalloutSec);
+      if (gBucket >= 1 && !_timerSession.spokenGramBuckets[gBucket]) {
+        _timerSession.spokenGramBuckets[gBucket] = 1;
+        if ((elS - gBucket * gramCalloutSec) <= 2.4) {
+          var spokenMark = fmtSpokenClock(gBucket * gramCalloutSec);
+          if (liveFlowInfo.rate > 0) {
+            speakGramCoach(spokenMark + ' \u2014 be around ' + approx5G + ' grams.');
+          } else if (steps[activeIdx + 1]) {
+            var waitRem = Math.max(3, Math.round(steps[activeIdx + 1].t - elS));
+            speakGramCoach(spokenMark + ' \u2014 hold around ' + approx5G + ' grams, next pour in ' + waitRem + ' seconds.');
+          }
+        }
+      }
     }
 
     function paintDynamicStickyBar() {
@@ -24482,17 +25850,69 @@ if (typeof window !== 'undefined') {
         shownFlowLbl = stepFlowInfo.label;
       }
 
-      /* Giant Kitchen-Counter Clock + Live Weight & Flow Readout */
-      giantClockEl.textContent = fmtClock(elS, !_timerSession.stopped);
+      /* 1. Full-Width Stadium Kitchen Stopwatch (#bt-timer-giant-clock) */
+      setGiantClockText(elS, !_timerSession.stopped);
       giantClockEl.classList.toggle('is-overtime', isOvertime && !_timerSession.stopped);
       giantClockEl.classList.toggle('is-stopped', !!_timerSession.stopped);
       giantPhaseEl.textContent = _timerSession.stopped
         ? ('Brew Stopped · Target ' + fmtClock(totalTargetS, false))
         : (isOvertime ? ('Overtime +' + fmtClock(overSec, false) + ' · Tap Stop When Drained') : ('Step ' + (curIdx + 1) + '/' + Math.max(1, steps.length) + ' · ' + curSt.title));
       giantPhaseEl.classList.toggle('is-overtime', isOvertime && !_timerSession.stopped);
-      giantWeightEl.textContent = Math.round(shownWeight) + ' / ' + rec.hotPourG + ' g · ' + fmtClock(totalTargetS, false);
+      giantWeightEl.textContent = Math.round(shownWeight) + ' / ' + Math.round(rec.hotPourG) + ' g · ' + fmtClock(totalTargetS, false);
       giantFlowEl.textContent = shownFlowLbl;
       giantFlowEl.className = 'bt-timer-giant-flow bt-num' + (shownFlowGs >= 0.15 ? ' is-flowing' : '');
+
+      /* 2. Prominent Full-Width 'Approx Grams Right Now' Pacer Banner (#bt-timer-approx-grams-hero) */
+      var ghostRoundG = Math.round(ghostG);
+      var stepTgtG = Math.round(curSt.targetG != null ? +curSt.targetG : rec.hotPourG);
+      var totalG = Math.max(1, Math.round(rec.hotPourG));
+      var gramPct = Math.max(0, Math.min(100, (ghostG / totalG) * 100));
+      var remToNext = nextSt ? Math.max(0, Math.ceil(nextSt.t - elS)) : Math.max(0, Math.ceil(totalTargetS - elS));
+      var isPouringNow = !_timerSession.stopped && !isOvertime && stepFlowInfo.rate > 0;
+      var isAllPoured = !_timerSession.stopped && !isPouringNow && ghostRoundG >= Math.max(1, totalG - 1);
+
+      if (_timerSession.stopped) {
+        approxGramsHeroEl.className = 'bt-timer-approx-grams-hero is-draining bt-num';
+        approxGramsMainEl.textContent = _timerSession.lockedYieldG
+          ? ('YIELD ' + Math.round(_timerSession.lockedYieldG) + ' g · ~' + totalG + ' g POURED')
+          : ('ALL ~' + totalG + ' g POURED \u2014 DONE');
+        approxGramsSubEl.textContent = 'Brew stopped at ' + fmtClock(elS, false) + ' · Target ' + fmtClock(totalTargetS, false);
+      } else if (isPouringNow) {
+        approxGramsHeroEl.className = 'bt-timer-approx-grams-hero is-pouring bt-num';
+        approxGramsMainEl.textContent = 'BE AT ~' + ghostRoundG + ' g NOW';
+        approxGramsSubEl.textContent = 'Pouring to ' + stepTgtG + ' g step target · ' + totalG + ' g total · Aim ~' + stepFlowInfo.rate.toFixed(1) + ' g/s';
+      } else if (isAllPoured) {
+        approxGramsHeroEl.className = 'bt-timer-approx-grams-hero is-draining bt-num';
+        approxGramsMainEl.textContent = 'ALL ~' + totalG + ' g POURED \u2014 DRAINING';
+        approxGramsSubEl.textContent = isOvertime
+          ? ('Overtime +' + fmtClock(overSec, false) + ' \u2014 tap Stop Brew when bed drains flat')
+          : ('Final Drawdown \u2014 target ' + fmtClock(totalTargetS, false) + ' in ' + fmtClock(remToNext, false));
+      } else {
+        approxGramsHeroEl.className = 'bt-timer-approx-grams-hero is-holding bt-num';
+        approxGramsMainEl.textContent = 'HOLD AT ~' + ghostRoundG + ' g';
+        var holdTag = /bloom/i.test(curSt.title || '')
+          ? 'Bloom Rest'
+          : (/steep|immersion/i.test(curSt.title || '') ? 'Steeping' : (curSt.title || 'Rest'));
+        approxGramsSubEl.textContent = nextSt
+          ? (holdTag + ' \u2014 next pour to ' + Math.round(nextSt.targetG || totalG) + ' g in ' + fmtClock(remToNext, false))
+          : (holdTag + ' \u2014 draining toward ' + fmtClock(totalTargetS, false) + ' (' + fmtClock(remToNext, false) + ' left)');
+      }
+
+      if (hasScale) {
+        var liveRoundG = Math.round(_timerSession.liveWeightG || 0);
+        var diffScaleG = liveRoundG - ghostRoundG;
+        var diffLbl = Math.abs(diffScaleG) <= 4 ? 'on pace' : (diffScaleG > 0 ? ('+' + diffScaleG + ' g') : (diffScaleG + ' g'));
+        approxGramsKickerTxt.textContent = (_timerSession.realScaleConnected ? 'BLE SCALE' : 'DEMO SCALE') + ' VS PACER';
+        approxGramsPctEl.textContent = 'Scale ' + liveRoundG + ' g vs ~' + ghostRoundG + ' g (' + diffLbl + ')';
+        approxGramsScalePinEl.hidden = false;
+        approxGramsScalePinEl.style.left = Math.max(0, Math.min(100, (liveRoundG / totalG) * 100)).toFixed(1) + '%';
+      } else {
+        approxGramsKickerTxt.textContent = 'APPROX GRAMS RIGHT NOW';
+        approxGramsPctEl.textContent = Math.round(gramPct) + '% · ~' + ghostRoundG + ' / ' + totalG + ' g';
+        approxGramsScalePinEl.hidden = true;
+      }
+      approxGramsFillEl.style.width = gramPct.toFixed(1) + '%';
+      approxGramsTrackEl.setAttribute('aria-valuenow', String(ghostRoundG));
 
       if (chronoNode && typeof chronoNode.update === 'function') {
         chronoNode.update({
@@ -24557,7 +25977,6 @@ if (typeof window !== 'undefined') {
         ? 'Past target time — tap Stop Brew (Done) the moment your bed finishes draining.'
         : (curSt.human || curSt.say || '');
       stepNextNameEl.textContent = nextSt ? ('Up next: ' + nextSt.title + ' (' + nextSt.targetG + ' g)') : 'When bed is flat: tap Stop Brew (Done)';
-      var remToNext = nextSt ? Math.max(0, Math.ceil(nextSt.t - elS)) : Math.max(0, Math.ceil(totalTargetS - elS));
       stepCountdownEl.textContent = _timerSession.stopped
         ? ('Locked at ' + fmtClock(elS, false))
         : (isOvertime ? ('+' + fmtClock(overSec, false) + ' overtime') : ((nextSt ? 'Next in ' : 'Target in ') + fmtClock(remToNext, false)));
@@ -24566,6 +25985,11 @@ if (typeof window !== 'undefined') {
       runBtn.className = 'bt-tctrl-btn ' + (_timerSession.running ? 'is-paused' : 'is-run');
       runBtnIcoWrap.textContent = '';
       runBtnIcoWrap.appendChild(ico(_timerSession.running ? 'pause' : 'play', 16));
+
+      var activeVoiceGram = gramCalloutSec > 0 && AudioCoach.mode() !== 'silent';
+      gramVoiceTxtEl.textContent = gramVoiceBtnLabel(gramCalloutSec);
+      gramVoiceBtn.className = 'bt-gram-voice-btn' + (activeVoiceGram ? ' is-active' : '');
+      gramVoiceBtn.setAttribute('aria-pressed', String(activeVoiceGram));
 
       flowPillTxt.textContent = shownFlowLbl;
       flowPillEl.className = 'bt-flow-rate-pill' + (shownFlowGs >= 0.15 ? '' : ' is-idle');
@@ -24643,13 +26067,16 @@ if (typeof window !== 'undefined') {
         }
       }
 
-      /* 2. Step Start Harmonic Chime + Spoken Voice Instruction */
+      /* 2. Step Start Harmonic Chime + Spoken Target-Gram Voice Instruction */
       var activeIdx = currentStepIndex(_timerSession.elapsedS);
       triggerStepCuesIfNeeded(activeIdx);
 
-      /* 3. Mid-Step Half-Way Voice Prompt when step duration > 25s */
+      /* 3. Hands-Free Spoken Approx-Gram Checkpoints (Every 10s / 15s, Pour Target Reached, & 20s Drawdown) */
+      evaluateSpokenGramCues(_timerSession.elapsedS, activeIdx);
+
+      /* 3B. Fallback Mid-Step Voice Prompt only when Spoken ~Grams callouts are Off */
       var activeSt = steps[activeIdx];
-      if (activeSt) {
+      if (gramCalloutSec <= 0 && activeSt) {
         var dur = (activeSt.endS || totalTargetS) - (activeSt.t || 0);
         var midAt = (activeSt.t || 0) + dur * 0.5;
         if (dur > 25 && _timerSession.elapsedS >= midAt && !_timerSession.midSpoken[activeIdx]) {
@@ -24667,7 +26094,11 @@ if (typeof window !== 'undefined') {
       if (_timerSession.elapsedS >= totalTargetS && !_timerSession.finishFired) {
         _timerSession.finishFired = true;
         AudioCoach.playFinishChord();
-        AudioCoach.speak('Target time reached. Tap Stop Brew as soon as your coffee bed finishes draining.');
+        if (gramCalloutSec > 0 && AudioCoach.mode() !== 'silent') {
+          speakGramCoach('Target time reached at ' + Math.round(rec.hotPourG) + ' grams. Tap Stop Brew as soon as your coffee bed finishes draining.');
+        } else {
+          AudioCoach.speak('Target time reached. Tap Stop Brew as soon as your coffee bed finishes draining.');
+        }
         haptic('celebrate');
         paintDynamicStickyBar();
       }
@@ -28318,13 +29749,136 @@ if (typeof window !== 'undefined') {
     );
   }
 
-  /* Main Step 5 Session & Live Repaint Hook */
+  /* Main Step 5 Session, Module-Scoped DiFluid R2 Live Auto-Sync & Repaint Hook */
   var _step5Session = null;
   var _activeRepaintHook = null;
+  var _r2BleBound = false;
+  var _r2BleSubscribed = false;
+  var _lastLiveR2 = null;
+  var _lastR2ToastAt = 0;
+  var _lastR2ToastTds = -1;
+  var _prevBleR2State = { connected: false, tempC: null, batteryPct: null };
 
-  function ensureStep5Session(opts) {
+  function getBleStateSafe() {
+    try {
+      var ble = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
+      if (ble && typeof ble.getState === 'function') return ble.getState() || {};
+    } catch (_) {}
+    return {};
+  }
+
+  function applyLiveR2Reading(detail, opts) {
+    if (!detail) return false;
+    var rawTds = +detail.tds;
+    if (!isFinite(rawTds) || rawTds <= 0 || rawTds > 35) return false;
+    var tdsVal = Math.round(rawTds * 100) / 100;
+    var hasTemp = detail.tempC != null && isFinite(+detail.tempC) && +detail.tempC > 0;
+    var tempVal = hasTemp ? Math.round(+detail.tempC * 10) / 10 : null;
+    var nowMs = Date.now();
+
+    _lastLiveR2 = {
+      tds: tdsVal,
+      tempC: tempVal,
+      brix: detail.brix != null && isFinite(+detail.brix) ? +detail.brix : Math.round((tdsVal / 0.85) * 100) / 100,
+      refractiveIndex: detail.refractiveIndex != null && isFinite(+detail.refractiveIndex) ? +detail.refractiveIndex : null,
+      isAverage: !!detail.isAverage,
+      readCount: detail.readCount || 1,
+      at: nowMs
+    };
+
     var a = S.getApp();
     var st = S.getState();
+    a.taste = (a.taste && typeof a.taste === 'object') ? a.taste : {};
+    a.taste.tds_pct = tdsVal;
+    if (tempVal != null) a.taste.r2_temp_c = tempVal;
+    st.measuredTds = tdsVal;
+
+    var s = _step5Session || ensureStep5Session();
+    s.tdsPct = tdsVal;
+    if (tempVal != null) s.r2TempC = tempVal;
+    s.r2Collapsed = false;
+    s.r2Expanded = true;
+    s._userHidR2 = false;
+    s._liveR2Received = true;
+
+    var mountedRepainted = false;
+    if (typeof _activeRepaintHook === 'function') {
+      mountedRepainted = !!_activeRepaintHook();
+    }
+
+    var isDuplicateTick = (nowMs - _lastR2ToastAt < 220) && Math.abs(tdsVal - _lastR2ToastTds) < 0.005;
+    if (!isDuplicateTick && !(opts && opts.silent)) {
+      _lastR2ToastAt = nowMs;
+      _lastR2ToastTds = tdsVal;
+      if (mountedRepainted || (a && a.activeTab === 'brew' && a.brewStep === 'taste')) {
+        S.haptic('snap');
+        S.toastSafe('DiFluid R2 Auto-Synced: ' + tdsVal.toFixed(2) + '% TDS');
+      }
+    }
+    return true;
+  }
+
+  function ensureR2BleListeners() {
+    if (typeof window === 'undefined') return;
+    if (!_r2BleBound && typeof window.addEventListener === 'function') {
+      _r2BleBound = true;
+      window.addEventListener('bt-ble-refractometer', function (ev) {
+        var d = (ev && ev.detail) || {};
+        applyLiveR2Reading(d, { fromEvent: true });
+      });
+    }
+    var ble = window.BTBle;
+    if (!_r2BleSubscribed && ble && typeof ble.subscribe === 'function') {
+      _r2BleSubscribed = true;
+      try {
+        ble.subscribe(function (bst) {
+          if (!bst) return;
+          var conn = !!bst.refractometerConnected;
+          var tempNow = (bst.lastTempC != null && isFinite(+bst.lastTempC)) ? Math.round(+bst.lastTempC * 10) / 10 : null;
+          var batNow = (bst.refractometerBatteryPct != null && isFinite(+bst.refractometerBatteryPct)) ? Math.round(+bst.refractometerBatteryPct) : null;
+          var liveTds = (bst.lastTds != null && +bst.lastTds > 0 && (conn || +bst.lastR2AtMs > 0)) ? Math.round(+bst.lastTds * 100) / 100 : 0;
+
+          if (liveTds > 0 && (!_step5Session || Math.abs(liveTds - (+_step5Session.tdsPct || 0)) >= 0.005)) {
+            _prevBleR2State = { connected: conn, tempC: tempNow, batteryPct: batNow };
+            applyLiveR2Reading({
+              tds: liveTds,
+              tempC: tempNow,
+              brix: bst.lastBrix,
+              refractiveIndex: bst.lastRefractiveIndex,
+              readCount: bst.lastR2ReadCount
+            }, { fromSubscribe: true });
+            return;
+          }
+
+          var metaChanged = (conn !== _prevBleR2State.connected) ||
+            (conn && tempNow !== _prevBleR2State.tempC) ||
+            (conn && batNow !== _prevBleR2State.batteryPct);
+          _prevBleR2State = { connected: conn, tempC: tempNow, batteryPct: batNow };
+
+          if (_step5Session) {
+            if (conn && !_step5Session._userHidR2) {
+              _step5Session.r2Expanded = true;
+              _step5Session.r2Collapsed = false;
+            }
+            if (conn && tempNow != null) {
+              _step5Session.r2TempC = tempNow;
+            }
+          }
+          if (metaChanged && typeof _activeRepaintHook === 'function') {
+            _activeRepaintHook();
+          }
+        });
+      } catch (_) {}
+    }
+  }
+
+  ensureR2BleListeners();
+
+  function ensureStep5Session(opts) {
+    ensureR2BleListeners();
+    var a = S.getApp();
+    var st = S.getState();
+    var bleNow = getBleStateSafe();
     if (!st.brewFinishedAtMs) st.brewFinishedAtMs = Date.now();
     var coffeeId = (a.coffee && (a.coffee.id || a.coffee.name)) || 'default';
     var attemptTag = (a.cupBrew && a.cupBrew.attempt) || a.attempt || 0;
@@ -28336,6 +29890,19 @@ if (typeof window !== 'undefined') {
       var doseG = +curBrew.dose || 15;
       var waterG = +curBrew.water || (isEsp ? 36 : 250);
       var preRated = !!(opts && opts.preRated === true);
+      var bleHasRecentTds = (+bleNow.lastTds > 0) && (!!bleNow.refractometerConnected || +bleNow.lastR2AtMs > 0 || !bleNow.simulatorActive);
+      var initTds = +st.measuredTds > 0
+        ? Math.round(+st.measuredTds * 100) / 100
+        : (bleHasRecentTds ? Math.round(+bleNow.lastTds * 100) / 100 : (_lastLiveR2 && +_lastLiveR2.tds > 0 ? _lastLiveR2.tds : 0));
+      var initR2Temp = (bleNow.lastTempC != null && isFinite(+bleNow.lastTempC) && (bleHasRecentTds || bleNow.refractometerConnected))
+        ? Math.round(+bleNow.lastTempC * 10) / 10
+        : (_lastLiveR2 && _lastLiveR2.tempC != null ? _lastLiveR2.tempC : 23.6);
+
+      if (initTds > 0) {
+        a.taste = (a.taste && typeof a.taste === 'object') ? a.taste : {};
+        a.taste.tds_pct = initTds;
+      }
+
       _step5Session = {
         coffeeRef: coffeeId,
         sessionSig: sessionSig,
@@ -28357,10 +29924,13 @@ if (typeof window !== 'undefined') {
         rescueMugG: Math.max(25, Math.round(+curBrew.out_g || +curBrew.yieldOut || (isEsp ? waterG : waterG - doseG * 2.05))),
         inMugLogged: '',
         bevOutG: Math.max(18, Math.round(+curBrew.out_g || +curBrew.yieldOut || (isEsp ? waterG : waterG - doseG * 2.05))),
-        r2Expanded: S.btToolModeSafe('refractometer') === 'always',
+        r2Expanded: S.btToolModeSafe('refractometer') === 'always' || !!bleNow.refractometerConnected || initTds > 0,
+        r2Collapsed: false,
+        _userHidR2: false,
+        _liveR2Received: initTds > 0,
         r2InputUnit: 'tds',
-        tdsPct: +st.measuredTds > 0 ? +st.measuredTds : 0,
-        r2TempC: 23.6,
+        tdsPct: initTds,
+        r2TempC: initR2Temp,
         excludeLearning: false,
         notMyStyle: false,
         foilRevealed: false,
@@ -28379,6 +29949,26 @@ if (typeof window !== 'undefined') {
         defectType: '',
         notes: st.general_notes || ''
       };
+    } else {
+      if (bleNow.refractometerConnected && !_step5Session._userHidR2) {
+        _step5Session.r2Expanded = true;
+        _step5Session.r2Collapsed = false;
+      }
+      var recentBleTdsOpen = (+bleNow.lastTds > 0 && (!!bleNow.refractometerConnected || +bleNow.lastR2AtMs > 0 || !bleNow.simulatorActive))
+        ? Math.round(+bleNow.lastTds * 100) / 100
+        : 0;
+      if (!(+_step5Session.tdsPct > 0) && recentBleTdsOpen > 0) {
+        _step5Session.tdsPct = recentBleTdsOpen;
+        if (bleNow.lastTempC != null && isFinite(+bleNow.lastTempC)) {
+          _step5Session.r2TempC = Math.round(+bleNow.lastTempC * 10) / 10;
+        }
+        if (!_step5Session._userHidR2) {
+          _step5Session.r2Expanded = true;
+          _step5Session.r2Collapsed = false;
+        }
+        a.taste = (a.taste && typeof a.taste === 'object') ? a.taste : {};
+        a.taste.tds_pct = _step5Session.tdsPct;
+      }
     }
     if (opts && opts.initialMode && ['quick', 'guided', 'cva'].indexOf(opts.initialMode) >= 0) {
       _step5Session.mode = opts.initialMode;
@@ -28418,21 +30008,7 @@ if (typeof window !== 'undefined') {
     }
 
     var ble = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
-    if (ble && typeof ble.subscribe === 'function' && !root._bleSubbed) {
-      root._bleSubbed = true;
-      try {
-        ble.subscribe(function (bst) {
-          if (!bst || !root.isConnected) return;
-          var ref = bst.refractometer || (bst.slots && bst.slots.refractometer) || null;
-          if (ref && +ref.tds > 0 && Math.abs(+ref.tds - tSt.tdsPct) >= 0.01) {
-            tSt.tdsPct = Math.round(+ref.tds * 100) / 100;
-            if (ref.tempC != null && isFinite(+ref.tempC)) tSt.r2TempC = Math.round(+ref.tempC * 10) / 10;
-            tSt.r2Expanded = true;
-            paintAll();
-          }
-        });
-      } catch (_) {}
-    }
+    ensureR2BleListeners();
 
     var fixBannerMount = S.h('section', { id: 'bt-nextbrew-fix', class: 'bt-tc-hero-fix' });
     var ctaMount = S.h('div', { id: 'bt-step5-sticky-cta', style: 'display:contents' });
@@ -29133,6 +30709,10 @@ if (typeof window !== 'undefined') {
       var waterNow = flowInfo.waterG;
       var measEyNow = (+tSt.tdsPct > 0 && doseNow > 0) ? Math.round(((+tSt.tdsPct * tSt.bevOutG) / doseNow) * 100) / 100 : null;
       var r2Mode = S.btToolModeSafe('refractometer');
+      var bleLive = getBleStateSafe();
+      var r2Connected = !!bleLive.refractometerConnected;
+      var r2CanTrigger = !!(r2Connected || bleLive.simulatorActive);
+      var r2EffectiveOn = r2Mode !== 'off' || r2Connected || !!tSt._liveR2Received || +tSt.tdsPct > 0;
 
       var shortcutButtons = [];
       function activeShortcutKey() {
@@ -29195,9 +30775,9 @@ if (typeof window !== 'undefined') {
             y: tSt.padY,
             grinderKey: a.brew && a.brew.grinderKey,
             isEspresso: isEspNow,
-            measuredTds: (r2Mode !== 'off' && +tSt.tdsPct > 0) ? +tSt.tdsPct : null,
-            measuredEy: (r2Mode !== 'off' && measEyNow != null) ? measEyNow : null,
-            sampleTempC: (r2Mode !== 'off' && +tSt.tdsPct > 0) ? tSt.r2TempC : null,
+            measuredTds: (r2EffectiveOn && +tSt.tdsPct > 0) ? +tSt.tdsPct : null,
+            measuredEy: (r2EffectiveOn && measEyNow != null) ? measEyNow : null,
+            sampleTempC: (r2EffectiveOn && +tSt.tdsPct > 0) ? tSt.r2TempC : null,
             targetTds: isEspNow ? 9.4 : 1.38,
             targetEy: 20.2,
             onChange: function (pt) {
@@ -29251,10 +30831,10 @@ if (typeof window !== 'undefined') {
         )
       );
 
-      var r2ReconcilerHost = S.h('div');
+      var r2ReconcilerHost = S.h('div', { id: 'bt-step5-r2-reconciler' });
       function paintR2ReconcilerOnly() {
         r2ReconcilerHost.textContent = '';
-        if (r2Mode === 'off' || !(+tSt.tdsPct > 0)) return;
+        if (!r2EffectiveOn || !(+tSt.tdsPct > 0)) return;
         var mEy = (+tSt.tdsPct > 0 && doseNow > 0) ? Math.round(((+tSt.tdsPct * tSt.bevOutG) / doseNow) * 100) / 100 : null;
         var rec = evaluateR2VsPalateDiscrepancy(tSt, mEy, isEspNow);
         if (!rec) return;
@@ -29275,38 +30855,65 @@ if (typeof window !== 'undefined') {
       }
 
       var r2Host = null;
-      if (r2Mode !== 'off') {
-        var showOpenR2 = r2Mode === 'always' || tSt.r2Expanded || (+tSt.tdsPct > 0 && !tSt.r2Collapsed);
+      if (r2EffectiveOn) {
+        var showOpenR2 = r2Mode === 'always' || (!tSt._userHidR2 && (tSt.r2Expanded || r2Connected || (+tSt.tdsPct > 0 && !tSt.r2Collapsed)));
         if (!showOpenR2) {
+          var collapsedR2Label = +tSt.tdsPct > 0
+            ? ('Refractometer: ' + (+tSt.tdsPct).toFixed(2) + '% TDS (Expand)')
+            : (r2Connected ? 'DiFluid R2 Connected \u00B7 Auto-Sync Active (Expand)' : '+ Optional: Enter Refractometer %TDS (DiFluid R2)');
           r2Host = S.h('button', {
             type: 'button',
             class: 'bt-tc-pill is-soft',
+            id: 'bt-step5-r2-expand-btn',
             style: 'align-self:flex-start',
-            onclick: function () { tSt.r2Collapsed = false; tSt.r2Expanded = true; paintAll(); }
-          }, S.iconEl('refract-prism', { size: 16 }), S.h('span', { text: +tSt.tdsPct > 0 ? ('Refractometer: ' + (+tSt.tdsPct).toFixed(2) + '% TDS (Expand)') : '+ Optional: Enter Refractometer %TDS (DiFluid R2)' }));
+            onclick: function () { tSt.r2Collapsed = false; tSt.r2Expanded = true; tSt._userHidR2 = false; paintAll(); }
+          }, S.iconEl('refract-prism', { size: 16 }), S.h('span', { text: collapsedR2Label }));
         } else {
           var r2Ready = evaluateR2ReadinessSafe(tSt.r2TempC);
           var waterInWarn = (!isEspNow && tSt.bevOutG >= waterNow * 0.92)
             ? ('Heads-up: Beverage weight (' + tSt.bevOutG + ' g) looks like poured water (' + waterNow + ' g) rather than liquid in your mug (~' + Math.round(waterNow - doseNow * 2.05) + ' g)!')
             : '';
+          var liveR2MetaParts = ['DiFluid R2 Connected \u00B7 Auto-Sync Active'];
+          if (bleLive.lastTempC != null && isFinite(+bleLive.lastTempC) && +bleLive.lastTempC > 0) {
+            liveR2MetaParts.push((+bleLive.lastTempC).toFixed(1) + ' \u00B0C');
+          } else if (tSt.r2TempC != null && isFinite(+tSt.r2TempC) && +tSt.r2TempC > 0) {
+            liveR2MetaParts.push((+tSt.r2TempC).toFixed(1) + ' \u00B0C');
+          }
+          if (bleLive.refractometerBatteryPct != null && isFinite(+bleLive.refractometerBatteryPct) && +bleLive.refractometerBatteryPct >= 0) {
+            liveR2MetaParts.push(Math.round(+bleLive.refractometerBatteryPct) + '%');
+          }
 
-          r2Host = S.h('div', { class: 'bt-tc-r2-card' },
+          r2Host = S.h('div', { class: 'bt-tc-r2-card', id: 'bt-step5-r2-card' },
             S.h('div', { class: 'bt-tc-row-between' },
-              S.h('span', { class: 'bt-tc-badge is-sci', text: r2Ready.badgeText }),
-              r2Mode === 'optional' ? S.h('button', {
+              S.h('div', { class: 'bt-tc-pill-wrap', style: 'gap:6px' },
+                r2Connected ? S.h('span', {
+                  class: 'bt-tc-badge is-good',
+                  id: 'bt-step5-r2-live-badge',
+                  text: liveR2MetaParts.join(' \u00B7 ')
+                }) : null,
+                S.h('span', { class: 'bt-tc-badge is-sci', text: r2Ready.badgeText })
+              ),
+              r2Mode !== 'always' ? S.h('button', {
                 type: 'button',
                 class: 'bt-tc-pill is-compact is-soft',
+                id: 'bt-step5-r2-hide-btn',
                 text: 'Hide Meter',
-                onclick: function () { tSt.r2Expanded = false; tSt.r2Collapsed = true; paintAll(); }
+                onclick: function () { tSt.r2Expanded = false; tSt.r2Collapsed = true; tSt._userHidR2 = true; paintAll(); }
               }) : null
             ),
-            S.h('p', { class: 'bt-tc-trait-desc', text: 'Optional lab refractometer: plots sensor strength (%TDS) alongside your tongue on the bullseye. Your personal taste always wins 100%.' }),
+            S.h('p', {
+              class: 'bt-tc-trait-desc',
+              text: r2Connected
+                ? 'Press the button on your DiFluid R2 (or tap Read R2 Now) \u2014 %TDS, %EY, and your Bullseye sensor pin update automatically with zero typing.'
+                : 'Optional lab refractometer: plots sensor strength (%TDS) alongside your tongue on the bullseye. Your personal taste always wins 100%.'
+            }),
             S.h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px' },
               S.h('label', { style: 'display:flex;flex-direction:column;gap:4px;font-size:0.76rem;font-weight:700' },
                 S.h('span', { text: tSt.r2InputUnit === 'brix' ? 'Measured \u00B0Brix (\u00D70.85 \u2192 TDS)' : 'Measured Strength (%TDS)' }),
                 S.h('div', { class: 'bt-tc-spotlight', style: 'min-height:44px' },
                   S.h('input', {
                     type: 'number',
+                    id: 'bt-step5-tds-input',
                     inputmode: 'decimal',
                     step: '0.01',
                     min: '0',
@@ -29320,6 +30927,9 @@ if (typeof window !== 'undefined') {
                       } else {
                         tSt.tdsPct = 0;
                       }
+                      a.taste = (a.taste && typeof a.taste === 'object') ? a.taste : {};
+                      a.taste.tds_pct = tSt.tdsPct;
+                      st.measuredTds = tSt.tdsPct;
                       paintAll();
                     }
                   })
@@ -29330,6 +30940,7 @@ if (typeof window !== 'undefined') {
                 S.h('div', { class: 'bt-tc-spotlight', style: 'min-height:44px' },
                   S.h('input', {
                     type: 'number',
+                    id: 'bt-step5-bev-out-input',
                     inputmode: 'decimal',
                     step: '1',
                     min: '10',
@@ -29347,6 +30958,7 @@ if (typeof window !== 'undefined') {
                 S.h('div', { class: 'bt-tc-spotlight', style: 'min-height:44px' },
                   S.h('input', {
                     type: 'number',
+                    id: 'bt-step5-r2-temp-input',
                     inputmode: 'decimal',
                     step: '0.5',
                     min: '10',
@@ -29377,21 +30989,49 @@ if (typeof window !== 'undefined') {
                   text: tSt.r2InputUnit === 'tds' ? 'Switch to \u00B0Brix' : 'Switch to %TDS',
                   onclick: function () { tSt.r2InputUnit = tSt.r2InputUnit === 'tds' ? 'brix' : 'tds'; paintAll(); }
                 }),
-                S.h('button', {
+                r2CanTrigger ? S.h('button', {
                   type: 'button',
+                  id: 'bt-step5-r2-read-btn',
+                  class: 'bt-tc-pill is-compact is-copper',
+                  onclick: function () {
+                    if (ble && typeof ble.triggerRefractometerRead === 'function') {
+                      Promise.resolve(ble.triggerRefractometerRead()).catch(function () {});
+                    }
+                  }
+                }, S.iconEl('ble-wave', { size: 14 }), S.h('span', { text: 'Read R2 Now' })) : null,
+                r2CanTrigger ? S.h('button', {
+                  type: 'button',
+                  id: 'bt-step5-r2-avg3-btn',
+                  class: 'bt-tc-pill is-compact is-soft',
+                  onclick: function () {
+                    if (ble && typeof ble.triggerRefractometerRead === 'function') {
+                      Promise.resolve(ble.triggerRefractometerRead({ averageCount: 3 })).catch(function () {});
+                    }
+                  }
+                }, S.h('span', { text: 'Avg x3' })) : null,
+                !r2CanTrigger ? S.h('button', {
+                  type: 'button',
+                  id: 'bt-step5-r2-pair-btn',
                   class: 'bt-tc-pill is-compact is-soft',
                   onclick: function () {
                     if (ble && typeof ble.connectRefractometer === 'function') {
-                      Promise.resolve(ble.connectRefractometer()).then(function () {
-                        if (typeof ble.triggerRefractometerRead === 'function') return ble.triggerRefractometerRead();
+                      Promise.resolve(ble.connectRefractometer()).then(function (res) {
+                        if (res && (res.refractometerConnected || res.ok) && typeof ble.triggerRefractometerRead === 'function') {
+                          return ble.triggerRefractometerRead();
+                        }
                       }).catch(function () {});
                     } else {
                       S.toastSafe('Pair DiFluid R2 in Lab & Tools \u2192 Bluetooth Gear');
                     }
                   }
-                }, S.iconEl('ble-wave', { size: 14 }), S.h('span', { text: 'Read Bluetooth Meter' }))
+                }, S.iconEl('ble-wave', { size: 14 }), S.h('span', { text: 'Pair DiFluid R2' })) : null
               ),
-              measEyNow != null ? S.h('b', { class: 'mono', style: 'font-size:0.88rem;color:var(--science)', text: tSt.tdsPct.toFixed(2) + '% TDS \u00B7 ' + measEyNow.toFixed(1) + '% Extraction (%EY)' }) : null
+              measEyNow != null ? S.h('b', {
+                class: 'mono',
+                id: 'bt-step5-ey-readout',
+                style: 'font-size:0.88rem;color:var(--science)',
+                text: tSt.tdsPct.toFixed(2) + '% TDS \u00B7 ' + measEyNow.toFixed(1) + '% Extraction (%EY)'
+              }) : null
             ),
             r2ReconcilerHost
           );
@@ -29405,7 +31045,7 @@ if (typeof window !== 'undefined') {
             S.h('div', { class: 'bt-tc-kicker', text: '4-Ring Taste Balance Bullseye' }),
             S.h('b', { style: 'font-size:0.96rem', text: 'Where did your cup land? (Sour \u2194 Bitter \u00D7 Weak \u2194 Strong)' })
           ),
-          (r2Mode !== 'off' && +tSt.tdsPct > 0) ? S.h('span', { class: 'bt-tc-badge is-sci', text: 'Dual-Pin Active' }) : null
+          (r2EffectiveOn && +tSt.tdsPct > 0) ? S.h('span', { class: 'bt-tc-badge is-sci', id: 'bt-step5-dual-pin-badge', text: 'Dual-Pin Active' }) : null
         ),
         shortcutRow,
         padWidget,
@@ -29744,7 +31384,11 @@ if (typeof window !== 'undefined') {
     }
 
     _activeRepaintHook = function () {
-      if (root.isConnected) paintAll();
+      if (root.isConnected) {
+        paintAll();
+        return true;
+      }
+      return false;
     };
 
     paintAll();
@@ -29760,7 +31404,7 @@ if (typeof window !== 'undefined') {
   var BTTasteStep = {
     renderStep5: renderStep5,
     getSession: function () { return ensureStep5Session(); },
-    resetSession: function () { _step5Session = null; },
+    resetSession: function () { _step5Session = null; _lastLiveR2 = null; },
     setUserRating: function (stars, padXY) {
       var s = ensureStep5Session();
       s.stars = clamp(+stars || 4.25, 0.25, 5.0);
@@ -32584,10 +34228,26 @@ if (typeof window !== 'undefined') {
       }
 
       root.appendChild(S.h('header', { class: 'bt-tc-head' },
-        S.h('div', null,
-          S.h('div', { class: 'bt-tc-kicker', text: 'Tab 2 \u00B7 Living Coffee Cellar' }),
-          S.h('h1', { class: 'bt-tc-title', text: 'Shelf, Trails, Journal & Cafes' }),
-          S.h('p', { class: 'bt-tc-sub', text: 'Peak freshness, freezer doses, personal brew journal & 4-step coffee shop logger.' })
+        S.h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;width:100%' },
+          S.h('div', { style: 'flex:1 1 210px;min-width:0' },
+            S.h('div', { class: 'bt-tc-kicker', text: 'Tab 2 \u00B7 Living Coffee Cellar' }),
+            S.h('h1', { class: 'bt-tc-title', text: 'Shelf, Trails, Journal & Cafes' }),
+            S.h('p', { class: 'bt-tc-sub', text: 'Peak freshness, freezer doses, personal brew journal & 4-step coffee shop logger.' })
+          ),
+          S.h('button', {
+            type: 'button',
+            id: 'bt-cellar-backup-saves-btn',
+            class: 'bt-tc-pill is-copper',
+            style: 'align-self:flex-start;min-height:44px;font-weight:800;flex-shrink:0',
+            onclick: function () {
+              S.haptic('snap');
+              if (typeof window !== 'undefined' && window.BTBackupCenter && typeof window.BTBackupCenter.open === 'function') {
+                window.BTBackupCenter.open({ source: 'cellar' });
+              } else {
+                S.openSheetSafe('save-backup-center', { source: 'cellar' }, { title: 'Backup & Load Saves', detent: 'full' });
+              }
+            }
+          }, S.iconEl('vault-shield', { size: 16 }), S.h('span', { text: 'Backup / Load Saves' }))
         )
       ));
 
@@ -33954,6 +35614,165 @@ if (typeof window !== 'undefined') {
     return {};
   }
 
+  let _labBleEventsBound = false;
+  let _labBleSubscribed = false;
+  let _labLastR2ToastAt = 0;
+  let _labLastR2ToastTds = -1;
+  const _labBenchHooks = [];
+  const _labLiveHooks = {
+    hwBar: null,
+    studioEy: null,
+    ratioYield: null
+  };
+
+  function registerLabBenchHook(rootEl, refreshFn) {
+    if (!rootEl || typeof refreshFn !== 'function') return;
+    for (let i = _labBenchHooks.length - 1; i >= 0; i--) {
+      if (!_labBenchHooks[i].root || (!_labBenchHooks[i].root.isConnected && _labBenchHooks[i].root !== rootEl)) {
+        _labBenchHooks.splice(i, 1);
+      }
+    }
+    _labBenchHooks.push({ root: rootEl, fn: refreshFn });
+  }
+
+  function notifyLabBenchHooks() {
+    let anyMounted = false;
+    for (let i = _labBenchHooks.length - 1; i >= 0; i--) {
+      const item = _labBenchHooks[i];
+      if (!item || !item.root || !item.root.isConnected) {
+        _labBenchHooks.splice(i, 1);
+        continue;
+      }
+      anyMounted = true;
+      try { item.fn(); } catch (_) {}
+    }
+    return anyMounted;
+  }
+
+  function applyLabLiveR2Reading(detail, opts) {
+    if (!detail) return false;
+    const rawTds = +detail.tds;
+    if (!Number.isFinite(rawTds) || rawTds <= 0 || rawTds > 35) return false;
+    const tds = Math.round(rawTds * 100) / 100;
+    const hasTemp = detail.tempC != null && Number.isFinite(+detail.tempC) && +detail.tempC > 0;
+    const tempVal = hasTemp ? Math.round(+detail.tempC * 10) / 10 : null;
+    const bxVal = (detail.brix != null && Number.isFinite(+detail.brix) && +detail.brix > 0)
+      ? +detail.brix
+      : brixFromTds(tds);
+    const ndVal = (detail.refractiveIndex != null && Number.isFinite(+detail.refractiveIndex) && +detail.refractiveIndex > 1.3)
+      ? +(+detail.refractiveIndex).toFixed(5)
+      : +nd20FromBrix(bxVal).toFixed(5);
+
+    if (tds >= 4.5 && labState.bc.mode !== 'espresso') {
+      labState.bc.mode = 'espresso';
+    }
+    labState.bc.measTds = tds;
+    labState.bc.targetTds = clamp(tds, labState.bc.mode === 'espresso' ? 5.0 : 0.75, labState.bc.mode === 'espresso' ? 16.0 : 2.25, tds);
+    if (tempVal != null) labState.bc.measTempC = tempVal;
+    labState.bc.measNd = ndVal;
+
+    if (labState.ratio4) {
+      labState.ratio4.tdsPct = tds;
+      labState.ratio4.eyPct = +clamp((tds * labState.ratio4.mugG) / Math.max(0.5, labState.ratio4.doseG), 2, 36, labState.ratio4.eyPct).toFixed(2);
+    }
+    if (labState.mugRescue) {
+      labState.mugRescue.tdsPct = tds;
+    }
+
+    let anyLabMounted = false;
+    if (typeof _labLiveHooks.hwBar === 'function') {
+      try { if (_labLiveHooks.hwBar()) anyLabMounted = true; } catch (_) {}
+    }
+    if (typeof _labLiveHooks.studioEy === 'function') {
+      try { if (_labLiveHooks.studioEy({ fromLive: true })) anyLabMounted = true; } catch (_) {}
+    }
+    if (typeof _labLiveHooks.ratioYield === 'function') {
+      try { if (_labLiveHooks.ratioYield({ fromLive: true })) anyLabMounted = true; } catch (_) {}
+    }
+    if (notifyLabBenchHooks()) anyLabMounted = true;
+
+    const nowMs = Date.now();
+    const isDup = (nowMs - _labLastR2ToastAt < 220) && Math.abs(tds - _labLastR2ToastTds) < 0.005;
+    if (!isDup && !(opts && opts.silent)) {
+      _labLastR2ToastAt = nowMs;
+      _labLastR2ToastTds = tds;
+      const a = getApp();
+      const step5HandlingToast = !!(a && a.activeTab === 'brew' && a.brewStep === 'taste');
+      if (anyLabMounted && !step5HandlingToast) {
+        CK.haptic('snap');
+        notify('DiFluid R2 Auto-Synced: ' + tds.toFixed(2) + '% TDS');
+      }
+    }
+    return true;
+  }
+
+  function ensureLabBleListeners() {
+    if (typeof window === 'undefined') return;
+    if (!_labBleEventsBound && typeof window.addEventListener === 'function') {
+      _labBleEventsBound = true;
+      window.addEventListener('bt-ble-refractometer', function (ev) {
+        const d = (ev && ev.detail) || {};
+        applyLabLiveR2Reading(d, { fromEvent: true });
+      });
+      window.addEventListener('bt-ble-omni', function (ev) {
+        const d = (ev && ev.detail) || {};
+        if (Number.isFinite(+d.beanAgtron) && +d.beanAgtron > 0) labState.roastFresh.beanG = +d.beanAgtron;
+        if (Number.isFinite(+d.groundAgtron) && +d.groundAgtron > 0) labState.roastFresh.groundG = +d.groundAgtron;
+        if (Number.isFinite(+d.d50Um) && +d.d50Um > 0) labState.wave.d50Um = +d.d50Um;
+        if (typeof _labLiveHooks.hwBar === 'function') {
+          try { _labLiveHooks.hwBar(); } catch (_) {}
+        }
+        notifyLabBenchHooks();
+      });
+    }
+    const ble = window.BTBle;
+    if (!_labBleSubscribed && ble && typeof ble.subscribe === 'function') {
+      _labBleSubscribed = true;
+      try {
+        ble.subscribe(function (bst) {
+          if (!bst) return;
+          const conn = !!bst.refractometerConnected;
+          const liveTds = (bst.lastTds != null && +bst.lastTds > 0 && (conn || +bst.lastR2AtMs > 0))
+            ? Math.round(+bst.lastTds * 100) / 100
+            : 0;
+          if (liveTds > 0 && Math.abs(liveTds - (+labState.bc.measTds || 0)) >= 0.005) {
+            applyLabLiveR2Reading({
+              tds: liveTds,
+              tempC: bst.lastTempC,
+              brix: bst.lastBrix,
+              refractiveIndex: bst.lastRefractiveIndex
+            }, { fromSubscribe: true });
+            return;
+          }
+          if (conn && bst.lastTempC != null && Number.isFinite(+bst.lastTempC) && +bst.lastTempC > 0) {
+            labState.bc.measTempC = Math.round(+bst.lastTempC * 10) / 10;
+          }
+          if (typeof _labLiveHooks.hwBar === 'function') {
+            try { _labLiveHooks.hwBar(); } catch (_) {}
+          }
+          if (typeof _labLiveHooks.studioEy === 'function') {
+            try { _labLiveHooks.studioEy({ metaOnly: true }); } catch (_) {}
+          }
+          if (typeof _labLiveHooks.ratioYield === 'function') {
+            try { _labLiveHooks.ratioYield({ metaOnly: true }); } catch (_) {}
+          }
+          notifyLabBenchHooks();
+        });
+      } catch (_) {}
+    }
+    const initBle = getBleStateSafe();
+    if (+initBle.lastTds > 0 && (!!initBle.refractometerConnected || +initBle.lastR2AtMs > 0) && !(+labState.bc.measTds > 0)) {
+      applyLabLiveR2Reading({
+        tds: +initBle.lastTds,
+        tempC: initBle.lastTempC,
+        brix: initBle.lastBrix,
+        refractiveIndex: initBle.lastRefractiveIndex
+      }, { silent: true });
+    }
+  }
+
+  ensureLabBleListeners();
+
   function getActiveR2TempC() {
     const st = getBleStateSafe();
     const r2 = st && st.refractometer;
@@ -34269,6 +36088,7 @@ if (typeof window !== 'undefined') {
   }
 
   function renderHardwareBench(fullMode) {
+    ensureLabBleListeners();
     const ble = window.BTBle || {};
     const caps = typeof ble.capabilities === 'function'
       ? ble.capabilities()
@@ -34359,30 +36179,64 @@ if (typeof window !== 'undefined') {
         id: 'refractometer',
         icon: 'refract-prism',
         title: '3. DiFluid R2 Extract',
-        families: 'Optical %TDS · Refractive Index nD20 · Prism Temp ATC · Multi-Read Average',
+        families: 'Optical %TDS · Refractive Index nD20 · Prism Temp ATC · Live Zero-Typing Auto-Sync',
         readout: function (s) {
           const r2 = s.refractometer || {};
+          const conn = !!(r2.connected || s.refractometerConnected);
           const tds = r2.tds || labState.bc.measTds;
+          const tempStr = Number(r2.tempC || labState.bc.measTempC || 22.5).toFixed(1) + ' \u00B0C';
+          if (conn) {
+            return tds > 0
+              ? ('DiFluid R2 Connected · Auto-Sync · ' + Number(tds).toFixed(2) + '% TDS · ' + tempStr)
+              : ('DiFluid R2 Connected · Auto-Sync Active · ' + tempStr);
+          }
           return tds > 0
-            ? (Number(tds).toFixed(2) + '% TDS · ' + Number(r2.tempC || labState.bc.measTempC || 22.5).toFixed(1) + ' C')
+            ? (Number(tds).toFixed(2) + '% TDS · ' + tempStr)
             : 'Standby · Ready to Read';
         },
-        actions: [
-          { lbl: 'Pair R2', primary: true, fn: function () { if (ble.connectRefractometer) ble.connectRefractometer(); } },
-          { lbl: 'Read R2', fn: function () { if (ble.triggerRefractometerRead) ble.triggerRefractometerRead(); } },
-          {
+        actions: function (s) {
+          const isPaired = !!(s.refractometerConnected || (s.refractometer && s.refractometer.connected));
+          const canTrigger = !!(isPaired || s.simulatorActive);
+          const acts = [];
+          if (canTrigger) {
+            acts.push({
+              lbl: 'Read R2 Now',
+              primary: true,
+              id: 'bt-bench-r2-read-btn',
+              fn: function () { if (ble.triggerRefractometerRead) ble.triggerRefractometerRead(); }
+            });
+            acts.push({
+              lbl: 'Avg x3',
+              id: 'bt-bench-r2-avg3-btn',
+              fn: function () { if (ble.triggerRefractometerRead) ble.triggerRefractometerRead({ averageCount: 3 }); }
+            });
+            if (isPaired) {
+              acts.push({
+                lbl: 'Disconnect',
+                fn: function () { if (ble.disconnectRefractometer) ble.disconnectRefractometer(); }
+              });
+            }
+          } else {
+            acts.push({
+              lbl: 'Pair DiFluid R2',
+              primary: true,
+              id: 'bt-bench-r2-pair-btn',
+              fn: function () { if (ble.connectRefractometer) ble.connectRefractometer(); }
+            });
+          }
+          acts.push({
             lbl: 'Sim R2 (23.4 C)',
             fn: function () {
-              if (ble.simulateRefractometerRead) ble.simulateRefractometerRead();
-              labState.bc.measTds = 1.42;
-              labState.bc.measTempC = 23.4;
-              labState.bc.measNd = +nd20FromBrix(brixFromTds(1.42)).toFixed(5);
+              if (ble.simulateRefractometerRead) {
+                ble.simulateRefractometerRead();
+              } else {
+                applyLabLiveR2Reading({ tds: 1.42, tempC: 23.4, brix: brixFromTds(1.42), refractiveIndex: +nd20FromBrix(brixFromTds(1.42)).toFixed(5) });
+              }
               CK.haptic('sweetSpotLock');
-              notify('DiFluid R2 plotted 1.42% TDS (23.4 C Spoon-Chilled) onto Brew Control Canvas!');
               refreshBenchLive();
             }
-          },
-          {
+          });
+          acts.push({
             lbl: 'Sim Hot (37.8 C)',
             fn: function () {
               labState.bc.measTds = 1.48;
@@ -34391,8 +36245,9 @@ if (typeof window !== 'undefined') {
               notify('Hot sample alert (37.8 C): Metal-spoon cool 15-20s to avoid evaporation drift!');
               refreshBenchLive();
             }
-          }
-        ]
+          });
+          return acts;
+        }
       },
       {
         id: 'omni',
@@ -34442,9 +36297,29 @@ if (typeof window !== 'undefined') {
     ];
 
     const liveReadoutEls = [];
+    const liveActionRows = [];
+    function renderActionButtonsInto(container, actionsSpec, curState) {
+      container.textContent = '';
+      const list = typeof actionsSpec === 'function' ? actionsSpec(curState) : actionsSpec;
+      (list || []).forEach(function (act) {
+        const attrs = {
+          type: 'button',
+          class: 'bt-lab-btn is-sm' + (act.primary ? ' is-primary' : ''),
+          onclick: act.fn
+        };
+        if (act.id) attrs.id = act.id;
+        container.appendChild(domH('button', attrs, act.lbl));
+      });
+    }
+
     slotDefs.forEach(function (sd) {
       const valNode = domH('div', { class: 'bt-ble-slot-readout num-tab', text: sd.readout(st) });
+      const actRowNode = domH('div', { class: 'bt-lab-btn-row' });
+      renderActionButtonsInto(actRowNode, sd.actions, st);
       liveReadoutEls.push({ el: valNode, fn: sd.readout });
+      if (typeof sd.actions === 'function') {
+        liveActionRows.push({ el: actRowNode, fn: sd.actions });
+      }
       const card = domH('div', { class: 'bt-ble-slot-card', 'data-slot': sd.id },
         domH('div', { class: 'bt-ble-slot-top' },
           ic(sd.icon, { size: 20 }),
@@ -34452,13 +36327,7 @@ if (typeof window !== 'undefined') {
         ),
         valNode,
         domH('p', { class: 'bt-ble-slot-fams', text: sd.families }),
-        domH('div', { class: 'bt-lab-btn-row' }, sd.actions.map(function (act) {
-          return domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn is-sm' + (act.primary ? ' is-primary' : ''),
-            onclick: act.fn
-          }, act.lbl);
-        }))
+        actRowNode
       );
       slotsGrid.appendChild(card);
     });
@@ -34479,8 +36348,12 @@ if (typeof window !== 'undefined') {
       liveReadoutEls.forEach(function (item) {
         item.el.textContent = item.fn(cur);
       });
+      liveActionRows.forEach(function (item) {
+        renderActionButtonsInto(item.el, item.fn, cur);
+      });
       if (benchR2Widget && benchR2Widget._syncTemp) benchR2Widget._syncTemp();
     }
+    registerLabBenchHook(root, refreshBenchLive);
 
     if (fullMode) {
       /* 3. Remembered Gear Auto-Reconnect & Workflow Tool-Mode Pills */
@@ -35319,10 +37192,20 @@ if (typeof window !== 'undefined') {
         aimSubSpan.textContent = rec.doseG.toFixed(1) + ' g dose · ' +
           (s.mode === 'espresso' ? (rec.bevG.toFixed(1) + ' g yield') : (rec.pourG.toFixed(0) + ' g water \u2192 ' + rec.bevG.toFixed(0) + ' g mug'));
       }
+      if (eyLiveReadoutEl) {
+        eyLiveReadoutEl.textContent = s.measTds > 0
+          ? (s.measTds.toFixed(2) + '% TDS · ' + mEyCalc.toFixed(1) + '% Extraction (%EY)')
+          : ('Target: ' + s.targetTds.toFixed(2) + '% TDS · ' + s.targetEy.toFixed(1) + '% Extraction (%EY)');
+      }
+      if (eyTdsInput && (typeof document === 'undefined' || document.activeElement !== eyTdsInput)) {
+        eyTdsInput.value = s.measTds > 0 ? s.measTds.toFixed(2) : '';
+      }
     }
 
     let aimCtaSpan = domH('span', { text: 'Brew Aiming Here \u2192' });
     let aimSubSpan = domH('span', { class: 'bt-cta-sub num-tab', text: '' });
+    let eyTdsInput = null;
+    let eyLiveReadoutEl = null;
 
     const surfCtrl = CK.bindChartSurface(svg, {
       ariaLabel: '2D TDS and Extraction Yield Target Puck',
@@ -35632,8 +37515,123 @@ if (typeof window !== 'undefined') {
       )
     );
 
-    const r2Enabled = getToolModeSafe('refractometer') !== 'off';
+    const bleForEy = window.BTBle || {};
+    const r2LiveStatusBadge = domH('span', {
+      class: 'bt-epistemic-pill is-research',
+      id: 'bt-lab-r2-status-badge',
+      text: 'Refractometer & %EY Calculator'
+    });
+    eyTdsInput = domH('input', {
+      type: 'number',
+      id: 'bt-lab-ey-tds-input',
+      inputmode: 'decimal',
+      class: 'bt-lab-text-in bt-lab-num-in',
+      style: 'font-size:1rem;max-width:118px',
+      step: '0.01',
+      min: '0',
+      max: '25',
+      placeholder: s.mode === 'espresso' ? '9.40' : '1.38',
+      value: s.measTds > 0 ? s.measTds.toFixed(2) : '',
+      'aria-label': 'Measured coffee strength percent TDS',
+      oninput: function () {
+        const v = parseFloat(eyTdsInput.value);
+        if (Number.isFinite(v) && v > 0) {
+          s.measTds = clamp(v, 0.05, 25, v);
+          s.targetTds = clamp(s.measTds, getDomains().tdsMin, getDomains().tdsMax, s.measTds);
+          s.measNd = +nd20FromBrix(brixFromTds(s.measTds)).toFixed(5);
+          tdsPill.setValue(s.measTds, true);
+          brixPill.setValue(brixFromTds(s.measTds), true);
+          ndPill.setValue(s.measNd, true);
+        } else {
+          s.measTds = 0;
+        }
+        updatePuckAndReadouts();
+      }
+    });
+    eyLiveReadoutEl = domH('strong', {
+      class: 'num-tab',
+      id: 'bt-lab-ey-live-readout',
+      style: 'font-size:0.9rem;color:var(--ink)',
+      text: ''
+    });
+    const r2ActionBtnsWrap = domH('div', { class: 'bt-lab-btn-row', id: 'bt-lab-r2-actions' });
+
+    function syncStudioR2Meta() {
+      const stNow = getBleStateSafe();
+      const conn = !!stNow.refractometerConnected;
+      const canTrigger = !!(conn || stNow.simulatorActive);
+      if (conn) {
+        const metaParts = ['DiFluid R2 Connected · Auto-Sync Active'];
+        if (stNow.lastTempC != null && Number.isFinite(+stNow.lastTempC) && +stNow.lastTempC > 0) {
+          metaParts.push((+stNow.lastTempC).toFixed(1) + ' \u00B0C');
+        }
+        if (stNow.refractometerBatteryPct != null && Number.isFinite(+stNow.refractometerBatteryPct) && +stNow.refractometerBatteryPct >= 0) {
+          metaParts.push(Math.round(+stNow.refractometerBatteryPct) + '%');
+        }
+        r2LiveStatusBadge.className = 'bt-epistemic-pill is-verified';
+        r2LiveStatusBadge.textContent = metaParts.join(' · ');
+      } else {
+        r2LiveStatusBadge.className = 'bt-epistemic-pill is-research';
+        r2LiveStatusBadge.textContent = 'Refractometer & %EY Calculator';
+      }
+      r2ActionBtnsWrap.textContent = '';
+      if (canTrigger) {
+        r2ActionBtnsWrap.appendChild(domH('button', {
+          type: 'button',
+          id: 'bt-lab-r2-read-btn',
+          class: 'bt-lab-btn is-sm is-primary',
+          onclick: function () {
+            if (typeof bleForEy.triggerRefractometerRead === 'function') {
+              Promise.resolve(bleForEy.triggerRefractometerRead()).catch(function () {});
+            }
+          }
+        }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Read R2 Now' })));
+        r2ActionBtnsWrap.appendChild(domH('button', {
+          type: 'button',
+          id: 'bt-lab-r2-avg3-btn',
+          class: 'bt-lab-btn is-sm',
+          onclick: function () {
+            if (typeof bleForEy.triggerRefractometerRead === 'function') {
+              Promise.resolve(bleForEy.triggerRefractometerRead({ averageCount: 3 })).catch(function () {});
+            }
+          }
+        }, 'Avg x3'));
+      } else {
+        r2ActionBtnsWrap.appendChild(domH('button', {
+          type: 'button',
+          id: 'bt-lab-r2-pair-btn',
+          class: 'bt-lab-btn is-sm',
+          onclick: function () {
+            if (typeof bleForEy.connectRefractometer === 'function') {
+              Promise.resolve(bleForEy.connectRefractometer()).then(function (res) {
+                if (res && (res.refractometerConnected || res.ok) && typeof bleForEy.triggerRefractometerRead === 'function') {
+                  return bleForEy.triggerRefractometerRead();
+                }
+              }).catch(function () {});
+            }
+          }
+        }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Pair DiFluid R2' })));
+      }
+    }
+    syncStudioR2Meta();
+
+    const r2LiveBar = domH('div', { class: 'bt-studio-subcard', id: 'bt-lab-r2-live-bar' },
+      domH('div', { class: 'bt-lab-card-head' },
+        r2LiveStatusBadge,
+        r2ActionBtnsWrap
+      ),
+      domH('div', { class: 'bt-lab-inline-inputs' },
+        domH('label', { class: 'bt-lab-field-lbl' },
+          domH('span', { text: 'Measured %TDS' }),
+          eyTdsInput
+        ),
+        eyLiveReadoutEl
+      )
+    );
+
+    const r2Enabled = getToolModeSafe('refractometer') !== 'off' || !!getBleStateSafe().refractometerConnected || s.measTds > 0;
     const r2Section = domH('div', { class: 'bt-bc-r2-section', hidden: !r2Enabled },
+      r2LiveBar,
       domH('div', { class: 'bt-vernier-row' }, tdsPill, brixPill, ndPill, tempSamplePill),
       studioR2Widget,
       domH('div', { class: 'bt-lab-chip-row' },
@@ -35654,6 +37652,31 @@ if (typeof window !== 'undefined') {
         }
       }, ic('refract-prism', { size: 14 }), domH('span', { text: 'Show Refractometer (%TDS / Brix / nD20) Controls' }))
     ) : null;
+
+    _labLiveHooks.studioEy = function (opts) {
+      if (!card.isConnected) return false;
+      const stNow = getBleStateSafe();
+      if (stNow.refractometerConnected || s.measTds > 0) {
+        r2Section.hidden = false;
+        if (r2ToggleHint) r2ToggleHint.hidden = true;
+      }
+      syncStudioR2Meta();
+      if (!(opts && opts.metaOnly) && s.measTds > 0) {
+        eyTdsInput.placeholder = s.mode === 'espresso' ? '9.40' : '1.38';
+        modeBtns.forEach(function (b, idx) {
+          const on = ['percolation', 'immersion', 'espresso'][idx] === s.mode;
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-pressed', String(on));
+        });
+        redrawStaticBackdrop();
+        tdsPill.setValue(s.measTds, true);
+        brixPill.setValue(brixFromTds(s.measTds), true);
+        ndPill.setValue(s.measNd, true);
+        tempSamplePill.setValue(s.measTempC, true);
+      }
+      updatePuckAndReadouts();
+      return true;
+    };
 
     card.appendChild(domH('div', { class: 'bt-lab-card-head' },
       domH('div', { class: 'bt-lab-title-group' },
@@ -38415,21 +40438,47 @@ if (typeof window !== 'undefined') {
         }
       }
     });
+    const tdsIn = domH('input', {
+      type: 'number',
+      id: 'bt-lab-ratio4-tds-input',
+      inputmode: 'decimal',
+      class: 'bt-lab-text-in bt-lab-num-in',
+      style: 'font-size:1rem',
+      step: '0.01',
+      min: '0.1',
+      max: '25',
+      value: Number(r4.tdsPct).toFixed(2),
+      'aria-label': 'Measured strength percent TDS',
+      oninput: function () {
+        const v = parseFloat(tdsIn.value);
+        if (Number.isFinite(v) && v > 0) {
+          r4.tdsPct = +clamp(v, 0.05, 25, r4.tdsPct).toFixed(2);
+          r4.eyPct = +clamp((r4.tdsPct * r4.mugG) / Math.max(0.5, r4.doseG), 2, 36, r4.eyPct).toFixed(2);
+          syncInputs('tds');
+        }
+      }
+    });
 
     function syncInputs(skipKey) {
       if (skipKey !== 'dose') doseIn.value = String(r4.doseG);
       if (skipKey !== 'water') waterIn.value = String(r4.waterG);
       if (skipKey !== 'mug') mugIn.value = String(r4.mugG);
       if (skipKey !== 'ratio') ratioIn.value = String(r4.ratio);
+      if (skipKey !== 'tds' && (typeof document === 'undefined' || document.activeElement !== tdsIn)) {
+        tdsIn.value = Number(r4.tdsPct).toFixed(2);
+      }
+      const stR4 = getBleStateSafe();
+      const canReadR2 = !!(stR4.refractometerConnected || stR4.simulatorActive);
+      const bleR4 = window.BTBle || {};
       const cbConcMl = Math.round(r4.coldBrewServeG / (1 + r4.coldBrewDiluteRatio - 1));
       const cbWaterOrMilkMl = Math.max(0, r4.coldBrewServeG - cbConcMl);
       const darcyShiftClicks = Math.round((Math.pow(r4.doseG / 18.0, 0.20) - 1) * 20);
       outBox.textContent = '';
       outBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
-        domH('div', { class: 'bt-studio-human-line num-tab' },
+        domH('div', { class: 'bt-studio-human-line num-tab', id: 'bt-lab-ratio4-live-readout' },
           domH('strong', {
             text: r4.doseG.toFixed(1) + ' g Dose  \u2194  ' + r4.waterG + ' g Pour Water  \u2194  ' +
-              r4.mugG + ' g in Mug  \u2194  1:' + r4.ratio.toFixed(1) + ' (~' + r4.tdsPct.toFixed(2) + '% TDS)'
+              r4.mugG + ' g in Mug  \u2194  1:' + r4.ratio.toFixed(1) + ' (' + r4.tdsPct.toFixed(2) + '% TDS · ' + r4.eyPct.toFixed(1) + '% EY)'
           })
         ),
         domH('p', {
@@ -38458,6 +40507,16 @@ if (typeof window !== 'undefined') {
               });
             }
           }, ic('brew', { size: 14 }), domH('span', { text: 'Apply Dose & Water to My Recipe \u2192' })),
+          canReadR2 ? domH('button', {
+            type: 'button',
+            id: 'bt-lab-ratio4-r2-read-btn',
+            class: 'bt-lab-btn is-sm is-accent',
+            onclick: function () {
+              if (typeof bleR4.triggerRefractometerRead === 'function') {
+                Promise.resolve(bleR4.triggerRefractometerRead()).catch(function () {});
+              }
+            }
+          }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Read R2 Now' })) : null,
           domH('button', {
             type: 'button',
             class: 'bt-lab-btn is-sm',
@@ -38498,6 +40557,10 @@ if (typeof window !== 'undefined') {
     ));
     card.appendChild(domH('div', { class: 'bt-lab-inline-inputs' },
       domH('label', { class: 'bt-lab-field-lbl' },
+        domH('span', { text: '5. Measured %TDS' }),
+        tdsIn
+      ),
+      domH('label', { class: 'bt-lab-field-lbl' },
         domH('span', { text: '1-Brew Sponge Check: Wet Grounds Wt (g)' }),
         wetBedIn
       ),
@@ -38515,6 +40578,11 @@ if (typeof window !== 'undefined') {
     ));
     card.appendChild(outBox);
     syncInputs('');
+    _labLiveHooks.ratioYield = function () {
+      if (!card.isConnected) return false;
+      syncInputs('');
+      return true;
+    };
     return card;
   }
 
@@ -39297,20 +41365,35 @@ if (typeof window !== 'undefined') {
     const ble = window.BTBle || {};
     const statusDot = domH('span', { class: 'bt-hw-dot' });
     const statusTxt = domH('span', { class: 'bt-hw-status-txt num-tab', text: 'Bluetooth Ready' });
+    const quickReadR2Btn = domH('button', {
+      type: 'button',
+      id: 'bt-hw-bar-r2-read-btn',
+      class: 'bt-hw-sim-pill',
+      hidden: true,
+      title: 'Trigger DiFluid R2 Refractometer Reading',
+      onclick: function () {
+        if (typeof ble.triggerRefractometerRead === 'function') {
+          Promise.resolve(ble.triggerRefractometerRead()).catch(function () {});
+        }
+      }
+    }, 'Read R2 Now');
 
     function syncHwStatus() {
       const st = getBleStateSafe();
       const scOn = !!(st.scale && st.scale.connected);
+      const r2On = !!(st.refractometerConnected || (st.refractometer && st.refractometer.connected));
       const r2Tds = (st.refractometer && st.refractometer.tds) || labState.bc.measTds;
       const simOn = !!st.simulatorActive;
-      const anyLive = scOn || simOn || r2Tds > 0;
+      const anyLive = scOn || r2On || simOn || r2Tds > 0;
       statusDot.className = 'bt-hw-dot' + (anyLive ? ' is-live' : '');
       const parts = [];
+      if (r2On) parts.push('DiFluid R2 Connected');
       if (scOn || simOn) parts.push(Number((st.scale && st.scale.weightG) || 0).toFixed(1) + ' g');
       if (r2Tds > 0) parts.push(Number(r2Tds).toFixed(2) + '% TDS');
       statusTxt.textContent = parts.length ? ('Live: ' + parts.join(' · ')) : 'Scale / R2 / Omni Standby';
+      quickReadR2Btn.hidden = !(r2On || simOn);
+      return barRoot && barRoot.isConnected;
     }
-    syncHwStatus();
 
     const connectBtn = domH('button', {
       type: 'button',
@@ -39348,13 +41431,17 @@ if (typeof window !== 'undefined') {
       }
     }, '10Hz Sim');
 
-    return domH('div', { class: 'bt-lab-hw-bar', role: 'region', 'aria-label': 'Compact Bluetooth Hardware Bar' },
+    const barRoot = domH('div', { class: 'bt-lab-hw-bar', role: 'region', 'aria-label': 'Compact Bluetooth Hardware Bar' },
       domH('div', { class: 'bt-hw-bar-left' }, statusDot, statusTxt),
-      domH('div', { class: 'bt-hw-bar-right' }, connectBtn, simBtn)
+      domH('div', { class: 'bt-hw-bar-right' }, quickReadR2Btn, connectBtn, simBtn)
     );
+    syncHwStatus();
+    _labLiveHooks.hwBar = syncHwStatus;
+    return barRoot;
   }
 
   function renderLabTab(mountEl, ctx) {
+    ensureLabBleListeners();
     const page = domH('div', { class: 'bt-tab-page bt-lab-page' });
     const a = getApp();
     a.tabSegments = a.tabSegments || {};
@@ -42518,6 +44605,37 @@ if (typeof window !== 'undefined') {
       a.justSavedTasting = null;
     }
 
+    const palateHeadRow = domH('header', {
+      class: 'bt-palate-top-head',
+      style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px'
+    },
+      domH('div', { style: 'flex:1 1 200px;min-width:0' },
+        domH('span', {
+          style: 'display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent,#9A4212)',
+          text: 'Tab 4 \u00B7 Preferences & Palate'
+        }),
+        domH('h1', {
+          style: 'margin:2px 0 0;font-size:1.18rem;line-height:1.22',
+          text: 'Your Taste DNA, Origins & Bag Guide'
+        })
+      ),
+      domH('button', {
+        type: 'button',
+        id: 'bt-prefs-backup-saves-btn',
+        class: 'bt-lab-btn is-accent',
+        style: 'min-height:44px;font-weight:700;flex-shrink:0',
+        onclick: function () {
+          if (CK && typeof CK.haptic === 'function') CK.haptic('snap');
+          if (typeof window !== 'undefined' && window.BTBackupCenter && typeof window.BTBackupCenter.open === 'function') {
+            window.BTBackupCenter.open({ source: 'palate' });
+          } else if (sh().openSheet) {
+            sh().openSheet('save-backup-center', { source: 'palate' }, { title: 'Backup & Load Saves', detent: 'full' });
+          }
+        }
+      }, ic('vault-shield', { size: 16 }), domH('span', { text: 'Backup / Load Saves' }))
+    );
+    page.appendChild(palateHeadRow);
+
     const segNav = domH('nav', { class: 'bt-studio-pill-nav', 'aria-label': 'Preferences & Palate Views' },
       [
         { id: 'dna', lbl: 'Preferences & Palate DNA', icon: 'origin-globe' },
@@ -42757,6 +44875,7 @@ if (typeof window !== 'undefined') {
     }
     if (shell.BTSheet && typeof shell.BTSheet.open === 'function') {
       const renderMap = {
+        'save-backup-center': renderSaveBackupCenterSheet,
         'data-vault': renderDataVaultSheet,
         'onboarding-tour': renderOnboardingTourSheet,
         'about-charter': renderAboutCharterSheet,
@@ -44716,6 +46835,535 @@ if (typeof window !== 'undefined') {
     }, 500);
   }
 
+  /* ==========================================================================
+   * v6.5 3-CARD SAVE & RESTORE CENTER ('save-backup-center' + Inline Vault)
+   * ========================================================================== */
+  const _SAVE_CENTER_CANON_IDS = [
+    'bt-save-web-url-btn',
+    'bt-load-web-url-input',
+    'bt-load-web-url-btn',
+    'bt-replace-web-url-btn',
+    'bt-export-json-save-btn',
+    'bt-import-save-file-btn',
+    'bt-export-csv-save-btn'
+  ];
+
+  let _saveCenterUi = {
+    fileImportMode: 'merge', /* 'merge' | 'replace' */
+    webUrlConfirmMsg: '',
+    lastGeneratedUrl: '',
+    feedbackMsg: '',
+    feedbackTone: 'good',
+    webUrlDraft: ''
+  };
+
+  function _yieldInlineSaveIdsForSheet() {
+    if (typeof document === 'undefined') return;
+    _SAVE_CENTER_CANON_IDS.forEach(function (cid) {
+      const existing = document.getElementById(cid);
+      if (existing && (!existing.closest || !existing.closest('#sheet'))) {
+        existing.setAttribute('data-yielded-save-id', cid);
+        existing.removeAttribute('id');
+      }
+    });
+  }
+
+  function _restoreInlineSaveIdsAfterSheet() {
+    if (typeof document === 'undefined') return;
+    const list = document.querySelectorAll('[data-yielded-save-id]');
+    for (let i = 0; i < list.length; i++) {
+      const cid = list[i].getAttribute('data-yielded-save-id');
+      if (cid && !document.getElementById(cid)) {
+        list[i].id = cid;
+      }
+      list[i].removeAttribute('data-yielded-save-id');
+    }
+  }
+
+  function _formatBackupTimestampHuman(ms) {
+    const t = Number(ms) || 0;
+    if (!(t > 0)) return 'Not backed up yet';
+    try {
+      const d = new Date(t);
+      if (isNaN(d.getTime())) return 'Saved recently';
+      const now = Date.now();
+      const diffMin = Math.max(0, Math.round((now - t) / 60000));
+      const p2 = function (n) { return String(n).padStart(2, '0'); };
+      const clock = d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes());
+      if (diffMin < 1) return 'Just now (' + clock + ')';
+      if (diffMin < 60) return diffMin + 'm ago (' + clock + ')';
+      return clock;
+    } catch (_) {
+      return 'Saved';
+    }
+  }
+
+  function _readLiveSaveSummaryCounts() {
+    const st = window.BTStorage || {};
+    if (typeof st.exportFullSaveBundle === 'function') {
+      try {
+        const b = st.exportFullSaveBundle();
+        const ps = typeof st.getPersistentStorageStatus === 'function' ? st.getPersistentStorageStatus() : { persisted: false, lastBackupMs: 0, supported: false };
+        return {
+          coffeeCount: b.coffeeCount || 0,
+          brewCount: b.brewCount || 0,
+          goldCount: b.goldCount || 0,
+          cafeCount: b.cafeCount || 0,
+          hasPrefs: !!b.hasPrefs,
+          lastBackupMs: ps.lastBackupMs || 0,
+          persisted: !!ps.persisted,
+          persistSupported: !!ps.supported
+        };
+      } catch (_) {}
+    }
+    const hist = typeof st.getHistory === 'function' ? st.getHistory() : null;
+    const hObjs = hist && Array.isArray(hist.objs) ? hist.objs : [];
+    const pr = typeof st.getPrices === 'function' ? st.getPrices() : null;
+    const pList = pr && Array.isArray(pr.list) ? pr.list : [];
+    const unified = typeof st.buildUnifiedCoffeesIndex === 'function' ? st.buildUnifiedCoffeesIndex(hObjs, pList) : pList;
+    return {
+      coffeeCount: Array.isArray(unified) ? unified.length : 0,
+      brewCount: hObjs.length,
+      goldCount: 0,
+      cafeCount: 0,
+      hasPrefs: true,
+      lastBackupMs: typeof st.getLastBackupMs === 'function' ? st.getLastBackupMs() : 0,
+      persisted: false,
+      persistSupported: !!(typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist)
+    };
+  }
+
+  function buildThreeCardSaveRestoreCenter(opts) {
+    opts = opts || {};
+    const isSheet = !!opts.isSheet;
+    const st = window.BTStorage || {};
+    const sheetCurrentlyOpen = !isSheet && typeof document !== 'undefined' && (function () {
+      const shEl = document.getElementById('sheet');
+      return !!(shEl && !shEl.hidden && shEl.getAttribute('data-sheet') === 'save-backup-center');
+    })();
+
+    function assignId(canonId) {
+      if (isSheet) return canonId;
+      return sheetCurrentlyOpen ? ('inline-' + canonId) : canonId;
+    }
+
+    const holder = domH('div', {
+      class: 'bt-save-restore-center',
+      style: 'display:flex;flex-direction:column;gap:12px'
+    });
+
+    function repaintCenter() {
+      const rebuilt = buildThreeCardSaveRestoreCenter(opts);
+      if (holder.parentNode) {
+        holder.parentNode.replaceChild(rebuilt, holder);
+      }
+      if (!isSheet && typeof opts.onAfterMutate === 'function') {
+        opts.onAfterMutate();
+      }
+    }
+
+    const counts = _readLiveSaveSummaryCounts();
+
+    /* Optional top feedback banner after any file/link restore */
+    if (_saveCenterUi.feedbackMsg) {
+      const isErr = _saveCenterUi.feedbackTone === 'error';
+      holder.appendChild(domH('div', {
+        role: 'status',
+        'aria-live': 'polite',
+        style: 'padding:11px 14px;border-radius:12px;font-size:0.86rem;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:8px;' +
+          (isErr
+            ? 'background:var(--bad-bg,#FDE8E7);border:1.5px solid var(--bad,#A1231F);color:var(--bad,#A1231F)'
+            : 'background:var(--good-bg,#E2F4EB);border:1.5px solid var(--good,#1B6341);color:var(--good,#1B6341)')
+      },
+        domH('span', { style: 'min-width:0;flex:1', text: _saveCenterUi.feedbackMsg }),
+        domH('button', {
+          type: 'button',
+          class: 'bt-lab-chip',
+          style: 'min-height:34px;padding:4px 10px;font-size:0.76rem;flex-shrink:0',
+          onclick: function () {
+            _saveCenterUi.feedbackMsg = '';
+            repaintCenter();
+          }
+        }, 'OK')
+      ));
+    }
+
+    /* ----------------------------------------------------------------------
+       CARD 1: Web Address Bookmark Save (Survives Clearing Browser History!)
+       ---------------------------------------------------------------------- */
+    const urlInput = domH('input', {
+      type: 'text',
+      id: assignId('bt-load-web-url-input'),
+      class: 'bt-lab-text-in',
+      style: 'font-size:1rem;min-height:44px;width:100%;max-width:100%;min-width:0;box-sizing:border-box',
+      placeholder: 'Paste #btsave=... web address or save code...',
+      value: _saveCenterUi.webUrlDraft || '',
+      oninput: function (e) {
+        _saveCenterUi.webUrlDraft = e.target.value;
+      }
+    });
+
+    async function runWebUrlRestore(mode) {
+      let rawVal = String(urlInput.value || _saveCenterUi.webUrlDraft || '').trim();
+      if (!rawVal && typeof location !== 'undefined' && location.hash && location.hash.indexOf('btsave=') >= 0) {
+        rawVal = location.hash;
+      }
+      if (!rawVal) {
+        _saveCenterUi.feedbackTone = 'error';
+        _saveCenterUi.feedbackMsg = 'Paste a #btsave=... web address or save code into the box first.';
+        repaintCenter();
+        return;
+      }
+      if (typeof st.importFullSaveBundle !== 'function') {
+        _saveCenterUi.feedbackTone = 'error';
+        _saveCenterUi.feedbackMsg = 'Storage engine unavailable.';
+        repaintCenter();
+        return;
+      }
+      try {
+        const res = await st.importFullSaveBundle(rawVal, { mode: mode });
+        if (res && res.ok) {
+          _saveCenterUi.webUrlDraft = '';
+          _saveCenterUi.feedbackTone = 'good';
+          _saveCenterUi.feedbackMsg = (mode === 'replace' ? 'Replaced save from web link! ' : 'Merged save from web link! ') +
+            (res.totalCoffees != null ? res.totalCoffees : res.coffeesImported) + ' Coffee(s) \u00B7 ' +
+            (res.totalBrews != null ? res.totalBrews : res.brewsImported) + ' Saved Brew(s) active.';
+          if (CK && typeof CK.haptic === 'function') CK.haptic('celebrate');
+          notify(_saveCenterUi.feedbackMsg);
+          repaintCenter();
+        } else {
+          _saveCenterUi.feedbackTone = 'error';
+          _saveCenterUi.feedbackMsg = (res && res.error) || 'Could not decode that web save link. Copy the full #btsave=... URL and try again.';
+          repaintCenter();
+        }
+      } catch (err) {
+        _saveCenterUi.feedbackTone = 'error';
+        _saveCenterUi.feedbackMsg = String(err && err.message ? err.message : 'Could not restore web save link.');
+        repaintCenter();
+      }
+    }
+
+    const card1 = domH('section', {
+      class: 'bt-studio-card',
+      style: 'border:1.5px solid var(--primary,#1B4D38);display:flex;flex-direction:column;gap:10px;min-width:0;max-width:100%;box-sizing:border-box;overflow:hidden'
+    },
+      domH('div', { class: 'bt-lab-card-head', style: 'min-width:0;flex-wrap:wrap' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0' },
+          ic('vault-shield', { size: 22 }),
+          domH('div', { style: 'min-width:0' },
+            domH('h3', { text: '1. Web Address Bookmark Save (Survives Clearing History!)' }),
+            domH('p', {
+              class: 'bt-lab-sub',
+              text: 'On a web address, clearing browser history clears site storage. Click below to pack your saves into your web address \u2014 bookmark it or copy the link to restore anytime on any phone or computer!'
+            })
+          )
+        )
+      ),
+      domH('button', {
+        type: 'button',
+        id: assignId('bt-save-web-url-btn'),
+        class: 'bt-lab-btn is-primary',
+        style: 'width:100%;max-width:100%;min-width:0;min-height:48px;font-size:0.88rem;font-weight:800;white-space:normal;line-height:1.22;text-align:center',
+        onclick: async function () {
+          try {
+            let res = null;
+            if (typeof st.applySaveToBrowserAddressBar === 'function') {
+              res = await st.applySaveToBrowserAddressBar();
+            } else if (typeof st.buildWebSaveUrl === 'function') {
+              const u = await st.buildWebSaveUrl();
+              try { if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', u); } catch (_) {}
+              res = { ok: true, url: u, copied: false };
+            }
+            if (res && res.ok) {
+              _saveCenterUi.webUrlConfirmMsg = 'Web address updated! Bookmark this page (Ctrl+D / Share \u2192 Add Bookmark) to keep your save safe';
+              _saveCenterUi.lastGeneratedUrl = res.url || '';
+              if (CK && typeof CK.haptic === 'function') CK.haptic('celebrate');
+              notify('Web address updated & copied! Bookmark this page to keep your save safe.');
+              repaintCenter();
+            }
+          } catch (err) {
+            _saveCenterUi.feedbackTone = 'error';
+            _saveCenterUi.feedbackMsg = String(err && err.message ? err.message : 'Could not update web address.');
+            repaintCenter();
+          }
+        }
+      }, ic('copy', { size: 17 }), domH('span', { text: 'Put My Save in Web Address & Copy Link' })),
+
+      _saveCenterUi.webUrlConfirmMsg ? domH('div', {
+        role: 'status',
+        'aria-live': 'polite',
+        class: 'bt-web-save-confirm-box',
+        style: 'padding:11px 13px;border-radius:12px;background:var(--good-bg,#E2F4EB);border:1.5px solid var(--good,#1B6341);color:var(--good,#1B6341);display:flex;flex-direction:column;gap:6px'
+      },
+        domH('div', { style: 'display:flex;align-items:flex-start;gap:8px;font-size:0.86rem;font-weight:700' },
+          ic('check-seal', { size: 18 }),
+          domH('span', { text: _saveCenterUi.webUrlConfirmMsg })
+        ),
+        _saveCenterUi.lastGeneratedUrl ? domH('div', {
+          class: 'num-tab',
+          style: 'font-size:0.74rem;padding:6px 9px;border-radius:8px;background:rgba(255,255,255,0.65);color:var(--ink,#1C130E);word-break:break-all;max-height:54px;overflow:hidden',
+          text: _saveCenterUi.lastGeneratedUrl.length > 140
+            ? (_saveCenterUi.lastGeneratedUrl.slice(0, 96) + '...' + _saveCenterUi.lastGeneratedUrl.slice(-32) + ' (' + _saveCenterUi.lastGeneratedUrl.length + ' chars copied)')
+            : _saveCenterUi.lastGeneratedUrl
+        }) : null
+      ) : null,
+
+      domH('div', {
+        style: 'display:flex;flex-direction:column;gap:8px;padding-top:8px;border-top:1px solid var(--line-hairline,rgba(28,19,14,0.1))'
+      },
+        domH('label', {
+          for: assignId('bt-load-web-url-input'),
+          style: 'font-size:0.8rem;font-weight:700;color:var(--ink,#1C130E)',
+          text: 'Have a Saved Web Link or Code? Paste & Restore:'
+        }),
+        urlInput,
+        domH('div', { class: 'bt-lab-btn-row', style: 'flex-wrap:wrap;min-width:0;max-width:100%' },
+          domH('button', {
+            type: 'button',
+            id: assignId('bt-load-web-url-btn'),
+            class: 'bt-lab-btn is-primary',
+            style: 'flex:1 1 180px;min-width:0;max-width:100%;white-space:normal;line-height:1.2',
+            onclick: function () { runWebUrlRestore('merge'); }
+          }, ic('clipboard-paste', { size: 16 }), domH('span', { text: 'Restore Link / Code (Merge)' })),
+          domH('button', {
+            type: 'button',
+            id: assignId('bt-replace-web-url-btn'),
+            class: 'bt-lab-btn',
+            style: 'flex:0 1 auto;min-width:0',
+            onclick: function () { runWebUrlRestore('replace'); }
+          }, 'Replace')
+        )
+      )
+    );
+    holder.appendChild(card1);
+
+    /* ----------------------------------------------------------------------
+       CARD 2: Download & Load Save Files (.json Full Backup + .csv Spreadsheet)
+       ---------------------------------------------------------------------- */
+    const saveFilePicker = domH('input', {
+      type: 'file',
+      accept: '.json,.csv,application/json,text/csv',
+      hidden: true,
+      style: 'font-size:1rem',
+      onchange: function () {
+        const f = saveFilePicker.files && saveFilePicker.files[0];
+        if (!f) return;
+        f.text().then(async function (textContent) {
+          const mode = _saveCenterUi.fileImportMode === 'replace' ? 'replace' : 'merge';
+          if (typeof st.importFullSaveBundle === 'function') {
+            const res = await st.importFullSaveBundle(textContent, { mode: mode });
+            if (res && res.ok) {
+              _saveCenterUi.feedbackTone = 'good';
+              _saveCenterUi.feedbackMsg = 'Loaded "' + f.name + '" (' + (mode === 'replace' ? 'Replace All' : 'Safe Merge') + '): ' +
+                (res.totalCoffees != null ? res.totalCoffees : res.coffeesImported) + ' Coffee(s) \u00B7 ' +
+                (res.totalBrews != null ? res.totalBrews : res.brewsImported) + ' Saved Brew(s) ready!';
+              if (CK && typeof CK.haptic === 'function') CK.haptic('celebrate');
+              notify(_saveCenterUi.feedbackMsg);
+            } else {
+              _saveCenterUi.feedbackTone = 'error';
+              _saveCenterUi.feedbackMsg = (res && res.error) || ('Could not load "' + f.name + '". Choose a valid .json save file or .csv brew history.');
+            }
+            repaintCenter();
+          }
+        }).catch(function () {
+          _saveCenterUi.feedbackTone = 'error';
+          _saveCenterUi.feedbackMsg = 'Could not read selected file.';
+          repaintCenter();
+        });
+      }
+    });
+
+    const curImportMode = _saveCenterUi.fileImportMode === 'replace' ? 'replace' : 'merge';
+    const card2 = domH('section', {
+      class: 'bt-studio-card',
+      style: 'display:flex;flex-direction:column;gap:10px;min-width:0;max-width:100%;box-sizing:border-box;overflow:hidden'
+    },
+      domH('div', { class: 'bt-lab-card-head', style: 'min-width:0;flex-wrap:wrap' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0' },
+          ic('share-card', { size: 21 }),
+          domH('div', { style: 'min-width:0' },
+            domH('h3', { text: '2. Download & Load Save Files (.json + .csv)' }),
+            domH('p', {
+              class: 'bt-lab-sub',
+              text: 'Download a portable file to your phone/computer Downloads folder, or load any .json save or .csv brew spreadsheet.'
+            })
+          )
+        )
+      ),
+      domH('div', { class: 'bt-lab-btn-row', style: 'flex-wrap:wrap;min-width:0;max-width:100%' },
+        domH('button', {
+          type: 'button',
+          id: assignId('bt-export-json-save-btn'),
+          class: 'bt-lab-btn is-primary',
+          style: 'flex:1 1 180px;min-width:0;max-width:100%;white-space:normal;line-height:1.2',
+          onclick: function () {
+            if (typeof st.downloadFullSaveFile === 'function') {
+              const r = st.downloadFullSaveFile();
+              _saveCenterUi.feedbackTone = 'good';
+              _saveCenterUi.feedbackMsg = 'Downloaded ' + ((r && r.filename) || 'BeanTelligence_Save.json') + ' (all coffees, brews, preferences, gear & water)!';
+              if (CK && typeof CK.haptic === 'function') CK.haptic('celebrate');
+              notify('Full Save File (.json) downloaded!');
+              repaintCenter();
+            }
+          }
+        }, ic('vault-shield', { size: 16 }), domH('span', { text: 'Download Full Save File (.json)' })),
+        domH('button', {
+          type: 'button',
+          id: assignId('bt-export-csv-save-btn'),
+          class: 'bt-lab-btn',
+          style: 'flex:1 1 190px',
+          onclick: function () {
+            if (typeof st.downloadHistoryCsvFile === 'function') {
+              const r = st.downloadHistoryCsvFile();
+              _saveCenterUi.feedbackTone = 'good';
+              _saveCenterUi.feedbackMsg = 'Exported ' + ((r && r.filename) || 'Brew History (.csv)') + '!';
+              notify('Brew History (.csv) exported!');
+              repaintCenter();
+            } else {
+              const hNow = typeof st.getHistory === 'function' ? st.getHistory() : null;
+              const csv = (hNow && hNow.text) || (typeof COLUMNS !== 'undefined' ? COLUMNS.join(',') + '\n' : 'schema_version,id,coffee_name,total_score\n');
+              downloadTextBlob(csv, 'BeanTelligence_Brew_History.csv', 'text/csv;charset=utf-8');
+              notify('Brew History (.csv) exported!');
+            }
+          }
+        }, ic('share-card', { size: 15 }), domH('span', { text: 'Export Brew History (.csv)' }))
+      ),
+      domH('div', {
+        style: 'display:flex;flex-direction:column;gap:8px;padding-top:8px;border-top:1px solid var(--line-hairline,rgba(28,19,14,0.1))'
+      },
+        domH('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap' },
+          domH('span', { style: 'font-size:0.8rem;font-weight:700;color:var(--ink,#1C130E)', text: 'When Loading a File:' }),
+          domH('div', { class: 'bt-lab-chip-row', role: 'group', 'aria-label': 'Save file import mode' },
+            [
+              { k: 'merge', lbl: 'Merge (Safe)' },
+              { k: 'replace', lbl: 'Replace All' }
+            ].map(function (m) {
+              const on = curImportMode === m.k;
+              return domH('button', {
+                type: 'button',
+                class: 'bt-lab-chip' + (on ? ' is-active' : ''),
+                style: 'min-height:38px;padding:6px 12px;font-size:0.8rem',
+                'aria-pressed': String(on),
+                onclick: function () {
+                  _saveCenterUi.fileImportMode = m.k;
+                  if (CK && typeof CK.haptic === 'function') CK.haptic('tick');
+                  repaintCenter();
+                }
+              }, m.lbl);
+            })
+          )
+        ),
+        saveFilePicker,
+        domH('button', {
+          type: 'button',
+          id: assignId('bt-import-save-file-btn'),
+          class: 'bt-lab-btn is-accent',
+          style: 'width:100%;max-width:100%;min-width:0;min-height:46px;font-weight:700;white-space:normal;line-height:1.2',
+          onclick: function () { saveFilePicker.click(); }
+        }, ic('clipboard-paste', { size: 16 }), domH('span', {
+          text: 'Load Save File (.json or .csv) \u00B7 ' + (curImportMode === 'replace' ? 'Replace All' : 'Merge (Safe)')
+        }))
+      )
+    );
+    holder.appendChild(card2);
+
+    /* ----------------------------------------------------------------------
+       CARD 3: Live Storage Protection Status
+       ---------------------------------------------------------------------- */
+    const persistBadgeTxt = counts.persisted
+      ? 'Persistent Storage Shielded'
+      : (counts.persistSupported ? 'Standard Browser Storage' : 'Browser Local Storage');
+
+    const card3 = domH('section', {
+      class: 'bt-studio-card',
+      style: 'display:flex;flex-direction:column;gap:10px;min-width:0;max-width:100%;box-sizing:border-box;overflow:hidden'
+    },
+      domH('div', { class: 'bt-lab-card-head', style: 'min-width:0;flex-wrap:wrap' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0' },
+          ic('check-seal', { size: 20 }),
+          domH('div', null,
+            domH('h3', { text: '3. Live Storage Protection Status' }),
+            domH('p', {
+              class: 'bt-lab-sub num-tab',
+              text: counts.coffeeCount + ' Coffees \u00B7 ' + counts.brewCount + ' Brews' +
+                (counts.goldCount > 0 ? (' \u00B7 ' + counts.goldCount + ' Gold Locked') : '') +
+                ' \u00B7 Last Backup: ' + _formatBackupTimestampHuman(counts.lastBackupMs)
+            })
+          )
+        ),
+        domH('span', {
+          class: 'bt-epistemic-pill ' + (counts.persisted ? 'is-verified' : 'is-craft'),
+          text: persistBadgeTxt
+        })
+      ),
+      domH('div', { class: 'bt-vault-kpi-strip' },
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Saved Coffees' }), domH('strong', { class: 'num-tab', text: String(counts.coffeeCount) })),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Saved Brews' }), domH('strong', { class: 'num-tab', text: String(counts.brewCount) })),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Last Backup' }), domH('strong', { class: 'num-tab', style: 'font-size:0.84rem', text: counts.lastBackupMs > 0 ? _formatBackupTimestampHuman(counts.lastBackupMs).split(' (')[0] : 'None yet' })),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Storage Shield' }), domH('strong', { class: 'num-tab', style: 'font-size:0.84rem', text: counts.persisted ? 'Protected' : 'Active' }))
+      ),
+      !counts.persisted && counts.persistSupported ? domH('button', {
+        type: 'button',
+        class: 'bt-lab-btn is-sm',
+        style: 'align-self:flex-start',
+        onclick: async function () {
+          if (typeof st.requestPersistentStorage === 'function') {
+            const prRes = await st.requestPersistentStorage();
+            const okP = !!(prRes && (prRes === true || prRes.persisted));
+            _saveCenterUi.feedbackTone = 'good';
+            _saveCenterUi.feedbackMsg = okP
+              ? 'Browser Persistent Storage enabled! Automatic OS storage cleanup is now blocked (still bookmark your #btsave link before manually clearing browser history).'
+              : 'Browser storage active \u2014 click "Put My Save in Web Address & Copy Link" above to survive manual history clearing!';
+            repaintCenter();
+          }
+        }
+      }, ic('lock-pin', { size: 15 }), domH('span', { text: 'Enable Browser Persistent Storage Shield' })) : null
+    );
+    holder.appendChild(card3);
+
+    return holder;
+  }
+
+  function renderSaveBackupCenterSheet(arg0) {
+    const hostEl = arg0 && arg0.nodeType === 1 ? arg0 : null;
+    _yieldInlineSaveIdsForSheet();
+    const sheetWrap = domH('div', {
+      class: 'bt-sheet-content bt-vault-sheet',
+      id: 'bt-save-backup-center-sheet'
+    },
+      buildThreeCardSaveRestoreCenter({ isSheet: true })
+    );
+    if (hostEl) {
+      hostEl.textContent = '';
+      hostEl.appendChild(sheetWrap);
+    }
+    return sheetWrap;
+  }
+
+  function openSaveBackupCenterModal(payload, opts) {
+    opts = Object.assign({
+      title: 'Backup & Load Saves',
+      detent: 'full',
+      onClose: function () {
+        _restoreInlineSaveIdsAfterSheet();
+        if (lastAcademyMount && acadUi.subView === 'vault') {
+          rerenderAcademyTab();
+        }
+      }
+    }, opts || {});
+    _yieldInlineSaveIdsForSheet();
+    const shell = sh();
+    if (shell.BTSheet && typeof shell.BTSheet.open === 'function') {
+      shell.BTSheet.open('save-backup-center', payload || null, opts);
+      return;
+    }
+    if (typeof window.BTSheet !== 'undefined' && window.BTSheet && typeof window.BTSheet.open === 'function') {
+      window.BTSheet.open('save-backup-center', payload || null, opts);
+      return;
+    }
+    openNamedSheet('save-backup-center', payload || null, opts);
+  }
+
   function renderDataVaultSheet(arg0) {
     const hostEl = arg0 && arg0.nodeType === 1 ? arg0 : null;
     const st = window.BTStorage || {};
@@ -44977,101 +47625,108 @@ if (typeof window !== 'undefined') {
     }, 'Clear Everything on This Device (2-Tap)');
 
     const vaultRoot = domH('div', { class: 'bt-sheet-content bt-vault-sheet' },
-      domH('div', { class: 'bt-vault-kpi-strip' },
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Home Tastings' }), domH('strong', { class: 'num-tab', text: String(histCount) })),
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'My Beans' }), domH('strong', { class: 'num-tab', text: String(bagCount) })),
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Cafe Visits' }), domH('strong', { class: 'num-tab', text: String(drinkCount) })),
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Backup Format' }), domH('strong', { class: 'num-tab', text: 'Lossless CSV' }))
-      ),
-      statusLine,
-      handleList,
+      buildThreeCardSaveRestoreCenter({
+        isSheet: false,
+        onAfterMutate: function () {
+          if (hostEl) renderDataVaultSheet(hostEl);
+          else rerenderAcademyTab();
+        }
+      }),
+      domH('details', { class: 'bt-lab-details', style: 'margin-top:4px' },
+        domH('summary', { text: 'Advanced Multi-Part Backups (.txt), Auto-Sync Handles & Safety Snapshots' }),
+        domH('div', { style: 'display:flex;flex-direction:column;gap:12px;padding-top:10px' },
+          statusLine,
+          handleList,
 
-      domH('section', { class: 'bt-lab-subcard' },
-        domH('strong', { text: '1-Tap Full Backups & Spreadsheet (.csv) Exports' }),
-        domH('div', { class: 'bt-lab-btn-row' },
-          domH('button', { type: 'button', class: 'bt-lab-btn is-primary', onclick: handleSaveEverything },
-            ic('vault-shield', { size: 16 }), domH('span', { text: 'Save Everything Backup (.txt)' })),
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn',
-            onclick: function () {
-              const csv = (hist && hist.text) || (typeof COLUMNS !== 'undefined' ? COLUMNS.join(',') + '\n' : 'schema_version,id,coffee_name,total_score\n');
-              downloadTextBlob(csv, 'BeanTelligence Taste History.csv', 'text/csv;charset=utf-8');
-              statusLine.textContent = 'Exported BeanTelligence Taste History.csv!';
-            }
-          }, 'Export Tasting History (.csv)'),
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn',
-            onclick: function () {
-              const csv = pr && pr.list && typeof priceCsv === 'function' ? priceCsv(pr.list) : 'id,coffee,price,size\n';
-              downloadTextBlob(csv, 'BeanTelligence Prices.csv', 'text/csv;charset=utf-8');
-              statusLine.textContent = 'Exported BeanTelligence Prices.csv!';
-            }
-          }, 'Export My Beans (.csv)'),
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn',
-            onclick: function () {
-              const csv = shStore && shStore.store && typeof shopCsv === 'function' ? shopCsv(shStore.store) : 'kind,shop,drink,price\n';
-              downloadTextBlob(csv, 'BeanTelligence Coffee Shops.csv', 'text/csv;charset=utf-8');
-              statusLine.textContent = 'Exported BeanTelligence Coffee Shops.csv!';
-            }
-          }, 'Export Cafes (.csv)'),
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn',
-            onclick: async function () {
-              try {
-                if (navigator.storage && typeof navigator.storage.persist === 'function') {
-                  const granted = await navigator.storage.persist();
-                  statusLine.textContent = granted ? 'Durable Browser Storage locked against OS eviction!' : 'Browser storage active (download .txt backups periodically on iOS).';
-                } else {
-                  statusLine.textContent = 'Local storage active.';
+          domH('section', { class: 'bt-lab-subcard' },
+            domH('strong', { text: 'Multi-Part Archive (.txt) & Extra Spreadsheet (.csv) Exports' }),
+            domH('div', { class: 'bt-lab-btn-row' },
+              domH('button', { type: 'button', class: 'bt-lab-btn is-primary', onclick: handleSaveEverything },
+                ic('vault-shield', { size: 16 }), domH('span', { text: 'Save Everything Backup (.txt)' })),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn',
+                onclick: function () {
+                  const csv = (hist && hist.text) || (typeof COLUMNS !== 'undefined' ? COLUMNS.join(',') + '\n' : 'schema_version,id,coffee_name,total_score\n');
+                  downloadTextBlob(csv, 'BeanTelligence Taste History.csv', 'text/csv;charset=utf-8');
+                  statusLine.textContent = 'Exported BeanTelligence Taste History.csv!';
                 }
-              } catch (_) {}
-            }
-          }, 'Lock Durable Storage')
+              }, 'Export Tasting History (.csv)'),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn',
+                onclick: function () {
+                  const csv = pr && pr.list && typeof priceCsv === 'function' ? priceCsv(pr.list) : 'id,coffee,price,size\n';
+                  downloadTextBlob(csv, 'BeanTelligence Prices.csv', 'text/csv;charset=utf-8');
+                  statusLine.textContent = 'Exported BeanTelligence Prices.csv!';
+                }
+              }, 'Export My Beans (.csv)'),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn',
+                onclick: function () {
+                  const csv = shStore && shStore.store && typeof shopCsv === 'function' ? shopCsv(shStore.store) : 'kind,shop,drink,price\n';
+                  downloadTextBlob(csv, 'BeanTelligence Coffee Shops.csv', 'text/csv;charset=utf-8');
+                  statusLine.textContent = 'Exported BeanTelligence Coffee Shops.csv!';
+                }
+              }, 'Export Cafes (.csv)'),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn',
+                onclick: async function () {
+                  try {
+                    if (navigator.storage && typeof navigator.storage.persist === 'function') {
+                      const granted = await navigator.storage.persist();
+                      statusLine.textContent = granted ? 'Durable Browser Storage locked against OS eviction!' : 'Browser storage active (download .json backups or bookmark your #btsave link on iOS).';
+                    } else {
+                      statusLine.textContent = 'Local storage active.';
+                    }
+                  } catch (_) {}
+                }
+              }, 'Lock Durable Storage')
+            )
+          ),
+
+          domH('section', { class: 'bt-lab-subcard' },
+            domH('strong', { text: 'Paste Multi-Part Code, NB1.z Block or QR Brew Passport' }),
+            dropZone
+          ),
+
+          domH('section', { class: 'bt-lab-subcard' },
+            domH('strong', { text: 'Safety Snapshots & App Preferences' }),
+            domH('div', { class: 'bt-lab-btn-row' },
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm is-primary',
+                onclick: async function () {
+                  const fn = st.ensurePreMigrationSnapshot || window.ensurePreMigrationSnapshot;
+                  if (typeof fn === 'function') await fn({ targetSchema: '6.2', forceManual: true });
+                  statusLine.textContent = 'Captured verified safety snapshot of all your saved data!';
+                }
+              }, 'Save Safety Snapshot Now'),
+              makeRollbackBtn('pre-import-safety', 'Undo Last Save Import'),
+              makeRollbackBtn('pre-v6-raw', 'Restore Pre-Update Backup (v6)'),
+              makeRollbackBtn('pre-v5-raw', 'Restore Legacy Backup (v5)'),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm',
+                onclick: function () {
+                  if (sh().openSheet) sh().openSheet('workflow-tools', null, { detent: 'full', title: 'My Workflow & Tools' });
+                }
+              }, 'My Workflow & Tools \u2192'),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm',
+                onclick: function () { openNamedSheet('about-charter', null, { detent: 'full', title: 'About & ' + releases.length + ' Releases' }); }
+              }, 'About / ' + Math.max(148, releases.length) + ' Releases \u2192')
+            )
+          ),
+
+          domH('section', { class: 'bt-lab-subcard bt-vault-danger-zone' },
+            domH('strong', { text: '2-Step Device Storage Reset' }),
+            clearBtn
+          )
         )
-      ),
-
-      domH('section', { class: 'bt-lab-subcard' },
-        domH('strong', { text: 'Import / Merge Files, Shared Recipes & Backup Codes' }),
-        dropZone
-      ),
-
-      domH('section', { class: 'bt-lab-subcard' },
-        domH('strong', { text: 'Safety Snapshots & App Preferences' }),
-        domH('div', { class: 'bt-lab-btn-row' },
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn is-sm is-primary',
-            onclick: async function () {
-              const fn = st.ensurePreMigrationSnapshot || window.ensurePreMigrationSnapshot;
-              if (typeof fn === 'function') await fn({ targetSchema: '6.2', forceManual: true });
-              statusLine.textContent = 'Captured verified safety snapshot of all your saved data!';
-            }
-          }, 'Save Safety Snapshot Now'),
-          makeRollbackBtn('pre-v6-raw', 'Restore Pre-Update Backup (v6)'),
-          makeRollbackBtn('pre-v5-raw', 'Restore Legacy Backup (v5)'),
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn is-sm',
-            onclick: function () {
-              if (sh().openSheet) sh().openSheet('workflow-tools', null, { detent: 'full', title: 'My Workflow & Tools' });
-            }
-          }, 'My Workflow & Tools \u2192'),
-          domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn is-sm',
-            onclick: function () { openNamedSheet('about-charter', null, { detent: 'full', title: 'About & ' + releases.length + ' Releases' }); }
-          }, 'About / ' + Math.max(148, releases.length) + ' Releases \u2192')
-        )
-      ),
-
-      domH('section', { class: 'bt-lab-subcard bt-vault-danger-zone' },
-        domH('strong', { text: '2-Step Device Storage Reset' }),
-        clearBtn
       )
     );
 
@@ -45275,7 +47930,11 @@ if (typeof window !== 'undefined') {
   function registerAcademyAndVaultBindings() {
     const shell = sh();
     if (typeof shell.registerTab === 'function') shell.registerTab('academy', renderAcademyTab);
+    if (typeof BTSheet !== 'undefined' && BTSheet && typeof BTSheet.register === 'function') {
+      BTSheet.register('save-backup-center', renderSaveBackupCenterSheet, { title: 'Backup & Load Saves', detent: 'full' });
+    }
     if (typeof shell.registerSheet === 'function') {
+      shell.registerSheet('save-backup-center', renderSaveBackupCenterSheet, { title: 'Backup & Load Saves', detent: 'full' });
       shell.registerSheet('data-vault', renderDataVaultSheet);
       shell.registerSheet('onboarding-tour', renderOnboardingTourSheet);
       shell.registerSheet('about-charter', renderAboutCharterSheet);
@@ -45305,8 +47964,21 @@ if (typeof window !== 'undefined') {
 
   registerAcademyAndVaultBindings();
 
+  window.BTBackupCenter = {
+    open: openSaveBackupCenterModal,
+    close: function () {
+      _restoreInlineSaveIdsAfterSheet();
+      const shell = sh();
+      if (shell.closeSheet) shell.closeSheet();
+      else if (typeof BTSheet !== 'undefined' && BTSheet && typeof BTSheet.close === 'function') BTSheet.close();
+    },
+    render: renderSaveBackupCenterSheet,
+    buildCenter: buildThreeCardSaveRestoreCenter
+  };
+
   window.BTAcademyVault = {
     renderAcademyTab: renderAcademyTab,
+    renderSaveBackupCenterSheet: renderSaveBackupCenterSheet,
     renderDataVaultSheet: renderDataVaultSheet,
     renderOnboardingTourSheet: renderOnboardingTourSheet,
     renderAboutCharterSheet: renderAboutCharterSheet,
@@ -45400,6 +48072,14 @@ function _bindGlobalShellEvents() {
 
     window.addEventListener('pagehide', flushDraft);
 
+    window.addEventListener('hashchange', function() {
+      try {
+        if (typeof location !== 'undefined' && location.hash && /[?#&]btsave=/i.test(location.hash)) {
+          _checkAndOfferWebSaveRestore(location.hash);
+        }
+      } catch (e) {}
+    });
+
     try {
       if (window.matchMedia) {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -45438,15 +48118,191 @@ function _bindGlobalShellEvents() {
   }
 }
 
+function _isLocalVaultCurrentlyEmpty(st) {
+  try {
+    const hist = (st && typeof st.getHistory === 'function') ? st.getHistory() : null;
+    if (hist && Array.isArray(hist.objs) && hist.objs.length > 0) return false;
+    const pr = (st && typeof st.getPrices === 'function') ? st.getPrices() : null;
+    if (pr && Array.isArray(pr.list) && pr.list.length > 0) return false;
+    const sh = (st && typeof st.getShops === 'function') ? st.getShops() : null;
+    if (sh && sh.store && Array.isArray(sh.store.drinks) && sh.store.drinks.length > 0) return false;
+    if (app && app.coffee && String(app.coffee.name || '').trim()) return false;
+    if (typeof localStorage !== 'undefined') {
+      if (localStorage.getItem('brew-and-cup-history-v1')) return false;
+      if (localStorage.getItem('brew-and-cup-prices-v1')) return false;
+      if (localStorage.getItem('brew-and-cup-shops-v1')) return false;
+    }
+  } catch (e) {}
+  return true;
+}
+
+function _dismissWebSaveRestorePrompt() {
+  try {
+    const existing = $('bt-web-save-banner');
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+    if (typeof BTSheet !== 'undefined' && BTSheet && BTSheet.isOpen && BTSheet.isOpen() && BTSheet.currentKey && BTSheet.currentKey() === 'btsave-detected') {
+      BTSheet.close();
+    }
+  } catch (e) {}
+}
+
+function _checkAndOfferWebSaveRestore(rawHashStr) {
+  try {
+    const st = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
+    if (!st || typeof st.decodeWebSaveUrl !== 'function' || typeof st.importFullSaveBundle !== 'function') return;
+    const hashVal = String(rawHashStr || '');
+    if (!/[?#&]btsave=/i.test(hashVal) && !/^btsave=/i.test(hashVal)) return;
+    if (typeof window !== 'undefined' && window.__btSelfAppliedSaveHash && window.__btSelfAppliedSaveHash === hashVal) return;
+
+    const localIsEmpty = _isLocalVaultCurrentlyEmpty(st);
+
+    Promise.resolve(st.decodeWebSaveUrl(hashVal)).then(function(decodedBundle) {
+      if (!decodedBundle || !decodedBundle.keys) return;
+      const cCnt = decodedBundle.coffeeCount || 0;
+      const bCnt = decodedBundle.brewCount || 0;
+      const summaryCountsTxt = cCnt + ' ' + (cCnt === 1 ? 'Coffee' : 'Coffees') + ' \u00B7 ' +
+        bCnt + ' Saved ' + (bCnt === 1 ? 'Brew' : 'Brews') + ' \u00B7 Preferences & Gear';
+
+      function executeWebRestore(chosenMode) {
+        Promise.resolve(st.importFullSaveBundle(decodedBundle, { mode: chosenMode })).then(function(res) {
+          _dismissWebSaveRestorePrompt();
+          if (res && res.ok) {
+            try {
+              render();
+              refreshAll();
+              paintChrome();
+              paintStudioAside();
+            } catch (_) {}
+            toast('Save restored (' + (chosenMode === 'replace' ? 'Replaced' : 'Merged') + ')! ' + summaryCountsTxt + ' ready.', { duration: 4800 });
+          } else {
+            toast((res && res.error) || 'Could not restore save from web address.');
+          }
+        }).catch(function() {
+          toast('Could not restore save from web address.');
+        });
+      }
+
+      /* Mount prominent top banner right inside #center-stage above #workspace-grid */
+      const oldBanner = $('bt-web-save-banner');
+      if (oldBanner && oldBanner.parentNode) oldBanner.parentNode.removeChild(oldBanner);
+
+      const bannerEl = h('section', {
+        id: 'bt-web-save-banner',
+        role: 'region',
+        'aria-label': 'Save Link Detected in Web Address',
+        style: 'margin:10px 14px 4px;padding:13px 15px;border-radius:14px;border:2px solid var(--primary,#1B4D38);background:var(--good-bg,#E2F4EB);color:var(--ink,#1C130E);display:flex;flex-direction:column;gap:10px;box-shadow:0 6px 18px rgba(27,77,56,0.12)'
+      },
+        h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap' },
+          h('div', { style: 'display:flex;align-items:flex-start;gap:9px;min-width:0;flex:1 1 220px' },
+            BTIcons.el('vault-shield', { size: 22 }),
+            h('div', { style: 'min-width:0' },
+              h('strong', { style: 'display:block;font-size:0.98rem;color:var(--good,#1B6341)', text: 'Save Link Detected in Web Address!' }),
+              h('span', { class: 'mono', style: 'display:block;font-size:0.82rem;font-weight:700;margin-top:2px;color:var(--ink,#1C130E)', text: summaryCountsTxt })
+            )
+          )
+        ),
+        h('div', { style: 'display:flex;flex-wrap:wrap;gap:8px;align-items:center' },
+          h('button', {
+            type: 'button',
+            id: 'bt-boot-restore-merge-btn',
+            class: 'bt-lab-btn is-primary',
+            style: 'min-height:44px;font-weight:800;flex:1 1 200px',
+            onclick: function() { executeWebRestore('merge'); }
+          }, BTIcons.el('check-seal', { size: 16 }), h('span', { text: 'Restore My Save Now (Merge)' })),
+          h('button', {
+            type: 'button',
+            id: 'bt-boot-restore-replace-btn',
+            class: 'bt-lab-btn',
+            style: 'min-height:44px;font-weight:700',
+            onclick: function() { executeWebRestore('replace'); }
+          }, h('span', { text: 'Replace Current Data' })),
+          h('button', {
+            type: 'button',
+            id: 'bt-boot-restore-dismiss-btn',
+            class: 'bt-lab-btn',
+            style: 'min-height:44px',
+            onclick: _dismissWebSaveRestorePrompt
+          }, h('span', { text: 'Dismiss' }))
+        )
+      );
+
+      const centerStage = $('center-stage');
+      const wsGrid = $('workspace-grid');
+      const mountNode = $('mount');
+      if (centerStage && wsGrid && wsGrid.parentNode === centerStage) {
+        centerStage.insertBefore(bannerEl, wsGrid);
+      } else if (mountNode && mountNode.parentNode) {
+        mountNode.parentNode.insertBefore(bannerEl, mountNode);
+      }
+
+      /* When local storage is empty (e.g. right after clearing browser history!), also open a prominent modal sheet right away */
+      if (localIsEmpty && !_isBrewActivelyRunning() && typeof BTSheet !== 'undefined' && BTSheet && typeof BTSheet.open === 'function') {
+        BTSheet.open({
+          id: 'btsave-detected',
+          title: 'Save Link Detected in Web Address!',
+          detent: 'half',
+          render: function(bodyEl) {
+            bodyEl.textContent = '';
+            bodyEl.appendChild(h('div', { style: 'display:flex;flex-direction:column;gap:12px;padding:4px 2px 12px' },
+              h('div', {
+                style: 'padding:14px;border-radius:14px;background:var(--good-bg,#E2F4EB);border:1.5px solid var(--good,#1B6341);display:flex;flex-direction:column;gap:6px'
+              },
+                h('div', { style: 'display:flex;align-items:center;gap:8px;color:var(--good,#1B6341);font-weight:800;font-size:1rem' },
+                  BTIcons.el('vault-shield', { size: 22 }),
+                  h('span', { text: 'Save Link Detected in Web Address!' })
+                ),
+                h('p', { class: 'mono', style: 'margin:0;font-size:0.88rem;font-weight:700;color:var(--ink,#1C130E)', text: summaryCountsTxt }),
+                h('p', { style: 'margin:0;font-size:0.84rem;line-height:1.45;color:var(--ink-secondary,#534034)', text: 'Your browser storage on this device is currently empty, so we unpacked your bookmarked web save link automatically. Tap below to restore everything in 1 tap!' })
+              ),
+              h('button', {
+                type: 'button',
+                id: 'bt-sheet-restore-merge-btn',
+                class: 'bt-lab-btn is-primary',
+                style: 'width:100%;min-height:48px;font-size:0.94rem;font-weight:800',
+                onclick: function() { executeWebRestore('merge'); }
+              }, BTIcons.el('check-seal', { size: 17 }), h('span', { text: 'Restore My Save Now (Merge)' })),
+              h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
+                h('button', {
+                  type: 'button',
+                  id: 'bt-sheet-restore-replace-btn',
+                  class: 'bt-lab-btn',
+                  style: 'flex:1 1 160px;min-height:44px;font-weight:700',
+                  onclick: function() { executeWebRestore('replace'); }
+                }, h('span', { text: 'Replace Current Data' })),
+                h('button', {
+                  type: 'button',
+                  id: 'bt-sheet-restore-dismiss-btn',
+                  class: 'bt-lab-btn',
+                  style: 'flex:1 1 110px;min-height:44px',
+                  onclick: _dismissWebSaveRestorePrompt
+                }, h('span', { text: 'Dismiss' }))
+              )
+            ));
+          }
+        });
+      }
+    }).catch(function() {});
+  } catch (e) {}
+}
+
 function BTBoot() {
   if (typeof window !== 'undefined' && window.__btBooted) return;
   if (typeof window !== 'undefined') window.__btBooted = true;
+
+  const initialBootHash = (typeof location !== 'undefined' && location.hash) ? String(location.hash) : '';
 
   BTBrand.mountSprite();
   BTIcons.mountSprite();
   _bindGlobalShellEvents();
 
   const st = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : {};
+
+  /* 0. Non-blocking Browser Persistent Storage Shield */
+  try {
+    if (typeof st.requestPersistentStorage === 'function') {
+      Promise.resolve(st.requestPersistentStorage()).catch(function() {});
+    }
+  } catch (e) {}
 
   /* 1. Gate #1 Safety Snapshot BEFORE mutating any storage keys */
   try {
@@ -45506,7 +48362,12 @@ function BTBoot() {
     navNote(false);
   }
 
-  /* 5. Silent Remembered WebBLE Auto-Reconnect */
+  /* 5. Boot-Time #btsave=... Web-Address Save Auto-Detection */
+  if (initialBootHash && /[?#&]btsave=/i.test(initialBootHash)) {
+    _checkAndOfferWebSaveRestore(initialBootHash);
+  }
+
+  /* 6. Silent Remembered WebBLE Auto-Reconnect */
   try {
     if (typeof window !== 'undefined' && window.BTBle && typeof window.BTBle.autoReconnectRemembered === 'function') {
       Promise.resolve(window.BTBle.autoReconnectRemembered()).then(function() {
@@ -45515,7 +48376,7 @@ function BTBoot() {
     }
   } catch (e) {}
 
-  /* 6. Non-Intrusive PWA Service Worker Registration */
+  /* 7. Non-Intrusive PWA Service Worker Registration */
   setTimeout(_registerServiceWorkerSafely, 350);
 }
 

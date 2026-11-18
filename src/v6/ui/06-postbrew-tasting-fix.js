@@ -2312,13 +2312,136 @@ if (typeof window !== 'undefined') {
     );
   }
 
-  /* Main Step 5 Session & Live Repaint Hook */
+  /* Main Step 5 Session, Module-Scoped DiFluid R2 Live Auto-Sync & Repaint Hook */
   var _step5Session = null;
   var _activeRepaintHook = null;
+  var _r2BleBound = false;
+  var _r2BleSubscribed = false;
+  var _lastLiveR2 = null;
+  var _lastR2ToastAt = 0;
+  var _lastR2ToastTds = -1;
+  var _prevBleR2State = { connected: false, tempC: null, batteryPct: null };
 
-  function ensureStep5Session(opts) {
+  function getBleStateSafe() {
+    try {
+      var ble = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
+      if (ble && typeof ble.getState === 'function') return ble.getState() || {};
+    } catch (_) {}
+    return {};
+  }
+
+  function applyLiveR2Reading(detail, opts) {
+    if (!detail) return false;
+    var rawTds = +detail.tds;
+    if (!isFinite(rawTds) || rawTds <= 0 || rawTds > 35) return false;
+    var tdsVal = Math.round(rawTds * 100) / 100;
+    var hasTemp = detail.tempC != null && isFinite(+detail.tempC) && +detail.tempC > 0;
+    var tempVal = hasTemp ? Math.round(+detail.tempC * 10) / 10 : null;
+    var nowMs = Date.now();
+
+    _lastLiveR2 = {
+      tds: tdsVal,
+      tempC: tempVal,
+      brix: detail.brix != null && isFinite(+detail.brix) ? +detail.brix : Math.round((tdsVal / 0.85) * 100) / 100,
+      refractiveIndex: detail.refractiveIndex != null && isFinite(+detail.refractiveIndex) ? +detail.refractiveIndex : null,
+      isAverage: !!detail.isAverage,
+      readCount: detail.readCount || 1,
+      at: nowMs
+    };
+
     var a = S.getApp();
     var st = S.getState();
+    a.taste = (a.taste && typeof a.taste === 'object') ? a.taste : {};
+    a.taste.tds_pct = tdsVal;
+    if (tempVal != null) a.taste.r2_temp_c = tempVal;
+    st.measuredTds = tdsVal;
+
+    var s = _step5Session || ensureStep5Session();
+    s.tdsPct = tdsVal;
+    if (tempVal != null) s.r2TempC = tempVal;
+    s.r2Collapsed = false;
+    s.r2Expanded = true;
+    s._userHidR2 = false;
+    s._liveR2Received = true;
+
+    var mountedRepainted = false;
+    if (typeof _activeRepaintHook === 'function') {
+      mountedRepainted = !!_activeRepaintHook();
+    }
+
+    var isDuplicateTick = (nowMs - _lastR2ToastAt < 220) && Math.abs(tdsVal - _lastR2ToastTds) < 0.005;
+    if (!isDuplicateTick && !(opts && opts.silent)) {
+      _lastR2ToastAt = nowMs;
+      _lastR2ToastTds = tdsVal;
+      if (mountedRepainted || (a && a.activeTab === 'brew' && a.brewStep === 'taste')) {
+        S.haptic('snap');
+        S.toastSafe('DiFluid R2 Auto-Synced: ' + tdsVal.toFixed(2) + '% TDS');
+      }
+    }
+    return true;
+  }
+
+  function ensureR2BleListeners() {
+    if (typeof window === 'undefined') return;
+    if (!_r2BleBound && typeof window.addEventListener === 'function') {
+      _r2BleBound = true;
+      window.addEventListener('bt-ble-refractometer', function (ev) {
+        var d = (ev && ev.detail) || {};
+        applyLiveR2Reading(d, { fromEvent: true });
+      });
+    }
+    var ble = window.BTBle;
+    if (!_r2BleSubscribed && ble && typeof ble.subscribe === 'function') {
+      _r2BleSubscribed = true;
+      try {
+        ble.subscribe(function (bst) {
+          if (!bst) return;
+          var conn = !!bst.refractometerConnected;
+          var tempNow = (bst.lastTempC != null && isFinite(+bst.lastTempC)) ? Math.round(+bst.lastTempC * 10) / 10 : null;
+          var batNow = (bst.refractometerBatteryPct != null && isFinite(+bst.refractometerBatteryPct)) ? Math.round(+bst.refractometerBatteryPct) : null;
+          var liveTds = (bst.lastTds != null && +bst.lastTds > 0 && (conn || +bst.lastR2AtMs > 0)) ? Math.round(+bst.lastTds * 100) / 100 : 0;
+
+          if (liveTds > 0 && (!_step5Session || Math.abs(liveTds - (+_step5Session.tdsPct || 0)) >= 0.005)) {
+            _prevBleR2State = { connected: conn, tempC: tempNow, batteryPct: batNow };
+            applyLiveR2Reading({
+              tds: liveTds,
+              tempC: tempNow,
+              brix: bst.lastBrix,
+              refractiveIndex: bst.lastRefractiveIndex,
+              readCount: bst.lastR2ReadCount
+            }, { fromSubscribe: true });
+            return;
+          }
+
+          var metaChanged = (conn !== _prevBleR2State.connected) ||
+            (conn && tempNow !== _prevBleR2State.tempC) ||
+            (conn && batNow !== _prevBleR2State.batteryPct);
+          _prevBleR2State = { connected: conn, tempC: tempNow, batteryPct: batNow };
+
+          if (_step5Session) {
+            if (conn && !_step5Session._userHidR2) {
+              _step5Session.r2Expanded = true;
+              _step5Session.r2Collapsed = false;
+            }
+            if (conn && tempNow != null) {
+              _step5Session.r2TempC = tempNow;
+            }
+          }
+          if (metaChanged && typeof _activeRepaintHook === 'function') {
+            _activeRepaintHook();
+          }
+        });
+      } catch (_) {}
+    }
+  }
+
+  ensureR2BleListeners();
+
+  function ensureStep5Session(opts) {
+    ensureR2BleListeners();
+    var a = S.getApp();
+    var st = S.getState();
+    var bleNow = getBleStateSafe();
     if (!st.brewFinishedAtMs) st.brewFinishedAtMs = Date.now();
     var coffeeId = (a.coffee && (a.coffee.id || a.coffee.name)) || 'default';
     var attemptTag = (a.cupBrew && a.cupBrew.attempt) || a.attempt || 0;
@@ -2330,6 +2453,19 @@ if (typeof window !== 'undefined') {
       var doseG = +curBrew.dose || 15;
       var waterG = +curBrew.water || (isEsp ? 36 : 250);
       var preRated = !!(opts && opts.preRated === true);
+      var bleHasRecentTds = (+bleNow.lastTds > 0) && (!!bleNow.refractometerConnected || +bleNow.lastR2AtMs > 0 || !bleNow.simulatorActive);
+      var initTds = +st.measuredTds > 0
+        ? Math.round(+st.measuredTds * 100) / 100
+        : (bleHasRecentTds ? Math.round(+bleNow.lastTds * 100) / 100 : (_lastLiveR2 && +_lastLiveR2.tds > 0 ? _lastLiveR2.tds : 0));
+      var initR2Temp = (bleNow.lastTempC != null && isFinite(+bleNow.lastTempC) && (bleHasRecentTds || bleNow.refractometerConnected))
+        ? Math.round(+bleNow.lastTempC * 10) / 10
+        : (_lastLiveR2 && _lastLiveR2.tempC != null ? _lastLiveR2.tempC : 23.6);
+
+      if (initTds > 0) {
+        a.taste = (a.taste && typeof a.taste === 'object') ? a.taste : {};
+        a.taste.tds_pct = initTds;
+      }
+
       _step5Session = {
         coffeeRef: coffeeId,
         sessionSig: sessionSig,
@@ -2351,10 +2487,13 @@ if (typeof window !== 'undefined') {
         rescueMugG: Math.max(25, Math.round(+curBrew.out_g || +curBrew.yieldOut || (isEsp ? waterG : waterG - doseG * 2.05))),
         inMugLogged: '',
         bevOutG: Math.max(18, Math.round(+curBrew.out_g || +curBrew.yieldOut || (isEsp ? waterG : waterG - doseG * 2.05))),
-        r2Expanded: S.btToolModeSafe('refractometer') === 'always',
+        r2Expanded: S.btToolModeSafe('refractometer') === 'always' || !!bleNow.refractometerConnected || initTds > 0,
+        r2Collapsed: false,
+        _userHidR2: false,
+        _liveR2Received: initTds > 0,
         r2InputUnit: 'tds',
-        tdsPct: +st.measuredTds > 0 ? +st.measuredTds : 0,
-        r2TempC: 23.6,
+        tdsPct: initTds,
+        r2TempC: initR2Temp,
         excludeLearning: false,
         notMyStyle: false,
         foilRevealed: false,
@@ -2373,6 +2512,26 @@ if (typeof window !== 'undefined') {
         defectType: '',
         notes: st.general_notes || ''
       };
+    } else {
+      if (bleNow.refractometerConnected && !_step5Session._userHidR2) {
+        _step5Session.r2Expanded = true;
+        _step5Session.r2Collapsed = false;
+      }
+      var recentBleTdsOpen = (+bleNow.lastTds > 0 && (!!bleNow.refractometerConnected || +bleNow.lastR2AtMs > 0 || !bleNow.simulatorActive))
+        ? Math.round(+bleNow.lastTds * 100) / 100
+        : 0;
+      if (!(+_step5Session.tdsPct > 0) && recentBleTdsOpen > 0) {
+        _step5Session.tdsPct = recentBleTdsOpen;
+        if (bleNow.lastTempC != null && isFinite(+bleNow.lastTempC)) {
+          _step5Session.r2TempC = Math.round(+bleNow.lastTempC * 10) / 10;
+        }
+        if (!_step5Session._userHidR2) {
+          _step5Session.r2Expanded = true;
+          _step5Session.r2Collapsed = false;
+        }
+        a.taste = (a.taste && typeof a.taste === 'object') ? a.taste : {};
+        a.taste.tds_pct = _step5Session.tdsPct;
+      }
     }
     if (opts && opts.initialMode && ['quick', 'guided', 'cva'].indexOf(opts.initialMode) >= 0) {
       _step5Session.mode = opts.initialMode;
@@ -2412,21 +2571,7 @@ if (typeof window !== 'undefined') {
     }
 
     var ble = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
-    if (ble && typeof ble.subscribe === 'function' && !root._bleSubbed) {
-      root._bleSubbed = true;
-      try {
-        ble.subscribe(function (bst) {
-          if (!bst || !root.isConnected) return;
-          var ref = bst.refractometer || (bst.slots && bst.slots.refractometer) || null;
-          if (ref && +ref.tds > 0 && Math.abs(+ref.tds - tSt.tdsPct) >= 0.01) {
-            tSt.tdsPct = Math.round(+ref.tds * 100) / 100;
-            if (ref.tempC != null && isFinite(+ref.tempC)) tSt.r2TempC = Math.round(+ref.tempC * 10) / 10;
-            tSt.r2Expanded = true;
-            paintAll();
-          }
-        });
-      } catch (_) {}
-    }
+    ensureR2BleListeners();
 
     var fixBannerMount = S.h('section', { id: 'bt-nextbrew-fix', class: 'bt-tc-hero-fix' });
     var ctaMount = S.h('div', { id: 'bt-step5-sticky-cta', style: 'display:contents' });
@@ -3127,6 +3272,10 @@ if (typeof window !== 'undefined') {
       var waterNow = flowInfo.waterG;
       var measEyNow = (+tSt.tdsPct > 0 && doseNow > 0) ? Math.round(((+tSt.tdsPct * tSt.bevOutG) / doseNow) * 100) / 100 : null;
       var r2Mode = S.btToolModeSafe('refractometer');
+      var bleLive = getBleStateSafe();
+      var r2Connected = !!bleLive.refractometerConnected;
+      var r2CanTrigger = !!(r2Connected || bleLive.simulatorActive);
+      var r2EffectiveOn = r2Mode !== 'off' || r2Connected || !!tSt._liveR2Received || +tSt.tdsPct > 0;
 
       var shortcutButtons = [];
       function activeShortcutKey() {
@@ -3189,9 +3338,9 @@ if (typeof window !== 'undefined') {
             y: tSt.padY,
             grinderKey: a.brew && a.brew.grinderKey,
             isEspresso: isEspNow,
-            measuredTds: (r2Mode !== 'off' && +tSt.tdsPct > 0) ? +tSt.tdsPct : null,
-            measuredEy: (r2Mode !== 'off' && measEyNow != null) ? measEyNow : null,
-            sampleTempC: (r2Mode !== 'off' && +tSt.tdsPct > 0) ? tSt.r2TempC : null,
+            measuredTds: (r2EffectiveOn && +tSt.tdsPct > 0) ? +tSt.tdsPct : null,
+            measuredEy: (r2EffectiveOn && measEyNow != null) ? measEyNow : null,
+            sampleTempC: (r2EffectiveOn && +tSt.tdsPct > 0) ? tSt.r2TempC : null,
             targetTds: isEspNow ? 9.4 : 1.38,
             targetEy: 20.2,
             onChange: function (pt) {
@@ -3245,10 +3394,10 @@ if (typeof window !== 'undefined') {
         )
       );
 
-      var r2ReconcilerHost = S.h('div');
+      var r2ReconcilerHost = S.h('div', { id: 'bt-step5-r2-reconciler' });
       function paintR2ReconcilerOnly() {
         r2ReconcilerHost.textContent = '';
-        if (r2Mode === 'off' || !(+tSt.tdsPct > 0)) return;
+        if (!r2EffectiveOn || !(+tSt.tdsPct > 0)) return;
         var mEy = (+tSt.tdsPct > 0 && doseNow > 0) ? Math.round(((+tSt.tdsPct * tSt.bevOutG) / doseNow) * 100) / 100 : null;
         var rec = evaluateR2VsPalateDiscrepancy(tSt, mEy, isEspNow);
         if (!rec) return;
@@ -3269,38 +3418,65 @@ if (typeof window !== 'undefined') {
       }
 
       var r2Host = null;
-      if (r2Mode !== 'off') {
-        var showOpenR2 = r2Mode === 'always' || tSt.r2Expanded || (+tSt.tdsPct > 0 && !tSt.r2Collapsed);
+      if (r2EffectiveOn) {
+        var showOpenR2 = r2Mode === 'always' || (!tSt._userHidR2 && (tSt.r2Expanded || r2Connected || (+tSt.tdsPct > 0 && !tSt.r2Collapsed)));
         if (!showOpenR2) {
+          var collapsedR2Label = +tSt.tdsPct > 0
+            ? ('Refractometer: ' + (+tSt.tdsPct).toFixed(2) + '% TDS (Expand)')
+            : (r2Connected ? 'DiFluid R2 Connected \u00B7 Auto-Sync Active (Expand)' : '+ Optional: Enter Refractometer %TDS (DiFluid R2)');
           r2Host = S.h('button', {
             type: 'button',
             class: 'bt-tc-pill is-soft',
+            id: 'bt-step5-r2-expand-btn',
             style: 'align-self:flex-start',
-            onclick: function () { tSt.r2Collapsed = false; tSt.r2Expanded = true; paintAll(); }
-          }, S.iconEl('refract-prism', { size: 16 }), S.h('span', { text: +tSt.tdsPct > 0 ? ('Refractometer: ' + (+tSt.tdsPct).toFixed(2) + '% TDS (Expand)') : '+ Optional: Enter Refractometer %TDS (DiFluid R2)' }));
+            onclick: function () { tSt.r2Collapsed = false; tSt.r2Expanded = true; tSt._userHidR2 = false; paintAll(); }
+          }, S.iconEl('refract-prism', { size: 16 }), S.h('span', { text: collapsedR2Label }));
         } else {
           var r2Ready = evaluateR2ReadinessSafe(tSt.r2TempC);
           var waterInWarn = (!isEspNow && tSt.bevOutG >= waterNow * 0.92)
             ? ('Heads-up: Beverage weight (' + tSt.bevOutG + ' g) looks like poured water (' + waterNow + ' g) rather than liquid in your mug (~' + Math.round(waterNow - doseNow * 2.05) + ' g)!')
             : '';
+          var liveR2MetaParts = ['DiFluid R2 Connected \u00B7 Auto-Sync Active'];
+          if (bleLive.lastTempC != null && isFinite(+bleLive.lastTempC) && +bleLive.lastTempC > 0) {
+            liveR2MetaParts.push((+bleLive.lastTempC).toFixed(1) + ' \u00B0C');
+          } else if (tSt.r2TempC != null && isFinite(+tSt.r2TempC) && +tSt.r2TempC > 0) {
+            liveR2MetaParts.push((+tSt.r2TempC).toFixed(1) + ' \u00B0C');
+          }
+          if (bleLive.refractometerBatteryPct != null && isFinite(+bleLive.refractometerBatteryPct) && +bleLive.refractometerBatteryPct >= 0) {
+            liveR2MetaParts.push(Math.round(+bleLive.refractometerBatteryPct) + '%');
+          }
 
-          r2Host = S.h('div', { class: 'bt-tc-r2-card' },
+          r2Host = S.h('div', { class: 'bt-tc-r2-card', id: 'bt-step5-r2-card' },
             S.h('div', { class: 'bt-tc-row-between' },
-              S.h('span', { class: 'bt-tc-badge is-sci', text: r2Ready.badgeText }),
-              r2Mode === 'optional' ? S.h('button', {
+              S.h('div', { class: 'bt-tc-pill-wrap', style: 'gap:6px' },
+                r2Connected ? S.h('span', {
+                  class: 'bt-tc-badge is-good',
+                  id: 'bt-step5-r2-live-badge',
+                  text: liveR2MetaParts.join(' \u00B7 ')
+                }) : null,
+                S.h('span', { class: 'bt-tc-badge is-sci', text: r2Ready.badgeText })
+              ),
+              r2Mode !== 'always' ? S.h('button', {
                 type: 'button',
                 class: 'bt-tc-pill is-compact is-soft',
+                id: 'bt-step5-r2-hide-btn',
                 text: 'Hide Meter',
-                onclick: function () { tSt.r2Expanded = false; tSt.r2Collapsed = true; paintAll(); }
+                onclick: function () { tSt.r2Expanded = false; tSt.r2Collapsed = true; tSt._userHidR2 = true; paintAll(); }
               }) : null
             ),
-            S.h('p', { class: 'bt-tc-trait-desc', text: 'Optional lab refractometer: plots sensor strength (%TDS) alongside your tongue on the bullseye. Your personal taste always wins 100%.' }),
+            S.h('p', {
+              class: 'bt-tc-trait-desc',
+              text: r2Connected
+                ? 'Press the button on your DiFluid R2 (or tap Read R2 Now) \u2014 %TDS, %EY, and your Bullseye sensor pin update automatically with zero typing.'
+                : 'Optional lab refractometer: plots sensor strength (%TDS) alongside your tongue on the bullseye. Your personal taste always wins 100%.'
+            }),
             S.h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px' },
               S.h('label', { style: 'display:flex;flex-direction:column;gap:4px;font-size:0.76rem;font-weight:700' },
                 S.h('span', { text: tSt.r2InputUnit === 'brix' ? 'Measured \u00B0Brix (\u00D70.85 \u2192 TDS)' : 'Measured Strength (%TDS)' }),
                 S.h('div', { class: 'bt-tc-spotlight', style: 'min-height:44px' },
                   S.h('input', {
                     type: 'number',
+                    id: 'bt-step5-tds-input',
                     inputmode: 'decimal',
                     step: '0.01',
                     min: '0',
@@ -3314,6 +3490,9 @@ if (typeof window !== 'undefined') {
                       } else {
                         tSt.tdsPct = 0;
                       }
+                      a.taste = (a.taste && typeof a.taste === 'object') ? a.taste : {};
+                      a.taste.tds_pct = tSt.tdsPct;
+                      st.measuredTds = tSt.tdsPct;
                       paintAll();
                     }
                   })
@@ -3324,6 +3503,7 @@ if (typeof window !== 'undefined') {
                 S.h('div', { class: 'bt-tc-spotlight', style: 'min-height:44px' },
                   S.h('input', {
                     type: 'number',
+                    id: 'bt-step5-bev-out-input',
                     inputmode: 'decimal',
                     step: '1',
                     min: '10',
@@ -3341,6 +3521,7 @@ if (typeof window !== 'undefined') {
                 S.h('div', { class: 'bt-tc-spotlight', style: 'min-height:44px' },
                   S.h('input', {
                     type: 'number',
+                    id: 'bt-step5-r2-temp-input',
                     inputmode: 'decimal',
                     step: '0.5',
                     min: '10',
@@ -3371,21 +3552,49 @@ if (typeof window !== 'undefined') {
                   text: tSt.r2InputUnit === 'tds' ? 'Switch to \u00B0Brix' : 'Switch to %TDS',
                   onclick: function () { tSt.r2InputUnit = tSt.r2InputUnit === 'tds' ? 'brix' : 'tds'; paintAll(); }
                 }),
-                S.h('button', {
+                r2CanTrigger ? S.h('button', {
                   type: 'button',
+                  id: 'bt-step5-r2-read-btn',
+                  class: 'bt-tc-pill is-compact is-copper',
+                  onclick: function () {
+                    if (ble && typeof ble.triggerRefractometerRead === 'function') {
+                      Promise.resolve(ble.triggerRefractometerRead()).catch(function () {});
+                    }
+                  }
+                }, S.iconEl('ble-wave', { size: 14 }), S.h('span', { text: 'Read R2 Now' })) : null,
+                r2CanTrigger ? S.h('button', {
+                  type: 'button',
+                  id: 'bt-step5-r2-avg3-btn',
+                  class: 'bt-tc-pill is-compact is-soft',
+                  onclick: function () {
+                    if (ble && typeof ble.triggerRefractometerRead === 'function') {
+                      Promise.resolve(ble.triggerRefractometerRead({ averageCount: 3 })).catch(function () {});
+                    }
+                  }
+                }, S.h('span', { text: 'Avg x3' })) : null,
+                !r2CanTrigger ? S.h('button', {
+                  type: 'button',
+                  id: 'bt-step5-r2-pair-btn',
                   class: 'bt-tc-pill is-compact is-soft',
                   onclick: function () {
                     if (ble && typeof ble.connectRefractometer === 'function') {
-                      Promise.resolve(ble.connectRefractometer()).then(function () {
-                        if (typeof ble.triggerRefractometerRead === 'function') return ble.triggerRefractometerRead();
+                      Promise.resolve(ble.connectRefractometer()).then(function (res) {
+                        if (res && (res.refractometerConnected || res.ok) && typeof ble.triggerRefractometerRead === 'function') {
+                          return ble.triggerRefractometerRead();
+                        }
                       }).catch(function () {});
                     } else {
                       S.toastSafe('Pair DiFluid R2 in Lab & Tools \u2192 Bluetooth Gear');
                     }
                   }
-                }, S.iconEl('ble-wave', { size: 14 }), S.h('span', { text: 'Read Bluetooth Meter' }))
+                }, S.iconEl('ble-wave', { size: 14 }), S.h('span', { text: 'Pair DiFluid R2' })) : null
               ),
-              measEyNow != null ? S.h('b', { class: 'mono', style: 'font-size:0.88rem;color:var(--science)', text: tSt.tdsPct.toFixed(2) + '% TDS \u00B7 ' + measEyNow.toFixed(1) + '% Extraction (%EY)' }) : null
+              measEyNow != null ? S.h('b', {
+                class: 'mono',
+                id: 'bt-step5-ey-readout',
+                style: 'font-size:0.88rem;color:var(--science)',
+                text: tSt.tdsPct.toFixed(2) + '% TDS \u00B7 ' + measEyNow.toFixed(1) + '% Extraction (%EY)'
+              }) : null
             ),
             r2ReconcilerHost
           );
@@ -3399,7 +3608,7 @@ if (typeof window !== 'undefined') {
             S.h('div', { class: 'bt-tc-kicker', text: '4-Ring Taste Balance Bullseye' }),
             S.h('b', { style: 'font-size:0.96rem', text: 'Where did your cup land? (Sour \u2194 Bitter \u00D7 Weak \u2194 Strong)' })
           ),
-          (r2Mode !== 'off' && +tSt.tdsPct > 0) ? S.h('span', { class: 'bt-tc-badge is-sci', text: 'Dual-Pin Active' }) : null
+          (r2EffectiveOn && +tSt.tdsPct > 0) ? S.h('span', { class: 'bt-tc-badge is-sci', id: 'bt-step5-dual-pin-badge', text: 'Dual-Pin Active' }) : null
         ),
         shortcutRow,
         padWidget,
@@ -3738,7 +3947,11 @@ if (typeof window !== 'undefined') {
     }
 
     _activeRepaintHook = function () {
-      if (root.isConnected) paintAll();
+      if (root.isConnected) {
+        paintAll();
+        return true;
+      }
+      return false;
     };
 
     paintAll();
@@ -3754,7 +3967,7 @@ if (typeof window !== 'undefined') {
   var BTTasteStep = {
     renderStep5: renderStep5,
     getSession: function () { return ensureStep5Session(); },
-    resetSession: function () { _step5Session = null; },
+    resetSession: function () { _step5Session = null; _lastLiveR2 = null; },
     setUserRating: function (stars, padXY) {
       var s = ensureStep5Session();
       s.stars = clamp(+stars || 4.25, 0.25, 5.0);

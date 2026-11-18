@@ -1233,6 +1233,165 @@
     return {};
   }
 
+  let _labBleEventsBound = false;
+  let _labBleSubscribed = false;
+  let _labLastR2ToastAt = 0;
+  let _labLastR2ToastTds = -1;
+  const _labBenchHooks = [];
+  const _labLiveHooks = {
+    hwBar: null,
+    studioEy: null,
+    ratioYield: null
+  };
+
+  function registerLabBenchHook(rootEl, refreshFn) {
+    if (!rootEl || typeof refreshFn !== 'function') return;
+    for (let i = _labBenchHooks.length - 1; i >= 0; i--) {
+      if (!_labBenchHooks[i].root || (!_labBenchHooks[i].root.isConnected && _labBenchHooks[i].root !== rootEl)) {
+        _labBenchHooks.splice(i, 1);
+      }
+    }
+    _labBenchHooks.push({ root: rootEl, fn: refreshFn });
+  }
+
+  function notifyLabBenchHooks() {
+    let anyMounted = false;
+    for (let i = _labBenchHooks.length - 1; i >= 0; i--) {
+      const item = _labBenchHooks[i];
+      if (!item || !item.root || !item.root.isConnected) {
+        _labBenchHooks.splice(i, 1);
+        continue;
+      }
+      anyMounted = true;
+      try { item.fn(); } catch (_) {}
+    }
+    return anyMounted;
+  }
+
+  function applyLabLiveR2Reading(detail, opts) {
+    if (!detail) return false;
+    const rawTds = +detail.tds;
+    if (!Number.isFinite(rawTds) || rawTds <= 0 || rawTds > 35) return false;
+    const tds = Math.round(rawTds * 100) / 100;
+    const hasTemp = detail.tempC != null && Number.isFinite(+detail.tempC) && +detail.tempC > 0;
+    const tempVal = hasTemp ? Math.round(+detail.tempC * 10) / 10 : null;
+    const bxVal = (detail.brix != null && Number.isFinite(+detail.brix) && +detail.brix > 0)
+      ? +detail.brix
+      : brixFromTds(tds);
+    const ndVal = (detail.refractiveIndex != null && Number.isFinite(+detail.refractiveIndex) && +detail.refractiveIndex > 1.3)
+      ? +(+detail.refractiveIndex).toFixed(5)
+      : +nd20FromBrix(bxVal).toFixed(5);
+
+    if (tds >= 4.5 && labState.bc.mode !== 'espresso') {
+      labState.bc.mode = 'espresso';
+    }
+    labState.bc.measTds = tds;
+    labState.bc.targetTds = clamp(tds, labState.bc.mode === 'espresso' ? 5.0 : 0.75, labState.bc.mode === 'espresso' ? 16.0 : 2.25, tds);
+    if (tempVal != null) labState.bc.measTempC = tempVal;
+    labState.bc.measNd = ndVal;
+
+    if (labState.ratio4) {
+      labState.ratio4.tdsPct = tds;
+      labState.ratio4.eyPct = +clamp((tds * labState.ratio4.mugG) / Math.max(0.5, labState.ratio4.doseG), 2, 36, labState.ratio4.eyPct).toFixed(2);
+    }
+    if (labState.mugRescue) {
+      labState.mugRescue.tdsPct = tds;
+    }
+
+    let anyLabMounted = false;
+    if (typeof _labLiveHooks.hwBar === 'function') {
+      try { if (_labLiveHooks.hwBar()) anyLabMounted = true; } catch (_) {}
+    }
+    if (typeof _labLiveHooks.studioEy === 'function') {
+      try { if (_labLiveHooks.studioEy({ fromLive: true })) anyLabMounted = true; } catch (_) {}
+    }
+    if (typeof _labLiveHooks.ratioYield === 'function') {
+      try { if (_labLiveHooks.ratioYield({ fromLive: true })) anyLabMounted = true; } catch (_) {}
+    }
+    if (notifyLabBenchHooks()) anyLabMounted = true;
+
+    const nowMs = Date.now();
+    const isDup = (nowMs - _labLastR2ToastAt < 220) && Math.abs(tds - _labLastR2ToastTds) < 0.005;
+    if (!isDup && !(opts && opts.silent)) {
+      _labLastR2ToastAt = nowMs;
+      _labLastR2ToastTds = tds;
+      const a = getApp();
+      const step5HandlingToast = !!(a && a.activeTab === 'brew' && a.brewStep === 'taste');
+      if (anyLabMounted && !step5HandlingToast) {
+        CK.haptic('snap');
+        notify('DiFluid R2 Auto-Synced: ' + tds.toFixed(2) + '% TDS');
+      }
+    }
+    return true;
+  }
+
+  function ensureLabBleListeners() {
+    if (typeof window === 'undefined') return;
+    if (!_labBleEventsBound && typeof window.addEventListener === 'function') {
+      _labBleEventsBound = true;
+      window.addEventListener('bt-ble-refractometer', function (ev) {
+        const d = (ev && ev.detail) || {};
+        applyLabLiveR2Reading(d, { fromEvent: true });
+      });
+      window.addEventListener('bt-ble-omni', function (ev) {
+        const d = (ev && ev.detail) || {};
+        if (Number.isFinite(+d.beanAgtron) && +d.beanAgtron > 0) labState.roastFresh.beanG = +d.beanAgtron;
+        if (Number.isFinite(+d.groundAgtron) && +d.groundAgtron > 0) labState.roastFresh.groundG = +d.groundAgtron;
+        if (Number.isFinite(+d.d50Um) && +d.d50Um > 0) labState.wave.d50Um = +d.d50Um;
+        if (typeof _labLiveHooks.hwBar === 'function') {
+          try { _labLiveHooks.hwBar(); } catch (_) {}
+        }
+        notifyLabBenchHooks();
+      });
+    }
+    const ble = window.BTBle;
+    if (!_labBleSubscribed && ble && typeof ble.subscribe === 'function') {
+      _labBleSubscribed = true;
+      try {
+        ble.subscribe(function (bst) {
+          if (!bst) return;
+          const conn = !!bst.refractometerConnected;
+          const liveTds = (bst.lastTds != null && +bst.lastTds > 0 && (conn || +bst.lastR2AtMs > 0))
+            ? Math.round(+bst.lastTds * 100) / 100
+            : 0;
+          if (liveTds > 0 && Math.abs(liveTds - (+labState.bc.measTds || 0)) >= 0.005) {
+            applyLabLiveR2Reading({
+              tds: liveTds,
+              tempC: bst.lastTempC,
+              brix: bst.lastBrix,
+              refractiveIndex: bst.lastRefractiveIndex
+            }, { fromSubscribe: true });
+            return;
+          }
+          if (conn && bst.lastTempC != null && Number.isFinite(+bst.lastTempC) && +bst.lastTempC > 0) {
+            labState.bc.measTempC = Math.round(+bst.lastTempC * 10) / 10;
+          }
+          if (typeof _labLiveHooks.hwBar === 'function') {
+            try { _labLiveHooks.hwBar(); } catch (_) {}
+          }
+          if (typeof _labLiveHooks.studioEy === 'function') {
+            try { _labLiveHooks.studioEy({ metaOnly: true }); } catch (_) {}
+          }
+          if (typeof _labLiveHooks.ratioYield === 'function') {
+            try { _labLiveHooks.ratioYield({ metaOnly: true }); } catch (_) {}
+          }
+          notifyLabBenchHooks();
+        });
+      } catch (_) {}
+    }
+    const initBle = getBleStateSafe();
+    if (+initBle.lastTds > 0 && (!!initBle.refractometerConnected || +initBle.lastR2AtMs > 0) && !(+labState.bc.measTds > 0)) {
+      applyLabLiveR2Reading({
+        tds: +initBle.lastTds,
+        tempC: initBle.lastTempC,
+        brix: initBle.lastBrix,
+        refractiveIndex: initBle.lastRefractiveIndex
+      }, { silent: true });
+    }
+  }
+
+  ensureLabBleListeners();
+
   function getActiveR2TempC() {
     const st = getBleStateSafe();
     const r2 = st && st.refractometer;
@@ -1548,6 +1707,7 @@
   }
 
   function renderHardwareBench(fullMode) {
+    ensureLabBleListeners();
     const ble = window.BTBle || {};
     const caps = typeof ble.capabilities === 'function'
       ? ble.capabilities()
@@ -1638,30 +1798,64 @@
         id: 'refractometer',
         icon: 'refract-prism',
         title: '3. DiFluid R2 Extract',
-        families: 'Optical %TDS · Refractive Index nD20 · Prism Temp ATC · Multi-Read Average',
+        families: 'Optical %TDS · Refractive Index nD20 · Prism Temp ATC · Live Zero-Typing Auto-Sync',
         readout: function (s) {
           const r2 = s.refractometer || {};
+          const conn = !!(r2.connected || s.refractometerConnected);
           const tds = r2.tds || labState.bc.measTds;
+          const tempStr = Number(r2.tempC || labState.bc.measTempC || 22.5).toFixed(1) + ' \u00B0C';
+          if (conn) {
+            return tds > 0
+              ? ('DiFluid R2 Connected · Auto-Sync · ' + Number(tds).toFixed(2) + '% TDS · ' + tempStr)
+              : ('DiFluid R2 Connected · Auto-Sync Active · ' + tempStr);
+          }
           return tds > 0
-            ? (Number(tds).toFixed(2) + '% TDS · ' + Number(r2.tempC || labState.bc.measTempC || 22.5).toFixed(1) + ' C')
+            ? (Number(tds).toFixed(2) + '% TDS · ' + tempStr)
             : 'Standby · Ready to Read';
         },
-        actions: [
-          { lbl: 'Pair R2', primary: true, fn: function () { if (ble.connectRefractometer) ble.connectRefractometer(); } },
-          { lbl: 'Read R2', fn: function () { if (ble.triggerRefractometerRead) ble.triggerRefractometerRead(); } },
-          {
+        actions: function (s) {
+          const isPaired = !!(s.refractometerConnected || (s.refractometer && s.refractometer.connected));
+          const canTrigger = !!(isPaired || s.simulatorActive);
+          const acts = [];
+          if (canTrigger) {
+            acts.push({
+              lbl: 'Read R2 Now',
+              primary: true,
+              id: 'bt-bench-r2-read-btn',
+              fn: function () { if (ble.triggerRefractometerRead) ble.triggerRefractometerRead(); }
+            });
+            acts.push({
+              lbl: 'Avg x3',
+              id: 'bt-bench-r2-avg3-btn',
+              fn: function () { if (ble.triggerRefractometerRead) ble.triggerRefractometerRead({ averageCount: 3 }); }
+            });
+            if (isPaired) {
+              acts.push({
+                lbl: 'Disconnect',
+                fn: function () { if (ble.disconnectRefractometer) ble.disconnectRefractometer(); }
+              });
+            }
+          } else {
+            acts.push({
+              lbl: 'Pair DiFluid R2',
+              primary: true,
+              id: 'bt-bench-r2-pair-btn',
+              fn: function () { if (ble.connectRefractometer) ble.connectRefractometer(); }
+            });
+          }
+          acts.push({
             lbl: 'Sim R2 (23.4 C)',
             fn: function () {
-              if (ble.simulateRefractometerRead) ble.simulateRefractometerRead();
-              labState.bc.measTds = 1.42;
-              labState.bc.measTempC = 23.4;
-              labState.bc.measNd = +nd20FromBrix(brixFromTds(1.42)).toFixed(5);
+              if (ble.simulateRefractometerRead) {
+                ble.simulateRefractometerRead();
+              } else {
+                applyLabLiveR2Reading({ tds: 1.42, tempC: 23.4, brix: brixFromTds(1.42), refractiveIndex: +nd20FromBrix(brixFromTds(1.42)).toFixed(5) });
+              }
               CK.haptic('sweetSpotLock');
-              notify('DiFluid R2 plotted 1.42% TDS (23.4 C Spoon-Chilled) onto Brew Control Canvas!');
               refreshBenchLive();
             }
-          },
-          {
+          });
+          acts.push({
             lbl: 'Sim Hot (37.8 C)',
             fn: function () {
               labState.bc.measTds = 1.48;
@@ -1670,8 +1864,9 @@
               notify('Hot sample alert (37.8 C): Metal-spoon cool 15-20s to avoid evaporation drift!');
               refreshBenchLive();
             }
-          }
-        ]
+          });
+          return acts;
+        }
       },
       {
         id: 'omni',
@@ -1721,9 +1916,29 @@
     ];
 
     const liveReadoutEls = [];
+    const liveActionRows = [];
+    function renderActionButtonsInto(container, actionsSpec, curState) {
+      container.textContent = '';
+      const list = typeof actionsSpec === 'function' ? actionsSpec(curState) : actionsSpec;
+      (list || []).forEach(function (act) {
+        const attrs = {
+          type: 'button',
+          class: 'bt-lab-btn is-sm' + (act.primary ? ' is-primary' : ''),
+          onclick: act.fn
+        };
+        if (act.id) attrs.id = act.id;
+        container.appendChild(domH('button', attrs, act.lbl));
+      });
+    }
+
     slotDefs.forEach(function (sd) {
       const valNode = domH('div', { class: 'bt-ble-slot-readout num-tab', text: sd.readout(st) });
+      const actRowNode = domH('div', { class: 'bt-lab-btn-row' });
+      renderActionButtonsInto(actRowNode, sd.actions, st);
       liveReadoutEls.push({ el: valNode, fn: sd.readout });
+      if (typeof sd.actions === 'function') {
+        liveActionRows.push({ el: actRowNode, fn: sd.actions });
+      }
       const card = domH('div', { class: 'bt-ble-slot-card', 'data-slot': sd.id },
         domH('div', { class: 'bt-ble-slot-top' },
           ic(sd.icon, { size: 20 }),
@@ -1731,13 +1946,7 @@
         ),
         valNode,
         domH('p', { class: 'bt-ble-slot-fams', text: sd.families }),
-        domH('div', { class: 'bt-lab-btn-row' }, sd.actions.map(function (act) {
-          return domH('button', {
-            type: 'button',
-            class: 'bt-lab-btn is-sm' + (act.primary ? ' is-primary' : ''),
-            onclick: act.fn
-          }, act.lbl);
-        }))
+        actRowNode
       );
       slotsGrid.appendChild(card);
     });
@@ -1758,8 +1967,12 @@
       liveReadoutEls.forEach(function (item) {
         item.el.textContent = item.fn(cur);
       });
+      liveActionRows.forEach(function (item) {
+        renderActionButtonsInto(item.el, item.fn, cur);
+      });
       if (benchR2Widget && benchR2Widget._syncTemp) benchR2Widget._syncTemp();
     }
+    registerLabBenchHook(root, refreshBenchLive);
 
     if (fullMode) {
       /* 3. Remembered Gear Auto-Reconnect & Workflow Tool-Mode Pills */
@@ -2598,10 +2811,20 @@
         aimSubSpan.textContent = rec.doseG.toFixed(1) + ' g dose · ' +
           (s.mode === 'espresso' ? (rec.bevG.toFixed(1) + ' g yield') : (rec.pourG.toFixed(0) + ' g water \u2192 ' + rec.bevG.toFixed(0) + ' g mug'));
       }
+      if (eyLiveReadoutEl) {
+        eyLiveReadoutEl.textContent = s.measTds > 0
+          ? (s.measTds.toFixed(2) + '% TDS · ' + mEyCalc.toFixed(1) + '% Extraction (%EY)')
+          : ('Target: ' + s.targetTds.toFixed(2) + '% TDS · ' + s.targetEy.toFixed(1) + '% Extraction (%EY)');
+      }
+      if (eyTdsInput && (typeof document === 'undefined' || document.activeElement !== eyTdsInput)) {
+        eyTdsInput.value = s.measTds > 0 ? s.measTds.toFixed(2) : '';
+      }
     }
 
     let aimCtaSpan = domH('span', { text: 'Brew Aiming Here \u2192' });
     let aimSubSpan = domH('span', { class: 'bt-cta-sub num-tab', text: '' });
+    let eyTdsInput = null;
+    let eyLiveReadoutEl = null;
 
     const surfCtrl = CK.bindChartSurface(svg, {
       ariaLabel: '2D TDS and Extraction Yield Target Puck',
@@ -2911,8 +3134,123 @@
       )
     );
 
-    const r2Enabled = getToolModeSafe('refractometer') !== 'off';
+    const bleForEy = window.BTBle || {};
+    const r2LiveStatusBadge = domH('span', {
+      class: 'bt-epistemic-pill is-research',
+      id: 'bt-lab-r2-status-badge',
+      text: 'Refractometer & %EY Calculator'
+    });
+    eyTdsInput = domH('input', {
+      type: 'number',
+      id: 'bt-lab-ey-tds-input',
+      inputmode: 'decimal',
+      class: 'bt-lab-text-in bt-lab-num-in',
+      style: 'font-size:1rem;max-width:118px',
+      step: '0.01',
+      min: '0',
+      max: '25',
+      placeholder: s.mode === 'espresso' ? '9.40' : '1.38',
+      value: s.measTds > 0 ? s.measTds.toFixed(2) : '',
+      'aria-label': 'Measured coffee strength percent TDS',
+      oninput: function () {
+        const v = parseFloat(eyTdsInput.value);
+        if (Number.isFinite(v) && v > 0) {
+          s.measTds = clamp(v, 0.05, 25, v);
+          s.targetTds = clamp(s.measTds, getDomains().tdsMin, getDomains().tdsMax, s.measTds);
+          s.measNd = +nd20FromBrix(brixFromTds(s.measTds)).toFixed(5);
+          tdsPill.setValue(s.measTds, true);
+          brixPill.setValue(brixFromTds(s.measTds), true);
+          ndPill.setValue(s.measNd, true);
+        } else {
+          s.measTds = 0;
+        }
+        updatePuckAndReadouts();
+      }
+    });
+    eyLiveReadoutEl = domH('strong', {
+      class: 'num-tab',
+      id: 'bt-lab-ey-live-readout',
+      style: 'font-size:0.9rem;color:var(--ink)',
+      text: ''
+    });
+    const r2ActionBtnsWrap = domH('div', { class: 'bt-lab-btn-row', id: 'bt-lab-r2-actions' });
+
+    function syncStudioR2Meta() {
+      const stNow = getBleStateSafe();
+      const conn = !!stNow.refractometerConnected;
+      const canTrigger = !!(conn || stNow.simulatorActive);
+      if (conn) {
+        const metaParts = ['DiFluid R2 Connected · Auto-Sync Active'];
+        if (stNow.lastTempC != null && Number.isFinite(+stNow.lastTempC) && +stNow.lastTempC > 0) {
+          metaParts.push((+stNow.lastTempC).toFixed(1) + ' \u00B0C');
+        }
+        if (stNow.refractometerBatteryPct != null && Number.isFinite(+stNow.refractometerBatteryPct) && +stNow.refractometerBatteryPct >= 0) {
+          metaParts.push(Math.round(+stNow.refractometerBatteryPct) + '%');
+        }
+        r2LiveStatusBadge.className = 'bt-epistemic-pill is-verified';
+        r2LiveStatusBadge.textContent = metaParts.join(' · ');
+      } else {
+        r2LiveStatusBadge.className = 'bt-epistemic-pill is-research';
+        r2LiveStatusBadge.textContent = 'Refractometer & %EY Calculator';
+      }
+      r2ActionBtnsWrap.textContent = '';
+      if (canTrigger) {
+        r2ActionBtnsWrap.appendChild(domH('button', {
+          type: 'button',
+          id: 'bt-lab-r2-read-btn',
+          class: 'bt-lab-btn is-sm is-primary',
+          onclick: function () {
+            if (typeof bleForEy.triggerRefractometerRead === 'function') {
+              Promise.resolve(bleForEy.triggerRefractometerRead()).catch(function () {});
+            }
+          }
+        }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Read R2 Now' })));
+        r2ActionBtnsWrap.appendChild(domH('button', {
+          type: 'button',
+          id: 'bt-lab-r2-avg3-btn',
+          class: 'bt-lab-btn is-sm',
+          onclick: function () {
+            if (typeof bleForEy.triggerRefractometerRead === 'function') {
+              Promise.resolve(bleForEy.triggerRefractometerRead({ averageCount: 3 })).catch(function () {});
+            }
+          }
+        }, 'Avg x3'));
+      } else {
+        r2ActionBtnsWrap.appendChild(domH('button', {
+          type: 'button',
+          id: 'bt-lab-r2-pair-btn',
+          class: 'bt-lab-btn is-sm',
+          onclick: function () {
+            if (typeof bleForEy.connectRefractometer === 'function') {
+              Promise.resolve(bleForEy.connectRefractometer()).then(function (res) {
+                if (res && (res.refractometerConnected || res.ok) && typeof bleForEy.triggerRefractometerRead === 'function') {
+                  return bleForEy.triggerRefractometerRead();
+                }
+              }).catch(function () {});
+            }
+          }
+        }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Pair DiFluid R2' })));
+      }
+    }
+    syncStudioR2Meta();
+
+    const r2LiveBar = domH('div', { class: 'bt-studio-subcard', id: 'bt-lab-r2-live-bar' },
+      domH('div', { class: 'bt-lab-card-head' },
+        r2LiveStatusBadge,
+        r2ActionBtnsWrap
+      ),
+      domH('div', { class: 'bt-lab-inline-inputs' },
+        domH('label', { class: 'bt-lab-field-lbl' },
+          domH('span', { text: 'Measured %TDS' }),
+          eyTdsInput
+        ),
+        eyLiveReadoutEl
+      )
+    );
+
+    const r2Enabled = getToolModeSafe('refractometer') !== 'off' || !!getBleStateSafe().refractometerConnected || s.measTds > 0;
     const r2Section = domH('div', { class: 'bt-bc-r2-section', hidden: !r2Enabled },
+      r2LiveBar,
       domH('div', { class: 'bt-vernier-row' }, tdsPill, brixPill, ndPill, tempSamplePill),
       studioR2Widget,
       domH('div', { class: 'bt-lab-chip-row' },
@@ -2933,6 +3271,31 @@
         }
       }, ic('refract-prism', { size: 14 }), domH('span', { text: 'Show Refractometer (%TDS / Brix / nD20) Controls' }))
     ) : null;
+
+    _labLiveHooks.studioEy = function (opts) {
+      if (!card.isConnected) return false;
+      const stNow = getBleStateSafe();
+      if (stNow.refractometerConnected || s.measTds > 0) {
+        r2Section.hidden = false;
+        if (r2ToggleHint) r2ToggleHint.hidden = true;
+      }
+      syncStudioR2Meta();
+      if (!(opts && opts.metaOnly) && s.measTds > 0) {
+        eyTdsInput.placeholder = s.mode === 'espresso' ? '9.40' : '1.38';
+        modeBtns.forEach(function (b, idx) {
+          const on = ['percolation', 'immersion', 'espresso'][idx] === s.mode;
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-pressed', String(on));
+        });
+        redrawStaticBackdrop();
+        tdsPill.setValue(s.measTds, true);
+        brixPill.setValue(brixFromTds(s.measTds), true);
+        ndPill.setValue(s.measNd, true);
+        tempSamplePill.setValue(s.measTempC, true);
+      }
+      updatePuckAndReadouts();
+      return true;
+    };
 
     card.appendChild(domH('div', { class: 'bt-lab-card-head' },
       domH('div', { class: 'bt-lab-title-group' },
@@ -5694,21 +6057,47 @@
         }
       }
     });
+    const tdsIn = domH('input', {
+      type: 'number',
+      id: 'bt-lab-ratio4-tds-input',
+      inputmode: 'decimal',
+      class: 'bt-lab-text-in bt-lab-num-in',
+      style: 'font-size:1rem',
+      step: '0.01',
+      min: '0.1',
+      max: '25',
+      value: Number(r4.tdsPct).toFixed(2),
+      'aria-label': 'Measured strength percent TDS',
+      oninput: function () {
+        const v = parseFloat(tdsIn.value);
+        if (Number.isFinite(v) && v > 0) {
+          r4.tdsPct = +clamp(v, 0.05, 25, r4.tdsPct).toFixed(2);
+          r4.eyPct = +clamp((r4.tdsPct * r4.mugG) / Math.max(0.5, r4.doseG), 2, 36, r4.eyPct).toFixed(2);
+          syncInputs('tds');
+        }
+      }
+    });
 
     function syncInputs(skipKey) {
       if (skipKey !== 'dose') doseIn.value = String(r4.doseG);
       if (skipKey !== 'water') waterIn.value = String(r4.waterG);
       if (skipKey !== 'mug') mugIn.value = String(r4.mugG);
       if (skipKey !== 'ratio') ratioIn.value = String(r4.ratio);
+      if (skipKey !== 'tds' && (typeof document === 'undefined' || document.activeElement !== tdsIn)) {
+        tdsIn.value = Number(r4.tdsPct).toFixed(2);
+      }
+      const stR4 = getBleStateSafe();
+      const canReadR2 = !!(stR4.refractometerConnected || stR4.simulatorActive);
+      const bleR4 = window.BTBle || {};
       const cbConcMl = Math.round(r4.coldBrewServeG / (1 + r4.coldBrewDiluteRatio - 1));
       const cbWaterOrMilkMl = Math.max(0, r4.coldBrewServeG - cbConcMl);
       const darcyShiftClicks = Math.round((Math.pow(r4.doseG / 18.0, 0.20) - 1) * 20);
       outBox.textContent = '';
       outBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
-        domH('div', { class: 'bt-studio-human-line num-tab' },
+        domH('div', { class: 'bt-studio-human-line num-tab', id: 'bt-lab-ratio4-live-readout' },
           domH('strong', {
             text: r4.doseG.toFixed(1) + ' g Dose  \u2194  ' + r4.waterG + ' g Pour Water  \u2194  ' +
-              r4.mugG + ' g in Mug  \u2194  1:' + r4.ratio.toFixed(1) + ' (~' + r4.tdsPct.toFixed(2) + '% TDS)'
+              r4.mugG + ' g in Mug  \u2194  1:' + r4.ratio.toFixed(1) + ' (' + r4.tdsPct.toFixed(2) + '% TDS · ' + r4.eyPct.toFixed(1) + '% EY)'
           })
         ),
         domH('p', {
@@ -5737,6 +6126,16 @@
               });
             }
           }, ic('brew', { size: 14 }), domH('span', { text: 'Apply Dose & Water to My Recipe \u2192' })),
+          canReadR2 ? domH('button', {
+            type: 'button',
+            id: 'bt-lab-ratio4-r2-read-btn',
+            class: 'bt-lab-btn is-sm is-accent',
+            onclick: function () {
+              if (typeof bleR4.triggerRefractometerRead === 'function') {
+                Promise.resolve(bleR4.triggerRefractometerRead()).catch(function () {});
+              }
+            }
+          }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Read R2 Now' })) : null,
           domH('button', {
             type: 'button',
             class: 'bt-lab-btn is-sm',
@@ -5777,6 +6176,10 @@
     ));
     card.appendChild(domH('div', { class: 'bt-lab-inline-inputs' },
       domH('label', { class: 'bt-lab-field-lbl' },
+        domH('span', { text: '5. Measured %TDS' }),
+        tdsIn
+      ),
+      domH('label', { class: 'bt-lab-field-lbl' },
         domH('span', { text: '1-Brew Sponge Check: Wet Grounds Wt (g)' }),
         wetBedIn
       ),
@@ -5794,6 +6197,11 @@
     ));
     card.appendChild(outBox);
     syncInputs('');
+    _labLiveHooks.ratioYield = function () {
+      if (!card.isConnected) return false;
+      syncInputs('');
+      return true;
+    };
     return card;
   }
 
@@ -6576,20 +6984,35 @@
     const ble = window.BTBle || {};
     const statusDot = domH('span', { class: 'bt-hw-dot' });
     const statusTxt = domH('span', { class: 'bt-hw-status-txt num-tab', text: 'Bluetooth Ready' });
+    const quickReadR2Btn = domH('button', {
+      type: 'button',
+      id: 'bt-hw-bar-r2-read-btn',
+      class: 'bt-hw-sim-pill',
+      hidden: true,
+      title: 'Trigger DiFluid R2 Refractometer Reading',
+      onclick: function () {
+        if (typeof ble.triggerRefractometerRead === 'function') {
+          Promise.resolve(ble.triggerRefractometerRead()).catch(function () {});
+        }
+      }
+    }, 'Read R2 Now');
 
     function syncHwStatus() {
       const st = getBleStateSafe();
       const scOn = !!(st.scale && st.scale.connected);
+      const r2On = !!(st.refractometerConnected || (st.refractometer && st.refractometer.connected));
       const r2Tds = (st.refractometer && st.refractometer.tds) || labState.bc.measTds;
       const simOn = !!st.simulatorActive;
-      const anyLive = scOn || simOn || r2Tds > 0;
+      const anyLive = scOn || r2On || simOn || r2Tds > 0;
       statusDot.className = 'bt-hw-dot' + (anyLive ? ' is-live' : '');
       const parts = [];
+      if (r2On) parts.push('DiFluid R2 Connected');
       if (scOn || simOn) parts.push(Number((st.scale && st.scale.weightG) || 0).toFixed(1) + ' g');
       if (r2Tds > 0) parts.push(Number(r2Tds).toFixed(2) + '% TDS');
       statusTxt.textContent = parts.length ? ('Live: ' + parts.join(' · ')) : 'Scale / R2 / Omni Standby';
+      quickReadR2Btn.hidden = !(r2On || simOn);
+      return barRoot && barRoot.isConnected;
     }
-    syncHwStatus();
 
     const connectBtn = domH('button', {
       type: 'button',
@@ -6627,13 +7050,17 @@
       }
     }, '10Hz Sim');
 
-    return domH('div', { class: 'bt-lab-hw-bar', role: 'region', 'aria-label': 'Compact Bluetooth Hardware Bar' },
+    const barRoot = domH('div', { class: 'bt-lab-hw-bar', role: 'region', 'aria-label': 'Compact Bluetooth Hardware Bar' },
       domH('div', { class: 'bt-hw-bar-left' }, statusDot, statusTxt),
-      domH('div', { class: 'bt-hw-bar-right' }, connectBtn, simBtn)
+      domH('div', { class: 'bt-hw-bar-right' }, quickReadR2Btn, connectBtn, simBtn)
     );
+    syncHwStatus();
+    _labLiveHooks.hwBar = syncHwStatus;
+    return barRoot;
   }
 
   function renderLabTab(mountEl, ctx) {
+    ensureLabBleListeners();
     const page = domH('div', { class: 'bt-tab-page bt-lab-page' });
     const a = getApp();
     a.tabSegments = a.tabSegments || {};

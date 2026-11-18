@@ -1942,7 +1942,22 @@
           type: 'button',
           class: 'bt-chip-v6 bt-chip-soft',
           onclick: function () { openSheet('workflow-tools', {}, { title: 'My Workflow & Tools', detent: 'half' }); }
-        }, ico('grinder-burr', 16), dom('span', { text: 'My Workflow & Tools' }))
+        }, ico('grinder-burr', 16), dom('span', { text: 'My Workflow & Tools' })),
+        dom('button', {
+          type: 'button',
+          id: 'bt-door-backup-saves-btn',
+          class: 'bt-chip-v6 bt-chip-soft',
+          style: 'border-color:var(--accent);color:var(--ink);font-weight:700',
+          onclick: function () {
+            haptic('tick');
+            if (typeof window !== 'undefined' && window.BTBackupCenter && typeof window.BTBackupCenter.open === 'function') {
+              window.BTBackupCenter.open();
+            } else {
+              var sh = getShell();
+              if (sh && sh.go) sh.go('vault');
+            }
+          }
+        }, ico('vault', 16), dom('span', { text: 'Backup / Load Saves & Web Link' }))
       )
     ));
 
@@ -3501,6 +3516,11 @@
     lastStepIdx: -1,
     lastPipKey: '',
     midSpoken: {},
+    spokenGramBuckets: {},
+    pourReachedSpoken: {},
+    drawdownBuckets: {},
+    lastSpeechAtS: -99,
+    lastSpokenCue: '',
     finishFired: false,
     lastAudioNote: 'Voice + 880 Hz Chimes ready \u2014 tap Test Sound or Start'
   };
@@ -3582,6 +3602,11 @@
       _timerSession.lastStepIdx = -1;
       _timerSession.lastPipKey = '';
       _timerSession.midSpoken = {};
+      _timerSession.spokenGramBuckets = {};
+      _timerSession.pourReachedSpoken = {};
+      _timerSession.drawdownBuckets = {};
+      _timerSession.lastSpeechAtS = -99;
+      _timerSession.lastSpokenCue = '';
       _timerSession.finishFired = false;
       _timerSession.liveWeightG = 0;
       _timerSession.prevSimG = 0;
@@ -3749,16 +3774,36 @@
     if (!a.prefs.timerCollapsed || typeof a.prefs.timerCollapsed !== 'object') {
       a.prefs.timerCollapsed = {};
     }
+    if (a.prefs.timerGramCalloutSec === undefined) {
+      a.prefs.timerGramCalloutSec = 10;
+    }
     var tcPref = a.prefs.timerCollapsed;
     var isAudioCollapsed = tcPref.audio !== undefined ? !!tcPref.audio : true;
+    var isDialRingCollapsed = tcPref.dialRing !== undefined ? !!tcPref.dialRing : (winW < 640 || winH < 760);
     var isWavesCollapsed = tcPref.waves !== undefined ? !!tcPref.waves : false;
     var isActiveStepCollapsed = tcPref.activeStep !== undefined ? !!tcPref.activeStep : false;
     var isAllStepsCollapsed = tcPref.allSteps !== undefined ? !!tcPref.allSteps : (winW < 640);
+    var gramCalloutSec = (a.prefs.timerGramCalloutSec === 0 || a.prefs.timerGramCalloutSec === '0' || a.prefs.timerGramCalloutSec === 'off')
+      ? 0
+      : (+a.prefs.timerGramCalloutSec === 15 ? 15 : 10);
 
     function persistTimerCollapse(key, nextVal) {
       a.prefs.timerCollapsed = a.prefs.timerCollapsed || {};
       a.prefs.timerCollapsed[key] = !!nextVal;
       saveDraft();
+    }
+
+    function gramVoiceBtnLabel(sec) {
+      return sec > 0 ? ('Spoken ~Grams: Every ' + sec + 's') : 'Spoken ~Grams: Off';
+    }
+
+    function fmtSpokenClock(secWhole) {
+      var w = Math.max(1, Math.round(secWhole));
+      if (w < 60) return w + ' seconds';
+      var m = Math.floor(w / 60);
+      var r = w % 60;
+      var mLbl = m === 1 ? '1 minute' : (m + ' minutes');
+      return r === 0 ? mLbl : (mLbl + ' ' + r);
     }
 
     /* 1. Collapsible Sound, Voice & Scale Card (#bt-timer-audio-card — compact 1-line summary by default) */
@@ -3770,6 +3815,72 @@
     };
     var curAudioMeta = audioMetaMap[curAudioMode] || audioMetaMap.voice;
     var wakeBadgeTxt = dom('span', { text: isWakeLockActive() ? 'Wake ON' : 'Wake' });
+    var audioNoteEl = dom('span', { class: 'bt-timer-audio-note', text: _timerSession.lastAudioNote || 'Ready' });
+
+    function speakGramCoach(text, opts) {
+      if (gramCalloutSec <= 0 || AudioCoach.mode() === 'silent' || !text) return false;
+      _timerSession.lastSpeechAtS = _timerSession.elapsedS;
+      _timerSession.lastSpokenCue = text;
+      _timerSession.lastAudioNote = text;
+      if (audioNoteEl) audioNoteEl.textContent = text;
+      if (AudioCoach.mode() === 'voice') {
+        AudioCoach.speak(text, opts);
+        return true;
+      }
+      try {
+        if (typeof window !== 'undefined' && window.speechSynthesis && typeof window.SpeechSynthesisUtterance === 'function') {
+          window.speechSynthesis.cancel();
+          var utt = new window.SpeechSynthesisUtterance(String(text));
+          utt.rate = (opts && opts.rate) || 1.04;
+          utt.pitch = 1.0;
+          window.speechSynthesis.speak(utt);
+        }
+      } catch (_) {}
+      return true;
+    }
+
+    var gramVoiceTxtEl = dom('span', { text: gramVoiceBtnLabel(gramCalloutSec) });
+    var gramVoiceBtn = dom('button', {
+      type: 'button',
+      class: 'bt-gram-voice-btn' + (gramCalloutSec > 0 && curAudioMode !== 'silent' ? ' is-active' : ''),
+      id: 'bt-timer-gram-voice-btn',
+      'aria-pressed': String(gramCalloutSec > 0 && curAudioMode !== 'silent'),
+      title: 'Hands-free spoken approximate gram checkpoints (Every 10s / 15s / Off)',
+      onclick: function (ev) {
+        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+        AudioCoach.unlock();
+        var nextSec;
+        if (AudioCoach.mode() === 'silent') {
+          nextSec = gramCalloutSec > 0 ? gramCalloutSec : 10;
+          AudioCoach.setMode('voice');
+          curAudioMode = 'voice';
+        } else {
+          nextSec = gramCalloutSec === 10 ? 15 : (gramCalloutSec === 15 ? 0 : 10);
+          if (nextSec > 0 && AudioCoach.mode() !== 'voice') {
+            AudioCoach.setMode('voice');
+            curAudioMode = 'voice';
+          }
+        }
+        gramCalloutSec = nextSec;
+        a.prefs.timerGramCalloutSec = nextSec;
+        _timerSession.spokenGramBuckets = {};
+        saveDraft();
+        curAudioMeta = audioMetaMap[AudioCoach.mode()] || audioMetaMap.voice;
+        audioToggleLblEl.textContent = (winW < 540 ? curAudioMeta.short : curAudioMeta.full) + ' · Sound';
+        if (nextSec > 0) {
+          var nowApprox5 = Math.round(computeGhostTargetAt(_timerSession.elapsedS, rec, bestLockedBrew) / 5) * 5;
+          speakGramCoach('Spoken grams every ' + nextSec + ' seconds.' + (_timerSession.elapsedS > 1 ? (' Currently around ' + nowApprox5 + ' grams.') : ''));
+          showToast('Spoken ~Grams: Every ' + nextSec + 's');
+        } else {
+          _timerSession.lastAudioNote = 'Spoken ~Grams callouts Off';
+          audioNoteEl.textContent = _timerSession.lastAudioNote;
+          showToast('Spoken ~Grams: Off');
+        }
+        haptic('tick');
+        syncTimerDom();
+      }
+    }, ico('voice-sound', 12), gramVoiceTxtEl);
+
     var flowPillTxt = dom('span', { text: 'Aim ~3.2 g/s' });
     var flowPillEl = dom('span', { class: 'bt-flow-rate-pill is-idle', id: 'bt-timer-flow-pill' }, ico('droplet', 12), flowPillTxt);
     var demoScaleTxt = dom('span', { text: _timerSession.simOn ? 'Demo Scale ON' : 'Demo Scale' });
@@ -3829,7 +3940,6 @@
       }
     }, ico(curAudioMeta.ico, 14), audioToggleLblEl, audioChevronEl);
 
-    var audioNoteEl = dom('span', { class: 'bt-timer-audio-note', text: _timerSession.lastAudioNote || 'Ready' });
     var audioBodyEl = dom('div', {
       class: 'bt-timer-audio-body',
       id: 'bt-timer-audio-body',
@@ -3882,6 +3992,7 @@
     },
       dom('div', { class: 'bt-timer-audio-head' },
         audioToggleBtn,
+        gramVoiceBtn,
         dom('div', { class: 'bt-timer-audio-pills' },
           flowPillEl,
           demoScaleBtn
@@ -3891,13 +4002,29 @@
     );
     container.appendChild(audioBar);
 
-    /* 2. GIANT Kitchen-Counter Clock Readout (#bt-timer-giant-clock) + Enlarged BTChronoDial (168px mobile / 204px desktop) */
+    /* 2. FULL-WIDTH STADIUM KITCHEN STOPWATCH (#bt-timer-giant-clock) + LIVE APPROX GRAMS PACER (#bt-timer-approx-grams-hero) + Collapsible BTChronoDial */
     var initElapsedS = _timerSession.stopped && _timerSession.actualStoppedS != null ? _timerSession.actualStoppedS : _timerSession.elapsedS;
+    var giantClockMmssEl = dom('span', { class: 'bt-timer-giant-mmss' });
+    var giantClockTenthsEl = dom('span', { class: 'bt-timer-giant-tenths' });
+    function setGiantClockText(secVal, withTenths) {
+      var fullTxt = fmtClock(secVal, withTenths);
+      var dotPos = withTenths ? fullTxt.indexOf('.') : -1;
+      if (dotPos > 0) {
+        giantClockMmssEl.textContent = fullTxt.slice(0, dotPos);
+        giantClockTenthsEl.textContent = fullTxt.slice(dotPos);
+        giantClockTenthsEl.hidden = false;
+      } else {
+        giantClockMmssEl.textContent = fullTxt;
+        giantClockTenthsEl.textContent = '';
+        giantClockTenthsEl.hidden = true;
+      }
+    }
+    setGiantClockText(initElapsedS, !_timerSession.stopped);
     var giantClockEl = dom('div', {
       class: 'bt-timer-giant-clock bt-num',
-      id: 'bt-timer-giant-clock',
-      text: fmtClock(initElapsedS, true)
-    });
+      id: 'bt-timer-giant-clock'
+    }, giantClockMmssEl, giantClockTenthsEl);
+
     var giantPhaseEl = dom('div', {
       class: 'bt-timer-giant-phase',
       id: 'bt-timer-giant-phase',
@@ -3913,19 +4040,115 @@
       id: 'bt-timer-giant-flow',
       text: 'Aim ~3.2 g/s'
     });
+    var overtimeBadgeEl = dom('div', {
+      class: 'bt-timer-overtime-badge',
+      id: 'bt-timer-overtime-badge',
+      hidden: true
+    });
+
+    var dialRingToggleBtn = dom('button', {
+      type: 'button',
+      class: 'bt-card-collapse-btn bt-timer-dial-ring-toggle',
+      id: 'bt-timer-dial-ring-toggle',
+      'data-timer-collapse': 'dialRing',
+      'aria-expanded': String(!isDialRingCollapsed),
+      'aria-controls': 'bt-timer-dial-wrap',
+      text: 'Circular Dial Ring ' + (isDialRingCollapsed ? '\u25B8' : '\u25BE'),
+      onclick: function (ev) {
+        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+        isDialRingCollapsed = !isDialRingCollapsed;
+        persistTimerCollapse('dialRing', isDialRingCollapsed);
+        dialCardEl.classList.toggle('is-dial-collapsed', isDialRingCollapsed);
+        dialWrapEl.hidden = isDialRingCollapsed;
+        dialRingToggleBtn.setAttribute('aria-expanded', String(!isDialRingCollapsed));
+        dialRingToggleBtn.textContent = 'Circular Dial Ring ' + (isDialRingCollapsed ? '\u25B8' : '\u25BE');
+        haptic('tick');
+      }
+    });
+
     var giantHeroEl = dom('div', { class: 'bt-timer-giant-hero', id: 'bt-timer-giant-hero' },
+      dom('div', { class: 'bt-timer-giant-topline' },
+        giantPhaseEl,
+        dialRingToggleBtn
+      ),
       giantClockEl,
       dom('div', { class: 'bt-timer-giant-meta' },
-        giantPhaseEl,
         giantWeightEl,
-        giantFlowEl
+        giantFlowEl,
+        overtimeBadgeEl
       )
+    );
+
+    /* 2A. Prominent Full-Width Visual 'Approx Grams Right Now' Pacer Banner (#bt-timer-approx-grams-hero) */
+    var seenTickPct = {};
+    var gramTickEls = [];
+    for (var ti = 0; ti < steps.length; ti++) {
+      var stTickG = steps[ti] && steps[ti].targetG != null ? +steps[ti].targetG : 0;
+      if (stTickG > 1 && stTickG < rec.hotPourG - 1 && rec.hotPourG > 0) {
+        var tPct = Math.max(4, Math.min(96, Math.round((stTickG / rec.hotPourG) * 1000) / 10));
+        var tKey = String(Math.round(tPct));
+        if (!seenTickPct[tKey]) {
+          seenTickPct[tKey] = 1;
+          gramTickEls.push(dom('span', {
+            class: 'bt-timer-grams-tick',
+            style: 'left:' + tPct + '%',
+            title: (steps[ti].title || ('Step ' + (ti + 1))) + ': ' + Math.round(stTickG) + ' g'
+          }));
+        }
+      }
+    }
+    var approxGramsKickerTxt = dom('span', { text: 'APPROX GRAMS RIGHT NOW' });
+    var approxGramsPctEl = dom('span', {
+      class: 'bt-timer-approx-grams-pct bt-num',
+      text: '0% · 0 / ' + Math.round(rec.hotPourG) + ' g'
+    });
+    var approxGramsMainEl = dom('div', {
+      class: 'bt-timer-approx-grams-main bt-num',
+      id: 'bt-timer-approx-grams-readout',
+      text: 'BE AT ~0 g NOW'
+    });
+    var approxGramsSubEl = dom('div', {
+      class: 'bt-timer-approx-grams-sub',
+      id: 'bt-timer-approx-grams-sub',
+      text: 'Pouring to ' + Math.round((steps[0] && steps[0].targetG) || rec.hotPourG) + ' g step target · ' + Math.round(rec.hotPourG) + ' g total'
+    });
+    var approxGramsFillEl = dom('div', {
+      class: 'bt-timer-grams-fill',
+      id: 'bt-timer-grams-fill',
+      style: 'width:0%'
+    });
+    var approxGramsScalePinEl = dom('span', {
+      class: 'bt-timer-grams-scale-pin',
+      hidden: true,
+      style: 'left:0%'
+    });
+    var approxGramsTrackEl = dom('div', {
+      class: 'bt-timer-grams-track',
+      id: 'bt-timer-grams-track',
+      role: 'progressbar',
+      'aria-label': 'Approximate grams poured progress',
+      'aria-valuemin': '0',
+      'aria-valuemax': String(Math.round(rec.hotPourG)),
+      'aria-valuenow': '0'
+    }, approxGramsFillEl, gramTickEls, approxGramsScalePinEl);
+
+    var approxGramsHeroEl = dom('div', {
+      class: 'bt-timer-approx-grams-hero is-pouring bt-num',
+      id: 'bt-timer-approx-grams-hero'
+    },
+      dom('div', { class: 'bt-timer-approx-grams-top' },
+        dom('span', { class: 'bt-timer-approx-grams-kicker' }, ico('droplet', 11), approxGramsKickerTxt),
+        approxGramsPctEl
+      ),
+      approxGramsMainEl,
+      approxGramsSubEl,
+      approxGramsTrackEl
     );
 
     var dialPhases = steps.map(function (s) {
       return { label: s.title, startS: s.t, endS: s.endS, waterG: s.targetG };
     });
-    var dialSizePx = winW < 640 ? 168 : 204;
+    var dialSizePx = winW < 640 ? 156 : 168;
     var chronoNode = (tac && typeof tac.BTChronoDial === 'function')
       ? tac.BTChronoDial({
           size: dialSizePx,
@@ -3941,11 +4164,11 @@
         })
       : dom('div', { class: 'bt-num', style: 'font-size:2.85rem;font-weight:800;padding:16px 0', text: fmtClock(initElapsedS, true) });
 
-    var overtimeBadgeEl = dom('div', {
-      class: 'bt-timer-overtime-badge',
-      id: 'bt-timer-overtime-badge',
-      hidden: true
-    });
+    var dialWrapEl = dom('div', {
+      class: 'bt-timer-dial-wrap',
+      id: 'bt-timer-dial-wrap',
+      hidden: isDialRingCollapsed
+    }, chronoNode);
 
     /* 2B. Collapsible Live 3-Line Extraction Wave Graph (#bt-timer-waves-card) */
     var wavesNode = (tac && typeof tac.BTExtractionWavesLive === 'function')
@@ -4187,27 +4410,29 @@
       )
     );
 
-    /* Above-the-fold order: Giant Clock + Dial + Pause/Stop Brew first, then 3-Wave & Active Step */
+    /* Above-the-fold order: Full-Width Giant Clock + Live Approx Grams Pacer + Collapsible Dial + Pause/Stop Brew first */
     var isMobileStage = winW < 640;
-    container.appendChild(dom('section', { class: 'bt-timer-dial-card' },
+    var dialCardEl = dom('section', {
+      class: 'bt-timer-dial-card' + (isDialRingCollapsed ? ' is-dial-collapsed' : '')
+    },
       giantHeroEl,
-      dom('div', { class: 'bt-timer-dial-wrap' }, chronoNode, overtimeBadgeEl),
+      approxGramsHeroEl,
+      dialWrapEl,
       dom('div', { class: 'bt-timer-dial-rhs' },
         lockedBannerEl,
         transportWrap,
         isMobileStage ? wavesCard : null,
         activeStepCard
       )
-    ));
+    );
+    container.appendChild(dialCardEl);
     if (!isMobileStage && wavesCard) {
       container.appendChild(wavesCard);
     }
 
-    /* 5. Dynamic Sticky Bottom Bar */
+    /* 5. Collapsible All Pour Steps Jump Card (#bt-timer-steps-card — collapsed by default on <640px mobile) */
     var stickyHost = dom('div', { style: 'display:contents' });
-    container.appendChild(stickyHost);
 
-    /* 6. Collapsible All Pour Steps Jump Card (#bt-timer-steps-card — collapsed by default on <640px mobile) */
     var allStepsBodyEl = dom('div', {
       class: 'bt-pour-schedule',
       id: 'bt-timer-steps-body',
@@ -4224,6 +4449,7 @@
             _timerSession.actualStoppedS = null;
             _timerSession.elapsedS = st.t;
             _timerSession.lastStepIdx = idx - 1;
+            _timerSession.lastSpeechAtS = -99;
             triggerStepCuesIfNeeded(idx);
             syncTimerDom();
           }
@@ -4275,6 +4501,9 @@
       allStepsBodyEl
     );
     container.appendChild(allStepsCardEl);
+
+    /* 6. Bottom-Flow Primary Save & Move Bar (Always at the very bottom below all cards) */
+    container.appendChild(stickyHost);
 
     stageEl.appendChild(container);
 
@@ -4334,8 +4563,86 @@
       if (_timerSession.lastStepIdx === idx || !steps[idx]) return;
       _timerSession.lastStepIdx = idx;
       AudioCoach.playStepChime();
-      AudioCoach.speak(steps[idx].say || ('Pour steadily to ' + steps[idx].targetG + ' grams.'));
+      var stCue = steps[idx];
+      var prevCueG = stCue.startG != null ? +stCue.startG : (idx > 0 && steps[idx - 1] ? (+steps[idx - 1].targetG || 0) : 0);
+      var tgtCueG = Math.round(stCue.targetG != null ? +stCue.targetG : rec.hotPourG);
+      var deltaCueG = tgtCueG - prevCueG;
+      if (gramCalloutSec > 0 && AudioCoach.mode() !== 'silent') {
+        var stepSpeech = deltaCueG > 1
+          ? ('Step ' + (idx + 1) + ', ' + stCue.title + '. Pour steadily to about ' + tgtCueG + ' grams.')
+          : ('Step ' + (idx + 1) + ', ' + stCue.title + '. Hold at about ' + tgtCueG + ' grams and let drain.');
+        speakGramCoach(stepSpeech);
+      } else {
+        AudioCoach.speak(stCue.say || ('Pour steadily to ' + tgtCueG + ' grams.'));
+      }
       haptic('snap');
+    }
+
+    function evaluateSpokenGramCues(elS, activeIdx) {
+      if (gramCalloutSec <= 0 || AudioCoach.mode() === 'silent' || elS >= totalTargetS - 2.5) return;
+      var nearStepOrPip = false;
+      for (var si = 0; si < steps.length; si++) {
+        var stT = steps[si].t || 0;
+        if (Math.abs(elS - stT) < 2.5 || (stT > elS && (stT - elS) <= 3.5)) {
+          nearStepOrPip = true;
+          break;
+        }
+      }
+      var curStepObj = steps[activeIdx];
+      if (!curStepObj || nearStepOrPip) return;
+
+      var s0P = curStepObj.t || 0;
+      var s1P = Math.max(s0P + 4, curStepObj.endS || totalTargetS);
+      var prevGP = curStepObj.startG != null
+        ? +curStepObj.startG
+        : (activeIdx > 0 && steps[activeIdx - 1] ? (+steps[activeIdx - 1].targetG || 0) : 0);
+      var tgtGP = curStepObj.targetG != null ? +curStepObj.targetG : rec.hotPourG;
+      var deltaGP = Math.max(0, tgtGP - prevGP);
+      var pourWinP = (curStepObj.pourEndS != null && curStepObj.pourEndS > s0P + 2 && curStepObj.pourEndS < s1P)
+        ? (curStepObj.pourEndS - s0P)
+        : Math.max(5, (s1P - s0P) * 0.65);
+      var pourEndP = s0P + pourWinP;
+      var liveFlowInfo = computeTargetStepFlow(elS, curStepObj, activeIdx, steps, rec, totalTargetS);
+      var rawGhostP = computeGhostTargetAt(elS, rec, bestLockedBrew);
+      var approx5G = Math.round(rawGhostP / 5) * 5;
+
+      /* A. Pour window inside current step just reached curSt.targetG */
+      if (deltaGP > 1 && (s1P - pourEndP) >= 3.5 && elS >= pourEndP && !_timerSession.pourReachedSpoken[activeIdx]) {
+        _timerSession.pourReachedSpoken[activeIdx] = 1;
+        var curBucketSkip = Math.floor(elS / gramCalloutSec);
+        if (curBucketSkip >= 1) _timerSession.spokenGramBuckets[curBucketSkip] = 1;
+        speakGramCoach('About ' + Math.round(tgtGP) + ' grams reached \u2014 hold and let drain.');
+        return;
+      }
+
+      if (elS - (_timerSession.lastSpeechAtS || -99) < 3.8) return;
+
+      /* B. Final drawdown every 20s once all water has been poured */
+      var allWaterIn = Math.round(rawGhostP) >= Math.max(1, Math.round(rec.hotPourG) - 1) && liveFlowInfo.rate <= 0;
+      if (allWaterIn) {
+        var ddBucket = Math.floor(elS / 20);
+        if (ddBucket >= 1 && !_timerSession.drawdownBuckets[ddBucket]) {
+          _timerSession.drawdownBuckets[ddBucket] = 1;
+          var remDrawS = Math.max(5, Math.round((totalTargetS - elS) / 5) * 5);
+          speakGramCoach('Draining at ' + Math.round(rec.hotPourG) + ' grams \u2014 ' + remDrawS + ' seconds to target.');
+        }
+        return;
+      }
+
+      /* C. Live periodic approx-gram callouts every 10s (or 15s) right on the checkpoint mark */
+      var gBucket = Math.floor(elS / gramCalloutSec);
+      if (gBucket >= 1 && !_timerSession.spokenGramBuckets[gBucket]) {
+        _timerSession.spokenGramBuckets[gBucket] = 1;
+        if ((elS - gBucket * gramCalloutSec) <= 2.4) {
+          var spokenMark = fmtSpokenClock(gBucket * gramCalloutSec);
+          if (liveFlowInfo.rate > 0) {
+            speakGramCoach(spokenMark + ' \u2014 be around ' + approx5G + ' grams.');
+          } else if (steps[activeIdx + 1]) {
+            var waitRem = Math.max(3, Math.round(steps[activeIdx + 1].t - elS));
+            speakGramCoach(spokenMark + ' \u2014 hold around ' + approx5G + ' grams, next pour in ' + waitRem + ' seconds.');
+          }
+        }
+      }
     }
 
     function paintDynamicStickyBar() {
@@ -4399,17 +4706,69 @@
         shownFlowLbl = stepFlowInfo.label;
       }
 
-      /* Giant Kitchen-Counter Clock + Live Weight & Flow Readout */
-      giantClockEl.textContent = fmtClock(elS, !_timerSession.stopped);
+      /* 1. Full-Width Stadium Kitchen Stopwatch (#bt-timer-giant-clock) */
+      setGiantClockText(elS, !_timerSession.stopped);
       giantClockEl.classList.toggle('is-overtime', isOvertime && !_timerSession.stopped);
       giantClockEl.classList.toggle('is-stopped', !!_timerSession.stopped);
       giantPhaseEl.textContent = _timerSession.stopped
         ? ('Brew Stopped · Target ' + fmtClock(totalTargetS, false))
         : (isOvertime ? ('Overtime +' + fmtClock(overSec, false) + ' · Tap Stop When Drained') : ('Step ' + (curIdx + 1) + '/' + Math.max(1, steps.length) + ' · ' + curSt.title));
       giantPhaseEl.classList.toggle('is-overtime', isOvertime && !_timerSession.stopped);
-      giantWeightEl.textContent = Math.round(shownWeight) + ' / ' + rec.hotPourG + ' g · ' + fmtClock(totalTargetS, false);
+      giantWeightEl.textContent = Math.round(shownWeight) + ' / ' + Math.round(rec.hotPourG) + ' g · ' + fmtClock(totalTargetS, false);
       giantFlowEl.textContent = shownFlowLbl;
       giantFlowEl.className = 'bt-timer-giant-flow bt-num' + (shownFlowGs >= 0.15 ? ' is-flowing' : '');
+
+      /* 2. Prominent Full-Width 'Approx Grams Right Now' Pacer Banner (#bt-timer-approx-grams-hero) */
+      var ghostRoundG = Math.round(ghostG);
+      var stepTgtG = Math.round(curSt.targetG != null ? +curSt.targetG : rec.hotPourG);
+      var totalG = Math.max(1, Math.round(rec.hotPourG));
+      var gramPct = Math.max(0, Math.min(100, (ghostG / totalG) * 100));
+      var remToNext = nextSt ? Math.max(0, Math.ceil(nextSt.t - elS)) : Math.max(0, Math.ceil(totalTargetS - elS));
+      var isPouringNow = !_timerSession.stopped && !isOvertime && stepFlowInfo.rate > 0;
+      var isAllPoured = !_timerSession.stopped && !isPouringNow && ghostRoundG >= Math.max(1, totalG - 1);
+
+      if (_timerSession.stopped) {
+        approxGramsHeroEl.className = 'bt-timer-approx-grams-hero is-draining bt-num';
+        approxGramsMainEl.textContent = _timerSession.lockedYieldG
+          ? ('YIELD ' + Math.round(_timerSession.lockedYieldG) + ' g · ~' + totalG + ' g POURED')
+          : ('ALL ~' + totalG + ' g POURED \u2014 DONE');
+        approxGramsSubEl.textContent = 'Brew stopped at ' + fmtClock(elS, false) + ' · Target ' + fmtClock(totalTargetS, false);
+      } else if (isPouringNow) {
+        approxGramsHeroEl.className = 'bt-timer-approx-grams-hero is-pouring bt-num';
+        approxGramsMainEl.textContent = 'BE AT ~' + ghostRoundG + ' g NOW';
+        approxGramsSubEl.textContent = 'Pouring to ' + stepTgtG + ' g step target · ' + totalG + ' g total · Aim ~' + stepFlowInfo.rate.toFixed(1) + ' g/s';
+      } else if (isAllPoured) {
+        approxGramsHeroEl.className = 'bt-timer-approx-grams-hero is-draining bt-num';
+        approxGramsMainEl.textContent = 'ALL ~' + totalG + ' g POURED \u2014 DRAINING';
+        approxGramsSubEl.textContent = isOvertime
+          ? ('Overtime +' + fmtClock(overSec, false) + ' \u2014 tap Stop Brew when bed drains flat')
+          : ('Final Drawdown \u2014 target ' + fmtClock(totalTargetS, false) + ' in ' + fmtClock(remToNext, false));
+      } else {
+        approxGramsHeroEl.className = 'bt-timer-approx-grams-hero is-holding bt-num';
+        approxGramsMainEl.textContent = 'HOLD AT ~' + ghostRoundG + ' g';
+        var holdTag = /bloom/i.test(curSt.title || '')
+          ? 'Bloom Rest'
+          : (/steep|immersion/i.test(curSt.title || '') ? 'Steeping' : (curSt.title || 'Rest'));
+        approxGramsSubEl.textContent = nextSt
+          ? (holdTag + ' \u2014 next pour to ' + Math.round(nextSt.targetG || totalG) + ' g in ' + fmtClock(remToNext, false))
+          : (holdTag + ' \u2014 draining toward ' + fmtClock(totalTargetS, false) + ' (' + fmtClock(remToNext, false) + ' left)');
+      }
+
+      if (hasScale) {
+        var liveRoundG = Math.round(_timerSession.liveWeightG || 0);
+        var diffScaleG = liveRoundG - ghostRoundG;
+        var diffLbl = Math.abs(diffScaleG) <= 4 ? 'on pace' : (diffScaleG > 0 ? ('+' + diffScaleG + ' g') : (diffScaleG + ' g'));
+        approxGramsKickerTxt.textContent = (_timerSession.realScaleConnected ? 'BLE SCALE' : 'DEMO SCALE') + ' VS PACER';
+        approxGramsPctEl.textContent = 'Scale ' + liveRoundG + ' g vs ~' + ghostRoundG + ' g (' + diffLbl + ')';
+        approxGramsScalePinEl.hidden = false;
+        approxGramsScalePinEl.style.left = Math.max(0, Math.min(100, (liveRoundG / totalG) * 100)).toFixed(1) + '%';
+      } else {
+        approxGramsKickerTxt.textContent = 'APPROX GRAMS RIGHT NOW';
+        approxGramsPctEl.textContent = Math.round(gramPct) + '% · ~' + ghostRoundG + ' / ' + totalG + ' g';
+        approxGramsScalePinEl.hidden = true;
+      }
+      approxGramsFillEl.style.width = gramPct.toFixed(1) + '%';
+      approxGramsTrackEl.setAttribute('aria-valuenow', String(ghostRoundG));
 
       if (chronoNode && typeof chronoNode.update === 'function') {
         chronoNode.update({
@@ -4474,7 +4833,6 @@
         ? 'Past target time — tap Stop Brew (Done) the moment your bed finishes draining.'
         : (curSt.human || curSt.say || '');
       stepNextNameEl.textContent = nextSt ? ('Up next: ' + nextSt.title + ' (' + nextSt.targetG + ' g)') : 'When bed is flat: tap Stop Brew (Done)';
-      var remToNext = nextSt ? Math.max(0, Math.ceil(nextSt.t - elS)) : Math.max(0, Math.ceil(totalTargetS - elS));
       stepCountdownEl.textContent = _timerSession.stopped
         ? ('Locked at ' + fmtClock(elS, false))
         : (isOvertime ? ('+' + fmtClock(overSec, false) + ' overtime') : ((nextSt ? 'Next in ' : 'Target in ') + fmtClock(remToNext, false)));
@@ -4483,6 +4841,11 @@
       runBtn.className = 'bt-tctrl-btn ' + (_timerSession.running ? 'is-paused' : 'is-run');
       runBtnIcoWrap.textContent = '';
       runBtnIcoWrap.appendChild(ico(_timerSession.running ? 'pause' : 'play', 16));
+
+      var activeVoiceGram = gramCalloutSec > 0 && AudioCoach.mode() !== 'silent';
+      gramVoiceTxtEl.textContent = gramVoiceBtnLabel(gramCalloutSec);
+      gramVoiceBtn.className = 'bt-gram-voice-btn' + (activeVoiceGram ? ' is-active' : '');
+      gramVoiceBtn.setAttribute('aria-pressed', String(activeVoiceGram));
 
       flowPillTxt.textContent = shownFlowLbl;
       flowPillEl.className = 'bt-flow-rate-pill' + (shownFlowGs >= 0.15 ? '' : ' is-idle');
@@ -4560,13 +4923,16 @@
         }
       }
 
-      /* 2. Step Start Harmonic Chime + Spoken Voice Instruction */
+      /* 2. Step Start Harmonic Chime + Spoken Target-Gram Voice Instruction */
       var activeIdx = currentStepIndex(_timerSession.elapsedS);
       triggerStepCuesIfNeeded(activeIdx);
 
-      /* 3. Mid-Step Half-Way Voice Prompt when step duration > 25s */
+      /* 3. Hands-Free Spoken Approx-Gram Checkpoints (Every 10s / 15s, Pour Target Reached, & 20s Drawdown) */
+      evaluateSpokenGramCues(_timerSession.elapsedS, activeIdx);
+
+      /* 3B. Fallback Mid-Step Voice Prompt only when Spoken ~Grams callouts are Off */
       var activeSt = steps[activeIdx];
-      if (activeSt) {
+      if (gramCalloutSec <= 0 && activeSt) {
         var dur = (activeSt.endS || totalTargetS) - (activeSt.t || 0);
         var midAt = (activeSt.t || 0) + dur * 0.5;
         if (dur > 25 && _timerSession.elapsedS >= midAt && !_timerSession.midSpoken[activeIdx]) {
@@ -4584,7 +4950,11 @@
       if (_timerSession.elapsedS >= totalTargetS && !_timerSession.finishFired) {
         _timerSession.finishFired = true;
         AudioCoach.playFinishChord();
-        AudioCoach.speak('Target time reached. Tap Stop Brew as soon as your coffee bed finishes draining.');
+        if (gramCalloutSec > 0 && AudioCoach.mode() !== 'silent') {
+          speakGramCoach('Target time reached at ' + Math.round(rec.hotPourG) + ' grams. Tap Stop Brew as soon as your coffee bed finishes draining.');
+        } else {
+          AudioCoach.speak('Target time reached. Tap Stop Brew as soon as your coffee bed finishes draining.');
+        }
         haptic('celebrate');
         paintDynamicStickyBar();
       }

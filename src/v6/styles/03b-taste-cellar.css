@@ -898,37 +898,32 @@
   color: var(--warn);
 }
 
-/* ==================== 8. STICKY THUMB-ZONE PRIMARY CTA ==================== */
+/* ==================== 8. BOTTOM-FLOW PRIMARY SAVE & MOVE BAR ==================== */
+/* Sits naturally at the very bottom of Step 5 below all rating & note fields
+   so it never floats in the middle of the screen or covers fields while entering. */
 #bt-step5-sticky-cta {
   display: contents;
 }
 
 .bt-tc-sticky-cta {
-  position: sticky;
-  bottom: calc(74px + env(safe-area-inset-bottom, 0px));
-  z-index: 24;
+  position: relative;
+  bottom: auto;
+  z-index: 2;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
   overflow: hidden;
-  margin-top: 4px;
-  padding: 10px 12px;
+  margin-top: 12px;
+  padding: 12px;
   border-radius: var(--r-lg, 20px);
-  background: var(--surface-glass, var(--surface));
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--line-soft, var(--line));
-  box-shadow: var(--shadow-elevated, var(--shadow-card));
+  background: var(--surface);
+  border: 1.5px solid var(--line-strong, var(--line));
+  box-shadow: var(--shadow-card);
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-}
-
-@media (min-width: 1024px) {
-  .bt-tc-sticky-cta {
-    bottom: 12px;
-  }
 }
 
 .bt-tc-primary-btn {

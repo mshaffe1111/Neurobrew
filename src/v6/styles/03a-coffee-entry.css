@@ -1109,23 +1109,19 @@
   cursor: pointer;
 }
 
-/* ==================== 11. STICKY THUMB-ZONE PRIMARY CTA ==================== */
+/* ==================== 11. BOTTOM-FLOW PRIMARY SAVE & MOVE BAR ==================== */
+/* Sits naturally at the very bottom of Step 1 below all fields so it never
+   floats in the middle of the screen or covers inputs/calendar/flavors while entering. */
 .bt-ce-sticky-cta {
-  position: sticky;
-  bottom: 0;
-  z-index: 24;
-  padding: 8px 0 calc(4px + var(--safe-bottom));
-  background: linear-gradient(180deg, rgba(250, 246, 240, 0) 0%, var(--bg) 26%);
-}
-
-:root[data-theme="dark"] .bt-ce-sticky-cta {
-  background: linear-gradient(180deg, rgba(17, 14, 12, 0) 0%, var(--bg) 26%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .bt-ce-sticky-cta {
-    background: linear-gradient(180deg, rgba(17, 14, 12, 0) 0%, var(--bg) 26%);
-  }
+  position: relative;
+  bottom: auto;
+  z-index: 2;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1.5px solid var(--line-strong, var(--line));
+  box-shadow: var(--shadow-card);
 }
 
 .bt-ce-cta-primary {

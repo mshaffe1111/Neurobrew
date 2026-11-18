@@ -75,6 +75,9 @@
     /* Refractometer & Roast/PSD Analyzer */
     DIFLUID_SVC:          '000000ff-0000-1000-8000-00805f9b34fb',
     DIFLUID_OMNI_SVC:     '000000fc-0000-1000-8000-00805f9b34fb',
+    DIFLUID_V3_SVC:       '0e140001-0000-1000-8000-00805f9b34fb',
+    DIFLUID_V3_NOTIFY:    '0e140002-0000-1000-8000-00805f9b34fb',
+    DIFLUID_V3_WRITE:     '0e140003-0000-1000-8000-00805f9b34fb',
 
     /* Smart Brewer & Kettle */
     XBLOOM_SVC:           '0000e0ff-3c17-d293-8e48-14fe2e4da212',
@@ -483,6 +486,9 @@
     /* 14. DiFluid R2 Extract Refractometer */
     difluidSetCelsius: function(){
       return new Uint8Array([0xDF, 0xDF, 0x01, 0x00, 0x01, 0x00, 0xC0]);
+    },
+    difluidR2EnableAutoNotifications: function(){
+      return new Uint8Array([0xDF, 0xDF, 0x01, 0x01, 0x01, 0x01, 0xC2]);
     },
     difluidTriggerSingle: function(){
       return new Uint8Array([0xDF, 0xDF, 0x03, 0x00, 0x00, 0xC1]);
@@ -1197,20 +1203,49 @@
     if (!checksumValid) return null;
 
     if (func === 0x02 && dataLen >= 1){
+      const batByte = b[5] <= 100 ? b[5] : (dataLen >= 2 && b[6] <= 100 ? b[6] : null);
       return {
         brand: 'difluid',
         slot: 'refractometer',
         packetType: 'battery',
-        batteryPct: b[5] <= 100 ? b[5] : null,
+        batteryPct: batByte,
         checksumValid: checksumValid
       };
     }
 
-    if (func === 0x03 && (cmd === 0x00 || cmd === 0x01 || cmd === 0x02) && dataLen >= 2){
+    if (func === 0x03 && cmd === 0xFE && dataLen >= 1){
+      const errCode = (dataLen >= 2 && (b[5] === 0x00 || b[5] === 0xFE)) ? b[6] : b[5];
+      const errMap = {
+        0x01: 'error_temp_out_of_range',
+        0x02: 'error_no_liquid',
+        0x03: 'error_no_liquid',
+        0x04: 'error_out_of_range',
+        0x05: 'error_out_of_range'
+      };
+      return {
+        brand: 'difluid',
+        slot: 'refractometer',
+        packetType: 'status',
+        isError: true,
+        statusCode: errCode,
+        statusText: errMap[errCode] || ('error_' + errCode),
+        checksumValid: checksumValid
+      };
+    }
+
+    if (func === 0x03 && dataLen >= 2){
       const pkg = b[5];
       if (pkg === 0x00){
         const code = b[6];
-        const map = { 0x00:'finished', 0x0B:'measuring', 0x03:'error_no_liquid', 0x04:'error_out_of_range', 0x05:'auto_ready' };
+        const map = {
+          0x00: 'finished',
+          0x0A: 'measuring',
+          0x0B: 'measuring',
+          0x02: 'error_no_liquid',
+          0x03: 'error_no_liquid',
+          0x04: 'error_out_of_range',
+          0x05: 'auto_ready'
+        };
         return {
           brand: 'difluid',
           slot: 'refractometer',
@@ -1220,52 +1255,92 @@
           checksumValid: checksumValid
         };
       }
-      if (pkg === 0x01 && dataLen >= 5){
-        const prismRaw = (b[6] << 8) | b[7];
-        const tankRaw = (b[8] << 8) | b[9];
-        const tempC = +((prismRaw + tankRaw) / 20.0).toFixed(2);
-        return {
-          brand: 'difluid',
-          slot: 'refractometer',
-          packetType: 'temperature',
-          tempC: tempC,
-          prismTempC: +(prismRaw / 10).toFixed(1),
-          tankTempC: +(tankRaw / 10).toFixed(1),
-          checksumValid: checksumValid
-        };
+      if (pkg === 0x01 && dataLen >= 3){
+        if (dataLen >= 5){
+          const prismRaw = (b[6] << 8) | b[7];
+          const tankRaw = (b[8] << 8) | b[9];
+          const tempC = (tankRaw === 0 && prismRaw > 0)
+            ? +(prismRaw / 10.0).toFixed(2)
+            : +((prismRaw + tankRaw) / 20.0).toFixed(2);
+          return {
+            brand: 'difluid',
+            slot: 'refractometer',
+            packetType: 'temperature',
+            tempC: tempC,
+            prismTempC: +(prismRaw / 10).toFixed(1),
+            tankTempC: tankRaw > 0 ? +(tankRaw / 10).toFixed(1) : +(prismRaw / 10).toFixed(1),
+            checksumValid: checksumValid
+          };
+        }
+        const singleTempRaw = (b[6] << 8) | b[7];
+        if (singleTempRaw <= 1000){
+          const singleTempC = +(singleTempRaw / 10.0).toFixed(2);
+          return {
+            brand: 'difluid',
+            slot: 'refractometer',
+            packetType: 'temperature',
+            tempC: singleTempC,
+            prismTempC: +(singleTempRaw / 10).toFixed(1),
+            tankTempC: +(singleTempRaw / 10).toFixed(1),
+            checksumValid: checksumValid
+          };
+        }
       }
-      if ((pkg === 0x02 || pkg === 0x03) && dataLen >= 3){
-        const isMultiAvg = (pkg === 0x03 || cmd === 0x01);
-        const tdsRaw = (b[6] << 8) | b[7];
-        const tds = +(tdsRaw / 100.0).toFixed(2);
-        const brix = +(tds / 0.85).toFixed(2);
-        let refractiveIndex = null;
-        let readCount = 1;
-        if (dataLen >= 7){
-          const riRaw = (((b[8] << 24) >>> 0) + (b[9] << 16) + (b[10] << 8) + b[11]);
-          if (riRaw >= 130000 && riRaw <= 155000){
-            refractiveIndex = +(riRaw / 100000.0).toFixed(5);
+      if ((pkg === 0x02 || pkg === 0x03 || pkg === 0x04) && dataLen >= 3){
+        /* Guard against standalone 4-byte Refractive Index packets on pkg 0x03/0x04 so RI bytes are never misread as TDS */
+        if ((pkg === 0x03 || pkg === 0x04) && (dataLen === 5 || dataLen === 6)){
+          const u32 = (((b[6] << 24) >>> 0) + (b[7] << 16) + (b[8] << 8) + b[9]);
+          if ((u32 >= 133000 && u32 <= 155000) || (u32 >= 1330000 && u32 <= 1550000)){
+            const riStandalone = u32 >= 1000000 ? +(u32 / 1000000.0).toFixed(5) : +(u32 / 100000.0).toFixed(5);
+            return {
+              brand: 'difluid',
+              slot: 'refractometer',
+              packetType: 'refractive_index',
+              refractiveIndex: riStandalone,
+              nD20: riStandalone,
+              checksumValid: checksumValid
+            };
           }
         }
-        if (dataLen >= 8 && b[12] >= 1 && b[12] <= 20){
-          readCount = b[12];
-        } else if (isMultiAvg && dataLen === 4 && b[8] >= 1 && b[8] <= 20){
-          readCount = b[8];
+        const tdsRaw = (b[6] << 8) | b[7];
+        if (tdsRaw <= 3500){
+          const isMultiAvg = (pkg === 0x03 || cmd === 0x01);
+          const tds = +(tdsRaw / 100.0).toFixed(2);
+          const brix = +(tds / 0.85).toFixed(2);
+          let refractiveIndex = null;
+          let readCount = 1;
+          if (dataLen >= 7){
+            const riRaw = (((b[8] << 24) >>> 0) + (b[9] << 16) + (b[10] << 8) + b[11]);
+            if (riRaw >= 130000 && riRaw <= 155000){
+              refractiveIndex = +(riRaw / 100000.0).toFixed(5);
+            } else if (riRaw >= 1300000 && riRaw <= 1550000){
+              refractiveIndex = +(riRaw / 1000000.0).toFixed(5);
+            }
+          }
+          if (dataLen >= 8 && b[12] >= 1 && b[12] <= 20){
+            readCount = b[12];
+          } else if (dataLen === 4 && b[8] >= 1 && b[8] <= 20){
+            readCount = b[8];
+          } else if (dataLen === 6 && b[10] >= 1 && b[10] <= 20){
+            readCount = b[10];
+          }
+          if (refractiveIndex === null) refractiveIndex = estimateNd20FromTds(tds);
+          return {
+            brand: 'difluid',
+            slot: 'refractometer',
+            packetType: isMultiAvg ? 'average_result' : 'result',
+            isAverage: isMultiAvg,
+            autoRead: cmd >= 0x02,
+            cmd: cmd,
+            pkg: pkg,
+            readCount: readCount,
+            tds: tds,
+            brix: brix,
+            refractiveIndex: refractiveIndex,
+            nD20: refractiveIndex,
+            checksumValid: checksumValid
+          };
         }
-        if (refractiveIndex === null) refractiveIndex = estimateNd20FromTds(tds);
-        return {
-          brand: 'difluid',
-          slot: 'refractometer',
-          packetType: isMultiAvg ? 'average_result' : 'result',
-          isAverage: isMultiAvg,
-          autoRead: cmd === 0x02,
-          readCount: readCount,
-          tds: tds,
-          brix: brix,
-          refractiveIndex: refractiveIndex,
-          nD20: refractiveIndex,
-          checksumValid: checksumValid
-        };
       }
     }
     return { brand:'difluid', slot:'refractometer', packetType:'ack', func:func, cmd:cmd, checksumValid:checksumValid };
@@ -1511,7 +1586,7 @@
           } else if (targetMode === 'omni'){
             parsed = decodeDiFluidOmni(slice);
           } else if (targetMode === 'r2'){
-            parsed = decodeDiFluidR2(slice);
+            parsed = slice[2] === 0x04 ? decodeDiFluidOmni(slice) : decodeDiFluidR2(slice);
           } else {
             if (slice[2] === 0x04) parsed = decodeDiFluidOmni(slice);
             else if (slice[2] === 0x03 && dataLen >= 13) parsed = decodeDiFluidScale(slice);
@@ -1665,8 +1740,8 @@
 
     if (b[0] === 0xDF && b[1] === 0xDF){
       if (b.length >= 3 && b[2] === 0x04) return 'difluid_omni';
-      if (ctx.slot === 'refractometer' || svc === UUID.DIFLUID_SVC){
-        if (b.length >= 5 && b[2] === 0x03 && b[4] >= 13) return 'difluid';
+      if (ctx.slot === 'refractometer' || svc === UUID.DIFLUID_SVC || /^0e140001-/.test(svc) || /r2|extract|refract/i.test(devName)){
+        if (ctx.slot !== 'refractometer' && b.length >= 5 && b[2] === 0x03 && b[4] >= 13) return 'difluid';
         return 'difluid_r2';
       }
       return 'difluid';
@@ -1747,10 +1822,96 @@
       }
     }
 
-    if (slot === 'refractometer' && svcMap[UUID.DIFLUID_SVC]){
-      const rn = findChar(UUID.DIFLUID_SVC, UUID.DIFLUID_CHAR) || svcMap[UUID.DIFLUID_SVC].chars[0];
-      const rw = findChar(UUID.DIFLUID_SVC, UUID.DIFLUID_WRITE_ALT) || rn;
-      if (rn) return { family:'difluid_r2', slot:'refractometer', serviceUuid:UUID.DIFLUID_SVC, notifyUuid:rn.uuid, writeUuid:rw ? rw.uuid : null };
+    if (slot === 'refractometer'){
+      const v3SvcKey = Object.keys(svcMap).find(function(k){ return /^0e140001-/.test(k); }) || UUID.DIFLUID_V3_SVC;
+      const r2CandidateOrder = [
+        UUID.DIFLUID_SVC,
+        v3SvcKey,
+        UUID.DIFLUID_SCALE_SVC,
+        UUID.DIFLUID_SCALE_ALT_SVC,
+        UUID.FELICITA_SVC,
+        UUID.SHARED_FFF0_SVC,
+        UUID.NUS_SVC,
+        UUID.DIFLUID_OMNI_SVC
+      ];
+      const matchedR2Svcs = [];
+      for (let ri = 0; ri < r2CandidateOrder.length; ri++){
+        const sk = r2CandidateOrder[ri];
+        if (svcMap[sk] && svcMap[sk].chars.length && matchedR2Svcs.indexOf(svcMap[sk]) < 0){
+          matchedR2Svcs.push(svcMap[sk]);
+        }
+      }
+      if (!matchedR2Svcs.length){
+        Object.keys(svcMap).forEach(function(sk){
+          if (!/^0000180[01af]-/.test(sk) && svcMap[sk].chars.length){
+            matchedR2Svcs.push(svcMap[sk]);
+          }
+        });
+      }
+      if (matchedR2Svcs.length){
+        const rSvc = matchedR2Svcs[0];
+        const canNotify = function(c){ return !c.properties || !!(c.properties.notify || c.properties.indicate); };
+        const canWrite = function(c){ return !c.properties || !!(c.properties.write || c.properties.writeWithoutResponse); };
+        const prefNotifyUuids = [
+          UUID.DIFLUID_CHAR, UUID.DIFLUID_WRITE_ALT, UUID.DIFLUID_V3_NOTIFY,
+          UUID.FELICITA_CHAR, UUID.XBLOOM_SHORT_NOTIFY, UUID.FFF1_NOTIFY, UUID.FFF2_WRITE, UUID.NUS_NOTIFY
+        ];
+        const prefWriteUuids = [
+          UUID.DIFLUID_WRITE_ALT, UUID.DIFLUID_CHAR, UUID.DIFLUID_V3_WRITE,
+          UUID.FFF2_WRITE, UUID.FELICITA_CHAR, UUID.XBLOOM_SHORT_NOTIFY, UUID.NUS_WRITE
+        ];
+        let rn = null;
+        for (let ni = 0; ni < prefNotifyUuids.length; ni++){
+          const cand = findChar(rSvc.uuid, prefNotifyUuids[ni]);
+          if (cand && canNotify(cand)){ rn = cand; break; }
+        }
+        if (!rn){
+          for (let ci = 0; ci < rSvc.chars.length; ci++){
+            if (canNotify(rSvc.chars[ci])){ rn = rSvc.chars[ci]; break; }
+          }
+        }
+        if (!rn) rn = rSvc.chars[0] || null;
+
+        const writableList = [];
+        for (let wi = 0; wi < prefWriteUuids.length; wi++){
+          const wc = findChar(rSvc.uuid, prefWriteUuids[wi]);
+          if (wc && canWrite(wc) && writableList.indexOf(wc) < 0) writableList.push(wc);
+        }
+        for (let cwi = 0; cwi < rSvc.chars.length; cwi++){
+          const anyW = rSvc.chars[cwi];
+          if (canWrite(anyW) && writableList.indexOf(anyW) < 0) writableList.push(anyW);
+        }
+        const rw = writableList[0] || (rn && canWrite(rn) ? rn : null);
+        const altW = writableList[1] || null;
+
+        const extraNotifyUuids = rSvc.chars
+          .filter(function(c){ return rn && c.uuid !== rn.uuid && canNotify(c); })
+          .map(function(c){ return c.uuid; });
+
+        const extraNotifyTargets = [];
+        for (let si = 1; si < matchedR2Svcs.length; si++){
+          const secSvc = matchedR2Svcs[si];
+          for (let sci = 0; sci < secSvc.chars.length; sci++){
+            const sc = secSvc.chars[sci];
+            if (canNotify(sc)){
+              extraNotifyTargets.push({ serviceUuid: secSvc.uuid, charUuid: sc.uuid });
+            }
+          }
+        }
+
+        if (rn){
+          return {
+            family: 'difluid_r2',
+            slot: 'refractometer',
+            serviceUuid: rSvc.uuid,
+            notifyUuid: rn.uuid,
+            extraNotifyUuids: extraNotifyUuids,
+            extraNotifyTargets: extraNotifyTargets,
+            writeUuid: rw ? rw.uuid : null,
+            altWriteUuid: altW ? altW.uuid : null
+          };
+        }
+      }
     }
 
     if (slot === 'omni' && (svcMap[UUID.DIFLUID_OMNI_SVC] || svcMap[UUID.DIFLUID_SVC])){
@@ -1873,7 +2034,12 @@
     const ctx = Object.assign({}, context || {});
     const rawRing = createMtuRingBuffer(MAX_RING_BYTES);
     const acaiaStream = createAcaiaStreamParser();
-    const difluidStream = createDiFluidStreamParser('auto');
+    const difluidMode = (family === 'difluid_r2' || ctx.slot === 'refractometer')
+      ? 'r2'
+      : ((family === 'difluid_omni' || ctx.slot === 'omni')
+        ? 'omni'
+        : ((family === 'difluid' || family === 'difluid_scale') ? 'scale' : 'auto'));
+    const difluidStream = createDiFluidStreamParser(difluidMode);
     const timemoreOspStream = createTimemoreOspStreamParser();
     const variaStream = createVariaStreamParser();
     const bookooStream = createBookooStreamParser();
@@ -2130,6 +2296,7 @@
     checksums: checksums,
     commands: commands,
     decoders: decoders,
+    decodeDiFluidR2: decodeDiFluidR2,
     streams: streams,
     detectProtocolFromBytes: detectProtocolFromBytes,
     detectGattProfile: detectGattProfile,

@@ -272,13 +272,19 @@
             const cu = normUuid(ch.uuid);
             charCache[su + '|' + cu] = ch;
             const p = ch.properties || {};
+            const hasExplicitProps = !!(ch.properties && (
+              typeof p.notify === 'boolean' ||
+              typeof p.indicate === 'boolean' ||
+              typeof p.write === 'boolean' ||
+              typeof p.writeWithoutResponse === 'boolean'
+            ));
             normChars.push({
               uuid: cu,
               properties: {
-                read: p.read !== false,
-                write: p.write !== false,
+                read: hasExplicitProps ? !!p.read : (p.read !== false),
+                write: hasExplicitProps ? (!!p.write || !!p.writeWithoutResponse) : (p.write !== false),
                 writeWithoutResponse: !!p.writeWithoutResponse,
-                notify: p.notify !== false,
+                notify: hasExplicitProps ? (!!p.notify || !!p.indicate) : (p.notify !== false),
                 indicate: !!p.indicate
               }
             });
@@ -320,13 +326,20 @@
               const val = (ev && ev.target && ev.target.value) || (ev && ev.value) || ch.value;
               if (typeof onBytes === 'function') onBytes(toU8(val));
             };
-            if (typeof ch.startNotifications === 'function'){
-              await ch.startNotifications();
-            }
             if (typeof ch.addEventListener === 'function'){
               ch.addEventListener('characteristicvaluechanged', handler);
             } else {
               ch.oncharacteristicvaluechanged = handler;
+            }
+            if (typeof ch.startNotifications === 'function'){
+              try {
+                await ch.startNotifications();
+              } catch(startErr){
+                if (typeof ch.removeEventListener === 'function'){
+                  try { ch.removeEventListener('characteristicvaluechanged', handler); } catch(_){}
+                }
+                throw startErr;
+              }
             }
             const stopFn = async function(){
               try {
@@ -352,26 +365,27 @@
           return writeQueue.enqueue(async function(){
             const ch = await resolveChar(serviceUuid, charUuid);
             if (!ch) return false;
-            try {
-              if ((preferNoResp || (ch.properties && ch.properties.writeWithoutResponse)) && typeof ch.writeValueWithoutResponse === 'function'){
-                await ch.writeValueWithoutResponse(u8);
-                return true;
-              }
-              if (typeof ch.writeValueWithResponse === 'function'){
-                await ch.writeValueWithResponse(u8);
-                return true;
-              }
-              if (typeof ch.writeValue === 'function'){
-                await ch.writeValue(u8);
-                return true;
-              }
-            } catch(e){
-              if (typeof ch.writeValue === 'function'){
-                await ch.writeValue(u8);
-                return true;
+            const props = ch.properties || {};
+            const tryNoRespFirst = preferNoResp || (!!props.writeWithoutResponse && props.write === false);
+            const methodOrder = tryNoRespFirst
+              ? ['writeValueWithoutResponse', 'writeValueWithResponse', 'writeValue']
+              : ['writeValueWithResponse', 'writeValueWithoutResponse', 'writeValue'];
+            let lastErr = null;
+            let attempted = 0;
+            for (let mi = 0; mi < methodOrder.length; mi++){
+              const mName = methodOrder[mi];
+              if (typeof ch[mName] === 'function'){
+                attempted++;
+                try {
+                  await ch[mName](u8);
+                  return true;
+                } catch(err){
+                  lastErr = err;
+                }
               }
             }
-            return false;
+            if (lastErr) throw lastErr;
+            return attempted > 0;
           });
         },
         disconnect: async function(){
@@ -571,11 +585,24 @@
             return writeQueue.enqueue(async function(){
               const payload = { deviceId:deviceId, service:su, characteristic:cu, value:bytesToNativeValue(u8) };
               if (noResp && typeof ble.writeWithoutResponse === 'function'){
-                await ble.writeWithoutResponse(payload);
-              } else {
-                await ble.write(payload);
+                try {
+                  await ble.writeWithoutResponse(payload);
+                  return true;
+                } catch(e){
+                  await ble.write(payload);
+                  return true;
+                }
               }
-              return true;
+              try {
+                await ble.write(payload);
+                return true;
+              } catch(e){
+                if (typeof ble.writeWithoutResponse === 'function'){
+                  await ble.writeWithoutResponse(payload);
+                  return true;
+                }
+                throw e;
+              }
             });
           },
           disconnect: async function(){
@@ -862,6 +889,7 @@
       lastBrix: null,
       lastRefractiveIndex: null,
       lastR2ReadCount: 1,
+      lastR2AtMs: 0,
 
       omniConnected: false,
       omniName: '',
@@ -1004,6 +1032,53 @@
         refractometer: Object.assign({}, state.slots.refractometer),
         omni: Object.assign({}, state.slots.omni),
         machine: Object.assign({}, state.slots.machine)
+      };
+      snap.scale = {
+        connected: !!(state.scaleConnected || state.simulatorActive),
+        reconnecting: !!state.scaleReconnecting,
+        brand: state.scaleBrand,
+        name: state.scaleName,
+        weightG: state.weightG,
+        flowGs: state.flowRateGs,
+        flowRateGs: state.flowRateGs,
+        stable: state.stable,
+        batteryPct: state.batteryPct
+      };
+      snap.pressure = {
+        connected: !!(state.pressureConnected || state.simulatorActive),
+        brand: state.pressureBrand,
+        name: state.pressureName,
+        bar: state.pressureBar,
+        pressureBar: state.pressureBar,
+        mbar: state.pressureMbar,
+        tempC: state.pressureTempC,
+        peakBar: state.peakPressureBar,
+        batteryPct: state.pressureBatteryPct
+      };
+      snap.refractometer = {
+        connected: !!(state.refractometerConnected || state.simulatorActive),
+        hardwareConnected: !!state.refractometerConnected,
+        name: state.refractometerName || (state.simulatorActive ? 'DiFluid R2 Simulator' : ''),
+        tds: state.lastTds,
+        tempC: state.lastTempC,
+        brix: state.lastBrix,
+        refractiveIndex: state.lastRefractiveIndex,
+        readCount: state.lastR2ReadCount,
+        updatedAtMs: state.lastR2AtMs,
+        batteryPct: state.refractometerBatteryPct
+      };
+      snap.omni = Object.assign({
+        connected: !!(state.omniConnected || state.simulatorActive),
+        name: state.omniName,
+        batteryPct: state.omniBatteryPct
+      }, state.lastOmni || {});
+      snap.machine = {
+        connected: !!(state.machineConnected || state.simulatorActive),
+        name: state.xbloomName || state.kettleName || (state.simulatorActive ? 'xBloom / Stagg Simulator' : ''),
+        tempC: state.kettleTempC,
+        targetTempC: state.kettleTargetTempC,
+        hold: state.kettleHold,
+        stage: state.xbloomStage
       };
       return snap;
     }
@@ -1962,8 +2037,90 @@
       } catch(e){}
     }
 
+    const R2_OPTIONAL_SERVICES = [
+      UUID.DIFLUID_SVC,
+      UUID.DIFLUID_V3_SVC,
+      UUID.DIFLUID_SCALE_SVC,
+      UUID.DIFLUID_SCALE_ALT_SVC,
+      UUID.FELICITA_SVC,
+      UUID.SHARED_FFF0_SVC,
+      UUID.NUS_SVC,
+      UUID.DIFLUID_OMNI_SVC,
+      UUID.BATTERY_SVC
+    ];
+
+    function handleRefractometerFrame(d){
+      if (!d) return;
+      if (d.slot === 'omni'){
+        handleOmniFrame(d);
+        return;
+      }
+      if (d.packetType === 'battery' && d.batteryPct != null){
+        state.refractometerBatteryPct = d.batteryPct;
+        state.slots.refractometer.batteryPct = d.batteryPct;
+        emit();
+      } else if (d.packetType === 'status'){
+        if (d.statusText === 'measuring') state.lastStatusText = 'DiFluid R2 measuring sample...';
+        else if (d.statusText === 'error_no_liquid') state.lastStatusText = 'DiFluid R2 prism dry - add 2-3 filtered drops.';
+        else if (d.statusText === 'error_out_of_range') state.lastStatusText = 'DiFluid R2 sample out of optical range.';
+        else if (d.statusText === 'error_temp_out_of_range') state.lastStatusText = 'DiFluid R2 sample temperature out of range.';
+        else if (d.statusText === 'auto_ready') state.lastStatusText = 'DiFluid R2 Auto-Test armed - drop sample onto prism.';
+        emit();
+      } else if (d.packetType === 'temperature'){
+        state.lastTempC = d.tempC;
+        emit();
+      } else if (d.packetType === 'refractive_index'){
+        state.lastRefractiveIndex = d.refractiveIndex;
+        emit();
+      } else if (d.packetType === 'result' || d.packetType === 'average_result'){
+        state.lastTds = d.tds;
+        state.lastBrix = d.brix;
+        state.lastRefractiveIndex = d.refractiveIndex;
+        state.lastR2ReadCount = d.readCount || 1;
+        state.lastR2AtMs = Date.now();
+        state.lastStatusText = 'DiFluid R2' + (d.isAverage ? ' Avg(' + state.lastR2ReadCount + ')' : '') + ': ' +
+          d.tds.toFixed(2) + '% TDS' + (state.lastTempC != null ? ' @ ' + state.lastTempC.toFixed(1) + 'C' : '');
+        recordR2InApiCache(d.tds, state.lastTempC, d.brix, d.refractiveIndex, state.lastR2ReadCount);
+        attachR2Reading({
+          tds: d.tds,
+          tempC: state.lastTempC,
+          brix: d.brix,
+          refractiveIndex: d.refractiveIndex
+        }, { suppressEmit:true });
+        emit();
+        dispatchSafeEvent('bt-ble-refractometer', {
+          tds: d.tds,
+          tempC: state.lastTempC,
+          brix: d.brix,
+          refractiveIndex: d.refractiveIndex,
+          isAverage: !!d.isAverage,
+          readCount: state.lastR2ReadCount,
+          autoRead: !!d.autoRead
+        });
+      }
+    }
+
+    async function writeR2CommandSafe(gatt, profile, cmdBytes){
+      if (!gatt || !profile || !cmdBytes) return false;
+      const primaryChr = profile.writeUuid;
+      const altChr = profile.altWriteUuid;
+      if (primaryChr){
+        try {
+          const ok = await gatt.write(profile.serviceUuid, primaryChr, cmdBytes);
+          if (ok) return true;
+        } catch(e){}
+      }
+      if (altChr && altChr !== primaryChr){
+        try {
+          const okAlt = await gatt.write(profile.serviceUuid, altChr, cmdBytes);
+          if (okAlt) return true;
+        } catch(e){}
+      }
+      return false;
+    }
+
     async function establishRefractometerSession(transportDev){
-      const optionalServices = [UUID.DIFLUID_SVC, UUID.BATTERY_SVC];
+      const optionalServices = R2_OPTIONAL_SERVICES.slice();
       let intentional = false;
       const gatt = await getTransport().connectGatt(transportDev, function(){
         if (intentional) return;
@@ -1976,7 +2133,7 @@
       const profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name, 'refractometer');
       if (!profile || !profile.notifyUuid){
         await gatt.disconnect();
-        throw new Error('DiFluid R2 service (0x00FF) not found on selected device.');
+        throw new Error('DiFluid R2 GATT service (0x00FF / 0x00EE / 0xFFE0 / 0xFFF0) not found on selected device.');
       }
 
       const stream = Codecs.streams.createCharacteristicStream('difluid_r2', {
@@ -1989,49 +2146,58 @@
       await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
         const res = stream.push(u8);
         for (let i = 0; i < res.frames.length; i++){
-          const d = res.frames[i];
-          if (d.slot === 'omni'){
-            handleOmniFrame(d);
-            continue;
-          }
-          if (d.packetType === 'battery' && d.batteryPct != null){
-            state.refractometerBatteryPct = d.batteryPct;
-            state.slots.refractometer.batteryPct = d.batteryPct;
-            emit();
-          } else if (d.packetType === 'status'){
-            if (d.statusText === 'measuring') state.lastStatusText = 'DiFluid R2 measuring sample...';
-            else if (d.statusText === 'error_no_liquid') state.lastStatusText = 'DiFluid R2 prism dry - add 2-3 filtered drops.';
-            else if (d.statusText === 'error_out_of_range') state.lastStatusText = 'DiFluid R2 sample out of optical range.';
-            emit();
-          } else if (d.packetType === 'temperature'){
-            state.lastTempC = d.tempC;
-            emit();
-          } else if (d.packetType === 'result' || d.packetType === 'average_result'){
-            state.lastTds = d.tds;
-            state.lastBrix = d.brix;
-            state.lastRefractiveIndex = d.refractiveIndex;
-            state.lastR2ReadCount = d.readCount || 1;
-            state.lastStatusText = 'DiFluid R2' + (d.isAverage ? ' Avg(' + state.lastR2ReadCount + ')' : '') + ': ' +
-              d.tds.toFixed(2) + '% TDS' + (state.lastTempC != null ? ' @ ' + state.lastTempC.toFixed(1) + 'C' : '');
-            recordR2InApiCache(d.tds, state.lastTempC, d.brix, d.refractiveIndex, state.lastR2ReadCount);
-            attachR2Reading({
-              tds: d.tds,
-              tempC: state.lastTempC,
-              brix: d.brix,
-              refractiveIndex: d.refractiveIndex
-            }, { suppressEmit:true });
-            emit();
-            dispatchSafeEvent('bt-ble-refractometer', {
-              tds: d.tds,
-              tempC: state.lastTempC,
-              brix: d.brix,
-              refractiveIndex: d.refractiveIndex,
-              isAverage: !!d.isAverage,
-              readCount: state.lastR2ReadCount
-            });
-          }
+          handleRefractometerFrame(res.frames[i]);
         }
       });
+
+      /* Subscribe to all secondary notify/indicate characteristics on R2 (e.g. 0xAA02 alongside 0xAA01, or 0xFFF2/0xFFE2) */
+      if (Array.isArray(profile.extraNotifyUuids)){
+        for (let ei = 0; ei < profile.extraNotifyUuids.length; ei++){
+          const extraUuid = profile.extraNotifyUuids[ei];
+          const extraStream = Codecs.streams.createCharacteristicStream('difluid_r2', {
+            slot: 'refractometer',
+            deviceName: gatt.name || transportDev.name,
+            serviceUuid: profile.serviceUuid,
+            charUuid: extraUuid
+          });
+          try {
+            await gatt.startNotifications(profile.serviceUuid, extraUuid, function(u8){
+              const eres = extraStream.push(u8);
+              for (let k = 0; k < eres.frames.length; k++) handleRefractometerFrame(eres.frames[k]);
+            });
+          } catch(e){}
+        }
+      }
+
+      if (Array.isArray(profile.extraNotifyTargets)){
+        for (let ti = 0; ti < profile.extraNotifyTargets.length; ti++){
+          const tgt = profile.extraNotifyTargets[ti];
+          const tgtStream = Codecs.streams.createCharacteristicStream('difluid_r2', {
+            slot: 'refractometer',
+            deviceName: gatt.name || transportDev.name,
+            serviceUuid: tgt.serviceUuid,
+            charUuid: tgt.charUuid
+          });
+          try {
+            await gatt.startNotifications(tgt.serviceUuid, tgt.charUuid, function(u8){
+              const tres = tgtStream.push(u8);
+              for (let m = 0; m < tres.frames.length; m++) handleRefractometerFrame(tres.frames[m]);
+            });
+          } catch(e){}
+        }
+      }
+
+      /* Read optional 0x180F battery level */
+      try {
+        const hasBat = services.some(function(s){ return s.uuid === UUID.BATTERY_SVC; });
+        if (hasBat){
+          const bVal = await gatt.read(UUID.BATTERY_SVC, UUID.BATTERY_LEVEL);
+          if (bVal.length >= 1 && bVal[0] <= 100){
+            state.refractometerBatteryPct = bVal[0];
+            state.slots.refractometer.batteryPct = bVal[0];
+          }
+        }
+      } catch(e){}
 
       sessions.refractometer = {
         gatt: gatt,
@@ -2047,10 +2213,14 @@
         name: state.refractometerName,
         batteryPct: state.refractometerBatteryPct
       };
-      state.lastStatusText = 'Connected to ' + state.refractometerName;
+      state.lastStatusText = 'Connected to ' + state.refractometerName + ' (Auto-Sync Active)';
 
-      if (profile.writeUuid){
-        try { await gatt.write(profile.serviceUuid, profile.writeUuid, Codecs.commands.difluidSetCelsius()); } catch(e){}
+      /* Post-Connect Auto-Notification Handshake: Set Celsius + Enable Automatic Physical-Button / Auto-Test BLE Push! */
+      if (profile.writeUuid || profile.altWriteUuid){
+        try { await writeR2CommandSafe(gatt, profile, Codecs.commands.difluidSetCelsius()); } catch(e){}
+        if (typeof Codecs.commands.difluidR2EnableAutoNotifications === 'function'){
+          try { await writeR2CommandSafe(gatt, profile, Codecs.commands.difluidR2EnableAutoNotifications()); } catch(e){}
+        }
       }
       rememberDevice({ slot:'refractometer', deviceId:gatt.deviceId, brand:'difluid_r2', name:state.refractometerName });
       emit();
@@ -2061,8 +2231,19 @@
       if (sessions.refractometer) await disconnectRefractometer();
       const dev = await getTransport().requestDevice({
         slot: 'refractometer',
-        filters: [{ services:[UUID.DIFLUID_SVC] }, { namePrefix:'DiFluid' }, { namePrefix:'R2' }],
-        optionalServices: [UUID.DIFLUID_SVC, UUID.BATTERY_SVC]
+        filters: [
+          { services:[UUID.DIFLUID_SVC] },
+          { services:[UUID.DIFLUID_V3_SVC] },
+          { services:[UUID.DIFLUID_SCALE_SVC] },
+          { services:[UUID.DIFLUID_SCALE_ALT_SVC] },
+          { services:[UUID.FELICITA_SVC] },
+          { services:[UUID.SHARED_FFF0_SVC] },
+          { namePrefix:'DiFluid' },
+          { namePrefix:'DIFLUID' },
+          { namePrefix:'R2' },
+          { namePrefix:'DF' }
+        ],
+        optionalServices: R2_OPTIONAL_SERVICES.slice()
       });
       return establishRefractometerSession(dev);
     }
@@ -2083,14 +2264,14 @@
 
     async function triggerRefractometerRead(opts){
       const o = opts || {};
-      if (state.refractometerConnected && sessions.refractometer && sessions.refractometer.profile.writeUuid){
+      if (state.refractometerConnected && sessions.refractometer && (sessions.refractometer.profile.writeUuid || sessions.refractometer.profile.altWriteUuid)){
         const p = sessions.refractometer.profile;
         const cmd = o.averageCount && +o.averageCount >= 2
           ? Codecs.commands.difluidTriggerMultiAverage(+o.averageCount)
           : Codecs.commands.difluidTriggerSingle();
         state.lastStatusText = 'Requesting DiFluid R2 optical read...';
         emit();
-        return sessions.refractometer.gatt.write(p.serviceUuid, p.writeUuid, cmd);
+        return writeR2CommandSafe(sessions.refractometer.gatt, p, cmd);
       }
       if (state.simulatorActive){
         simulateRefractometerRead(o);
@@ -2114,6 +2295,7 @@
       state.lastBrix = brix;
       state.lastRefractiveIndex = refractiveIndex;
       state.lastR2ReadCount = o.readCount || 1;
+      state.lastR2AtMs = Date.now();
       state.lastStatusText = 'Simulated R2 Read: ' + tds.toFixed(2) + '% TDS @ ' + tempC.toFixed(1) + 'C';
       recordR2InApiCache(tds, tempC, brix, refractiveIndex, state.lastR2ReadCount);
       const attachRes = attachR2Reading(
@@ -3216,6 +3398,14 @@
       _pushScaleSampleForTest: function(rawG, hwFlowGs, hwStable, sampleTimeMs){
         pushRawWeight(rawG, hwFlowGs, hwStable, undefined, sampleTimeMs);
         return snapshotState();
+      },
+      _pushRefractometerBytesForTest: function(rawBytes){
+        const testStream = Codecs.streams.createCharacteristicStream('difluid_r2', { slot:'refractometer' });
+        const res = testStream.push(rawBytes);
+        for (let i = 0; i < res.frames.length; i++){
+          handleRefractometerFrame(res.frames[i]);
+        }
+        return res.frames;
       },
       _resetScaleStateForTest: function(){
         clearDemoTimers();

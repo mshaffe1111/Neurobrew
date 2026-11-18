@@ -80,6 +80,14 @@ function _bindGlobalShellEvents() {
 
     window.addEventListener('pagehide', flushDraft);
 
+    window.addEventListener('hashchange', function() {
+      try {
+        if (typeof location !== 'undefined' && location.hash && /[?#&]btsave=/i.test(location.hash)) {
+          _checkAndOfferWebSaveRestore(location.hash);
+        }
+      } catch (e) {}
+    });
+
     try {
       if (window.matchMedia) {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -118,15 +126,191 @@ function _bindGlobalShellEvents() {
   }
 }
 
+function _isLocalVaultCurrentlyEmpty(st) {
+  try {
+    const hist = (st && typeof st.getHistory === 'function') ? st.getHistory() : null;
+    if (hist && Array.isArray(hist.objs) && hist.objs.length > 0) return false;
+    const pr = (st && typeof st.getPrices === 'function') ? st.getPrices() : null;
+    if (pr && Array.isArray(pr.list) && pr.list.length > 0) return false;
+    const sh = (st && typeof st.getShops === 'function') ? st.getShops() : null;
+    if (sh && sh.store && Array.isArray(sh.store.drinks) && sh.store.drinks.length > 0) return false;
+    if (app && app.coffee && String(app.coffee.name || '').trim()) return false;
+    if (typeof localStorage !== 'undefined') {
+      if (localStorage.getItem('brew-and-cup-history-v1')) return false;
+      if (localStorage.getItem('brew-and-cup-prices-v1')) return false;
+      if (localStorage.getItem('brew-and-cup-shops-v1')) return false;
+    }
+  } catch (e) {}
+  return true;
+}
+
+function _dismissWebSaveRestorePrompt() {
+  try {
+    const existing = $('bt-web-save-banner');
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+    if (typeof BTSheet !== 'undefined' && BTSheet && BTSheet.isOpen && BTSheet.isOpen() && BTSheet.currentKey && BTSheet.currentKey() === 'btsave-detected') {
+      BTSheet.close();
+    }
+  } catch (e) {}
+}
+
+function _checkAndOfferWebSaveRestore(rawHashStr) {
+  try {
+    const st = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
+    if (!st || typeof st.decodeWebSaveUrl !== 'function' || typeof st.importFullSaveBundle !== 'function') return;
+    const hashVal = String(rawHashStr || '');
+    if (!/[?#&]btsave=/i.test(hashVal) && !/^btsave=/i.test(hashVal)) return;
+    if (typeof window !== 'undefined' && window.__btSelfAppliedSaveHash && window.__btSelfAppliedSaveHash === hashVal) return;
+
+    const localIsEmpty = _isLocalVaultCurrentlyEmpty(st);
+
+    Promise.resolve(st.decodeWebSaveUrl(hashVal)).then(function(decodedBundle) {
+      if (!decodedBundle || !decodedBundle.keys) return;
+      const cCnt = decodedBundle.coffeeCount || 0;
+      const bCnt = decodedBundle.brewCount || 0;
+      const summaryCountsTxt = cCnt + ' ' + (cCnt === 1 ? 'Coffee' : 'Coffees') + ' \u00B7 ' +
+        bCnt + ' Saved ' + (bCnt === 1 ? 'Brew' : 'Brews') + ' \u00B7 Preferences & Gear';
+
+      function executeWebRestore(chosenMode) {
+        Promise.resolve(st.importFullSaveBundle(decodedBundle, { mode: chosenMode })).then(function(res) {
+          _dismissWebSaveRestorePrompt();
+          if (res && res.ok) {
+            try {
+              render();
+              refreshAll();
+              paintChrome();
+              paintStudioAside();
+            } catch (_) {}
+            toast('Save restored (' + (chosenMode === 'replace' ? 'Replaced' : 'Merged') + ')! ' + summaryCountsTxt + ' ready.', { duration: 4800 });
+          } else {
+            toast((res && res.error) || 'Could not restore save from web address.');
+          }
+        }).catch(function() {
+          toast('Could not restore save from web address.');
+        });
+      }
+
+      /* Mount prominent top banner right inside #center-stage above #workspace-grid */
+      const oldBanner = $('bt-web-save-banner');
+      if (oldBanner && oldBanner.parentNode) oldBanner.parentNode.removeChild(oldBanner);
+
+      const bannerEl = h('section', {
+        id: 'bt-web-save-banner',
+        role: 'region',
+        'aria-label': 'Save Link Detected in Web Address',
+        style: 'margin:10px 14px 4px;padding:13px 15px;border-radius:14px;border:2px solid var(--primary,#1B4D38);background:var(--good-bg,#E2F4EB);color:var(--ink,#1C130E);display:flex;flex-direction:column;gap:10px;box-shadow:0 6px 18px rgba(27,77,56,0.12)'
+      },
+        h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap' },
+          h('div', { style: 'display:flex;align-items:flex-start;gap:9px;min-width:0;flex:1 1 220px' },
+            BTIcons.el('vault-shield', { size: 22 }),
+            h('div', { style: 'min-width:0' },
+              h('strong', { style: 'display:block;font-size:0.98rem;color:var(--good,#1B6341)', text: 'Save Link Detected in Web Address!' }),
+              h('span', { class: 'mono', style: 'display:block;font-size:0.82rem;font-weight:700;margin-top:2px;color:var(--ink,#1C130E)', text: summaryCountsTxt })
+            )
+          )
+        ),
+        h('div', { style: 'display:flex;flex-wrap:wrap;gap:8px;align-items:center' },
+          h('button', {
+            type: 'button',
+            id: 'bt-boot-restore-merge-btn',
+            class: 'bt-lab-btn is-primary',
+            style: 'min-height:44px;font-weight:800;flex:1 1 200px',
+            onclick: function() { executeWebRestore('merge'); }
+          }, BTIcons.el('check-seal', { size: 16 }), h('span', { text: 'Restore My Save Now (Merge)' })),
+          h('button', {
+            type: 'button',
+            id: 'bt-boot-restore-replace-btn',
+            class: 'bt-lab-btn',
+            style: 'min-height:44px;font-weight:700',
+            onclick: function() { executeWebRestore('replace'); }
+          }, h('span', { text: 'Replace Current Data' })),
+          h('button', {
+            type: 'button',
+            id: 'bt-boot-restore-dismiss-btn',
+            class: 'bt-lab-btn',
+            style: 'min-height:44px',
+            onclick: _dismissWebSaveRestorePrompt
+          }, h('span', { text: 'Dismiss' }))
+        )
+      );
+
+      const centerStage = $('center-stage');
+      const wsGrid = $('workspace-grid');
+      const mountNode = $('mount');
+      if (centerStage && wsGrid && wsGrid.parentNode === centerStage) {
+        centerStage.insertBefore(bannerEl, wsGrid);
+      } else if (mountNode && mountNode.parentNode) {
+        mountNode.parentNode.insertBefore(bannerEl, mountNode);
+      }
+
+      /* When local storage is empty (e.g. right after clearing browser history!), also open a prominent modal sheet right away */
+      if (localIsEmpty && !_isBrewActivelyRunning() && typeof BTSheet !== 'undefined' && BTSheet && typeof BTSheet.open === 'function') {
+        BTSheet.open({
+          id: 'btsave-detected',
+          title: 'Save Link Detected in Web Address!',
+          detent: 'half',
+          render: function(bodyEl) {
+            bodyEl.textContent = '';
+            bodyEl.appendChild(h('div', { style: 'display:flex;flex-direction:column;gap:12px;padding:4px 2px 12px' },
+              h('div', {
+                style: 'padding:14px;border-radius:14px;background:var(--good-bg,#E2F4EB);border:1.5px solid var(--good,#1B6341);display:flex;flex-direction:column;gap:6px'
+              },
+                h('div', { style: 'display:flex;align-items:center;gap:8px;color:var(--good,#1B6341);font-weight:800;font-size:1rem' },
+                  BTIcons.el('vault-shield', { size: 22 }),
+                  h('span', { text: 'Save Link Detected in Web Address!' })
+                ),
+                h('p', { class: 'mono', style: 'margin:0;font-size:0.88rem;font-weight:700;color:var(--ink,#1C130E)', text: summaryCountsTxt }),
+                h('p', { style: 'margin:0;font-size:0.84rem;line-height:1.45;color:var(--ink-secondary,#534034)', text: 'Your browser storage on this device is currently empty, so we unpacked your bookmarked web save link automatically. Tap below to restore everything in 1 tap!' })
+              ),
+              h('button', {
+                type: 'button',
+                id: 'bt-sheet-restore-merge-btn',
+                class: 'bt-lab-btn is-primary',
+                style: 'width:100%;min-height:48px;font-size:0.94rem;font-weight:800',
+                onclick: function() { executeWebRestore('merge'); }
+              }, BTIcons.el('check-seal', { size: 17 }), h('span', { text: 'Restore My Save Now (Merge)' })),
+              h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
+                h('button', {
+                  type: 'button',
+                  id: 'bt-sheet-restore-replace-btn',
+                  class: 'bt-lab-btn',
+                  style: 'flex:1 1 160px;min-height:44px;font-weight:700',
+                  onclick: function() { executeWebRestore('replace'); }
+                }, h('span', { text: 'Replace Current Data' })),
+                h('button', {
+                  type: 'button',
+                  id: 'bt-sheet-restore-dismiss-btn',
+                  class: 'bt-lab-btn',
+                  style: 'flex:1 1 110px;min-height:44px',
+                  onclick: _dismissWebSaveRestorePrompt
+                }, h('span', { text: 'Dismiss' }))
+              )
+            ));
+          }
+        });
+      }
+    }).catch(function() {});
+  } catch (e) {}
+}
+
 function BTBoot() {
   if (typeof window !== 'undefined' && window.__btBooted) return;
   if (typeof window !== 'undefined') window.__btBooted = true;
+
+  const initialBootHash = (typeof location !== 'undefined' && location.hash) ? String(location.hash) : '';
 
   BTBrand.mountSprite();
   BTIcons.mountSprite();
   _bindGlobalShellEvents();
 
   const st = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : {};
+
+  /* 0. Non-blocking Browser Persistent Storage Shield */
+  try {
+    if (typeof st.requestPersistentStorage === 'function') {
+      Promise.resolve(st.requestPersistentStorage()).catch(function() {});
+    }
+  } catch (e) {}
 
   /* 1. Gate #1 Safety Snapshot BEFORE mutating any storage keys */
   try {
@@ -186,7 +370,12 @@ function BTBoot() {
     navNote(false);
   }
 
-  /* 5. Silent Remembered WebBLE Auto-Reconnect */
+  /* 5. Boot-Time #btsave=... Web-Address Save Auto-Detection */
+  if (initialBootHash && /[?#&]btsave=/i.test(initialBootHash)) {
+    _checkAndOfferWebSaveRestore(initialBootHash);
+  }
+
+  /* 6. Silent Remembered WebBLE Auto-Reconnect */
   try {
     if (typeof window !== 'undefined' && window.BTBle && typeof window.BTBle.autoReconnectRemembered === 'function') {
       Promise.resolve(window.BTBle.autoReconnectRemembered()).then(function() {
@@ -195,7 +384,7 @@ function BTBoot() {
     }
   } catch (e) {}
 
-  /* 6. Non-Intrusive PWA Service Worker Registration */
+  /* 7. Non-Intrusive PWA Service Worker Registration */
   setTimeout(_registerServiceWorkerSafely, 350);
 }
 

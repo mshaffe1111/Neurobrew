@@ -2828,7 +2828,7 @@ function buildStaticChrome() {
       const t = e && e.target;
       if (!t || !t.tagName) return;
       const tag = t.tagName.toUpperCase();
-      if (tag === 'TEXTAREA' || (tag === 'INPUT' && !/^(checkbox|radio|button|submit|range|file|color)$/i.test(t.type || 'text'))) {
+      if (tag === 'TEXTAREA' || tag === 'SELECT' || t.isContentEditable || (tag === 'INPUT' && !/^(checkbox|radio|button|submit|range|file|color)$/i.test(t.type || 'text'))) {
         clearTimeout(kbBlurTimer);
         if (typeof window !== 'undefined' && window.innerWidth < 1024) {
           document.documentElement.classList.add('bt-kb-open');
