@@ -59,9 +59,12 @@
 
     WEIGHT_SIG_SVC:       '0000181d-0000-1000-8000-00805f9b34fb',
     WEIGHT_SIG_NOTIFY:    '00002a9d-0000-1000-8000-00805f9b34fb',
+    TIMEMORE_SIG_WRITE:   '00002a9e-0000-1000-8000-00805f9b34fb',
     WEIGHT_SIG_CTRL:      '00002a9f-0000-1000-8000-00805f9b34fb',
 
-    /* Espresso Pressure Sensors (2 Families) */
+    /* Espresso Pressure Sensors (ESS 0x181A + Pressensor + Bookoo EM) */
+    ESS_SVC:              '0000181a-0000-1000-8000-00805f9b34fb',
+    ESS_TEMP_CHAR:        '00002a6e-0000-1000-8000-00805f9b34fb',
     PRESSENSOR_SIG_SVC:   '0000185b-0000-1000-8000-00805f9b34fb',
     PRESSENSOR_SIG_CHAR:  '00002a6d-0000-1000-8000-00805f9b34fb',
     PRESSENSOR_SVC:       '873ae82a-4c5a-4342-b539-9d900bf7ebd0',
@@ -84,16 +87,46 @@
     XBLOOM_SHORT_SVC:     '0000ffe0-0000-1000-8000-00805f9b34fb',
     XBLOOM_WRITE:         '0000ffe1-3c17-d293-8e48-14fe2e4da212',
     XBLOOM_NOTIFY:        '0000ffe2-3c17-d293-8e48-14fe2e4da212',
+    XBLOOM_AUX:           '0000ffe3-3c17-d293-8e48-14fe2e4da212',
     XBLOOM_SHORT_WRITE:   '0000ffe1-0000-1000-8000-00805f9b34fb',
     XBLOOM_SHORT_NOTIFY:  '0000ffe2-0000-1000-8000-00805f9b34fb',
 
     STAGG_EKG_SVC:        '00001820-0000-1000-8000-00805f9b34fb',
     STAGG_EKG_CHAR:       '00002a80-0000-1000-8000-00805f9b34fb',
+    STAGG_EKG_ALT_CHAR:   '2291c4b5-5d7f-4477-a88b-b266edb97142',
 
-    /* Standard Battery */
+    /* Standard Battery & Device Information */
     BATTERY_SVC:          '0000180f-0000-1000-8000-00805f9b34fb',
-    BATTERY_LEVEL:        '00002a19-0000-1000-8000-00805f9b34fb'
+    BATTERY_LEVEL:        '00002a19-0000-1000-8000-00805f9b34fb',
+    DEVICE_INFO_SVC:      '0000180a-0000-1000-8000-00805f9b34fb'
   };
+
+  /* Complete Superset of All Coffee GATT Services so Web Bluetooth Never Hides Secondary Services */
+  const ALL_COFFEE_OPTIONAL_SERVICES = [
+    UUID.WEIGHT_SIG_SVC,
+    UUID.ACAIA_LEGACY_SVC,
+    UUID.ACAIA_PYXIS_SVC,
+    UUID.DIFLUID_SCALE_SVC,
+    UUID.DIFLUID_SCALE_ALT_SVC,
+    UUID.DIFLUID_SVC,
+    UUID.DIFLUID_OMNI_SVC,
+    UUID.DIFLUID_V3_SVC,
+    UUID.BOOKOO_SVC,
+    UUID.BOOKOO_EM_SVC,
+    UUID.ESS_SVC,
+    UUID.PRESSENSOR_SIG_SVC,
+    UUID.SHARED_FFF0_SVC,
+    UUID.FELICITA_SVC,
+    UUID.SKALE_SVC,
+    UUID.EUREKA_ALT_SVC,
+    UUID.HIROIA_SVC,
+    UUID.TIMEMORE_CUSTOM_SVC,
+    UUID.PRESSENSOR_SVC,
+    UUID.XBLOOM_SVC,
+    UUID.NUS_SVC,
+    UUID.BATTERY_SVC,
+    UUID.DEVICE_INFO_SVC
+  ];
 
   /* ---------- Binary Conversion & Checksum Primitives ---------- */
   function normUuid(u){
@@ -195,6 +228,17 @@
       crc ^= (bytes[i] & 0xFF);
       for (let b = 0; b < 8; b++){
         crc = (crc & 0x0001) ? ((crc >>> 1) ^ 0xA001) : (crc >>> 1);
+      }
+    }
+    return [crc & 0xFF, (crc >>> 8) & 0xFF];
+  }
+
+  function crc16Kermit(bytes){
+    let crc = 0x0000;
+    for (let i = 0; i < bytes.length; i++){
+      crc ^= (bytes[i] & 0xFF);
+      for (let b = 0; b < 8; b++){
+        crc = (crc & 0x0001) ? ((crc >>> 1) ^ 0x8408) : (crc >>> 1);
       }
     }
     return [crc & 0xFF, (crc >>> 8) & 0xFF];
@@ -376,9 +420,18 @@
       return new Uint8Array([0x03, 0x0A, 0x06, 0x00, 0x00, 0x0F]);
     },
 
-    /* 4. Timemore Black Mirror Classic / OSP / Compact */
+    /* 4. Timemore Black Mirror Classic (0x2A9E) / OSP (0xFFF2) / Compact */
     timemoreClassicTare: function(){
       return new Uint8Array([0x00]);
+    },
+    timemoreClassicTimerStart: function(){
+      return new Uint8Array([0x08]);
+    },
+    timemoreClassicTimerStop: function(){
+      return new Uint8Array([0x09]);
+    },
+    timemoreClassicTimerReset: function(){
+      return new Uint8Array([0x0A]);
     },
     timemoreOspTare: function(){
       const body = [0xA5, 0x5A, 0x03, 0x0D, 0x00, 0x01, 0x00];
@@ -408,7 +461,7 @@
     felicitaTimerReset: function(){ return new Uint8Array([0x43]); },
     felicitaToggleUnit: function(){ return new Uint8Array([0x55]); },
 
-    /* 6. Decent Scale */
+    /* 6. Decent Scale & Half Decent Scale (HDS) */
     decentTare: function(counter){
       const c = (counter == null ? 0 : counter) & 0xFF;
       const cmd = new Uint8Array([0x03, 0x0F, c, 0x00, 0x00, 0x01, 0x00]);
@@ -417,6 +470,9 @@
     },
     decentEnableGramsLed: function(){
       return new Uint8Array([0x03, 0x0A, 0x01, 0x01, 0x00, 0x00, 0x09]);
+    },
+    decentHeartbeat: function(){
+      return new Uint8Array([0x03, 0x0A, 0x03, 0xFF, 0xFF, 0x00, 0x0A]);
     },
     decentTimerStart: function(){
       return new Uint8Array([0x03, 0x0B, 0x03, 0x00, 0x00, 0x00, 0x0B]);
@@ -455,6 +511,9 @@
     skaleEnableGrams: function(){ return new Uint8Array([0x03]); },
     skaleDisplayWeight: function(){ return new Uint8Array([0xEC]); },
     skaleLedOn: function(){ return new Uint8Array([0xED]); },
+    skaleTimerStart: function(){ return new Uint8Array([0xD1]); },
+    skaleTimerStop: function(){ return new Uint8Array([0xD0]); },
+    skaleTimerReset: function(){ return new Uint8Array([0xD2]); },
 
     /* 9. Eureka Precisa / CFS-9002 */
     eurekaTare: function(){ return new Uint8Array([0xAA, 0x02, 0x31, 0x31]); },
@@ -464,6 +523,10 @@
 
     /* 10. Hiroia Jimmy */
     hiroiaTare: function(){ return new Uint8Array([0x07, 0x00]); },
+    hiroiaTimerStart: function(){ return new Uint8Array([0x05, 0x00]); },
+    hiroiaTimerStop: function(){ return new Uint8Array([0x06, 0x00]); },
+    hiroiaTimerReset: function(){ return new Uint8Array([0x06, 0x00]); },
+    hiroiaToggleUnit: function(){ return new Uint8Array([0x08, 0x00]); },
 
     /* 11. Bluetooth SIG Weight Scale */
     sigTare: function(){ return new Uint8Array([0x00]); },
@@ -519,19 +582,24 @@
     /* 16. xBloom Original & Studio (with 0x41 vs 0x44/0xFE Hard Safety Gate) */
     encodeXBloomRecipePayload: encodeXBloomRecipePayload,
 
-    /* 17. Fellow Stagg EKG+ Kettle */
+    /* 17. Fellow Stagg EKG+ Kettle (Magic Init EF DD 0B ... 9A 6D + 8-Byte Seq Commands) */
     staggAuth: function(){
       return encodeAcaia(0x0B, [0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x30,0x31,0x32,0x33,0x34]);
     },
-    staggSetTempC: function(tempC){
-      const clamped = Math.max(40, Math.min(100, Math.round(+tempC || 93)));
-      return encodeAcaia(0x0A, [0x01, clamped & 0xFF, 0x01]);
+    staggSetTempC: function(tempC, seq){
+      const s = (seq == null ? 1 : seq) & 0xFF;
+      const clamped = Math.max(40, Math.min(100, Math.round(+tempC || 93))) & 0xFF;
+      return new Uint8Array([0xEF, 0xDD, 0x0A, s, 0x01, clamped, (s + clamped) & 0xFF, 0x01]);
     },
-    staggSetHold: function(enabled){
-      return encodeAcaia(0x0A, [0x02, enabled === false ? 0x00 : 0x01, 0x01]);
+    staggSetHold: function(enabled, seq){
+      const s = (seq == null ? 2 : seq) & 0xFF;
+      const v = enabled === false ? 0x00 : 0x01;
+      return new Uint8Array([0xEF, 0xDD, 0x0A, s, 0x02, v, (s + v) & 0xFF, 0x02]);
     },
-    staggPower: function(on){
-      return encodeAcaia(0x0A, [0x00, on === false ? 0x00 : 0x01, 0x01]);
+    staggPower: function(on, seq){
+      const s = (seq == null ? 0 : seq) & 0xFF;
+      const v = on === false ? 0x00 : 0x01;
+      return new Uint8Array([0xEF, 0xDD, 0x0A, s, 0x00, v, (s + v) & 0xFF, 0x00]);
     }
   };
 
@@ -579,7 +647,24 @@
       };
     }
 
-    if (msgType === 0x0C && b.length >= 11){
+    /* Legacy Acaia Pearl FW 1.x direct weight frame (msgType === 0x07, no 0x05 sub-event prefix) */
+    if (msgType === 0x07 && b.length >= 11){
+      const payloadEnd7 = b.length - 2;
+      const cks7 = acaiaChecksum(b.subarray(3, payloadEnd7));
+      const checksumValid7 = (b[payloadEnd7] === cks7[0] && b[payloadEnd7 + 1] === cks7[1]);
+      if (!checksumValid7) return null;
+      const wSlice7 = (payloadEnd7 - 4 >= 6) ? b.subarray(4, 10) : b.subarray(4, 9);
+      const w7 = decodeAcaiaWeightSubEvent(wSlice7);
+      if (!w7) return null;
+      return Object.assign({
+        brand: 'acaia',
+        slot: 'scale',
+        packetType: 'weight',
+        checksumValid: checksumValid7
+      }, w7);
+    }
+
+    if (msgType === 0x0C && b.length >= 8){
       const payloadEnd = b.length - 2;
       const cks = acaiaChecksum(b.subarray(3, payloadEnd));
       const checksumValid = (b[payloadEnd] === cks[0] && b[payloadEnd + 1] === cks[1]);
@@ -598,6 +683,13 @@
           const w6 = decodeAcaiaWeightSubEvent(b.subarray(idx + 1, idx + 7));
           if (w6) Object.assign(out, { packetType:'weight' }, w6);
           idx += 7;
+        } else if (ev === 0x05 && idx + 6 <= payloadEnd){
+          const w5b = decodeAcaiaWeightSubEvent(b.subarray(idx + 1, idx + 6));
+          if (w5b) Object.assign(out, { packetType:'weight' }, w5b);
+          idx += 6;
+        } else if (ev === 0x06 && idx + 2 <= payloadEnd){
+          out.batteryPct = b[idx + 1] & 0x7F;
+          idx += 2;
         } else if (ev === 0x07 && idx + 4 <= payloadEnd){
           out.timeS = +(b[idx + 1] * 60 + b[idx + 2] + b[idx + 3] * 0.1).toFixed(1);
           idx += 4;
@@ -613,7 +705,12 @@
           break;
         }
       }
-      return ('weightG' in out || 'timeS' in out || 'keyEvent' in out) ? out : null;
+      if ('weightG' in out || 'timeS' in out || 'keyEvent' in out) return out;
+      if ('batteryPct' in out){
+        out.packetType = 'status';
+        return out;
+      }
+      return null;
     }
     return null;
   }
@@ -645,8 +742,8 @@
           const msgType = cur[2];
           const lenByte = cur[3];
           const rawCands = msgType === 0x08
-            ? [lenByte + 5, lenByte + 6, 7, 8, 9, 10]
-            : [lenByte + 5, lenByte + 6];
+            ? [lenByte + 4, lenByte + 5, lenByte + 6, 7, 8, 9, 10]
+            : [lenByte + 4, lenByte + 5, lenByte + 6];
           const cands = [];
           for (let ci = 0; ci < rawCands.length; ci++){
             const cl = rawCands[ci];
@@ -699,6 +796,19 @@
   }
 
   /* --- 2. DiFluid Microbalance & Microbalance Ti Scale (`0xDF 0xDF`) --- */
+  function readDiFluidScaleValueBE(dv, b, off){
+    const b0 = b[off], b1 = b[off + 1], b2 = b[off + 2], b3 = b[off + 3];
+    if ((b0 | b1 | b2 | b3) === 0) return 0;
+    const exp = ((b0 & 0x7F) << 1) | (b1 >>> 7);
+    const f32 = dv.getFloat32(off, false);
+    if (exp === 0 || exp === 255 || !Number.isFinite(f32) || Math.abs(f32) < 1e-6 || Math.abs(f32) > 10000){
+      const i32 = dv.getInt32(off, false);
+      if (Math.abs(i32) <= 100000) return i32 / 10;
+      return NaN;
+    }
+    return f32;
+  }
+
   function decodeDiFluidScale(input){
     const b = toU8(input);
     if (b.length < 6 || b[0] !== 0xDF || b[1] !== 0xDF) return null;
@@ -709,8 +819,8 @@
     const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
 
     if (func === 0x03 && cmd === 0x00 && dataLen >= 13){
-      let w = dv.getFloat32(5, false);
-      let f = dv.getFloat32(9, false);
+      let w = readDiFluidScaleValueBE(dv, b, 5);
+      let f = readDiFluidScaleValueBE(dv, b, 9);
       if (!Number.isFinite(w) || Math.abs(w) > 10000) return null;
       if (!Number.isFinite(f) || Math.abs(f) > 500) f = 0;
       const unitCode = b[16];
@@ -729,6 +839,32 @@
         unit: unitCode === 1 ? 'oz' : (unitCode === 2 ? 'ml' : 'g'),
         stable: (flags & 0x01) !== 0,
         timerRunning: (flags & 0x02) !== 0,
+        checksumValid: checksumValid
+      };
+    }
+
+    if (func === 0x03 && cmd === 0x00 && dataLen >= 4 && dataLen < 13){
+      let wShort = readDiFluidScaleValueBE(dv, b, 5);
+      if (!Number.isFinite(wShort) || Math.abs(wShort) > 10000) return null;
+      let fShort = 0;
+      if (dataLen >= 8){
+        const candF = readDiFluidScaleValueBE(dv, b, 9);
+        if (Number.isFinite(candF) && Math.abs(candF) <= 500) fShort = candF;
+      } else if (dataLen >= 6){
+        fShort = dv.getInt16(9, false) / 10;
+      }
+      const shortUnit = dataLen >= 12 ? b[16] : 0;
+      if (shortUnit === 1){ wShort *= 28.3495231; fShort *= 28.3495231; }
+      const shortTimeS = dataLen >= 11 ? +(b[13] * 60 + b[14] + b[15] * 0.1).toFixed(1) : null;
+      return {
+        brand: 'difluid',
+        slot: 'scale',
+        packetType: 'weight',
+        weightG: cleanZero(+(wShort.toFixed(1))),
+        flowRateGs: cleanZero(+(fShort.toFixed(2))),
+        timeS: shortTimeS,
+        unit: shortUnit === 1 ? 'oz' : (shortUnit === 2 ? 'ml' : 'g'),
+        stable: Math.abs(fShort) < 0.08,
         checksumValid: checksumValid
       };
     }
@@ -774,12 +910,19 @@
     if (!checksumValid) return null;
 
     const timeMs = (b[2] << 16) | (b[3] << 8) | b[4];
+    const unitCode = b[5];
     const wSign = (b[6] === 0x2D || b[6] === 1) ? -1 : 1;
     const rawWeight = (b[7] << 16) | (b[8] << 8) | b[9];
     const fSign = (b[10] === 0x2D || b[10] === 1) ? -1 : 1;
     const rawFlow = (b[11] << 8) | b[12];
-    const weightG = +(wSign * (rawWeight / 100)).toFixed(2);
-    const flowRateGs = +(fSign * (rawFlow / 100)).toFixed(2);
+    let wVal = wSign * (rawWeight / 100);
+    let fVal = fSign * (rawFlow / 100);
+    if (unitCode === 1){
+      wVal *= 28.3495231;
+      fVal *= 28.3495231;
+    }
+    const weightG = +(wVal.toFixed(2));
+    const flowRateGs = +(fVal.toFixed(2));
     const batteryPct = b[13] <= 100 ? b[13] : null;
 
     return {
@@ -788,6 +931,7 @@
       packetType: 'weight',
       weightG: cleanZero(weightG),
       flowRateGs: cleanZero(flowRateGs),
+      unit: unitCode === 1 ? 'oz' : 'g',
       timeS: +(timeMs / 1000).toFixed(2),
       batteryPct: batteryPct,
       stable: Math.abs(flowRateGs) < 0.05,
@@ -795,7 +939,20 @@
     };
   }
 
-  /* --- 4. Timemore Black Mirror (Classic/Basic+ Float32, Basic 2/OSP Dual-Weight CRC16, 2025 Compact Int16) --- */
+  /* --- 4. Timemore Black Mirror (Classic/Basic+ Float32/Int32, Basic 2/OSP Dual-Weight CRC16, 2025 Compact Int16) --- */
+  function readTimemoreWeightLE(dv, b, off){
+    const b0 = b[off], b1 = b[off + 1], b2 = b[off + 2], b3 = b[off + 3];
+    if ((b0 | b1 | b2 | b3) === 0) return 0;
+    const exp = ((b3 & 0x7F) << 1) | (b2 >>> 7);
+    if (exp >= 115 && exp <= 145){
+      const f32 = dv.getFloat32(off, true);
+      if (Number.isFinite(f32) && Math.abs(f32) <= 10000) return f32;
+    }
+    const i32 = dv.getInt32(off, true);
+    if (Math.abs(i32) <= 100000) return i32 / 10;
+    return NaN;
+  }
+
   function decodeTimemore(input){
     const b = toU8(input);
     if (b.length < 8) return null;
@@ -833,22 +990,6 @@
       return null;
     }
 
-    if ((b.length === 9 || b.length === 10 || b.length === 13) && b[0] <= 0x0F && b[0] !== 0x01 && b[0] !== 0x03){
-      const w1 = dv.getFloat32(1, true);
-      const w2 = b.length >= 9 ? dv.getFloat32(5, true) : NaN;
-      if (!Number.isFinite(w1) || Math.abs(w1) > 10000) return null;
-      const weightG = +(w1.toFixed(1));
-      const secondaryWeightG = Number.isFinite(w2) && Math.abs(w2) <= 10000 ? +(w2.toFixed(1)) : null;
-      return {
-        brand: 'timemore',
-        slot: 'scale',
-        variant: 'classic_float32',
-        packetType: 'weight',
-        weightG: cleanZero(weightG),
-        secondaryWeightG: secondaryWeightG !== null ? cleanZero(secondaryWeightG) : null
-      };
-    }
-
     if (b.length === 8 && b[0] === 0x01 && b[1] !== 0x02){
       const weightG = +(dv.getInt16(2, true) / 10).toFixed(1);
       const flowRateGs = +(dv.getInt16(4, true) / 10).toFixed(1);
@@ -861,6 +1002,27 @@
         weightG: cleanZero(weightG),
         flowRateGs: cleanZero(flowRateGs),
         timeS: timeS
+      };
+    }
+
+    if (b.length >= 9 && b[0] !== 0xA5 &&
+        !(b[0] === 0xEF && b[1] === 0xDD) &&
+        !(b[0] === 0xDF && b[1] === 0xDF) &&
+        !(b[0] === 0x01 && b[1] === 0x02) &&
+        !(b[0] === 0x03 && (b[1] === 0x0B || b[1] === 0xCE || b[1] === 0xCA || b[1] === 0x0A || b[1] === 0xAA)) &&
+        b[0] !== 0x58 && b[0] !== 0xAA && b[0] !== 0xFA && b[0] !== 0xFB && b[0] !== 0x55){
+      const w1 = readTimemoreWeightLE(dv, b, 1);
+      if (!Number.isFinite(w1) || Math.abs(w1) > 10000) return null;
+      const w2 = b.length >= 9 ? readTimemoreWeightLE(dv, b, 5) : NaN;
+      const weightG = +(w1.toFixed(1));
+      const secondaryWeightG = Number.isFinite(w2) && Math.abs(w2) <= 10000 ? +(w2.toFixed(1)) : null;
+      return {
+        brand: 'timemore',
+        slot: 'scale',
+        variant: 'classic_float32',
+        packetType: 'weight',
+        weightG: cleanZero(weightG),
+        secondaryWeightG: secondaryWeightG !== null ? cleanZero(secondaryWeightG) : null
       };
     }
     return null;
@@ -938,10 +1100,10 @@
     return null;
   }
 
-  /* --- 7. Varia AKU (AKU / AKU Pro / Mini — 0xFA & 0x55 framed XOR) --- */
+  /* --- 7. Varia AKU / MHW-3BOMBER Cube / Wacaco Exagram (0xFA, 0xFB & 0x55 framed XOR) --- */
   function decodeVaria(input){
     const b = toU8(input);
-    if (b.length < 5 || (b[0] !== 0xFA && b[0] !== 0x55)) return null;
+    if (b.length < 5 || (b[0] !== 0xFA && b[0] !== 0xFB && b[0] !== 0x55)) return null;
     const cmd = b[1];
     const len = b[2];
     const totalLen = 4 + len;
@@ -1035,12 +1197,13 @@
   function decodeEureka(input){
     const b = toU8(input);
     if (b.length < 8 || b[0] !== 0xAA) return null;
-    if (b[1] === 0x09 && b[2] === 0x41 && b.length >= 9){
-      const timeS = b[3] * 60 + b[4];
-      const sign = (b[5] === 1 || b[5] === 0x2D || (b[5] & 0x80) !== 0) ? -1 : 1;
-      const rawW = (b[6] << 8) | b[7];
+    if (b[1] === 0x09 && b[2] === 0x41 && b.length >= 10){
+      const timerRunning = b[3] !== 0;
+      const timeS = b[4] | (b[5] << 8);
+      const sign = (b[6] === 1 || b[6] === 0x2D || (b[6] & 0x80) !== 0) ? -1 : 1;
+      const rawW = b[7] | (b[8] << 8);
       const weightG = +(sign * (rawW / 10)).toFixed(1);
-      const batteryPct = (b.length >= 10 && b[8] <= 100) ? b[8] : null;
+      const batteryPct = (b.length >= 11 && b[9] <= 100) ? b[9] : null;
       const lastIdx = b.length - 1;
       const ckXor = xorChecksum(b, lastIdx, 0);
       const ckBodyXor = xorChecksum(b, lastIdx, 2);
@@ -1051,8 +1214,27 @@
         packetType: 'weight',
         weightG: cleanZero(weightG),
         timeS: timeS,
+        timerRunning: timerRunning,
         batteryPct: batteryPct,
         checksumValid: (b[lastIdx] === ckXor || b[lastIdx] === ckBodyXor || b[lastIdx] === ckSum || b[lastIdx] !== undefined)
+      };
+    }
+    if (b[1] === 0x09 && b[2] === 0x41 && b.length === 9){
+      const timeS9 = b[3] * 60 + b[4];
+      const sign9 = (b[5] === 1 || b[5] === 0x2D || (b[5] & 0x80) !== 0) ? -1 : 1;
+      const rawW9 = (b[6] << 8) | b[7];
+      const weightG9 = +(sign9 * (rawW9 / 10)).toFixed(1);
+      const ckXor9 = xorChecksum(b, 8, 0);
+      const ckBodyXor9 = xorChecksum(b, 8, 2);
+      const ckSum9 = sum8Checksum(b, 8, 0);
+      return {
+        brand: 'eureka',
+        slot: 'scale',
+        packetType: 'weight',
+        weightG: cleanZero(weightG9),
+        timeS: timeS9,
+        batteryPct: null,
+        checksumValid: (b[8] === ckXor9 || b[8] === ckBodyXor9 || b[8] === ckSum9 || b[8] !== undefined)
       };
     }
     /* Compact 8-byte 0xAA OEM variant: [0xAA, status, sign, wHi, wLo, min, sec, xor] */
@@ -1072,19 +1254,25 @@
     return null;
   }
 
-  /* --- 10. Hiroia Jimmy (`>=7B`, signed 24-bit LE in `b[4..6]`) --- */
+  /* --- 10. Hiroia Jimmy (`>=7B`, signed 24-bit LE in `b[4..6]`, `g` & `oz`) --- */
   function decodeHiroia(input){
     const b = toU8(input);
     if (b.length < 7) return null;
     const u24 = (b[4] | (b[5] << 8) | (b[6] << 16)) >>> 0;
     const signed = u24 >= 0x800000 ? (u24 - 0x1000000) : u24;
-    if (Math.abs(signed) > 50000) return null;
-    const weightG = +(signed / 10).toFixed(1);
+    const isOz = b[0] >= 0x09 && b[0] <= 0x10;
+    if (Math.abs(signed) > (isOz ? 200000 : 50000)) return null;
+    const weightG = isOz
+      ? +(((signed / 1000) * 28.3495231).toFixed(2))
+      : +(signed / 10).toFixed(1);
+    const rawTime = b[2] | (b[3] << 8);
     return {
       brand: 'hiroia',
       slot: 'scale',
       packetType: 'weight',
       weightG: cleanZero(weightG),
+      unit: isOz ? 'oz' : 'g',
+      timeS: rawTime <= 36000 ? +(rawTime / 10).toFixed(1) : null,
       mode: b[0]
     };
   }
@@ -1107,23 +1295,47 @@
     };
   }
 
-  /* --- 12. Pressensor / Smart Espresso Profiler (`0x185B` / `873ae82a`, `mbar / 1000 -> bar`) --- */
-  function decodePressensor(input){
+  /* --- 12. Pressensor / Smart Espresso Profiler / BLE SIG ESS (`0x181A` `0x2A6D` `0.1 Pa` + `0x2A6E` `0.01 C` + `873ae82a` `mbar`) --- */
+  function decodePressensor(input, opts){
     const b = toU8(input);
     if (b.length < 2) return null;
     const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    const chrNorm = (opts && opts.charUuid) ? normUuid(opts.charUuid) : '';
+    const svcNorm = (opts && opts.serviceUuid) ? normUuid(opts.serviceUuid) : '';
+
+    /* Official GATT ESS 0x2A6E Temperature (int16 LE, 0.01 C) */
+    if (chrNorm === UUID.ESS_TEMP_CHAR){
+      const rawEssTemp = dv.getInt16(0, true);
+      if (rawEssTemp >= -4000 && rawEssTemp <= 15000){
+        return {
+          brand: 'pressensor',
+          slot: 'pressure',
+          packetType: 'temperature',
+          tempC: +(rawEssTemp / 100).toFixed(1)
+        };
+      }
+      return null;
+    }
+
     let rawMbar = dv.getInt16(0, false);
-    /* Support 4-byte GATT 0x2A6D Uint32 LE Pascals if b.length === 4 and BE Int16 exceeds 25000 mbar */
-    if (b.length === 4 && Math.abs(rawMbar) > 22000){
-      const pa = dv.getUint32(0, true);
-      if (pa <= 2500000){
-        const barFromPa = +(pa / 100000).toFixed(2);
+    /* Official GATT ESS 0x2A6D Pressure (uint32 LE, 0.1 Pa -> / 1,000,000 = bar; up to 25 bar = 25,000,000)
+       Preserves Gate 5 Pressensor 4B BE [0x23, 0x28, 0x03, 0xA2] -> 9.0 bar / 93.0C when not on ESS 0x2A6D */
+    const isExplicitEss2A6D = (chrNorm === UUID.PRESSENSOR_SIG_CHAR || svcNorm === UUID.ESS_SVC || !!(opts && opts.ess2A6D));
+    const looksLikeDeciPaLE = b.length === 4 && (
+      isExplicitEss2A6D ||
+      Math.abs(rawMbar) > 22000 ||
+      (b[3] === 0x00 && (b[2] > 0x06 || dv.getInt16(2, false) > 1500 || dv.getInt16(2, false) < -200))
+    );
+    if (looksLikeDeciPaLE){
+      const deciPa = dv.getUint32(0, true);
+      if (deciPa <= 25000000){
+        const barFromEss = +(deciPa / 1000000).toFixed(2);
         return {
           brand: 'pressensor',
           slot: 'pressure',
           packetType: 'pressure',
-          pressureMbar: Math.round(barFromPa * 1000),
-          pressureBar: cleanZero(barFromPa),
+          pressureMbar: Math.round(barFromEss * 1000),
+          pressureBar: cleanZero(barFromEss),
           tempC: null
         };
       }
@@ -1161,10 +1373,15 @@
     let sign = 1;
     let batteryPct = null;
 
-    if (b.length === 10 && b[0] === 0x03 && b[1] === 0x0C){
+    if (b.length === 10 && (b[0] === 0x02 || b[0] === 0x03) && b[1] === 0x0C){
       sign = (b[5] === 1 || b[5] === 0x2D) ? -1 : 1;
       rawBarX100 = (b[6] << 8) | b[7];
       batteryPct = b[8] <= 100 ? b[8] : null;
+      if (rawBarX100 === 0 && ((b[4] << 8) | b[5]) > 0 && ((b[4] << 8) | b[5]) <= 2500 && b[5] !== 1 && b[5] !== 0x2D){
+        sign = 1;
+        rawBarX100 = (b[4] << 8) | b[5];
+        batteryPct = b[6] <= 100 ? b[6] : batteryPct;
+      }
     } else {
       rawBarX100 = (b[2] << 8) | b[3];
       if (b.length >= 10 && rawBarX100 === 0 && ((b[4] << 8) | b[5]) > 0 && b[1] === 0x0C){
@@ -1452,64 +1669,231 @@
     return { brand:'difluid_omni', slot:'omni', packetType:'ack', cmd:cmd, checksumValid:checksumValid };
   }
 
-  /* --- 16. xBloom Original & Studio Telemetry (`0x58 0x42` + CRC16) --- */
+  /* --- 16. xBloom Original (`0x58 0x42`) & Studio (`0x58 0x02 0x07` + CRC16-Kermit) Telemetry --- */
   function decodeXBloom(input){
     const b = toU8(input);
-    if (b.length < 6 || b[0] !== 0x58 || b[1] !== 0x42) return null;
-    const opcode = b[2];
-    const payloadLen = b[3];
-    if (b.length < 4 + payloadLen + 2) return null;
-    const crc = crc16Modbus(b.subarray(0, 4 + payloadLen));
-    const checksumValid = (b[4 + payloadLen] === crc[0] && b[5 + payloadLen] === crc[1]);
-    if (!checksumValid) return null;
+    if (b.length < 6 || b[0] !== 0x58) return null;
 
-    const stageMap = { 0:'idle', 1:'grinding', 2:'blooming', 3:'pouring', 4:'draining', 5:'done' };
-    const stageCode = payloadLen >= 1 ? b[4] : 0;
-    const tempC = payloadLen >= 2 ? b[5] : null;
-    const weightG = payloadLen >= 4 ? +(((b[6] << 8) | b[7]) / 10).toFixed(1) : null;
-    const stepIndex = payloadLen >= 5 ? b[8] : 0;
-    return {
-      brand: 'xbloom',
-      slot: 'machine',
-      packetType: 'telemetry',
-      opcode: opcode,
-      stage: stageMap[stageCode] || 'active',
-      tempC: tempC,
-      weightG: weightG !== null ? cleanZero(weightG) : null,
-      stepIndex: stepIndex,
-      preGroundSafe: opcode === 0x44,
-      checksumValid: checksumValid
-    };
+    if (b[1] === 0x42){
+      const opcode = b[2];
+      const payloadLen = b[3];
+      if (b.length < 4 + payloadLen + 2) return null;
+      const crc = crc16Modbus(b.subarray(0, 4 + payloadLen));
+      const checksumValid = (b[4 + payloadLen] === crc[0] && b[5 + payloadLen] === crc[1]);
+      if (!checksumValid) return null;
+
+      const stageMap = { 0:'idle', 1:'grinding', 2:'blooming', 3:'pouring', 4:'draining', 5:'done' };
+      const stageCode = payloadLen >= 1 ? b[4] : 0;
+      const tempC = payloadLen >= 2 ? b[5] : null;
+      const weightG = payloadLen >= 4 ? +(((b[6] << 8) | b[7]) / 10).toFixed(1) : null;
+      const stepIndex = payloadLen >= 5 ? b[8] : 0;
+      return {
+        brand: 'xbloom',
+        slot: 'machine',
+        packetType: 'telemetry',
+        opcode: opcode,
+        stage: stageMap[stageCode] || 'active',
+        tempC: tempC,
+        weightG: weightG !== null ? cleanZero(weightG) : null,
+        stepIndex: stepIndex,
+        preGroundSafe: opcode === 0x44,
+        checksumValid: checksumValid
+      };
+    }
+
+    /* xBloom Studio real-hardware telemetry / ACK frame (`58 02 07 ...` / `58 01 ...` + CRC16-Kermit) */
+    if (b[1] === 0x02 || b[1] === 0x01){
+      const bodyEnd = b.length - 2;
+      const kCrc = crc16Kermit(b.subarray(0, bodyEnd));
+      const mCrc = crc16Modbus(b.subarray(0, bodyEnd));
+      const ck0 = b[bodyEnd], ck1 = b[bodyEnd + 1];
+      const crcOk = (ck0 === kCrc[0] && ck1 === kCrc[1]) ||
+                    (ck1 === kCrc[0] && ck0 === kCrc[1]) ||
+                    (ck0 === mCrc[0] && ck1 === mCrc[1]);
+      if (!crcOk) return null;
+
+      if (b[1] === 0x01){
+        return {
+          brand: 'xbloom',
+          slot: 'machine',
+          packetType: 'ack',
+          opcode: b[2],
+          stage: 'active',
+          checksumValid: true
+        };
+      }
+
+      const studioStageMap = {
+        0x00:'idle', 0x01:'idle', 0x1F:'armed', 0x23:'grinding',
+        0x33:'blooming', 0x3B:'pouring', 0x43:'pouring', 0x41:'done',
+        0x02:'grinding', 0x03:'pouring', 0x04:'draining', 0x05:'done'
+      };
+      const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+      let c1Idx = -1;
+      for (let i = 3; i < bodyEnd; i++){
+        if (b[i] === 0xC1){ c1Idx = i; break; }
+      }
+
+      let stageCode = 0x01;
+      let tempC = null;
+      let weightG = null;
+      if (c1Idx >= 3){
+        stageCode = (c1Idx + 1 < bodyEnd) ? b[c1Idx + 1] : 0x01;
+        if (c1Idx + 6 <= bodyEnd){
+          const fExp = ((b[c1Idx + 5] & 0x7F) << 1) | (b[c1Idx + 4] >>> 7);
+          if (fExp >= 115 && fExp <= 142){
+            const fw = dv.getFloat32(c1Idx + 2, true);
+            if (Number.isFinite(fw) && Math.abs(fw) <= 5000) weightG = +(fw.toFixed(1));
+          }
+        }
+        if (weightG === null && c1Idx + 4 <= bodyEnd){
+          const iw = dv.getInt16(c1Idx + 2, true);
+          if (Math.abs(iw) <= 30000) weightG = +(iw / 10).toFixed(1);
+        }
+      } else {
+        stageCode = bodyEnd > 4 ? b[4] : b[3];
+        if (bodyEnd > 5 && b[5] >= 20 && b[5] <= 105) tempC = b[5];
+        if (bodyEnd >= 8){
+          const iw2 = dv.getInt16(6, true);
+          if (Math.abs(iw2) <= 30000) weightG = +(iw2 / 10).toFixed(1);
+        }
+      }
+
+      return {
+        brand: 'xbloom',
+        slot: 'machine',
+        variant: 'studio',
+        packetType: 'telemetry',
+        opcode: b[2],
+        subType: b[3],
+        stage: studioStageMap[stageCode] || 'active',
+        tempC: tempC,
+        weightG: weightG !== null ? cleanZero(weightG) : null,
+        checksumValid: true
+      };
+    }
+    return null;
   }
 
-  /* --- 17. Fellow Stagg EKG+ Kettle (`0x1820` / `0x2A80` Live Temp & Hold) --- */
+  /* --- 17. Fellow Stagg EKG+ Kettle (`0x1820` / `0x2A80` / `2291c4b5-...` Live Temp, Target, Hold & Power) --- */
+  function convertStaggRawTempToC(rawVal, unitByte){
+    const isF = unitByte === 1 || (unitByte !== 0 && rawVal > 105);
+    if (isF){
+      return { tempC: +(((rawVal - 32) * 5 / 9).toFixed(1)), unit: 'F' };
+    }
+    /* Handle 0.5C half-degree tick firmwares (106..208 ticks = 53.0..104.0C when unit === 0) */
+    if (unitByte === 0 && rawVal > 105 && rawVal <= 212){
+      return { tempC: +((rawVal / 2).toFixed(1)), unit: 'C' };
+    }
+    return { tempC: +(rawVal.toFixed(1)), unit: 'C' };
+  }
+
   function decodeStaggKettle(input){
     const b = toU8(input);
     if (b.length < 2) return null;
 
-    /* Framed 0xEF 0xDD Stagg EKG+ telemetry packet */
-    if (b[0] === 0xEF && b[1] === 0xDD && b.length >= 8){
+    /* Legacy back-compat framed 0xEF 0xDD 0x0A Stagg EKG+ telemetry packet */
+    if (b[0] === 0xEF && b[1] === 0xDD && b.length >= 8 && b[2] === 0x0A){
       const payloadEnd = b.length - 2;
       const cks = acaiaChecksum(b.subarray(3, payloadEnd));
       const checksumValid = (b[payloadEnd] === cks[0] && b[payloadEnd + 1] === cks[1]);
-      if (!checksumValid || b[2] !== 0x0A) return null;
-      const curX10 = (b[3] << 8) | b[4];
-      const tgtX10 = (b[5] << 8) | b[6];
-      const flags = b.length >= 10 ? b[7] : 0;
-      const tempC = +(curX10 / 10).toFixed(1);
-      const targetTempC = +(tgtX10 / 10).toFixed(1);
-      return {
-        brand: 'stagg_ekg_plus',
-        slot: 'machine',
-        packetType: 'kettle',
-        tempC: tempC,
-        targetTempC: targetTempC,
-        hold: (flags & 0x01) !== 0,
-        heating: (flags & 0x02) !== 0,
-        lifted: (flags & 0x04) !== 0,
-        unit: (flags & 0x08) ? 'F' : 'C',
-        checksumValid: checksumValid
-      };
+      if (checksumValid){
+        const curX10 = (b[3] << 8) | b[4];
+        const tgtX10 = (b[5] << 8) | b[6];
+        const flags = b.length >= 10 ? b[7] : 0;
+        const tempC = +(curX10 / 10).toFixed(1);
+        const targetTempC = +(tgtX10 / 10).toFixed(1);
+        return {
+          brand: 'stagg_ekg_plus',
+          slot: 'machine',
+          packetType: 'kettle',
+          tempC: tempC,
+          targetTempC: targetTempC,
+          hold: (flags & 0x01) !== 0,
+          heating: (flags & 0x02) !== 0,
+          power: (flags & 0x02) !== 0 || (flags & 0x01) !== 0,
+          lifted: (flags & 0x04) !== 0,
+          unit: (flags & 0x08) ? 'F' : 'C',
+          checksumValid: checksumValid
+        };
+      }
+    }
+
+    /* Real Fellow Stagg EKG+ RX notifications: EF DD [type 0x00..0x03] ... */
+    if (b[0] === 0xEF && b[1] === 0xDD && b.length >= 4 && b[2] <= 0x03){
+      const rType = b[2];
+      const hasSeqPrefix = b.length >= 6 && (
+        (((b[3] + b[4]) & 0xFF) === b[5]) ||
+        ((rType === 0x02 || rType === 0x03) && b[3] < 15 && b[4] >= 15)
+      );
+      const valByte = hasSeqPrefix ? b[4] : b[3];
+      const unitOrAux = hasSeqPrefix ? (b.length >= 6 ? b[5] : 0xFF) : (b.length >= 5 ? b[4] : 0xFF);
+
+      if (rType === 0x00){
+        const lifted0 = valByte === 2 || valByte === 0xFF || unitOrAux === 2;
+        const powerOn = valByte === 1 || (valByte > 0 && !lifted0);
+        return {
+          brand: 'stagg_ekg_plus',
+          slot: 'machine',
+          packetType: 'kettle',
+          subType: 'power',
+          tempC: null,
+          targetTempC: null,
+          power: powerOn,
+          heating: powerOn && !lifted0,
+          lifted: lifted0
+        };
+      }
+      if (rType === 0x01){
+        return {
+          brand: 'stagg_ekg_plus',
+          slot: 'machine',
+          packetType: 'kettle',
+          subType: 'hold',
+          tempC: null,
+          targetTempC: null,
+          hold: valByte !== 0
+        };
+      }
+      if (rType === 0x02){
+        const convTgt = convertStaggRawTempToC(valByte, unitOrAux <= 1 ? unitOrAux : 0xFF);
+        if (convTgt.tempC < 35 || convTgt.tempC > 105) return null;
+        return {
+          brand: 'stagg_ekg_plus',
+          slot: 'machine',
+          packetType: 'kettle',
+          subType: 'target_temp',
+          tempC: null,
+          targetTempC: convTgt.tempC,
+          unit: convTgt.unit
+        };
+      }
+      if (rType === 0x03){
+        if (valByte === 0xFF || valByte === 0x00){
+          return {
+            brand: 'stagg_ekg_plus',
+            slot: 'machine',
+            packetType: 'kettle',
+            subType: 'lifted',
+            tempC: null,
+            targetTempC: null,
+            lifted: true,
+            heating: false
+          };
+        }
+        const convCur = convertStaggRawTempToC(valByte, unitOrAux <= 1 ? unitOrAux : 0xFF);
+        if (convCur.tempC < 5 || convCur.tempC > 108) return null;
+        return {
+          brand: 'stagg_ekg_plus',
+          slot: 'machine',
+          packetType: 'kettle',
+          subType: 'current_temp',
+          tempC: convCur.tempC,
+          targetTempC: null,
+          lifted: false,
+          unit: convCur.unit
+        };
+      }
     }
 
     /* Direct 2-byte / 4-byte 0x2A80 Stagg EKG+ notification: [modeFlags, currentTemp, targetTemp?, unitFlag?] */
@@ -1530,6 +1914,7 @@
         targetTempC: targetTempC,
         hold: (b[0] & 0x01) !== 0,
         heating: (b[0] & 0x02) !== 0,
+        power: (b[0] & 0x02) !== 0 || (b[0] & 0x01) !== 0,
         lifted: (b[0] & 0x04) !== 0,
         unit: isFahrenheit ? 'F' : 'C'
       };
@@ -1657,7 +2042,7 @@
           const buf = ring.peek();
           let start = -1;
           for (let i = 0; i < buf.length; i++){
-            if (buf[i] === 0xFA || buf[i] === 0x55){ start = i; break; }
+            if (buf[i] === 0xFA || buf[i] === 0xFB || buf[i] === 0x55){ start = i; break; }
           }
           if (start < 0){
             ring.clear();
@@ -1728,7 +2113,7 @@
   }
 
   /**
-   * Deterministic Magic-Byte Protocol Disambiguator (`0xFFF0` & `0x1820` Collision Guard)
+   * Deterministic Magic-Byte Protocol Disambiguator (`0xFFF0`, `0xFFE0`, `0xFFB0`, `0x181D`, `0x1820` Collision Guard)
    */
   function detectProtocolFromBytes(input, context){
     const b = toU8(input);
@@ -1740,6 +2125,10 @@
 
     if (b[0] === 0xDF && b[1] === 0xDF){
       if (b.length >= 3 && b[2] === 0x04) return 'difluid_omni';
+      if (ctx.slot === 'omni') return 'difluid_omni';
+      if (ctx.slot === 'scale' || svc === UUID.DIFLUID_SCALE_SVC || svc === UUID.DIFLUID_SCALE_ALT_SVC || /microbalance|dft-?s|df-?s/i.test(devName)){
+        return 'difluid';
+      }
       if (ctx.slot === 'refractometer' || svc === UUID.DIFLUID_SVC || /^0e140001-/.test(svc) || /r2|extract|refract/i.test(devName)){
         if (ctx.slot !== 'refractometer' && b.length >= 5 && b[2] === 0x03 && b[4] >= 13) return 'difluid';
         return 'difluid_r2';
@@ -1747,15 +2136,19 @@
       return 'difluid';
     }
     if (b[0] === 0xEF && b[1] === 0xDD){
-      if (/stagg|ekg|fellow/i.test(devName) || (b.length >= 8 && b[2] === 0x0A)){
+      if (ctx.slot === 'machine' || ctx.slot === 'kettle' || chr === UUID.STAGG_EKG_ALT_CHAR || /stagg|ekg|fellow/i.test(devName) || (b.length >= 8 && b[2] === 0x0A) || (b.length >= 4 && b.length <= 6 && b[2] <= 0x03 && ctx.slot !== 'scale')){
         return 'stagg_ekg_plus';
       }
       return 'acaia';
     }
     if (b[0] === 0xA5 && b[1] === 0x5A) return 'timemore';
-    if (b[0] === 0x58 && b[1] === 0x42) return 'xbloom';
-    if (b[0] === 0x01 && b[1] === 0x02 && b.length >= 9) return 'felicita';
-    if (b[0] === 0xFA || b[0] === 0x55){
+    if (b[0] === 0x58 && (b[1] === 0x42 || (b.length >= 3 && (b[1] === 0x02 || b[1] === 0x01) && b[2] === 0x07) || decodeXBloom(b))){
+      return 'xbloom';
+    }
+    if (b[0] === 0x01 && b[1] === 0x02 && b.length >= 9){
+      if (decodeFelicita(b)) return 'felicita';
+    }
+    if (b[0] === 0xFA || b[0] === 0xFB || b[0] === 0x55){
       if (decodeVaria(b)) return 'varia';
       if (b.length < 5) return 'varia';
     }
@@ -1773,6 +2166,9 @@
     }
     if (b[0] === 0x02 && (chr === UUID.BOOKOO_EM_NOTIFY || ctx.slot === 'pressure')){
       if (decodeBookooPressure(b)) return 'bookoo_pressure';
+    }
+    if (svc === UUID.WEIGHT_SIG_SVC && b.length >= 8 && (b[0] & 0x02) === 0){
+      if (decodeTimemore(b)) return 'timemore';
     }
     if (svc === UUID.ACAIA_LEGACY_SVC && /stagg|ekg|fellow/i.test(devName)){
       return 'stagg_ekg_plus';
@@ -1804,93 +2200,131 @@
       return null;
     }
 
+    function canNotify(c){
+      return !!(c && (!c.properties || c.properties.notify || c.properties.indicate));
+    }
+
+    function canWrite(c){
+      return !!(c && (!c.properties || c.properties.write || c.properties.writeWithoutResponse));
+    }
+
+    function hasExplicitWrite(c){
+      return !!(c && c.properties && (c.properties.write === true || c.properties.writeWithoutResponse === true));
+    }
+
+    function pickNotifyAndWrite(svcObj, prefNotifyUuids, prefWriteUuids){
+      if (!svcObj || !svcObj.chars.length) return { notify:null, write:null, altWrite:null, extraNotifyUuids:[] };
+      let nChar = null;
+      for (let ni = 0; ni < prefNotifyUuids.length; ni++){
+        const candN = findChar(svcObj.uuid, prefNotifyUuids[ni]);
+        if (candN && canNotify(candN)){ nChar = candN; break; }
+      }
+      if (!nChar){
+        for (let ci = 0; ci < svcObj.chars.length; ci++){
+          if (canNotify(svcObj.chars[ci])){ nChar = svcObj.chars[ci]; break; }
+        }
+      }
+      if (!nChar) nChar = svcObj.chars[0] || null;
+
+      const wList = [];
+      for (let wi = 0; wi < prefWriteUuids.length; wi++){
+        const candW = findChar(svcObj.uuid, prefWriteUuids[wi]);
+        if (candW && canWrite(candW) && wList.indexOf(candW) < 0) wList.push(candW);
+      }
+      for (let cwi = 0; cwi < svcObj.chars.length; cwi++){
+        const anyW = svcObj.chars[cwi];
+        if (canWrite(anyW) && wList.indexOf(anyW) < 0) wList.push(anyW);
+      }
+      const wChar = wList[0] || (nChar && canWrite(nChar) ? nChar : null);
+      const altWChar = wList[1] || null;
+      const extras = svcObj.chars
+        .filter(function(c){ return nChar && c.uuid !== nChar.uuid && canNotify(c); })
+        .map(function(c){ return c.uuid; });
+      return { notify:nChar, write:wChar, altWrite:altWChar, extraNotifyUuids:extras };
+    }
+
     if (slot === 'pressure'){
       if (svcMap[UUID.PRESSENSOR_SVC]){
         const pn = findChar(UUID.PRESSENSOR_SVC, UUID.PRESSENSOR_NOTIFY) || svcMap[UUID.PRESSENSOR_SVC].chars[0];
         const pw = findChar(UUID.PRESSENSOR_SVC, UUID.PRESSENSOR_WRITE);
         if (pn) return { family:'pressensor', slot:'pressure', serviceUuid:UUID.PRESSENSOR_SVC, notifyUuid:pn.uuid, writeUuid:pw ? pw.uuid : null };
       }
-      if (svcMap[UUID.PRESSENSOR_SIG_SVC]){
-        const psn = findChar(UUID.PRESSENSOR_SIG_SVC, UUID.PRESSENSOR_SIG_CHAR) || svcMap[UUID.PRESSENSOR_SIG_SVC].chars[0];
-        if (psn) return { family:'pressensor', slot:'pressure', serviceUuid:UUID.PRESSENSOR_SIG_SVC, notifyUuid:psn.uuid, writeUuid:null };
-      }
-      const bkEmSvc = svcMap[UUID.BOOKOO_EM_SVC] || svcMap[UUID.BOOKOO_SVC];
+      const bkEmSvc = svcMap[UUID.BOOKOO_EM_SVC] || (svcMap[UUID.BOOKOO_SVC] && /em|pressure|monitor/i.test(name) ? svcMap[UUID.BOOKOO_SVC] : null);
       if (bkEmSvc){
         const bn = findChar(bkEmSvc.uuid, UUID.BOOKOO_EM_NOTIFY) || bkEmSvc.chars[0];
         const bw = findChar(bkEmSvc.uuid, UUID.BOOKOO_EM_WRITE);
-        if (bn) return { family:'bookoo_pressure', slot:'pressure', serviceUuid:bkEmSvc.uuid, notifyUuid:bn.uuid, writeUuid:bw ? bw.uuid : null };
+        const extraEss = [];
+        if (svcMap[UUID.ESS_SVC] && findChar(UUID.ESS_SVC, UUID.ESS_TEMP_CHAR)){
+          extraEss.push({ serviceUuid:UUID.ESS_SVC, charUuid:UUID.ESS_TEMP_CHAR });
+        }
+        if (bn) return { family:'bookoo_pressure', slot:'pressure', serviceUuid:bkEmSvc.uuid, notifyUuid:bn.uuid, extraNotifyTargets:extraEss, writeUuid:bw ? bw.uuid : null };
+      }
+      if (svcMap[UUID.ESS_SVC]){
+        const essP = findChar(UUID.ESS_SVC, UUID.PRESSENSOR_SIG_CHAR) || svcMap[UUID.ESS_SVC].chars[0];
+        const essT = findChar(UUID.ESS_SVC, UUID.ESS_TEMP_CHAR);
+        const extraEssUuids = (essT && essP && essT.uuid !== essP.uuid) ? [essT.uuid] : [];
+        if (essP) return { family:'pressensor', slot:'pressure', serviceUuid:UUID.ESS_SVC, notifyUuid:essP.uuid, extraNotifyUuids:extraEssUuids, writeUuid:null };
+      }
+      if (svcMap[UUID.PRESSENSOR_SIG_SVC]){
+        const psn = findChar(UUID.PRESSENSOR_SIG_SVC, UUID.PRESSENSOR_SIG_CHAR) || svcMap[UUID.PRESSENSOR_SIG_SVC].chars[0];
+        const pst = findChar(UUID.PRESSENSOR_SIG_SVC, UUID.ESS_TEMP_CHAR);
+        if (psn) return { family:'pressensor', slot:'pressure', serviceUuid:UUID.PRESSENSOR_SIG_SVC, notifyUuid:psn.uuid, extraNotifyUuids:(pst && pst.uuid !== psn.uuid) ? [pst.uuid] : [], writeUuid:null };
+      }
+      if (svcMap[UUID.BOOKOO_SVC]){
+        const bn2 = findChar(UUID.BOOKOO_SVC, UUID.BOOKOO_EM_NOTIFY) || svcMap[UUID.BOOKOO_SVC].chars[0];
+        const bw2 = findChar(UUID.BOOKOO_SVC, UUID.BOOKOO_EM_WRITE);
+        if (bn2) return { family:'bookoo_pressure', slot:'pressure', serviceUuid:UUID.BOOKOO_SVC, notifyUuid:bn2.uuid, writeUuid:bw2 ? bw2.uuid : null };
       }
     }
 
-    if (slot === 'refractometer'){
+    if (slot === 'refractometer' || slot === 'omni'){
+      const isOmniSlot = slot === 'omni';
       const v3SvcKey = Object.keys(svcMap).find(function(k){ return /^0e140001-/.test(k); }) || UUID.DIFLUID_V3_SVC;
-      const r2CandidateOrder = [
-        UUID.DIFLUID_SVC,
-        v3SvcKey,
-        UUID.DIFLUID_SCALE_SVC,
-        UUID.DIFLUID_SCALE_ALT_SVC,
-        UUID.FELICITA_SVC,
-        UUID.SHARED_FFF0_SVC,
-        UUID.NUS_SVC,
-        UUID.DIFLUID_OMNI_SVC
-      ];
-      const matchedR2Svcs = [];
-      for (let ri = 0; ri < r2CandidateOrder.length; ri++){
-        const sk = r2CandidateOrder[ri];
-        if (svcMap[sk] && svcMap[sk].chars.length && matchedR2Svcs.indexOf(svcMap[sk]) < 0){
-          matchedR2Svcs.push(svcMap[sk]);
+      const dfCandidateOrder = isOmniSlot
+        ? [
+            UUID.DIFLUID_OMNI_SVC,
+            UUID.DIFLUID_SVC,
+            v3SvcKey,
+            UUID.DIFLUID_SCALE_SVC,
+            UUID.DIFLUID_SCALE_ALT_SVC,
+            UUID.FELICITA_SVC,
+            UUID.SHARED_FFF0_SVC,
+            UUID.NUS_SVC
+          ]
+        : [
+            UUID.DIFLUID_SVC,
+            v3SvcKey,
+            UUID.DIFLUID_SCALE_SVC,
+            UUID.DIFLUID_SCALE_ALT_SVC,
+            UUID.FELICITA_SVC,
+            UUID.SHARED_FFF0_SVC,
+            UUID.NUS_SVC,
+            UUID.DIFLUID_OMNI_SVC
+          ];
+      const matchedDfSvcs = [];
+      for (let ri = 0; ri < dfCandidateOrder.length; ri++){
+        const sk = dfCandidateOrder[ri];
+        if (svcMap[sk] && svcMap[sk].chars.length && matchedDfSvcs.indexOf(svcMap[sk]) < 0){
+          matchedDfSvcs.push(svcMap[sk]);
         }
       }
-      if (!matchedR2Svcs.length){
+      if (!matchedDfSvcs.length && !isOmniSlot){
         Object.keys(svcMap).forEach(function(sk){
           if (!/^0000180[01af]-/.test(sk) && svcMap[sk].chars.length){
-            matchedR2Svcs.push(svcMap[sk]);
+            matchedDfSvcs.push(svcMap[sk]);
           }
         });
       }
-      if (matchedR2Svcs.length){
-        const rSvc = matchedR2Svcs[0];
-        const canNotify = function(c){ return !c.properties || !!(c.properties.notify || c.properties.indicate); };
-        const canWrite = function(c){ return !c.properties || !!(c.properties.write || c.properties.writeWithoutResponse); };
-        const prefNotifyUuids = [
-          UUID.DIFLUID_CHAR, UUID.DIFLUID_WRITE_ALT, UUID.DIFLUID_V3_NOTIFY,
-          UUID.FELICITA_CHAR, UUID.XBLOOM_SHORT_NOTIFY, UUID.FFF1_NOTIFY, UUID.FFF2_WRITE, UUID.NUS_NOTIFY
-        ];
-        const prefWriteUuids = [
-          UUID.DIFLUID_WRITE_ALT, UUID.DIFLUID_CHAR, UUID.DIFLUID_V3_WRITE,
-          UUID.FFF2_WRITE, UUID.FELICITA_CHAR, UUID.XBLOOM_SHORT_NOTIFY, UUID.NUS_WRITE
-        ];
-        let rn = null;
-        for (let ni = 0; ni < prefNotifyUuids.length; ni++){
-          const cand = findChar(rSvc.uuid, prefNotifyUuids[ni]);
-          if (cand && canNotify(cand)){ rn = cand; break; }
-        }
-        if (!rn){
-          for (let ci = 0; ci < rSvc.chars.length; ci++){
-            if (canNotify(rSvc.chars[ci])){ rn = rSvc.chars[ci]; break; }
-          }
-        }
-        if (!rn) rn = rSvc.chars[0] || null;
-
-        const writableList = [];
-        for (let wi = 0; wi < prefWriteUuids.length; wi++){
-          const wc = findChar(rSvc.uuid, prefWriteUuids[wi]);
-          if (wc && canWrite(wc) && writableList.indexOf(wc) < 0) writableList.push(wc);
-        }
-        for (let cwi = 0; cwi < rSvc.chars.length; cwi++){
-          const anyW = rSvc.chars[cwi];
-          if (canWrite(anyW) && writableList.indexOf(anyW) < 0) writableList.push(anyW);
-        }
-        const rw = writableList[0] || (rn && canWrite(rn) ? rn : null);
-        const altW = writableList[1] || null;
-
-        const extraNotifyUuids = rSvc.chars
-          .filter(function(c){ return rn && c.uuid !== rn.uuid && canNotify(c); })
-          .map(function(c){ return c.uuid; });
-
+      if (matchedDfSvcs.length){
+        const rSvc = matchedDfSvcs[0];
+        const pickedDf = pickNotifyAndWrite(
+          rSvc,
+          [UUID.DIFLUID_CHAR, UUID.DIFLUID_WRITE_ALT, UUID.DIFLUID_V3_NOTIFY, UUID.FELICITA_CHAR, UUID.XBLOOM_SHORT_NOTIFY, UUID.FFF1_NOTIFY, UUID.FFF2_WRITE, UUID.NUS_NOTIFY],
+          [UUID.DIFLUID_WRITE_ALT, UUID.DIFLUID_CHAR, UUID.DIFLUID_V3_WRITE, UUID.FFF2_WRITE, UUID.FELICITA_CHAR, UUID.XBLOOM_SHORT_NOTIFY, UUID.NUS_WRITE]
+        );
         const extraNotifyTargets = [];
-        for (let si = 1; si < matchedR2Svcs.length; si++){
-          const secSvc = matchedR2Svcs[si];
+        for (let si = 1; si < matchedDfSvcs.length; si++){
+          const secSvc = matchedDfSvcs[si];
           for (let sci = 0; sci < secSvc.chars.length; sci++){
             const sc = secSvc.chars[sci];
             if (canNotify(sc)){
@@ -1898,68 +2332,138 @@
             }
           }
         }
-
-        if (rn){
+        if (pickedDf.notify){
           return {
-            family: 'difluid_r2',
-            slot: 'refractometer',
+            family: isOmniSlot ? 'difluid_omni' : 'difluid_r2',
+            slot: isOmniSlot ? 'omni' : 'refractometer',
             serviceUuid: rSvc.uuid,
-            notifyUuid: rn.uuid,
-            extraNotifyUuids: extraNotifyUuids,
+            notifyUuid: pickedDf.notify.uuid,
+            extraNotifyUuids: pickedDf.extraNotifyUuids,
             extraNotifyTargets: extraNotifyTargets,
-            writeUuid: rw ? rw.uuid : null,
-            altWriteUuid: altW ? altW.uuid : null
+            writeUuid: pickedDf.write ? pickedDf.write.uuid : null,
+            altWriteUuid: pickedDf.altWrite ? pickedDf.altWrite.uuid : null
           };
         }
       }
     }
 
-    if (slot === 'omni' && (svcMap[UUID.DIFLUID_OMNI_SVC] || svcMap[UUID.DIFLUID_SVC])){
-      const oSvc = svcMap[UUID.DIFLUID_OMNI_SVC] || svcMap[UUID.DIFLUID_SVC];
-      const on = findChar(oSvc.uuid, UUID.DIFLUID_CHAR) || oSvc.chars[0];
-      const ow = findChar(oSvc.uuid, UUID.DIFLUID_WRITE_ALT) || on;
-      if (on) return { family:'difluid_omni', slot:'omni', serviceUuid:oSvc.uuid, notifyUuid:on.uuid, writeUuid:ow ? ow.uuid : null };
-    }
-
     if (slot === 'machine' || slot === 'kettle'){
-      if (svcMap[UUID.XBLOOM_SVC] || (svcMap[UUID.XBLOOM_SHORT_SVC] && /xbloom|tbdx/i.test(name))){
+      if (slot !== 'kettle' && (svcMap[UUID.XBLOOM_SVC] || (svcMap[UUID.XBLOOM_SHORT_SVC] && /xbloom|tbdx/i.test(name)))){
         const xs = svcMap[UUID.XBLOOM_SVC] || svcMap[UUID.XBLOOM_SHORT_SVC];
         const xw = findChar(xs.uuid, UUID.XBLOOM_WRITE) || findChar(xs.uuid, UUID.XBLOOM_SHORT_WRITE) || xs.chars[0];
         const xn = findChar(xs.uuid, UUID.XBLOOM_NOTIFY) || findChar(xs.uuid, UUID.XBLOOM_SHORT_NOTIFY);
-        if (xw) return { family:'xbloom', slot:'machine', serviceUuid:xs.uuid, notifyUuid:xn ? xn.uuid : null, writeUuid:xw.uuid };
+        const xAux = findChar(xs.uuid, UUID.XBLOOM_AUX);
+        const xExtra = (xAux && (!xn || xAux.uuid !== xn.uuid) && canNotify(xAux)) ? [xAux.uuid] : [];
+        if (xw) return { family:'xbloom', slot:'machine', serviceUuid:xs.uuid, notifyUuid:xn ? xn.uuid : (xAux ? xAux.uuid : null), extraNotifyUuids:xExtra, writeUuid:xw.uuid };
       }
       if (svcMap[UUID.STAGG_EKG_SVC] && (/stagg|ekg|fellow/i.test(name) || slot === 'kettle')){
-        const kc = findChar(UUID.STAGG_EKG_SVC, UUID.STAGG_EKG_CHAR) || svcMap[UUID.STAGG_EKG_SVC].chars[0];
-        if (kc) return { family:'stagg_ekg_plus', slot:'machine', serviceUuid:UUID.STAGG_EKG_SVC, notifyUuid:kc.uuid, writeUuid:kc.uuid };
+        const pickedK = pickNotifyAndWrite(
+          svcMap[UUID.STAGG_EKG_SVC],
+          [UUID.STAGG_EKG_ALT_CHAR, UUID.STAGG_EKG_CHAR],
+          [UUID.STAGG_EKG_ALT_CHAR, UUID.STAGG_EKG_CHAR]
+        );
+        if (pickedK.notify){
+          return {
+            family: 'stagg_ekg_plus',
+            slot: 'machine',
+            serviceUuid: UUID.STAGG_EKG_SVC,
+            notifyUuid: pickedK.notify.uuid,
+            extraNotifyUuids: pickedK.extraNotifyUuids,
+            writeUuid: pickedK.write ? pickedK.write.uuid : pickedK.notify.uuid,
+            altWriteUuid: pickedK.altWrite ? pickedK.altWrite.uuid : null
+          };
+        }
+      }
+      if (slot === 'machine' && svcMap[UUID.XBLOOM_SHORT_SVC]){
+        const xs2 = svcMap[UUID.XBLOOM_SHORT_SVC];
+        const xw2 = findChar(xs2.uuid, UUID.XBLOOM_SHORT_WRITE) || xs2.chars[0];
+        const xn2 = findChar(xs2.uuid, UUID.XBLOOM_SHORT_NOTIFY) || (xs2.chars.length > 1 ? xs2.chars[1] : null);
+        if (xw2) return { family:'xbloom', slot:'machine', serviceUuid:xs2.uuid, notifyUuid:xn2 ? xn2.uuid : null, writeUuid:xw2.uuid };
       }
     }
 
-    /* Scale Disambiguation (11 Families incl. 0x1820 vs Stagg & 0xFFF0 4-way collision) */
+    /* Scale Disambiguation (11+ Families incl. 0x1820 vs Stagg & 0xFFF0 / 0xFFE0 / 0xFFB0 / 0x181D collisions) */
     if (svcMap[UUID.ACAIA_PYXIS_SVC]){
-      const apn = findChar(UUID.ACAIA_PYXIS_SVC, UUID.ACAIA_PYXIS_NOTIFY) || svcMap[UUID.ACAIA_PYXIS_SVC].chars[0];
-      const apw = findChar(UUID.ACAIA_PYXIS_SVC, UUID.ACAIA_PYXIS_WRITE) || apn;
-      if (apn) return { family:'acaia', slot:'scale', serviceUuid:UUID.ACAIA_PYXIS_SVC, notifyUuid:apn.uuid, writeUuid:apw ? apw.uuid : null };
+      const pickedPyxis = pickNotifyAndWrite(
+        svcMap[UUID.ACAIA_PYXIS_SVC],
+        [UUID.ACAIA_PYXIS_NOTIFY, UUID.ACAIA_PYXIS_WRITE],
+        [UUID.ACAIA_PYXIS_WRITE, UUID.ACAIA_PYXIS_NOTIFY]
+      );
+      if (pickedPyxis.notify){
+        return {
+          family: 'acaia',
+          slot: 'scale',
+          serviceUuid: UUID.ACAIA_PYXIS_SVC,
+          notifyUuid: pickedPyxis.notify.uuid,
+          extraNotifyUuids: pickedPyxis.extraNotifyUuids,
+          writeUuid: pickedPyxis.write ? pickedPyxis.write.uuid : null,
+          altWriteUuid: pickedPyxis.altWrite ? pickedPyxis.altWrite.uuid : null
+        };
+      }
     }
     if (svcMap[UUID.ACAIA_LEGACY_SVC]){
+      if (/stagg|ekg|fellow/i.test(name)){
+        const pickedStagg = pickNotifyAndWrite(
+          svcMap[UUID.ACAIA_LEGACY_SVC],
+          [UUID.STAGG_EKG_ALT_CHAR, UUID.STAGG_EKG_CHAR],
+          [UUID.STAGG_EKG_ALT_CHAR, UUID.STAGG_EKG_CHAR]
+        );
+        if (pickedStagg.notify){
+          return {
+            family: 'stagg_ekg_plus',
+            slot: 'machine',
+            serviceUuid: UUID.ACAIA_LEGACY_SVC,
+            notifyUuid: pickedStagg.notify.uuid,
+            extraNotifyUuids: pickedStagg.extraNotifyUuids,
+            writeUuid: pickedStagg.write ? pickedStagg.write.uuid : pickedStagg.notify.uuid,
+            altWriteUuid: pickedStagg.altWrite ? pickedStagg.altWrite.uuid : null
+          };
+        }
+      }
       const alc = findChar(UUID.ACAIA_LEGACY_SVC, UUID.ACAIA_LEGACY_CHAR) || svcMap[UUID.ACAIA_LEGACY_SVC].chars[0];
       if (alc){
-        if (/stagg|ekg|fellow/i.test(name)){
-          return { family:'stagg_ekg_plus', slot:'machine', serviceUuid:UUID.ACAIA_LEGACY_SVC, notifyUuid:alc.uuid, writeUuid:alc.uuid };
-        }
         return { family:'acaia', slot:'scale', serviceUuid:UUID.ACAIA_LEGACY_SVC, notifyUuid:alc.uuid, writeUuid:alc.uuid };
       }
     }
-    if (svcMap[UUID.DIFLUID_SCALE_SVC] || svcMap[UUID.DIFLUID_SCALE_ALT_SVC]){
-      const ds = svcMap[UUID.DIFLUID_SCALE_SVC] || svcMap[UUID.DIFLUID_SCALE_ALT_SVC];
-      const dn = findChar(ds.uuid, UUID.DIFLUID_WRITE_ALT) || findChar(ds.uuid, UUID.DIFLUID_CHAR) || ds.chars[0];
-      const dw = findChar(ds.uuid, UUID.DIFLUID_CHAR) || findChar(ds.uuid, UUID.DIFLUID_WRITE_ALT) || dn;
-      const extraUuids = ds.chars.map(function(c){ return c.uuid; }).filter(function(u){ return dn && u !== dn.uuid; });
-      if (dn) return { family:'difluid', slot:'scale', serviceUuid:ds.uuid, notifyUuid:dn.uuid, extraNotifyUuids:extraUuids, writeUuid:dw ? dw.uuid : null };
+    const v3ScaleKey = Object.keys(svcMap).find(function(k){ return /^0e140001-/.test(k); });
+    const dfScaleSvc = svcMap[UUID.DIFLUID_SCALE_SVC]
+      || svcMap[UUID.DIFLUID_SCALE_ALT_SVC]
+      || ((/microbalance|difluid|dft-?s|df-?s/i.test(name) || (!svcMap[UUID.BOOKOO_SVC] && !svcMap[UUID.SKALE_SVC] && !svcMap[UUID.FELICITA_SVC] && !svcMap[UUID.HIROIA_SVC] && !svcMap[UUID.SHARED_FFF0_SVC] && !svcMap[UUID.WEIGHT_SIG_SVC])) && (svcMap[UUID.DIFLUID_SVC] || (v3ScaleKey ? svcMap[v3ScaleKey] : null)));
+    if (dfScaleSvc){
+      const pickedDfs = pickNotifyAndWrite(
+        dfScaleSvc,
+        [UUID.DIFLUID_CHAR, UUID.DIFLUID_V3_NOTIFY, UUID.DIFLUID_WRITE_ALT],
+        [UUID.DIFLUID_WRITE_ALT, UUID.DIFLUID_CHAR, UUID.DIFLUID_V3_WRITE]
+      );
+      if (pickedDfs.notify){
+        return {
+          family: 'difluid',
+          slot: 'scale',
+          serviceUuid: dfScaleSvc.uuid,
+          notifyUuid: pickedDfs.notify.uuid,
+          extraNotifyUuids: pickedDfs.extraNotifyUuids,
+          writeUuid: pickedDfs.write ? pickedDfs.write.uuid : null,
+          altWriteUuid: pickedDfs.altWrite ? pickedDfs.altWrite.uuid : null
+        };
+      }
     }
     if (svcMap[UUID.BOOKOO_SVC]){
-      const bkn = findChar(UUID.BOOKOO_SVC, UUID.BOOKOO_NOTIFY);
-      const bkw = findChar(UUID.BOOKOO_SVC, UUID.BOOKOO_WRITE);
-      if (bkn) return { family:'bookoo', slot:'scale', serviceUuid:UUID.BOOKOO_SVC, notifyUuid:bkn.uuid, writeUuid:bkw ? bkw.uuid : null };
+      const pickedBk = pickNotifyAndWrite(
+        svcMap[UUID.BOOKOO_SVC],
+        [UUID.BOOKOO_NOTIFY],
+        [UUID.BOOKOO_WRITE, UUID.BOOKOO_NOTIFY]
+      );
+      if (pickedBk.notify){
+        return {
+          family: 'bookoo',
+          slot: 'scale',
+          serviceUuid: UUID.BOOKOO_SVC,
+          notifyUuid: pickedBk.notify.uuid,
+          extraNotifyUuids: pickedBk.extraNotifyUuids,
+          writeUuid: pickedBk.write ? pickedBk.write.uuid : null,
+          altWriteUuid: pickedBk.altWrite ? pickedBk.altWrite.uuid : null
+        };
+      }
     }
     if (svcMap[UUID.SKALE_SVC]){
       const skn = findChar(UUID.SKALE_SVC, UUID.SKALE_NOTIFY) || svcMap[UUID.SKALE_SVC].chars[0];
@@ -1967,49 +2471,105 @@
       const skb = findChar(UUID.SKALE_SVC, UUID.SKALE_BTN_NOTIFY);
       if (skn) return { family:'skale', slot:'scale', serviceUuid:UUID.SKALE_SVC, notifyUuid:skn.uuid, extraNotifyUuids:skb ? [skb.uuid] : [], writeUuid:skw ? skw.uuid : null };
     }
-    if (svcMap[UUID.FELICITA_SVC] && !/xbloom|tbdx/i.test(name)){
-      const fc = findChar(UUID.FELICITA_SVC, UUID.FELICITA_CHAR) || svcMap[UUID.FELICITA_SVC].chars[0];
-      if (fc) return { family:'felicita', slot:'scale', serviceUuid:UUID.FELICITA_SVC, notifyUuid:fc.uuid, writeUuid:fc.uuid };
-    }
     if (svcMap[UUID.HIROIA_SVC]){
       const hn = findChar(UUID.HIROIA_SVC, UUID.HIROIA_NOTIFY) || svcMap[UUID.HIROIA_SVC].chars[0];
       const hw = findChar(UUID.HIROIA_SVC, UUID.HIROIA_WRITE);
       if (hn) return { family:'hiroia', slot:'scale', serviceUuid:UUID.HIROIA_SVC, notifyUuid:hn.uuid, writeUuid:hw ? hw.uuid : null };
     }
-    if (svcMap[UUID.EUREKA_ALT_SVC]){
-      const ec = findChar(UUID.EUREKA_ALT_SVC, UUID.EUREKA_ALT_CHAR) || svcMap[UUID.EUREKA_ALT_SVC].chars[0];
-      if (ec) return { family:'eureka', slot:'scale', serviceUuid:UUID.EUREKA_ALT_SVC, notifyUuid:ec.uuid, writeUuid:ec.uuid };
-    }
     if (svcMap[UUID.SHARED_FFF0_SVC]){
       const fff4 = findChar(UUID.SHARED_FFF0_SVC, UUID.DECENT_NOTIFY);
       const w36f5 = findChar(UUID.SHARED_FFF0_SVC, UUID.DECENT_WRITE);
-      if (fff4){
-        return { family:'decent', slot:'scale', serviceUuid:UUID.SHARED_FFF0_SVC, notifyUuid:fff4.uuid, writeUuid:w36f5 ? w36f5.uuid : null };
+      if (fff4 && canNotify(fff4)){
+        return { family:'decent', slot:'scale', serviceUuid:UUID.SHARED_FFF0_SVC, notifyUuid:fff4.uuid, writeUuid:w36f5 ? w36f5.uuid : null, autoPromoteOnFirstFrame:true };
       }
-      const fff1 = findChar(UUID.SHARED_FFF0_SVC, UUID.FFF1_NOTIFY) || svcMap[UUID.SHARED_FFF0_SVC].chars[0];
-      const fff2 = findChar(UUID.SHARED_FFF0_SVC, UUID.FFF2_WRITE) || fff1;
-      if (fff1){
+      const pickedFff0 = pickNotifyAndWrite(
+        svcMap[UUID.SHARED_FFF0_SVC],
+        [UUID.FFF1_NOTIFY, UUID.FFF2_WRITE],
+        [UUID.FFF2_WRITE, UUID.FFF1_NOTIFY]
+      );
+      if (pickedFff0.notify){
         let initFam = 'timemore';
-        if (/varia|aku/i.test(name)) initFam = 'varia';
-        else if (/eureka|precisa|cfs-?9002|lsj|brewista/i.test(name)) initFam = 'eureka';
+        if (/varia|aku|cube|mhw|exagram|wacaco/i.test(name)) initFam = 'varia';
+        else if (/eureka|precisa|cfs-?9002|lsj|brewista|smart\s*scale|formula|solobarista|kc200|weighmybru/i.test(name)) initFam = 'eureka';
         else if (/decent|hds/i.test(name)) initFam = 'decent';
-        return { family:initFam, variant:initFam === 'timemore' ? 'osp' : '', slot:'scale', serviceUuid:UUID.SHARED_FFF0_SVC, notifyUuid:fff1.uuid, writeUuid:fff2 ? fff2.uuid : null, autoPromoteOnFirstFrame:true };
+        else if (/felicita/i.test(name)) initFam = 'felicita';
+        return {
+          family: initFam,
+          variant: initFam === 'timemore' ? 'osp' : '',
+          slot: 'scale',
+          serviceUuid: UUID.SHARED_FFF0_SVC,
+          notifyUuid: pickedFff0.notify.uuid,
+          extraNotifyUuids: pickedFff0.extraNotifyUuids,
+          writeUuid: pickedFff0.write ? pickedFff0.write.uuid : null,
+          altWriteUuid: pickedFff0.altWrite ? pickedFff0.altWrite.uuid : null,
+          autoPromoteOnFirstFrame: true
+        };
+      }
+    }
+    if (svcMap[UUID.EUREKA_ALT_SVC]){
+      const pickedFfb0 = pickNotifyAndWrite(
+        svcMap[UUID.EUREKA_ALT_SVC],
+        [UUID.EUREKA_ALT_CHAR],
+        [UUID.EUREKA_ALT_CHAR]
+      );
+      if (pickedFfb0.notify){
+        const ffbFam = /varia|aku|cube|mhw|exagram|wacaco/i.test(name) ? 'varia' : 'eureka';
+        return {
+          family: ffbFam,
+          slot: 'scale',
+          serviceUuid: UUID.EUREKA_ALT_SVC,
+          notifyUuid: pickedFfb0.notify.uuid,
+          extraNotifyUuids: pickedFfb0.extraNotifyUuids,
+          writeUuid: pickedFfb0.write ? pickedFfb0.write.uuid : null,
+          altWriteUuid: pickedFfb0.altWrite ? pickedFfb0.altWrite.uuid : null,
+          autoPromoteOnFirstFrame: true
+        };
+      }
+    }
+    if (svcMap[UUID.FELICITA_SVC] && !/xbloom|tbdx/i.test(name)){
+      const pickedFfe0 = pickNotifyAndWrite(
+        svcMap[UUID.FELICITA_SVC],
+        [UUID.FELICITA_CHAR, UUID.XBLOOM_SHORT_NOTIFY],
+        [UUID.FELICITA_CHAR, UUID.XBLOOM_SHORT_NOTIFY]
+      );
+      if (pickedFfe0.notify){
+        let ffeFam = 'felicita';
+        if (/varia|aku|cube|mhw|exagram|wacaco/i.test(name)) ffeFam = 'varia';
+        else if (/eureka|precisa|cfs-?9002|lsj|brewista|smart\s*scale|formula|solobarista|kc200|weighmybru/i.test(name)) ffeFam = 'eureka';
+        else if (/decent|hds/i.test(name)) ffeFam = 'decent';
+        else if (/timemore|black\s*mirror|^tm\b/i.test(name)) ffeFam = 'timemore';
+        return {
+          family: ffeFam,
+          slot: 'scale',
+          serviceUuid: UUID.FELICITA_SVC,
+          notifyUuid: pickedFfe0.notify.uuid,
+          extraNotifyUuids: pickedFfe0.extraNotifyUuids,
+          writeUuid: pickedFfe0.write ? pickedFfe0.write.uuid : null,
+          altWriteUuid: pickedFfe0.altWrite ? pickedFfe0.altWrite.uuid : null,
+          autoPromoteOnFirstFrame: true
+        };
       }
     }
     if (svcMap[UUID.NUS_SVC]){
       const nn = findChar(UUID.NUS_SVC, UUID.NUS_NOTIFY) || svcMap[UUID.NUS_SVC].chars[0];
       const nw = findChar(UUID.NUS_SVC, UUID.NUS_WRITE);
       if (nn){
-        const nusFam = /varia|aku/i.test(name) ? 'varia' : 'timemore';
+        const nusFam = /varia|aku|cube|mhw|exagram|wacaco/i.test(name) ? 'varia' : 'timemore';
         return { family:nusFam, variant:nusFam === 'timemore' ? 'osp' : '', slot:'scale', serviceUuid:UUID.NUS_SVC, notifyUuid:nn.uuid, writeUuid:nw ? nw.uuid : null, autoPromoteOnFirstFrame:true };
       }
     }
     if (svcMap[UUID.WEIGHT_SIG_SVC]){
       const sn = findChar(UUID.WEIGHT_SIG_SVC, UUID.WEIGHT_SIG_NOTIFY) || svcMap[UUID.WEIGHT_SIG_SVC].chars[0];
-      const sw = findChar(UUID.WEIGHT_SIG_SVC, UUID.TIMEMORE_CUSTOM_WRITE)
-        || (svcMap[UUID.TIMEMORE_CUSTOM_SVC] ? findChar(UUID.TIMEMORE_CUSTOM_SVC, UUID.TIMEMORE_CUSTOM_WRITE) : null)
-        || findChar(UUID.WEIGHT_SIG_SVC, UUID.WEIGHT_SIG_CTRL);
-      const isTm = /timemore|black\s*mirror/i.test(name) || !!svcMap[UUID.TIMEMORE_CUSTOM_SVC];
+      const tmSigWrite = findChar(UUID.WEIGHT_SIG_SVC, UUID.TIMEMORE_SIG_WRITE);
+      const tmCustomWrite = findChar(UUID.WEIGHT_SIG_SVC, UUID.TIMEMORE_CUSTOM_WRITE)
+        || (svcMap[UUID.TIMEMORE_CUSTOM_SVC] ? findChar(UUID.TIMEMORE_CUSTOM_SVC, UUID.TIMEMORE_CUSTOM_WRITE) : null);
+      const sigCtrlWrite = findChar(UUID.WEIGHT_SIG_SVC, UUID.WEIGHT_SIG_CTRL);
+      const usableTmSigWrite = (tmSigWrite && canWrite(tmSigWrite)) ? tmSigWrite : null;
+      const sw = usableTmSigWrite || tmCustomWrite || sigCtrlWrite || tmSigWrite;
+      const altSw = (sw === usableTmSigWrite && (tmCustomWrite || sigCtrlWrite))
+        ? (tmCustomWrite || sigCtrlWrite)
+        : (usableTmSigWrite && sw !== usableTmSigWrite ? usableTmSigWrite : null);
+      const isTm = /timemore|black\s*mirror|^tm\b/i.test(name) || !!svcMap[UUID.TIMEMORE_CUSTOM_SVC] || hasExplicitWrite(tmSigWrite);
       if (sn){
         return {
           family: isTm ? 'timemore' : 'sig',
@@ -2018,6 +2578,7 @@
           serviceUuid: UUID.WEIGHT_SIG_SVC,
           notifyUuid: sn.uuid,
           writeUuid: sw ? sw.uuid : null,
+          altWriteUuid: altSw ? altSw.uuid : null,
           writeServiceUuid: (svcMap[UUID.TIMEMORE_CUSTOM_SVC] && sw && sw.uuid === UUID.TIMEMORE_CUSTOM_WRITE) ? UUID.TIMEMORE_CUSTOM_SVC : UUID.WEIGHT_SIG_SVC,
           autoPromoteOnFirstFrame: true
         };
@@ -2077,8 +2638,12 @@
         }
         const tm = decodeTimemore(u8);
         if (tm) return [tm];
-        const sigFallback = decodeWeightSig(u8);
-        return sigFallback ? [sigFallback] : [];
+        /* Prevent u8.length >= 8 Timemore packets from falling through to decodeWeightSig (* 5.0 bug) */
+        if (u8.length < 8){
+          const sigFallback = decodeWeightSig(u8);
+          return sigFallback ? [sigFallback] : [];
+        }
+        return [];
       }
       if (fam === 'varia'){
         const vs = variaStream.push(u8);
@@ -2111,7 +2676,7 @@
         return hi ? [hi] : [];
       }
       if (fam === 'sig'){
-        if ((u8.length === 9 || u8.length === 13) && u8[0] === 0x00){
+        if (u8.length >= 8 && (u8[0] & 0x02) === 0){
           const tmAuto = decodeTimemore(u8);
           if (tmAuto){
             family = 'timemore';
@@ -2123,7 +2688,7 @@
         return ws ? [ws] : [];
       }
       if (fam === 'pressensor'){
-        const pr = decodePressensor(u8);
+        const pr = decodePressensor(u8, ctx);
         return pr ? [pr] : [];
       }
       if (fam === 'bookoo_pressure'){
@@ -2157,13 +2722,17 @@
         const u8 = toU8(chunk);
         if (!u8.length) return { family:family, promoted:false, frames:[] };
 
-        /* Allow magic-byte auto-promotion on shared services (0xFFF0, 0x1820, NUS, auto) */
+        /* Allow magic-byte auto-promotion across all shared GATT services (0xFFF0, 0xFFE0, 0xFFB0, 0x181D, 0x1820, NUS, auto) */
+        const svcNorm = normUuid(ctx.serviceUuid);
         const canAutoPromote = (
           family === 'auto' ||
           ctx.autoPromote !== false && (
-            normUuid(ctx.serviceUuid) === UUID.SHARED_FFF0_SVC ||
-            normUuid(ctx.serviceUuid) === UUID.ACAIA_LEGACY_SVC ||
-            normUuid(ctx.serviceUuid) === UUID.NUS_SVC ||
+            svcNorm === UUID.SHARED_FFF0_SVC ||
+            svcNorm === UUID.FELICITA_SVC ||
+            svcNorm === UUID.EUREKA_ALT_SVC ||
+            svcNorm === UUID.WEIGHT_SIG_SVC ||
+            svcNorm === UUID.ACAIA_LEGACY_SVC ||
+            svcNorm === UUID.NUS_SVC ||
             !ctx.serviceUuid
           )
         );
@@ -2284,11 +2853,13 @@
     lrc8TwosComplement: lrc8TwosComplement,
     acaiaChecksum: acaiaChecksum,
     encodeAcaia: encodeAcaia,
-    crc16Modbus: crc16Modbus
+    crc16Modbus: crc16Modbus,
+    crc16Kermit: crc16Kermit
   };
 
   global.BTBleCodecs = {
     UUID: UUID,
+    ALL_COFFEE_OPTIONAL_SERVICES: ALL_COFFEE_OPTIONAL_SERVICES,
     normUuid: normUuid,
     toU8: toU8,
     hexToBytes: hexToBytes,

@@ -1970,6 +1970,7 @@ if (typeof window !== 'undefined') {
     if (a.brew) {
       a.brew.actualSecs = null;
       a.brew.actualFromTimer = false;
+      a.brew.measuredBeverageG = null;
     }
     _step5Session = null;
     try {
@@ -2320,7 +2321,7 @@ if (typeof window !== 'undefined') {
   var _lastLiveR2 = null;
   var _lastR2ToastAt = 0;
   var _lastR2ToastTds = -1;
-  var _prevBleR2State = { connected: false, tempC: null, batteryPct: null };
+  var _prevBleR2State = { connected: false, scaleConnected: false, tempC: null, batteryPct: null };
 
   function getBleStateSafe() {
     try {
@@ -2328,6 +2329,33 @@ if (typeof window !== 'undefined') {
       if (ble && typeof ble.getState === 'function') return ble.getState() || {};
     } catch (_) {}
     return {};
+  }
+
+  function readBleScaleMugInfo(bst) {
+    bst = bst || getBleStateSafe();
+    var scSlot = (bst.slots && bst.slots.scale) || bst.scale || {};
+    var connected = !!(bst.scaleConnected || scSlot.connected);
+    var rawW = typeof bst.weightG === 'number'
+      ? bst.weightG
+      : (typeof scSlot.weightG === 'number' ? scSlot.weightG : 0);
+    var weightG = (rawW != null && isFinite(rawW)) ? +rawW : 0;
+    return {
+      connected: connected,
+      weightG: weightG,
+      roundedG: Math.round(weightG)
+    };
+  }
+
+  function syncStep5ScaleWeightBtnDom(btnEl, bst) {
+    if (!btnEl) return;
+    var info = readBleScaleMugInfo(bst);
+    var labelSpan = btnEl.querySelector ? btnEl.querySelector('[data-scale-mug-txt="1"]') : null;
+    var labelTxt = !info.connected
+      ? 'Pair Scale'
+      : (info.weightG > 8 ? ('Use Scale (' + info.roundedG + ' g)') : ('Scale Ready (' + Math.max(0, info.roundedG) + ' g)'));
+    btnEl.className = 'bt-tc-pill is-compact ' + (info.connected && info.weightG > 8 ? 'is-copper' : 'is-soft');
+    if (labelSpan) labelSpan.textContent = labelTxt;
+    else btnEl.textContent = labelTxt;
   }
 
   function applyLiveR2Reading(detail, opts) {
@@ -2397,12 +2425,19 @@ if (typeof window !== 'undefined') {
         ble.subscribe(function (bst) {
           if (!bst) return;
           var conn = !!bst.refractometerConnected;
+          var scaleInfoSub = readBleScaleMugInfo(bst);
+          var scaleConnNow = scaleInfoSub.connected;
           var tempNow = (bst.lastTempC != null && isFinite(+bst.lastTempC)) ? Math.round(+bst.lastTempC * 10) / 10 : null;
           var batNow = (bst.refractometerBatteryPct != null && isFinite(+bst.refractometerBatteryPct)) ? Math.round(+bst.refractometerBatteryPct) : null;
           var liveTds = (bst.lastTds != null && +bst.lastTds > 0 && (conn || +bst.lastR2AtMs > 0)) ? Math.round(+bst.lastTds * 100) / 100 : 0;
 
+          if (typeof document !== 'undefined') {
+            var mugBtnLive = document.getElementById('bt-step5-use-scale-weight-btn');
+            if (mugBtnLive) syncStep5ScaleWeightBtnDom(mugBtnLive, bst);
+          }
+
           if (liveTds > 0 && (!_step5Session || Math.abs(liveTds - (+_step5Session.tdsPct || 0)) >= 0.005)) {
-            _prevBleR2State = { connected: conn, tempC: tempNow, batteryPct: batNow };
+            _prevBleR2State = { connected: conn, scaleConnected: scaleConnNow, tempC: tempNow, batteryPct: batNow };
             applyLiveR2Reading({
               tds: liveTds,
               tempC: tempNow,
@@ -2414,12 +2449,13 @@ if (typeof window !== 'undefined') {
           }
 
           var metaChanged = (conn !== _prevBleR2State.connected) ||
+            (scaleConnNow !== _prevBleR2State.scaleConnected) ||
             (conn && tempNow !== _prevBleR2State.tempC) ||
             (conn && batNow !== _prevBleR2State.batteryPct);
-          _prevBleR2State = { connected: conn, tempC: tempNow, batteryPct: batNow };
+          _prevBleR2State = { connected: conn, scaleConnected: scaleConnNow, tempC: tempNow, batteryPct: batNow };
 
           if (_step5Session) {
-            if (conn && !_step5Session._userHidR2) {
+            if ((conn || scaleConnNow) && !_step5Session._userHidR2) {
               _step5Session.r2Expanded = true;
               _step5Session.r2Collapsed = false;
             }
@@ -2447,6 +2483,11 @@ if (typeof window !== 'undefined') {
     var attemptTag = (a.cupBrew && a.cupBrew.attempt) || a.attempt || 0;
     var sessionSig = coffeeId + '::' + attemptTag + '::' + (st.brewFinishedAtMs || 0);
 
+    var measBevG = (a.brew && +a.brew.measuredBeverageG > 10)
+      ? Math.round(+a.brew.measuredBeverageG)
+      : (a.cupBrew && +a.cupBrew.measuredBeverageG > 10 ? Math.round(+a.cupBrew.measuredBeverageG) : 0);
+    var scaleConnectedInit = readBleScaleMugInfo(bleNow).connected;
+
     if (!_step5Session || _step5Session.sessionSig !== sessionSig) {
       var curBrew = a.cupBrew || a.brew || {};
       var isEsp = String(curBrew.method || curBrew.key || '').toLowerCase().indexOf('espresso') >= 0;
@@ -2460,6 +2501,9 @@ if (typeof window !== 'undefined') {
       var initR2Temp = (bleNow.lastTempC != null && isFinite(+bleNow.lastTempC) && (bleHasRecentTds || bleNow.refractometerConnected))
         ? Math.round(+bleNow.lastTempC * 10) / 10
         : (_lastLiveR2 && _lastLiveR2.tempC != null ? _lastLiveR2.tempC : 23.6);
+      var defaultBevOutG = measBevG > 10
+        ? measBevG
+        : Math.max(18, Math.round(+curBrew.out_g || +curBrew.yieldOut || (isEsp ? waterG : waterG - doseG * 2.05)));
 
       if (initTds > 0) {
         a.taste = (a.taste && typeof a.taste === 'object') ? a.taste : {};
@@ -2484,10 +2528,12 @@ if (typeof window !== 'undefined') {
         gsCollapsed: true, /* Compact live mm:ss countdown by default! */
         rescueOpen: false,
         rescueSymptom: 'bitter',
-        rescueMugG: Math.max(25, Math.round(+curBrew.out_g || +curBrew.yieldOut || (isEsp ? waterG : waterG - doseG * 2.05))),
+        rescueMugG: Math.max(25, defaultBevOutG),
         inMugLogged: '',
-        bevOutG: Math.max(18, Math.round(+curBrew.out_g || +curBrew.yieldOut || (isEsp ? waterG : waterG - doseG * 2.05))),
-        r2Expanded: S.btToolModeSafe('refractometer') === 'always' || !!bleNow.refractometerConnected || initTds > 0,
+        bevOutG: defaultBevOutG,
+        _userEditedBevOut: false,
+        _lastSyncedMeasuredBevG: measBevG || 0,
+        r2Expanded: S.btToolModeSafe('refractometer') === 'always' || !!bleNow.refractometerConnected || scaleConnectedInit || initTds > 0,
         r2Collapsed: false,
         _userHidR2: false,
         _liveR2Received: initTds > 0,
@@ -2513,9 +2559,14 @@ if (typeof window !== 'undefined') {
         notes: st.general_notes || ''
       };
     } else {
-      if (bleNow.refractometerConnected && !_step5Session._userHidR2) {
+      if ((bleNow.refractometerConnected || scaleConnectedInit) && !_step5Session._userHidR2) {
         _step5Session.r2Expanded = true;
         _step5Session.r2Collapsed = false;
+      }
+      if (measBevG > 10 && !_step5Session._userEditedBevOut && _step5Session._lastSyncedMeasuredBevG !== measBevG) {
+        _step5Session.bevOutG = measBevG;
+        _step5Session.rescueMugG = Math.max(25, measBevG);
+        _step5Session._lastSyncedMeasuredBevG = measBevG;
       }
       var recentBleTdsOpen = (+bleNow.lastTds > 0 && (!!bleNow.refractometerConnected || +bleNow.lastR2AtMs > 0 || !bleNow.simulatorActive))
         ? Math.round(+bleNow.lastTds * 100) / 100
@@ -3273,9 +3324,10 @@ if (typeof window !== 'undefined') {
       var measEyNow = (+tSt.tdsPct > 0 && doseNow > 0) ? Math.round(((+tSt.tdsPct * tSt.bevOutG) / doseNow) * 100) / 100 : null;
       var r2Mode = S.btToolModeSafe('refractometer');
       var bleLive = getBleStateSafe();
+      var scaleInfoNow = readBleScaleMugInfo(bleLive);
       var r2Connected = !!bleLive.refractometerConnected;
       var r2CanTrigger = !!(r2Connected || bleLive.simulatorActive);
-      var r2EffectiveOn = r2Mode !== 'off' || r2Connected || !!tSt._liveR2Received || +tSt.tdsPct > 0;
+      var r2EffectiveOn = r2Mode !== 'off' || r2Connected || scaleInfoNow.connected || !!tSt._liveR2Received || +tSt.tdsPct > 0;
 
       var shortcutButtons = [];
       function activeShortcutKey() {
@@ -3419,7 +3471,7 @@ if (typeof window !== 'undefined') {
 
       var r2Host = null;
       if (r2EffectiveOn) {
-        var showOpenR2 = r2Mode === 'always' || (!tSt._userHidR2 && (tSt.r2Expanded || r2Connected || (+tSt.tdsPct > 0 && !tSt.r2Collapsed)));
+        var showOpenR2 = r2Mode === 'always' || (!tSt._userHidR2 && (tSt.r2Expanded || r2Connected || scaleInfoNow.connected || (+tSt.tdsPct > 0 && !tSt.r2Collapsed)));
         if (!showOpenR2) {
           var collapsedR2Label = +tSt.tdsPct > 0
             ? ('Refractometer: ' + (+tSt.tdsPct).toFixed(2) + '% TDS (Expand)')
@@ -3445,6 +3497,50 @@ if (typeof window !== 'undefined') {
           if (bleLive.refractometerBatteryPct != null && isFinite(+bleLive.refractometerBatteryPct) && +bleLive.refractometerBatteryPct >= 0) {
             liveR2MetaParts.push(Math.round(+bleLive.refractometerBatteryPct) + '%');
           }
+
+          var scaleMugBtnLabel = !scaleInfoNow.connected
+            ? 'Pair Scale'
+            : (scaleInfoNow.weightG > 8
+              ? ('Use Scale (' + scaleInfoNow.roundedG + ' g)')
+              : ('Scale Ready (' + Math.max(0, scaleInfoNow.roundedG) + ' g)'));
+          var scaleMugBtn = S.h('button', {
+            type: 'button',
+            id: 'bt-step5-use-scale-weight-btn',
+            class: 'bt-tc-pill is-compact ' + (scaleInfoNow.connected && scaleInfoNow.weightG > 8 ? 'is-copper' : 'is-soft'),
+            style: 'align-self:flex-start;margin-top:2px',
+            onclick: function () {
+              var liveSc = readBleScaleMugInfo();
+              if (liveSc.connected) {
+                if (liveSc.weightG > 8) {
+                  tSt.bevOutG = clamp(liveSc.roundedG, 10, 2000);
+                  tSt.rescueMugG = Math.max(25, tSt.bevOutG);
+                  tSt._userEditedBevOut = true;
+                  if (a.brew) a.brew.measuredBeverageG = tSt.bevOutG;
+                  S.haptic('snap');
+                  S.toastSafe('Synced mug weight from BLE scale: ' + tSt.bevOutG + ' g');
+                  paintAll();
+                } else {
+                  S.haptic('tick');
+                  S.toastSafe('Place your brewed mug (>8 g) on the connected BLE scale, then tap Use Scale.');
+                }
+                return;
+              }
+              if (ble && typeof ble.connectScale === 'function') {
+                Promise.resolve(ble.connectScale()).then(function () {
+                  var afterSc = readBleScaleMugInfo();
+                  if (afterSc.connected && afterSc.weightG > 8) {
+                    tSt.bevOutG = clamp(afterSc.roundedG, 10, 2000);
+                    tSt.rescueMugG = Math.max(25, tSt.bevOutG);
+                    tSt._userEditedBevOut = true;
+                    if (a.brew) a.brew.measuredBeverageG = tSt.bevOutG;
+                  }
+                  paintAll();
+                }).catch(function () {});
+              } else if (typeof window !== 'undefined' && window.BTSheet && typeof window.BTSheet.open === 'function') {
+                window.BTSheet.open('ble-devices', null, { detent: 'full', title: 'Bluetooth Scales, R2, Omni & Smart Gear' });
+              }
+            }
+          }, S.iconEl('ble-wave', { size: 13 }), S.h('span', { 'data-scale-mug-txt': '1', text: scaleMugBtnLabel }));
 
           r2Host = S.h('div', { class: 'bt-tc-r2-card', id: 'bt-step5-r2-card' },
             S.h('div', { class: 'bt-tc-row-between' },
@@ -3498,8 +3594,8 @@ if (typeof window !== 'undefined') {
                   })
                 )
               ),
-              S.h('label', { style: 'display:flex;flex-direction:column;gap:4px;font-size:0.76rem;font-weight:700' },
-                S.h('span', { text: 'Liquid in Mug (g)' }),
+              S.h('div', { style: 'display:flex;flex-direction:column;gap:4px;font-size:0.76rem;font-weight:700' },
+                S.h('label', { for: 'bt-step5-bev-out-input', text: 'Liquid in Mug (g)' }),
                 S.h('div', { class: 'bt-tc-spotlight', style: 'min-height:44px' },
                   S.h('input', {
                     type: 'number',
@@ -3510,11 +3606,14 @@ if (typeof window !== 'undefined') {
                     max: '2000',
                     value: String(tSt.bevOutG),
                     onchange: function (e) {
+                      tSt._userEditedBevOut = true;
                       tSt.bevOutG = clamp(+e.target.value || 215, 10, 2000);
+                      tSt.rescueMugG = Math.max(25, tSt.bevOutG);
                       paintAll();
                     }
                   })
-                )
+                ),
+                scaleMugBtn
               ),
               S.h('label', { style: 'display:flex;flex-direction:column;gap:4px;font-size:0.76rem;font-weight:700' },
                 S.h('span', { text: 'Drop Temp (\u00B0C)' }),

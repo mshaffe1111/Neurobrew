@@ -2679,30 +2679,74 @@ function _readBleSummary() {
       const slots = st.slots || {};
       const fsm = st.fsmState || (st.autoPilot && st.autoPilot.state) || 'IDLE';
       const fsmHuman = _humanFsmLabel(fsm);
-      const sc = slots.scale || st;
-      if (sc && (sc.connected || st.scaleConnected)) {
-        const w = typeof sc.weightG === 'number' ? sc.weightG : (typeof st.weightG === 'number' ? st.weightG : null);
-        const wTxt = w != null && isFinite(w) ? (w.toFixed(1) + 'g') : 'Scale';
-        return { active: true, sim: !!(st.simulatorActive || sc.simulator), label: wTxt, fsm: fsm, fsmHuman: fsmHuman, title: 'Live Scale: ' + wTxt + ' (' + fsmHuman + ')' };
+      const scaleOn = !!((slots.scale && slots.scale.connected) || st.scaleConnected);
+      const pressOn = !!((slots.pressure && slots.pressure.connected) || st.pressureConnected);
+      const r2On = !!((slots.refractometer && slots.refractometer.connected) || st.refractometerConnected);
+      const omniOn = !!((slots.omni && slots.omni.connected) || st.omniConnected);
+      const machOn = !!((slots.machine && slots.machine.connected) || st.xbloomConnected || st.kettleConnected || st.machineConnected);
+
+      const pNum = typeof st.pressureBar === 'number' && isFinite(st.pressureBar)
+        ? st.pressureBar
+        : (st.pressure && typeof st.pressure.bar === 'number' && isFinite(st.pressure.bar) ? st.pressure.bar : 0);
+
+      if (scaleOn) {
+        const sc = st.scale || slots.scale || st;
+        const w = typeof st.weightG === 'number' && isFinite(st.weightG)
+          ? st.weightG
+          : (sc && typeof sc.weightG === 'number' && isFinite(sc.weightG) ? sc.weightG : 0);
+        const wTxt = w.toFixed(1) + 'g';
+        const fl = typeof st.flowRateGs === 'number' && isFinite(st.flowRateGs) ? st.flowRateGs : 0;
+        if (pressOn && pNum > 0.1 && Math.abs(w) < 0.2 && Math.abs(fl) < 0.1) {
+          const pIdleTxt = pNum.toFixed(1) + ' bar';
+          return {
+            active: true,
+            sim: !!(st.simulatorActive || (sc && sc.simulator)),
+            label: pIdleTxt,
+            fsm: fsm,
+            fsmHuman: fsmHuman,
+            title: 'Live Scale: ' + wTxt + ' \u00B7 ' + pIdleTxt + ' (' + fsmHuman + ')'
+          };
+        }
+        const pressSuffix = (pressOn && pNum > 0.1) ? (' \u00B7 ' + pNum.toFixed(1) + ' bar') : '';
+        return {
+          active: true,
+          sim: !!(st.simulatorActive || (sc && sc.simulator)),
+          label: wTxt,
+          fsm: fsm,
+          fsmHuman: fsmHuman,
+          title: 'Live Scale: ' + wTxt + pressSuffix + ' (' + fsmHuman + ')'
+        };
       }
-      if ((slots.refractometer && slots.refractometer.connected) || st.refractometerConnected) {
-        return { active: true, sim: !!st.simulatorActive, label: 'R2', fsm: fsm, fsmHuman: fsmHuman, title: 'DiFluid R2 Connected' };
+      if (pressOn) {
+        const pTxt = pNum.toFixed(1) + ' bar';
+        return { active: true, sim: !!st.simulatorActive, label: pTxt, fsm: fsm, fsmHuman: fsmHuman, title: 'Espresso Pressure: ' + pTxt };
       }
-      if ((slots.omni && slots.omni.connected) || st.omniConnected) {
-        return { active: true, sim: !!st.simulatorActive, label: 'Omni', fsm: fsm, fsmHuman: fsmHuman, title: 'DiFluid Omni Connected' };
+      if (r2On) {
+        const r2Lbl = st.lastTds > 0 ? ((+st.lastTds).toFixed(2) + '% TDS') : 'R2 Ready';
+        return { active: true, sim: !!st.simulatorActive, label: r2Lbl, fsm: fsm, fsmHuman: fsmHuman, title: 'DiFluid R2: ' + r2Lbl };
       }
-      if ((slots.pressure && slots.pressure.connected) || st.pressureConnected) {
-        return { active: true, sim: !!st.simulatorActive, label: 'Bar', fsm: fsm, fsmHuman: fsmHuman, title: 'Pressure Sensor Connected' };
+      if (omniOn) {
+        const om = st.lastOmni || st.omni || null;
+        const agNum = (om && om.beanAgtron > 0)
+          ? om.beanAgtron
+          : (om && om.groundAgtron > 0 ? om.groundAgtron : (om && om.agtron > 0 ? om.agtron : 0));
+        const omLbl = agNum > 0 ? ('Ag ' + Math.round(agNum)) : 'Omni';
+        return { active: true, sim: !!st.simulatorActive, label: omLbl, fsm: fsm, fsmHuman: fsmHuman, title: 'DiFluid Omni: ' + omLbl };
       }
-      if ((slots.machine && slots.machine.connected) || st.xbloomConnected || st.kettleConnected) {
-        return { active: true, sim: !!st.simulatorActive, label: 'Gear', fsm: fsm, fsmHuman: fsmHuman, title: 'Smart Brewer / Kettle Connected' };
+      if (machOn) {
+        const mLbl = st.kettleTempC > 0 ? (Math.round(st.kettleTempC) + '\u00B0C') : (st.xbloomConnected ? 'xBloom' : 'Gear');
+        const mTitle = st.kettleTempC > 0
+          ? ('Stagg Kettle: ' + mLbl)
+          : (st.xbloomConnected ? ('xBloom Studio' + (st.xbloomStage && st.xbloomStage !== 'idle' ? ' (' + st.xbloomStage + ')' : '')) : 'Smart Brewer / Kettle Connected');
+        return { active: true, sim: !!st.simulatorActive, label: mLbl, fsm: fsm, fsmHuman: fsmHuman, title: mTitle };
       }
       if (st.simulatorActive) {
-        return { active: true, sim: true, label: 'Sim', fsm: fsm, fsmHuman: fsmHuman, title: 'Scale Simulator Active (' + fsmHuman + ')' };
+        const simWTxt = (typeof st.weightG === 'number' && isFinite(st.weightG)) ? (st.weightG.toFixed(1) + 'g') : 'Sim';
+        return { active: true, sim: true, label: simWTxt, fsm: fsm, fsmHuman: fsmHuman, title: 'Scale Simulator: ' + simWTxt + ' (' + fsmHuman + ')' };
       }
     }
   } catch (e) {}
-  return { active: false, sim: false, label: '', fsm: 'IDLE', fsmHuman: 'Standby', title: 'Bluetooth & Workflow Sensors' };
+  return { active: false, sim: false, label: '', fsm: 'IDLE', fsmHuman: 'Standby', title: 'Bluetooth Scales, R2, Omni & Smart Gear' };
 }
 
 function _buildNavItems(isDock) {
@@ -2782,13 +2826,12 @@ function buildStaticChrome() {
     }
   }
 
-  /* Top BLE / Workflow Dot Button */
+  /* Top BLE / Smart Gear Button (ALWAYS opens 'ble-devices' whether active or unpaired) */
   const blePill = $('top-ble-pill');
   if (blePill) {
     blePill.onclick = function() {
-      const ble = _readBleSummary();
-      if (ble.active && _sheetRegistry.has('ble-devices')) {
-        BTSheet.open('ble-devices', null, { detent: 'full' });
+      if (_sheetRegistry.has('ble-devices')) {
+        BTSheet.open('ble-devices', null, { detent: 'full', title: 'Bluetooth Scales, R2, Omni & Smart Gear' });
       } else {
         BTSheet.open('workflow-tools', null, { detent: 'full' });
       }
@@ -2866,6 +2909,8 @@ function paintBlePill() {
   if (railFooter) {
     const bleRow = railFooter.querySelector('[data-rail-ble="1"]');
     if (bleRow) {
+      const dot = bleRow.querySelector('.bt-status-dot');
+      if (dot) dot.className = 'bt-status-dot' + (ble.active ? (ble.sim ? ' is-sim' : ' is-live') : '');
       const txt = bleRow.querySelector('.bt-rail-ble-txt');
       if (txt) txt.textContent = ble.active ? ble.title : 'Bluetooth Gear';
     }
@@ -2876,6 +2921,66 @@ function paintBlePill() {
     if (fsmEl) fsmEl.textContent = 'Smart Scale: ' + (ble.fsmHuman || _humanFsmLabel(ble.fsm));
   }
 }
+
+let _bleShellSubSource = null;
+let _bleShellSubUnsub = null;
+let _blePillLastPaintMs = 0;
+let _blePillThrottleTimer = null;
+let _blePrevConnSig = '';
+
+function _scheduleBlePillPaint(st) {
+  const now = Date.now();
+  let connSig = '';
+  if (st && typeof st === 'object') {
+    const sl = st.slots || {};
+    connSig = [
+      (sl.scale && sl.scale.connected) || st.scaleConnected ? 1 : 0,
+      (sl.pressure && sl.pressure.connected) || st.pressureConnected ? 1 : 0,
+      (sl.refractometer && sl.refractometer.connected) || st.refractometerConnected ? 1 : 0,
+      (sl.omni && sl.omni.connected) || st.omniConnected ? 1 : 0,
+      (sl.machine && sl.machine.connected) || st.kettleConnected || st.xbloomConnected || st.machineConnected ? 1 : 0,
+      st.simulatorActive ? 1 : 0,
+      st.lastTds > 0 ? (+st.lastTds).toFixed(2) : '',
+      st.lastOmni && (st.lastOmni.beanAgtron || st.lastOmni.groundAgtron || st.lastOmni.agtron) ? Math.round(st.lastOmni.beanAgtron || st.lastOmni.groundAgtron || st.lastOmni.agtron) : ''
+    ].join('|');
+  }
+  const sigChanged = connSig !== _blePrevConnSig;
+  _blePrevConnSig = connSig;
+
+  if (sigChanged || (now - _blePillLastPaintMs >= 250)) {
+    if (_blePillThrottleTimer) {
+      clearTimeout(_blePillThrottleTimer);
+      _blePillThrottleTimer = null;
+    }
+    _blePillLastPaintMs = now;
+    paintBlePill();
+    return;
+  }
+  if (!_blePillThrottleTimer) {
+    const waitMs = Math.max(40, 250 - (now - _blePillLastPaintMs));
+    _blePillThrottleTimer = setTimeout(function() {
+      _blePillThrottleTimer = null;
+      _blePillLastPaintMs = Date.now();
+      paintBlePill();
+    }, waitMs);
+  }
+}
+
+function _bindShellBleSubscription() {
+  if (typeof window === 'undefined' || !window.BTBle || typeof window.BTBle.subscribe !== 'function') return;
+  if (_bleShellSubSource === window.BTBle) return;
+  if (_bleShellSubUnsub) {
+    try { _bleShellSubUnsub(); } catch (e) {}
+    _bleShellSubUnsub = null;
+  }
+  _bleShellSubSource = window.BTBle;
+  try {
+    _bleShellSubUnsub = window.BTBle.subscribe(function(st) {
+      _scheduleBlePillPaint(st);
+    });
+  } catch (e) {}
+}
+_bindShellBleSubscription();
 
 let _popStateBound = false;
 function _bindShellPopState() {
@@ -2916,6 +3021,7 @@ _bindShellPopState();
 function paintChrome() {
   buildStaticChrome();
   _bindShellPopState();
+  _bindShellBleSubscription();
 
   /* 0. Universal Top-Chrome & Desktop Rail Back Buttons */
   const hasBack = canGoBack();
@@ -3025,8 +3131,11 @@ function paintChrome() {
         class: 'bt-rail-tool-btn',
         'data-rail-ble': '1',
         onclick: function() {
-          if (_sheetRegistry.has('ble-devices')) BTSheet.open('ble-devices', null, { detent: 'full' });
-          else BTSheet.open('workflow-tools', null, { detent: 'full' });
+          if (_sheetRegistry.has('ble-devices')) {
+            BTSheet.open('ble-devices', null, { detent: 'full', title: 'Bluetooth Scales, R2, Omni & Smart Gear' });
+          } else {
+            BTSheet.open('workflow-tools', null, { detent: 'full' });
+          }
         }
       },
         h('span', { style: 'display:inline-flex;align-items:center;gap:7px;min-width:0' },

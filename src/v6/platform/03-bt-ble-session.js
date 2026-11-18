@@ -12,6 +12,70 @@
   const bytesToHex = Codecs.bytesToHex;
   const hexToBytes = Codecs.hexToBytes;
 
+  const ALL_COFFEE_OPTIONAL_SERVICES = (Array.isArray(Codecs.ALL_COFFEE_OPTIONAL_SERVICES) && Codecs.ALL_COFFEE_OPTIONAL_SERVICES.length)
+    ? Codecs.ALL_COFFEE_OPTIONAL_SERVICES.slice()
+    : [
+        UUID.WEIGHT_SIG_SVC, UUID.ACAIA_LEGACY_SVC, UUID.ACAIA_PYXIS_SVC,
+        UUID.DIFLUID_SCALE_SVC, UUID.DIFLUID_SCALE_ALT_SVC, UUID.DIFLUID_SVC,
+        UUID.DIFLUID_OMNI_SVC, UUID.DIFLUID_V3_SVC, UUID.BOOKOO_SVC,
+        UUID.BOOKOO_EM_SVC, UUID.ESS_SVC, UUID.PRESSENSOR_SIG_SVC,
+        UUID.SHARED_FFF0_SVC, UUID.FELICITA_SVC, UUID.SKALE_SVC,
+        UUID.EUREKA_ALT_SVC, UUID.HIROIA_SVC, UUID.TIMEMORE_CUSTOM_SVC,
+        UUID.PRESSENSOR_SVC, UUID.XBLOOM_SVC, UUID.NUS_SVC,
+        UUID.BATTERY_SVC, UUID.DEVICE_INFO_SVC
+      ].filter(Boolean);
+
+  function mergeOptionalServices(extra){
+    const out = [];
+    const seen = Object.create(null);
+    const pushList = function(arr){
+      if (!Array.isArray(arr)) return;
+      for (let i = 0; i < arr.length; i++){
+        if (!arr[i]) continue;
+        const u = normUuid(arr[i]);
+        if (u && !seen[u]){
+          seen[u] = true;
+          out.push(u);
+        }
+      }
+    };
+    pushList(extra);
+    pushList(ALL_COFFEE_OPTIONAL_SERVICES);
+    return out;
+  }
+
+  function dedupeDeviceFilters(rawFilters){
+    if (!Array.isArray(rawFilters) || !rawFilters.length) return [];
+    const out = [];
+    const seen = Object.create(null);
+    for (let i = 0; i < rawFilters.length; i++){
+      const f = rawFilters[i];
+      if (!f || typeof f !== 'object') continue;
+      if (typeof f.namePrefix === 'string' && f.namePrefix.length > 0 && !f.services){
+        const k = 'np:' + f.namePrefix;
+        if (!seen[k]){
+          seen[k] = true;
+          out.push({ namePrefix:f.namePrefix });
+        }
+      } else if (Array.isArray(f.services) && f.services.length > 0 && !f.namePrefix){
+        const svcs = f.services.filter(Boolean).map(normUuid);
+        if (!svcs.length) continue;
+        const sk = 'svc:' + svcs.join(',');
+        if (!seen[sk]){
+          seen[sk] = true;
+          out.push({ services:svcs });
+        }
+      } else {
+        const gk = JSON.stringify(f);
+        if (!seen[gk]){
+          seen[gk] = true;
+          out.push(f);
+        }
+      }
+    }
+    return out;
+  }
+
   function perfNow(){
     return (typeof performance !== 'undefined' && typeof performance.now === 'function')
       ? performance.now()
@@ -156,14 +220,12 @@
       }
       const q = query || {};
       const opts = {};
-      if (Array.isArray(q.filters) && q.filters.length){
+      if (!q.acceptAll && !q.acceptAllDevices && Array.isArray(q.filters) && q.filters.length){
         opts.filters = q.filters;
       } else {
         opts.acceptAllDevices = true;
       }
-      if (Array.isArray(q.optionalServices) && q.optionalServices.length){
-        opts.optionalServices = q.optionalServices;
-      }
+      opts.optionalServices = mergeOptionalServices(q.optionalServices);
       const rawDev = await navigator.bluetooth.requestDevice(opts);
       return {
         deviceId: String(rawDev.id || rawDev.name || ('webble-' + Date.now())),
@@ -481,9 +543,24 @@
         const q = query || {};
         /* Omit restrictive primary services array on iOS so name-only advertisers appear cleanly */
         const req = {
-          optionalServices: (q.optionalServices || []).map(normUuid)
+          optionalServices: mergeOptionalServices(q.optionalServices)
         };
-        if (q.namePrefix) req.namePrefix = q.namePrefix;
+        if (!q.acceptAll && !q.acceptAllDevices){
+          if (q.namePrefix){
+            req.namePrefix = String(q.namePrefix);
+          } else if (Array.isArray(q.filters) && q.filters.length){
+            const prefixes = [];
+            for (let fi = 0; fi < q.filters.length; fi++){
+              const np = q.filters[fi] && q.filters[fi].namePrefix;
+              if (typeof np === 'string' && np.length > 0 && prefixes.indexOf(np) < 0){
+                prefixes.push(np);
+              }
+            }
+            if (prefixes.length === 1){
+              req.namePrefix = prefixes[0];
+            }
+          }
+        }
         const dev = await ble.requestDevice(req);
         const unwrapped = (dev && dev.device) ? dev.device : dev;
         return {
@@ -900,17 +977,26 @@
       xbloomConnected: false,
       xbloomName: '',
       xbloomStage: 'idle',
+      xbloomWeightG: null,
+      xbloomTempC: null,
       kettleConnected: false,
       kettleName: '',
       kettleTempC: null,
       kettleTargetTempC: null,
       kettleHold: false,
+      kettlePower: false,
+      kettleHeating: false,
 
       simulatorActive: false,
       simulatorStall: false,
       fsmState: 'IDLE',
       demoAutoPilotActive: false,
       lastStatusText: '',
+      rxPacketCount: 0,
+      lastPacketAtMs: 0,
+      lastRawHex: '',
+      lastServiceUuid: '',
+      lastCharUuid: '',
       slots: {
         scale:         { connected:false, deviceId:'', brand:'', name:'', batteryPct:null },
         pressure:      { connected:false, deviceId:'', brand:'', name:'', batteryPct:null },
@@ -988,9 +1074,26 @@
 
     let scaleHeartbeatIv = null;
     let scaleWakeTimeout = null;
+    let scaleReceivedWeightThisSession = false;
     let scaleTimemoreVariant = '';
+    let staggSeq = 1;
     let simIv = null;
     let simCtx = null;
+
+    function recordRxTelemetry(u8, serviceUuid, charUuid){
+      const b = toU8(u8);
+      if (!b.length) return;
+      state.rxPacketCount = (state.rxPacketCount || 0) + 1;
+      state.lastPacketAtMs = Date.now();
+      const lim = Math.min(24, b.length);
+      const hexParts = [];
+      for (let i = 0; i < lim; i++){
+        hexParts.push((b[i] & 0xFF).toString(16).padStart(2, '0').toUpperCase());
+      }
+      state.lastRawHex = hexParts.join(' ') + (b.length > 24 ? ' ...' : '');
+      if (serviceUuid) state.lastServiceUuid = normUuid(serviceUuid);
+      if (charUuid) state.lastCharUuid = normUuid(charUuid);
+    }
 
     function clearDemoTimers(){
       while (demoTimers.length > 0){
@@ -1022,6 +1125,14 @@
 
     function snapshotState(){
       const snap = Object.assign({}, state);
+      snap.active = !!(
+        state.scaleConnected ||
+        state.pressureConnected ||
+        state.refractometerConnected ||
+        state.omniConnected ||
+        state.machineConnected ||
+        state.simulatorActive
+      );
       snap.flowGs = snap.flowRateGs;
       snap.fsmState = autoPilot.state;
       snap.demoAutoPilotActive = demoActive;
@@ -1562,46 +1673,128 @@
     function normalizeScaleBrand(raw){
       const s = String(raw || '').trim().toLowerCase();
       if (!s || s === 'auto') return 'auto';
-      if (/acaia|lunar|pearl|pyxis|cinco/.test(s)) return 'acaia';
-      if (/difluid|microbalance/.test(s)) return 'difluid';
+      if (/acaia|lunar|pearl|pyxis|cinco|prochbt/.test(s)) return 'acaia';
+      if (/difluid|microbalance|dft-?s|df-?s/.test(s)) return 'difluid';
       if (/bookoo|themis/.test(s)) return 'bookoo';
-      if (/timemore|black\s*mirror/.test(s)) return 'timemore';
+      if (/timemore|black\s*mirror|^tm\b/.test(s)) return 'timemore';
       if (/felicita|arc|incline|parallel/.test(s)) return 'felicita';
-      if (/decent|hds/.test(s)) return 'decent';
-      if (/varia|aku/.test(s)) return 'varia';
+      if (/decent|hds|half\s*decent/.test(s)) return 'decent';
+      if (/varia|aku|cube|mhw|exagram|wacaco/.test(s)) return 'varia';
       if (/skale|atomax/.test(s)) return 'skale';
-      if (/eureka|precisa|cfs-?9002|brewista/.test(s)) return 'eureka';
+      if (/eureka|precisa|cfs-?9002|brewista|lsj|smart\s*scale|formula|solobarista|kc200|weighmybru/.test(s)) return 'eureka';
       if (/hiroia|jimmy/.test(s)) return 'hiroia';
       if (/sig|181d/.test(s)) return 'sig';
       return 'auto';
     }
 
-    function buildScaleQuery(brandKey){
-      const optionalServices = [
+    function buildScaleQuery(brandKey, opts){
+      const o = opts || {};
+      const optionalServices = mergeOptionalServices([
         UUID.ACAIA_PYXIS_SVC, UUID.ACAIA_LEGACY_SVC, UUID.DIFLUID_SCALE_SVC, UUID.DIFLUID_SCALE_ALT_SVC,
-        UUID.BOOKOO_SVC, UUID.SHARED_FFF0_SVC, UUID.FELICITA_SVC, UUID.SKALE_SVC, UUID.EUREKA_ALT_SVC,
-        UUID.HIROIA_SVC, UUID.WEIGHT_SIG_SVC, UUID.TIMEMORE_CUSTOM_SVC, UUID.NUS_SVC, UUID.BATTERY_SVC
-      ];
+        UUID.DIFLUID_SVC, UUID.DIFLUID_V3_SVC, UUID.BOOKOO_SVC, UUID.SHARED_FFF0_SVC,
+        UUID.FELICITA_SVC, UUID.SKALE_SVC, UUID.EUREKA_ALT_SVC, UUID.HIROIA_SVC,
+        UUID.WEIGHT_SIG_SVC, UUID.TIMEMORE_CUSTOM_SVC, UUID.NUS_SVC, UUID.BATTERY_SVC
+      ]);
+      if (o.acceptAll === true || o.acceptAllDevices === true){
+        return { slot:'scale', acceptAll:true, filters:[], optionalServices:optionalServices };
+      }
       const byBrand = {
-        acaia:    [{ services:[UUID.ACAIA_PYXIS_SVC] }, { services:[UUID.ACAIA_LEGACY_SVC] }, { namePrefix:'ACAIA' }, { namePrefix:'LUNAR' }, { namePrefix:'PEARL' }, { namePrefix:'PYXIS' }, { namePrefix:'CINCO' }],
-        difluid:  [{ services:[UUID.DIFLUID_SCALE_SVC] }, { services:[UUID.DIFLUID_SCALE_ALT_SVC] }, { namePrefix:'Microbalance' }, { namePrefix:'DiFluid Micro' }, { namePrefix:'DFT-S' }],
-        bookoo:   [{ services:[UUID.BOOKOO_SVC] }, { namePrefix:'BOOKOO' }, { namePrefix:'Themis' }],
-        timemore: [{ services:[UUID.WEIGHT_SIG_SVC] }, { services:[UUID.SHARED_FFF0_SVC] }, { namePrefix:'Timemore' }, { namePrefix:'TIMEMORE' }, { namePrefix:'Black Mirror' }],
-        felicita: [{ services:[UUID.FELICITA_SVC] }, { namePrefix:'FELICITA' }, { namePrefix:'Felicita' }],
-        decent:   [{ services:[UUID.DECENT_SVC] }, { namePrefix:'Decent' }, { namePrefix:'HDS' }],
-        varia:    [{ services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.NUS_SVC] }, { namePrefix:'Varia' }, { namePrefix:'AKU' }],
-        skale:    [{ services:[UUID.SKALE_SVC] }, { namePrefix:'Skale' }, { namePrefix:'SKALE' }],
-        eureka:   [{ services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.EUREKA_ALT_SVC] }, { namePrefix:'Precisa' }, { namePrefix:'CFS-9002' }, { namePrefix:'Eureka' }, { namePrefix:'LSJ' }],
-        hiroia:   [{ services:[UUID.HIROIA_SVC] }, { namePrefix:'HIROIA' }, { namePrefix:'Hiroia' }, { namePrefix:'JIMMY' }],
-        sig:      [{ services:[UUID.WEIGHT_SIG_SVC] }]
+        acaia: [
+          { services:[UUID.ACAIA_PYXIS_SVC] }, { services:[UUID.ACAIA_LEGACY_SVC] },
+          { namePrefix:'ACAIA' }, { namePrefix:'Acaia' }, { namePrefix:'PROCHBT' },
+          { namePrefix:'LUNAR' }, { namePrefix:'Lunar' },
+          { namePrefix:'PEARL' }, { namePrefix:'Pearl' },
+          { namePrefix:'PYXIS' }, { namePrefix:'Pyxis' },
+          { namePrefix:'CINCO' }, { namePrefix:'Cinco' }
+        ],
+        difluid: [
+          { services:[UUID.DIFLUID_SCALE_SVC] }, { services:[UUID.DIFLUID_SCALE_ALT_SVC] },
+          { services:[UUID.DIFLUID_SVC] }, { services:[UUID.DIFLUID_V3_SVC] },
+          { namePrefix:'Microbalance' }, { namePrefix:'MicroBalance' }, { namePrefix:'MICROBALANCE' },
+          { namePrefix:'DiFluid' }, { namePrefix:'DIFLUID' },
+          { namePrefix:'DFT-S' }, { namePrefix:'DF-S' }, { namePrefix:'DF' }
+        ],
+        bookoo: [
+          { services:[UUID.BOOKOO_SVC] },
+          { namePrefix:'BOOKOO' }, { namePrefix:'Bookoo' }, { namePrefix:'bookoo' },
+          { namePrefix:'Themis' }, { namePrefix:'THEMIS' }
+        ],
+        timemore: [
+          { services:[UUID.WEIGHT_SIG_SVC] }, { services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.TIMEMORE_CUSTOM_SVC] },
+          { namePrefix:'Timemore' }, { namePrefix:'TIMEMORE' },
+          { namePrefix:'Black Mirror' }, { namePrefix:'BLACK MIRROR' }, { namePrefix:'TM' }
+        ],
+        felicita: [
+          { services:[UUID.FELICITA_SVC] },
+          { namePrefix:'FELICITA' }, { namePrefix:'Felicita' }
+        ],
+        decent: [
+          { services:[UUID.DECENT_SVC] },
+          { namePrefix:'Decent' }, { namePrefix:'DECENT' }, { namePrefix:'Half Decent' }, { namePrefix:'HDS' }
+        ],
+        varia: [
+          { services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.FELICITA_SVC] }, { services:[UUID.NUS_SVC] },
+          { namePrefix:'Varia' }, { namePrefix:'VARIA' }, { namePrefix:'AKU' }, { namePrefix:'aku' },
+          { namePrefix:'Cube' }, { namePrefix:'CUBE' }, { namePrefix:'MHW' },
+          { namePrefix:'Exagram' }, { namePrefix:'EXAGRAM' }, { namePrefix:'Wacaco' }, { namePrefix:'WACACO' }
+        ],
+        skale: [
+          { services:[UUID.SKALE_SVC] },
+          { namePrefix:'Skale' }, { namePrefix:'SKALE' }
+        ],
+        eureka: [
+          { services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.EUREKA_ALT_SVC] }, { services:[UUID.FELICITA_SVC] },
+          { namePrefix:'Precisa' }, { namePrefix:'PRECISA' }, { namePrefix:'CFS-9002' },
+          { namePrefix:'Eureka' }, { namePrefix:'EUREKA' }, { namePrefix:'LSJ' },
+          { namePrefix:'Smart Scale' }, { namePrefix:'Brewista' }, { namePrefix:'BREWISTA' },
+          { namePrefix:'Exagram' }, { namePrefix:'EXAGRAM' }, { namePrefix:'Wacaco' }, { namePrefix:'WACACO' },
+          { namePrefix:'Cube' }, { namePrefix:'CUBE' }, { namePrefix:'MHW' },
+          { namePrefix:'Formula' }, { namePrefix:'SoloBarista' }, { namePrefix:'KC200' }, { namePrefix:'WeighMyBru' }
+        ],
+        hiroia: [
+          { services:[UUID.HIROIA_SVC] },
+          { namePrefix:'HIROIA' }, { namePrefix:'Hiroia' }, { namePrefix:'JIMMY' }, { namePrefix:'Jimmy' }
+        ],
+        sig: [
+          { services:[UUID.WEIGHT_SIG_SVC] }
+        ]
       };
-      const filters = (brandKey !== 'auto' && byBrand[brandKey])
+      const rawFilters = (brandKey !== 'auto' && byBrand[brandKey])
         ? byBrand[brandKey]
         : [].concat(
             byBrand.acaia, byBrand.difluid, byBrand.bookoo, byBrand.timemore, byBrand.felicita,
             byBrand.decent, byBrand.varia, byBrand.skale, byBrand.eureka, byBrand.hiroia, byBrand.sig
           );
-      return { slot:'scale', filters:filters, optionalServices:optionalServices };
+      return { slot:'scale', filters:dedupeDeviceFilters(rawFilters), optionalServices:optionalServices };
+    }
+
+    async function writeScaleCommandSafe(gatt, profile, cmdBytes){
+      if (!gatt || !profile || !cmdBytes) return false;
+      const writeSvc = profile.writeServiceUuid || profile.serviceUuid;
+      const primaryChr = profile.writeUuid;
+      const altChr = profile.altWriteUuid;
+      if (primaryChr){
+        try {
+          const ok = await gatt.write(writeSvc, primaryChr, cmdBytes);
+          if (ok) return true;
+        } catch(e){}
+      }
+      if (altChr && altChr !== primaryChr){
+        try {
+          const okAlt = await gatt.write(profile.serviceUuid, altChr, cmdBytes);
+          if (okAlt) return true;
+        } catch(e){}
+      }
+      return false;
+    }
+
+    function armDecentHeartbeatLoop(gatt, profile){
+      if (scaleHeartbeatIv) return;
+      scaleHeartbeatIv = setInterval(function(){
+        if (state.scaleConnected && sessions.scale && sessions.scale.gatt === gatt){
+          writeScaleCommandSafe(gatt, profile, Codecs.commands.decentHeartbeat()).catch(function(){});
+        }
+      }, 3500);
     }
 
     function processDecodedScaleFrame(fr){
@@ -1616,6 +1809,7 @@
         state.slots.scale.batteryPct = fr.batteryPct;
       }
       if (fr.packetType === 'weight' && Number.isFinite(fr.weightG)){
+        scaleReceivedWeightThisSession = true;
         if (scaleWakeTimeout){ clearTimeout(scaleWakeTimeout); scaleWakeTimeout = null; }
         pushRawWeight(
           fr.weightG,
@@ -1632,7 +1826,7 @@
           state.flowRateGs = 0;
           emit();
         }
-        try { global.dispatchEvent(new CustomEvent('bt-ble-scale-button', { detail:fr })); } catch(e){}
+        dispatchSafeEvent('bt-ble-scale-button', fr);
       } else if (fr.packetType === 'status'){
         emit();
       }
@@ -1697,6 +1891,7 @@
       }
 
       clearScaleTimers();
+      scaleReceivedWeightThisSession = false;
       if (!isReconnect){
         resetFlowFilter();
         softwareTareOffsetG = 0;
@@ -1714,10 +1909,14 @@
       });
 
       await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
+        recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
         const res = charStream.push(u8);
         if (res.promoted && res.family){
           state.scaleBrand = res.family;
           state.slots.scale.brand = res.family;
+          if (res.family === 'decent' && (profile.writeUuid || profile.altWriteUuid)){
+            armDecentHeartbeatLoop(gatt, profile);
+          }
         }
         for (let i = 0; i < res.frames.length; i++){
           processDecodedScaleFrame(res.frames[i]);
@@ -1736,7 +1935,15 @@
           });
           try {
             await gatt.startNotifications(profile.serviceUuid, extraUuid, function(u8){
+              recordRxTelemetry(u8, profile.serviceUuid, extraUuid);
               const eres = extraStream.push(u8);
+              if (eres.promoted && eres.family){
+                state.scaleBrand = eres.family;
+                state.slots.scale.brand = eres.family;
+                if (eres.family === 'decent' && (profile.writeUuid || profile.altWriteUuid)){
+                  armDecentHeartbeatLoop(gatt, profile);
+                }
+              }
               for (let k = 0; k < eres.frames.length; k++) processDecodedScaleFrame(eres.frames[k]);
             });
           } catch(e){}
@@ -1793,23 +2000,49 @@
         transportKind: transport.kind
       });
 
-      /* Brand Handshakes (serialized automatically by gatt.writeQueue at 40ms spacing!) */
-      if (profile.family === 'acaia' && writeChr){
-        await gatt.write(writeSvc, writeChr, Codecs.commands.acaiaIdentify());
-        await gatt.write(writeSvc, writeChr, Codecs.commands.acaiaNotificationRequest());
+      /* Brand Handshakes (serialized automatically by gatt.writeQueue!) */
+      if (profile.family === 'acaia' && (writeChr || profile.altWriteUuid)){
+        await writeScaleCommandSafe(gatt, profile, Codecs.commands.acaiaIdentify());
+        await waitMs(120);
+        await writeScaleCommandSafe(gatt, profile, Codecs.commands.acaiaNotificationRequest());
+
+        /* Arm Lunar 2021 / Pyxis wake retries at 900ms & 2000ms if weight notifications haven't started yet */
+        const scheduleAcaiaWakeRetry = function(delayMs, nextDelayMs){
+          scaleWakeTimeout = setTimeout(function(){
+            if (!state.scaleConnected || !sessions.scale || sessions.scale.gatt !== gatt || scaleReceivedWeightThisSession) return;
+            writeScaleCommandSafe(gatt, profile, Codecs.commands.acaiaIdentify())
+              .then(function(){ return waitMs(120); })
+              .then(function(){
+                if (!state.scaleConnected || !sessions.scale || sessions.scale.gatt !== gatt || scaleReceivedWeightThisSession) return;
+                return writeScaleCommandSafe(gatt, profile, Codecs.commands.acaiaNotificationRequest());
+              })
+              .catch(function(){});
+            if (nextDelayMs > 0 && !scaleReceivedWeightThisSession){
+              scheduleAcaiaWakeRetry(nextDelayMs, 0);
+            }
+          }, delayMs);
+        };
+        if (!scaleReceivedWeightThisSession){
+          scheduleAcaiaWakeRetry(900, 1100);
+        }
+
         scaleHeartbeatIv = setInterval(function(){
           if (state.scaleConnected && sessions.scale && sessions.scale.gatt === gatt){
-            gatt.write(writeSvc, writeChr, Codecs.commands.acaiaHeartbeat()).catch(function(){});
+            writeScaleCommandSafe(gatt, profile, Codecs.commands.acaiaHeartbeat()).catch(function(){});
           }
         }, 2750);
-      } else if (profile.family === 'difluid' && writeChr){
-        await gatt.write(writeSvc, writeChr, Codecs.commands.difluidScaleEnableAuto());
-        await gatt.write(writeSvc, writeChr, Codecs.commands.difluidScaleSetGrams());
-      } else if (profile.family === 'decent' && writeChr){
-        await gatt.write(writeSvc, writeChr, Codecs.commands.decentEnableGramsLed());
-      } else if (profile.family === 'skale' && writeChr){
-        await gatt.write(writeSvc, writeChr, Codecs.commands.skaleEnableGrams());
-        await gatt.write(writeSvc, writeChr, Codecs.commands.skaleDisplayWeight());
+      } else if (profile.family === 'difluid' && (writeChr || profile.altWriteUuid)){
+        await writeScaleCommandSafe(gatt, profile, Codecs.commands.difluidScaleEnableAuto());
+        await writeScaleCommandSafe(gatt, profile, Codecs.commands.difluidScaleSetGrams());
+      } else if (profile.family === 'decent' && (writeChr || profile.altWriteUuid)){
+        await writeScaleCommandSafe(gatt, profile, Codecs.commands.decentEnableGramsLed());
+        await waitMs(60);
+        await writeScaleCommandSafe(gatt, profile, Codecs.commands.decentEnableGramsLed());
+        armDecentHeartbeatLoop(gatt, profile);
+      } else if (profile.family === 'skale' && (writeChr || profile.altWriteUuid)){
+        await writeScaleCommandSafe(gatt, profile, Codecs.commands.skaleLedOn());
+        await writeScaleCommandSafe(gatt, profile, Codecs.commands.skaleEnableGrams());
+        await writeScaleCommandSafe(gatt, profile, Codecs.commands.skaleDisplayWeight());
       }
 
       emit();
@@ -1819,10 +2052,14 @@
     async function connectScale(preferredBrandOrOpts){
       if (state.simulatorActive) stopSimulator();
       if (sessions.scale) await disconnectScale();
+      const isObj = !!(preferredBrandOrOpts && typeof preferredBrandOrOpts === 'object');
+      const acceptAll = isObj
+        ? !!(preferredBrandOrOpts.acceptAll || preferredBrandOrOpts.acceptAllDevices)
+        : (preferredBrandOrOpts === 'any' || preferredBrandOrOpts === 'acceptAll');
       const brandKey = typeof preferredBrandOrOpts === 'string'
         ? normalizeScaleBrand(preferredBrandOrOpts)
-        : normalizeScaleBrand(preferredBrandOrOpts && preferredBrandOrOpts.brand);
-      const query = buildScaleQuery(brandKey);
+        : normalizeScaleBrand(isObj ? preferredBrandOrOpts.brand : 'auto');
+      const query = buildScaleQuery(brandKey, { acceptAll:acceptAll });
       const dev = await getTransport().requestDevice(query);
       return establishScaleSession(dev, brandKey, false);
     }
@@ -1881,7 +2118,7 @@
       emit();
 
       const sess = sessions.scale;
-      if (!sess.writeChr) return true;
+      if (!sess.writeChr && !sess.profile.altWriteUuid) return true;
       const br = state.scaleBrand;
       const cmds = Codecs.commands;
       let pkt = null;
@@ -1898,12 +2135,86 @@
       else if (br === 'sig') pkt = cmds.sigTare();
 
       if (!pkt) return true;
-      return sess.gatt.write(sess.writeSvc, sess.writeChr, pkt);
+      return writeScaleCommandSafe(sess.gatt, sess.profile, pkt);
     }
 
-    /* ---------- Slot 2: Espresso Pressure Transducer (`Pressensor` & `Bookoo EM`) ---------- */
+    async function sendScaleTimerAction(actionKind){
+      if (state.simulatorActive){
+        state.lastStatusText = 'Simulator timer ' + actionKind;
+        emit();
+        return true;
+      }
+      if (!state.scaleConnected || !sessions.scale) return false;
+      const sess = sessions.scale;
+      if (!sess.writeChr && !sess.profile.altWriteUuid) return false;
+      const br = state.scaleBrand;
+      const cmds = Codecs.commands;
+      let pkt = null;
+      if (actionKind === 'start'){
+        if (br === 'acaia') pkt = cmds.acaiaTimerStart();
+        else if (br === 'difluid') pkt = cmds.difluidScaleTimerStart();
+        else if (br === 'bookoo') pkt = cmds.bookooTimerStart();
+        else if (br === 'timemore') pkt = scaleTimemoreVariant === 'osp' ? cmds.timemoreTimerStart() : cmds.timemoreClassicTimerStart();
+        else if (br === 'felicita') pkt = cmds.felicitaTimerStart();
+        else if (br === 'decent') pkt = cmds.decentTimerStart();
+        else if (br === 'varia') pkt = cmds.variaTimerStart();
+        else if (br === 'eureka') pkt = cmds.eurekaTimerStart();
+        else if (br === 'hiroia') pkt = cmds.hiroiaTimerStart();
+        else if (br === 'skale') pkt = cmds.skaleTimerStart();
+      } else if (actionKind === 'stop'){
+        if (br === 'acaia') pkt = cmds.acaiaTimerStop();
+        else if (br === 'difluid') pkt = cmds.difluidScaleTimerStop();
+        else if (br === 'bookoo') pkt = cmds.bookooTimerStop();
+        else if (br === 'timemore') pkt = scaleTimemoreVariant === 'osp' ? cmds.timemoreTimerStop() : cmds.timemoreClassicTimerStop();
+        else if (br === 'felicita') pkt = cmds.felicitaTimerStop();
+        else if (br === 'decent') pkt = cmds.decentTimerStop();
+        else if (br === 'varia') pkt = cmds.variaTimerStop();
+        else if (br === 'eureka') pkt = cmds.eurekaTimerStop();
+        else if (br === 'hiroia') pkt = cmds.hiroiaTimerStop();
+        else if (br === 'skale') pkt = cmds.skaleTimerStop();
+      } else if (actionKind === 'reset'){
+        if (br === 'acaia') pkt = cmds.acaiaTimerReset();
+        else if (br === 'difluid') pkt = cmds.difluidScaleTimerReset();
+        else if (br === 'bookoo') pkt = cmds.bookooTimerReset();
+        else if (br === 'timemore') pkt = scaleTimemoreVariant === 'osp' ? cmds.timemoreTimerReset() : cmds.timemoreClassicTimerReset();
+        else if (br === 'felicita') pkt = cmds.felicitaTimerReset();
+        else if (br === 'decent') pkt = cmds.decentTimerReset();
+        else if (br === 'varia') pkt = cmds.variaTimerReset();
+        else if (br === 'eureka') pkt = cmds.eurekaTimerReset();
+        else if (br === 'hiroia') pkt = cmds.hiroiaTimerReset();
+        else if (br === 'skale') pkt = cmds.skaleTimerReset();
+      }
+      if (!pkt) return false;
+      state.lastStatusText = 'Scale timer ' + actionKind;
+      emit();
+      return writeScaleCommandSafe(sess.gatt, sess.profile, pkt);
+    }
+
+    function startTimer(){ return sendScaleTimerAction('start'); }
+    function stopTimer(){ return sendScaleTimerAction('stop'); }
+    function resetTimer(){ return sendScaleTimerAction('reset'); }
+
+    /* ---------- Slot 2: Espresso Pressure Transducer (`Pressensor`, `ESS 0x181A` & `Bookoo EM`) ---------- */
+    function handleDecodedPressureFrame(fr){
+      if (!fr) return;
+      if (fr.packetType === 'pressure'){
+        pushPressureReading(fr.pressureBar, fr.pressureMbar, fr.tempC, fr.batteryPct);
+      } else if (fr.packetType === 'temperature' && fr.tempC != null && Number.isFinite(fr.tempC)){
+        state.pressureTempC = +fr.tempC.toFixed(1);
+        emit();
+        dispatchSafeEvent('bt-ble-pressure', {
+          pressureBar: state.pressureBar,
+          pressureMbar: state.pressureMbar,
+          tempC: state.pressureTempC,
+          peakPressureBar: state.peakPressureBar
+        });
+      }
+    }
+
     async function establishPressureSession(transportDev){
-      const optionalServices = [UUID.PRESSENSOR_SVC, UUID.PRESSENSOR_SIG_SVC, UUID.BOOKOO_EM_SVC, UUID.BOOKOO_SVC, UUID.BATTERY_SVC];
+      const optionalServices = mergeOptionalServices([
+        UUID.PRESSENSOR_SVC, UUID.ESS_SVC, UUID.PRESSENSOR_SIG_SVC, UUID.BOOKOO_EM_SVC, UUID.BOOKOO_SVC, UUID.BATTERY_SVC
+      ]);
       let intentional = false;
       const gatt = await getTransport().connectGatt(transportDev, function(){
         if (intentional) return;
@@ -1916,7 +2227,7 @@
       const profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name, 'pressure');
       if (!profile || !profile.notifyUuid){
         await gatt.disconnect();
-        throw new Error('No supported espresso pressure GATT characteristic found (Pressensor / Bookoo EM).');
+        throw new Error('No supported espresso pressure GATT characteristic found (Pressensor / Bookoo EM / ESS 0x181A).');
       }
 
       state.peakPressureBar = 0;
@@ -1928,14 +2239,60 @@
       });
 
       await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
+        recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
         const res = stream.push(u8);
-        for (let i = 0; i < res.frames.length; i++){
-          const fr = res.frames[i];
-          if (fr.packetType === 'pressure'){
-            pushPressureReading(fr.pressureBar, fr.pressureMbar, fr.tempC, fr.batteryPct);
+        for (let i = 0; i < res.frames.length; i++) handleDecodedPressureFrame(res.frames[i]);
+      });
+
+      if (Array.isArray(profile.extraNotifyUuids)){
+        for (let ei = 0; ei < profile.extraNotifyUuids.length; ei++){
+          const extraChr = profile.extraNotifyUuids[ei];
+          const extraStream = Codecs.streams.createCharacteristicStream('pressensor', {
+            slot: 'pressure',
+            deviceName: gatt.name || transportDev.name,
+            serviceUuid: profile.serviceUuid,
+            charUuid: extraChr
+          });
+          try {
+            await gatt.startNotifications(profile.serviceUuid, extraChr, function(u8){
+              recordRxTelemetry(u8, profile.serviceUuid, extraChr);
+              const eres = extraStream.push(u8);
+              for (let k = 0; k < eres.frames.length; k++) handleDecodedPressureFrame(eres.frames[k]);
+            });
+          } catch(e){}
+        }
+      }
+
+      if (Array.isArray(profile.extraNotifyTargets)){
+        for (let ti = 0; ti < profile.extraNotifyTargets.length; ti++){
+          const tgt = profile.extraNotifyTargets[ti];
+          const tgtStream = Codecs.streams.createCharacteristicStream('pressensor', {
+            slot: 'pressure',
+            deviceName: gatt.name || transportDev.name,
+            serviceUuid: tgt.serviceUuid,
+            charUuid: tgt.charUuid
+          });
+          try {
+            await gatt.startNotifications(tgt.serviceUuid, tgt.charUuid, function(u8){
+              recordRxTelemetry(u8, tgt.serviceUuid, tgt.charUuid);
+              const tres = tgtStream.push(u8);
+              for (let m = 0; m < tres.frames.length; m++) handleDecodedPressureFrame(tres.frames[m]);
+            });
+          } catch(e){}
+        }
+      }
+
+      /* Read optional 0x180F battery level */
+      try {
+        const hasBat = services.some(function(s){ return s.uuid === UUID.BATTERY_SVC; });
+        if (hasBat){
+          const bVal = await gatt.read(UUID.BATTERY_SVC, UUID.BATTERY_LEVEL);
+          if (bVal.length >= 1 && bVal[0] <= 100){
+            state.pressureBatteryPct = bVal[0];
+            state.slots.pressure.batteryPct = bVal[0];
           }
         }
-      });
+      } catch(e){}
 
       if (profile.family === 'bookoo_pressure' && profile.writeUuid){
         try { await gatt.write(profile.serviceUuid, profile.writeUuid, Codecs.commands.bookooPressureStartStream()); } catch(e){}
@@ -1962,22 +2319,35 @@
       return snapshotState();
     }
 
-    async function connectPressure(){
+    async function connectPressure(opts){
+      const o = opts || {};
+      const acceptAll = !!(o.acceptAll || o.acceptAllDevices || opts === 'any');
       if (sessions.pressure) await disconnectPressure();
+      const optionalServices = mergeOptionalServices([
+        UUID.PRESSENSOR_SVC, UUID.ESS_SVC, UUID.PRESSENSOR_SIG_SVC, UUID.BOOKOO_EM_SVC, UUID.BOOKOO_SVC, UUID.BATTERY_SVC
+      ]);
       const dev = await getTransport().requestDevice({
         slot: 'pressure',
-        filters: [
+        acceptAll: acceptAll,
+        filters: acceptAll ? [] : dedupeDeviceFilters([
           { services:[UUID.PRESSENSOR_SVC] },
+          { services:[UUID.ESS_SVC] },
           { services:[UUID.PRESSENSOR_SIG_SVC] },
           { services:[UUID.BOOKOO_EM_SVC] },
           { services:[UUID.BOOKOO_SVC] },
           { namePrefix:'PRS' },
+          { namePrefix:'PSE' },
+          { namePrefix:'SEP' },
           { namePrefix:'Pressensor' },
+          { namePrefix:'pressensor' },
           { namePrefix:'Smart Espresso' },
           { namePrefix:'BOOKOO_EM' },
-          { namePrefix:'Bookoo EM' }
-        ],
-        optionalServices: [UUID.PRESSENSOR_SVC, UUID.PRESSENSOR_SIG_SVC, UUID.BOOKOO_EM_SVC, UUID.BOOKOO_SVC, UUID.BATTERY_SVC]
+          { namePrefix:'Bookoo EM' },
+          { namePrefix:'BOOKOO' },
+          { namePrefix:'Bookoo' },
+          { namePrefix:'bookoo' }
+        ]),
+        optionalServices: optionalServices
       });
       return establishPressureSession(dev);
     }
@@ -2120,7 +2490,7 @@
     }
 
     async function establishRefractometerSession(transportDev){
-      const optionalServices = R2_OPTIONAL_SERVICES.slice();
+      const optionalServices = mergeOptionalServices(R2_OPTIONAL_SERVICES);
       let intentional = false;
       const gatt = await getTransport().connectGatt(transportDev, function(){
         if (intentional) return;
@@ -2144,6 +2514,7 @@
       });
 
       await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
+        recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
         const res = stream.push(u8);
         for (let i = 0; i < res.frames.length; i++){
           handleRefractometerFrame(res.frames[i]);
@@ -2162,6 +2533,7 @@
           });
           try {
             await gatt.startNotifications(profile.serviceUuid, extraUuid, function(u8){
+              recordRxTelemetry(u8, profile.serviceUuid, extraUuid);
               const eres = extraStream.push(u8);
               for (let k = 0; k < eres.frames.length; k++) handleRefractometerFrame(eres.frames[k]);
             });
@@ -2180,6 +2552,7 @@
           });
           try {
             await gatt.startNotifications(tgt.serviceUuid, tgt.charUuid, function(u8){
+              recordRxTelemetry(u8, tgt.serviceUuid, tgt.charUuid);
               const tres = tgtStream.push(u8);
               for (let m = 0; m < tres.frames.length; m++) handleRefractometerFrame(tres.frames[m]);
             });
@@ -2227,11 +2600,14 @@
       return snapshotState();
     }
 
-    async function connectRefractometer(){
+    async function connectRefractometer(opts){
+      const o = opts || {};
+      const acceptAll = !!(o.acceptAll || o.acceptAllDevices || opts === 'any');
       if (sessions.refractometer) await disconnectRefractometer();
       const dev = await getTransport().requestDevice({
         slot: 'refractometer',
-        filters: [
+        acceptAll: acceptAll,
+        filters: acceptAll ? [] : dedupeDeviceFilters([
           { services:[UUID.DIFLUID_SVC] },
           { services:[UUID.DIFLUID_V3_SVC] },
           { services:[UUID.DIFLUID_SCALE_SVC] },
@@ -2240,10 +2616,13 @@
           { services:[UUID.SHARED_FFF0_SVC] },
           { namePrefix:'DiFluid' },
           { namePrefix:'DIFLUID' },
+          { namePrefix:'difluid' },
           { namePrefix:'R2' },
+          { namePrefix:'Extract' },
+          { namePrefix:'DFT-R' },
           { namePrefix:'DF' }
-        ],
-        optionalServices: R2_OPTIONAL_SERVICES.slice()
+        ]),
+        optionalServices: mergeOptionalServices(R2_OPTIONAL_SERVICES)
       });
       return establishRefractometerSession(dev);
     }
@@ -2330,6 +2709,9 @@
         emit();
         return;
       }
+      if (om.packetType === 'ack'){
+        return;
+      }
       const gAg = om.groundAgtron != null ? om.groundAgtron : om.agtron;
       const sw = gAg != null ? Codecs.agtronToRoastSwatch(gAg, 'ground') : null;
       const merged = Object.assign({
@@ -2345,8 +2727,8 @@
         if (global.BTDiFluidApi && typeof global.BTDiFluidApi._pushLiveRecord === 'function'){
           global.BTDiFluidApi._pushLiveRecord('omni', merged);
         }
-        global.dispatchEvent(new CustomEvent('bt-ble-omni', { detail:merged }));
       } catch(e){}
+      dispatchSafeEvent('bt-ble-omni', merged);
 
       state.lastStatusText = om.packetType === 'agtron'
         ? ('Omni Agtron ' + om.agtron + (om.roastDelta != null ? ' (Delta ' + om.roastDelta + ')' : ''))
@@ -2357,7 +2739,11 @@
     }
 
     async function establishOmniSession(transportDev){
-      const optionalServices = [UUID.DIFLUID_OMNI_SVC, UUID.DIFLUID_SVC, UUID.BATTERY_SVC];
+      const optionalServices = mergeOptionalServices([
+        UUID.DIFLUID_OMNI_SVC, UUID.DIFLUID_SVC, UUID.DIFLUID_V3_SVC,
+        UUID.DIFLUID_SCALE_SVC, UUID.DIFLUID_SCALE_ALT_SVC, UUID.FELICITA_SVC,
+        UUID.SHARED_FFF0_SVC, UUID.NUS_SVC, UUID.BATTERY_SVC
+      ]);
       let intentional = false;
       const gatt = await getTransport().connectGatt(transportDev, function(){
         if (intentional) return;
@@ -2370,7 +2756,7 @@
       const profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name, 'omni');
       if (!profile || !profile.notifyUuid){
         await gatt.disconnect();
-        throw new Error('DiFluid Omni service (0x00FC / 0x00FF) not found on selected device.');
+        throw new Error('DiFluid Omni service (0x00FC / 0x00FF / 0e140001) not found on selected device.');
       }
 
       const stream = Codecs.streams.createCharacteristicStream('difluid_omni', {
@@ -2381,9 +2767,60 @@
       });
 
       await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
+        recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
         const res = stream.push(u8);
         for (let i = 0; i < res.frames.length; i++) handleOmniFrame(res.frames[i]);
       });
+
+      if (Array.isArray(profile.extraNotifyUuids)){
+        for (let ei = 0; ei < profile.extraNotifyUuids.length; ei++){
+          const extraUuid = profile.extraNotifyUuids[ei];
+          const extraStream = Codecs.streams.createCharacteristicStream('difluid_omni', {
+            slot: 'omni',
+            deviceName: gatt.name || transportDev.name,
+            serviceUuid: profile.serviceUuid,
+            charUuid: extraUuid
+          });
+          try {
+            await gatt.startNotifications(profile.serviceUuid, extraUuid, function(u8){
+              recordRxTelemetry(u8, profile.serviceUuid, extraUuid);
+              const eres = extraStream.push(u8);
+              for (let k = 0; k < eres.frames.length; k++) handleOmniFrame(eres.frames[k]);
+            });
+          } catch(e){}
+        }
+      }
+
+      if (Array.isArray(profile.extraNotifyTargets)){
+        for (let ti = 0; ti < profile.extraNotifyTargets.length; ti++){
+          const tgt = profile.extraNotifyTargets[ti];
+          const tgtStream = Codecs.streams.createCharacteristicStream('difluid_omni', {
+            slot: 'omni',
+            deviceName: gatt.name || transportDev.name,
+            serviceUuid: tgt.serviceUuid,
+            charUuid: tgt.charUuid
+          });
+          try {
+            await gatt.startNotifications(tgt.serviceUuid, tgt.charUuid, function(u8){
+              recordRxTelemetry(u8, tgt.serviceUuid, tgt.charUuid);
+              const tres = tgtStream.push(u8);
+              for (let m = 0; m < tres.frames.length; m++) handleOmniFrame(tres.frames[m]);
+            });
+          } catch(e){}
+        }
+      }
+
+      /* Read optional 0x180F battery level */
+      try {
+        const hasBat = services.some(function(s){ return s.uuid === UUID.BATTERY_SVC; });
+        if (hasBat){
+          const bVal = await gatt.read(UUID.BATTERY_SVC, UUID.BATTERY_LEVEL);
+          if (bVal.length >= 1 && bVal[0] <= 100){
+            state.omniBatteryPct = bVal[0];
+            state.slots.omni.batteryPct = bVal[0];
+          }
+        }
+      } catch(e){}
 
       sessions.omni = {
         gatt: gatt,
@@ -2399,27 +2836,43 @@
         name: state.omniName,
         batteryPct: state.omniBatteryPct
       };
-      state.lastStatusText = 'Connected to ' + state.omniName;
-      if (profile.writeUuid){
-        try { await gatt.write(profile.serviceUuid, profile.writeUuid, Codecs.commands.difluidOmniTrigger()); } catch(e){}
+      state.lastStatusText = 'Connected to ' + state.omniName + ' (Auto-Sync Active)';
+      if (profile.writeUuid || profile.altWriteUuid){
+        try { await writeR2CommandSafe(gatt, profile, Codecs.commands.difluidSetCelsius()); } catch(e){}
+        try { await writeR2CommandSafe(gatt, profile, Codecs.commands.difluidR2EnableAutoNotifications()); } catch(e){}
       }
       rememberDevice({ slot:'omni', deviceId:gatt.deviceId, brand:'difluid_omni', name:state.omniName });
       emit();
       return snapshotState();
     }
 
-    async function connectOmni(){
+    async function connectOmni(opts){
+      const o = opts || {};
+      const acceptAll = !!(o.acceptAll || o.acceptAllDevices || opts === 'any');
       if (sessions.omni) await disconnectOmni();
+      const optionalServices = mergeOptionalServices([
+        UUID.DIFLUID_OMNI_SVC, UUID.DIFLUID_SVC, UUID.DIFLUID_V3_SVC,
+        UUID.DIFLUID_SCALE_SVC, UUID.DIFLUID_SCALE_ALT_SVC, UUID.FELICITA_SVC,
+        UUID.SHARED_FFF0_SVC, UUID.NUS_SVC, UUID.BATTERY_SVC
+      ]);
       const dev = await getTransport().requestDevice({
         slot: 'omni',
-        filters: [
+        acceptAll: acceptAll,
+        filters: acceptAll ? [] : dedupeDeviceFilters([
           { services:[UUID.DIFLUID_OMNI_SVC] },
           { services:[UUID.DIFLUID_SVC] },
+          { services:[UUID.DIFLUID_V3_SVC] },
+          { services:[UUID.DIFLUID_SCALE_SVC] },
+          { services:[UUID.DIFLUID_SCALE_ALT_SVC] },
           { namePrefix:'Omni' },
+          { namePrefix:'OMNI' },
           { namePrefix:'DiFluid Omni' },
-          { namePrefix:'DFT-SD' }
-        ],
-        optionalServices: [UUID.DIFLUID_OMNI_SVC, UUID.DIFLUID_SVC, UUID.BATTERY_SVC]
+          { namePrefix:'DiFluid' },
+          { namePrefix:'DIFLUID' },
+          { namePrefix:'DFT-SD' },
+          { namePrefix:'DF' }
+        ]),
+        optionalServices: optionalServices
       });
       return establishOmniSession(dev);
     }
@@ -2439,14 +2892,26 @@
     }
 
     async function triggerOmniRead(preset){
-      if (state.omniConnected && sessions.omni && sessions.omni.profile.writeUuid){
+      const modeStr = typeof preset === 'string'
+        ? preset.toLowerCase()
+        : (preset && typeof preset === 'object' ? String(preset.mode || preset.preset || '').toLowerCase() : '');
+      if (state.omniConnected && sessions.omni && (sessions.omni.profile.writeUuid || sessions.omni.profile.altWriteUuid)){
         const p = sessions.omni.profile;
-        state.lastStatusText = 'Requesting DiFluid Omni NIR + PSD scan...';
+        state.lastStatusText = modeStr === 'psd'
+          ? 'Requesting DiFluid Omni Grind PSD scan...'
+          : 'Requesting DiFluid Omni NIR + PSD scan...';
         emit();
-        return sessions.omni.gatt.write(p.serviceUuid, p.writeUuid, Codecs.commands.difluidOmniTrigger());
+        const okTrig = await writeR2CommandSafe(sessions.omni.gatt, p, Codecs.commands.difluidOmniTrigger());
+        if (modeStr === 'psd' || modeStr === 'histogram'){
+          try { await writeR2CommandSafe(sessions.omni.gatt, p, Codecs.commands.difluidOmniRequestHistogram()); } catch(e){}
+        }
+        return okTrig;
       }
       if (state.simulatorActive || preset != null){
-        return simulateOmniRead(preset || 'filter_light');
+        const simPreset = typeof preset === 'string'
+          ? preset
+          : (preset && typeof preset === 'object' && preset.preset ? preset.preset : 'filter_light');
+        return simulateOmniRead(simPreset);
       }
       return false;
     }
@@ -2480,7 +2945,7 @@
     }
 
     async function establishXBloomSession(transportDev){
-      const optionalServices = [UUID.XBLOOM_SVC, UUID.XBLOOM_SHORT_SVC, UUID.BATTERY_SVC];
+      const optionalServices = mergeOptionalServices([UUID.XBLOOM_SVC, UUID.XBLOOM_SHORT_SVC, UUID.BATTERY_SVC]);
       let intentional = false;
       const gatt = await getTransport().connectGatt(transportDev, function(){
         if (intentional) return;
@@ -2497,8 +2962,21 @@
         throw new Error('xBloom BLE write characteristic (FFE1) not found - close official xBloom app first.');
       }
 
+      const handleXBloomRx = function(u8, chrUuid, streamObj){
+        recordRxTelemetry(u8, profile.serviceUuid, chrUuid);
+        const res = streamObj.push(u8);
+        for (let i = 0; i < res.frames.length; i++){
+          const xf = res.frames[i];
+          if (xf.stage) state.xbloomStage = xf.stage;
+          if (xf.weightG != null) state.xbloomWeightG = xf.weightG;
+          if (xf.tempC != null) state.xbloomTempC = xf.tempC;
+          emit();
+        }
+        dispatchSafeEvent('bt-ble-xbloom', { bytes:Array.from(u8), frames:res.frames });
+      };
+
       if (profile.notifyUuid){
-        const stream = Codecs.streams.createCharacteristicStream('xbloom', {
+        const xbPrimaryStream = Codecs.streams.createCharacteristicStream('xbloom', {
           slot: 'machine',
           deviceName: gatt.name || transportDev.name,
           serviceUuid: profile.serviceUuid,
@@ -2506,14 +2984,25 @@
         });
         try {
           await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
-            const res = stream.push(u8);
-            for (let i = 0; i < res.frames.length; i++){
-              state.xbloomStage = res.frames[i].stage || state.xbloomStage;
-              emit();
-            }
-            try { global.dispatchEvent(new CustomEvent('bt-ble-xbloom', { detail:{ bytes:Array.from(u8), frames:res.frames } })); } catch(e){}
+            handleXBloomRx(u8, profile.notifyUuid, xbPrimaryStream);
           });
         } catch(e){}
+      }
+      if (Array.isArray(profile.extraNotifyUuids)){
+        for (let xi = 0; xi < profile.extraNotifyUuids.length; xi++){
+          const xExtra = profile.extraNotifyUuids[xi];
+          const xbExtraStream = Codecs.streams.createCharacteristicStream('xbloom', {
+            slot: 'machine',
+            deviceName: gatt.name || transportDev.name,
+            serviceUuid: profile.serviceUuid,
+            charUuid: xExtra
+          });
+          try {
+            await gatt.startNotifications(profile.serviceUuid, xExtra, function(u8){
+              handleXBloomRx(u8, xExtra, xbExtraStream);
+            });
+          } catch(e){}
+        }
       }
 
       sessions.machine = {
@@ -2533,17 +3022,24 @@
       return snapshotState();
     }
 
-    async function connectXBloom(){
+    async function connectXBloom(opts){
+      const o = opts || {};
+      const acceptAll = !!(o.acceptAll || o.acceptAllDevices || opts === 'any');
       if (sessions.machine) await disconnectMachineSlot();
       const dev = await getTransport().requestDevice({
         slot: 'machine',
-        filters: [
+        acceptAll: acceptAll,
+        filters: acceptAll ? [] : dedupeDeviceFilters([
           { services:[UUID.XBLOOM_SVC] },
+          { services:[UUID.XBLOOM_SHORT_SVC] },
           { namePrefix:'xBloom' },
+          { namePrefix:'XBloom' },
           { namePrefix:'XBLOOM' },
-          { namePrefix:'TBDx' }
-        ],
-        optionalServices: [UUID.XBLOOM_SVC, UUID.XBLOOM_SHORT_SVC, UUID.BATTERY_SVC]
+          { namePrefix:'xbloom' },
+          { namePrefix:'TBDx' },
+          { namePrefix:'tbdx' }
+        ]),
+        optionalServices: mergeOptionalServices([UUID.XBLOOM_SVC, UUID.XBLOOM_SHORT_SVC, UUID.BATTERY_SVC])
       });
       return establishXBloomSession(dev);
     }
@@ -2581,7 +3077,7 @@
     }
 
     async function connectKettleWithDevice(transportDev){
-      const optionalServices = [UUID.STAGG_EKG_SVC, UUID.BATTERY_SVC];
+      const optionalServices = mergeOptionalServices([UUID.STAGG_EKG_SVC, UUID.BATTERY_SVC]);
       let intentional = false;
       const gatt = await getTransport().connectGatt(transportDev, function(){
         if (intentional) return;
@@ -2598,6 +3094,21 @@
         throw new Error('Fellow Stagg EKG+ service (0x1820 / 0x2A80) not found.');
       }
 
+      const handleKettleFrames = function(frames){
+        for (let i = 0; i < frames.length; i++){
+          const fr = frames[i];
+          if (fr.packetType === 'kettle'){
+            if (fr.tempC != null && Number.isFinite(fr.tempC)) state.kettleTempC = fr.tempC;
+            if (fr.targetTempC != null && Number.isFinite(fr.targetTempC)) state.kettleTargetTempC = fr.targetTempC;
+            if (fr.hold !== undefined && fr.hold !== null) state.kettleHold = !!fr.hold;
+            if (fr.power !== undefined && fr.power !== null) state.kettlePower = !!fr.power;
+            if (fr.heating !== undefined && fr.heating !== null) state.kettleHeating = !!fr.heating;
+            emit();
+            dispatchSafeEvent('bt-ble-kettle', fr);
+          }
+        }
+      };
+
       const stream = Codecs.streams.createCharacteristicStream('stagg_ekg_plus', {
         slot: 'machine',
         deviceName: gatt.name || transportDev.name || 'Stagg EKG+',
@@ -2606,21 +3117,32 @@
       });
 
       await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
+        recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
         const res = stream.push(u8);
-        for (let i = 0; i < res.frames.length; i++){
-          const fr = res.frames[i];
-          if (fr.packetType === 'kettle'){
-            state.kettleTempC = fr.tempC;
-            if (fr.targetTempC != null) state.kettleTargetTempC = fr.targetTempC;
-            state.kettleHold = !!fr.hold;
-            emit();
-            try { global.dispatchEvent(new CustomEvent('bt-ble-kettle', { detail:fr })); } catch(e){}
-          }
-        }
+        handleKettleFrames(res.frames);
       });
 
-      if (profile.writeUuid){
-        try { await gatt.write(profile.serviceUuid, profile.writeUuid, Codecs.commands.staggAuth()); } catch(e){}
+      if (Array.isArray(profile.extraNotifyUuids)){
+        for (let ki = 0; ki < profile.extraNotifyUuids.length; ki++){
+          const kExtra = profile.extraNotifyUuids[ki];
+          const kExtraStream = Codecs.streams.createCharacteristicStream('stagg_ekg_plus', {
+            slot: 'machine',
+            deviceName: gatt.name || transportDev.name || 'Stagg EKG+',
+            serviceUuid: profile.serviceUuid,
+            charUuid: kExtra
+          });
+          try {
+            await gatt.startNotifications(profile.serviceUuid, kExtra, function(u8){
+              recordRxTelemetry(u8, profile.serviceUuid, kExtra);
+              const kres = kExtraStream.push(u8);
+              handleKettleFrames(kres.frames);
+            });
+          } catch(e){}
+        }
+      }
+
+      if (profile.writeUuid || profile.altWriteUuid){
+        try { await writeR2CommandSafe(gatt, profile, Codecs.commands.staggAuth()); } catch(e){}
       }
 
       sessions.machine = {
@@ -2640,17 +3162,24 @@
       return snapshotState();
     }
 
-    async function connectKettle(){
+    async function connectKettle(opts){
+      const o = opts || {};
+      const acceptAll = !!(o.acceptAll || o.acceptAllDevices || opts === 'any');
       if (sessions.machine) await disconnectMachineSlot();
       const dev = await getTransport().requestDevice({
         slot: 'kettle',
-        filters: [
+        acceptAll: acceptAll,
+        filters: acceptAll ? [] : dedupeDeviceFilters([
           { namePrefix:'Stagg' },
           { namePrefix:'STAGG' },
+          { namePrefix:'stagg' },
           { namePrefix:'EKG' },
+          { namePrefix:'ekg' },
+          { namePrefix:'Fellow' },
+          { namePrefix:'FELLOW' },
           { services:[UUID.STAGG_EKG_SVC] }
-        ],
-        optionalServices: [UUID.STAGG_EKG_SVC, UUID.BATTERY_SVC]
+        ]),
+        optionalServices: mergeOptionalServices([UUID.STAGG_EKG_SVC, UUID.BATTERY_SVC])
       });
       return connectKettleWithDevice(dev);
     }
@@ -2665,17 +3194,37 @@
       const clamped = Math.max(40, Math.min(100, Math.round(+tempC || 93)));
       state.kettleTargetTempC = clamped;
       if (holdEnabled !== undefined) state.kettleHold = !!holdEnabled;
-      if (state.kettleConnected && sessions.machine && sessions.machine.kind === 'stagg_ekg_plus' && sessions.machine.profile.writeUuid){
+      if (state.kettleConnected && sessions.machine && sessions.machine.kind === 'stagg_ekg_plus' && (sessions.machine.profile.writeUuid || sessions.machine.profile.altWriteUuid)){
         const s = sessions.machine;
-        await s.gatt.write(s.profile.serviceUuid, s.profile.writeUuid, Codecs.commands.staggSetTempC(clamped));
+        staggSeq = (staggSeq + 1) & 0xFF;
+        await writeR2CommandSafe(s.gatt, s.profile, Codecs.commands.staggSetTempC(clamped, staggSeq));
         if (holdEnabled !== undefined){
-          await s.gatt.write(s.profile.serviceUuid, s.profile.writeUuid, Codecs.commands.staggSetHold(!!holdEnabled));
+          staggSeq = (staggSeq + 1) & 0xFF;
+          await writeR2CommandSafe(s.gatt, s.profile, Codecs.commands.staggSetHold(!!holdEnabled, staggSeq));
         }
+        state.lastStatusText = 'Sent ' + clamped + 'C target to ' + (state.kettleName || 'Stagg EKG+');
         emit();
         return true;
       }
       if (state.simulatorActive){
         state.kettleTempC = clamped;
+        emit();
+        return true;
+      }
+      return false;
+    }
+
+    async function setKettlePower(on){
+      const powerOn = on !== false;
+      state.kettlePower = powerOn;
+      if (state.kettleConnected && sessions.machine && sessions.machine.kind === 'stagg_ekg_plus' && (sessions.machine.profile.writeUuid || sessions.machine.profile.altWriteUuid)){
+        const s = sessions.machine;
+        staggSeq = (staggSeq + 1) & 0xFF;
+        await writeR2CommandSafe(s.gatt, s.profile, Codecs.commands.staggPower(powerOn, staggSeq));
+        emit();
+        return true;
+      }
+      if (state.simulatorActive){
         emit();
         return true;
       }
@@ -3342,6 +3891,10 @@
       connectScale: connectScale,
       disconnectScale: disconnectScale,
       tare: tare,
+      tareScale: tare,
+      startTimer: startTimer,
+      stopTimer: stopTimer,
+      resetTimer: resetTimer,
 
       connectPressure: connectPressure,
       disconnectPressure: disconnectPressure,
@@ -3355,16 +3908,22 @@
       connectOmni: connectOmni,
       disconnectOmni: disconnectOmni,
       triggerOmniRead: triggerOmniRead,
+      triggerOmniScan: triggerOmniRead,
+      requestOmniAgtron: triggerOmniRead,
       simulateOmniRead: simulateOmniRead,
 
       connectXBloom: connectXBloom,
+      connectMachine: connectXBloom,
       disconnectXBloom: disconnectXBloom,
+      disconnectMachine: disconnectMachineSlot,
       sendXBloomRecipe: sendXBloomRecipe,
       encodeXBloomRecipePayload: Codecs.commands.encodeXBloomRecipePayload,
 
       connectKettle: connectKettle,
       disconnectKettle: disconnectKettle,
       setKettleTemp: setKettleTemp,
+      setKettleTargetTemp: setKettleTemp,
+      setKettlePower: setKettlePower,
 
       autoReconnectRemembered: autoReconnectRemembered,
       rememberDevice: rememberDevice,
@@ -3389,6 +3948,7 @@
       decoders: Codecs.decoders,
       commands: Codecs.commands,
       UUID: Codecs.UUID,
+      ALL_COFFEE_OPTIONAL_SERVICES: ALL_COFFEE_OPTIONAL_SERVICES.slice(),
       DEVICE_CATALOG: Codecs.DEVICE_CATALOG,
       NON_GATT_DISCLOSURES: Codecs.NON_GATT_DISCLOSURES,
 
@@ -3400,6 +3960,7 @@
         return snapshotState();
       },
       _pushRefractometerBytesForTest: function(rawBytes){
+        recordRxTelemetry(rawBytes, UUID.DIFLUID_SVC, UUID.DIFLUID_CHAR);
         const testStream = Codecs.streams.createCharacteristicStream('difluid_r2', { slot:'refractometer' });
         const res = testStream.push(rawBytes);
         for (let i = 0; i < res.frames.length; i++){

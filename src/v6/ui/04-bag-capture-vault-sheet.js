@@ -4101,7 +4101,225 @@ if (typeof window !== 'undefined') {
     );
   }
 
+  /* ---------- Module-Scoped DiFluid Omni Live BLE Auto-Sync (Agtron Roast & PSD D50) ---------- */
+  var _omniBleEventBound = false;
+  var _omniBleSubSource = null;
+  var _omniBleSubUnsub = null;
+  var _activeStep1Hook = null;
+  var _lastOmniToastAt = 0;
+  var _lastOmniToastSig = '';
+  var _prevOmniSubState = { connected: false, sim: false, agSig: '', psdSig: '' };
+
+  function getOmniBleStateSafe() {
+    try {
+      var ble = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
+      if (ble && typeof ble.getState === 'function') return ble.getState() || {};
+    } catch (e) {}
+    return {};
+  }
+
+  function mapOmniAgtronToCanonicalRoast(agVal) {
+    var n = parseFloat(agVal);
+    if (!isFinite(n) || n <= 0) return { roastKey: 'medium', label: 'Medium' };
+    var codecs = (typeof window !== 'undefined' && window.BTBleCodecs) ? window.BTBleCodecs : null;
+    var mappedKey = '';
+    if (codecs && typeof codecs.agtronToRoastSwatch === 'function') {
+      try {
+        var sw = codecs.agtronToRoastSwatch(n);
+        if (sw) {
+          var cand = sw.roastKey || sw.roast || '';
+          if (cand === 'light-medium') cand = 'medium-light';
+          if (S.ROAST_STOPS.some(function (r) { return r.key === cand; })) {
+            mappedKey = cand;
+          }
+        }
+      } catch (e) {}
+    }
+    if (!mappedKey) {
+      if (n >= 86) mappedKey = 'ultra-light';
+      else if (n >= 78) mappedKey = 'light';
+      else if (n >= 68) mappedKey = 'medium-light';
+      else if (n >= 55) mappedKey = 'medium';
+      else if (n >= 44) mappedKey = 'medium-dark';
+      else mappedKey = 'dark';
+    }
+    var rObj = S.ROAST_STOPS.find(function (r) { return r.key === mappedKey; });
+    return {
+      roastKey: mappedKey,
+      label: (rObj && rObj.label) || mappedKey
+    };
+  }
+
+  function applyLiveOmniReading(detail, opts) {
+    if (!detail || typeof detail !== 'object') return false;
+    opts = opts || {};
+    var pktType = String(detail.packetType || '').toLowerCase();
+    if (pktType === 'battery' || pktType === 'histogram' || pktType === 'ack') return false;
+
+    var hasBean = detail.beanAgtron != null && isFinite(+detail.beanAgtron) && +detail.beanAgtron > 0;
+    var hasGround = detail.groundAgtron != null && isFinite(+detail.groundAgtron) && +detail.groundAgtron > 0;
+    var hasAny = detail.agtron != null && isFinite(+detail.agtron) && +detail.agtron > 0;
+    var hasAgtron = (pktType !== 'psd') && (hasBean || hasGround || hasAny);
+    var hasPsd = (pktType !== 'agtron') && detail.d50Um != null && isFinite(+detail.d50Um) && +detail.d50Um > 80;
+
+    if (!hasAgtron && !hasPsd) return false;
+
+    var a = S.getApp();
+    a.coffee = a.coffee || {};
+    a.prefs = a.prefs || {};
+    a.brew = a.brew || {};
+    var c = a.coffee;
+    var nowMs = Date.now();
+    var agRounded = 0;
+    var roastLabel = '';
+    var d50Rounded = 0;
+
+    if (hasAgtron) {
+      var agVal = hasBean ? +detail.beanAgtron : (hasGround ? +detail.groundAgtron : +detail.agtron);
+      agRounded = Math.round(agVal);
+      c.agtron = agRounded;
+      c.agtron_scale = 'omni';
+      if (hasBean) c.bean_agtron = Math.round(+detail.beanAgtron * 10) / 10;
+      if (hasGround) c.ground_agtron = Math.round(+detail.groundAgtron * 10) / 10;
+      else if (hasAny && !hasBean) c.ground_agtron = Math.round(+detail.agtron * 10) / 10;
+
+      var mapped = mapOmniAgtronToCanonicalRoast(agVal);
+      c.roast = mapped.roastKey;
+      roastLabel = mapped.label;
+      c.roastUnsure = '';
+      c.roast_unknown = '';
+      c._v64Touched = 'yes';
+      ceUi.showRoastMeter = true;
+    }
+
+    if (hasPsd) {
+      d50Rounded = Math.round(+detail.d50Um);
+      a.prefs.omniLastD50Um = d50Rounded;
+      a.brew.measuredD50Um = d50Rounded;
+    }
+
+    S.saveDraftSafe();
+    S.notifyChromeSafe();
+
+    if (typeof _activeStep1Hook === 'function') {
+      try { _activeStep1Hook(); } catch (e) {}
+    }
+
+    var toastSig = (hasAgtron ? ('ag:' + agRounded + ':' + c.roast) : '') + '|' + (hasPsd ? ('d50:' + d50Rounded) : '');
+    var isDup = (nowMs - _lastOmniToastAt < 260) && (toastSig === _lastOmniToastSig);
+    if (!isDup && !opts.silent) {
+      _lastOmniToastAt = nowMs;
+      _lastOmniToastSig = toastSig;
+      S.haptic('snap');
+      if (hasAgtron) {
+        S.toastSafe('DiFluid Omni Auto-Synced: Agtron ' + agRounded + ' (' + roastLabel + ')' + (hasPsd ? (' \u00B7 D50 ' + d50Rounded + ' \u00B5m') : ''));
+      } else if (hasPsd) {
+        S.toastSafe('DiFluid Omni Grind Auto-Synced: D50 ' + d50Rounded + ' \u00B5m');
+      }
+    }
+    return true;
+  }
+
+  function ensureStep1OmniListeners() {
+    if (typeof window === 'undefined') return;
+    if (!_omniBleEventBound && typeof window.addEventListener === 'function') {
+      _omniBleEventBound = true;
+      window.addEventListener('bt-ble-omni', function (ev) {
+        var d = (ev && ev.detail) || {};
+        applyLiveOmniReading(d, { fromEvent: true });
+      });
+    }
+    var ble = window.BTBle;
+    if (ble && typeof ble.subscribe === 'function' && _omniBleSubSource !== ble) {
+      if (_omniBleSubUnsub) {
+        try { _omniBleSubUnsub(); } catch (e) {}
+        _omniBleSubUnsub = null;
+      }
+      _omniBleSubSource = ble;
+      try {
+        _omniBleSubUnsub = ble.subscribe(function (bst) {
+          if (!bst) return;
+          var conn = !!(bst.omniConnected || (bst.slots && bst.slots.omni && bst.slots.omni.connected));
+          var sim = !!bst.simulatorActive;
+          var om = bst.lastOmni || null;
+          var agNow = om && (om.beanAgtron > 0 ? Math.round(om.beanAgtron) : (om.groundAgtron > 0 ? Math.round(om.groundAgtron) : (om.agtron > 0 ? Math.round(om.agtron) : 0)));
+          var d50Now = (om && om.d50Um > 80) ? Math.round(+om.d50Um) : 0;
+          var agSig = agNow > 0 ? (String(om.id || '') + ':' + agNow) : '';
+          var psdSig = d50Now > 80 ? (String(om.id || '') + ':' + d50Now) : '';
+
+          var connChanged = (conn !== _prevOmniSubState.connected) || (sim !== _prevOmniSubState.sim);
+          var newAg = !!(agSig && agSig !== _prevOmniSubState.agSig && (conn || sim));
+          var newPsd = !!(psdSig && psdSig !== _prevOmniSubState.psdSig && (conn || sim));
+          _prevOmniSubState = { connected: conn, sim: sim, agSig: agSig, psdSig: psdSig };
+
+          if ((newAg || newPsd) && om) {
+            var subDetail = {};
+            if (newAg) {
+              if (om.beanAgtron != null) subDetail.beanAgtron = om.beanAgtron;
+              if (om.groundAgtron != null) subDetail.groundAgtron = om.groundAgtron;
+              if (om.agtron != null) subDetail.agtron = om.agtron;
+            }
+            if (newPsd) {
+              subDetail.d50Um = om.d50Um;
+            }
+            applyLiveOmniReading(subDetail, { fromSubscribe: true });
+            return;
+          }
+          if (connChanged && typeof _activeStep1Hook === 'function') {
+            if (conn) ceUi.showRoastMeter = true;
+            try { _activeStep1Hook(); } catch (e) {}
+          }
+        });
+      } catch (e) {}
+    }
+  }
+  ensureStep1OmniListeners();
+
+  function buildStep1OmniControls(repaintFn) {
+    ensureStep1OmniListeners();
+    var bst = getOmniBleStateSafe();
+    var omniConnected = !!(bst.omniConnected || (bst.slots && bst.slots.omni && bst.slots.omni.connected));
+    var omniActive = !!(omniConnected || bst.simulatorActive);
+    return S.h('span', { style: 'display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap' },
+      omniActive ? S.h('span', {
+        class: 'bt-ce-badge is-good',
+        id: 'bt-step1-omni-badge',
+        text: 'Omni Connected'
+      }) : null,
+      S.h('button', {
+        type: 'button',
+        id: 'bt-step1-omni-btn',
+        class: 'bt-ce-chip is-compact' + (omniActive ? ' is-active' : ''),
+        onclick: function () {
+          var ble = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
+          var cur = (ble && typeof ble.getState === 'function') ? (ble.getState() || {}) : {};
+          var isConnNow = !!(cur.omniConnected || (cur.slots && cur.slots.omni && cur.slots.omni.connected) || cur.simulatorActive);
+          if (isConnNow && ble) {
+            S.haptic('tick');
+            if (typeof ble.triggerOmniScan === 'function') {
+              Promise.resolve(ble.triggerOmniScan('roast')).catch(function () {});
+            } else if (typeof ble.requestOmniAgtron === 'function') {
+              Promise.resolve(ble.requestOmniAgtron()).catch(function () {});
+            } else if (typeof ble.triggerOmniRead === 'function') {
+              Promise.resolve(ble.triggerOmniRead('filter_light')).catch(function () {});
+            }
+            return;
+          }
+          if (ble && typeof ble.connectOmni === 'function') {
+            Promise.resolve(ble.connectOmni()).then(function () {
+              ceUi.showRoastMeter = true;
+              if (typeof repaintFn === 'function') repaintFn();
+            }).catch(function () {});
+          } else {
+            S.openSheetSafe('ble-devices', null, { detent: 'full', title: 'Bluetooth Scales, R2, Omni & Smart Gear' });
+          }
+        }
+      }, S.iconEl('ble-wave', { size: 14 }), S.h('span', { text: omniActive ? 'Scan Omni Roast Now' : 'Pair DiFluid Omni' }))
+    );
+  }
+
   function renderStep1(containerEl, opts) {
+    ensureStep1OmniListeners();
     opts = opts || {};
     var inSheet = !!opts.inSheet;
     var a = S.getApp();
@@ -4180,6 +4398,7 @@ if (typeof window !== 'undefined') {
       if (a.brew) {
         a.brew.actualSecs = null;
         a.brew.actualFromTimer = false;
+        a.brew.measuredBeverageG = null;
       }
       try {
         if (typeof window !== 'undefined' && window.BTBrewStudio && typeof window.BTBrewStudio.resetTimerSession === 'function') {
@@ -4358,6 +4577,7 @@ if (typeof window !== 'undefined') {
       if (a.brew) {
         a.brew.actualSecs = null;
         a.brew.actualFromTimer = false;
+        a.brew.measuredBeverageG = null;
       }
       try {
         if (typeof window !== 'undefined' && window.BTBrewStudio) {
@@ -4815,6 +5035,15 @@ if (typeof window !== 'undefined') {
       ));
     }
 
+    _activeStep1Hook = function () {
+      if (root.isConnected) {
+        c = S.getApp().coffee || c;
+        repaintAll();
+        return true;
+      }
+      return false;
+    };
+
     repaintAll();
     return root;
   }
@@ -5013,8 +5242,10 @@ if (typeof window !== 'undefined') {
     var nameStateBadge = registerFieldStateBadge(S.h('span'), 'name');
     var roastStateBadge = registerFieldStateBadge(S.h('span'), 'roast');
 
+    var omniStNow = getOmniBleStateSafe();
+    var omniConnectedNow = !!(omniStNow.omniConnected || (omniStNow.slots && omniStNow.slots.omni && omniStNow.slots.omni.connected) || omniStNow.simulatorActive);
     var roastMeterPanel = null;
-    if (agMode !== 'off' && (agMode === 'always' || lens === 'scientist' || ceUi.showRoastMeter)) {
+    if (agMode !== 'off' && (agMode === 'always' || lens === 'scientist' || ceUi.showRoastMeter || omniConnectedNow)) {
       var curScale = c.agtron_scale || 'gourmet';
       var deltaVal = (isFinite(+c.ground_agtron) && isFinite(+c.bean_agtron) && +c.ground_agtron > 0 && +c.bean_agtron > 0)
         ? Math.round((+c.ground_agtron - +c.bean_agtron) * 10) / 10
@@ -5053,6 +5284,8 @@ if (typeof window !== 'undefined') {
               oninput: function (e) {
                 c._v64Touched = 'yes';
                 c.bean_agtron = e.target.value;
+                var bNum = parseFloat(e.target.value);
+                if (isFinite(bNum) && bNum > 0) c.agtron = Math.round(bNum);
                 syncLiveSummariesOnly();
               }
             })
@@ -5068,6 +5301,8 @@ if (typeof window !== 'undefined') {
               oninput: function (e) {
                 c._v64Touched = 'yes';
                 c.ground_agtron = e.target.value;
+                var gNum = parseFloat(e.target.value);
+                if (isFinite(gNum) && gNum > 0) c.agtron = Math.round(gNum);
                 var gEq = roastMeterToGourmet(e.target.value, c.agtron_scale);
                 var mappedR = normRoastKey('', gEq);
                 if (mappedR) { c.roast = mappedR; c.roastUnsure = ''; c.roast_unknown = ''; }
@@ -5075,18 +5310,7 @@ if (typeof window !== 'undefined') {
               }
             })
           ),
-          S.h('button', {
-            type: 'button',
-            class: 'bt-ce-chip is-compact',
-            onclick: function () {
-              var ble = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
-              if (ble && typeof ble.connectOmni === 'function') {
-                Promise.resolve(ble.connectOmni()).catch(function () {});
-              } else {
-                S.openSheetSafe('ble-devices', null, { detent: 'full' });
-              }
-            }
-          }, S.iconEl('ble-wave', { size: 14 }), S.h('span', { text: 'BLE Omni' }))
+          buildStep1OmniControls(repaintAll)
         )
       );
     }
@@ -5200,9 +5424,10 @@ if (typeof window !== 'undefined') {
             agMode !== 'off' ? S.h('button', {
               type: 'button',
               class: 'bt-ce-chip is-compact',
-              'aria-pressed': String(agMode === 'always' || lens === 'scientist' || ceUi.showRoastMeter),
+              'aria-pressed': String(agMode === 'always' || lens === 'scientist' || ceUi.showRoastMeter || omniConnectedNow),
               onclick: function () { ceUi.showRoastMeter = !ceUi.showRoastMeter; repaintAll(); }
-            }, S.iconEl('omni-nir', { size: 14 }), S.h('span', { text: 'Roast Meter' })) : null
+            }, S.iconEl('omni-nir', { size: 14 }), S.h('span', { text: 'Roast Meter' })) : null,
+            (!roastMeterPanel && agMode !== 'off') ? buildStep1OmniControls(repaintAll) : null
           )
         ),
         roastMeterPanel
@@ -5969,26 +6194,32 @@ if (typeof window !== 'undefined') {
         })
       );
     } else if (curIdx === 1) {
-      bodySlot.appendChild(S.h('div', { class: 'bt-ce-roast-grid' },
-        S.ROAST_STOPS.map(function (st) {
-          return S.h('button', {
-            type: 'button',
-            class: 'bt-ce-roast-swatch',
-            'aria-pressed': String(!c.roastUnsure && c.roast === st.key),
-            onclick: function () {
-              c._v64Touched = 'yes';
-              c.roast = st.key;
-              c.roastUnsure = '';
-              c.roast_unknown = '';
-              S.saveDraftSafe();
-              nextCardOrFinish();
-            }
-          },
-            S.h('span', { class: 'bt-ce-roast-disc', style: 'background:' + st.hex }),
-            S.h('span', { text: st.label })
-          );
-        })
-      ));
+      bodySlot.append(
+        S.h('div', { class: 'bt-ce-roast-grid' },
+          S.ROAST_STOPS.map(function (st) {
+            return S.h('button', {
+              type: 'button',
+              class: 'bt-ce-roast-swatch',
+              'aria-pressed': String(!c.roastUnsure && c.roast === st.key),
+              onclick: function () {
+                c._v64Touched = 'yes';
+                c.roast = st.key;
+                c.roastUnsure = '';
+                c.roast_unknown = '';
+                S.saveDraftSafe();
+                nextCardOrFinish();
+              }
+            },
+              S.h('span', { class: 'bt-ce-roast-disc', style: 'background:' + st.hex }),
+              S.h('span', { text: st.label })
+            );
+          })
+        ),
+        S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap' },
+          S.h('span', { style: 'font-size:11.5px;color:var(--ink-secondary)', text: c.agtron ? ('Omni Synced: Agtron ' + c.agtron) : 'Or scan beans/grounds with DiFluid Omni:' }),
+          buildStep1OmniControls(repaintAll)
+        )
+      );
     } else if (curIdx === 2) {
       bodySlot.append(
         S.h('div', { class: 'bt-ce-chips' },

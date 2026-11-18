@@ -2959,9 +2959,39 @@
     return card;
   }
 
+  var _activeXBloomBleCleanup = null;
+
   function buildXBloomConsoleCard(a, rec, onChangeUpdate) {
+    if (_activeXBloomBleCleanup) {
+      try { _activeXBloomBleCleanup(); } catch (e) {}
+      _activeXBloomBleCleanup = null;
+    }
     var inn = (typeof window !== 'undefined' && window.BTInnovate) ? window.BTInnovate : null;
     var card = dom('section', { class: 'bt-card-v6', id: 'bt-xbloom-console' });
+    var liveBadgeEl = dom('span', { class: 'bt-badge-v62 is-good', id: 'bt-xbloom-live-badge', hidden: true });
+    var sendBtnTxtEl = dom('span', { text: 'Send to xBloom via BLE' });
+
+    function syncXBloomLiveStatus(stObj) {
+      var bleRef = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
+      var st = stObj || ((bleRef && typeof bleRef.getState === 'function') ? (bleRef.getState() || {}) : {});
+      var conn = !!(st.xbloomConnected || st.simulatorActive);
+      if (conn) {
+        var stageStr = st.xbloomStage ? String(st.xbloomStage) : 'idle';
+        var parts = [st.xbloomConnected ? 'xBloom Live' : 'xBloom Sim'];
+        if (stageStr) parts.push(stageStr.charAt(0).toUpperCase() + stageStr.slice(1));
+        if (st.kettleTempC != null && isFinite(+st.kettleTempC) && +st.kettleTempC > 0) {
+          parts.push(Math.round(+st.kettleTempC) + '\u00B0C');
+        }
+        liveBadgeEl.textContent = parts.join(' \u00B7 ');
+        liveBadgeEl.hidden = false;
+        liveBadgeEl.style.display = 'inline-flex';
+        sendBtnTxtEl.textContent = 'Send to xBloom via BLE';
+      } else {
+        liveBadgeEl.hidden = true;
+        liveBadgeEl.style.display = 'none';
+        sendBtnTxtEl.textContent = 'Send to xBloom via BLE';
+      }
+    }
 
     function repaint() {
       card.textContent = '';
@@ -2995,10 +3025,12 @@
       }
 
       var omniMap = mapGrinderClicks(a.brew.grindUm, 'xbloom-studio', 'xbloom', a);
+      syncXBloomLiveStatus();
 
       card.appendChild(dom('div', { class: 'bt-card-hd' },
         dom('div', { class: 'bt-card-title-wrap' }, brewerIco('xbloom', 20), dom('h3', { class: 'bt-card-title', text: 'xBloom Studio 4-Pour & Omni Grinder Card' })),
         dom('div', { style: 'display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap' },
+          liveBadgeEl,
           makeWhyPill('grind', '? Why Grind & RPM'),
           makeWhyPill('time', '? Why 4-Pour'),
           dom('span', { class: 'bt-badge-v62 is-sci', text: 'Omni Step ' + omniMap.clicks + '/80 · ' + xb.rpm + ' RPM' })
@@ -3054,7 +3086,7 @@
         })
       ));
 
-      /* Whole-Bean 0x41 vs Pre-Ground 0x44 + Beam CTA */
+      /* Whole-Bean 0x41 vs Pre-Ground 0x44 + Send via BLE CTA */
       card.appendChild(dom('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap' },
         dom('div', { class: 'bt-pill-row' },
           dom('button', {
@@ -3084,30 +3116,92 @@
         ),
         dom('button', {
           type: 'button',
+          id: 'bt-xbloom-send-ble-btn',
           class: 'bt-chip-v6 bt-chip-accent is-active',
           onclick: function () {
             var ble = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
+            var xbPayload = {
+              doseG: +a.brew.dose || 15,
+              ratio: +a.brew.ratio || 16,
+              preGround: !xb.grinderOn,
+              wholeBean: !!xb.grinderOn,
+              grinderOn: !!xb.grinderOn,
+              opcode: xb.grinderOn ? 0x41 : 0x44,
+              grindStep: xb.grinderOn ? omniMap.clicks : 0xFE,
+              grindRpm: xb.grinderOn ? xb.rpm : 0,
+              rpm: xb.grinderOn ? xb.rpm : 0,
+              vessel: xb.vessel || 'omni2',
+              pours: xb.pours
+            };
             if (ble && typeof ble.sendXBloomRecipe === 'function') {
-              Promise.resolve(ble.sendXBloomRecipe({
-                grinderOn: xb.grinderOn,
-                opcode: xb.grinderOn ? 0x41 : 0x44,
-                rpm: xb.rpm,
-                grindStep: omniMap.clicks,
-                pours: xb.pours
-              })).then(function () {
-                showToast('Beamed 4-pour recipe to xBloom Studio!');
+              var curSt = (typeof ble.getState === 'function') ? (ble.getState() || {}) : {};
+              var ensureConn = (!curSt.xbloomConnected && !curSt.simulatorActive)
+                ? (typeof ble.connectXBloom === 'function' ? ble.connectXBloom() : (typeof ble.connectMachine === 'function' ? ble.connectMachine() : Promise.resolve()))
+                : Promise.resolve(curSt);
+              Promise.resolve(ensureConn).then(function () {
+                return ble.sendXBloomRecipe(xbPayload, { preGround: !xb.grinderOn, wholeBean: !!xb.grinderOn });
+              }).then(function (res) {
+                syncXBloomLiveStatus();
+                if (res && res.ok === false) {
+                  showToast('xBloom BLE upload could not complete \u2014 close official phone app and retry.');
+                } else {
+                  haptic('snap');
+                  showToast('Sent 4-pour recipe to xBloom Studio via BLE!');
+                }
               }).catch(function () {
-                showToast('xBloom profile armed (' + totalMl + ' mL · ' + xb.rpm + ' RPM). Pair xBloom via BLE to beam.');
+                showToast('xBloom profile armed (' + totalMl + ' mL · ' + xb.rpm + ' RPM). Pair xBloom via BLE to send.');
               });
             } else {
               showToast('xBloom 4-pour profile armed (' + totalMl + ' mL · Step ' + omniMap.clicks + ' @ ' + xb.rpm + ' RPM).');
             }
           }
-        }, ico('ble-wave', 15), dom('span', { text: 'Beam to xBloom' }))
+        }, ico('ble-wave', 15), sendBtnTxtEl)
       ));
     }
 
     repaint();
+
+    var bleSubRef = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
+    var unsubFn = null;
+    var onXbEvt = function (ev) {
+      if (!card.isConnected) {
+        if (_activeXBloomBleCleanup) { _activeXBloomBleCleanup(); _activeXBloomBleCleanup = null; }
+        return;
+      }
+      var d = (ev && ev.detail) || {};
+      var frames = Array.isArray(d.frames) ? d.frames : [];
+      var stNow = (bleSubRef && typeof bleSubRef.getState === 'function') ? Object.assign({}, bleSubRef.getState() || {}) : {};
+      stNow.xbloomConnected = true;
+      if (d.stage || d.xbloomStage) stNow.xbloomStage = d.stage || d.xbloomStage;
+      if (d.tempC > 0 || d.kettleTempC > 0) stNow.kettleTempC = d.tempC > 0 ? d.tempC : d.kettleTempC;
+      if (frames.length) {
+        var lastFr = frames[frames.length - 1];
+        if (lastFr && lastFr.stage) stNow.xbloomStage = lastFr.stage;
+        if (lastFr && lastFr.tempC > 0) stNow.kettleTempC = lastFr.tempC;
+      }
+      syncXBloomLiveStatus(stNow);
+    };
+    if (bleSubRef && typeof bleSubRef.subscribe === 'function') {
+      try {
+        unsubFn = bleSubRef.subscribe(function (bst) {
+          if (!card.isConnected) {
+            if (_activeXBloomBleCleanup) { _activeXBloomBleCleanup(); _activeXBloomBleCleanup = null; }
+            return;
+          }
+          syncXBloomLiveStatus(bst);
+        });
+      } catch (e) {}
+    }
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('bt-ble-xbloom', onXbEvt);
+    }
+    _activeXBloomBleCleanup = function () {
+      if (unsubFn) { try { unsubFn(); } catch (e) {} unsubFn = null; }
+      if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+        try { window.removeEventListener('bt-ble-xbloom', onXbEvt); } catch (e) {}
+      }
+    };
+
     return card;
   }
 
@@ -3381,17 +3475,116 @@
       }, ico('qr-passport', 15), dom('span', { text: 'Share QR Passport' }))
     );
 
-    /* 4. Kettle Fill Banner */
-    var kettleBanner = (!isPhilips && rec.method.key !== 'cold' && rec.method.key !== 'cold_drip')
-      ? dom('div', { class: 'bt-kettle-banner' },
-          dom('span', null,
-            ico('kettle-gooseneck', 16), ' Heat in kettle: ',
-            dom('b', { class: 'bt-num', text: rec.kettleG + ' g' }),
-            ' (includes ' + (rec.usesPaper ? 'paper rinse + ' : '') + 'thermal stability margin)'
-          ),
+    /* 4. Kettle Fill Banner + 1-Tap BLE Kettle Target Sync Pill (#bt-step3-kettle-ble-btn) */
+    if (stageEl._kettleBleCleanup) {
+      try { stageEl._kettleBleCleanup(); } catch (e) {}
+      stageEl._kettleBleCleanup = null;
+    }
+    var kettleBanner = null;
+    if (!isPhilips && rec.method.key !== 'cold' && rec.method.key !== 'cold_drip') {
+      var tempDisplay = tempUnit === 'F' ? (rec.tempF + ' \u00B0F') : (rec.tempC + ' \u00B0C');
+      var kettleBleTxtEl = dom('span', { text: 'Pair BLE Kettle' });
+      var kettleBleBtn = dom('button', {
+        type: 'button',
+        id: 'bt-step3-kettle-ble-btn',
+        class: 'bt-chip-v6 bt-chip-soft',
+        style: 'min-height:32px;padding:0 10px;font-size:0.74rem;font-weight:800',
+        onclick: function () {
+          var ble = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
+          if (!ble) {
+            openSheet('ble-devices', null, { detent: 'full', title: 'Bluetooth Scales, R2, Omni & Smart Gear' });
+            return;
+          }
+          var pushTarget = function () {
+            var fn = typeof ble.setKettleTargetTemp === 'function'
+              ? ble.setKettleTargetTemp.bind(ble)
+              : (typeof ble.setKettleTemp === 'function' ? ble.setKettleTemp.bind(ble) : null);
+            if (!fn) return Promise.resolve(false);
+            return Promise.resolve(fn(rec.tempC, true));
+          };
+          var curSt = (typeof ble.getState === 'function') ? (ble.getState() || {}) : {};
+          if (curSt.kettleConnected || curSt.simulatorActive) {
+            pushTarget().then(function () {
+              haptic('snap');
+              syncKettlePill();
+              showToast('Sent ' + tempDisplay + ' target to Stagg EKG Kettle!');
+            }).catch(function () {});
+          } else if (typeof ble.connectKettle === 'function') {
+            Promise.resolve(ble.connectKettle()).then(function () {
+              return pushTarget();
+            }).then(function () {
+              haptic('snap');
+              syncKettlePill();
+              showToast('Sent ' + tempDisplay + ' target to Stagg EKG Kettle!');
+            }).catch(function () {});
+          } else {
+            openSheet('ble-devices', null, { detent: 'full', title: 'Bluetooth Scales, R2, Omni & Smart Gear' });
+          }
+        }
+      }, ico('ble-wave', 13), kettleBleTxtEl);
+
+      function syncKettlePill(stArg) {
+        var bleRef = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
+        var st = stArg || ((bleRef && typeof bleRef.getState === 'function') ? (bleRef.getState() || {}) : {});
+        var kActive = !!(st.kettleConnected || st.simulatorActive);
+        if (kActive) {
+          var liveC = (st.kettleTempC != null && isFinite(+st.kettleTempC) && +st.kettleTempC > 0)
+            ? Math.round(+st.kettleTempC)
+            : Math.round(rec.tempC);
+          kettleBleTxtEl.textContent = 'Kettle ' + liveC + '\u00B0C \u00B7 Push Target';
+          kettleBleBtn.className = 'bt-chip-v6 bt-chip-accent is-active';
+        } else {
+          kettleBleTxtEl.textContent = 'Pair BLE Kettle';
+          kettleBleBtn.className = 'bt-chip-v6 bt-chip-soft';
+        }
+      }
+      syncKettlePill();
+
+      var bleKRef = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
+      var kUnsub = null;
+      var onKettleEvt = function () {
+        if (!kettleBleBtn.isConnected) {
+          if (kUnsub) { try { kUnsub(); } catch (e) {} kUnsub = null; }
+          if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+            try { window.removeEventListener('bt-ble-kettle', onKettleEvt); } catch (e) {}
+          }
+          return;
+        }
+        syncKettlePill();
+      };
+      if (bleKRef && typeof bleKRef.subscribe === 'function') {
+        try {
+          kUnsub = bleKRef.subscribe(function (bst) {
+            if (!kettleBleBtn.isConnected) {
+              if (kUnsub) { try { kUnsub(); } catch (e) {} kUnsub = null; }
+              return;
+            }
+            syncKettlePill(bst);
+          });
+        } catch (e) {}
+      }
+      if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+        window.addEventListener('bt-ble-kettle', onKettleEvt);
+      }
+      stageEl._kettleBleCleanup = function () {
+        if (kUnsub) { try { kUnsub(); } catch (e) {} kUnsub = null; }
+        if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+          try { window.removeEventListener('bt-ble-kettle', onKettleEvt); } catch (e) {}
+        }
+      };
+
+      kettleBanner = dom('div', { class: 'bt-kettle-banner' },
+        dom('span', null,
+          ico('kettle-gooseneck', 16), ' Heat in kettle: ',
+          dom('b', { class: 'bt-num', text: rec.kettleG + ' g' }),
+          ' (includes ' + (rec.usesPaper ? 'paper rinse + ' : '') + 'thermal stability margin)'
+        ),
+        dom('span', { style: 'display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap' },
+          kettleBleBtn,
           lens === 'scientist' ? dom('span', { class: 'bt-badge-v62 is-sci', text: 'Smrke CO2 · Darcy' }) : null
         )
-      : null;
+      );
+    }
 
     stageEl.appendChild(dom('section', { class: 'bt-card-v6 bt-card-hero' },
       tiles6,
@@ -3477,6 +3670,7 @@
       sub: fmtClock(rec.totalSecs, false) + ' · Audible Voice & 3-2-1 Chimes',
       secondaryLabel: 'Skip \u2192 Taste',
       onSecondary: function () {
+        if (a.brew) a.brew.measuredBeverageG = null;
         recordFinishedCupBrew(a, rec, rec.totalSecs, rec.yieldMl, false);
         goBrewStep('taste');
       },
@@ -3489,6 +3683,8 @@
   }
 
   /* ==================== 9. STEP 4: AUDIBLE & SPOKEN KITCHEN CHRONOGRAPH ('timer') ==================== */
+  var _activeStep4BleEvtCleanup = null;
+
   var _timerSession = {
     brewSig: '',
     running: false,
@@ -3500,6 +3696,8 @@
     bleUnsub: null,
     scaleConnected: false,
     realScaleConnected: false,
+    hadRealScaleWeight: false,
+    pressureConnected: false,
     simOn: false,
     armedZero: false,
     zeroFrames: 0,
@@ -3524,6 +3722,26 @@
     finishFired: false,
     lastAudioNote: 'Voice + 880 Hz Chimes ready \u2014 tap Test Sound or Start'
   };
+
+  function computeTimerMeasuredBeverageG(rec) {
+    if (!_timerSession.realScaleConnected && !_timerSession.hadRealScaleWeight) return null;
+    if (_timerSession.lockedYieldG != null && _timerSession.lockedYieldG > 12) {
+      return Math.round(_timerSession.lockedYieldG);
+    }
+    if (rec && rec.method && rec.method.outRatio && _timerSession.liveWeightG > 8) {
+      return Math.round(_timerSession.liveWeightG);
+    }
+    if (rec && rec.method && rec.method.outRatio && _timerSession.maxPourWeightG > 8) {
+      return Math.round(_timerSession.maxPourWeightG);
+    }
+    if (_timerSession.maxPourWeightG > 25) {
+      return Math.max(12, Math.round(_timerSession.maxPourWeightG - ((rec && rec.doseG) || 15) * 2.0));
+    }
+    if (_timerSession.liveWeightG > 25) {
+      return Math.max(12, Math.round(_timerSession.liveWeightG - ((rec && rec.doseG) || 15) * 2.0));
+    }
+    return null;
+  }
 
   function requestTimerWakeLock(on) {
     try {
@@ -3616,6 +3834,7 @@
       _timerSession.flowGs = 0;
       _timerSession.maxPourWeightG = 0;
       _timerSession.lockedYieldG = null;
+      _timerSession.hadRealScaleWeight = false;
       _timerSession.waves = { thetaA: 0, thetaS: 0, thetaB: 0 };
       if (_timerSession.simOn) {
         try {
@@ -3730,6 +3949,10 @@
   }
 
   function renderStep4Timer(stageEl, a) {
+    if (_activeStep4BleEvtCleanup) {
+      try { _activeStep4BleEvtCleanup(); } catch (e) {}
+      _activeStep4BleEvtCleanup = null;
+    }
     ensureBrewState(a);
     var rec = runCurrentSynthesis(a);
     var curBrewSig = [
@@ -3746,6 +3969,34 @@
       stopActiveTimerSession(true);
     }
     _timerSession.brewSig = curBrewSig;
+
+    /* Immediately sync real BLE scale & espresso pressure state on mount so already-paired gear shows live at 0.0 g! */
+    var initBle = (typeof window !== 'undefined' && window.BTBle && typeof window.BTBle.getState === 'function')
+      ? (window.BTBle.getState() || {})
+      : {};
+    var initSim = !!initBle.simulatorActive;
+    var initSc = (initBle.slots && initBle.slots.scale) || initBle.scale || {};
+    var initRealHw = !initSim && !!(initSc.connected || initBle.scaleConnected);
+    _timerSession.realScaleConnected = initRealHw;
+    _timerSession.scaleConnected = initRealHw || initSim;
+    if (initRealHw) {
+      var initW = typeof initBle.weightG === 'number' && isFinite(initBle.weightG)
+        ? Math.max(0, initBle.weightG)
+        : (typeof initSc.weightG === 'number' && isFinite(initSc.weightG) ? Math.max(0, initSc.weightG) : 0);
+      _timerSession.liveWeightG = initW;
+      _timerSession.prevBleG = initW;
+      if (initW > 8) _timerSession.hadRealScaleWeight = true;
+      if (Math.abs(initW) <= 0.5) {
+        _timerSession.zeroFrames = Math.max(_timerSession.zeroFrames || 0, 2);
+        _timerSession.armedZero = true;
+      }
+    }
+    var initPr = (initBle.slots && initBle.slots.pressure) || initBle.pressure || {};
+    _timerSession.pressureConnected = !!(initPr.connected || initBle.pressureConnected);
+    var initPVal = typeof initBle.pressureBar === 'number' && isFinite(initBle.pressureBar)
+      ? +initBle.pressureBar
+      : (typeof initPr.bar === 'number' && isFinite(initPr.bar) ? +initPr.bar : 0);
+    _timerSession.pressureBar = initPVal;
     var totalTargetS = Math.max(15, rec.totalSecs > 3600 ? 180 : rec.totalSecs);
     var steps = rec.steps || [];
     var simRecipeOpts = {
@@ -3881,13 +4132,104 @@
       }
     }, ico('voice-sound', 12), gramVoiceTxtEl);
 
+    var showPressInit = !!(_timerSession.pressureConnected || _timerSession.pressureBar > 0.2);
+    var pressurePillTxt = dom('span', { text: (+_timerSession.pressureBar || 0).toFixed(1) + ' bar' });
+    var pressurePillEl = dom('span', {
+      class: 'bt-flow-rate-pill',
+      id: 'bt-timer-pressure-pill',
+      hidden: !showPressInit,
+      style: (showPressInit ? 'display:inline-flex;' : 'display:none;') + 'background:var(--science-bg);color:var(--science);border-color:var(--science-border)'
+    }, ico('pressure-gauge', 12), pressurePillTxt);
+
     var flowPillTxt = dom('span', { text: 'Aim ~3.2 g/s' });
     var flowPillEl = dom('span', { class: 'bt-flow-rate-pill is-idle', id: 'bt-timer-flow-pill' }, ico('droplet', 12), flowPillTxt);
+
+    var bleScaleTxt = dom('span', {
+      text: _timerSession.realScaleConnected
+        ? ('Scale Live ' + _timerSession.liveWeightG.toFixed(1) + ' g')
+        : 'Pair Scale'
+    });
+    var bleScaleBtn = dom('button', {
+      type: 'button',
+      class: 'bt-demo-scale-btn' + (_timerSession.realScaleConnected ? ' is-active' : ''),
+      id: 'bt-timer-ble-scale-btn',
+      'aria-pressed': String(!!_timerSession.realScaleConnected),
+      style: _timerSession.realScaleConnected ? 'background:var(--good-bg);color:var(--good);border-color:rgba(24,96,62,0.32);font-weight:800' : '',
+      title: 'Pair Bluetooth scale or inspect live connected scale',
+      onclick: function (ev) {
+        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+        AudioCoach.unlock();
+        var bleRef = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
+        if (_timerSession.realScaleConnected) {
+          haptic('tick');
+          openSheet('ble-devices', null, { detent: 'full', title: 'Bluetooth Scales, R2, Omni & Smart Gear' });
+          return;
+        }
+        if (bleRef && typeof bleRef.connectScale === 'function') {
+          Promise.resolve(bleRef.connectScale()).then(function (stNow) {
+            var cur = stNow || (typeof bleRef.getState === 'function' ? bleRef.getState() : {}) || {};
+            var scSlot = (cur.slots && cur.slots.scale) || cur.scale || {};
+            if (!cur.simulatorActive && (scSlot.connected || cur.scaleConnected)) {
+              _timerSession.realScaleConnected = true;
+              _timerSession.scaleConnected = true;
+              _timerSession.simOn = false;
+              var wCur = typeof cur.weightG === 'number' && isFinite(cur.weightG) ? Math.max(0, cur.weightG) : 0;
+              _timerSession.liveWeightG = wCur;
+              _timerSession.prevBleG = wCur;
+              if (Math.abs(wCur) <= 0.5) {
+                _timerSession.zeroFrames = 2;
+                _timerSession.armedZero = true;
+              }
+              haptic('snap');
+              syncTimerDom();
+            }
+          }).catch(function () {});
+        } else {
+          openSheet('ble-devices', null, { detent: 'full', title: 'Bluetooth Scales, R2, Omni & Smart Gear' });
+        }
+      }
+    }, ico('ble-wave', 12), bleScaleTxt);
+
+    var showTareInit = !!(_timerSession.realScaleConnected || _timerSession.simOn);
+    var tareScaleBtn = dom('button', {
+      type: 'button',
+      class: 'bt-demo-scale-btn',
+      id: 'bt-timer-tare-btn',
+      hidden: !showTareInit,
+      style: showTareInit ? 'display:inline-flex' : 'display:none',
+      title: 'Tare scale to 0.0 g',
+      onclick: function (ev) {
+        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+        AudioCoach.unlock();
+        var bleRef = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
+        if (_timerSession.realScaleConnected && bleRef) {
+          var tareFn = typeof bleRef.tareScale === 'function'
+            ? bleRef.tareScale.bind(bleRef)
+            : (typeof bleRef.tare === 'function' ? bleRef.tare.bind(bleRef) : null);
+          if (tareFn) Promise.resolve(tareFn()).catch(function () {});
+        } else if (_timerSession.simOn && bleRef) {
+          if (typeof bleRef.tareScale === 'function') Promise.resolve(bleRef.tareScale()).catch(function () {});
+          else if (typeof bleRef.tare === 'function') Promise.resolve(bleRef.tare()).catch(function () {});
+        }
+        _timerSession.liveWeightG = 0;
+        _timerSession.prevSimG = 0;
+        _timerSession.prevBleG = 0;
+        _timerSession.flowGs = 0;
+        _timerSession.emaFlowGs = 0;
+        _timerSession.zeroFrames = 2;
+        _timerSession.armedZero = true;
+        haptic('tick');
+        syncTimerDom();
+      }
+    }, ico('tare-zero', 12), dom('span', { text: 'Tare 0g' }));
+
     var demoScaleTxt = dom('span', { text: _timerSession.simOn ? 'Demo Scale ON' : 'Demo Scale' });
     var demoScaleBtn = dom('button', {
       type: 'button',
       class: 'bt-demo-scale-btn' + (_timerSession.simOn ? ' is-active' : ''),
       id: 'bt-timer-demo-scale-btn',
+      hidden: !!_timerSession.realScaleConnected,
+      style: _timerSession.realScaleConnected ? 'display:none' : 'display:inline-flex',
       'aria-pressed': String(!!_timerSession.simOn),
       title: 'Simulate live Bluetooth scale pour rate (g/s)',
       onclick: function (ev) {
@@ -3994,7 +4336,10 @@
         audioToggleBtn,
         gramVoiceBtn,
         dom('div', { class: 'bt-timer-audio-pills' },
+          pressurePillEl,
           flowPillEl,
+          bleScaleBtn,
+          tareScaleBtn,
           demoScaleBtn
         )
       ),
@@ -4654,6 +4999,7 @@
           sub: 'Voice + 3-2-1 Pips · Screen Wake Lock',
           secondaryLabel: 'Skip \u2192 Taste',
           onSecondary: function () {
+            if (a.brew) a.brew.measuredBeverageG = null;
             recordFinishedCupBrew(a, rec, totalTargetS, rec.yieldMl, false);
             goBrewStep('taste');
           },
@@ -4849,6 +5195,29 @@
 
       flowPillTxt.textContent = shownFlowLbl;
       flowPillEl.className = 'bt-flow-rate-pill' + (shownFlowGs >= 0.15 ? '' : ' is-idle');
+
+      var showPressureNow = !!(_timerSession.pressureConnected || _timerSession.pressureBar > 0.2);
+      pressurePillEl.hidden = !showPressureNow;
+      pressurePillEl.style.display = showPressureNow ? 'inline-flex' : 'none';
+      if (showPressureNow) {
+        pressurePillTxt.textContent = (+_timerSession.pressureBar || 0).toFixed(1) + ' bar';
+      }
+
+      bleScaleBtn.className = 'bt-demo-scale-btn' + (_timerSession.realScaleConnected ? ' is-active' : '');
+      bleScaleBtn.setAttribute('aria-pressed', String(!!_timerSession.realScaleConnected));
+      bleScaleBtn.style.cssText = _timerSession.realScaleConnected
+        ? 'background:var(--good-bg);color:var(--good);border-color:rgba(24,96,62,0.32);font-weight:800'
+        : '';
+      bleScaleTxt.textContent = _timerSession.realScaleConnected
+        ? ('Scale Live ' + (_timerSession.liveWeightG || 0).toFixed(1) + ' g')
+        : 'Pair Scale';
+
+      var showTareNow = !!(_timerSession.realScaleConnected || _timerSession.simOn);
+      tareScaleBtn.hidden = !showTareNow;
+      tareScaleBtn.style.display = showTareNow ? 'inline-flex' : 'none';
+
+      demoScaleBtn.hidden = !!_timerSession.realScaleConnected;
+      demoScaleBtn.style.display = _timerSession.realScaleConnected ? 'none' : 'inline-flex';
       demoScaleBtn.className = 'bt-demo-scale-btn' + (_timerSession.simOn ? ' is-active' : '');
       demoScaleBtn.setAttribute('aria-pressed', String(!!_timerSession.simOn));
       demoScaleTxt.textContent = _timerSession.realScaleConnected
@@ -4980,6 +5349,11 @@
       requestTimerWakeLock(false);
       a.brew.actualSecs = actualStoppedS;
       a.brew.actualFromTimer = true;
+      var measStopG = computeTimerMeasuredBeverageG(rec);
+      if (measStopG != null && measStopG > 10) {
+        a.brew.measuredBeverageG = measStopG;
+        a.brew.yieldOut = measStopG;
+      }
       saveDraft();
       AudioCoach.playFinishChord();
       haptic('celebrate');
@@ -5018,7 +5392,19 @@
       var usedS = _timerSession.stopped
         ? _timerSession.actualStoppedS
         : (_timerSession.elapsedS > 0 ? Math.max(1, Math.round(_timerSession.elapsedS)) : rec.totalSecs);
-      var lockedY = _timerSession.lockedYieldG || null;
+      var measFinG = computeTimerMeasuredBeverageG(rec);
+      var lockedY = (measFinG != null && measFinG > 10)
+        ? measFinG
+        : (_timerSession.lockedYieldG || null);
+      if (measFinG != null && measFinG > 10) {
+        a.brew.measuredBeverageG = measFinG;
+      } else if (a.brew && !_timerSession.realScaleConnected && !_timerSession.hadRealScaleWeight) {
+        a.brew.measuredBeverageG = null;
+      }
+      if (_activeStep4BleEvtCleanup) {
+        try { _activeStep4BleEvtCleanup(); } catch (e) {}
+        _activeStep4BleEvtCleanup = null;
+      }
       stopActiveTimerSession(false);
       recordFinishedCupBrew(a, rec, usedS, lockedY, _timerSession.stopped || _timerSession.elapsedS > 0);
       stopActiveTimerSession(true);
@@ -5026,7 +5412,7 @@
       goBrewStep('taste');
     }
 
-    /* Wire WebBLE Scale Live Weight / Post-Tare Auto-Start / Dripper-Lift Yield Lock */
+    /* Wire WebBLE Scale Live Weight / Post-Tare Auto-Start / Dripper-Lift Yield Lock / Physical Buttons / Pressure */
     if (_timerSession.bleUnsub) {
       try { _timerSession.bleUnsub(); } catch (_) {}
       _timerSession.bleUnsub = null;
@@ -5037,16 +5423,26 @@
         _timerSession.bleUnsub = ble.subscribe(function (st) {
           if (!st || !container.isConnected) return;
           var isSimPacket = !!st.simulatorActive;
+          var prSlot = (st.slots && st.slots.pressure) || st.pressure || {};
+          _timerSession.pressureConnected = !!(prSlot.connected || st.pressureConnected);
+          var pr = typeof st.pressureBar === 'number' ? st.pressureBar : prSlot.bar;
+          if (pr != null && isFinite(pr)) _timerSession.pressureBar = +pr;
+
           /* When Demo Live Scale is driven synchronously by tickRaf, ignore background simulator ticks while paused/stopped */
           if (isSimPacket && (_timerSession.stopped || !_timerSession.running)) return;
-          var sc = (st.slots && st.slots.scale) || st;
-          var w = typeof sc.weightG === 'number' ? sc.weightG : (typeof st.weightG === 'number' ? st.weightG : null);
+          var sc = (st.slots && st.slots.scale) || st.scale || st;
+          var isRealHw = !isSimPacket && !!(sc.connected || st.scaleConnected);
+          _timerSession.realScaleConnected = isRealHw;
+          _timerSession.scaleConnected = isRealHw || isSimPacket;
+          if (isRealHw) _timerSession.simOn = false;
+
+          var w = typeof st.weightG === 'number'
+            ? st.weightG
+            : (typeof sc.weightG === 'number' ? sc.weightG : null);
           if (w != null && isFinite(w)) {
-            var isRealHw = !isSimPacket && !!(sc.connected || st.scaleConnected);
-            _timerSession.realScaleConnected = isRealHw;
-            _timerSession.scaleConnected = isRealHw || isSimPacket;
             var cleanW = Math.max(0, w);
             if (isRealHw) {
+              if (cleanW > 8) _timerSession.hadRealScaleWeight = true;
               var nowMs = Date.now();
               var dtBle = _timerSession.prevBleTs ? Math.max(0.04, Math.min(1.0, (nowMs - _timerSession.prevBleTs) / 1000)) : 0.1;
               var hwFl = typeof st.flowRateGs === 'number' ? st.flowRateGs : (typeof sc.flowGs === 'number' ? sc.flowGs : (typeof st.flowGs === 'number' ? st.flowGs : null));
@@ -5068,20 +5464,89 @@
                 toggleStartPause();
               }
             }
-            if (_timerSession.running) {
+            if (_timerSession.running || isRealHw) {
               if (cleanW > _timerSession.maxPourWeightG) _timerSession.maxPourWeightG = cleanW;
+            }
+            if (_timerSession.running) {
               /* Dripper-Lift Yield Lock when cone is lifted off carafe */
               if (!rec.method.outRatio && _timerSession.maxPourWeightG >= rec.hotPourG * 0.8 && cleanW >= rec.hotPourG * 0.42 && cleanW <= _timerSession.maxPourWeightG - Math.max(18, rec.doseG * 1.4) && Math.abs(_timerSession.flowGs) <= 0.25) {
                 _timerSession.lockedYieldG = cleanW;
               }
             }
-            if (st.lockedYieldG > 10) _timerSession.lockedYieldG = +st.lockedYieldG;
+            if (st.lockedYieldG > 10 || (st.autoPilot && st.autoPilot.lockedYieldG > 10)) {
+              _timerSession.lockedYieldG = +(st.lockedYieldG || st.autoPilot.lockedYieldG);
+            }
           }
-          var pr = typeof st.pressureBar === 'number' ? st.pressureBar : (st.slots && st.slots.pressure && st.slots.pressure.bar);
-          if (pr != null && isFinite(pr)) _timerSession.pressureBar = +pr;
           if (!isSimPacket) syncTimerDom();
         });
       } catch (_) {}
+    }
+
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      var onScaleBtnEvt = function (ev) {
+        if (!container.isConnected) {
+          if (_activeStep4BleEvtCleanup) {
+            try { _activeStep4BleEvtCleanup(); } catch (e) {}
+            _activeStep4BleEvtCleanup = null;
+          }
+          return;
+        }
+        var d = (ev && ev.detail) || {};
+        var act = String(d.action || d.type || '').toLowerCase();
+        if (act === 'timer_start' || act === 'start') {
+          if (!_timerSession.running) {
+            toggleStartPause();
+          } else if (d.brand === 'decent' || d.brand === 'skale') {
+            toggleStartPause();
+          }
+        } else if (act === 'timer_toggle' || act === 'toggle') {
+          toggleStartPause();
+        } else if (act === 'timer_stop' || act === 'stop' || act === 'pause' || act === 'timer_pause') {
+          if (_timerSession.running) {
+            toggleStartPause();
+          }
+        } else if (act === 'timer_reset' || act === 'reset') {
+          stopActiveTimerSession(true);
+          haptic('tick');
+          rerender();
+        } else if (act === 'tare') {
+          _timerSession.liveWeightG = 0;
+          _timerSession.prevBleG = 0;
+          _timerSession.prevSimG = 0;
+          _timerSession.flowGs = 0;
+          _timerSession.emaFlowGs = 0;
+          _timerSession.zeroFrames = 2;
+          _timerSession.armedZero = true;
+          haptic('tick');
+          syncTimerDom();
+        }
+      };
+
+      var onPressureEvt = function (ev) {
+        if (!container.isConnected) {
+          if (_activeStep4BleEvtCleanup) {
+            try { _activeStep4BleEvtCleanup(); } catch (e) {}
+            _activeStep4BleEvtCleanup = null;
+          }
+          return;
+        }
+        var d = (ev && ev.detail) || {};
+        var pVal = d.pressureBar != null ? d.pressureBar : d.bar;
+        if (pVal != null && isFinite(+pVal)) {
+          _timerSession.pressureConnected = true;
+          _timerSession.pressureBar = +pVal;
+          syncTimerDom();
+        }
+      };
+
+      window.addEventListener('bt-ble-scale-button', onScaleBtnEvt);
+      window.addEventListener('bt-ble-pressure', onPressureEvt);
+      _activeStep4BleEvtCleanup = function () {
+        if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+          try { window.removeEventListener('bt-ble-scale-button', onScaleBtnEvt); } catch (e) {}
+          try { window.removeEventListener('bt-ble-pressure', onPressureEvt); } catch (e) {}
+        }
+      };
     }
 
     paintDynamicStickyBar();

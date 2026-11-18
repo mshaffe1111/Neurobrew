@@ -1211,6 +1211,32 @@
       refType: 'card', /* 'card' | 'quarter' | 'euro' */
       clickVal: 22,
       result: null
+    },
+
+    /* 5-Slot Bluetooth Bench UI & Live Omni Telemetry State */
+    bleBench: {
+      scaleBrand: 'auto',
+      xbloomPreGround: true,
+      diagOpen: false,
+      lastScaleBtn: '',
+      lastScaleBtnAtMs: 0,
+      localRxCount: 0,
+      localLastHex: '',
+      localLastPacketAtMs: 0
+    },
+    omniLive: {
+      beanAgtron: null,
+      groundAgtron: null,
+      agtron: null,
+      roastDelta: null,
+      suggestedRoast: '',
+      d10Um: null,
+      d50Um: null,
+      d90Um: null,
+      span: null,
+      finesUnder200Pct: null,
+      bins: [],
+      updatedAtMs: 0
     }
   };
 
@@ -1233,15 +1259,48 @@
     return {};
   }
 
+  function setTextIfChanged(el, nextStr) {
+    if (!el) return;
+    const s = String(nextStr == null ? '' : nextStr);
+    if (el.textContent !== s) el.textContent = s;
+  }
+
+  function setClassIfChanged(el, nextCls) {
+    if (!el) return;
+    if (el.className !== nextCls) el.className = nextCls;
+  }
+
+  function formatBytesHex(arr, maxLen) {
+    if (!arr || !arr.length) return '';
+    const lim = Math.min(arr.length, maxLen || 24);
+    const out = [];
+    for (let i = 0; i < lim; i++) {
+      out.push((arr[i] & 0xFF).toString(16).toUpperCase().padStart(2, '0'));
+    }
+    return out.join(' ') + (arr.length > lim ? ' ...' : '');
+  }
+
+  function shortGattUuid(u) {
+    if (!u) return '';
+    const s = String(u).toLowerCase();
+    const m = s.match(/^0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb$/);
+    if (m) return '0x' + m[1].toUpperCase();
+    return s.length > 14 ? (s.slice(0, 8) + '..') : s;
+  }
+
   let _labBleEventsBound = false;
   let _labBleSubscribed = false;
   let _labLastR2ToastAt = 0;
   let _labLastR2ToastTds = -1;
+  let _labLastOmniToastAt = 0;
+  let _labLastOmniSig = '';
   const _labBenchHooks = [];
   const _labLiveHooks = {
     hwBar: null,
     studioEy: null,
-    ratioYield: null
+    ratioYield: null,
+    grinderLab: null,
+    studioAgtron: null
   };
 
   function registerLabBenchHook(rootEl, refreshFn) {
@@ -1325,21 +1384,140 @@
     return true;
   }
 
+  function applyLabLiveOmniReading(detail, opts) {
+    if (!detail || typeof detail !== 'object') return false;
+    const om = labState.omniLive;
+    let changedAny = false;
+
+    const beanAg = (detail.beanAgtron != null && Number.isFinite(+detail.beanAgtron) && +detail.beanAgtron > 0) ? +(+detail.beanAgtron).toFixed(1) : null;
+    const groundAg = (detail.groundAgtron != null && Number.isFinite(+detail.groundAgtron) && +detail.groundAgtron > 0) ? +(+detail.groundAgtron).toFixed(1) : null;
+    const singleAg = (detail.agtron != null && Number.isFinite(+detail.agtron) && +detail.agtron > 0) ? +(+detail.agtron).toFixed(1) : null;
+    const d10 = (detail.d10Um != null && Number.isFinite(+detail.d10Um) && +detail.d10Um > 0) ? +(+detail.d10Um).toFixed(1) : null;
+    const d50 = (detail.d50Um != null && Number.isFinite(+detail.d50Um) && +detail.d50Um > 0) ? +(+detail.d50Um).toFixed(1) : null;
+    const d90 = (detail.d90Um != null && Number.isFinite(+detail.d90Um) && +detail.d90Um > 0) ? +(+detail.d90Um).toFixed(1) : null;
+    const spanVal = (detail.span != null && Number.isFinite(+detail.span) && +detail.span > 0)
+      ? +(+detail.span).toFixed(2)
+      : (d10 != null && d50 != null && d90 != null && d50 > 0 ? +((d90 - d10) / d50).toFixed(2) : null);
+    const hasBins = Array.isArray(detail.bins) && detail.bins.length > 0;
+
+    if (beanAg != null) {
+      om.beanAgtron = beanAg;
+      labState.roastFresh.beanG = clamp(beanAg, 20, 110, labState.roastFresh.beanG);
+      changedAny = true;
+    }
+    if (groundAg != null) {
+      om.groundAgtron = groundAg;
+      labState.roastFresh.groundG = clamp(groundAg, 20, 110, labState.roastFresh.groundG);
+      labState.wave.agtron = Math.round(labState.roastFresh.groundG);
+      changedAny = true;
+    } else if (singleAg != null && beanAg == null) {
+      om.agtron = singleAg;
+      om.groundAgtron = singleAg;
+      labState.roastFresh.groundG = clamp(singleAg, 20, 110, labState.roastFresh.groundG);
+      labState.wave.agtron = Math.round(labState.roastFresh.groundG);
+      changedAny = true;
+    }
+    if (singleAg != null) om.agtron = singleAg;
+    if (om.beanAgtron != null && om.groundAgtron != null) {
+      om.roastDelta = +(om.groundAgtron - om.beanAgtron).toFixed(1);
+    } else if (detail.roastDelta != null && Number.isFinite(+detail.roastDelta)) {
+      om.roastDelta = +(+detail.roastDelta).toFixed(1);
+    }
+    if (detail.suggestedRoast) om.suggestedRoast = String(detail.suggestedRoast);
+
+    if (d10 != null) { om.d10Um = d10; changedAny = true; }
+    if (d50 != null) {
+      om.d50Um = d50;
+      labState.wave.d50Um = Math.round(clamp(d50, 120, 1400, labState.wave.d50Um));
+      labState.grinderLab.targetUm = Math.round(clamp(d50, 120, 1400, labState.grinderLab.targetUm));
+      changedAny = true;
+    }
+    if (d90 != null) { om.d90Um = d90; changedAny = true; }
+    if (spanVal != null) om.span = spanVal;
+    if (detail.finesUnder200Pct != null && Number.isFinite(+detail.finesUnder200Pct)) {
+      om.finesUnder200Pct = +(+detail.finesUnder200Pct).toFixed(1);
+    }
+    if (hasBins) {
+      om.bins = detail.bins.map(function (b) {
+        return {
+          lowerUm: Number(b.lowerUm) || 50,
+          upperUm: Number(b.upperUm) || 100,
+          pct: Number.isFinite(+b.pct) ? +(+b.pct).toFixed(2) : 0
+        };
+      });
+      changedAny = true;
+    }
+    if (!changedAny) return false;
+    om.updatedAtMs = Date.now();
+
+    let anyLabMounted = false;
+    if (typeof _labLiveHooks.hwBar === 'function') {
+      try { if (_labLiveHooks.hwBar()) anyLabMounted = true; } catch (_) {}
+    }
+    if (typeof _labLiveHooks.grinderLab === 'function') {
+      try { if (_labLiveHooks.grinderLab({ fromLive: true, d50Changed: d50 != null })) anyLabMounted = true; } catch (_) {}
+    }
+    if (typeof _labLiveHooks.studioAgtron === 'function') {
+      try { if (_labLiveHooks.studioAgtron({ fromLive: true })) anyLabMounted = true; } catch (_) {}
+    }
+    if (notifyLabBenchHooks()) anyLabMounted = true;
+
+    const sig = [om.beanAgtron || '', om.groundAgtron || '', om.d50Um || '', om.bins.length].join('|');
+    const nowMs = Date.now();
+    const isDup = (nowMs - _labLastOmniToastAt < 260) && sig === _labLastOmniSig;
+    _labLastOmniSig = sig;
+    if (!isDup && !(opts && opts.silent) && anyLabMounted) {
+      _labLastOmniToastAt = nowMs;
+      const a = getApp();
+      const step1Handling = !!(a && a.activeTab === 'brew' && (a.brewStep === 'coffee' || a.screen === 'coffee'));
+      if (!step1Handling) {
+        const msgParts = [];
+        if (om.groundAgtron || om.beanAgtron) {
+          msgParts.push('Agtron ' + (om.beanAgtron != null ? (om.beanAgtron + '/') : '') + (om.groundAgtron != null ? om.groundAgtron : om.beanAgtron));
+        }
+        if (om.d50Um) msgParts.push('D50 ' + Math.round(om.d50Um) + ' \u00B5m');
+        if (msgParts.length) {
+          CK.haptic('snap');
+          notify('DiFluid Omni Auto-Synced: ' + msgParts.join(' \u00B7 '));
+        }
+      }
+    }
+    return true;
+  }
+
   function ensureLabBleListeners() {
     if (typeof window === 'undefined') return;
     if (!_labBleEventsBound && typeof window.addEventListener === 'function') {
       _labBleEventsBound = true;
       window.addEventListener('bt-ble-refractometer', function (ev) {
         const d = (ev && ev.detail) || {};
+        labState.bleBench.localRxCount++;
+        labState.bleBench.localLastPacketAtMs = Date.now();
         applyLabLiveR2Reading(d, { fromEvent: true });
       });
       window.addEventListener('bt-ble-omni', function (ev) {
         const d = (ev && ev.detail) || {};
-        if (Number.isFinite(+d.beanAgtron) && +d.beanAgtron > 0) labState.roastFresh.beanG = +d.beanAgtron;
-        if (Number.isFinite(+d.groundAgtron) && +d.groundAgtron > 0) labState.roastFresh.groundG = +d.groundAgtron;
-        if (Number.isFinite(+d.d50Um) && +d.d50Um > 0) labState.wave.d50Um = +d.d50Um;
+        labState.bleBench.localRxCount++;
+        labState.bleBench.localLastPacketAtMs = Date.now();
+        applyLabLiveOmniReading(d, { fromEvent: true });
+      });
+      window.addEventListener('bt-ble-scale-button', function (ev) {
+        const d = (ev && ev.detail) || {};
+        labState.bleBench.localRxCount++;
+        labState.bleBench.localLastPacketAtMs = Date.now();
+        labState.bleBench.lastScaleBtn = String(d.action || d.button || 'pressed');
+        labState.bleBench.lastScaleBtnAtMs = Date.now();
         if (typeof _labLiveHooks.hwBar === 'function') {
           try { _labLiveHooks.hwBar(); } catch (_) {}
+        }
+        notifyLabBenchHooks();
+      });
+      window.addEventListener('bt-ble-xbloom', function (ev) {
+        const d = (ev && ev.detail) || {};
+        labState.bleBench.localRxCount++;
+        labState.bleBench.localLastPacketAtMs = Date.now();
+        if (Array.isArray(d.bytes) && d.bytes.length) {
+          labState.bleBench.localLastHex = formatBytesHex(d.bytes, 24);
         }
         notifyLabBenchHooks();
       });
@@ -1350,6 +1528,9 @@
       try {
         ble.subscribe(function (bst) {
           if (!bst) return;
+          labState.bleBench.localRxCount++;
+          labState.bleBench.localLastPacketAtMs = Date.now();
+
           const conn = !!bst.refractometerConnected;
           const liveTds = (bst.lastTds != null && +bst.lastTds > 0 && (conn || +bst.lastR2AtMs > 0))
             ? Math.round(+bst.lastTds * 100) / 100
@@ -1366,6 +1547,17 @@
           if (conn && bst.lastTempC != null && Number.isFinite(+bst.lastTempC) && +bst.lastTempC > 0) {
             labState.bc.measTempC = Math.round(+bst.lastTempC * 10) / 10;
           }
+
+          /* Sync Omni state if snapshot carries new Omni payload */
+          const omSnap = bst.lastOmni || bst.omni;
+          if (omSnap && (omSnap.beanAgtron > 0 || omSnap.groundAgtron > 0 || omSnap.agtron > 0 || omSnap.d50Um > 0 || (Array.isArray(omSnap.bins) && omSnap.bins.length))) {
+            const nextSig = [omSnap.beanAgtron || '', omSnap.groundAgtron || omSnap.agtron || '', omSnap.d50Um || '', Array.isArray(omSnap.bins) ? omSnap.bins.length : 0].join('|');
+            if (nextSig !== _labLastOmniSig) {
+              applyLabLiveOmniReading(omSnap, { fromSubscribe: true });
+              return;
+            }
+          }
+
           if (typeof _labLiveHooks.hwBar === 'function') {
             try { _labLiveHooks.hwBar(); } catch (_) {}
           }
@@ -1374,6 +1566,12 @@
           }
           if (typeof _labLiveHooks.ratioYield === 'function') {
             try { _labLiveHooks.ratioYield({ metaOnly: true }); } catch (_) {}
+          }
+          if (typeof _labLiveHooks.grinderLab === 'function') {
+            try { _labLiveHooks.grinderLab({ metaOnly: true }); } catch (_) {}
+          }
+          if (typeof _labLiveHooks.studioAgtron === 'function') {
+            try { _labLiveHooks.studioAgtron({ metaOnly: true }); } catch (_) {}
           }
           notifyLabBenchHooks();
         });
@@ -1387,6 +1585,9 @@
         brix: initBle.lastBrix,
         refractiveIndex: initBle.lastRefractiveIndex
       }, { silent: true });
+    }
+    if (initBle.lastOmni && !labState.omniLive.updatedAtMs) {
+      applyLabLiveOmniReading(initBle.lastOmni, { silent: true });
     }
   }
 
@@ -1423,11 +1624,11 @@
     }, ic('info-circle', { size: 14 }), guideBtnSpan);
 
     const guideCard = domH('div', { class: 'bt-r2-guide-card', hidden: true },
-      domH('strong', { text: 'DiFluid R2 Optical Precision & Spoon-Chill Protocol (20–28 °C / 68–82 °F)' }),
+      domH('strong', { text: 'DiFluid R2 Optical Precision & Spoon-Chill Protocol (20\u201328 \u00B0C / 68\u201382 \u00B0F)' }),
       domH('ul', { class: 'bt-r2-guide-list' },
-        domH('li', { text: 'Ideal Sample Temp (20–28 °C / 68–82 °F, within ±2 °C of room/prism): Piping-hot drops (>32–60 °C) cause sapphire-prism dn/dT thermal-gradient drift AND rapid 0.3 mL micro-drop flash evaporation that falsely inflates %TDS!' }),
-        domH('li', { text: '15–20s Metal-Spoon Chill: Stir 3–5 mL in a room-temp metal spoon for 15–20s (cools 75 °C \u2192 ~24 °C with zero evaporation), zero prism with 20–25 °C distilled water, apply 3–4 drops, and wait 5–10s for prism lock.' }),
-        domH('li', { text: 'Espresso & Immersion Syringe Filter: Pass espresso or French press/AeroPress samples through a 0.22–0.45 um syringe filter so suspended fines and lipids do not scatter the CCD shadowline.' })
+        domH('li', { text: 'Ideal Sample Temp (20\u201328 \u00B0C / 68\u201382 \u00B0F, within \u00B12 \u00B0C of room/prism): Piping-hot drops (>32\u201360 \u00B0C) cause sapphire-prism dn/dT thermal-gradient drift AND rapid 0.3 mL micro-drop flash evaporation that falsely inflates %TDS!' }),
+        domH('li', { text: '15\u201320s Metal-Spoon Chill: Stir 3\u20135 mL in a room-temp metal spoon for 15\u201320s (cools 75 \u00B0C \u2192 ~24 \u00B0C with zero evaporation), zero prism with 20\u201325 \u00B0C distilled water, apply 3\u20134 drops, and wait 5\u201310s for prism lock.' }),
+        domH('li', { text: 'Espresso & Immersion Syringe Filter: Pass espresso or French press/AeroPress samples through a 0.22\u20130.45 um syringe filter so suspended fines and lipids do not scatter the CCD shadowline.' })
       ),
       o.onCoolSim ? domH('div', { class: 'bt-lab-btn-row' },
         domH('button', {
@@ -1436,7 +1637,7 @@
           onclick: function () {
             o.onCoolSim(23.4);
           }
-        }, 'Simulate 15s Metal-Spoon Chill (23.4 °C)')
+        }, 'Simulate 15s Metal-Spoon Chill (23.4 \u00B0C)')
       ) : null
     );
 
@@ -1455,8 +1656,8 @@
         } catch (_) { ev = null; }
       }
       if (!ev) ev = evaluateR2SampleTemp(tVal);
-      badge.className = 'bt-r2-temp-badge is-' + ev.state;
-      badgeTxt.textContent = ev.badgeText;
+      setClassIfChanged(badge, 'bt-r2-temp-badge is-' + ev.state);
+      setTextIfChanged(badgeTxt, ev.badgeText);
     }
 
     syncTemp();
@@ -1677,7 +1878,7 @@
       domH('div', { class: 'bt-lab-title-group' },
         ic('scan-lens', { size: 20 }),
         domH('div', null,
-          domH('h3', { text: 'Pocket Micron Lens — Camera PSD & Burr-Zero Calibrator' }),
+          domH('h3', { text: 'Pocket Micron Lens \u2014 Camera PSD & Burr-Zero Calibrator' }),
           domH('p', { class: 'bt-lab-sub', text: 'Zero-cost smartphone reference-card Sauvola PSD analyzer' })
         )
       ),
@@ -1706,24 +1907,80 @@
     return wrap;
   }
 
-  function renderHardwareBench(fullMode) {
+  function runBleAsync(promiseOrVal, errPrefix) {
+    Promise.resolve(promiseOrVal).catch(function (err) {
+      const msg = err && err.message ? String(err.message) : '';
+      if (/User cancelled|NotFoundError|chooser/i.test(msg)) return;
+      if (msg) notify((errPrefix ? (errPrefix + ': ') : '') + msg);
+    });
+  }
+
+  function buildActiveXBloomProfileFromApp(preGroundFlag) {
+    const a = getApp();
+    const cf = (a && a.coffee) || {};
+    const br = (a && a.brew) || {};
+    const doseG = clamp(+br.dose || 15, 8, 25, 15);
+    const ratioVal = clamp(+br.ratio || ((+br.water || 240) / Math.max(1, doseG)), 8, 22, 16);
+    const tempC = clamp(+br.tempC || (br.tempF ? Math.round((+br.tempF - 32) * 5 / 9) : 93), 40, 99, 93);
+    if (window.BTInnovate && typeof window.BTInnovate.synthesizeXBloomProfile === 'function') {
+      try {
+        const syn = window.BTInnovate.synthesizeXBloomProfile(
+          { agtron: +cf.agtron || labState.roastFresh.groundG || 78, process: cf.process || 'washed' },
+          { doseG: doseG, ratio: ratioVal, tempC: tempC, preGround: !!preGroundFlag }
+        );
+        if (syn && typeof syn === 'object') {
+          syn.preGround = !!preGroundFlag;
+          syn.wholeBean = !preGroundFlag;
+          return syn;
+        }
+      } catch (_) {}
+    }
+    const totMl = Math.round(doseG * ratioVal);
+    const bMl = Math.max(30, Math.round(doseG * 3));
+    const p1Ml = Math.max(40, Math.round((totMl - bMl) * 0.55));
+    const p2Ml = Math.max(20, totMl - bMl - p1Ml);
+    return {
+      doseG: doseG,
+      ratio: ratioVal,
+      preGround: !!preGroundFlag,
+      wholeBean: !preGroundFlag,
+      grindStep: preGroundFlag ? 0xFE : 48,
+      pours: [
+        { volumeMl: bMl, temp: tempC, pattern: 'spiral', flowRateMls: 3.5, pauseS: 30, agitation: 'none' },
+        { volumeMl: p1Ml, temp: tempC, pattern: 'spiral', flowRateMls: 3.3, pauseS: 12, agitation: 'none' },
+        { volumeMl: p2Ml, temp: Math.max(84, tempC - 1), pattern: 'circular', flowRateMls: 3.1, pauseS: 0, agitation: 'none' }
+      ]
+    };
+  }
+
+  function renderHardwareBench(fullMode, hostContext) {
     ensureLabBleListeners();
+    const idPfx = hostContext === 'sheet' ? 'bt-sheet-ble-' : 'bt-bench-';
     const ble = window.BTBle || {};
     const caps = typeof ble.capabilities === 'function'
       ? ble.capabilities()
       : { webBluetooth: typeof navigator !== 'undefined' && !!navigator.bluetooth };
-    const st = getBleStateSafe();
-    const root = domH('div', { class: 'bt-ble-bench' + (fullMode ? ' is-full' : '') });
+    const stInit = getBleStateSafe();
+    const root = domH('div', {
+      class: 'bt-ble-bench' + (fullMode ? ' is-full' : ''),
+      'data-ble-bench-host': hostContext || 'studio',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box;'
+    });
+
+    const bluefyHref = 'bluefy://open?url=' + encodeURIComponent(typeof location !== 'undefined' ? location.href : 'https://mshaffe1111.github.io/Neurobrew/');
 
     /* 1. Zero API Key Required Banner + Platform Detection */
-    const banner = domH('div', { class: 'bt-ble-zero-key-banner' },
-      domH('div', { class: 'bt-ble-banner-main' },
+    const simToggleLbl = domH('span', {
+      text: stInit.simulatorActive ? 'Stop 10Hz Bench Simulator' : '1-Tap 10Hz Full Bench Simulator'
+    });
+    const banner = domH('div', { class: 'bt-ble-zero-key-banner', style: 'min-width:0;max-width:100%;box-sizing:border-box;' },
+      domH('div', { class: 'bt-ble-banner-main', style: 'min-width:0;' },
         ic('ble-wave', { size: 22 }),
-        domH('div', null,
-          domH('strong', { text: 'Direct Web Bluetooth — Zero API Key Required' }),
+        domH('div', { style: 'min-width:0;' },
+          domH('strong', { text: 'Direct Web Bluetooth \u2014 Zero API Key Required' }),
           domH('p', {
             text: caps.webBluetooth
-              ? '1. Power on gear  ·  2. Close vendor phone app so GATT is unlocked  ·  3. Tap any slot below to pair directly in browser.'
+              ? '1. Power on gear  \u00B7  2. Close vendor phone app so GATT is unlocked  \u00B7  3. Tap Pair or Scan Any BLE on any slot below.'
               : 'WebKit hides Web Bluetooth here: tap Open in Bluefy on iPhone/iPad for live BLE, or launch our 10Hz Full Bench Simulator right now!'
           })
         )
@@ -1731,20 +1988,21 @@
       domH('div', { class: 'bt-lab-btn-row' },
         !caps.webBluetooth ? domH('a', {
           class: 'bt-lab-btn',
-          href: 'bluefy://open?url=' + encodeURIComponent(typeof location !== 'undefined' ? location.href : 'https://mshaffe1111.github.io/Neurobrew/')
+          href: bluefyHref
         }, ic('ble-wave', { size: 15 }), domH('span', { text: 'Open in Bluefy (iOS BLE)' })) : null,
         domH('button', {
           type: 'button',
           class: 'bt-lab-btn is-accent',
+          'data-ble-action': 'toggle-simulator',
           onclick: function () {
-            if (st.simulatorActive && typeof ble.stopSimulator === 'function') {
+            const curNow = getBleStateSafe();
+            if (curNow.simulatorActive && typeof ble.stopSimulator === 'function') {
               ble.stopSimulator();
               notify('Stopped 10Hz BLE Bench Simulator.');
             } else if (typeof ble.startSimulator === 'function') {
               ble.startSimulator();
               notify('10Hz Full Bench Simulator active across all 5 slots!');
             } else {
-              /* Local simulation fallback into Studio 1 & Studio 6 */
               labState.bc.measTds = 1.42;
               labState.bc.measTempC = 23.4;
               labState.roastFresh.beanG = 74.2;
@@ -1754,202 +2012,692 @@
             CK.haptic('snap');
             refreshBenchLive();
           }
-        }, ic('play', { size: 15 }), domH('span', { text: st.simulatorActive ? 'Stop 10Hz Bench Simulator' : '1-Tap 10Hz Full Bench Simulator' }))
+        }, ic('play', { size: 15 }), simToggleLbl)
       )
     );
     root.appendChild(banner);
 
-    /* 2. 5 Concurrent WebBLE Hardware Slots */
-    const slotsGrid = domH('div', { class: 'bt-ble-slots-grid' });
-
-    const slotDefs = [
-      {
-        id: 'scale',
-        icon: 'scale-deck',
-        title: '1. Smart Scale (11 Families)',
-        families: 'Acaia · DiFluid Microbalance/Ti · Bookoo Themis · Timemore Classic/OSP/Compact · Felicita · Decent · Varia AKU · Skale II · Eureka · Hiroia · SIG 0x181D',
-        readout: function (s) {
-          const sc = s.scale || {};
-          return sc.connected
-            ? (Number(sc.weightG || 0).toFixed(1) + ' g  ·  ' + Number(sc.flowGs || 0).toFixed(1) + ' g/s')
-            : 'Standby · 0.0 g';
-        },
-        actions: [
-          { lbl: 'Pair Scale', primary: true, fn: function () { if (ble.connectScale) ble.connectScale(); else notify('Scale pairing requires WebBLE browser or Simulator.'); } },
-          { lbl: 'Tare 0.0g', fn: function () { if (ble.tare) ble.tare(); CK.haptic('tick'); } },
-          { lbl: 'Sim Lift', fn: function () { if (ble.simulateDripperLift) ble.simulateDripperLift(); } }
-        ]
-      },
-      {
-        id: 'pressure',
-        icon: 'espresso',
-        title: '2. Espresso Pressure (2 Families)',
-        families: 'Pressensor / Smart Espresso Profiler (0x185B mbar) · Bookoo Espresso Monitor (0x0FFE bar)',
-        readout: function (s) {
-          const pr = s.pressure || {};
-          return pr.connected ? (Number(pr.bar || 0).toFixed(2) + ' bar live') : 'Standby · 0.0 bar';
-        },
-        actions: [
-          { lbl: 'Pair Pressure', primary: true, fn: function () { if (ble.connectPressure) ble.connectPressure(); else notify('Use Chromium WebBLE or 10Hz Simulator.'); } },
-          { lbl: 'Disconnect', fn: function () { if (ble.disconnectPressure) ble.disconnectPressure(); } }
-        ]
-      },
-      {
-        id: 'refractometer',
-        icon: 'refract-prism',
-        title: '3. DiFluid R2 Extract',
-        families: 'Optical %TDS · Refractive Index nD20 · Prism Temp ATC · Live Zero-Typing Auto-Sync',
-        readout: function (s) {
-          const r2 = s.refractometer || {};
-          const conn = !!(r2.connected || s.refractometerConnected);
-          const tds = r2.tds || labState.bc.measTds;
-          const tempStr = Number(r2.tempC || labState.bc.measTempC || 22.5).toFixed(1) + ' \u00B0C';
-          if (conn) {
-            return tds > 0
-              ? ('DiFluid R2 Connected · Auto-Sync · ' + Number(tds).toFixed(2) + '% TDS · ' + tempStr)
-              : ('DiFluid R2 Connected · Auto-Sync Active · ' + tempStr);
-          }
-          return tds > 0
-            ? (Number(tds).toFixed(2) + '% TDS · ' + tempStr)
-            : 'Standby · Ready to Read';
-        },
-        actions: function (s) {
-          const isPaired = !!(s.refractometerConnected || (s.refractometer && s.refractometer.connected));
-          const canTrigger = !!(isPaired || s.simulatorActive);
-          const acts = [];
-          if (canTrigger) {
-            acts.push({
-              lbl: 'Read R2 Now',
-              primary: true,
-              id: 'bt-bench-r2-read-btn',
-              fn: function () { if (ble.triggerRefractometerRead) ble.triggerRefractometerRead(); }
-            });
-            acts.push({
-              lbl: 'Avg x3',
-              id: 'bt-bench-r2-avg3-btn',
-              fn: function () { if (ble.triggerRefractometerRead) ble.triggerRefractometerRead({ averageCount: 3 }); }
-            });
-            if (isPaired) {
-              acts.push({
-                lbl: 'Disconnect',
-                fn: function () { if (ble.disconnectRefractometer) ble.disconnectRefractometer(); }
-              });
-            }
-          } else {
-            acts.push({
-              lbl: 'Pair DiFluid R2',
-              primary: true,
-              id: 'bt-bench-r2-pair-btn',
-              fn: function () { if (ble.connectRefractometer) ble.connectRefractometer(); }
-            });
-          }
-          acts.push({
-            lbl: 'Sim R2 (23.4 C)',
-            fn: function () {
-              if (ble.simulateRefractometerRead) {
-                ble.simulateRefractometerRead();
-              } else {
-                applyLabLiveR2Reading({ tds: 1.42, tempC: 23.4, brix: brixFromTds(1.42), refractiveIndex: +nd20FromBrix(brixFromTds(1.42)).toFixed(5) });
-              }
-              CK.haptic('sweetSpotLock');
-              refreshBenchLive();
-            }
-          });
-          acts.push({
-            lbl: 'Sim Hot (37.8 C)',
-            fn: function () {
-              labState.bc.measTds = 1.48;
-              labState.bc.measTempC = 37.8;
-              CK.haptic('tick');
-              notify('Hot sample alert (37.8 C): Metal-spoon cool 15-20s to avoid evaporation drift!');
-              refreshBenchLive();
-            }
-          });
-          return acts;
-        }
-      },
-      {
-        id: 'omni',
-        icon: 'omni-nir',
-        title: '4. DiFluid Omni (Agtron & PSD)',
-        families: 'NIR Whole-Bean & Ground Agtron · Roast Delta · 2D Optical D10 / D50 / D90 um & Span',
-        readout: function (s) {
-          const om = s.omni || {};
-          if (om.beanAgtron || om.d50Um) {
-            return 'Agtron ' + (om.beanAgtron || '--') + '/' + (om.groundAgtron || '--') + ' · D50 ' + (om.d50Um || '--') + ' um';
-          }
-          return 'Bean ' + labState.roastFresh.beanG.toFixed(1) + ' / Ground ' + labState.roastFresh.groundG.toFixed(1) + ' Ag';
-        },
-        actions: [
-          { lbl: 'Pair Omni', primary: true, fn: function () { if (ble.connectOmni) ble.connectOmni(); } },
-          { lbl: 'Scan Omni', fn: function () { if (ble.triggerOmniRead) ble.triggerOmniRead(); } },
-          {
-            lbl: 'Sim Omni',
-            fn: function () {
-              if (ble.simulateOmniRead) ble.simulateOmniRead();
-              labState.roastFresh.beanG = 75.4;
-              labState.roastFresh.groundG = 83.6;
-              labState.wave.d50Um = 515;
-              CK.haptic('snap');
-              notify('Simulated Omni scan: Bean 75.4 / Ground 83.6 (Delta +8.2) · D50 515 um.');
-              refreshBenchLive();
-            }
-          }
-        ]
-      },
-      {
-        id: 'machine',
-        icon: 'xbloom',
-        title: '5. xBloom Studio & Stagg EKG+',
-        families: 'xBloom 0xFFE0 (Safety Gate: 0x41 Whole-Bean vs 0x44/0xFE Pre-Ground) · Stagg EKG+ 0x1820 Temp',
-        readout: function (s) {
-          const mc = s.machine || {};
-          return mc.connected
-            ? ((mc.name || 'Connected') + (mc.tempC ? ' · ' + mc.tempC + ' C' : ''))
-            : 'Safety Gate Armed (Whole-Bean vs Pre-Ground)';
-        },
-        actions: [
-          { lbl: 'Pair xBloom', primary: true, fn: function () { if (ble.connectXBloom) ble.connectXBloom(); } },
-          { lbl: 'Pair Stagg EKG+', fn: function () { if (ble.connectKettle) ble.connectKettle(); } }
-        ]
-      }
-    ];
-
-    const liveReadoutEls = [];
-    const liveActionRows = [];
-    function renderActionButtonsInto(container, actionsSpec, curState) {
-      container.textContent = '';
-      const list = typeof actionsSpec === 'function' ? actionsSpec(curState) : actionsSpec;
-      (list || []).forEach(function (act) {
-        const attrs = {
-          type: 'button',
-          class: 'bt-lab-btn is-sm' + (act.primary ? ' is-primary' : ''),
-          onclick: act.fn
-        };
-        if (act.id) attrs.id = act.id;
-        container.appendChild(domH('button', attrs, act.lbl));
+    /* Helper to construct a slot header with live dot, icon, title, device name & battery % */
+    function createSlotHeader(iconName, titleText) {
+      const dotEl = domH('span', { class: 'bt-hw-dot', 'data-slot-dot': '1' });
+      const devBadgeEl = domH('span', {
+        class: 'bt-epistemic-pill is-craft',
+        'data-slot-device': '1',
+        style: 'font-size:0.72rem;padding:2px 8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;',
+        text: 'Standby'
       });
+      const batBadgeEl = domH('span', {
+        class: 'bt-epistemic-pill is-verified num-tab',
+        'data-slot-battery': '1',
+        style: 'font-size:0.72rem;padding:2px 7px;',
+        hidden: true,
+        text: ''
+      });
+      const headEl = domH('div', {
+        class: 'bt-ble-slot-top',
+        style: 'justify-content:space-between;flex-wrap:wrap;gap:6px;min-width:0;'
+      },
+        domH('div', { style: 'display:flex;align-items:center;gap:7px;min-width:0;' },
+          dotEl,
+          ic(iconName, { size: 19 }),
+          domH('strong', { style: 'min-width:0;', text: titleText })
+        ),
+        domH('div', { style: 'display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:0;' },
+          devBadgeEl,
+          batBadgeEl
+        )
+      );
+      return {
+        el: headEl,
+        sync: function (isLive, deviceName, batteryPct, isSim) {
+          setClassIfChanged(dotEl, 'bt-hw-dot' + (isLive ? ' is-live' : ''));
+          setClassIfChanged(devBadgeEl, 'bt-epistemic-pill ' + (isLive ? (isSim ? 'is-research' : 'is-verified') : 'is-craft'));
+          setTextIfChanged(devBadgeEl, isLive ? (deviceName || 'Connected') : 'Standby');
+          const hasBat = batteryPct != null && Number.isFinite(+batteryPct) && +batteryPct >= 0 && +batteryPct <= 100;
+          batBadgeEl.hidden = !hasBat;
+          if (hasBat) setTextIfChanged(batBadgeEl, Math.round(+batteryPct) + '%');
+        }
+      };
     }
 
-    slotDefs.forEach(function (sd) {
-      const valNode = domH('div', { class: 'bt-ble-slot-readout num-tab', text: sd.readout(st) });
-      const actRowNode = domH('div', { class: 'bt-lab-btn-row' });
-      renderActionButtonsInto(actRowNode, sd.actions, st);
-      liveReadoutEls.push({ el: valNode, fn: sd.readout });
-      if (typeof sd.actions === 'function') {
-        liveActionRows.push({ el: actRowNode, fn: sd.actions });
+    function createRecessedReadout(attrName) {
+      const txtSpan = domH('span', {
+        style: 'min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word;',
+        text: ''
+      });
+      const box = domH('div', {
+        class: 'bt-ble-slot-readout num-tab',
+        'data-slot-readout': attrName,
+        style: 'min-width:0;max-width:100%;box-sizing:border-box;'
+      }, txtSpan);
+      return { el: box, txt: txtSpan };
+    }
+
+    const slotsGrid = domH('div', { class: 'bt-ble-slots-grid', style: 'min-width:0;max-width:100%;' });
+
+    /* ---- SLOT 1: Smart Scale (11+ Families + Auto-Detect All Scales) ---- */
+    const scaleHead = createSlotHeader('scale-deck', '1. Smart Scale');
+    const scaleReadout = createRecessedReadout('scale');
+    const scaleFamilies = [
+      { key: 'auto', lbl: 'Auto-Detect All Scales (15+ Models)' },
+      { key: 'acaia', lbl: 'Acaia (Lunar / Pearl / Pyxis / Cinco)' },
+      { key: 'difluid', lbl: 'DiFluid (Microbalance / Ti)' },
+      { key: 'bookoo', lbl: 'Bookoo (Themis Mini / Ultra)' },
+      { key: 'timemore', lbl: 'Timemore (Black Mirror / Nano / OSP)' },
+      { key: 'decent', lbl: 'Decent Scale / Half Decent' },
+      { key: 'felicita', lbl: 'Felicita (Arc / Incline / Parallel)' },
+      { key: 'varia', lbl: 'Varia AKU / MHW Cube / Exagram' },
+      { key: 'skale', lbl: 'Atomax Skale II' },
+      { key: 'eureka', lbl: 'Eureka Precisa / Brewista / CFS-9002' },
+      { key: 'hiroia', lbl: 'Hiroia Jimmy' },
+      { key: 'sig', lbl: 'Standard BLE Weight Scale (0x181D)' }
+    ];
+    const scaleBrandSel = domH('select', {
+      class: 'bt-lab-select',
+      'data-ble-select': 'scale-brand',
+      'aria-label': 'Smart scale family filter',
+      style: 'width:100%;max-width:100%;font-size:16px;',
+      onchange: function () {
+        labState.bleBench.scaleBrand = scaleBrandSel.value || 'auto';
       }
-      const card = domH('div', { class: 'bt-ble-slot-card', 'data-slot': sd.id },
-        domH('div', { class: 'bt-ble-slot-top' },
-          ic(sd.icon, { size: 20 }),
-          domH('strong', { text: sd.title })
-        ),
-        valNode,
-        domH('p', { class: 'bt-ble-slot-fams', text: sd.families }),
-        actRowNode
-      );
-      slotsGrid.appendChild(card);
     });
+    scaleFamilies.forEach(function (sf) {
+      const opt = domH('option', { value: sf.key, text: sf.lbl });
+      if (sf.key === (labState.bleBench.scaleBrand || 'auto')) opt.selected = true;
+      scaleBrandSel.appendChild(opt);
+    });
+    const scaleSelectWrap = domH('label', { class: 'bt-lab-field-lbl', style: 'min-width:0;max-width:100%;' },
+      domH('span', { text: 'Scale Family Filter' }),
+      scaleBrandSel
+    );
+
+    const scaleUnpairedRow = domH('div', { class: 'bt-lab-btn-row' },
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'scale-pair-btn',
+        'data-ble-action': 'scale-pair',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.connectScale === 'function') {
+            runBleAsync(b.connectScale({ brand: labState.bleBench.scaleBrand || 'auto' }), 'Scale pair');
+          } else {
+            notify('Scale pairing requires a WebBLE browser or 10Hz Simulator.');
+          }
+        }
+      }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Pair Smart Scale' })),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'scale-scan-any-btn',
+        'data-ble-action': 'scale-scan-any',
+        class: 'bt-lab-btn is-sm',
+        title: 'List every nearby BLE device in case your scale has a custom name',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.connectScale === 'function') {
+            runBleAsync(b.connectScale({ acceptAll: true, brand: labState.bleBench.scaleBrand || 'auto' }), 'Scale scan');
+          } else {
+            notify('Scale scanning requires a WebBLE browser.');
+          }
+        }
+      }, 'Scan Any BLE Scale')
+    );
+
+    const scaleConnectedRow = domH('div', { class: 'bt-lab-btn-row', hidden: true },
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'scale-tare-btn',
+        'data-ble-action': 'scale-tare',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.tare === 'function') runBleAsync(b.tare(), 'Tare');
+          CK.haptic('tick');
+        }
+      }, 'Tare (0.0 g)'),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'scale-timer-start-btn',
+        'data-ble-action': 'scale-timer-start',
+        class: 'bt-lab-btn is-sm',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.startTimer === 'function') {
+            runBleAsync(b.startTimer(), 'Scale timer');
+          }
+          try {
+            window.dispatchEvent(new CustomEvent('bt-ble-scale-button', {
+              detail: { slot: 'scale', packetType: 'button', action: 'timer_start', source: 'bench_ui' }
+            }));
+          } catch (_) {}
+          CK.haptic('tick');
+          notify('Scale timer started.');
+        }
+      }, 'Start Timer'),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'scale-timer-reset-btn',
+        'data-ble-action': 'scale-timer-reset',
+        class: 'bt-lab-btn is-sm',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.resetTimer === 'function') {
+            runBleAsync(b.resetTimer(), 'Scale timer reset');
+          }
+          try {
+            window.dispatchEvent(new CustomEvent('bt-ble-scale-button', {
+              detail: { slot: 'scale', packetType: 'button', action: 'timer_reset', source: 'bench_ui' }
+            }));
+          } catch (_) {}
+          CK.haptic('tick');
+          notify('Scale timer reset.');
+        }
+      }, 'Reset Timer'),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'scale-disconnect-btn',
+        'data-ble-action': 'scale-disconnect',
+        class: 'bt-lab-btn is-sm is-danger',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          const curS = getBleStateSafe();
+          if (curS.scaleConnected && typeof b.disconnectScale === 'function') {
+            runBleAsync(b.disconnectScale(), 'Disconnect scale');
+          } else if (curS.simulatorActive && typeof b.stopSimulator === 'function') {
+            b.stopSimulator();
+          }
+          CK.haptic('tick');
+        }
+      }, 'Disconnect')
+    );
+
+    const scaleCard = domH('div', {
+      class: 'bt-ble-slot-card',
+      'data-slot': 'scale',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box;'
+    },
+      scaleHead.el,
+      scaleReadout.el,
+      domH('p', {
+        class: 'bt-ble-slot-fams',
+        text: 'Acaia \u00B7 DiFluid Microbalance/Ti \u00B7 Bookoo Themis \u00B7 Timemore \u00B7 Felicita \u00B7 Decent \u00B7 Varia AKU \u00B7 Skale II \u00B7 Eureka/Brewista \u00B7 Hiroia \u00B7 SIG 0x181D'
+      }),
+      scaleSelectWrap,
+      scaleUnpairedRow,
+      scaleConnectedRow
+    );
+    slotsGrid.appendChild(scaleCard);
+
+    /* ---- SLOT 2: Espresso Pressure (Bookoo EM / Pressensor / ESS 0x181A) ---- */
+    const pressureHead = createSlotHeader('pressure-gauge', '2. Espresso Pressure');
+    const pressureReadout = createRecessedReadout('pressure');
+    const pressureUnpairedRow = domH('div', { class: 'bt-lab-btn-row' },
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'pressure-pair-btn',
+        'data-ble-action': 'pressure-pair',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.connectPressure === 'function') {
+            runBleAsync(b.connectPressure(), 'Pressure pair');
+          } else {
+            notify('Pressure pairing requires WebBLE or 10Hz Simulator.');
+          }
+        }
+      }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Pair Pressure Sensor' })),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'pressure-scan-any-btn',
+        'data-ble-action': 'pressure-scan-any',
+        class: 'bt-lab-btn is-sm',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.connectPressure === 'function') {
+            runBleAsync(b.connectPressure({ acceptAll: true }), 'Pressure scan');
+          }
+        }
+      }, 'Scan Any BLE')
+    );
+    const pressureConnectedRow = domH('div', { class: 'bt-lab-btn-row', hidden: true },
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'pressure-zero-btn',
+        'data-ble-action': 'pressure-zero',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.zeroPressure === 'function') runBleAsync(b.zeroPressure(), 'Zero pressure');
+          CK.haptic('tick');
+          notify('Zeroed pressure sensor to 0.0 bar.');
+        }
+      }, 'Zero Sensor (0.0 bar)'),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'pressure-disconnect-btn',
+        'data-ble-action': 'pressure-disconnect',
+        class: 'bt-lab-btn is-sm is-danger',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          const curS = getBleStateSafe();
+          if (curS.pressureConnected && typeof b.disconnectPressure === 'function') {
+            runBleAsync(b.disconnectPressure(), 'Disconnect pressure');
+          } else if (curS.simulatorActive && typeof b.stopSimulator === 'function') {
+            b.stopSimulator();
+          }
+          CK.haptic('tick');
+        }
+      }, 'Disconnect')
+    );
+    const pressureCard = domH('div', {
+      class: 'bt-ble-slot-card',
+      'data-slot': 'pressure',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box;'
+    },
+      pressureHead.el,
+      pressureReadout.el,
+      domH('p', {
+        class: 'bt-ble-slot-fams',
+        text: 'Bookoo Espresso Monitor (0x0FFF) \u00B7 Pressensor / Smart Espresso Profiler \u00B7 BLE SIG ESS (0x181A / 0x2A6D)'
+      }),
+      pressureUnpairedRow,
+      pressureConnectedRow
+    );
+    slotsGrid.appendChild(pressureCard);
+
+    /* ---- SLOT 3: Refractometer (DiFluid R2 Extract) ---- */
+    const r2Head = createSlotHeader('refract-prism', '3. DiFluid R2 Extract');
+    const r2Readout = createRecessedReadout('refractometer');
+    const r2UnpairedRow = domH('div', { class: 'bt-lab-btn-row' },
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'r2-pair-btn',
+        'data-ble-action': 'r2-pair',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.connectRefractometer === 'function') {
+            runBleAsync(b.connectRefractometer(), 'DiFluid R2 pair');
+          }
+        }
+      }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Pair DiFluid R2' })),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'r2-scan-any-btn',
+        'data-ble-action': 'r2-scan-any',
+        class: 'bt-lab-btn is-sm',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.connectRefractometer === 'function') {
+            runBleAsync(b.connectRefractometer({ acceptAll: true }), 'DiFluid R2 scan');
+          }
+        }
+      }, 'Scan Any BLE'),
+      domH('button', {
+        type: 'button',
+        'data-ble-action': 'r2-sim',
+        class: 'bt-lab-btn is-sm',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.simulateRefractometerRead === 'function') {
+            b.simulateRefractometerRead();
+          } else {
+            applyLabLiveR2Reading({ tds: 1.42, tempC: 23.4, brix: brixFromTds(1.42), refractiveIndex: +nd20FromBrix(brixFromTds(1.42)).toFixed(5) });
+          }
+          CK.haptic('sweetSpotLock');
+          refreshBenchLive();
+        }
+      }, 'Sim R2 (23.4 \u00B0C)')
+    );
+    const r2ConnectedRow = domH('div', { class: 'bt-lab-btn-row', hidden: true },
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'r2-read-btn',
+        'data-ble-action': 'r2-read',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.triggerRefractometerRead === 'function') {
+            runBleAsync(b.triggerRefractometerRead(), 'R2 read');
+          }
+        }
+      }, 'Read R2 Now'),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'r2-avg3-btn',
+        'data-ble-action': 'r2-avg3',
+        class: 'bt-lab-btn is-sm',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.triggerRefractometerRead === 'function') {
+            runBleAsync(b.triggerRefractometerRead({ averageCount: 3 }), 'R2 Avg x3');
+          }
+        }
+      }, 'Avg x3'),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'r2-disconnect-btn',
+        'data-ble-action': 'r2-disconnect',
+        class: 'bt-lab-btn is-sm is-danger',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          const curS = getBleStateSafe();
+          if (curS.refractometerConnected && typeof b.disconnectRefractometer === 'function') {
+            runBleAsync(b.disconnectRefractometer(), 'Disconnect R2');
+          } else if (curS.simulatorActive && typeof b.stopSimulator === 'function') {
+            b.stopSimulator();
+          }
+          CK.haptic('tick');
+        }
+      }, 'Disconnect')
+    );
+    const r2Card = domH('div', {
+      class: 'bt-ble-slot-card',
+      'data-slot': 'refractometer',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box;'
+    },
+      r2Head.el,
+      r2Readout.el,
+      domH('p', {
+        class: 'bt-ble-slot-fams',
+        text: 'Optical %TDS \u00B7 Refractive Index nD20 \u00B7 Prism Temp ATC \u00B7 Live Zero-Typing Auto-Sync across Lab & Tasting'
+      }),
+      r2UnpairedRow,
+      r2ConnectedRow
+    );
+    slotsGrid.appendChild(r2Card);
+
+    /* ---- SLOT 4: Roast & Particle Analyzer (DiFluid Omni) ---- */
+    const omniHead = createSlotHeader('omni-nir', '4. DiFluid Omni');
+    const omniReadout = createRecessedReadout('omni');
+    const omniUnpairedRow = domH('div', { class: 'bt-lab-btn-row' },
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'omni-pair-btn',
+        'data-ble-action': 'omni-pair',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.connectOmni === 'function') {
+            runBleAsync(b.connectOmni(), 'DiFluid Omni pair');
+          }
+        }
+      }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Pair DiFluid Omni' })),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'omni-scan-any-btn',
+        'data-ble-action': 'omni-scan-any',
+        class: 'bt-lab-btn is-sm',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.connectOmni === 'function') {
+            runBleAsync(b.connectOmni({ acceptAll: true }), 'DiFluid Omni scan');
+          }
+        }
+      }, 'Scan Any BLE'),
+      domH('button', {
+        type: 'button',
+        'data-ble-action': 'omni-sim',
+        class: 'bt-lab-btn is-sm',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.simulateOmniRead === 'function') {
+            b.simulateOmniRead('filter_light');
+          } else {
+            applyLabLiveOmniReading({ beanAgtron: 68.4, groundAgtron: 76.2, agtron: 76.2, roastDelta: 7.8, d10Um: 198.4, d50Um: 565.0, d90Um: 862.6, span: 1.18 });
+          }
+          CK.haptic('snap');
+          refreshBenchLive();
+        }
+      }, 'Sim Omni')
+    );
+    const omniConnectedRow = domH('div', { class: 'bt-lab-btn-row', hidden: true },
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'omni-agtron-btn',
+        'data-ble-action': 'omni-scan-agtron',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.triggerOmniRead === 'function') {
+            runBleAsync(b.triggerOmniRead({ mode: 'agtron' }), 'Omni roast scan');
+          }
+          CK.haptic('tick');
+        }
+      }, 'Scan Roast / Agtron'),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'omni-psd-btn',
+        'data-ble-action': 'omni-scan-psd',
+        class: 'bt-lab-btn is-sm',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.triggerOmniRead === 'function') {
+            runBleAsync(b.triggerOmniRead({ mode: 'psd' }), 'Omni PSD scan');
+          }
+          CK.haptic('tick');
+        }
+      }, 'Scan Grind PSD'),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'omni-disconnect-btn',
+        'data-ble-action': 'omni-disconnect',
+        class: 'bt-lab-btn is-sm is-danger',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          const curS = getBleStateSafe();
+          if (curS.omniConnected && typeof b.disconnectOmni === 'function') {
+            runBleAsync(b.disconnectOmni(), 'Disconnect Omni');
+          } else if (curS.simulatorActive && typeof b.stopSimulator === 'function') {
+            b.stopSimulator();
+          }
+          CK.haptic('tick');
+        }
+      }, 'Disconnect')
+    );
+    const omniCard = domH('div', {
+      class: 'bt-ble-slot-card',
+      'data-slot': 'omni',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box;'
+    },
+      omniHead.el,
+      omniReadout.el,
+      domH('p', {
+        class: 'bt-ble-slot-fams',
+        text: 'NIR Whole-Bean & Ground Agtron \u00B7 Roast Delta \u00B7 2D Optical D10 / D50 / D90 \u00B5m & PSD Histogram'
+      }),
+      omniUnpairedRow,
+      omniConnectedRow
+    );
+    slotsGrid.appendChild(omniCard);
+
+    /* ---- SLOT 5: Smart Gooseneck Kettle (Stagg EKG+) & Smart Brewer (xBloom) ---- */
+    const machineHead = createSlotHeader('kettle-gooseneck', '5. Kettle & xBloom');
+    const machineReadout = createRecessedReadout('machine');
+
+    /* 5A. Fellow Stagg EKG+ Kettle Sub-Controls */
+    const kettleStatusLine = domH('div', {
+      class: 'bt-lab-hint num-tab',
+      'data-ble-readout': 'kettle',
+      style: 'font-weight:700;color:var(--ink);min-width:0;overflow-wrap:anywhere;',
+      text: ''
+    });
+    const kettlePushLbl = domH('span', { text: 'Push Recipe Temp' });
+    const kettleUnpairedRow = domH('div', { class: 'bt-lab-btn-row' },
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'kettle-pair-btn',
+        'data-ble-action': 'kettle-pair',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.connectKettle === 'function') {
+            runBleAsync(b.connectKettle(), 'Stagg EKG+ pair');
+          }
+        }
+      }, ic('kettle-gooseneck', { size: 14 }), domH('span', { text: 'Pair Stagg EKG+ Kettle' })),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'kettle-scan-any-btn',
+        'data-ble-action': 'kettle-scan-any',
+        class: 'bt-lab-btn is-sm',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.connectKettle === 'function') {
+            runBleAsync(b.connectKettle({ acceptAll: true }), 'Kettle scan');
+          }
+        }
+      }, 'Scan Any BLE')
+    );
+    const kettleConnectedRow = domH('div', { class: 'bt-lab-btn-row', hidden: true },
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'kettle-push-btn',
+        'data-ble-action': 'kettle-push-temp',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          const a = getApp();
+          const br = (a && a.brew) || {};
+          const targetC = Math.round(clamp(+br.tempC || (br.tempF ? ((+br.tempF - 32) * 5 / 9) : labState.wave.kettleC || 93), 40, 100, 93));
+          const targetF = Math.round(targetC * 9 / 5 + 32);
+          if (typeof b.setKettleTemp === 'function') {
+            runBleAsync(b.setKettleTemp(targetC, true), 'Kettle target');
+          }
+          CK.haptic('snap');
+          notify('Pushed ' + targetC + ' \u00B0C (' + targetF + ' \u00B0F) target to Stagg EKG+ Kettle.');
+        }
+      }, ic('kettle-gooseneck', { size: 14 }), kettlePushLbl),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'kettle-disconnect-btn',
+        'data-ble-action': 'kettle-disconnect',
+        class: 'bt-lab-btn is-sm is-danger',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          const curS = getBleStateSafe();
+          if (curS.kettleConnected && typeof b.disconnectKettle === 'function') {
+            runBleAsync(b.disconnectKettle(), 'Disconnect kettle');
+          } else if (curS.simulatorActive && typeof b.stopSimulator === 'function') {
+            b.stopSimulator();
+          }
+          CK.haptic('tick');
+        }
+      }, 'Disconnect Kettle')
+    );
+
+    /* 5B. xBloom Studio / Original Sub-Controls */
+    const xbloomStatusLine = domH('div', {
+      class: 'bt-lab-hint num-tab',
+      'data-ble-readout': 'xbloom',
+      style: 'font-weight:700;color:var(--ink);min-width:0;overflow-wrap:anywhere;',
+      text: ''
+    });
+    const xbloomSafetyLbl = domH('span', {
+      text: labState.bleBench.xbloomPreGround ? 'Safety: Pre-Ground (0x44 OFF)' : 'Mode: Whole-Bean (0x41 ON)'
+    });
+    const xbloomSafetyChip = domH('button', {
+      type: 'button',
+      class: 'bt-lab-chip' + (labState.bleBench.xbloomPreGround ? ' is-active' : ''),
+      'data-ble-action': 'xbloom-toggle-safety',
+      'aria-pressed': String(!!labState.bleBench.xbloomPreGround),
+      onclick: function () {
+        labState.bleBench.xbloomPreGround = !labState.bleBench.xbloomPreGround;
+        CK.haptic('tick');
+        refreshBenchLive();
+      }
+    }, xbloomSafetyLbl);
+
+    const xbloomUnpairedRow = domH('div', { class: 'bt-lab-btn-row' },
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'xbloom-pair-btn',
+        'data-ble-action': 'xbloom-pair',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.connectXBloom === 'function') {
+            runBleAsync(b.connectXBloom(), 'xBloom pair');
+          }
+        }
+      }, ic('brewer-xbloom', { size: 14 }), domH('span', { text: 'Pair xBloom' })),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'xbloom-scan-any-btn',
+        'data-ble-action': 'xbloom-scan-any',
+        class: 'bt-lab-btn is-sm',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          if (typeof b.connectXBloom === 'function') {
+            runBleAsync(b.connectXBloom({ acceptAll: true }), 'xBloom scan');
+          }
+        }
+      }, 'Scan Any BLE')
+    );
+    const xbloomConnectedRow = domH('div', { class: 'bt-lab-btn-row', hidden: true },
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'xbloom-send-btn',
+        'data-ble-action': 'xbloom-send-recipe',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          const isPg = !!labState.bleBench.xbloomPreGround;
+          const prof = buildActiveXBloomProfileFromApp(isPg);
+          if (typeof b.sendXBloomRecipe === 'function') {
+            Promise.resolve(b.sendXBloomRecipe(prof, { preGround: isPg, wholeBean: !isPg })).then(function (res) {
+              if (res && res.ok) {
+                CK.haptic('celebrate');
+                notify('Sent recipe to xBloom (' + (isPg ? 'Pre-Ground Grinder OFF' : 'Whole-Bean Grinder ON') + ').');
+              }
+            }).catch(function (err) {
+              if (err && err.message) notify('xBloom send: ' + err.message);
+            });
+          }
+        }
+      }, ic('brewer-xbloom', { size: 14 }), domH('span', { text: 'Send Recipe to xBloom' })),
+      domH('button', {
+        type: 'button',
+        id: idPfx + 'xbloom-disconnect-btn',
+        'data-ble-action': 'xbloom-disconnect',
+        class: 'bt-lab-btn is-sm is-danger',
+        onclick: function () {
+          const b = window.BTBle || ble;
+          const curS = getBleStateSafe();
+          if (curS.xbloomConnected && typeof b.disconnectXBloom === 'function') {
+            runBleAsync(b.disconnectXBloom(), 'Disconnect xBloom');
+          } else if (curS.simulatorActive && typeof b.stopSimulator === 'function') {
+            b.stopSimulator();
+          }
+          CK.haptic('tick');
+        }
+      }, 'Disconnect xBloom')
+    );
+
+    const machineCard = domH('div', {
+      class: 'bt-ble-slot-card',
+      'data-slot': 'machine',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box;'
+    },
+      machineHead.el,
+      machineReadout.el,
+      domH('div', {
+        style: 'display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:10px;background:var(--bg-subtle, #F2EAE0);min-width:0;max-width:100%;box-sizing:border-box;'
+      },
+        kettleStatusLine,
+        kettleUnpairedRow,
+        kettleConnectedRow
+      ),
+      domH('div', {
+        style: 'display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:10px;background:var(--bg-subtle, #F2EAE0);min-width:0;max-width:100%;box-sizing:border-box;'
+      },
+        xbloomStatusLine,
+        domH('div', { class: 'bt-lab-chip-row' }, xbloomSafetyChip),
+        xbloomUnpairedRow,
+        xbloomConnectedRow
+      )
+    );
+    slotsGrid.appendChild(machineCard);
     root.appendChild(slotsGrid);
 
     /* Live R2 Refractometer Sample Temp Readiness Badge + Spoon-Chill Guide on Bench */
@@ -1962,24 +2710,19 @@
     });
     root.appendChild(benchR2Widget);
 
-    function refreshBenchLive() {
-      const cur = getBleStateSafe();
-      liveReadoutEls.forEach(function (item) {
-        item.el.textContent = item.fn(cur);
-      });
-      liveActionRows.forEach(function (item) {
-        renderActionButtonsInto(item.el, item.fn, cur);
-      });
-      if (benchR2Widget && benchR2Widget._syncTemp) benchR2Widget._syncTemp();
-    }
-    registerLabBenchHook(root, refreshBenchLive);
-
     if (fullMode) {
       /* 3. Remembered Gear Auto-Reconnect & Workflow Tool-Mode Pills */
       const remList = (getApp().gear && getApp().gear.ble && getApp().gear.ble.rememberedDevices) ||
         (getApp().prefs && getApp().prefs.gear && getApp().prefs.gear.ble && getApp().prefs.gear.ble.rememberedDevices) || [];
 
-      const remCard = domH('div', { class: 'bt-lab-subcard' },
+      const remHintEl = domH('p', {
+        class: 'bt-lab-hint',
+        text: remList.length
+          ? ('Remembered devices (' + remList.length + '): ' + remList.map(function (d) { return d.name || d.id; }).join(', '))
+          : 'Paired scales, refractometers, and analyzers appear here for silent 0-popup getDevices() reconnection.'
+      });
+
+      const remCard = domH('div', { class: 'bt-lab-subcard', style: 'min-width:0;max-width:100%;box-sizing:border-box;' },
         domH('div', { class: 'bt-lab-card-head' },
           domH('div', { class: 'bt-lab-title-group' },
             ic('check-seal', { size: 18 }),
@@ -1989,17 +2732,13 @@
             type: 'button',
             class: 'bt-lab-btn is-sm',
             onclick: function () {
-              if (ble.autoReconnectRemembered) ble.autoReconnectRemembered();
+              const b = window.BTBle || ble;
+              if (typeof b.autoReconnectRemembered === 'function') runBleAsync(b.autoReconnectRemembered(), 'Auto-reconnect');
               notify('Scanning remembered WebBLE permissions via getDevices()...');
             }
           }, 'Auto-Reconnect Remembered')
         ),
-        domH('p', {
-          class: 'bt-lab-hint',
-          text: remList.length
-            ? ('Remembered devices (' + remList.length + '): ' + remList.map(function (d) { return d.name || d.id; }).join(', '))
-            : 'Paired scales, refractometers, and analyzers appear here for silent 0-popup getDevices() reconnection.'
-        })
+        remHintEl
       );
 
       const toolRow = domH('div', { class: 'bt-toolmode-grid' });
@@ -2067,14 +2806,13 @@
         }
         if (parsed && Array.isArray(parsed.records) && parsed.records.length) {
           const rec = parsed.records[0];
-          if (rec.tds) labState.bc.measTds = +rec.tds;
-          if (rec.beanAgtron) labState.roastFresh.beanG = +rec.beanAgtron;
-          if (rec.groundAgtron) labState.roastFresh.groundG = +rec.groundAgtron;
+          if (rec.tds) applyLabLiveR2Reading({ tds: +rec.tds, tempC: rec.tempC || 23.4 }, { silent: true });
+          if (rec.beanAgtron || rec.groundAgtron || rec.d50Um) applyLabLiveOmniReading(rec, { silent: true });
           dfMsg.textContent = 'Imported ' + parsed.records.length + ' DiFluid record(s) into Lab Studios!';
         } else {
           const tdsMatch = txt.match(/([0-9]{1,2}\.[0-9]{1,3})\s*%?\s*(?:TDS)?/i);
           if (tdsMatch) {
-            labState.bc.measTds = clamp(parseFloat(tdsMatch[1]), 0.4, 22, 1.40);
+            applyLabLiveR2Reading({ tds: clamp(parseFloat(tdsMatch[1]), 0.4, 22, 1.40), tempC: 23.4 }, { silent: true });
             dfMsg.textContent = 'Extracted ' + labState.bc.measTds.toFixed(2) + '% TDS into Brew Control Canvas!';
           } else {
             dfMsg.textContent = 'Parsed DiFluid payload cleanly.';
@@ -2100,7 +2838,7 @@
       });
 
       const partnerDetails = domH('details', { class: 'bt-lab-details' },
-        domH('summary', { text: 'Optional Commercial Partner Cloud API (Local-Only Key — Not Needed for Home Users)' }),
+        domH('summary', { text: 'Optional Commercial Partner Cloud API (Local-Only Key \u2014 Not Needed for Home Users)' }),
         domH('p', {
           class: 'bt-lab-hint',
           text: 'Stored strictly in local-only brew-and-cup-difluid-auth-v1; never serialized into setup_json, CSVs, QR codes, or backups.'
@@ -2129,7 +2867,7 @@
         )
       );
 
-      const dfCard = domH('div', { class: 'bt-lab-subcard' },
+      const dfCard = domH('div', { class: 'bt-lab-subcard', style: 'min-width:0;max-width:100%;box-sizing:border-box;' },
         domH('div', { class: 'bt-lab-card-head' },
           domH('div', { class: 'bt-lab-title-group' },
             ic('paste-card', { size: 18 }),
@@ -2150,9 +2888,8 @@
                 pasteArea.value = typeof demo === 'string' ? demo : JSON.stringify(demo);
                 importDiFluidPayload(pasteArea.value);
               } else {
-                labState.bc.measTds = 1.39;
-                labState.roastFresh.beanG = 78.0;
-                labState.roastFresh.groundG = 85.2;
+                applyLabLiveR2Reading({ tds: 1.39, tempC: 23.4 }, { silent: true });
+                applyLabLiveOmniReading({ beanAgtron: 78.0, groundAgtron: 85.2, d50Um: 540 }, { silent: true });
                 dfMsg.textContent = 'Loaded DiFluid Ecosystem Demo Dataset (1.39% TDS, Agtron 78.0/85.2)!';
               }
             }
@@ -2163,20 +2900,262 @@
       );
       root.appendChild(dfCard);
 
-      /* 5. Honest Non-BLE Capability Notes */
-      root.appendChild(domH('div', { class: 'bt-lab-subcard bt-honest-hw-notes' },
-        domH('strong', { text: 'Honest Hardware Radio & Protocol Notes' }),
-        domH('ul', { class: 'bt-lab-list' },
-          domH('li', { text: 'Fellow Tally Pro: Contains no Bluetooth radio hardware; pair Acaia, DiFluid Microbalance, Bookoo, Timemore, Felicita, or Decent for live 10Hz telemetry.' }),
-          domH('li', { text: 'Fellow Stagg EKG Pro vs EKG+: Stagg EKG+ exposes Bluetooth GATT (0x1820) supported in Slot 5; newer EKG Pro uses Wi-Fi firmware updates only.' }),
-          domH('li', { text: 'Fellow Aiden Precision Brewer: Synthesizes exact Green SS Cone (<=450 mL) & Blue Batch Flat (>450 mL) declining-pulse profiles in Tab 1 Brew Studio.' })
-        )
-      ));
-
-      /* 6. PocketMicronLens Camera Grind Calibrator */
+      /* 5. PocketMicronLens Camera Grind Calibrator */
       root.appendChild(buildPocketMicronLensCard());
     }
 
+    /* 6. Collapsible "Live BLE Diagnostics & Compatibility Guide" Card at Bottom of Bench */
+    const diagCapTxt = domH('span', { text: '' });
+    const diagRxCountEl = domH('strong', { class: 'num-tab', 'data-ble-diag-field': 'rxPacketCount', text: '0' });
+    const diagUuidsEl = domH('strong', { class: 'num-tab', 'data-ble-diag-field': 'gattUuids', style: 'overflow-wrap:anywhere;', text: '--' });
+    const diagSlotsEl = domH('strong', { class: 'num-tab', 'data-ble-diag-field': 'activeSlots', text: '0 / 5' });
+    const diagStatusEl = domH('span', {
+      'data-ble-diag-field': 'lastStatusText',
+      style: 'min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word;',
+      text: 'Ready'
+    });
+    const diagHexEl = domH('span', {
+      'data-ble-diag-field': 'lastRawHex',
+      style: 'min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word;',
+      text: '--'
+    });
+
+    const diagDetails = domH('details', {
+      class: 'bt-lab-details bt-ble-diag-card',
+      id: idPfx + 'diagnostics-card',
+      'data-ble-diag': '1',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box;'
+    },
+      domH('summary', {
+        style: 'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;'
+      },
+        domH('span', { style: 'font-weight:700;', text: 'Live BLE Diagnostics & Compatibility Guide' }),
+        diagCapTxt
+      ),
+      domH('div', { style: 'display:flex;flex-direction:column;gap:10px;margin-top:10px;min-width:0;max-width:100%;' },
+        domH('div', { class: 'bt-lab-btn-row' },
+          domH('a', {
+            class: 'bt-lab-btn is-sm' + (!caps.webBluetooth ? ' is-primary' : ''),
+            href: bluefyHref,
+            'data-ble-action': 'open-bluefy'
+          }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Open in Bluefy (iPhone / iPad BLE)' })),
+          domH('button', {
+            type: 'button',
+            class: 'bt-lab-btn is-sm',
+            'data-ble-action': 'copy-ble-diag',
+            onclick: function () {
+              const cur = getBleStateSafe();
+              const snapLine = [
+                'WebBLE=' + Boolean(caps.webBluetooth),
+                'rxPacketCount=' + (cur.rxPacketCount != null ? cur.rxPacketCount : labState.bleBench.localRxCount),
+                'service=' + (cur.lastServiceUuid || '--'),
+                'char=' + (cur.lastCharUuid || '--'),
+                'status=' + (cur.lastStatusText || 'Idle'),
+                'rawHex=' + (cur.lastRawHex || labState.bleBench.localLastHex || '--')
+              ].join(' | ');
+              if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                navigator.clipboard.writeText(snapLine).catch(function () {});
+              }
+              CK.haptic('tick');
+              notify('Copied live BLE diagnostic snapshot.');
+            }
+          }, 'Copy Packet Snapshot')
+        ),
+        domH('div', { class: 'bt-lab-metric-strip' },
+          domH('div', { class: 'bt-lab-kpi' },
+            domH('span', { text: 'RX Packets' }),
+            diagRxCountEl
+          ),
+          domH('div', { class: 'bt-lab-kpi' },
+            domH('span', { text: 'Active GATT UUID' }),
+            diagUuidsEl
+          ),
+          domH('div', { class: 'bt-lab-kpi' },
+            domH('span', { text: 'Active Slots' }),
+            diagSlotsEl
+          )
+        ),
+        domH('div', { class: 'bt-ble-slot-readout num-tab', style: 'min-width:0;max-width:100%;box-sizing:border-box;' }, diagStatusEl),
+        domH('div', { class: 'bt-ble-slot-readout num-tab', style: 'min-width:0;max-width:100%;box-sizing:border-box;' }, diagHexEl),
+        domH('ul', { class: 'bt-lab-list' },
+          domH('li', { text: 'Browser Readiness: Chrome, Edge, Opera, Android Chrome, and Bluefy (iOS) support direct Web Bluetooth GATT across all 5 concurrent slots; iOS Safari blocks WebBLE (use Open in Bluefy above).' }),
+          domH('li', { text: 'Custom-Renamed Hardware: If you renamed your scale or sensor in its vendor app, tap Scan Any BLE on that slot to unlock all 23 coffee GATT service UUIDs without name filtering.' }),
+          domH('li', { text: 'Honest Radio Notes: Close vendor phone apps before pairing so GATT advertising resumes. Fellow Tally Pro has no BLE radio; Fellow Stagg EKG+ (0x1820) pairs in Slot 5 while newer EKG Pro uses Wi-Fi only.' })
+        )
+      )
+    );
+    if (labState.bleBench.diagOpen) diagDetails.setAttribute('open', '');
+    diagDetails.addEventListener('toggle', function () {
+      labState.bleBench.diagOpen = !!diagDetails.open;
+    });
+    root.appendChild(diagDetails);
+
+    /* Non-destructive in-place live updater across all 5 slots + Diagnostics */
+    function refreshBenchLive() {
+      const cur = getBleStateSafe();
+      const curCaps = typeof ble.capabilities === 'function'
+        ? ble.capabilities()
+        : { webBluetooth: typeof navigator !== 'undefined' && !!navigator.bluetooth };
+      const simOn = !!cur.simulatorActive;
+      setTextIfChanged(simToggleLbl, simOn ? 'Stop 10Hz Bench Simulator' : '1-Tap 10Hz Full Bench Simulator');
+
+      /* 1. Smart Scale */
+      const scObj = cur.scale || {};
+      const scHw = !!cur.scaleConnected;
+      const scOn = !!(scHw || scObj.connected || simOn);
+      const scName = cur.scaleName || scObj.name || (simOn ? '10Hz Scale Simulator' : 'Smart Scale');
+      const scBat = cur.batteryPct != null ? cur.batteryPct : scObj.batteryPct;
+      scaleHead.sync(scOn, scName, scBat, simOn && !scHw);
+      scaleSelectWrap.hidden = scOn;
+      scaleUnpairedRow.hidden = scOn;
+      scaleConnectedRow.hidden = !scOn;
+      if (scaleBrandSel.value !== (labState.bleBench.scaleBrand || 'auto') && (typeof document === 'undefined' || document.activeElement !== scaleBrandSel)) {
+        scaleBrandSel.value = labState.bleBench.scaleBrand || 'auto';
+      }
+      const wG = Number((scObj.weightG != null ? scObj.weightG : cur.weightG) || 0).toFixed(1);
+      const fGs = Number((scObj.flowGs != null ? scObj.flowGs : cur.flowRateGs) || 0).toFixed(1);
+      const btnAgeMs = Date.now() - (labState.bleBench.lastScaleBtnAtMs || 0);
+      const btnSuffix = (labState.bleBench.lastScaleBtn && btnAgeMs < 8000) ? (' \u00B7 Btn: ' + labState.bleBench.lastScaleBtn) : '';
+      setTextIfChanged(
+        scaleReadout.txt,
+        cur.scaleReconnecting
+          ? ('Reconnecting \u00B7 Holding ' + wG + ' g')
+          : (scOn ? (wG + ' g \u00B7 ' + fGs + ' g/s' + btnSuffix) : 'Standby \u00B7 0.0 g \u00B7 0.0 g/s')
+      );
+
+      /* 2. Espresso Pressure */
+      const prObj = cur.pressure || {};
+      const prHw = !!cur.pressureConnected;
+      const prOn = !!(prHw || prObj.connected || simOn);
+      const prName = cur.pressureName || prObj.name || (simOn ? '9-Bar Profiler Sim' : 'Pressure Sensor');
+      const prBat = cur.pressureBatteryPct != null ? cur.pressureBatteryPct : prObj.batteryPct;
+      pressureHead.sync(prOn, prName, prBat, simOn && !prHw);
+      pressureUnpairedRow.hidden = prOn;
+      pressureConnectedRow.hidden = !prOn;
+      const barVal = Number((prObj.bar != null ? prObj.bar : cur.pressureBar) || 0).toFixed(1);
+      const prTempRaw = prObj.tempC != null ? prObj.tempC : cur.pressureTempC;
+      const prTempPart = (prTempRaw != null && Number.isFinite(+prTempRaw)) ? (' \u00B7 ' + (+prTempRaw).toFixed(1) + ' \u00B0C') : '';
+      const pkRaw = prObj.peakBar != null ? prObj.peakBar : cur.peakPressureBar;
+      const pkPart = (pkRaw != null && +pkRaw > 0.2) ? (' \u00B7 Peak ' + (+pkRaw).toFixed(1) + ' bar') : '';
+      setTextIfChanged(pressureReadout.txt, prOn ? (barVal + ' bar' + prTempPart + pkPart) : 'Standby \u00B7 0.0 bar');
+
+      /* 3. DiFluid R2 Extract */
+      const r2Obj = cur.refractometer || {};
+      const r2Hw = !!cur.refractometerConnected;
+      const r2On = !!(r2Hw || r2Obj.connected || simOn);
+      const r2Name = cur.refractometerName || r2Obj.name || (simOn ? 'DiFluid R2 Sim' : 'DiFluid R2');
+      const r2Bat = cur.refractometerBatteryPct != null ? cur.refractometerBatteryPct : r2Obj.batteryPct;
+      r2Head.sync(r2On, r2Name, r2Bat, simOn && !r2Hw);
+      r2UnpairedRow.hidden = r2On;
+      r2ConnectedRow.hidden = !r2On;
+      const tdsVal = +(r2Obj.tds || cur.lastTds || labState.bc.measTds || 0);
+      const r2TempStr = Number(r2Obj.tempC || cur.lastTempC || labState.bc.measTempC || 23.4).toFixed(1) + ' \u00B0C';
+      setTextIfChanged(
+        r2Readout.txt,
+        r2On
+          ? ((tdsVal > 0 ? (tdsVal.toFixed(2) + '% TDS \u00B7 ' + r2TempStr) : ('R2 Ready \u00B7 ' + r2TempStr)) + ' \u00B7 Auto-Sync')
+          : (tdsVal > 0 ? (tdsVal.toFixed(2) + '% TDS \u00B7 ' + r2TempStr) : 'Standby \u00B7 Ready to Read')
+      );
+
+      /* 4. DiFluid Omni */
+      const omObj = cur.omni || cur.lastOmni || {};
+      const omHw = !!cur.omniConnected;
+      const omOn = !!(omHw || omObj.connected || simOn);
+      const omName = cur.omniName || omObj.name || (simOn ? 'DiFluid Omni Sim' : 'DiFluid Omni');
+      const omBat = cur.omniBatteryPct != null ? cur.omniBatteryPct : omObj.batteryPct;
+      omniHead.sync(omOn, omName, omBat, simOn && !omHw);
+      omniUnpairedRow.hidden = omOn;
+      omniConnectedRow.hidden = !omOn;
+      const liveBeanAg = omObj.beanAgtron || labState.omniLive.beanAgtron;
+      const liveGroundAg = omObj.groundAgtron || omObj.agtron || labState.omniLive.groundAgtron;
+      const liveD50 = omObj.d50Um || labState.omniLive.d50Um;
+      let omniLine = 'Bean ' + labState.roastFresh.beanG.toFixed(1) + ' / Ground ' + labState.roastFresh.groundG.toFixed(1) + ' Ag';
+      if (liveBeanAg || liveGroundAg || liveD50) {
+        const agPart = (liveBeanAg && liveGroundAg)
+          ? ('Agtron ' + Number(liveGroundAg).toFixed(1) + ' (Bean ' + Number(liveBeanAg).toFixed(1) + ')')
+          : (liveGroundAg ? ('Agtron ' + Number(liveGroundAg).toFixed(1)) : (liveBeanAg ? ('Bean Agtron ' + Number(liveBeanAg).toFixed(1)) : 'Agtron --'));
+        const psdPart = liveD50 ? ('D50 ' + Math.round(+liveD50) + ' \u00B5m') : 'PSD Ready';
+        omniLine = agPart + ' \u00B7 ' + psdPart;
+      }
+      setTextIfChanged(omniReadout.txt, omniLine);
+
+      /* 5. Kettle & xBloom */
+      const ktHw = !!cur.kettleConnected;
+      const xbHw = !!cur.xbloomConnected;
+      const ktOn = !!(ktHw || simOn);
+      const xbOn = !!(xbHw || simOn);
+      const mcOn = !!(ktOn || xbOn || cur.machineConnected);
+      const mcBat = cur.slots && cur.slots.machine ? cur.slots.machine.batteryPct : null;
+      const mcDevLabel = ktHw && xbHw
+        ? 'Kettle + xBloom'
+        : (ktHw ? (cur.kettleName || 'Stagg EKG+') : (xbHw ? (cur.xbloomName || 'xBloom Studio') : (simOn ? 'Kettle & xBloom Sim' : 'Standby')));
+      machineHead.sync(mcOn, mcDevLabel, mcBat, simOn && !ktHw && !xbHw);
+
+      kettleUnpairedRow.hidden = ktOn;
+      kettleConnectedRow.hidden = !ktOn;
+      xbloomUnpairedRow.hidden = xbOn;
+      xbloomConnectedRow.hidden = !xbOn;
+
+      const aBrew = (getApp() && getApp().brew) || {};
+      const recTargetC = Math.round(clamp(+aBrew.tempC || (aBrew.tempF ? ((+aBrew.tempF - 32) * 5 / 9) : labState.wave.kettleC || 93), 40, 100, 93));
+      setTextIfChanged(kettlePushLbl, 'Push Recipe Temp (' + recTargetC + ' \u00B0C)');
+
+      const ktTempC = cur.kettleTempC != null && Number.isFinite(+cur.kettleTempC) ? +cur.kettleTempC : null;
+      const ktTargetC = cur.kettleTargetTempC != null && Number.isFinite(+cur.kettleTargetTempC) ? +cur.kettleTargetTempC : recTargetC;
+      const ktF = ktTempC != null ? Math.round(ktTempC * 9 / 5 + 32) : Math.round(recTargetC * 9 / 5 + 32);
+      setTextIfChanged(
+        kettleStatusLine,
+        ktOn
+          ? ('Stagg EKG+ Kettle: ' + (ktTempC != null ? (ktTempC.toFixed(1) + ' \u00B0C (' + ktF + ' \u00B0F)') : 'Connected') + ' \u00B7 Target ' + Math.round(ktTargetC) + ' \u00B0C' + (cur.kettleHold ? ' \u00B7 Hold ON' : ''))
+          : ('Stagg EKG+ Kettle: Standby \u00B7 Recipe Target ' + recTargetC + ' \u00B0C (' + Math.round(recTargetC * 9 / 5 + 32) + ' \u00B0F)')
+      );
+
+      const rawStage = String(cur.xbloomStage || (cur.machine && cur.machine.stage) || 'idle');
+      const stageCap = rawStage.charAt(0).toUpperCase() + rawStage.slice(1);
+      setTextIfChanged(
+        xbloomStatusLine,
+        xbOn
+          ? ((cur.xbloomName || 'xBloom Studio') + ' \u00B7 Stage: ' + stageCap)
+          : 'xBloom Studio / Original: Standby \u00B7 Safety Gate Armed'
+      );
+      setClassIfChanged(xbloomSafetyChip, 'bt-lab-chip' + (labState.bleBench.xbloomPreGround ? ' is-active' : ''));
+      xbloomSafetyChip.setAttribute('aria-pressed', String(!!labState.bleBench.xbloomPreGround));
+      setTextIfChanged(
+        xbloomSafetyLbl,
+        labState.bleBench.xbloomPreGround ? 'Safety: Pre-Ground (0x44 OFF)' : 'Mode: Whole-Bean (0x41 ON)'
+      );
+
+      const ktShort = ktOn ? ('Kettle ' + (ktTempC != null ? (Math.round(ktTempC) + ' \u00B0C') : 'Ready')) : 'Kettle Idle';
+      const xbShort = xbOn ? ('xBloom ' + stageCap) : 'xBloom Idle';
+      setTextIfChanged(machineReadout.txt, ktShort + ' / ' + xbShort);
+
+      if (benchR2Widget && benchR2Widget._syncTemp) benchR2Widget._syncTemp();
+
+      /* 6. Live BLE Diagnostics Inspector */
+      const rxTotal = cur.rxPacketCount != null ? +cur.rxPacketCount : labState.bleBench.localRxCount;
+      const activeSlotNames = [];
+      if (scOn) activeSlotNames.push('Scale');
+      if (prOn) activeSlotNames.push('Pressure');
+      if (r2On) activeSlotNames.push('R2');
+      if (omOn) activeSlotNames.push('Omni');
+      if (mcOn) activeSlotNames.push(ktHw ? 'Kettle' : (xbHw ? 'xBloom' : 'Gear'));
+
+      setClassIfChanged(diagCapTxt, 'bt-epistemic-pill num-tab ' + (curCaps.webBluetooth ? 'is-verified' : 'is-craft'));
+      setTextIfChanged(
+        diagCapTxt,
+        (curCaps.webBluetooth ? 'WebBLE Ready' : 'Use Bluefy on iOS') + ' \u00B7 ' + rxTotal + ' pkts'
+      );
+      setTextIfChanged(diagRxCountEl, String(rxTotal));
+      const svcShort = shortGattUuid(cur.lastServiceUuid);
+      const chrShort = shortGattUuid(cur.lastCharUuid);
+      setTextIfChanged(diagUuidsEl, (svcShort || chrShort) ? ((svcShort || '--') + ' / ' + (chrShort || '--')) : 'Awaiting GATT');
+      setTextIfChanged(diagSlotsEl, activeSlotNames.length ? (activeSlotNames.length + '/5 (' + activeSlotNames.join(', ') + ')') : '0 / 5 Paired');
+      setTextIfChanged(diagStatusEl, 'Status: ' + (cur.lastStatusText || (curCaps.webBluetooth ? 'WebBLE Ready \u2014 select any slot above to pair' : 'WebBluetooth unavailable in this WebView \u2014 tap Open in Bluefy')));
+      setTextIfChanged(diagHexEl, 'Raw Hex: ' + (cur.lastRawHex || labState.bleBench.localLastHex || '-- (incoming BLE notification bytes appear here live)'));
+    }
+
+    refreshBenchLive();
+    registerLabBenchHook(root, refreshBenchLive);
     return root;
   }
 
@@ -3174,62 +4153,81 @@
       text: ''
     });
     const r2ActionBtnsWrap = domH('div', { class: 'bt-lab-btn-row', id: 'bt-lab-r2-actions' });
+    let _prevEyR2Mode = '';
 
     function syncStudioR2Meta() {
       const stNow = getBleStateSafe();
       const conn = !!stNow.refractometerConnected;
       const canTrigger = !!(conn || stNow.simulatorActive);
       if (conn) {
-        const metaParts = ['DiFluid R2 Connected · Auto-Sync Active'];
+        const metaParts = ['DiFluid R2 Connected \u00B7 Auto-Sync Active'];
         if (stNow.lastTempC != null && Number.isFinite(+stNow.lastTempC) && +stNow.lastTempC > 0) {
           metaParts.push((+stNow.lastTempC).toFixed(1) + ' \u00B0C');
         }
         if (stNow.refractometerBatteryPct != null && Number.isFinite(+stNow.refractometerBatteryPct) && +stNow.refractometerBatteryPct >= 0) {
           metaParts.push(Math.round(+stNow.refractometerBatteryPct) + '%');
         }
-        r2LiveStatusBadge.className = 'bt-epistemic-pill is-verified';
-        r2LiveStatusBadge.textContent = metaParts.join(' · ');
+        setClassIfChanged(r2LiveStatusBadge, 'bt-epistemic-pill is-verified');
+        setTextIfChanged(r2LiveStatusBadge, metaParts.join(' \u00B7 '));
       } else {
-        r2LiveStatusBadge.className = 'bt-epistemic-pill is-research';
-        r2LiveStatusBadge.textContent = 'Refractometer & %EY Calculator';
+        setClassIfChanged(r2LiveStatusBadge, 'bt-epistemic-pill is-research');
+        setTextIfChanged(r2LiveStatusBadge, 'Refractometer & %EY Calculator');
       }
-      r2ActionBtnsWrap.textContent = '';
-      if (canTrigger) {
-        r2ActionBtnsWrap.appendChild(domH('button', {
-          type: 'button',
-          id: 'bt-lab-r2-read-btn',
-          class: 'bt-lab-btn is-sm is-primary',
-          onclick: function () {
-            if (typeof bleForEy.triggerRefractometerRead === 'function') {
-              Promise.resolve(bleForEy.triggerRefractometerRead()).catch(function () {});
+      const nextMode = canTrigger ? 'connected' : 'unpaired';
+      if (_prevEyR2Mode !== nextMode) {
+        _prevEyR2Mode = nextMode;
+        r2ActionBtnsWrap.textContent = '';
+        if (canTrigger) {
+          r2ActionBtnsWrap.appendChild(domH('button', {
+            type: 'button',
+            id: 'bt-lab-r2-read-btn',
+            class: 'bt-lab-btn is-sm is-primary',
+            onclick: function () {
+              const b = window.BTBle || bleForEy;
+              if (typeof b.triggerRefractometerRead === 'function') {
+                Promise.resolve(b.triggerRefractometerRead()).catch(function () {});
+              }
             }
-          }
-        }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Read R2 Now' })));
-        r2ActionBtnsWrap.appendChild(domH('button', {
-          type: 'button',
-          id: 'bt-lab-r2-avg3-btn',
-          class: 'bt-lab-btn is-sm',
-          onclick: function () {
-            if (typeof bleForEy.triggerRefractometerRead === 'function') {
-              Promise.resolve(bleForEy.triggerRefractometerRead({ averageCount: 3 })).catch(function () {});
+          }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Read R2 Now' })));
+          r2ActionBtnsWrap.appendChild(domH('button', {
+            type: 'button',
+            id: 'bt-lab-r2-avg3-btn',
+            class: 'bt-lab-btn is-sm',
+            onclick: function () {
+              const b = window.BTBle || bleForEy;
+              if (typeof b.triggerRefractometerRead === 'function') {
+                Promise.resolve(b.triggerRefractometerRead({ averageCount: 3 })).catch(function () {});
+              }
             }
-          }
-        }, 'Avg x3'));
-      } else {
-        r2ActionBtnsWrap.appendChild(domH('button', {
-          type: 'button',
-          id: 'bt-lab-r2-pair-btn',
-          class: 'bt-lab-btn is-sm',
-          onclick: function () {
-            if (typeof bleForEy.connectRefractometer === 'function') {
-              Promise.resolve(bleForEy.connectRefractometer()).then(function (res) {
-                if (res && (res.refractometerConnected || res.ok) && typeof bleForEy.triggerRefractometerRead === 'function') {
-                  return bleForEy.triggerRefractometerRead();
-                }
-              }).catch(function () {});
+          }, 'Avg x3'));
+        } else {
+          r2ActionBtnsWrap.appendChild(domH('button', {
+            type: 'button',
+            id: 'bt-lab-r2-pair-btn',
+            class: 'bt-lab-btn is-sm',
+            onclick: function () {
+              const b = window.BTBle || bleForEy;
+              if (typeof b.connectRefractometer === 'function') {
+                Promise.resolve(b.connectRefractometer()).then(function (res) {
+                  if (res && (res.refractometerConnected || res.ok) && typeof b.triggerRefractometerRead === 'function') {
+                    return b.triggerRefractometerRead();
+                  }
+                }).catch(function () {});
+              }
             }
-          }
-        }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Pair DiFluid R2' })));
+          }, ic('ble-wave', { size: 14 }), domH('span', { text: 'Pair DiFluid R2' })));
+          r2ActionBtnsWrap.appendChild(domH('button', {
+            type: 'button',
+            id: 'bt-lab-r2-scan-any-btn',
+            class: 'bt-lab-btn is-sm',
+            onclick: function () {
+              const b = window.BTBle || bleForEy;
+              if (typeof b.connectRefractometer === 'function') {
+                Promise.resolve(b.connectRefractometer({ acceptAll: true })).catch(function () {});
+              }
+            }
+          }, 'Scan Any BLE'));
+        }
       }
     }
     syncStudioR2Meta();
@@ -6078,16 +7076,19 @@
       }
     });
 
+    let _prevR4CanRead = null;
     function syncInputs(skipKey) {
-      if (skipKey !== 'dose') doseIn.value = String(r4.doseG);
-      if (skipKey !== 'water') waterIn.value = String(r4.waterG);
-      if (skipKey !== 'mug') mugIn.value = String(r4.mugG);
-      if (skipKey !== 'ratio') ratioIn.value = String(r4.ratio);
-      if (skipKey !== 'tds' && (typeof document === 'undefined' || document.activeElement !== tdsIn)) {
+      const actEl = typeof document !== 'undefined' ? document.activeElement : null;
+      if (skipKey !== 'dose' && actEl !== doseIn) doseIn.value = String(r4.doseG);
+      if (skipKey !== 'water' && actEl !== waterIn) waterIn.value = String(r4.waterG);
+      if (skipKey !== 'mug' && actEl !== mugIn) mugIn.value = String(r4.mugG);
+      if (skipKey !== 'ratio' && actEl !== ratioIn) ratioIn.value = String(r4.ratio);
+      if (skipKey !== 'tds' && actEl !== tdsIn) {
         tdsIn.value = Number(r4.tdsPct).toFixed(2);
       }
       const stR4 = getBleStateSafe();
       const canReadR2 = !!(stR4.refractometerConnected || stR4.simulatorActive);
+      _prevR4CanRead = canReadR2;
       const bleR4 = window.BTBle || {};
       const cbConcMl = Math.round(r4.coldBrewServeG / (1 + r4.coldBrewDiluteRatio - 1));
       const cbWaterOrMilkMl = Math.max(0, r4.coldBrewServeG - cbConcMl);
@@ -6197,8 +7198,13 @@
     ));
     card.appendChild(outBox);
     syncInputs('');
-    _labLiveHooks.ratioYield = function () {
+    _labLiveHooks.ratioYield = function (opts) {
       if (!card.isConnected) return false;
+      if (opts && opts.metaOnly) {
+        const stNow = getBleStateSafe();
+        const nextCan = !!(stNow.refractometerConnected || stNow.simulatorActive);
+        if (nextCan === _prevR4CanRead) return true;
+      }
       syncInputs('');
       return true;
     };
@@ -6551,14 +7557,80 @@
       proTip: 'Freezing beans airtight at -18 °C slows aging ~12× — grind straight from frozen (+1 step coarser for ultra-uniform grounds)!'
     });
 
+    /* Live DiFluid Omni Roast Colorimeter Sync Strip */
+    const omniAgBadge = domH('span', {
+      class: 'bt-epistemic-pill is-research num-tab',
+      id: 'bt-agtron-omni-live-badge',
+      text: 'DiFluid Omni NIR Standby'
+    });
+    const omniAgPairRow = domH('div', { class: 'bt-lab-btn-row' },
+      domH('button', {
+        type: 'button',
+        class: 'bt-lab-btn is-sm',
+        'data-ble-action': 'agtron-omni-pair',
+        onclick: function () {
+          const b = window.BTBle || {};
+          if (typeof b.connectOmni === 'function') runBleAsync(b.connectOmni(), 'Omni pair');
+        }
+      }, ic('omni-nir', { size: 14 }), domH('span', { text: 'Pair DiFluid Omni' })),
+      domH('button', {
+        type: 'button',
+        class: 'bt-lab-btn is-sm',
+        'data-ble-action': 'agtron-omni-scan-any',
+        onclick: function () {
+          const b = window.BTBle || {};
+          if (typeof b.connectOmni === 'function') runBleAsync(b.connectOmni({ acceptAll: true }), 'Omni scan');
+        }
+      }, 'Scan Any BLE')
+    );
+    const omniAgConnRow = domH('div', { class: 'bt-lab-btn-row', hidden: true },
+      domH('button', {
+        type: 'button',
+        class: 'bt-lab-btn is-sm is-primary',
+        'data-ble-action': 'agtron-omni-trigger',
+        onclick: function () {
+          const b = window.BTBle || {};
+          if (typeof b.triggerOmniRead === 'function') {
+            runBleAsync(b.triggerOmniRead({ mode: 'agtron' }), 'Omni roast scan');
+          }
+          CK.haptic('tick');
+        }
+      }, ic('omni-nir', { size: 14 }), domH('span', { text: 'Scan Roast / Agtron' }))
+    );
+
+    function syncOmniAgtronBar() {
+      const stO = getBleStateSafe();
+      const isOmOn = !!(stO.omniConnected || (stO.omni && stO.omni.connected) || stO.simulatorActive);
+      omniAgPairRow.hidden = isOmOn;
+      omniAgConnRow.hidden = !isOmOn;
+      const omL = labState.omniLive;
+      const hasLiveAg = omL.beanAgtron != null || omL.groundAgtron != null;
+      setClassIfChanged(omniAgBadge, 'bt-epistemic-pill num-tab ' + (isOmOn || hasLiveAg ? 'is-verified' : 'is-research'));
+      if (hasLiveAg) {
+        const bTxt = omL.beanAgtron != null ? omL.beanAgtron.toFixed(1) : rf.beanG.toFixed(1);
+        const gTxt = omL.groundAgtron != null ? omL.groundAgtron.toFixed(1) : rf.groundG.toFixed(1);
+        const dVal = +(parseFloat(gTxt) - parseFloat(bTxt)).toFixed(1);
+        setTextIfChanged(omniAgBadge, 'Omni Live: Bean ' + bTxt + ' \u00B7 Ground ' + gTxt + ' (Delta ' + (dVal >= 0 ? '+' : '') + dVal + ')');
+      } else {
+        setTextIfChanged(omniAgBadge, isOmOn ? 'DiFluid Omni Connected \u00B7 Ready to Scan Roast' : 'DiFluid Omni NIR Colorimeter');
+      }
+    }
+    syncOmniAgtronBar();
+
+    const omniAgBar = domH('div', {
+      class: 'bt-lab-subcard',
+      'data-omni-agtron-bar': '1',
+      style: 'flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;'
+    }, omniAgBadge, omniAgPairRow, omniAgConnRow);
+
     card.appendChild(domH('div', { class: 'bt-lab-card-head' },
       domH('div', { class: 'bt-lab-title-group' },
         ic('omni-nir', { size: 22 }),
         domH('div', null,
           domH('h3', {
             text: isScienceXray()
-              ? 'Cutaway 5-Scale Agtron Ribbon & -18 °C Arrhenius Freezer Curve'
-              : 'Cutaway 5-Scale Roast Color & Freezer Storage (-18 °C · 12× Slower Aging)'
+              ? 'Cutaway 5-Scale Agtron Ribbon & -18 \u00B0C Arrhenius Freezer Curve'
+              : 'Cutaway 5-Scale Roast Color & Freezer Storage (-18 \u00B0C \u00B7 12\u00D7 Slower Aging)'
           }),
           domH('p', {
             class: 'bt-lab-sub',
@@ -6571,6 +7643,7 @@
       domH('div', { class: 'bt-head-actions' }, agtronHow.trigger, epistemicBadge('verified_physics'))
     ));
     card.appendChild(agtronHow.panel);
+    card.appendChild(omniAgBar);
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, agSvg));
     card.appendChild(agReadout);
     card.appendChild(domH('div', { class: 'bt-lab-btn-row' },
@@ -6585,7 +7658,7 @@
             a.coffee.roast_delta = +(rf.groundG - rf.beanG).toFixed(1);
             const recTemp = rf.groundG >= 80 ? 95 : (rf.groundG >= 65 ? 93 : (rf.groundG >= 52 ? 90 : 87));
             a.brew.tempC = recTemp;
-            a.brew.customizedNote = 'Agtron ' + rf.groundG.toFixed(0) + ' (' + recTemp + ' °C kettle)';
+            a.brew.customizedNote = 'Agtron ' + rf.groundG.toFixed(0) + ' (' + recTemp + ' \u00B0C kettle)';
           }, {
             targetStep: 'brew',
             returnRoute: 'agtron',
@@ -6635,6 +7708,15 @@
 
     redrawAgtron();
     redrawFreshness();
+    _labLiveHooks.studioAgtron = function (opts) {
+      if (!card.isConnected) return false;
+      syncOmniAgtronBar();
+      if (!(opts && opts.metaOnly)) {
+        redrawAgtron();
+        redrawFreshness();
+      }
+      return true;
+    };
     return card;
   }
 
@@ -6882,24 +7964,200 @@
       return g.max <= 16 ? +clamped.toFixed(1) : Math.round(clamped * 2) / 2;
     }
 
+    let _omniOverrideUm = (labState.omniLive && labState.omniLive.d50Um > 0) ? Math.round(labState.omniLive.d50Um) : 0;
+
+    /* Live DiFluid Omni D10 / D50 / D90 & PSD Histogram Calibration Subcard */
+    const omniPsdBadge = domH('span', {
+      class: 'bt-epistemic-pill is-research num-tab',
+      id: 'bt-grinder-omni-psd-badge',
+      text: 'DiFluid Omni Optical PSD'
+    });
+    const omniPsdPairRow = domH('div', { class: 'bt-lab-btn-row' },
+      domH('button', {
+        type: 'button',
+        class: 'bt-lab-btn is-sm',
+        'data-ble-action': 'grinder-omni-pair',
+        onclick: function () {
+          const b = window.BTBle || {};
+          if (typeof b.connectOmni === 'function') runBleAsync(b.connectOmni(), 'Omni pair');
+        }
+      }, ic('omni-nir', { size: 14 }), domH('span', { text: 'Pair DiFluid Omni' })),
+      domH('button', {
+        type: 'button',
+        class: 'bt-lab-btn is-sm',
+        'data-ble-action': 'grinder-omni-scan-any',
+        onclick: function () {
+          const b = window.BTBle || {};
+          if (typeof b.connectOmni === 'function') runBleAsync(b.connectOmni({ acceptAll: true }), 'Omni scan');
+        }
+      }, 'Scan Any BLE')
+    );
+    const omniPsdConnRow = domH('div', { class: 'bt-lab-btn-row', hidden: true },
+      domH('button', {
+        type: 'button',
+        class: 'bt-lab-btn is-sm is-primary',
+        'data-ble-action': 'grinder-omni-scan-psd',
+        onclick: function () {
+          const b = window.BTBle || {};
+          if (typeof b.triggerOmniRead === 'function') {
+            runBleAsync(b.triggerOmniRead({ mode: 'psd' }), 'Omni PSD scan');
+          }
+          CK.haptic('tick');
+        }
+      }, ic('omni-nir', { size: 14 }), domH('span', { text: 'Scan Grind PSD' }))
+    );
+
+    const kpiD10El = domH('strong', { class: 'num-tab', id: 'bt-grinder-omni-d10', text: '--' });
+    const kpiD50El = domH('strong', { class: 'num-tab', id: 'bt-grinder-omni-d50', text: '--' });
+    const kpiD90El = domH('strong', { class: 'num-tab', id: 'bt-grinder-omni-d90', text: '--' });
+    const kpiSpanEl = domH('strong', { class: 'num-tab', id: 'bt-grinder-omni-span', text: '--' });
+    const psdSvg = CK.svgEl('svg', {
+      viewBox: '0 0 380 112',
+      class: 'bt-chart-svg bt-omni-psd-svg',
+      'aria-label': 'DiFluid Omni Particle Size Distribution Histogram'
+    });
+
+    function synthesizeFallbackBins(d10, d50, d90) {
+      const edges = [60, 140, 220, 340, 460, 580, 720, 900, 1250];
+      const mu = Math.log(Math.max(80, d50 || 540));
+      const sig = Math.max(0.24, Math.min(0.75, Math.log(Math.max(1.2, (d90 || d50 * 1.55) / Math.max(40, d10 || d50 * 0.42))) / 2.56));
+      const raw = [];
+      let sum = 0;
+      for (let i = 0; i < edges.length - 1; i++) {
+        const mid = Math.sqrt(edges[i] * edges[i + 1]);
+        const z = (Math.log(mid) - mu) / sig;
+        const w = Math.exp(-0.5 * z * z);
+        raw.push({ lowerUm: edges[i], upperUm: edges[i + 1], w: w });
+        sum += w;
+      }
+      return raw.map(function (b) {
+        return { lowerUm: b.lowerUm, upperUm: b.upperUm, pct: sum > 0 ? +((b.w / sum) * 100).toFixed(1) : 0 };
+      });
+    }
+
+    function renderOmniPsdHistogram() {
+      const stO = getBleStateSafe();
+      const isOmOn = !!(stO.omniConnected || (stO.omni && stO.omni.connected) || stO.simulatorActive);
+      omniPsdPairRow.hidden = isOmOn;
+      omniPsdConnRow.hidden = !isOmOn;
+
+      const omL = labState.omniLive;
+      const hasPsd = !!(omL.d50Um > 0 || (Array.isArray(omL.bins) && omL.bins.length));
+      setClassIfChanged(omniPsdBadge, 'bt-epistemic-pill num-tab ' + (isOmOn || hasPsd ? 'is-verified' : 'is-research'));
+      setTextIfChanged(
+        omniPsdBadge,
+        hasPsd
+          ? ('DiFluid Omni Live PSD \u00B7 D50 ' + Math.round(omL.d50Um || gl.targetUm) + ' \u00B5m')
+          : (isOmOn ? 'DiFluid Omni Connected \u00B7 Ready to Scan PSD' : 'DiFluid Omni 2D Optical PSD')
+      );
+
+      const d50Show = omL.d50Um || null;
+      const d10Show = omL.d10Um || (d50Show ? +(d50Show * 0.36).toFixed(0) : null);
+      const d90Show = omL.d90Um || (d50Show ? +(d50Show * 1.52).toFixed(0) : null);
+      const spanShow = omL.span || (d50Show && d10Show && d90Show ? +((d90Show - d10Show) / d50Show).toFixed(2) : null);
+
+      setTextIfChanged(kpiD10El, d10Show != null ? (Math.round(d10Show) + ' \u00B5m') : '--');
+      setTextIfChanged(kpiD50El, d50Show != null ? (Math.round(d50Show) + ' \u00B5m') : '--');
+      setTextIfChanged(kpiD90El, d90Show != null ? (Math.round(d90Show) + ' \u00B5m') : '--');
+      setTextIfChanged(kpiSpanEl, spanShow != null ? String(spanShow) : '--');
+
+      psdSvg.textContent = '';
+      psdSvg.appendChild(CK.svgEl('rect', { x: '12', y: '8', width: '356', height: '82', rx: '8', class: 'bt-chart-plot-bg' }));
+      const bins = (Array.isArray(omL.bins) && omL.bins.length)
+        ? omL.bins
+        : synthesizeFallbackBins(d10Show || 200, d50Show || settingToUm(gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0], gl.fromSetting), d90Show || 820);
+      let maxPct = 5;
+      for (let i = 0; i < bins.length; i++) {
+        if (+bins[i].pct > maxPct) maxPct = +bins[i].pct;
+      }
+      const nB = Math.max(1, bins.length);
+      const slotW = 336 / nB;
+      const barW = Math.max(4, slotW - 3);
+      for (let j = 0; j < nB; j++) {
+        const b = bins[j];
+        const hPx = Math.max(2, ((+b.pct || 0) / maxPct) * 68);
+        const bx = 22 + j * slotW;
+        const by = 86 - hPx;
+        psdSvg.appendChild(CK.svgEl('rect', {
+          x: bx.toFixed(1),
+          y: by.toFixed(1),
+          width: barW.toFixed(1),
+          height: hPx.toFixed(1),
+          rx: '2.5',
+          fill: hasPsd ? 'var(--primary, #1B4D38)' : 'var(--accent, #9A4212)',
+          opacity: hasPsd ? '0.88' : '0.45'
+        }));
+      }
+      const axisTxt = CK.svgEl('text', { x: '190', y: '104', 'text-anchor': 'middle', class: 'bt-chart-tick' });
+      axisTxt.textContent = hasPsd
+        ? ('Live Omni Histogram (' + bins.length + ' bins \u00B7 50\u20131600 \u00B5m)')
+        : 'Estimated Burr Distribution (Pair DiFluid Omni for live optical PSD)';
+      psdSvg.appendChild(axisTxt);
+    }
+
+    const omniPsdCard = domH('div', {
+      class: 'bt-lab-subcard',
+      id: 'bt-grinder-omni-psd-card',
+      'data-omni-psd-card': '1',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box;'
+    },
+      domH('div', { class: 'bt-lab-card-head' }, omniPsdBadge, omniPsdPairRow, omniPsdConnRow),
+      domH('div', { class: 'bt-lab-metric-strip' },
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Fines D10' }), kpiD10El),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Median D50' }), kpiD50El),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Boulders D90' }), kpiD90El),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'PSD Span' }), kpiSpanEl)
+      ),
+      domH('div', { class: 'bt-chart-stage' }, psdSvg),
+      domH('div', { class: 'bt-lab-btn-row' },
+        domH('button', {
+          type: 'button',
+          class: 'bt-lab-btn is-sm',
+          onclick: function () {
+            const curUm = Math.round(labState.omniLive.d50Um || settingToUm(gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0], gl.fromSetting));
+            gl.calPt1Click = gl.fromSetting;
+            gl.calPt1Um = curUm;
+            CK.haptic('snap');
+            paintGrinder();
+            notify('Locked Burr Calibration Point 1: ' + gl.calPt1Click + ' \u2192 ' + gl.calPt1Um + ' \u00B5m.');
+          }
+        }, 'Lock as Burr Point 1'),
+        domH('button', {
+          type: 'button',
+          class: 'bt-lab-btn is-sm',
+          onclick: function () {
+            const curUm = Math.round(labState.omniLive.d50Um || settingToUm(gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0], gl.fromSetting));
+            gl.calPt2Click = gl.fromSetting;
+            gl.calPt2Um = curUm;
+            CK.haptic('snap');
+            paintGrinder();
+            notify('Locked Burr Calibration Point 2: ' + gl.calPt2Click + ' \u2192 ' + gl.calPt2Um + ' \u00B5m.');
+          }
+        }, 'Lock as Burr Point 2')
+      )
+    );
+
+    fromSel.addEventListener('change', function () { _omniOverrideUm = 0; });
+    fromSetIn.addEventListener('input', function () { _omniOverrideUm = 0; });
+
     function paintGrinder() {
       const gFrom = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
       const gTo = gList.find(function (x) { return x.key === gl.toKey; }) || gList[1] || gList[0];
-      const d50Um = Math.round(settingToUm(gFrom, gl.fromSetting));
+      const d50Um = _omniOverrideUm > 0 ? _omniOverrideUm : Math.round(settingToUm(gFrom, gl.fromSetting));
       const targetSetting = umToSetting(gTo, d50Um);
       const slopeCal = +((gl.calPt2Um - gl.calPt1Um) / Math.max(1, gl.calPt2Click - gl.calPt1Click)).toFixed(1);
 
       outBox.textContent = '';
       outBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
-        domH('div', { class: 'bt-studio-human-line num-tab' },
+        domH('div', { class: 'bt-studio-human-line num-tab', id: 'bt-grinder-live-readout' },
           domH('strong', {
-            text: gFrom.name + ' @ ' + gl.fromSetting + ' ' + gFrom.unit + ' (~' + d50Um + ' um D50)  \u2192  ' +
+            text: gFrom.name + ' @ ' + gl.fromSetting + ' ' + gFrom.unit + ' (~' + d50Um + ' \u00B5m D50)  \u2192  ' +
               gTo.name + ' @ ' + targetSetting + ' ' + gTo.unit
           })
         ),
         domH('p', {
           class: 'bt-lab-hint num-tab',
-          text: '2-Point Burr Calibration Slope: ' + slopeCal + ' um/step across ' + gList.length + ' mapped grinders — lock your personal burr zero-point via Pocket Micron Lens below.'
+          text: '2-Point Burr Calibration Slope: ' + slopeCal + ' \u00B5m/step (' + gl.calPt1Click + '\u2192' + gl.calPt1Um + ' \u00B5m, ' + gl.calPt2Click + '\u2192' + gl.calPt2Um + ' \u00B5m) across ' + gList.length + ' mapped grinders.'
         }),
         domH('div', { class: 'bt-lab-btn-row', style: 'margin-top:8px' },
           domH('button', {
@@ -6913,24 +8171,25 @@
                 a.brew.grinderKey = gTo.key;
                 a.brew.grindUm = d50Um;
                 a.brew.grind_setting = targetSetting + ' ' + gTo.unit;
-                a.brew.customizedNote = gTo.name + ' @ ' + targetSetting + ' ' + gTo.unit + ' (~' + d50Um + ' um)';
+                a.brew.customizedNote = gTo.name + ' @ ' + targetSetting + ' ' + gTo.unit + ' (~' + d50Um + ' \u00B5m)';
               }, {
                 targetStep: 'brew',
                 returnRoute: 'devices',
-                toast: 'Applied ' + gTo.name + ' @ ' + targetSetting + ' ' + gTo.unit + ' (~' + d50Um + ' um) to your recipe!'
+                toast: 'Applied ' + gTo.name + ' @ ' + targetSetting + ' ' + gTo.unit + ' (~' + d50Um + ' \u00B5m) to your recipe!'
               });
             }
-          }, ic('gear', { size: 14 }), domH('span', { text: 'Apply Translated Setting to My Recipe \u2192' }))
+          }, ic('grinder-burr', { size: 14 }), domH('span', { text: 'Apply Translated Setting to My Recipe \u2192' }))
         )
       ));
+      renderOmniPsdHistogram();
     }
 
     card.appendChild(domH('div', { class: 'bt-lab-card-head' },
       domH('div', { class: 'bt-lab-title-group' },
-        ic('gear', { size: 22 }),
+        ic('grinder-burr', { size: 22 }),
         domH('div', null,
-          domH('h3', { text: 'Cross-Grinder Click Translator & 2-Point Burr Calibration' }),
-          domH('p', { class: 'bt-lab-sub', text: 'Translate any recipe click/dial across ' + gList.length + ' grinders via micron D50 equivalence' })
+          domH('h3', { text: 'Cross-Grinder Click Translator & DiFluid Omni D50 Calibration' }),
+          domH('p', { class: 'bt-lab-sub', text: 'Translate any recipe click/dial or live Omni D50 micron scan across ' + gList.length + ' grinders' })
         )
       ),
       epistemicBadge('calibrated_biophysics')
@@ -6941,7 +8200,28 @@
       domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Translate To' }), toSel)
     ));
     card.appendChild(outBox);
+    card.appendChild(omniPsdCard);
     paintGrinder();
+
+    _labLiveHooks.grinderLab = function (opts) {
+      if (!card.isConnected) return false;
+      if (opts && opts.d50Changed && labState.omniLive.d50Um > 0) {
+        const measuredUm = Math.round(labState.omniLive.d50Um);
+        _omniOverrideUm = measuredUm;
+        const gFrom = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
+        const solvedSet = umToSetting(gFrom, measuredUm);
+        if (Number.isFinite(+solvedSet)) {
+          gl.fromSetting = +solvedSet;
+          if (typeof document === 'undefined' || document.activeElement !== fromSetIn) {
+            fromSetIn.value = String(gl.fromSetting);
+          }
+        }
+        paintGrinder();
+        return true;
+      }
+      renderOmniPsdHistogram();
+      return true;
+    };
     return card;
   }
 
@@ -6954,7 +8234,7 @@
 
   function buildStudioBluetoothAndGrinderHub() {
     const wrap = domH('div', { class: 'bt-studio-stack' });
-    wrap.appendChild(renderHardwareBench(true));
+    wrap.appendChild(renderHardwareBench(true, 'studio'));
     wrap.appendChild(buildGrinderTranslatorCard());
     wrap.appendChild(buildStudioAgtronAndFreshness());
     return wrap;
@@ -6991,25 +8271,36 @@
       hidden: true,
       title: 'Trigger DiFluid R2 Refractometer Reading',
       onclick: function () {
-        if (typeof ble.triggerRefractometerRead === 'function') {
-          Promise.resolve(ble.triggerRefractometerRead()).catch(function () {});
+        const b = window.BTBle || ble;
+        if (typeof b.triggerRefractometerRead === 'function') {
+          Promise.resolve(b.triggerRefractometerRead()).catch(function () {});
         }
       }
     }, 'Read R2 Now');
 
     function syncHwStatus() {
       const st = getBleStateSafe();
-      const scOn = !!(st.scale && st.scale.connected);
-      const r2On = !!(st.refractometerConnected || (st.refractometer && st.refractometer.connected));
-      const r2Tds = (st.refractometer && st.refractometer.tds) || labState.bc.measTds;
       const simOn = !!st.simulatorActive;
-      const anyLive = scOn || r2On || simOn || r2Tds > 0;
-      statusDot.className = 'bt-hw-dot' + (anyLive ? ' is-live' : '');
+      const scOn = !!(st.scaleConnected || (st.scale && st.scale.connected));
+      const prOn = !!(st.pressureConnected || (st.pressure && st.pressure.connected));
+      const r2On = !!(st.refractometerConnected || (st.refractometer && st.refractometer.connected));
+      const omOn = !!(st.omniConnected || (st.omni && st.omni.connected));
+      const ktOn = !!st.kettleConnected;
+      const xbOn = !!st.xbloomConnected;
+      const r2Tds = (st.refractometer && st.refractometer.tds) || st.lastTds || labState.bc.measTds;
+      const anyLive = scOn || prOn || r2On || omOn || ktOn || xbOn || simOn || r2Tds > 0;
+      setClassIfChanged(statusDot, 'bt-hw-dot' + (anyLive ? ' is-live' : ''));
       const parts = [];
-      if (r2On) parts.push('DiFluid R2 Connected');
-      if (scOn || simOn) parts.push(Number((st.scale && st.scale.weightG) || 0).toFixed(1) + ' g');
+      if (scOn) parts.push(Number((st.scale && st.scale.weightG != null ? st.scale.weightG : st.weightG) || 0).toFixed(1) + ' g');
+      if (prOn && (st.pressureConnected || +st.pressureBar > 0.1)) parts.push(Number((st.pressure && st.pressure.bar != null ? st.pressure.bar : st.pressureBar) || 0).toFixed(1) + ' bar');
       if (r2Tds > 0) parts.push(Number(r2Tds).toFixed(2) + '% TDS');
-      statusTxt.textContent = parts.length ? ('Live: ' + parts.join(' · ')) : 'Scale / R2 / Omni Standby';
+      else if (r2On) parts.push('R2 Ready');
+      if (omOn || labState.omniLive.d50Um) {
+        parts.push(labState.omniLive.d50Um ? ('D50 ' + Math.round(labState.omniLive.d50Um) + ' \u00B5m') : 'Omni Live');
+      }
+      if (ktOn) parts.push('Kettle ' + (st.kettleTempC != null ? (Math.round(+st.kettleTempC) + ' \u00B0C') : 'On'));
+      if (xbOn) parts.push('xBloom ' + (st.xbloomStage || 'Ready'));
+      setTextIfChanged(statusTxt, parts.length ? ('Live: ' + parts.join(' \u00B7 ')) : 'Scale / Pressure / R2 / Omni / Kettle Standby');
       quickReadR2Btn.hidden = !(r2On || simOn);
       return barRoot && barRoot.isConnected;
     }
@@ -7033,17 +8324,18 @@
       class: 'bt-hw-sim-pill',
       title: 'Simulate 10Hz Scale + DiFluid R2 + Omni',
       onclick: function () {
+        const b = window.BTBle || ble;
         const st = getBleStateSafe();
-        if (st.simulatorActive && typeof ble.stopSimulator === 'function') {
-          ble.stopSimulator();
+        if (st.simulatorActive && typeof b.stopSimulator === 'function') {
+          b.stopSimulator();
           notify('Stopped 10Hz BLE Simulator.');
-        } else if (typeof ble.startSimulator === 'function') {
-          ble.startSimulator();
+        } else if (typeof b.startSimulator === 'function') {
+          b.startSimulator();
           notify('10Hz Scale + R2 + Omni Simulator active!');
         } else {
           labState.bc.measTds = 1.42;
           labState.bc.measTempC = 23.4;
-          notify('Simulated 1.42% TDS (23.4 °C) & 10Hz Scale!');
+          notify('Simulated 1.42% TDS (23.4 \u00B0C) & 10Hz Scale!');
         }
         CK.haptic('snap');
         syncHwStatus();
@@ -7147,15 +8439,18 @@
 
   function renderBleDevicesSheet(arg0) {
     const hostEl = arg0 && arg0.nodeType === 1 ? arg0 : null;
-    const box = domH('div', { class: 'bt-sheet-content bt-ble-sheet-content' },
+    const box = domH('div', {
+      class: 'bt-sheet-content bt-ble-sheet-content',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box;'
+    },
       domH('div', { class: 'bt-sheet-head-sub' },
         ic('ble-wave', { size: 22 }),
-        domH('div', null,
+        domH('div', { style: 'min-width:0;' },
           domH('h2', { text: '5-Slot Bluetooth Bench & Pocket Micron Lens' }),
-          domH('p', { class: 'bt-lab-sub', text: 'Concurrent WebBLE GATT across 15 hardware families + Zero-CORS DiFluid Sync' })
+          domH('p', { class: 'bt-lab-sub', text: 'Concurrent WebBLE GATT across 15+ hardware families + Live Packet Inspector' })
         )
       ),
-      renderHardwareBench(true)
+      renderHardwareBench(true, 'sheet')
     );
     if (hostEl) {
       hostEl.textContent = '';
