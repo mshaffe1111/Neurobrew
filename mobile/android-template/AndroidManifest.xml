@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
+          package="app.beantelligence.mobile">
+
+  <!-- Android 12-15+ (API 31-35): Zero GPS/Location Permission Prompt for Coffee BLE -->
+  <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+                   android:usesPermissionFlags="neverForLocation"
+                   tools:targetApi="s" />
+  <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+  <!-- Android 6-11 (API 23-30) Legacy BLE Compatibility -->
+  <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+  <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="30" />
+
+  <!-- Tactile Haptics & Active Brew Wake Lock -->
+  <uses-permission android:name="android.permission.VIBRATE" />
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
+  <uses-permission android:name="android.permission.INTERNET" />
+
+  <!-- Optional Hardware Features (required="false" so Google Play supports all phones & tablets) -->
+  <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+  <uses-feature android:name="android.hardware.camera" android:required="false" />
+  <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+  <application
+    android:allowBackup="true"
+    android:icon="@mipmap/ic_launcher"
+    android:roundIcon="@mipmap/ic_launcher_round"
+    android:label="BeanTelligence"
+    android:supportsRtl="true"
+    android:theme="@style/AppTheme"
+    android:usesCleartextTraffic="false">
+
+    <activity
+      android:name=".MainActivity"
+      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
+      android:exported="true"
+      android:launchMode="singleTask"
+      android:windowSoftInputMode="adjustResize">
+
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+  </application>
+</manifest>

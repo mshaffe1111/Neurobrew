@@ -1,0 +1,3389 @@
+/* ============================================================================
+ * BeanTelligence v6.0 — Stylesheet 04: BTChartKit, Lab & Devices, Palate DNA,
+ * Sunburst Wheel, SensoryPalateGym, Folklore Deck, Glossary & Data Vault
+ * Module: src/v6/styles/04-charts-lab-palate-academy.css
+ * WCAG 2.2 AA Light & Dark Themes · >=44px Touch Targets · 0px Mobile Overflow
+ * ============================================================================ */
+
+.num-tab {
+  font-family: var(--font-mono, "JetBrains Mono", "SF Mono", ui-monospace, monospace);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* ---- Shared Page & Studio Card Layout (Tabs 3, 4, 5) ---- */
+.bt-tab-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.bt-page-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: var(--r-lg, 22px);
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--line, #DCCDBE);
+  box-shadow: var(--shadow-card, 0 2px 10px rgba(28, 19, 14, 0.05));
+}
+
+.bt-hero-copy {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.bt-kicker {
+  display: inline-block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent, #9A4212);
+  margin-bottom: 4px;
+}
+
+.bt-page-hero h1 {
+  margin: 0 0 4px;
+  font-family: var(--font-display, "Lora", Georgia, serif);
+  font-size: clamp(1.38rem, 2.8vw, 1.85rem);
+  line-height: 1.2;
+  color: var(--ink, #1C130E);
+}
+
+.bt-page-hero p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--ink-secondary, #534034);
+}
+
+/* ---- Single-Row Horizontal Studio Navigation Pill Strip ---- */
+.bt-studio-pill-nav {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.bt-studio-pill-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.bt-studio-nav-pill {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  border: 1px solid var(--line, #DCCDBE);
+  background: var(--surface, #FFFFFF);
+  color: var(--ink-secondary, #534034);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.14s ease;
+}
+
+.bt-studio-nav-pill:hover {
+  border-color: var(--accent, #9A4212);
+  color: var(--ink, #1C130E);
+}
+
+.bt-studio-nav-pill.is-active {
+  background: var(--primary, #1B4D38);
+  border-color: var(--primary, #1B4D38);
+  color: var(--primary-ink, #FFFDF9);
+}
+
+/* ---- Studio & Subcard Containers ---- */
+.bt-lab-studios-stage,
+.bt-palate-seg,
+.bt-academy-seg {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.bt-studio-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--r-lg, 22px);
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--line, #DCCDBE);
+  box-shadow: var(--shadow-card, 0 2px 10px rgba(28, 19, 14, 0.05));
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-lab-subcard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px 14px;
+  border-radius: var(--r-md, 16px);
+  background: var(--bg-subtle, #F2EAE0);
+  border: 1px solid var(--line-hairline, rgba(28, 19, 14, 0.08));
+  min-width: 0;
+}
+
+.bt-lab-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bt-lab-title-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.bt-lab-title-group h3 {
+  margin: 0 0 2px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink, #1C130E);
+}
+
+.bt-lab-sub,
+.bt-lab-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--ink-secondary, #534034);
+}
+
+/* ---- Epistemic Tier Provenance Pills ---- */
+.bt-epistemic-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bt-epistemic-pill.is-verified {
+  background: var(--good-bg, #E2F4EB);
+  color: var(--good, #1B6341);
+}
+
+.bt-epistemic-pill.is-research {
+  background: var(--science-bg, #E3F2F7);
+  color: var(--science, #195A73);
+}
+
+.bt-epistemic-pill.is-craft {
+  background: var(--warn-bg, #FEF1D6);
+  color: var(--warn, #8C4F04);
+}
+
+.bt-epistemic-pill.is-myth {
+  background: var(--bad-bg, #FDE8E7);
+  color: var(--bad, #A1231F);
+}
+
+/* ---- Tactile Buttons & Chips (>= 44px Touch Targets) ---- */
+.bt-lab-chip-row,
+.bt-lab-btn-row,
+.bt-vernier-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.bt-lab-inline-lbl {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-muted, #6E5849);
+  margin-right: 2px;
+}
+
+.bt-lab-chip,
+.bt-lab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 13px;
+  border-radius: 9999px;
+  border: 1px solid var(--line, #DCCDBE);
+  background: var(--surface, #FFFFFF);
+  color: var(--ink, #1C130E);
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.12s ease;
+}
+
+.bt-lab-chip:active,
+.bt-lab-btn:active {
+  transform: scale(0.98);
+}
+
+.bt-lab-chip.is-active,
+.bt-lab-btn.is-primary {
+  background: var(--primary, #1B4D38);
+  border-color: var(--primary, #1B4D38);
+  color: var(--primary-ink, #FFFDF9);
+}
+
+.bt-lab-btn.is-accent,
+.bt-lab-chip.is-sweet-peak {
+  background: var(--accent, #9A4212);
+  border-color: var(--accent, #9A4212);
+  color: #FFFDF9;
+}
+
+.bt-lab-btn.is-danger {
+  background: var(--bad-bg, #FDE8E7);
+  border-color: var(--bad, #A1231F);
+  color: var(--bad, #A1231F);
+}
+
+/* ---- BTChartKit Surface, 48px Thumb-Offset Loupe & Hit-Halos ---- */
+.bt-chart-stage {
+  position: relative;
+  width: 100%;
+  border-radius: var(--r-md, 16px);
+  overflow: hidden;
+  background: var(--well, #EFE6DA);
+  border: 1px solid var(--line-hairline, rgba(28, 19, 14, 0.08));
+}
+
+.bt-chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bt-chart-surface {
+  outline: none;
+}
+
+.bt-chart-surface:focus-visible {
+  box-shadow: 0 0 0 2.5px var(--accent, #9A4212);
+  border-radius: var(--r-md, 16px);
+}
+
+.bt-chart-hit-halo {
+  cursor: grab;
+  touch-action: none;
+}
+
+.bt-chart-hit-halo:active {
+  cursor: grabbing;
+}
+
+.bt-chart-loupe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  pointer-events: none;
+  padding: 6px 11px;
+  border-radius: 9999px;
+  background: rgba(28, 19, 14, 0.90);
+  color: #FFFDF9;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  will-change: transform;
+}
+
+:root[data-theme="dark"] .bt-chart-loupe {
+  background: rgba(247, 240, 232, 0.94);
+  color: #15100D;
+}
+
+/* ---- Scrubbable Vernier Pill & Standalone Precision Keypad ---- */
+.bt-vernier-pill {
+  display: inline-flex;
+  align-items: stretch;
+  min-height: 44px;
+  border-radius: 9999px;
+  border: 1px solid var(--line, #DCCDBE);
+  background: var(--surface, #FFFFFF);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bt-vernier-pill.is-scrubbing {
+  border-color: var(--accent, #9A4212);
+  box-shadow: 0 0 0 2px var(--accent-soft, #FDECE0);
+}
+
+.bt-vp-step {
+  min-width: 44px;
+  min-height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--ink-secondary, #534034);
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bt-vp-step:hover {
+  background: var(--well, #EFE6DA);
+  color: var(--ink, #1C130E);
+}
+
+.bt-vp-track {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-width: 86px;
+  padding: 3px 10px;
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+
+.bt-vp-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted, #6E5849);
+}
+
+.bt-vp-val {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ink, #1C130E);
+}
+
+.bt-vp-ticks {
+  width: 100%;
+  height: 3px;
+  margin-top: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent, #9A4212) var(--vp-pct, 50%), var(--line-hairline, rgba(28,19,14,0.12)) var(--vp-pct, 50%));
+}
+
+.bt-vernier-keypad-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(16, 12, 10, 0.48);
+  backdrop-filter: blur(4px);
+}
+
+.bt-vernier-keypad-sheet {
+  width: 100%;
+  max-width: 420px;
+  padding: 16px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  border-radius: 24px 24px 0 0;
+  background: var(--surface-elevated, #FFFFFF);
+  border-top: 1px solid var(--line, #DCCDBE);
+  box-shadow: var(--shadow-sheet, 0 -8px 36px rgba(28, 19, 14, 0.18));
+}
+
+.bt-vk-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+
+.bt-vk-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ink-secondary, #534034);
+}
+
+.bt-vk-display {
+  font-size: 1.65rem;
+  color: var(--ink, #1C130E);
+}
+
+.bt-vk-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.bt-vk-key,
+.bt-vk-act {
+  min-height: 52px;
+  border-radius: 14px;
+  border: 1px solid var(--line, #DCCDBE);
+  background: var(--bg-subtle, #F2EAE0);
+  color: var(--ink, #1C130E);
+  font-size: 1.08rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bt-vk-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.bt-vk-act.is-primary {
+  background: var(--primary, #1B4D38);
+  border-color: var(--primary, #1B4D38);
+  color: #FFFDF9;
+}
+
+/* ---- 5-Slot WebBLE Hardware Bench & PocketMicronLens ---- */
+.bt-ble-bench {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bt-ble-zero-key-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--r-md, 16px);
+  background: var(--science-bg, #E3F2F7);
+  border: 1px solid var(--science, #195A73);
+}
+
+.bt-ble-banner-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1 1 250px;
+}
+
+.bt-ble-banner-main strong {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--ink, #1C130E);
+  margin-bottom: 2px;
+}
+
+.bt-ble-banner-main p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-secondary, #534034);
+}
+
+.bt-ble-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.bt-ble-slot-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--r-md, 16px);
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--line, #DCCDBE);
+}
+
+.bt-ble-slot-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink, #1C130E);
+  font-size: 0.88rem;
+}
+
+.bt-ble-slot-readout {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--accent, #9A4212);
+}
+
+.bt-ble-slot-fams {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.38;
+  color: var(--ink-muted, #6E5849);
+}
+
+.bt-toolmode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.bt-toolmode-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bt-toolmode-lbl {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink, #1C130E);
+}
+
+.bt-micron-canvas {
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--line, #DCCDBE);
+}
+
+.bt-lab-metric-strip,
+.bt-vault-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.bt-lab-kpi {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--line-hairline, rgba(28, 19, 14, 0.1));
+}
+
+.bt-lab-kpi span {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--ink-muted, #6E5849);
+}
+
+.bt-lab-kpi strong {
+  font-size: 1.05rem;
+  color: var(--ink, #1C130E);
+}
+
+/* ---- Inputs & Details Folds (>= 16px font-size for iOS Safari No-Zoom) ---- */
+.bt-lab-text-in,
+.bt-lab-textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  border: 1px solid var(--line, #DCCDBE);
+  background: var(--surface, #FFFFFF);
+  color: var(--ink, #1C130E);
+  font-family: inherit;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.bt-lab-inline-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.bt-lab-details {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--line, #DCCDBE);
+}
+
+.bt-lab-details summary {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--ink, #1C130E);
+}
+
+.bt-lab-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 0.84rem;
+  line-height: 1.48;
+  color: var(--ink-secondary, #534034);
+}
+
+/* ---- SVG Chart Vector Styling Across All 6 Lab Studios ---- */
+.bt-chart-plot-bg {
+  fill: var(--surface, #FFFFFF);
+  stroke: var(--line, #DCCDBE);
+  stroke-width: 1;
+}
+
+.bt-chart-gridline {
+  stroke: var(--line-hairline, rgba(28, 19, 14, 0.09));
+  stroke-width: 1;
+}
+
+.bt-chart-tick {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9.5px;
+  font-weight: 600;
+  fill: var(--ink-muted, #6E5849);
+}
+
+.bt-chart-axis-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: var(--ink-secondary, #534034);
+}
+
+/* Studio 1: BrewControlCanvas */
+.bt-bc-isoratio {
+  stroke: var(--line-strong, #8A725F);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  opacity: 0.55;
+}
+
+.bt-bc-isolabel {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 8.5px;
+  fill: var(--ink-muted, #6E5849);
+}
+
+.bt-bc-zone-sca {
+  fill: rgba(27, 99, 65, 0.11);
+  stroke: var(--good, #1B6341);
+  stroke-width: 1.2;
+  stroke-dasharray: 5 3;
+}
+
+.bt-bc-zone-nordic {
+  fill: rgba(25, 90, 115, 0.11);
+  stroke: var(--science, #195A73);
+  stroke-width: 1.1;
+}
+
+.bt-bc-zone-danger {
+  fill: rgba(161, 35, 31, 0.09);
+  stroke: var(--bad, #A1231F);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.bt-bc-zone-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--good, #1B6341);
+}
+
+.bt-bc-zone-lbl.is-danger {
+  fill: var(--bad, #A1231F);
+}
+
+.bt-bc-kde-outer {
+  fill: rgba(43, 114, 82, 0.18);
+  stroke: var(--good, #1B6341);
+  stroke-width: 1.2;
+}
+
+.bt-bc-kde-peak {
+  fill: rgba(238, 155, 77, 0.24);
+  stroke: var(--accent, #9A4212);
+  stroke-width: 2;
+}
+
+.bt-bc-hist-dot {
+  fill: var(--ink-muted, #6E5849);
+  opacity: 0.55;
+}
+
+.bt-bc-hist-dot.is-liked {
+  fill: var(--good, #1B6341);
+  opacity: 0.85;
+}
+
+.bt-bc-puck-ring {
+  fill: rgba(180, 76, 16, 0.22);
+  stroke: var(--accent, #9A4212);
+  stroke-width: 2;
+}
+
+.bt-bc-puck-core {
+  fill: var(--accent, #9A4212);
+  stroke: #FFFDF9;
+  stroke-width: 2;
+}
+
+.bt-bc-r2-diamond {
+  fill: var(--science, #195A73);
+  stroke: #FFFDF9;
+  stroke-width: 1.8;
+}
+
+.bt-bc-channel-halo {
+  fill: none;
+  stroke: var(--bad, #A1231F);
+  stroke-width: 2.2;
+  stroke-dasharray: 4 3;
+}
+
+/* Studio 2: ExtractionWaveTelemetry Hybrid Stage */
+.bt-wave-hybrid-stage {
+  position: relative;
+}
+
+.bt-wave-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.bt-wave-overlay-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.bt-wave-diamond-knot {
+  fill: var(--accent, #9A4212);
+  stroke: #FFFDF9;
+  stroke-width: 2;
+}
+
+.bt-wave-scrub-line {
+  stroke: var(--ink, #1C130E);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+  opacity: 0.65;
+}
+
+/* Studio 3: CircadianCaffeineTimeline */
+.bt-pk-night-curtain {
+  fill: rgba(25, 42, 86, 0.13);
+}
+
+.bt-pk-caf-area {
+  fill: rgba(180, 76, 16, 0.16);
+}
+
+.bt-pk-caf-curve {
+  stroke: var(--accent, #9A4212);
+  stroke-width: 2.4;
+}
+
+.bt-pk-alert-curve {
+  stroke: var(--science, #195A73);
+  stroke-width: 1.8;
+  stroke-dasharray: 5 3;
+}
+
+.bt-pk-wake-line {
+  stroke: #E59A28;
+  stroke-width: 2;
+}
+
+.bt-pk-sws-portal {
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.bt-pk-sws-portal.is-safe {
+  stroke: var(--good, #1B6341);
+}
+
+.bt-pk-sws-portal.is-over {
+  stroke: var(--bad, #A1231F);
+}
+
+.bt-pk-gate-lbl {
+  font-size: 9.5px;
+  font-weight: 700;
+}
+
+.bt-pk-gate-lbl.is-safe { fill: var(--good, #1B6341); }
+.bt-pk-gate-lbl.is-over { fill: var(--bad, #A1231F); }
+
+.bt-pk-track-bar {
+  fill: var(--bg-subtle, #F2EAE0);
+  stroke: var(--line, #DCCDBE);
+}
+
+.bt-pk-token-pill {
+  fill: var(--primary, #1B4D38);
+  stroke: #FFFDF9;
+  stroke-width: 1.6;
+}
+
+.bt-pk-cup-token.is-selected .bt-pk-token-pill {
+  fill: var(--accent, #9A4212);
+}
+
+.bt-pk-token-txt {
+  font-size: 9.5px;
+  font-weight: 700;
+  fill: #FFFDF9;
+  pointer-events: none;
+}
+
+.bt-pk-cup-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--bg-subtle, #F2EAE0);
+}
+
+.bt-pk-inspector-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Studio 4: WaterMineralPad */
+.bt-wt-zone-corrosive { fill: rgba(120, 130, 140, 0.16); }
+.bt-wt-zone-nordic { fill: rgba(25, 90, 115, 0.15); stroke: var(--science, #195A73); stroke-width: 1; }
+.bt-wt-zone-sca { fill: rgba(27, 99, 65, 0.14); stroke: var(--good, #1B6341); stroke-width: 1.2; }
+.bt-wt-zone-rpavlis { fill: rgba(180, 76, 16, 0.16); }
+.bt-wt-scale-hyperbola { fill: rgba(161, 35, 31, 0.15); stroke: var(--bad, #A1231F); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.bt-wt-ray-line { stroke: var(--science, #195A73); stroke-width: 2; stroke-dasharray: 4 3; }
+.bt-wt-blend-bead { fill: var(--good, #1B6341); stroke: #FFFDF9; stroke-width: 1.8; }
+.bt-wt-tap-pin { fill: var(--ink, #1C130E); stroke: #FFFDF9; stroke-width: 2; }
+.bt-wt-drop-halo { fill: rgba(25, 90, 115, 0.25); }
+.bt-wt-drop-core { fill: var(--science, #195A73); stroke: #FFFDF9; stroke-width: 2; }
+
+.bt-wt-recipe-deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.bt-wt-bottle-card {
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: var(--bg-subtle, #F2EAE0);
+  border: 1px solid var(--line, #DCCDBE);
+}
+
+.bt-wt-bottle-kicker {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--ink-muted, #6E5849);
+  margin-bottom: 3px;
+}
+
+/* Studio 5: TactileVesselVisualizer & Milk Steaming Lab */
+.bt-vs-glass {
+  fill: rgba(255, 255, 255, 0.35);
+  stroke: var(--line-strong, #8A725F);
+  stroke-width: 2.2;
+}
+
+.bt-vs-liquid {
+  fill: rgba(146, 72, 24, 0.78);
+}
+
+.bt-vs-meniscus-pill {
+  fill: var(--primary, #1B4D38);
+  stroke: #FFFDF9;
+  stroke-width: 1.5;
+}
+
+.bt-vs-meniscus-txt {
+  font-size: 9.5px;
+  font-weight: 700;
+  fill: #FFFDF9;
+  pointer-events: none;
+}
+
+.bt-vs-ice-cube {
+  fill: rgba(220, 244, 255, 0.85);
+  stroke: #6CC4E4;
+  stroke-width: 1.4;
+}
+
+.bt-vs-paragon-sphere {
+  fill: #9AA8B4;
+  stroke: #195A73;
+  stroke-width: 2;
+}
+
+.bt-vs-ret-sponge { fill: rgba(120, 82, 54, 0.35); stroke: var(--line-strong, #8A725F); }
+.bt-vs-bev-col { fill: rgba(180, 76, 16, 0.25); stroke: var(--accent, #9A4212); }
+.bt-vs-col-txt { font-size: 10px; font-weight: 700; fill: var(--ink, #1C130E); }
+
+.bt-milk-verdict {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--line, #DCCDBE);
+}
+
+.bt-milk-verdict.is-good { border-color: var(--good, #1B6341); background: var(--good-bg, #E2F4EB); }
+.bt-milk-verdict.is-warn { border-color: var(--bad, #A1231F); background: var(--bad-bg, #FDE8E7); }
+.bt-milk-verdict p { margin: 4px 0 6px; font-size: 0.84rem; }
+
+/* Studio 6: Agtron Cutaway, Freshness Cryo & Bulk-Trap Silos */
+.bt-ag-dish,
+.bt-ag-cutaway {
+  stroke: var(--line-strong, #8A725F);
+  stroke-width: 2;
+}
+
+.bt-ag-caliper { stroke: #FFFDF9; stroke-width: 3; }
+.bt-ag-puck { fill: var(--surface, #FFFFFF); stroke: var(--ink, #1C130E); stroke-width: 2.2; }
+.bt-ag-puck-lbl { font-size: 9.5px; font-weight: 800; fill: var(--ink, #1C130E); pointer-events: none; }
+.bt-ag-ruler-name { font-size: 10px; font-weight: 700; fill: var(--ink-secondary, #534034); }
+.bt-ag-ruler-val { font-size: 10px; font-weight: 700; fill: var(--ink, #1C130E); }
+
+.bt-fr-amb-curve { stroke: var(--good, #1B6341); stroke-width: 2.4; }
+.bt-fr-cryo-curve { stroke: var(--science, #195A73); stroke-width: 2.4; stroke-dasharray: 5 3; }
+.bt-fr-mass-line { stroke: var(--accent, #9A4212); stroke-width: 1.6; stroke-dasharray: 3 3; }
+.bt-fr-freeze-pin { fill: var(--science, #195A73); stroke: #FFFDF9; stroke-width: 2; }
+.bt-fr-today-pin { fill: var(--accent, #9A4212); stroke: #FFFDF9; stroke-width: 2; }
+
+.bt-silo-race-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--bg-subtle, #F2EAE0);
+}
+
+.bt-silo-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bt-silos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.bt-silo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface, #FFFFFF);
+}
+
+.bt-silo-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--well, #EFE6DA);
+}
+
+.bt-silo-fresh { background: var(--good, #1B6341); }
+.bt-silo-stale { background: var(--bad, #A1231F); }
+
+/* ---- Studio Readout &Dial-In Sparkline ---- */
+.bt-studio-readout-banner {
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: var(--bg-subtle, #F2EAE0);
+  border-left: 3.5px solid var(--accent, #9A4212);
+}
+
+.bt-studio-human-line strong {
+  font-size: 0.92rem;
+  color: var(--ink, #1C130E);
+}
+
+.bt-studio-xray-line {
+  margin: 5px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.42;
+  color: var(--science, #195A73);
+}
+
+.bt-dial-sparkline { width: 100%; height: auto; display: block; }
+.bt-spark-sweet-band { fill: rgba(27, 99, 65, 0.14); }
+.bt-spark-zone-lbl { font-size: 9px; font-weight: 700; fill: var(--good, #1B6341); }
+.bt-spark-axis { font-size: 9.5px; fill: var(--ink-muted, #6E5849); }
+.bt-spark-curve { stroke: var(--ink, #1C130E); stroke-width: 2.2; }
+.bt-spark-curve.is-multi { stroke-dasharray: 6 3 2 3; }
+.bt-spark-pred-line { stroke: var(--accent, #9A4212); stroke-width: 1.8; stroke-dasharray: 4 4; }
+.bt-spark-pred-node { fill: var(--surface, #FFFFFF); stroke: var(--accent, #9A4212); stroke-width: 2.2; stroke-dasharray: 3 2; }
+.bt-spark-node { fill: var(--ink, #1C130E); stroke: #FFFDF9; stroke-width: 1.5; }
+.bt-spark-node.is-sweet,
+.bt-spark-node.is-locked { fill: var(--good, #1B6341); }
+.bt-spark-delta { font-size: 9px; font-weight: 700; fill: var(--ink-secondary, #534034); }
+.bt-spark-delta.is-helped { fill: var(--good, #1B6341); }
+.bt-spark-delta.is-hurt { fill: var(--bad, #A1231F); }
+.bt-spark-empty { font-size: 11px; fill: var(--ink-muted, #6E5849); }
+
+/* ---- Tab 3: Palate Radar, World Passport, Trait Boards, Scanner & Wheel ---- */
+.bt-radar-ring { fill: none; stroke: var(--line, #DCCDBE); stroke-width: 1; }
+.bt-radar-spoke { stroke: var(--line, #DCCDBE); stroke-width: 1; }
+.bt-radar-lbl { font-size: 10px; font-weight: 700; fill: var(--ink, #1C130E); }
+.bt-radar-ci-band { fill: rgba(25, 90, 115, 0.18); }
+.bt-radar-poly { fill: rgba(180, 76, 16, 0.24); stroke: var(--accent, #9A4212); stroke-width: 2.3; }
+.bt-radar-dot { fill: var(--accent, #9A4212); stroke: #FFFDF9; stroke-width: 1.6; }
+
+.bt-map-ocean { fill: var(--well, #EFE6DA); }
+.bt-map-belt-band { fill: rgba(180, 76, 16, 0.08); }
+.bt-map-equator { stroke: var(--accent, #9A4212); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.5; }
+.bt-map-land { fill: var(--surface, #FFFFFF); stroke: var(--line-strong, #8A725F); stroke-width: 1.2; }
+.bt-map-pin { fill: var(--ink-muted, #6E5849); opacity: 0.55; cursor: pointer; }
+.bt-map-pin.is-stamped { fill: var(--good, #1B6341); stroke: #FFFDF9; stroke-width: 1.5; opacity: 1; }
+
+.bt-trait-board-body {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.bt-trait-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 160px) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: var(--bg-subtle, #F2EAE0);
+}
+
+.bt-trait-row.is-muted { opacity: 0.62; }
+.bt-trait-name { font-size: 0.84rem; font-weight: 600; color: var(--ink, #1C130E); }
+.bt-trait-bar-track { position: relative; height: 10px; border-radius: 5px; background: var(--surface, #FFFFFF); }
+.bt-trait-ci-band { position: absolute; top: 2px; height: 6px; border-radius: 3px; background: rgba(25, 90, 115, 0.30); }
+.bt-trait-dot { position: absolute; top: 0; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--accent, #9A4212); }
+.bt-trait-stat { font-size: 0.78rem; color: var(--ink-secondary, #534034); }
+
+.bt-scanner-verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--bg-subtle, #F2EAE0);
+}
+
+.bt-scanner-score-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  border: 4px solid var(--good, #1B6341);
+  background: var(--surface, #FFFFFF);
+}
+
+.bt-scanner-score-ring strong { font-size: 1.55rem; color: var(--good, #1B6341); }
+.bt-scanner-score-ring span { font-size: 0.68rem; font-weight: 700; text-align: center; color: var(--ink-secondary, #534034); }
+.bt-scanner-reasons { flex: 1 1 220px; }
+.bt-scanner-reasons p { margin: 0 0 6px; font-size: 0.85rem; }
+
+.bt-wheel-wedge { stroke: var(--surface, #FFFFFF); stroke-width: 1.2; cursor: pointer; transition: fill-opacity 0.14s ease; }
+.bt-wheel-wedge.is-picked { stroke: var(--ink, #1C130E); stroke-width: 2.2; }
+.bt-wheel-hub { fill: var(--surface, #FFFFFF); stroke: var(--line-strong, #8A725F); stroke-width: 2; cursor: pointer; }
+.bt-wheel-hub-txt { font-size: 10.5px; font-weight: 700; fill: var(--ink, #1C130E); }
+.bt-constellation-star { cursor: pointer; }
+
+/* ---- Tab 5: Academy, SensoryPalateGym, Folklore, Glossary & Data Vault ---- */
+.bt-expect-bars { display: flex; flex-direction: column; gap: 8px; }
+.bt-expect-row { display: grid; grid-template-columns: minmax(140px, 220px) 1fr 46px; align-items: center; gap: 10px; font-size: 0.84rem; }
+.bt-expect-track { height: 9px; border-radius: 5px; background: var(--well, #EFE6DA); overflow: hidden; }
+.bt-expect-fill { height: 100%; border-radius: 5px; background: var(--accent, #9A4212); }
+
+.bt-module-cards-grid,
+.bt-salami-glasses-grid,
+.bt-triangle-cups-row,
+.bt-sca-bowls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.bt-module-lead,
+.bt-module-body { margin: 0; font-size: 0.88rem; line-height: 1.5; color: var(--ink, #1C130E); }
+.bt-module-cite { margin: 4px 0 0; font-size: 0.76rem; color: var(--ink-muted, #6E5849); }
+
+.bt-salami-glass,
+.bt-sca-bowl-card {
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--bg-subtle, #F2EAE0);
+  border: 1.5px solid var(--line, #DCCDBE);
+}
+
+.bt-salami-glass.is-pouring {
+  border-color: var(--accent, #9A4212);
+  background: var(--accent-soft, #FDECE0);
+}
+
+.bt-gym-timer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--well, #EFE6DA);
+}
+
+.bt-gym-clock { font-size: 1.35rem; color: var(--ink, #1C130E); }
+
+.bt-triangle-cup-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 104px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 2px solid var(--line, #DCCDBE);
+  background: var(--surface, #FFFFFF);
+  color: var(--ink, #1C130E);
+  cursor: pointer;
+}
+
+.bt-triangle-cup-btn.is-odd-truth { border-color: var(--good, #1B6341); background: var(--good-bg, #E2F4EB); }
+.bt-triangle-cup-btn.is-wrong-pick { border-color: var(--bad, #A1231F); background: var(--bad-bg, #FDE8E7); }
+
+.bt-folk-swipe-card {
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--bg-subtle, #F2EAE0);
+  border: 1px solid var(--line, #DCCDBE);
+  touch-action: pan-y;
+}
+
+.bt-folk-claim-quote {
+  margin: 6px 0 14px;
+  font-family: var(--font-display, "Lora", Georgia, serif);
+  font-size: 1.25rem;
+  color: var(--ink, #1C130E);
+}
+
+.bt-folk-reveal-box {
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--science, #195A73);
+}
+
+.bt-glossary-results,
+.bt-glossary-results-untrapped {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px;
+  max-height: none;
+  overflow: visible;
+}
+
+.bt-glossary-item {
+  padding: 11px 13px;
+  border-radius: 12px;
+  background: var(--bg-subtle, #F2EAE0);
+}
+
+.bt-glossary-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.bt-glossary-cat {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent, #9A4212);
+}
+
+.bt-glossary-item p { margin: 0; font-size: 0.84rem; line-height: 1.45; color: var(--ink-secondary, #534034); }
+
+/* ---- Data Vault, Tour & Charter Sheets ---- */
+.bt-sheet-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 6px 2px 18px;
+  box-sizing: border-box;
+}
+
+.bt-vault-status {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--good-bg, #E2F4EB);
+  color: var(--good, #1B6341);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.bt-vault-handles-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bt-vault-handle-pill {
+  padding: 5px 10px;
+  border-radius: 9999px;
+  background: var(--bg-subtle, #F2EAE0);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-secondary, #534034);
+}
+
+.bt-vault-dropzone {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 2px dashed var(--line-strong, #8A725F);
+  background: var(--surface, #FFFFFF);
+}
+
+.bt-vault-dropzone.is-dragover {
+  border-color: var(--primary, #1B4D38);
+  background: var(--good-bg, #E2F4EB);
+}
+
+.bt-tour-mascot {
+  width: 132px;
+  height: 132px;
+  margin: 0 auto;
+}
+
+.bt-charter-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.bt-charter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--ink-secondary, #534034);
+}
+
+@media (max-width: 520px) {
+  .bt-studio-card { padding: 13px; }
+  .bt-expect-row { grid-template-columns: 1fr; gap: 4px; }
+  .bt-trait-row { grid-template-columns: 112px 1fr auto; gap: 6px; }
+}
+
+/* --------------------------------------------------------------------------
+ * 7. 1-Tap "? How This Works" Explainer Pill & Visual Guide Card
+ * -------------------------------------------------------------------------- */
+.bt-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.bt-how-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--line-strong, #8A725F);
+  background: var(--bg-subtle, #F2EAE0);
+  color: var(--ink, #1C130E);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+
+.bt-how-pill:hover,
+.bt-how-pill[aria-expanded="true"] {
+  background: var(--science-bg, #E0EFF5);
+  border-color: var(--science, #195A73);
+  color: var(--science, #195A73);
+}
+
+html[data-theme="dark"] .bt-how-pill {
+  background: var(--bg-subtle, #241B16);
+  color: var(--ink, #F7F0E8);
+}
+
+html[data-theme="dark"] .bt-how-pill:hover,
+html[data-theme="dark"] .bt-how-pill[aria-expanded="true"] {
+  background: rgba(91, 180, 212, 0.18);
+  border-color: #5BB4D4;
+  color: #8FD4EE;
+}
+
+.bt-how-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--bg-subtle, #F2EAE0);
+  border: 1px solid var(--science, #195A73);
+}
+
+.bt-how-panel[hidden] {
+  display: none !important;
+}
+
+.bt-how-step {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--line, #DCCDBE);
+}
+
+html[data-theme="dark"] .bt-how-step {
+  background: var(--surface, #1D1511);
+}
+
+.bt-how-kicker {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--science, #195A73);
+}
+
+html[data-theme="dark"] .bt-how-kicker {
+  color: #77C6E2;
+}
+
+.bt-how-step p {
+  margin: 0;
+  font-size: 0.81rem;
+  line-height: 1.4;
+  color: var(--ink, #1C130E);
+}
+
+/* --------------------------------------------------------------------------
+ * 8. DiFluid R2 Refractometer Thermal Readiness Badge & Metal-Spoon Coach
+ * -------------------------------------------------------------------------- */
+.bt-r2-readiness-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bt-r2-readiness-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--bg-subtle, #F2EAE0);
+  border: 1px solid var(--line, #DCCDBE);
+}
+
+.bt-r2-temp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 9999px;
+  font-size: 0.79rem;
+  font-weight: 700;
+}
+
+.bt-r2-temp-badge.is-ideal {
+  background: var(--good-bg, #E2F4EB);
+  color: var(--good, #1B6341);
+  border: 1px solid rgba(27, 99, 65, 0.34);
+}
+
+.bt-r2-temp-badge.is-warm {
+  background: #FFF3DC;
+  color: #8A4A08;
+  border: 1px solid rgba(180, 102, 18, 0.45);
+}
+
+.bt-r2-temp-badge.is-cool {
+  background: var(--science-bg, #E0EFF5);
+  color: var(--science, #195A73);
+  border: 1px solid rgba(25, 90, 115, 0.34);
+}
+
+html[data-theme="dark"] .bt-r2-temp-badge.is-ideal {
+  background: rgba(52, 179, 116, 0.18);
+  color: #7CE2AE;
+}
+
+html[data-theme="dark"] .bt-r2-temp-badge.is-warm {
+  background: rgba(232, 157, 53, 0.2);
+  color: #FFD089;
+}
+
+html[data-theme="dark"] .bt-r2-temp-badge.is-cool {
+  background: rgba(91, 180, 212, 0.2);
+  color: #8FD4EE;
+}
+
+.bt-r2-guide-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--line-strong, #8A725F);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ink, #1C130E);
+}
+
+html[data-theme="dark"] .bt-r2-guide-card {
+  background: var(--surface, #1D1511);
+}
+
+.bt-r2-guide-card[hidden] {
+  display: none !important;
+}
+
+.bt-r2-guide-list {
+  margin: 2px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* --------------------------------------------------------------------------
+ * 9. GMT Day/Night Bezel, Living 3-Wave Prism Horizon & Cutaway Tasting Glasses
+ *    (Zero generic fitness-tracker circle timers — THE Wave IS the Timer!)
+ * -------------------------------------------------------------------------- */
+.bt-pk-bezel-day {
+  fill: rgba(232, 168, 66, 0.22);
+  stroke: rgba(196, 104, 36, 0.45);
+  stroke-width: 1;
+}
+
+.bt-pk-bezel-night {
+  fill: rgba(24, 30, 56, 0.34);
+  stroke: rgba(91, 180, 212, 0.38);
+  stroke-width: 1;
+}
+
+html[data-theme="dark"] .bt-pk-bezel-night {
+  fill: rgba(14, 18, 38, 0.72);
+}
+
+.bt-pk-horo-tick {
+  stroke: var(--ink-muted, #6E5849);
+  stroke-width: 1;
+  opacity: 0.68;
+}
+
+.bt-pk-horo-tick.is-major {
+  stroke: var(--accent, #9A4212);
+  stroke-width: 1.9;
+  opacity: 0.95;
+}
+
+html[data-theme="dark"] .bt-pk-horo-tick.is-major {
+  stroke: #E8844A;
+}
+
+.bt-pk-sun-icon {
+  fill: #E69D35;
+  stroke: #B86814;
+  stroke-width: 1.2;
+}
+
+.bt-pk-moon-icon {
+  fill: #8FD4EE;
+}
+
+.bt-pk-sws-glow {
+  stroke-width: 9;
+  stroke-linecap: round;
+  opacity: 0.28;
+}
+
+.bt-pk-sws-glow.is-safe { stroke: #2E9E64; }
+.bt-pk-sws-glow.is-over { stroke: #E69D35; }
+
+.bt-chrono-gym-deck {
+  display: grid;
+  grid-template-columns: minmax(210px, 268px) 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--bg-subtle, #F2EAE0);
+  border: 1px solid var(--line, #DCCDBE);
+}
+
+html[data-theme="dark"] .bt-chrono-gym-deck {
+  background: #17120F;
+  border-color: #362920;
+}
+
+@media (max-width: 660px) {
+  .bt-chrono-gym-deck {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+}
+
+.bt-chrono-dial-col {
+  width: 100%;
+  max-width: 264px;
+  display: flex;
+  justify-content: center;
+}
+
+.bt-chrono-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.bt-salami-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bt-salami-pct {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--line, #DCCDBE);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--ink-secondary, #534034);
+}
+
+.bt-chrono-fallback-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.bt-chrono-face {
+  fill: var(--surface, #FFFFFF);
+  stroke: var(--line-strong, #8A725F);
+  stroke-width: 2;
+}
+
+html[data-theme="dark"] .bt-chrono-face {
+  fill: #130F0C;
+  stroke: #4A382C;
+}
+
+.bt-chrono-tick {
+  stroke: var(--ink-muted, #6E5849);
+  stroke-width: 1.1;
+  opacity: 0.6;
+}
+
+.bt-chrono-tick-major {
+  stroke: var(--accent, #9A4212);
+  stroke-width: 2.1;
+}
+
+html[data-theme="dark"] .bt-chrono-tick-major {
+  stroke: #E8844A;
+}
+
+.bt-chrono-digits {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 22px;
+  font-weight: 800;
+  fill: var(--ink, #1C130E);
+}
+
+html[data-theme="dark"] .bt-chrono-digits {
+  fill: #F7F0E8;
+}
+
+.bt-chrono-phase {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  fill: var(--science, #195A73);
+}
+
+html[data-theme="dark"] .bt-chrono-phase {
+  fill: #7CCAE6;
+}
+
+/* --------------------------------------------------------------------------
+ * 10. AAA Chiaroscuro Surfaces, Recessed OLED BLE Readouts & Archival Borders
+ * -------------------------------------------------------------------------- */
+.bt-studio-card,
+.bt-ble-slot-card {
+  background: var(--surface-card-grad, linear-gradient(180deg, #FFFFFF 0%, #FCF9F4 100%));
+  box-shadow: var(--shadow-card, inset 0 1px 0 rgba(255, 255, 255, 0.88), 0 4px 16px -2px rgba(32, 18, 10, 0.06), 0 1px 3px rgba(32, 18, 10, 0.05));
+}
+
+html[data-theme="dark"] .bt-studio-card,
+html[data-theme="dark"] .bt-ble-slot-card {
+  background: var(--surface-card-grad, linear-gradient(180deg, #201A16 0%, #17120F 100%));
+  box-shadow: var(--shadow-card, inset 0 1px 0 rgba(255, 244, 228, 0.09), 0 10px 28px -4px rgba(0, 0, 0, 0.52), 0 2px 6px rgba(0, 0, 0, 0.38));
+}
+
+.bt-chart-stage,
+.bt-studio-readout-banner {
+  box-shadow: var(--shadow-well-inset, inset 0 2px 5px rgba(36, 22, 12, 0.08), 0 1px 0 rgba(255, 255, 255, 0.78));
+}
+
+html[data-theme="dark"] .bt-chart-stage,
+html[data-theme="dark"] .bt-studio-readout-banner {
+  box-shadow: var(--shadow-well-inset, inset 0 2px 7px rgba(0, 0, 0, 0.62), 0 1px 0 rgba(255, 244, 228, 0.05));
+}
+
+.bt-ble-slot-readout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: 9px;
+  background: #14110F;
+  color: #F6EFE6;
+  border: 1px solid #352921;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.65);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 0.84rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bt-ble-slot-readout::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #34B374;
+  box-shadow: 0 0 6px rgba(52, 179, 116, 0.75);
+  flex-shrink: 0;
+}
+
+.bt-folk-swipe-card {
+  box-shadow:
+    inset 0 0 0 3px var(--surface, #FFFFFF),
+    inset 0 0 0 4px var(--line, #DCCDBE),
+    var(--shadow-card, 0 6px 20px rgba(32, 18, 10, 0.08));
+}
+
+.bt-folk-swipe-card h3 {
+  font-family: var(--font-serif, "Lora", Georgia, serif);
+}
+
+.bt-vault-sheet,
+.bt-vault-handle-pill {
+  font-variant-numeric: tabular-nums;
+}
+
+.bt-r2-reconcile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  background: var(--bg-subtle, #F2EAE0);
+  border: 1px solid var(--science, #195A73);
+  font-size: 0.82rem;
+  line-height: 1.42;
+}
+
+.bt-r2-reconcile-card[hidden] {
+  display: none !important;
+}
+
+html[data-theme="dark"] .bt-r2-reconcile-card {
+  background: #1B1512;
+  border-color: #5BB4D4;
+}
+
+/* --------------------------------------------------------------------------
+ * 11. v6.2 Sleek 52px Compact Hardware Bar, Actionable CTAs, Rescue, World Belt,
+ *     Empirical-Bayes 4-Level Drill-In, Buyer Trio, 36 Vials & 5-Bowl Cupping
+ * -------------------------------------------------------------------------- */
+.bt-lab-hw-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--line, #DCCDBE);
+  box-shadow: var(--shadow-card, 0 2px 8px rgba(28, 19, 14, 0.05));
+  box-sizing: border-box;
+}
+
+.bt-hw-bar-left,
+.bt-hw-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bt-hw-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink-muted, #6E5849);
+  flex-shrink: 0;
+}
+
+.bt-hw-dot.is-live {
+  background: #2E9E64;
+  box-shadow: 0 0 8px rgba(46, 158, 100, 0.8);
+}
+
+.bt-hw-status-txt {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink, #1C130E);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bt-hw-connect-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--primary, #1B4D38);
+  background: var(--primary, #1B4D38);
+  color: var(--primary-ink, #FFFDF9);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.bt-hw-sim-pill {
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--line, #DCCDBE);
+  background: var(--bg-subtle, #F2EAE0);
+  color: var(--ink-secondary, #534034);
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .bt-lab-hw-bar {
+    padding: 6px 10px;
+    gap: 6px;
+    overflow: hidden;
+    max-width: 100%;
+  }
+  .bt-hw-status-txt {
+    max-width: 112px;
+    font-size: 0.74rem;
+  }
+  .bt-hw-connect-btn,
+  .bt-hw-sim-pill,
+  .bt-hw-sim-btn {
+    padding: 5px 8px;
+    font-size: 0.73rem;
+  }
+}
+
+.bt-studio-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.bt-chart-cta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.bt-chart-cta-btn {
+  flex: 1 1 220px;
+  min-height: 48px;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.bt-lab-page .bt-cta-sub {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-secondary, #534034);
+}
+
+/* >= 16px (1rem) font-size on ALL accessible inputs, selects & textareas (Zero iOS Zoom) */
+.bt-lab-select,
+.bt-lab-num-in,
+.bt-lab-text-in,
+.bt-lab-textarea {
+  font-size: 16px;
+  min-height: 44px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line, #DCCDBE);
+  background: var(--surface, #FFFFFF);
+  color: var(--ink, #1C130E);
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.bt-lab-field-lbl {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bt-lab-field-lbl > span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ink-muted, #6E5849);
+}
+
+.bt-lab-range {
+  width: 100%;
+  min-height: 36px;
+  accent-color: var(--primary, #1B4D38);
+  cursor: pointer;
+}
+
+.bt-cutoff-scrubber-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--bg-subtle, #F2EAE0);
+  border: 1px solid var(--line, #DCCDBE);
+}
+
+.bt-cutoff-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--ink, #1C130E);
+}
+
+.bt-ratio4-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.bt-bagcmp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+/* In-Mug Rescue & Caffeine Flagpole SVG Vectors */
+.bt-mug-handle {
+  stroke: var(--line-strong, #8A725F);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.bt-mug-bypass-band {
+  fill: rgba(91, 180, 212, 0.42);
+  stroke: var(--science, #195A73);
+  stroke-width: 1.2;
+}
+
+.bt-pk-focus-band {
+  fill: rgba(46, 158, 100, 0.11);
+}
+
+.bt-pk-flagpole {
+  stroke: var(--good, #1B6341);
+  stroke-width: 1.8;
+  stroke-dasharray: 4 3;
+}
+
+.bt-pk-flag-badge {
+  fill: var(--good, #1B6341);
+}
+
+.bt-pk-flag-txt {
+  font-size: 9px;
+  font-weight: 700;
+  fill: #FFFDF9;
+}
+
+/* World Coffee Belt Map Coastlines, Tropics & Affinity Pins */
+.bt-map-tropic {
+  stroke: var(--accent, #9A4212);
+  stroke-width: 0.8;
+  stroke-dasharray: 3 4;
+  opacity: 0.42;
+}
+
+.bt-map-lat-lbl {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 8.5px;
+  font-weight: 600;
+  fill: var(--ink-muted, #6E5849);
+}
+
+.bt-map-pin.is-fav {
+  fill: #D8832B;
+  stroke: #FFFDF9;
+  stroke-width: 1.5;
+  opacity: 1;
+}
+
+.bt-map-pin.is-selected {
+  stroke: var(--ink, #1C130E);
+  stroke-width: 2.2;
+  opacity: 1;
+}
+
+.bt-map-pin-lbl {
+  font-size: 6.5px;
+  font-weight: 700;
+  fill: var(--ink, #1C130E);
+  pointer-events: none;
+}
+
+.bt-map-inspector-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--bg-subtle, #F2EAE0);
+  border: 1px solid var(--line, #DCCDBE);
+}
+
+/* Confidence-Weighted 4-Level Drill-In Rows */
+.bt-drill-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.bt-crumb-sep {
+  color: var(--ink-muted, #6E5849);
+  font-weight: 700;
+}
+
+button.bt-trait-row {
+  width: 100%;
+  border: 1px solid transparent;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button.bt-trait-row:hover {
+  border-color: var(--accent, #9A4212);
+}
+
+.bt-trait-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.bt-trait-conf {
+  font-size: 0.68rem;
+  color: var(--ink-muted, #6E5849);
+}
+
+.bt-trait-mean-line {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 1.5px;
+  background: var(--ink-muted, #6E5849);
+  opacity: 0.45;
+}
+
+.bt-trait-conf-fill {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(27, 99, 65, 0.22);
+}
+
+.bt-trait-raw-tick {
+  position: absolute;
+  top: 1px;
+  width: 3px;
+  height: 8px;
+  margin-left: -1.5px;
+  border-radius: 1.5px;
+  background: var(--science, #195A73);
+}
+
+/* Smart Bag Buyer Trio & 36-Vial Aroma Kit */
+.bt-buyer-trio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.bt-buyer-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 13px 14px;
+  border-radius: 16px;
+  border: 1.5px solid var(--line, #DCCDBE);
+  background: var(--bg-subtle, #F2EAE0);
+  color: var(--ink, #1C130E);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.bt-buyer-card.is-bullseye { border-color: var(--good, #1B6341); }
+.bt-buyer-card.is-bridge { border-color: var(--accent, #9A4212); }
+.bt-buyer-card.is-horizon { border-color: var(--science, #195A73); }
+
+.bt-buyer-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bt-buyer-kicker {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent, #9A4212);
+}
+
+.bt-buyer-card p {
+  margin: 0;
+  font-size: 0.81rem;
+  line-height: 1.42;
+  color: var(--ink-secondary, #534034);
+}
+
+.bt-aroma-kit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(144px, 1fr));
+  gap: 8px;
+}
+
+.bt-aroma-vial-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line, #DCCDBE);
+  background: var(--surface, #FFFFFF);
+  color: var(--ink, #1C130E);
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bt-aroma-vial-btn.is-mastered {
+  background: var(--good-bg, #E2F4EB);
+  border-color: var(--good, #1B6341);
+  color: var(--good, #1B6341);
+}
+
+.bt-vial-num {
+  font-size: 0.74rem;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+/* Accordion Mini-Courses, Quiz Checkpoints, 5-Bowl Cupping & 6-Cup Kitchen */
+.bt-lessons-accordion-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bt-lesson-accordion.is-completed {
+  border-color: var(--good, #1B6341);
+}
+
+.bt-lesson-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bt-lesson-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  color: var(--ink-muted, #6E5849);
+}
+
+.bt-lesson-done-pill {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--good-bg, #E2F4EB);
+  color: var(--good, #1B6341);
+  font-weight: 700;
+}
+
+.bt-lesson-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+}
+
+.bt-lesson-quiz-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: var(--bg-subtle, #F2EAE0);
+  border: 1px solid var(--line, #DCCDBE);
+}
+
+.bt-quiz-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bt-quiz-opt.is-correct,
+.bt-lab-chip.is-correct {
+  background: var(--good, #1B6341);
+  border-color: var(--good, #1B6341);
+  color: #FFFDF9;
+}
+
+.bt-quiz-opt.is-wrong,
+.bt-lab-chip.is-wrong {
+  background: var(--bad, #A1231F);
+  border-color: var(--bad, #A1231F);
+  color: #FFFDF9;
+}
+
+.bt-sca-bowl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bt-sca-bowl-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bt-sca-bowl-badge {
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background: var(--primary, #1B4D38);
+  color: #FFFDF9;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.bt-sca-score-live {
+  font-size: 0.96rem;
+  color: var(--accent, #9A4212);
+}
+
+.bt-cva-attr-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.bt-cva-attr-row {
+  display: grid;
+  grid-template-columns: 88px 1fr 56px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.bt-kitchen-6grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.bt-kitchen-recipe {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent, #9A4212);
+}
+
+.bt-doi-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--ink-secondary, #534034);
+}
+
+.bt-doi-link {
+  color: var(--science, #195A73);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+ * v6.3 ELEVATION: INTERACTIVE CROSSHAIRS, EVERYDAY WATER METER, ORIGIN
+ * PASSPORT CARD, 4-STEP CUPPING GUIDE & BEANJAMIN PALATE COACH
+ * ========================================================================== */
+
+/* Universal Sub-View Escape Bar & Back Pill */
+.bt-subview-back-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.bt-back-escape-btn {
+  min-height: 40px;
+  padding: 6px 14px;
+  font-weight: 800;
+  border-radius: 9999px;
+  border: 1.5px solid var(--primary, #1B4D38);
+  color: var(--primary, #1B4D38);
+  background: var(--bg-elevated, #FFFDF9);
+}
+
+[data-theme="dark"] .bt-back-escape-btn {
+  border-color: #46B884;
+  color: #7EE2B2;
+  background: rgba(27, 77, 56, 0.22);
+}
+
+/* SVG Chart Crosshair & Axis Callout Pills (08-bt-chart-kit) */
+.bt-chart-crosshair {
+  transition: opacity 0.14s ease;
+}
+
+.bt-chart-crosshair.is-subtle {
+  opacity: 0.52;
+}
+
+.bt-chart-crosshair.is-active {
+  opacity: 1;
+}
+
+.bt-ch-line {
+  stroke: var(--accent, #C2591D);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 3;
+}
+
+.bt-ch-pill-bg {
+  fill: var(--ink-primary, #231811);
+  opacity: 0.92;
+}
+
+[data-theme="dark"] .bt-ch-pill-bg {
+  fill: #F5EDE3;
+}
+
+.bt-ch-pill-txt {
+  fill: #FFFDF9;
+  font-size: 9.5px;
+  font-weight: 700;
+}
+
+[data-theme="dark"] .bt-ch-pill-txt {
+  fill: #1A130E;
+}
+
+/* Touch-to-Brew Sweet-Spot Control Chart Pins, Legend & Flavor Forecast Badge */
+.bt-bc-cur-ring {
+  fill: rgba(25, 90, 115, 0.16);
+  stroke: var(--science, #195A73);
+  stroke-width: 2;
+}
+
+.bt-bc-cur-core {
+  fill: var(--science, #195A73);
+  stroke: #FFFDF9;
+  stroke-width: 1.5;
+}
+
+.bt-bc-cur-lbl {
+  fill: var(--science, #195A73);
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+[data-theme="dark"] .bt-bc-cur-ring {
+  stroke: #63C4E8;
+  fill: rgba(99, 196, 232, 0.18);
+}
+
+[data-theme="dark"] .bt-bc-cur-core,
+[data-theme="dark"] .bt-bc-cur-lbl {
+  fill: #63C4E8;
+}
+
+.bt-bc-delta-bridge {
+  stroke: var(--science, #195A73);
+  stroke-width: 1.6;
+  stroke-dasharray: 4 4;
+  opacity: 0.75;
+}
+
+.bt-bc-aim-tag-bg {
+  fill: var(--primary, #1B4D38);
+  stroke: #FFFDF9;
+  stroke-width: 1.2;
+}
+
+.bt-bc-aim-tag-txt {
+  fill: #FFFDF9;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.bt-chart-pin-legend,
+.bt-wave-legend-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  background: var(--bg-subtle, #F3ECE2);
+  border: 1px solid var(--line, #DFD2C3);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--ink-secondary, #4E3C30);
+}
+
+[data-theme="dark"] .bt-chart-pin-legend,
+[data-theme="dark"] .bt-wave-legend-bar {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #D8CBBF;
+}
+
+.bt-pin-leg-item,
+.bt-wave-leg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bt-pin-swatch,
+.bt-wave-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 9999px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.bt-pin-swatch.is-current { background: #195A73; border: 2px solid #7BD0EE; }
+.bt-pin-swatch.is-aimed { background: #1B4D38; border: 2px solid #E8844A; }
+.bt-pin-swatch.is-zone { background: rgba(38, 166, 105, 0.35); border: 1.5px solid #26A669; border-radius: 3px; }
+
+.bt-wave-swatch.is-acid { background: #F5B041; }
+.bt-wave-swatch.is-sweet { background: #E8844A; }
+.bt-wave-swatch.is-bitter { background: #9C5C3E; }
+.bt-wave-swatch.is-cutoff { background: #26A669; border-radius: 2px; width: 4px; height: 13px; }
+
+.bt-wave-cutoff-pill {
+  fill: var(--primary, #1B4D38);
+  stroke: #FFFDF9;
+  stroke-width: 1.25;
+}
+
+.bt-wave-cutoff-pill-txt {
+  fill: #FFFDF9;
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+.bt-flavor-forecast-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(27, 99, 65, 0.32);
+  background: linear-gradient(135deg, rgba(38, 166, 105, 0.11), rgba(232, 132, 74, 0.09));
+}
+
+.bt-flavor-forecast-badge.is-floral {
+  border-color: rgba(25, 90, 115, 0.35);
+  background: linear-gradient(135deg, rgba(75, 163, 199, 0.13), rgba(200, 90, 142, 0.09));
+}
+
+.bt-flavor-forecast-badge.is-syrupy {
+  border-color: rgba(154, 66, 18, 0.38);
+  background: linear-gradient(135deg, rgba(154, 66, 18, 0.14), rgba(216, 131, 43, 0.1));
+}
+
+.bt-flavor-forecast-badge.is-warn,
+.bt-flavor-forecast-badge.is-danger {
+  border-color: rgba(161, 35, 31, 0.38);
+  background: rgba(161, 35, 31, 0.08);
+}
+
+.bt-forecast-kicker {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent, #9A4212);
+}
+
+[data-theme="dark"] .bt-forecast-kicker {
+  color: #F2A365;
+}
+
+.bt-forecast-main {
+  font-size: 0.94rem;
+  line-height: 1.35;
+  color: var(--ink-primary, #231811);
+}
+
+[data-theme="dark"] .bt-forecast-main {
+  color: #FAF3EB;
+}
+
+.bt-cta-sub {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-secondary, #5B4638);
+}
+
+/* 24-Hr Caffeine Curve: Last Safe Sip Hero & Bedtime Threshold Line */
+.bt-pk-sleep-thresh-line {
+  stroke: #26A669;
+  stroke-width: 1.3;
+  stroke-dasharray: 5 4;
+  opacity: 0.82;
+}
+
+.bt-pk-sleep-thresh-line.is-over {
+  stroke: #D9534F;
+}
+
+.bt-pk-thresh-lbl {
+  fill: var(--good, #1B6341);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+[data-theme="dark"] .bt-pk-thresh-lbl {
+  fill: #6EE0A8;
+}
+
+.bt-pk-safesip-hero {
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(38, 166, 105, 0.35);
+  background: rgba(38, 166, 105, 0.09);
+}
+
+.bt-pk-safesip-hero.is-over {
+  border-color: rgba(201, 68, 56, 0.45);
+  background: rgba(201, 68, 56, 0.1);
+}
+
+.bt-pk-safesip-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bt-pk-safesip-clock {
+  font-size: 1.12rem;
+  color: var(--ink-primary, #201610);
+}
+
+[data-theme="dark"] .bt-pk-safesip-clock {
+  color: #FFF9F2;
+}
+
+.bt-pk-safesip-sub {
+  font-size: 0.78rem;
+  color: var(--ink-secondary, #534034);
+}
+
+[data-theme="dark"] .bt-pk-safesip-sub {
+  color: #D2C3B5;
+}
+
+/* 4-Way Everyday Water Selector & Water Impact Meter */
+.bt-water-4way-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bt-water-4way-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(156px, 1fr));
+  gap: 8px;
+}
+
+.bt-water-4way-pill {
+  min-height: 44px;
+  justify-content: center;
+  text-align: center;
+  font-weight: 700;
+}
+
+.bt-water-impact-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--bg-elevated, #FFFDF9);
+  border: 1px solid var(--line, #DCCDBE);
+}
+
+[data-theme="dark"] .bt-water-impact-meter {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.11);
+}
+
+.bt-wim-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bt-wim-scale-pill {
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  background: rgba(27, 99, 65, 0.14);
+  color: var(--good, #1B6341);
+}
+
+.bt-wim-scale-pill.is-warn {
+  background: rgba(194, 89, 29, 0.16);
+  color: #9A4212;
+}
+
+.bt-wim-scale-pill.is-severe {
+  background: rgba(161, 35, 31, 0.16);
+  color: #A1231F;
+}
+
+[data-theme="dark"] .bt-wim-scale-pill { color: #7EE2B2; }
+[data-theme="dark"] .bt-wim-scale-pill.is-warn { color: #F5B041; }
+[data-theme="dark"] .bt-wim-scale-pill.is-severe { color: #FF8A80; }
+
+.bt-wim-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.bt-wim-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bt-wim-axis-lbls {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-secondary, #5B4638);
+}
+
+[data-theme="dark"] .bt-wim-axis-lbls {
+  color: #CBBBA9;
+}
+
+.bt-wim-track {
+  position: relative;
+  height: 10px;
+  border-radius: 9999px;
+  overflow: visible;
+}
+
+.bt-wim-track.is-flavor {
+  background: linear-gradient(90deg, #F5B041 0%, #26A669 45%, #4BA3C7 100%);
+}
+
+.bt-wim-track.is-scale {
+  background: linear-gradient(90deg, #26A669 0%, #E8844A 62%, #C94438 100%);
+}
+
+.bt-wim-sweet-band {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: 26%;
+  width: 28%;
+  border-radius: 9999px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+}
+
+.bt-wim-thumb {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: #FFFDF9;
+  border: 3px solid var(--ink-primary, #231811);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+}
+
+.bt-wim-explain {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ink-secondary, #4A382C);
+}
+
+[data-theme="dark"] .bt-wim-explain {
+  color: #DFD2C5;
+}
+
+/* 52-Origin Selected Passport Card & Live Flavor Chemistry Strip (10-tab-palate) */
+.bt-origin-passport-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--bg-elevated, #FFFDF9);
+  border: 1.5px solid var(--primary, #1B4D38);
+  box-shadow: 0 4px 14px rgba(27, 77, 56, 0.08);
+}
+
+[data-theme="dark"] .bt-origin-passport-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: #3CA374;
+}
+
+.bt-passport-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bt-passport-title-wrap {
+  flex: 1 1 220px;
+}
+
+.bt-passport-country {
+  margin: 2px 0 4px;
+  font-size: 1.16rem;
+}
+
+.bt-passport-terroir {
+  margin: 0;
+  font-size: 0.83rem;
+  line-height: 1.45;
+  color: var(--ink-secondary, #534034);
+}
+
+[data-theme="dark"] .bt-passport-terroir {
+  color: #D7C8B9;
+}
+
+.bt-passport-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 9px;
+}
+
+.bt-passport-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: var(--bg-subtle, #F3ECE2);
+  border: 1px solid var(--line, #DFD2C3);
+  font-size: 0.82rem;
+}
+
+[data-theme="dark"] .bt-passport-tile {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.bt-passport-lbl {
+  font-size: 0.69rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted, #6E5849);
+}
+
+[data-theme="dark"] .bt-passport-lbl {
+  color: #BBAE9F;
+}
+
+.bt-passport-note {
+  font-size: 0.76rem;
+  color: var(--ink-secondary, #534034);
+}
+
+[data-theme="dark"] .bt-passport-note {
+  color: #CFC0B1;
+}
+
+.bt-passport-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bt-map-origin-select {
+  max-width: 210px;
+}
+
+.bt-bag-chem-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.bt-chem-pill {
+  display: block;
+  padding: 7px 11px;
+  border-radius: 10px;
+  background: rgba(25, 90, 115, 0.08);
+  border: 1px solid rgba(25, 90, 115, 0.24);
+  font-size: 0.79rem;
+  line-height: 1.4;
+}
+
+[data-theme="dark"] .bt-chem-pill {
+  background: rgba(99, 196, 232, 0.1);
+  border-color: rgba(99, 196, 232, 0.28);
+}
+
+/* 5-Bowl Cupping 4-Step Banner, 8-Trait Helper Lines & Beanjamin Palate Coach (11-tab-academy) */
+.bt-cupping-4steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 8px;
+}
+
+.bt-cupping-step-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 11px;
+  border-radius: 11px;
+  background: var(--bg-subtle, #F3ECE2);
+  border: 1.5px solid var(--line, #DFD2C3);
+  font-size: 0.78rem;
+}
+
+.bt-cupping-step-card p {
+  margin: 0;
+  line-height: 1.38;
+  color: var(--ink-secondary, #534034);
+}
+
+.bt-cupping-step-card.is-active-phase {
+  border-color: var(--primary, #1B4D38);
+  background: rgba(38, 166, 105, 0.11);
+}
+
+[data-theme="dark"] .bt-cupping-step-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .bt-cupping-step-card p {
+  color: #D2C3B5;
+}
+
+[data-theme="dark"] .bt-cupping-step-card.is-active-phase {
+  border-color: #46B884;
+  background: rgba(38, 166, 105, 0.18);
+}
+
+.bt-cupping-step-time {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--accent, #9A4212);
+}
+
+[data-theme="dark"] .bt-cupping-step-time {
+  color: #F2A365;
+}
+
+.bt-sca-timer-readout-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bt-sca-mmss-pill {
+  padding: 4px 11px;
+  border-radius: 9999px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  background: var(--ink-primary, #231811);
+  color: #FFFDF9;
+}
+
+[data-theme="dark"] .bt-sca-mmss-pill {
+  background: #F5EDE3;
+  color: #1A130E;
+}
+
+.bt-sca-quick-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--bg-subtle, #F3ECE2);
+}
+
+[data-theme="dark"] .bt-sca-quick-wrap {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.bt-sca-quick-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.bt-sca-scale-hint {
+  font-size: 0.71rem;
+  color: var(--ink-secondary, #5B4638);
+}
+
+[data-theme="dark"] .bt-sca-scale-hint {
+  color: #C9B9A8;
+}
+
+.bt-cva-attr-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px 0;
+  border-bottom: 1px dashed var(--line, rgba(140, 115, 95, 0.24));
+}
+
+.bt-cva-attr-desc {
+  font-size: 0.73rem;
+  color: var(--ink-secondary, #5B4638);
+  line-height: 1.35;
+}
+
+[data-theme="dark"] .bt-cva-attr-desc {
+  color: #C9B9A8;
+}
+
+.bt-cva-val-pill {
+  text-align: right;
+  font-weight: 700;
+}
+
+.bt-gym-coach-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1.5px solid rgba(232, 132, 74, 0.38);
+  background: linear-gradient(135deg, rgba(232, 132, 74, 0.1), rgba(38, 166, 105, 0.08));
+}
+
+.bt-gym-coach-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: visible;
+}
+
+.bt-gym-mascot-avatar {
+  width: 62px;
+  height: 58px;
+  padding-left: 4px;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.bt-gym-mascot-avatar svg,
+.bt-gym-mascot-avatar .bj-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.bt-gym-coach-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.bt-gym-coach-copy p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.42;
+  color: var(--ink-secondary, #4E3C30);
+}
+
+[data-theme="dark"] .bt-gym-coach-copy p {
+  color: #DFD2C5;
+}
+
+.bt-gym-coach-kicker-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.bt-gym-rank-badge,
+.bt-gym-score-pill {
+  padding: 2px 9px;
+  border-radius: 9999px;
+  font-size: 0.73rem;
+  font-weight: 800;
+  background: var(--primary, #1B4D38);
+  color: #FFFDF9;
+}
+
+.bt-gym-scorecard-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bt-gym-mini-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: var(--bg-elevated, #FFFDF9);
+  border: 1px solid var(--line, #DFD2C3);
+  font-size: 0.75rem;
+}
+
+[data-theme="dark"] .bt-gym-mini-kpi {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================================================
+ * v6.4 Post-Tasting Celebratory Banner, Top Coffee Preferences Hub &
+ * "Don't Know"-Smart Bag Predictor Pills
+ * ============================================================================ */
+
+.bt-saved-palate-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px 14px;
+  margin-bottom: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(27, 77, 56, 0.10) 0%, rgba(196, 122, 44, 0.11) 100%);
+  border: 1.5px solid rgba(27, 77, 56, 0.34);
+  box-shadow: 0 8px 22px rgba(26, 20, 18, 0.07);
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-saved-palate-banner.is-gold {
+  background: linear-gradient(135deg, rgba(196, 122, 44, 0.15) 0%, rgba(27, 77, 56, 0.10) 100%);
+  border-color: rgba(196, 122, 44, 0.52);
+}
+
+[data-theme="dark"] .bt-saved-palate-banner {
+  background: linear-gradient(135deg, rgba(46, 139, 98, 0.20) 0%, rgba(218, 152, 68, 0.16) 100%);
+  border-color: rgba(94, 198, 150, 0.38);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32);
+}
+
+[data-theme="dark"] .bt-saved-palate-banner.is-gold {
+  border-color: rgba(232, 174, 92, 0.52);
+}
+
+.bt-saved-palate-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bt-saved-palate-kicker {
+  font-size: 0.70rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary, #1B4D38);
+}
+
+[data-theme="dark"] .bt-saved-palate-kicker {
+  color: #7CE0B0;
+}
+
+.bt-saved-palate-dismiss {
+  appearance: none;
+  background: rgba(26, 20, 18, 0.06);
+  border: 1px solid var(--line, #DFD2C3);
+  border-radius: 9999px;
+  padding: 5px 11px;
+  min-height: 32px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--ink-muted, #65564C);
+  cursor: pointer;
+}
+
+[data-theme="dark"] .bt-saved-palate-dismiss {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 253, 249, 0.82);
+}
+
+.bt-saved-palate-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.bt-saved-palate-mascot {
+  flex: 0 0 auto;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bt-saved-palate-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bt-saved-palate-title {
+  margin: 0;
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.06rem;
+  line-height: 1.24;
+  font-weight: 800;
+  color: var(--ink, #1E1612);
+}
+
+[data-theme="dark"] .bt-saved-palate-title {
+  color: #FFFDF9;
+}
+
+.bt-saved-palate-meta {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink, #1E1612);
+  overflow-wrap: anywhere;
+}
+
+[data-theme="dark"] .bt-saved-palate-meta {
+  color: rgba(255, 253, 249, 0.92);
+}
+
+.bt-saved-palate-tweak {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--ink-muted, #5E5046);
+  overflow-wrap: anywhere;
+}
+
+[data-theme="dark"] .bt-saved-palate-tweak {
+  color: rgba(255, 253, 249, 0.76);
+}
+
+.bt-saved-palate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.bt-saved-palate-actions .bt-lab-btn {
+  min-height: 44px;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.bt-saved-palate-home-btn {
+  flex: 1 1 124px;
+}
+
+.bt-saved-palate-matcher-btn {
+  flex: 2 1 208px;
+}
+
+/* Top Coffee Preferences 6-Tile Summary Card */
+.bt-prefs-summary-card {
+  border-color: rgba(27, 77, 56, 0.24);
+}
+
+.bt-prefs-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+@media (min-width: 720px) {
+  .bt-prefs-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.bt-pref-summary-tile {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 10px 11px;
+  min-height: 64px;
+  min-width: 0;
+  text-align: left;
+  border-radius: 12px;
+  background: var(--bg-elevated, #FFFDF9);
+  border: 1px solid var(--line, #DFD2C3);
+  color: var(--ink, #1E1612);
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.bt-pref-summary-tile:hover,
+.bt-pref-summary-tile:focus-visible {
+  border-color: var(--primary, #1B4D38);
+  box-shadow: 0 4px 12px rgba(27, 77, 56, 0.10);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .bt-pref-summary-tile {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.11);
+  color: #FFFDF9;
+}
+
+[data-theme="dark"] .bt-pref-summary-tile:hover,
+[data-theme="dark"] .bt-pref-summary-tile:focus-visible {
+  border-color: #7CE0B0;
+}
+
+.bt-pref-tile-lbl {
+  font-size: 0.69rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted, #6A5B50);
+}
+
+[data-theme="dark"] .bt-pref-tile-lbl {
+  color: rgba(255, 253, 249, 0.68);
+}
+
+.bt-pref-tile-val {
+  font-size: 0.88rem;
+  line-height: 1.25;
+  font-weight: 800;
+  color: var(--ink, #1E1612);
+  overflow-wrap: anywhere;
+}
+
+[data-theme="dark"] .bt-pref-tile-val {
+  color: #FFFDF9;
+}
+
+.bt-pref-tile-sub {
+  font-size: 0.73rem;
+  color: var(--primary, #1B4D38);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+[data-theme="dark"] .bt-pref-tile-sub {
+  color: #7CE0B0;
+}
+
+.bt-prefs-hygiene-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  background: rgba(27, 77, 56, 0.07);
+  border: 1px dashed rgba(27, 77, 56, 0.30);
+  font-size: 0.76rem;
+  line-height: 1.38;
+  color: var(--ink-muted, #5A4C43);
+}
+
+[data-theme="dark"] .bt-prefs-hygiene-note {
+  background: rgba(124, 224, 176, 0.08);
+  border-color: rgba(124, 224, 176, 0.28);
+  color: rgba(255, 253, 249, 0.82);
+}
+
+/* "Don't Know" Pills in Will I Love This Bag? */
+.bt-lab-chip.bt-dontknow-pill {
+  border-style: dashed;
+  border-color: rgba(140, 108, 78, 0.55);
+  font-weight: 700;
+}
+
+.bt-lab-chip.bt-dontknow-pill.is-active {
+  border-style: solid;
+  background: var(--accent, #B86B2B);
+  border-color: var(--accent, #B86B2B);
+  color: #FFFDF9;
+}
+
+[data-theme="dark"] .bt-lab-chip.bt-dontknow-pill {
+  border-color: rgba(255, 253, 249, 0.32);
+}
+
+[data-theme="dark"] .bt-lab-chip.bt-dontknow-pill.is-active {
+  background: #D98943;
+  border-color: #D98943;
+  color: #1A120E;
+}
+
+.bt-scanner-conf-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+
+

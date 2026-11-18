@@ -1,0 +1,296 @@
+{
+  "name": "BeanTelligence",
+  "version": "6.2.0",
+  "schema": 1,
+  "description": "Deterministic Zero-Node ordered module concatenation manifest for BeanTelligence v6.2 standalone web PWA and Horizon-2 Capacitor www bundle.",
+  "encoding": "utf-8-nobom",
+  "defaultOutput": "index.html",
+  "pwaAssets": {
+    "manifest": "manifest.webmanifest",
+    "serviceWorker": "sw.js",
+    "iconsDir": "icons"
+  },
+  "capacitorWww": {
+    "webDir": "mobile/www",
+    "bundles": {
+      "styles": "styles.css",
+      "core": "bt-core.js",
+      "platform": "bt-platform.js",
+      "ui": "bt-ui.js"
+    }
+  },
+  "modules": [
+    {
+      "order": 1,
+      "path": "html/0010-head.html",
+      "kind": "html",
+      "scope": "document-head",
+      "owner": "v62-shell-audio-dev",
+      "balanced": false
+    },
+    {
+      "order": 2,
+      "path": "styles/01-tokens-themes.css",
+      "kind": "css",
+      "scope": "styles",
+      "bundle": "styles",
+      "owner": "v62-shell-audio-dev",
+      "balanced": true
+    },
+    {
+      "order": 3,
+      "path": "styles/02-shell-brand-tactile.css",
+      "kind": "css",
+      "scope": "styles",
+      "bundle": "styles",
+      "owner": "v62-shell-audio-dev",
+      "balanced": true
+    },
+    {
+      "order": 4,
+      "path": "styles/03-brew-cellar-tasting.css",
+      "kind": "css",
+      "scope": "styles",
+      "bundle": "styles",
+      "owner": "v62-brew-timer-dev",
+      "balanced": true
+    },
+    {
+      "order": 5,
+      "path": "styles/03a-coffee-entry.css",
+      "kind": "css",
+      "scope": "styles",
+      "bundle": "styles",
+      "owner": "v62-coffee-entry-dev",
+      "balanced": true
+    },
+    {
+      "order": 6,
+      "path": "styles/03b-taste-cellar.css",
+      "kind": "css",
+      "scope": "styles",
+      "bundle": "styles",
+      "owner": "v62-taste-cellar-dev",
+      "balanced": true
+    },
+    {
+      "order": 7,
+      "path": "styles/04-charts-lab-palate-academy.css",
+      "kind": "css",
+      "scope": "styles",
+      "bundle": "styles",
+      "owner": "v62-lab-academy-dev",
+      "balanced": true
+    },
+    {
+      "order": 8,
+      "path": "html/0100-shell.html",
+      "kind": "html",
+      "scope": "document-shell",
+      "owner": "v62-shell-audio-dev",
+      "balanced": false
+    },
+    {
+      "order": 9,
+      "path": "core/01-schema-codecs.js",
+      "kind": "js",
+      "scope": "global-pure",
+      "bundle": "core",
+      "owner": "v62-core-sci-dev",
+      "balanced": true,
+      "startMarker": "/*PURE_START*/",
+      "endMarker": "/*PURE_END*/"
+    },
+    {
+      "order": 10,
+      "path": "core/02-methods-grinders-water-pk.js",
+      "kind": "js",
+      "scope": "global-engine",
+      "bundle": "core",
+      "owner": "v62-core-sci-dev",
+      "balanced": true,
+      "startMarker": "/*ENGINE_START*/"
+    },
+    {
+      "order": 11,
+      "path": "core/03-bt-core-v6.js",
+      "kind": "js",
+      "scope": "global-engine",
+      "bundle": "core",
+      "owner": "v62-core-sci-dev",
+      "balanced": true
+    },
+    {
+      "order": 12,
+      "path": "core/04-machines-innovations.js",
+      "kind": "js",
+      "scope": "global-engine",
+      "bundle": "core",
+      "owner": "v62-core-sci-dev",
+      "balanced": true
+    },
+    {
+      "order": 13,
+      "path": "core/05-encyclopedia-db.js",
+      "kind": "js",
+      "scope": "global-engine",
+      "bundle": "core",
+      "owner": "v62-core-sci-dev",
+      "balanced": true,
+      "endMarker": "/*ENGINE_END*/"
+    },
+    {
+      "order": 14,
+      "path": "platform/01-bt-platform.js",
+      "kind": "js",
+      "scope": "platform",
+      "bundle": "platform",
+      "owner": "v6-ble-pwa-dev",
+      "balanced": true
+    },
+    {
+      "order": 15,
+      "path": "platform/02-bt-ble-codecs.js",
+      "kind": "js",
+      "scope": "platform",
+      "bundle": "platform",
+      "owner": "v6-ble-pwa-dev",
+      "balanced": true
+    },
+    {
+      "order": 16,
+      "path": "platform/03-bt-ble-session.js",
+      "kind": "js",
+      "scope": "platform",
+      "bundle": "platform",
+      "owner": "v62-shell-audio-dev",
+      "balanced": true
+    },
+    {
+      "order": 17,
+      "path": "ui/00-iife-open.js",
+      "kind": "js",
+      "scope": "iife-open",
+      "bundle": "ui",
+      "owner": "v62-shell-audio-dev",
+      "balanced": false
+    },
+    {
+      "order": 18,
+      "path": "ui/01-brand-beanjamin-icons.js",
+      "kind": "js",
+      "scope": "iife",
+      "bundle": "ui",
+      "owner": "v62-shell-audio-dev",
+      "balanced": true
+    },
+    {
+      "order": 19,
+      "path": "ui/02-shell-router-state.js",
+      "kind": "js",
+      "scope": "iife",
+      "bundle": "ui",
+      "owner": "v62-shell-audio-dev",
+      "balanced": true
+    },
+    {
+      "order": 20,
+      "path": "data/01-storage-vault.js",
+      "kind": "js",
+      "scope": "iife",
+      "bundle": "ui",
+      "owner": "v6-build-data-dev",
+      "balanced": true
+    },
+    {
+      "order": 21,
+      "path": "ui/03-tactile-primitives.js",
+      "kind": "js",
+      "scope": "iife",
+      "bundle": "ui",
+      "owner": "v62-shell-audio-dev",
+      "balanced": true
+    },
+    {
+      "order": 22,
+      "path": "ui/08-bt-chart-kit.js",
+      "kind": "js",
+      "scope": "iife",
+      "bundle": "ui",
+      "owner": "v62-lab-academy-dev",
+      "balanced": true
+    },
+    {
+      "order": 23,
+      "path": "ui/04-bag-capture-vault-sheet.js",
+      "kind": "js",
+      "scope": "iife",
+      "bundle": "ui",
+      "owner": "v62-coffee-entry-dev",
+      "balanced": true
+    },
+    {
+      "order": 24,
+      "path": "ui/05-tab-brew-studio.js",
+      "kind": "js",
+      "scope": "iife",
+      "bundle": "ui",
+      "owner": "v62-brew-timer-dev",
+      "balanced": true
+    },
+    {
+      "order": 25,
+      "path": "ui/06-postbrew-tasting-fix.js",
+      "kind": "js",
+      "scope": "iife",
+      "bundle": "ui",
+      "owner": "v62-taste-cellar-dev",
+      "balanced": true
+    },
+    {
+      "order": 26,
+      "path": "ui/07-tab-cellar-journal.js",
+      "kind": "js",
+      "scope": "iife",
+      "bundle": "ui",
+      "owner": "v62-taste-cellar-dev",
+      "balanced": true
+    },
+    {
+      "order": 27,
+      "path": "ui/09-tab-lab-devices.js",
+      "kind": "js",
+      "scope": "iife",
+      "bundle": "ui",
+      "owner": "v62-lab-academy-dev",
+      "balanced": true
+    },
+    {
+      "order": 28,
+      "path": "ui/10-tab-palate-insights.js",
+      "kind": "js",
+      "scope": "iife",
+      "bundle": "ui",
+      "owner": "v62-lab-academy-dev",
+      "balanced": true
+    },
+    {
+      "order": 29,
+      "path": "ui/11-tab-academy-vault.js",
+      "kind": "js",
+      "scope": "iife",
+      "bundle": "ui",
+      "owner": "v62-lab-academy-dev",
+      "balanced": true
+    },
+    {
+      "order": 30,
+      "path": "ui/99-boot-close.js",
+      "kind": "js",
+      "scope": "iife-close",
+      "bundle": "ui",
+      "owner": "v62-shell-audio-dev",
+      "balanced": false
+    }
+  ]
+}

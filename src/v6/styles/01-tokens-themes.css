@@ -1,0 +1,629 @@
+/* ==========================================================================
+   BeanTelligence v6.2 — 01-tokens-themes.css
+   WCAG 2.2 AA/AAA Verified Warm Specialty Alabaster (Light) &
+   OLED-Warm Espresso & Copper (Dark) Design Tokens
+   ========================================================================== */
+
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Core WCAG AA/AAA Light Surfaces & Espresso Ink */
+  --bg: #FAF6F0;
+  --bg-subtle: #F2EAE0;
+  --surface: #FFFDF9;
+  --card: #FFFDF9;
+  --surface-elevated: #FFFDF9;
+  --card-elevated: #FFFDF9;
+  --surface-glass: rgba(250, 246, 240, 0.90);
+  --well: #EFE6DA;
+  --field: #FFFDF9;
+  --tint: #EFE5D8;
+  --track: #E1D4C3;
+
+  --ink: #1F1712;                /* Espresso ink >= 16.2:1 vs #FAF6F0 / #FFFDF9 */
+  --ink-secondary: #4E3C31;      /* 8.9:1 WCAG AAA */
+  --ink-muted: #685244;          /* 5.7:1 WCAG AA */
+  --muted: #685244;
+  --label: #1F1712;
+
+  /* Borders & Focus */
+  --line-hairline: rgba(31, 23, 18, 0.08);
+  --line-soft: #E5D9C9;
+  --hush: #DFD1BE;
+  --line: #D8C8B6;
+  --edge: #7E6755;
+  --line-strong: #523E31;
+  --focus: #9A4A1E;
+  --focus-ring: #9A4A1E;
+
+  /* Burnt Copper Accent & Deep Botanical Pine Primary CTA */
+  --accent: #9A4A1E;             /* Burnt Copper >= 5.5:1 vs #FAF6F0 / #FFFDF9 */
+  --accent-hover: #7E3B16;
+  --accent-ink: #FFFDF9;
+  --accent-soft: #FCECE2;
+  --accent-glow: rgba(154, 74, 30, 0.16);
+
+  --primary: #1C4A36;            /* Deep Botanical Pine >= 9.6:1 with #FFFDF9 */
+  --primary-hover: #153929;
+  --primary-ink: #FFFDF9;
+  --primary-soft: #E3F1EA;
+  --sel: #1C4A36;
+  --sel-ink: #FFFDF9;
+  --leaf: #1C4A36;
+  --leaf-ink: #FFFDF9;
+  --gold: #D98B26;
+  --gold-soft: #FEF3DF;
+
+  /* Science Lens & Semantic States */
+  --science: #16556E;
+  --science-bg: #E3F2F7;
+  --science-border: rgba(22, 85, 110, 0.28);
+
+  --good: #18603E;
+  --good-bg: #E2F4EB;
+  --warn: #854B04;
+  --warn-bg: #FEF1D6;
+  --bad: #9E211D;
+  --bad-bg: #FDE8E7;
+  --alert: #9E211D;
+  --alert-bg: #FDE8E7;
+  --info: #16556E;
+  --info-bg: #E3F2F7;
+
+  /* 3-Wave Extraction Kinetics & Chronograph Comets */
+  --wave-acid: #D98B26;
+  --wave-sweet: #B84A14;
+  --wave-sweet-body: #1C4A36;
+  --wave-bitter: #9E211D;
+  --chrono-time-a: #D67A38;
+  --chrono-weight-a: #2A7B56;
+  --chrono-overtime: #D98B26;
+  --chrono-overtime-glow: rgba(217, 139, 38, 0.26);
+
+  /* 6-Stop Specialty Roast Spectrum */
+  --roast-1: #C88A4B;
+  --roast-2: #AD6D34;
+  --roast-3: #8B5022;
+  --roast-4: #693917;
+  --roast-5: #47250F;
+  --roast-6: #2B1609;
+  --r1: #C88A4B;
+  --r2: #AD6D34;
+  --r3: #8B5022;
+  --r4: #693917;
+  --r5: #3E2211;
+
+  /* Brand Mark ("The Refracting Prism Drop") */
+  --bt-prism-left: #2E160B;
+  --bt-prism-right: #9A4A1E;
+  --bt-prism-crown: #D98B26;
+  --bt-prism-heart: #F6BE58;
+  --bt-prism-beam: #381C0D;
+  --bt-prism-wave1: #E09224;
+  --bt-prism-wave2: #9A4A1E;
+  --bt-prism-wave3: #1C4A36;
+  --bt-mark-lobe-primary: #2E160B;
+  --bt-mark-lobe-secondary: #9A4A1E;
+  --bt-mark-orbit: #DF862C;
+  --bt-mark-node: #1C4A36;
+  --bt-wordmark-bean: #1F1712;
+  --bt-wordmark-accent: #9A4A1E;
+  --bt-wordmark-sub: #685244;
+
+  /* Beanjamin 2.0 Stage & Medallion */
+  --bj-stage-bg: #F4EBDD;
+  --bj-stage-border: #DCC9B0;
+  --bj-stage-glow: rgba(230, 157, 53, 0.14);
+  --bj-ink: #261209;
+  --bj-rim-glow: transparent;
+  --bj-shadow: rgba(31, 23, 18, 0.15);
+
+  /* BTIcons Duotone Layers */
+  --bti-accent: #9A4A1E;
+  --bti-tone: rgba(154, 74, 30, 0.14);
+  --bti-tone-active: rgba(154, 74, 30, 0.28);
+
+  /* Elevation Shadows, Specular Rim Bevels & Recessed Instrument Wells */
+  --bevel-rim-top: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  --shadow-xs: 0 1px 2px rgba(31, 23, 18, 0.05);
+  --shadow-card: var(--bevel-rim-top), 0 4px 16px -2px rgba(32, 18, 10, 0.06), 0 1px 3px rgba(32, 18, 10, 0.05);
+  --shadow-elevated: var(--bevel-rim-top), 0 14px 34px -6px rgba(32, 18, 10, 0.14), 0 3px 8px rgba(32, 18, 10, 0.06);
+  --shadow-well-inset: inset 0 2px 5px rgba(36, 22, 12, 0.08), 0 1px 0 rgba(255, 255, 255, 0.78);
+  --surface-card-grad: linear-gradient(180deg, #FFFDF9 0%, #FCF8F2 100%);
+  --bg-stage-radial: radial-gradient(1100px 540px at 50% -8%, rgba(223, 134, 44, 0.07), transparent 68%);
+  --shadow-sheet: 0 -10px 38px rgba(31, 23, 18, 0.16), 0 -1px 4px rgba(31, 23, 18, 0.06);
+  --shadow-dock: 0 -4px 24px rgba(31, 23, 18, 0.08), 0 -1px 2px rgba(31, 23, 18, 0.05);
+  --backdrop-scrim: rgba(20, 14, 11, 0.44);
+
+  /* Typography, Spacing, Radii, Safe Areas & Springs */
+  --font-display: "Lora", Georgia, "Times New Roman", serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-num: var(--font-mono);
+  --display: var(--font-display);
+  --ui: var(--font-sans);
+  --txt: var(--font-sans);
+
+  --text-micro: 0.75rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: clamp(1.45rem, 2.8vw, 2.05rem);
+  --text-instrument: clamp(2.35rem, 6.8vw, 3.85rem);
+  --text-hero-num: var(--text-instrument);
+
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 22px;
+  --r-xl: 28px;
+  --r-pill: 9999px;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  --spring-snappy: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --spring-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+
+  --tap-min: 44px;
+  --tap-comfy: 48px;
+  --tap-cockpit: 56px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #13100E;
+    --bg-subtle: #171311;
+    --surface: #1C1815;
+    --card: #1C1815;
+    --surface-elevated: #241F1B;
+    --card-elevated: #241F1B;
+    --surface-glass: rgba(19, 16, 14, 0.90);
+    --well: #151210;
+    --field: #171311;
+    --tint: #261E19;
+    --track: #342922;
+
+    --ink: #F5EDE4;
+    --ink-secondary: #D2C2B4;
+    --ink-muted: #AE9A89;
+    --muted: #AE9A89;
+    --label: #F5EDE4;
+
+    --line-hairline: rgba(245, 237, 228, 0.08);
+    --line-soft: #2E251F;
+    --hush: #352922;
+    --line: #3E3028;
+    --edge: #8C7564;
+    --line-strong: #B69E8B;
+    --focus: #E08A54;
+    --focus-ring: #E08A54;
+
+    --accent: #E08A54;
+    --accent-hover: #EAA070;
+    --accent-ink: #160E09;
+    --accent-soft: #312015;
+    --accent-glow: rgba(224, 138, 84, 0.22);
+
+    --primary: #2A6B4E;
+    --primary-hover: #34805E;
+    --primary-ink: #FFFDF9;
+    --primary-soft: #162E23;
+    --sel: #2A6B4E;
+    --sel-ink: #FFFDF9;
+    --leaf: #7AD6A4;
+    --leaf-ink: #13100E;
+    --gold: #F2AE4B;
+    --gold-soft: #33240D;
+
+    --science: #6EC6E6;
+    --science-bg: #122833;
+    --science-border: rgba(110, 198, 230, 0.30);
+
+    --good: #5CD49C;
+    --good-bg: #132E22;
+    --warn: #F4BC5C;
+    --warn-bg: #33230B;
+    --bad: #F68580;
+    --bad-bg: #381615;
+    --alert: #F68580;
+    --alert-bg: #381615;
+    --info: #6EC6E6;
+    --info-bg: #122833;
+
+    --wave-acid: #F5B041;
+    --wave-sweet: #E08A54;
+    --wave-sweet-body: #5CD49C;
+    --wave-bitter: #F07167;
+    --chrono-time-a: #FAD398;
+    --chrono-weight-a: #7CF2BE;
+    --chrono-overtime: #F5B041;
+    --chrono-overtime-glow: rgba(245, 176, 65, 0.30);
+
+    --bt-prism-left: #C98B56;
+    --bt-prism-right: #E08A54;
+    --bt-prism-crown: #FAD67D;
+    --bt-prism-heart: #FFF3D1;
+    --bt-prism-beam: #FFF6E5;
+    --bt-prism-wave1: #FAD45B;
+    --bt-prism-wave2: #E08A54;
+    --bt-prism-wave3: #52D99B;
+    --bt-mark-lobe-primary: #C98B56;
+    --bt-mark-lobe-secondary: #E08A54;
+    --bt-mark-orbit: #F4B350;
+    --bt-mark-node: #52D99B;
+    --bt-wordmark-bean: #F5EDE4;
+    --bt-wordmark-accent: #E08A54;
+    --bt-wordmark-sub: #AE9A89;
+
+    --bj-stage-bg: #251C16;
+    --bj-stage-border: #4A372B;
+    --bj-stage-glow: rgba(224, 138, 84, 0.18);
+    --bj-ink: #1E0E07;
+    --bj-rim-glow: rgba(245, 202, 150, 0.24);
+    --bj-shadow: rgba(0, 0, 0, 0.46);
+
+    --bti-accent: #E08A54;
+    --bti-tone: rgba(224, 138, 84, 0.20);
+    --bti-tone-active: rgba(224, 138, 84, 0.35);
+
+    --bevel-rim-top: inset 0 1px 0 rgba(255, 244, 228, 0.09);
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.30);
+    --shadow-card: var(--bevel-rim-top), 0 10px 28px -4px rgba(0, 0, 0, 0.52), 0 2px 6px rgba(0, 0, 0, 0.38);
+    --shadow-elevated: inset 0 1px 0 rgba(255, 244, 228, 0.13), 0 20px 46px -8px rgba(0, 0, 0, 0.68), 0 4px 12px rgba(0, 0, 0, 0.45);
+    --shadow-well-inset: inset 0 2px 7px rgba(0, 0, 0, 0.62), 0 1px 0 rgba(255, 244, 228, 0.05);
+    --surface-card-grad: linear-gradient(180deg, #211C18 0%, #191512 100%);
+    --bg-stage-radial: radial-gradient(980px 500px at 50% -10%, rgba(224, 138, 84, 0.10), transparent 66%);
+    --shadow-sheet: 0 -12px 44px rgba(0, 0, 0, 0.65);
+    --shadow-dock: 0 -6px 28px rgba(0, 0, 0, 0.52);
+    --backdrop-scrim: rgba(5, 4, 3, 0.68);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #13100E;
+  --bg-subtle: #171311;
+  --surface: #1C1815;
+  --card: #1C1815;
+  --surface-elevated: #241F1B;
+  --card-elevated: #241F1B;
+  --surface-glass: rgba(19, 16, 14, 0.90);
+  --well: #151210;
+  --field: #171311;
+  --tint: #261E19;
+  --track: #342922;
+
+  --ink: #F5EDE4;
+  --ink-secondary: #D2C2B4;
+  --ink-muted: #AE9A89;
+  --muted: #AE9A89;
+  --label: #F5EDE4;
+
+  --line-hairline: rgba(245, 237, 228, 0.08);
+  --line-soft: #2E251F;
+  --hush: #352922;
+  --line: #3E3028;
+  --edge: #8C7564;
+  --line-strong: #B69E8B;
+  --focus: #E08A54;
+  --focus-ring: #E08A54;
+
+  --accent: #E08A54;
+  --accent-hover: #EAA070;
+  --accent-ink: #160E09;
+  --accent-soft: #312015;
+  --accent-glow: rgba(224, 138, 84, 0.22);
+
+  --primary: #2A6B4E;
+  --primary-hover: #34805E;
+  --primary-ink: #FFFDF9;
+  --primary-soft: #162E23;
+  --sel: #2A6B4E;
+  --sel-ink: #FFFDF9;
+  --leaf: #7AD6A4;
+  --leaf-ink: #13100E;
+  --gold: #F2AE4B;
+  --gold-soft: #33240D;
+
+  --science: #6EC6E6;
+  --science-bg: #122833;
+  --science-border: rgba(110, 198, 230, 0.30);
+
+  --good: #5CD49C;
+  --good-bg: #132E22;
+  --warn: #F4BC5C;
+  --warn-bg: #33230B;
+  --bad: #F68580;
+  --bad-bg: #381615;
+  --alert: #F68580;
+  --alert-bg: #381615;
+  --info: #6EC6E6;
+  --info-bg: #122833;
+
+  --wave-acid: #F5B041;
+  --wave-sweet: #E08A54;
+  --wave-sweet-body: #5CD49C;
+  --wave-bitter: #F07167;
+  --chrono-time-a: #FAD398;
+  --chrono-weight-a: #7CF2BE;
+  --chrono-overtime: #F5B041;
+  --chrono-overtime-glow: rgba(245, 176, 65, 0.30);
+
+  --bt-prism-left: #C98B56;
+  --bt-prism-right: #E08A54;
+  --bt-prism-crown: #FAD67D;
+  --bt-prism-heart: #FFF3D1;
+  --bt-prism-beam: #FFF6E5;
+  --bt-prism-wave1: #FAD45B;
+  --bt-prism-wave2: #E08A54;
+  --bt-prism-wave3: #52D99B;
+  --bt-mark-lobe-primary: #C98B56;
+  --bt-mark-lobe-secondary: #E08A54;
+  --bt-mark-orbit: #F4B350;
+  --bt-mark-node: #52D99B;
+  --bt-wordmark-bean: #F5EDE4;
+  --bt-wordmark-accent: #E08A54;
+  --bt-wordmark-sub: #AE9A89;
+
+  --bj-stage-bg: #251C16;
+  --bj-stage-border: #4A372B;
+  --bj-stage-glow: rgba(224, 138, 84, 0.18);
+  --bj-ink: #1E0E07;
+  --bj-rim-glow: rgba(245, 202, 150, 0.24);
+  --bj-shadow: rgba(0, 0, 0, 0.46);
+
+  --bti-accent: #E08A54;
+  --bti-tone: rgba(224, 138, 84, 0.20);
+  --bti-tone-active: rgba(224, 138, 84, 0.35);
+
+  --bevel-rim-top: inset 0 1px 0 rgba(255, 244, 228, 0.09);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-card: var(--bevel-rim-top), 0 10px 28px -4px rgba(0, 0, 0, 0.52), 0 2px 6px rgba(0, 0, 0, 0.38);
+  --shadow-elevated: inset 0 1px 0 rgba(255, 244, 228, 0.13), 0 20px 46px -8px rgba(0, 0, 0, 0.68), 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-well-inset: inset 0 2px 7px rgba(0, 0, 0, 0.62), 0 1px 0 rgba(255, 244, 228, 0.05);
+  --surface-card-grad: linear-gradient(180deg, #211C18 0%, #191512 100%);
+  --bg-stage-radial: radial-gradient(980px 500px at 50% -10%, rgba(224, 138, 84, 0.10), transparent 66%);
+  --shadow-sheet: 0 -12px 44px rgba(0, 0, 0, 0.65);
+  --shadow-dock: 0 -6px 28px rgba(0, 0, 0, 0.52);
+  --backdrop-scrim: rgba(5, 4, 3, 0.68);
+}
+
+/* ==================== BASE RESET & ACCESSIBLE TYPOGRAPHY ==================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--bg);
+  background-image: var(--bg-stage-radial);
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+h1, h2, h3, .bt-serif {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
+  color: var(--ink);
+  margin: 0;
+}
+
+h1 { font-size: var(--text-2xl); }
+h2 { font-size: var(--text-xl); }
+h3 { font-size: var(--text-lg); }
+p  { margin: 0; }
+
+/* Anti-auto-zoom iOS Safari floor: ALL interactive inputs MUST be >= 16px (1rem) */
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+input,
+textarea,
+select,
+.bt-input,
+.bt-spotlight-input {
+  font-family: inherit;
+  font-size: 16px;
+  font-size: max(16px, 1rem);
+  color: var(--ink);
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: 2.5px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.num,
+.mono,
+.tabular,
+.bt-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.bt-skip-link {
+  position: fixed;
+  top: -120px;
+  left: 16px;
+  z-index: 999;
+  padding: 12px 18px;
+  border-radius: var(--r-pill);
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: var(--shadow-elevated);
+  transition: top 0.16s var(--spring-snappy);
+}
+.bt-skip-link:focus {
+  top: calc(12px + var(--safe-top));
+}
+
+/* ==================== EXPERIENCE LENS VISIBILITY & DUAL-DEPTH RULES ==================== */
+:root[data-science-lens="surface"] .bt-xray-only,
+:root[data-science-lens="surface"] [data-lens="xray"],
+:root[data-science-lens="surface"] .bt-hybrid-up,
+:root[data-science-lens="surface"] [data-lens="hybrid"],
+:root[data-lens="starter"] .bt-xray-only,
+:root[data-lens="starter"] .bt-scientist-only,
+:root[data-lens="starter"] .bt-comfy-up {
+  display: none !important;
+}
+
+:root[data-science-lens="hybrid"] .bt-xray-only,
+:root[data-science-lens="hybrid"] [data-lens="xray"],
+:root[data-lens="comfy"] .bt-xray-only,
+:root[data-lens="comfy"] .bt-scientist-only {
+  display: none !important;
+}
+
+:root[data-science-lens="xray"] .bt-surface-only,
+:root[data-science-lens="xray"] [data-lens="surface-only"],
+:root[data-lens="scientist"] .bt-starter-only {
+  display: none !important;
+}
+
+.bt-lens-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bt-lens-wrap[data-hold-peek="1"] {
+  cursor: pointer;
+}
+
+.bt-lens-xray {
+  display: none;
+  padding: 8px 11px;
+  border-radius: var(--r-sm);
+  background: var(--science-bg);
+  border: 1px solid var(--science-border);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: 1.42;
+}
+
+:root[data-science-lens="hybrid"] .bt-lens-wrap .bt-lens-xray.bt-lens-hybrid-show,
+:root[data-science-lens="xray"] .bt-lens-wrap .bt-lens-xray {
+  display: block;
+}
+
+/* Epistemic Taxonomy Badges */
+.bt-ep-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  min-height: 24px;
+  border-radius: var(--r-pill);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  border: 1px solid transparent;
+}
+.bt-ep-verified {
+  background: var(--good-bg);
+  color: var(--good);
+  border-color: rgba(24, 96, 62, 0.24);
+}
+.bt-ep-research {
+  background: var(--science-bg);
+  color: var(--science);
+  border-color: var(--science-border);
+}
+.bt-ep-craft {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-glow);
+}
+.bt-ep-myth {
+  background: var(--bad-bg);
+  color: var(--bad);
+  border-color: rgba(158, 33, 29, 0.24);
+}
+
+/* ==================== REDUCED MOTION & FORCED COLORS GUARDS ==================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .bt-ico,
+  .bj-svg,
+  .bt-logo-svg,
+  .bt-wordmark-svg {
+    forced-color-adjust: none;
+  }
+}

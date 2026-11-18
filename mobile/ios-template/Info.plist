@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleDisplayName</key>
+  <string>BeanTelligence</string>
+  <key>CFBundleExecutable</key>
+  <string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundleIdentifier</key>
+  <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>$(PRODUCT_NAME)</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>6.0.0</string>
+  <key>CFBundleVersion</key>
+  <string>600</string>
+  <key>LSRequiresIPhoneOS</key>
+  <true/>
+
+  <!-- CoreBluetooth Hardware Permissions (App Store Review Guideline 2.5.4 & 5.1.1) -->
+  <key>NSBluetoothAlwaysUsageDescription</key>
+  <string>BeanTelligence uses Bluetooth Low Energy to connect directly to your smart coffee scale, espresso pressure sensor, DiFluid R2 refractometer, DiFluid Omni analyzer, xBloom brewer, or Stagg EKG+ kettle for live brew weight, flow rate, and TDS% telemetry.</string>
+  <key>NSBluetoothPeripheralUsageDescription</key>
+  <string>BeanTelligence uses Bluetooth Low Energy to communicate directly with your coffee brewing scale and optical sensors.</string>
+
+  <!-- Optional On-Device Camera & Photo Library for Bag Label Snap & Grind Calibration -->
+  <key>NSCameraUsageDescription</key>
+  <string>Snap a coffee bag label or grind reference card to auto-fill bean origin, process, tasting notes, and particle distribution locally on your device.</string>
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>Choose a photo of your coffee bag label or grind calibration sheet for on-device analysis.</string>
+
+  <!-- Active Brew Scale GATT Continuity if Screen Dims Mid-Drawdown -->
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>bluetooth-central</string>
+  </array>
+
+  <!-- Local Vault & Export Compliance -->
+  <key>LSSupportsOpeningDocumentsInPlace</key>
+  <false/>
+  <key>UISupportsDocumentBrowser</key>
+  <false/>
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
+  <key>UIViewControllerBasedStatusBarAppearance</key>
+  <true/>
+  <key>UILaunchStoryboardName</key>
+  <string>LaunchScreen</string>
+  <key>UISupportedInterfaceOrientations</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
+  <key>UISupportedInterfaceOrientations~ipad</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
+</dict>
+</plist>

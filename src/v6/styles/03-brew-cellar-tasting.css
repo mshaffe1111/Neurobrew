@@ -1,0 +1,2579 @@
+/* ==========================================================================
+   BeanTelligence v6.2 — 03-brew-cellar-tasting.css
+   Tab 1: Morning Command Center (door), Brewer & Gear Studio (method),
+   6-Tile Scannable Recipe & Machine Consoles (brew: Philips 5500 22-Drink,
+   Fellow Aiden 1-Dot/3-Dot, xBloom Studio 4-Pour), Audible Kitchen
+   Chronograph (timer), Tap-to-Tune Drawers & Shared Studio Primitives
+   ========================================================================== */
+
+/* ==================== 1. BREW STUDIO ROOT & STEP STAGE ==================== */
+.bt-bc-root,
+.bt-brew-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.bt-brew-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  padding-bottom: 8px;
+}
+
+/* Fallback 5-Step Trail Bar if shell helper not yet mounted */
+.bt-trail-bar-fallback {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px;
+  border-radius: var(--r-lg, 20px);
+  background: var(--bg-subtle);
+  border: 1px solid var(--line-soft, var(--line));
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+}
+.bt-trail-bar-fallback::-webkit-scrollbar {
+  display: none;
+}
+
+.bt-trail-home-btn {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 8px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px solid var(--line-soft, var(--line));
+  background: var(--surface);
+  color: var(--ink-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bt-trail-step-pill {
+  flex: 1 0 auto;
+  min-height: 36px;
+  padding: 0 9px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.bt-trail-step-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--track);
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bt-trail-step-pill.is-done {
+  color: var(--good);
+}
+.bt-trail-step-pill.is-done .bt-trail-step-num {
+  background: var(--good-bg);
+  color: var(--good);
+}
+
+.bt-trail-step-pill.is-active {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--ink);
+  box-shadow: var(--shadow-xs);
+}
+.bt-trail-step-pill.is-active .bt-trail-step-num {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* ==================== 2. TYPOGRAPHY HEADERS & CARDS ==================== */
+.bt-screen-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.bt-screen-kicker,
+.bt-kicker {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent);
+  margin-bottom: 3px;
+}
+
+.bt-kicker {
+  color: var(--ink-muted);
+  margin-bottom: 0;
+}
+
+.bt-screen-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 4.5vw, 1.65rem);
+  font-weight: 700;
+  line-height: 1.16;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+}
+
+.bt-screen-sub,
+.bt-subcopy {
+  font-size: 0.875rem;
+  color: var(--ink-secondary);
+  line-height: 1.44;
+  margin: 4px 0 0;
+}
+
+.bt-subcopy {
+  margin: 0;
+}
+
+.bt-card-v6 {
+  width: 100%;
+  min-width: 0;
+  background: var(--surface-card-grad, var(--surface));
+  border: 1px solid var(--line-soft, var(--line));
+  border-radius: var(--r-md, 18px);
+  padding: 15px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  position: relative;
+}
+
+.bt-card-v6.bt-card-hero {
+  border-color: var(--line);
+  box-shadow: var(--shadow-elevated, var(--shadow-card));
+}
+
+.bt-card-v6.bt-card-well {
+  background: var(--bg-subtle);
+}
+
+.bt-card-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bt-card-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bt-card-title {
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.22;
+  color: var(--ink);
+  margin: 0;
+}
+
+.bt-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Badges */
+.bt-badge-v62 {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: var(--r-pill, 9999px);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.25;
+  background: var(--accent-soft);
+  color: var(--accent);
+  white-space: nowrap;
+}
+.bt-badge-v62.is-good {
+  background: var(--good-bg);
+  color: var(--good);
+}
+.bt-badge-v62.is-gold {
+  background: var(--gold-soft, var(--warn-bg));
+  color: var(--warn);
+  border: 1px solid rgba(217, 139, 38, 0.28);
+}
+.bt-badge-v62.is-sci {
+  background: var(--science-bg);
+  color: var(--science);
+  border: 1px solid var(--science-border);
+}
+.bt-badge-v62.is-muted {
+  background: var(--well);
+  color: var(--ink-secondary);
+}
+
+/* ==================== 3. SINGLE-ROW PILL BARS, INPUTS & STICKY CTA ==================== */
+.bt-pill-row,
+.bt-action-row-1line,
+.bt-submode-strip {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 7px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 2px 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+}
+.bt-pill-row::-webkit-scrollbar,
+.bt-action-row-1line::-webkit-scrollbar,
+.bt-submode-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.bt-pill-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-width: 0;
+}
+
+.bt-chip-v6 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 7px 13px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: transform 0.14s var(--spring-snappy), background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+
+.bt-chip-v6:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.bt-chip-v6:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+.bt-chip-v6[aria-pressed="true"],
+.bt-chip-v6[aria-selected="true"],
+.bt-chip-v6.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.bt-chip-v6.bt-chip-primary[aria-pressed="true"],
+.bt-chip-v6.bt-chip-primary.is-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+}
+
+.bt-chip-v6.bt-chip-accent[aria-pressed="true"],
+.bt-chip-v6.bt-chip-accent.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.bt-chip-v6.bt-chip-soft {
+  background: var(--bg-subtle);
+  border-color: var(--line-soft, var(--line));
+}
+
+/* Segmented Bar */
+.bt-seg-bar {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  background: var(--well);
+  box-shadow: var(--shadow-well-inset);
+  border-radius: 13px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.bt-seg-bar > button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 40px;
+  padding: 5px 8px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+@media (max-width: 430px) {
+  .bt-seg-bar > button {
+    padding: 4px 4px;
+    font-size: 0.71rem;
+    gap: 3px;
+  }
+}
+
+.bt-seg-bar > button[aria-pressed="true"],
+.bt-seg-bar > button.is-active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Accessible 16px Inputs & Selects (Zero iOS Zoom!) */
+.bt-select-v62,
+.bt-input-v62,
+.bt-textarea-v62 {
+  width: 100%;
+  min-height: 46px;
+  padding: 8px 13px;
+  border-radius: 13px;
+  border: 1px solid var(--line);
+  background: var(--well);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+  outline: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.bt-select-v62 {
+  padding-right: 34px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.bt-textarea-v62 {
+  min-height: 92px;
+  resize: vertical;
+  font-weight: 500;
+}
+
+.bt-select-v62:focus,
+.bt-input-v62:focus,
+.bt-textarea-v62:focus {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+
+/* Sticky Thumb-Zone Primary CTA Bar */
+.bt-brew-sticky-bar {
+  position: sticky;
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+  z-index: 31;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border-radius: 20px;
+  background: var(--surface-glass, var(--surface));
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(16px) saturate(1.3);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-elevated, var(--shadow-card));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (min-width: 1024px) {
+  .bt-brew-sticky-bar {
+    bottom: 14px;
+  }
+}
+
+.bt-cta-btn {
+  flex: 1 1 auto;
+  min-height: 54px;
+  min-width: 44px;
+  padding: 10px 18px;
+  border-radius: 15px;
+  border: 1px solid transparent;
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 0.96rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-shadow: 0 6px 18px rgba(27, 77, 56, 0.22);
+  transition: transform 0.14s var(--spring-snappy), background-color 0.15s ease;
+}
+
+.bt-cta-btn.is-centered {
+  justify-content: center;
+}
+
+.bt-cta-btn:hover:not(:disabled) {
+  background: var(--primary-hover, var(--primary));
+}
+.bt-cta-btn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.bt-cta-btn .bt-cta-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 1px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-cta-btn .bt-cta-sub,
+.bt-hero-cta .bt-hero-cta-sub,
+.bt-tc-primary-btn .bt-tc-primary-sub {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: rgba(255, 253, 249, 0.88);
+  opacity: 1;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.bt-cta-btn.bt-cta-copper {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 6px 18px rgba(154, 66, 18, 0.22);
+}
+
+.bt-cta-btn.bt-cta-ghost,
+.bt-secondary-cta {
+  flex: 0 0 auto;
+  min-height: 50px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--well);
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: none;
+}
+
+/* ==================== 4. FRONT DOOR MORNING COMMAND CENTER ==================== */
+.bt-bj-coach-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: var(--r-md, 18px);
+  background: var(--bj-stage-bg, var(--bg-subtle));
+  border: 1px solid var(--bj-stage-border, var(--line));
+}
+
+@media (min-width: 1024px) {
+  /* Hide inline coach when Desktop Studio Right Aside shows Beanjamin */
+  #studio-aside:not(:empty) ~ * .bt-bj-coach-banner,
+  body[data-studio-aside="1"] .bt-bj-coach-banner {
+    display: none;
+  }
+}
+
+.bt-bj-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1.5px solid var(--bj-stage-border, var(--line));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.bt-bj-copy {
+  font-size: 0.83rem;
+  line-height: 1.42;
+  color: var(--ink);
+  min-width: 0;
+}
+.bt-bj-copy b {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+
+.bt-hero-bag-card {
+  background: linear-gradient(155deg, var(--surface) 0%, var(--bg-subtle) 100%);
+  border: 1.5px solid var(--line);
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: var(--shadow-elevated, var(--shadow-card));
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bt-hero-bag-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--bag-roast-color, var(--accent));
+}
+
+.bt-door-grid-2up {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 350px) {
+  .bt-door-grid-2up {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bt-door-action-card {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+  min-height: 126px;
+  transition: border-color 0.15s ease, transform 0.14s var(--spring-snappy);
+}
+
+.bt-door-action-card:hover {
+  border-color: var(--accent);
+}
+.bt-door-action-card:active {
+  transform: scale(0.985);
+}
+
+/* ==================== 5. STEP 2: 4-FAMILY BREWER PICKER & GEAR ==================== */
+.bt-brewer-grid-v62 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .bt-brewer-grid-v62 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.bt-brewer-tile-v62 {
+  min-height: 70px;
+  padding: 10px 11px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line-soft, var(--line));
+  background: var(--surface);
+  color: var(--ink);
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  text-align: left;
+  position: relative;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.14s var(--spring-snappy);
+}
+
+.bt-brewer-tile-v62:hover {
+  border-color: var(--accent);
+}
+.bt-brewer-tile-v62:active {
+  transform: scale(0.985);
+}
+
+.bt-brewer-tile-v62[aria-pressed="true"],
+.bt-brewer-tile-v62.is-active {
+  border-color: var(--primary);
+  background: var(--primary-soft, var(--good-bg));
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.bt-brewer-tile-title {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.bt-brewer-tile-sub {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.bt-top-match-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 4px;
+  padding: 2px 7px;
+  border-radius: var(--r-pill, 9999px);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid rgba(154, 66, 18, 0.26);
+}
+
+.bt-gear-inline-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 600px) {
+  .bt-gear-inline-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Everyday Water 4-Choice Selector (Step 2, Step 3 & Water Sheet) */
+.bt-water-everyday-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--line-soft, var(--line));
+}
+
+.bt-water-everyday-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+@media (min-width: 560px) {
+  .bt-water-everyday-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.bt-water-choice-btn {
+  min-height: 52px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  transition: border-color 0.14s ease, background-color 0.14s ease, transform 0.12s var(--spring-snappy);
+}
+
+.bt-water-choice-btn:hover {
+  border-color: var(--accent);
+}
+.bt-water-choice-btn:active {
+  transform: scale(0.98);
+}
+
+.bt-water-choice-btn[aria-pressed="true"],
+.bt-water-choice-btn.is-active {
+  border-color: var(--primary);
+  background: var(--primary-soft, var(--good-bg));
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.bt-water-choice-title {
+  font-size: 0.81rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.bt-water-choice-sub {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  line-height: 1.24;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bt-water-chem-note {
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft, var(--line));
+  font-size: 0.75rem;
+  color: var(--ink-secondary);
+  line-height: 1.36;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bt-water-custom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 7px;
+  align-items: end;
+}
+
+@media (max-width: 440px) {
+  .bt-water-custom-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bt-water-custom-grid > button {
+    grid-column: span 2;
+  }
+}
+
+/* ==================== 6. STEP 3: 6-TILE SCANNABLE RECIPE STUDIO ==================== */
+.bt-recipe-6grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+@media (min-width: 600px) {
+  .bt-recipe-6grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.bt-spec-tile-v62 {
+  min-height: 92px;
+  padding: 11px 12px;
+  border-radius: 15px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 3px;
+  position: relative;
+  transition: border-color 0.15s ease, transform 0.14s var(--spring-snappy), box-shadow 0.15s ease;
+}
+
+.bt-spec-tile-v62:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-xs);
+}
+.bt-spec-tile-v62:active {
+  transform: scale(0.985);
+}
+
+.bt-spec-tile-v62.bt-recipe-tile {
+  cursor: pointer;
+  user-select: none;
+}
+
+.bt-spec-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.bt-spec-lbl {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bt-spec-actions-grp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.bt-spec-why-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--science-bg);
+  color: var(--science);
+  border: 1px solid var(--science-border, rgba(35, 118, 168, 0.34));
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.bt-spec-why-pill:hover {
+  border-color: var(--science);
+}
+
+.bt-spec-why-pill:active {
+  transform: scale(0.95);
+}
+
+.bt-spec-why-pill.is-dark-surface {
+  background: rgba(124, 232, 255, 0.14);
+  color: #8DE8FF;
+  border-color: rgba(124, 232, 255, 0.4);
+}
+
+.bt-spec-tune {
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .bt-spec-tile-v62 {
+    padding: 10px 10px;
+  }
+  .bt-spec-head-row {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  .bt-spec-lbl {
+    flex: 1 1 100%;
+    font-size: 0.64rem;
+    letter-spacing: 0.04em;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .bt-spec-actions-grp {
+    gap: 4px;
+  }
+  .bt-spec-why-pill {
+    min-height: 21px;
+    padding: 1px 6px;
+    font-size: 0.62rem;
+  }
+  .bt-spec-tune {
+    padding: 1px 6px;
+    font-size: 0.62rem;
+  }
+}
+
+.bt-recipe-science-hero-btn {
+  width: 100%;
+  padding: 10px 13px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--science-bg) 0%, var(--accent-soft) 100%);
+  border: 1.5px solid var(--science-border, var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.14s var(--spring-snappy), border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bt-recipe-science-hero-btn:hover {
+  border-color: var(--science);
+  box-shadow: var(--shadow-xs);
+}
+
+.bt-recipe-science-hero-btn:active {
+  transform: scale(0.99);
+}
+
+.bt-recipe-science-hero-lhs {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  flex: 1 1 210px;
+  color: var(--science);
+}
+
+.bt-recipe-science-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.bt-recipe-science-hero-copy > b {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.22;
+}
+
+.bt-recipe-science-hero-copy > span {
+  font-size: 0.73rem;
+  color: var(--ink-secondary);
+  line-height: 1.3;
+}
+
+.bt-recipe-science-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--science-border, var(--line));
+  color: var(--science);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Recipe Science Explainability Sheet ('recipe-science-why') */
+.bt-sci-why-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  width: 100%;
+  min-width: 0;
+}
+
+.bt-sci-context-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: var(--well);
+  border: 1px solid var(--line);
+}
+
+.bt-sci-why-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 13px 14px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-xs);
+}
+
+.bt-sci-why-hd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bt-sci-why-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.bt-sci-why-hero-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.bt-sci-why-plain {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.46;
+  color: var(--ink);
+  padding: 9px 11px;
+  border-radius: 11px;
+  background: var(--bg-subtle, var(--well));
+  border-left: 3px solid var(--primary);
+}
+
+.bt-sci-ledger {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  background: var(--well);
+}
+
+.bt-sci-ledger-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 11px;
+  border-bottom: 1px solid var(--line-hairline, var(--line));
+  font-size: 0.78rem;
+}
+
+.bt-sci-ledger-row:last-child {
+  border-bottom: 0;
+}
+
+.bt-sci-ledger-row.is-total {
+  background: var(--primary-soft, var(--good-bg));
+  border-top: 1px solid var(--primary);
+}
+
+.bt-sci-ledger-lhs {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.bt-sci-ledger-lbl {
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.bt-sci-ledger-sub {
+  font-size: 0.69rem;
+  color: var(--ink-secondary);
+  line-height: 1.25;
+}
+
+.bt-sci-ledger-val {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bt-sci-ledger-row.is-total .bt-sci-ledger-val {
+  color: var(--primary);
+  font-size: 0.84rem;
+}
+
+[data-theme="dark"] .bt-sci-ledger-row.is-total .bt-sci-ledger-val {
+  color: var(--good);
+}
+
+.bt-sci-whatif-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+}
+
+@media (min-width: 560px) {
+  .bt-sci-whatif-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.bt-sci-whatif-box {
+  padding: 8px 10px;
+  border-radius: 11px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bt-sci-whatif-box > b {
+  font-size: 0.75rem;
+  color: var(--ink);
+}
+
+.bt-sci-whatif-box > span {
+  font-size: 0.73rem;
+  color: var(--ink-secondary);
+  line-height: 1.36;
+}
+
+.bt-sci-why-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 2px;
+}
+
+.bt-sci-cite {
+  font-size: 0.69rem;
+  color: var(--ink-muted);
+}
+
+.bt-sci-tune-jump-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.bt-spec-primary {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size: 1.32rem;
+  font-weight: 800;
+  line-height: 1.16;
+  color: var(--ink);
+  margin-top: 2px;
+  word-break: break-word;
+}
+
+.bt-spec-primary.is-compact {
+  font-size: 1.06rem;
+}
+
+.bt-spec-primary small {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-secondary);
+}
+
+.bt-spec-sub {
+  font-size: 0.74rem;
+  color: var(--ink-secondary);
+  line-height: 1.32;
+}
+
+.bt-kettle-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 13px;
+  border-radius: 13px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  font-size: 0.8rem;
+  color: var(--ink);
+}
+
+.bt-card-hero .bt-action-row-1line {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
+.bt-pour-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.bt-pour-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--line-soft, var(--line));
+}
+
+.bt-pour-time {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.bt-pour-gram {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* ==================== 7. STEP 4: AUDIBLE KITCHEN CHRONOGRAPH ==================== */
+.bt-timer-stage-v62 {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.bt-timer-audio-card {
+  padding: 5px 8px;
+  border-radius: 15px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.bt-timer-audio-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  row-gap: 4px;
+  flex-wrap: wrap;
+  width: 100%;
+  min-width: 0;
+}
+
+.bt-timer-audio-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--well);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-weight: 800;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.bt-timer-audio-sum-txt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bt-collapse-chev {
+  font-size: 0.72rem;
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.bt-timer-audio-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.bt-timer-audio-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  padding-top: 5px;
+  border-top: 1px solid var(--line-hairline, var(--line));
+}
+
+.bt-timer-audio-note {
+  flex: 1 1 0%;
+  min-width: 0;
+  font-size: 0.7rem;
+  color: var(--ink-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bt-card-collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 23px;
+  padding: 0 8px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--well);
+  border: 1px solid var(--line);
+  color: var(--ink-secondary);
+  font-size: 0.67rem;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.bt-card-collapse-btn:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.bt-timer-audio-body[hidden],
+.bt-active-step-body[hidden],
+.bt-active-step-collapsed-sum[hidden],
+#bt-timer-steps-body[hidden],
+.bt-timer-waves-card.is-collapsed .bt-ext-waves-svg,
+.bt-timer-waves-card.is-collapsed .bt-ext-waves-legend,
+.bt-timer-waves-card .bt-ext-waves-svg[hidden],
+.bt-timer-waves-card .bt-ext-waves-legend[hidden] {
+  display: none !important;
+}
+
+.bt-timer-audio-card .bt-seg-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+  gap: 3px;
+}
+
+.bt-timer-audio-card .bt-seg-bar > button {
+  min-height: 32px;
+  min-width: 0;
+  width: 100%;
+  padding: 0 5px;
+  font-size: 0.7rem;
+  gap: 4px;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.bt-timer-audio-card .bt-seg-bar > button > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bt-timer-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.bt-timer-status-lhs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 0%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 520px) {
+  .bt-timer-audio-toggle {
+    flex: 0 1 auto;
+    padding: 0 7px;
+    font-size: 0.68rem;
+  }
+  .bt-flow-rate-pill,
+  .bt-demo-scale-btn {
+    padding: 0 6px;
+    font-size: 0.67rem;
+  }
+  .bt-timer-audio-card .bt-seg-bar > button {
+    padding: 0 4px;
+    font-size: 0.67rem;
+    gap: 3px;
+  }
+}
+
+.bt-timer-status-row .bt-badge-v62 {
+  min-height: 28px;
+  padding: 0 7px;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.bt-flow-rate-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 7px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--good-bg);
+  color: var(--good);
+  border: 1px solid rgba(24, 96, 62, 0.28);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bt-flow-rate-pill.is-idle {
+  background: var(--well);
+  color: var(--ink-secondary);
+  border-color: var(--line);
+}
+
+.bt-demo-scale-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 7px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--well);
+  color: var(--ink-secondary);
+  border: 1px solid var(--line);
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+
+.bt-demo-scale-btn[aria-pressed="true"],
+.bt-demo-scale-btn.is-active {
+  background: var(--science-bg);
+  color: var(--science);
+  border-color: var(--science-border);
+  font-weight: 800;
+}
+
+.bt-test-sound-btn {
+  min-height: 28px;
+  padding: 0 7px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* GIANT Kitchen-Counter Digital Readout (#bt-timer-giant-clock) */
+.bt-timer-giant-hero {
+  width: 100%;
+  min-width: 0;
+  padding: 5px 9px;
+  border-radius: 13px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bt-timer-giant-clock {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size: clamp(2.75rem, 10vw, 3.8rem);
+  font-weight: 800;
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bt-timer-giant-clock.is-overtime {
+  color: var(--warn, #D98B26);
+}
+
+.bt-timer-giant-clock.is-stopped {
+  color: var(--good);
+}
+
+.bt-timer-giant-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 0%;
+  text-align: right;
+  overflow: hidden;
+}
+
+.bt-timer-giant-phase {
+  font-size: 0.67rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bt-timer-giant-phase.is-overtime {
+  color: var(--warn, #D98B26);
+}
+
+.bt-timer-giant-weight {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.bt-timer-giant-flow {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-end;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-secondary);
+  font-size: 0.67rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.bt-timer-giant-flow.is-flowing {
+  background: var(--good-bg);
+  color: var(--good);
+  border-color: rgba(24, 96, 62, 0.32);
+}
+
+@media (max-width: 639px) {
+  .bt-timer-giant-hero {
+    padding: 5px 7px;
+    gap: 6px;
+  }
+  .bt-timer-giant-weight {
+    font-size: 0.76rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bt-timer-giant-flow {
+    font-size: 0.63rem;
+    padding: 1px 5px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.bt-timer-dial-card {
+  padding: 7px 10px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.bt-timer-dial-rhs {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+@media (min-width: 640px) {
+  .bt-timer-stage-v62 {
+    gap: 7px;
+  }
+  .bt-timer-audio-card {
+    padding: 6px 10px;
+    gap: 5px;
+  }
+  .bt-timer-dial-card {
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: 208px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px 14px;
+  }
+  .bt-timer-dial-wrap {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .bt-timer-giant-hero {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 7px 12px;
+  }
+  .bt-timer-giant-weight {
+    font-size: 1.04rem;
+  }
+  .bt-timer-dial-rhs {
+    grid-column: 2;
+    grid-row: 2;
+    gap: 7px;
+  }
+}
+
+/* Enlarged Kitchen Chronograph Ring (168px mobile / 204px desktop) keeping Stop Brew & 3-Wave 100% above fold */
+.bt-timer-dial-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.bt-timer-dial-wrap .bt-chrono {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.bt-timer-dial-wrap .bt-chrono-stage,
+.bt-timer-dial-wrap .bt-chrono-svg {
+  width: min(158px, 43vw);
+  max-width: 158px;
+  height: auto !important;
+  margin: 0 auto;
+  display: block;
+}
+
+@media (max-width: 639px), (max-height: 920px) {
+  .bt-timer-dial-wrap .bt-chrono-legend {
+    display: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .bt-timer-dial-wrap .bt-chrono-stage,
+  .bt-timer-dial-wrap .bt-chrono-svg {
+    width: 204px;
+    max-width: 204px;
+    height: auto !important;
+  }
+}
+
+.bt-timer-dial-wrap .bt-chrono-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+/* Live 3-Line Extraction Kinetics Graph below Dial Card inside Step 4 */
+.bt-timer-waves-card {
+  width: 100%;
+  min-width: 0;
+}
+
+.bt-timer-waves-card .bt-ext-waves-live {
+  padding: 5px 9px;
+  gap: 3px;
+  border-radius: 15px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-xs);
+}
+
+.bt-timer-waves-card .bt-ext-waves-head {
+  gap: 3px 6px;
+  justify-content: space-between;
+}
+
+.bt-timer-waves-card #bt-timer-waves-toggle {
+  margin-left: auto;
+}
+
+.bt-timer-waves-card .bt-ext-waves-title {
+  font-size: 0.68rem;
+}
+
+.bt-timer-waves-card .bt-ext-waves-legend {
+  gap: 4px 7px;
+  font-size: 0.63rem;
+}
+
+.bt-timer-waves-card .bt-ext-waves-dot {
+  width: 7px;
+  height: 7px;
+}
+
+.bt-timer-waves-card .bt-ext-waves-status {
+  padding: 4px 8px;
+  font-size: 0.67rem;
+  line-height: 1.25;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.bt-timer-waves-card.is-overtime .bt-ext-waves-live {
+  border-color: rgba(217, 139, 38, 0.52);
+  background: var(--gold-soft, var(--warn-bg));
+}
+
+.bt-waves3-svg,
+.bt-timer-waves-card .bt-ext-waves-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 46px;
+}
+
+@media (min-width: 640px) {
+  .bt-timer-waves-card .bt-ext-waves-live {
+    padding: 7px 11px;
+    gap: 4px;
+  }
+  .bt-waves3-svg,
+  .bt-timer-waves-card .bt-ext-waves-svg {
+    max-height: 68px;
+  }
+}
+
+.bt-waves3-caption {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.bt-timer-overtime-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-pill, 9999px);
+  background: rgba(184, 50, 39, 0.14);
+  border: 1px solid rgba(184, 50, 39, 0.42);
+  color: var(--bad, #B83227);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.69rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .bt-timer-overtime-badge {
+  background: rgba(242, 139, 130, 0.16);
+  border-color: rgba(242, 139, 130, 0.45);
+  color: #FFB4AB;
+}
+
+.bt-active-step-card {
+  width: 100%;
+  padding: 5px 9px;
+  border-radius: 13px;
+  background: var(--primary-soft, var(--good-bg));
+  border: 1.5px solid var(--primary);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bt-active-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bt-active-step-collapsed-sum {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bt-timer-steps-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bt-timer-steps-card.is-collapsed {
+  gap: 0;
+}
+
+@media (max-width: 639px) {
+  .bt-active-step-say {
+    -webkit-line-clamp: 1;
+  }
+  .bt-timer-transport-subrow .bt-tctrl-btn {
+    min-height: 34px;
+    font-size: 0.74rem;
+  }
+}
+
+.bt-active-step-card.is-overtime {
+  border-color: var(--warn, #D98B26);
+  background: var(--gold-soft, var(--warn-bg));
+}
+
+.bt-active-step-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+[data-theme="dark"] .bt-active-step-top > span,
+[data-theme="dark"] .bt-active-step-target {
+  color: var(--good) !important;
+}
+
+.bt-active-step-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.bt-active-step-target {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.bt-active-step-say {
+  font-size: 0.77rem;
+  color: var(--ink-secondary);
+  line-height: 1.28;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bt-active-step-upnext {
+  font-size: 0.71rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 2px;
+  border-top: 1px solid var(--line-hairline, rgba(26, 20, 18, 0.08));
+}
+
+/* Above-the-Fold Wet-Hand Transport Controls */
+.bt-timer-transport-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bt-timer-transport-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 6px;
+}
+
+.bt-timer-transport-subrow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.35fr 0.8fr 0.85fr;
+  gap: 6px;
+}
+
+@media (min-width: 600px) {
+  .bt-timer-transport-wrap {
+    display: grid;
+    grid-template-columns: 1.45fr 1.15fr;
+    gap: 7px;
+  }
+}
+
+.bt-tctrl-btn {
+  min-height: 40px;
+  padding: 0 7px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--well);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: transform 0.12s var(--spring-snappy), background-color 0.14s ease, border-color 0.14s ease;
+}
+
+@media (min-width: 640px) {
+  .bt-tctrl-btn {
+    min-height: 42px;
+    font-size: 0.82rem;
+    padding: 0 10px;
+  }
+}
+
+.bt-tctrl-btn:active {
+  transform: scale(0.97);
+}
+
+.bt-tctrl-btn.is-run,
+.bt-tctrl-btn.is-start-hero {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+  box-shadow: 0 4px 12px rgba(27, 77, 56, 0.22);
+}
+
+.bt-tctrl-btn.is-paused {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.bt-tctrl-btn.is-stop-brew {
+  background: linear-gradient(180deg, #B83227 0%, #96221A 100%);
+  border-color: #D44B3E;
+  color: #FFFDF9;
+  box-shadow: 0 4px 12px rgba(150, 34, 26, 0.28);
+}
+
+[data-theme="dark"] .bt-tctrl-btn.is-stop-brew {
+  background: linear-gradient(180deg, #CC3E32 0%, #9E261C 100%);
+  border-color: #F06D61;
+  color: #FFFDF9;
+}
+
+/* Actual Brew Time Locked Banner */
+.bt-timer-locked-banner {
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: 14px;
+  background: linear-gradient(155deg, var(--good-bg) 0%, var(--surface) 100%);
+  border: 1.5px solid var(--good);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bt-timer-locked-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bt-timer-locked-title {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.bt-timer-nudge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.bt-timer-nudge-pill {
+  min-height: 36px;
+  min-width: 42px;
+  padding: 0 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.bt-timer-nudge-pill:hover {
+  border-color: var(--accent);
+}
+.bt-timer-nudge-pill:active {
+  transform: scale(0.96);
+}
+
+/* ==================== 8. SMART MACHINE CONSOLES (PHILIPS 5500, AIDEN, XBLOOM) ==================== */
+.bt-ph5500-console {
+  background: linear-gradient(175deg, #1A1512 0%, #100D0B 100%);
+  color: #F7F0E8;
+  border: 1px solid #3D3028;
+  border-radius: var(--r-lg, 24px);
+  padding: 15px;
+  box-shadow: 0 12px 32px rgba(10, 7, 5, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  min-width: 0;
+}
+
+.bt-ph5500-console h2,
+.bt-ph5500-console h3 {
+  color: #F7F0E8;
+  margin: 0;
+}
+
+.bt-ph-bezel-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(247, 240, 232, 0.12);
+}
+
+.bt-ph-profile-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.bt-ph5500-console .bt-pill-row {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
+.bt-ph-profile-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 4px 8px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px solid rgba(247, 240, 232, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  color: #E8DDD2;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.bt-ph-profile-btn[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--ph-ring-col, #F2AE4B);
+  color: #FFFFFF;
+}
+
+.bt-ph-temp-box {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(247, 240, 232, 0.13);
+}
+
+.bt-ph-temp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.bt-ph-iced-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: var(--r-pill, 9999px);
+  background: rgba(56, 189, 248, 0.16);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #BAE6FD;
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.bt-ph-ring-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2.5px solid var(--ph-ring-col, #D0C0B2);
+  flex-shrink: 0;
+}
+
+.bt-ph-recs-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+@media (max-width: 480px) {
+  .bt-ph-recs-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bt-ph-rec-card {
+  padding: 9px 11px;
+  border-radius: 12px;
+  border: 1px solid rgba(242, 174, 75, 0.34);
+  background: rgba(242, 174, 75, 0.09);
+  color: #FFF6EA;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bt-ph-rec-why {
+  font-size: 0.7rem;
+  color: #E8DDD2;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bt-ph-drink-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 7px;
+}
+
+.bt-ph-drink-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 68px;
+  padding: 8px 6px;
+  border-radius: 13px;
+  border: 1px solid rgba(247, 240, 232, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: #EFE5DA;
+  font-size: 0.77rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+}
+.bt-ph-drink-tile[aria-pressed="true"],
+.bt-ph-drink-tile.is-active {
+  background: linear-gradient(180deg, rgba(232, 132, 74, 0.34) 0%, rgba(232, 132, 74, 0.14) 100%);
+  border-color: #FAD398;
+  box-shadow: 0 0 0 1px rgba(250, 211, 152, 0.45);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.bt-ph-sliders-deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.bt-ph-slider-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 7px;
+  padding: 11px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(247, 240, 232, 0.11);
+}
+
+.bt-ph-led-stack {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+}
+
+.bt-ph-led-seg {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(247, 240, 232, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(247, 240, 232, 0.72);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.bt-ph-led-seg.is-lit {
+  background: linear-gradient(90deg, #E8844A 0%, #F5B86E 100%);
+  border-color: #FAD398;
+  color: #1A100A;
+}
+.bt-ph-led-seg.is-milk.is-lit {
+  background: linear-gradient(90deg, #E9DFC9 0%, #FFFDF9 100%);
+  border-color: #FFFFFF;
+  color: #1A120D;
+}
+
+.bt-ph-interlock-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(247, 240, 232, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: #F7F0E8;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+.bt-ph-interlock-btn[aria-pressed="true"] {
+  background: #EE9B4D;
+  border-color: #FAD398;
+  color: #1A100A;
+}
+
+.bt-ph-hopper-lock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: rgba(244, 188, 92, 0.09);
+  border: 1px solid rgba(244, 188, 92, 0.34);
+}
+
+.bt-ph-safety-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(246, 133, 128, 0.16);
+  border: 1px solid rgba(246, 133, 128, 0.42);
+  color: #FFD2CF;
+  font-size: 0.73rem;
+  font-weight: 800;
+}
+
+.bt-ph-sas-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.bt-ph-sas-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid #F4BC5C;
+}
+.bt-ph-sas-dot.is-filled {
+  background: #5CD49C;
+  border-color: #5CD49C;
+}
+
+/* Fellow Aiden & xBloom Studios */
+.bt-basket-badge-green {
+  background: var(--good-bg);
+  color: var(--good);
+  border: 1px solid rgba(24, 96, 62, 0.32);
+  padding: 5px 11px;
+  border-radius: var(--r-pill, 9999px);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.bt-basket-badge-blue {
+  background: var(--science-bg);
+  color: var(--science);
+  border: 1px solid var(--science-border);
+  padding: 5px 11px;
+  border-radius: var(--r-pill, 9999px);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.bt-staircase-svg {
+  display: block;
+  width: 100%;
+  height: 168px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #1A171E 0%, #111015 100%);
+  border: 1px solid rgba(250, 211, 152, 0.24);
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.bt-xbloom-pours-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 8px;
+}
+
+.bt-xbloom-pour-card {
+  padding: 10px;
+  border-radius: 13px;
+  background: var(--well);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bt-profiler-svg {
+  display: block;
+  width: 100%;
+  height: 168px;
+  border-radius: 16px;
+  background: var(--well);
+  border: 1px solid var(--line);
+  touch-action: pan-y;
+  user-select: none;
+}
+
+/* ==================== 9. SHARED QR PASSPORT & TUNER HELPERS ==================== */
+.bt-tune-stepper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--well);
+  box-shadow: var(--shadow-well-inset);
+}
+
+.bt-nudge-btn {
+  min-width: 46px;
+  min-height: 46px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.bt-qr-card-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--bg-subtle);
+  border: 1.5px solid var(--line);
+  text-align: center;
+}
+
+.bt-qr-svg-box {
+  width: 188px;
+  height: 188px;
+  padding: 10px;
+  border-radius: 16px;
+  background: #FFFFFF;
+  color: #1A1412;
+  border: 1px solid #D8C8B6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bt-qr-svg-box svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Preserved Shared Compatibility Classes for Neighboring Tabs/Sheets */
+.bt-vault-carousel {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 2px 2px 8px;
+  scrollbar-width: none;
+}
+.bt-vault-carousel::-webkit-scrollbar { display: none; }
+
+.bt-bag-card-3d {
+  flex: 0 0 210px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 13px 13px 13px 16px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+.bt-bag-card-3d::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--bag-roast-color, var(--roast-3, #8B5022));
+}
+
+.bt-fix-dock {
+  border-radius: 20px;
+  border: 1.5px solid var(--accent);
+  background: linear-gradient(160deg, var(--surface) 0%, var(--accent-soft) 100%);
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bt-horology-clock-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 15px;
+  border-radius: 20px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+}
+.bt-horology-clock-card.is-golden {
+  border-color: var(--gold, #D98B26);
+}
+

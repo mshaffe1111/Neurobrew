@@ -1,0 +1,1305 @@
+/* ==========================================================================
+   BeanTelligence v6.3 — 03b-taste-cellar.css
+   Step 5 (Taste & Perfect: Context Strip & Flow Clue, Cup Cooling Timer 60 C,
+   Rate-First 3-Mode Sensory Flow, 4-Way Bullseye Cheat-Sheet, Plain-English
+   Guided & Pro Cupping Instructions, Rose-Copper Scratch Foil 2.0, Live
+   Post-Rating Dial-In Verdict & In-Place Gold Recipe Lock) +
+   Tab 2 (Cellar: Universal Back Navigation, Open Shelf & Trails, Cryo-Calendar,
+   Brew Journal, Compare 2-3 Brews, 4-Step Cafe Logger & Bag Value Tracker)
+   Zero Emojis · 16px Min Input Font · WCAG 2.2 AA Light & Dark
+   ========================================================================== */
+
+/* ==================== 1. SHARED TASTE & CELLAR STAGE ==================== */
+.bt-tc-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 780px;
+  min-width: 0;
+  margin: 0 auto;
+  padding-bottom: 20px;
+}
+
+.bt-tc-stage.has-sticky-cta {
+  padding-bottom: calc(168px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+  .bt-tc-stage.has-sticky-cta {
+    padding-bottom: 96px;
+  }
+}
+
+/* Enforce >= 16px (1rem) on all inputs, textareas & selects — Zero iOS Zoom! */
+.bt-tc-stage input,
+.bt-tc-stage textarea,
+.bt-tc-stage select,
+.bt-tc-sheet input,
+.bt-tc-sheet textarea,
+.bt-tc-sheet select,
+.bt-tc-input,
+.bt-tc-textarea,
+.bt-tc-select {
+  font-family: var(--font-sans);
+  font-size: 16px !important;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.bt-tc-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bt-tc-kicker {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.bt-tc-title {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.32rem, 3.6vw, 1.62rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.bt-tc-sub {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.46;
+  color: var(--ink-secondary);
+}
+
+/* Primary Breathable Card */
+.bt-tc-card {
+  background: var(--surface-card-grad, var(--surface));
+  border: 1px solid var(--line-soft, var(--line));
+  border-radius: var(--r-lg, 22px);
+  padding: 15px 16px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  min-width: 0;
+  position: relative;
+}
+
+.bt-tc-well {
+  background: var(--well);
+  border-radius: var(--r-md, 16px);
+  padding: 11px 13px;
+  box-shadow: var(--shadow-well-inset);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bt-tc-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* ==================== 2. TOP CONTEXT STRIP, BACK BUTTONS & HOW-TO GUIDE ==================== */
+.bt-tc-top-strip,
+.bt-cellar-nav-bar,
+.bt-sheet-back-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.bt-tc-back-pill {
+  min-height: 44px;
+  padding: 7px 14px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.14s var(--spring-snappy), border-color 0.14s ease, background-color 0.14s ease;
+}
+
+.bt-tc-back-pill:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--bg-subtle);
+}
+
+.bt-tc-back-pill:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+.bt-tc-brew-summary {
+  flex: 1 1 220px;
+  min-height: 42px;
+  padding: 7px 12px;
+  border-radius: 14px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  color: var(--ink);
+  font-size: 0.81rem;
+  font-weight: 600;
+  line-height: 1.35;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bt-tc-flow-clue {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 13px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.42;
+  border: 1px solid rgba(133, 75, 4, 0.28);
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.bt-tc-flow-clue.is-slow {
+  background: var(--accent-soft);
+  border-color: rgba(154, 66, 18, 0.30);
+  color: var(--accent);
+}
+
+/* Scannable "How to Taste This Cup" Guide Strip */
+.bt-tc-guide-strip {
+  background: var(--surface);
+  border: 1px solid var(--line-soft, var(--line));
+  border-radius: var(--r-md, 18px);
+  padding: 11px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.bt-tc-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+  gap: 8px;
+}
+
+.bt-tc-guide-step {
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--well);
+  font-size: 0.8rem;
+  line-height: 1.42;
+  color: var(--ink-secondary);
+}
+
+.bt-tc-guide-step b {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+/* Single-Row Horizontal Scroll Strip (Mandatory for > 4 pills on 390px!) */
+.bt-tc-pill-scroll {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 7px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 2px 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+}
+
+.bt-tc-pill-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.bt-tc-pill-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-width: 0;
+}
+
+/* Segmented Mode / Tab Switcher */
+.bt-tc-seg-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--r-md, 16px);
+  background: var(--well);
+  box-shadow: var(--shadow-well-inset);
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+
+.bt-tc-seg-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.bt-tc-seg-btn {
+  flex: 1 0 auto;
+  min-height: 44px;
+  padding: 6px 11px;
+  border-radius: var(--r-sm, 12px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: background-color 0.16s var(--spring-snappy), color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.bt-tc-seg-btn[aria-selected="true"],
+.bt-tc-seg-btn[aria-pressed="true"],
+.bt-tc-seg-btn.is-active {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line-soft, var(--line));
+  box-shadow: var(--shadow-xs);
+}
+
+/* Tactile Pill Buttons (>= 44px touch height) */
+.bt-tc-pill {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 7px 13px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: transform 0.14s var(--spring-snappy), background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+
+.bt-tc-pill:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.bt-tc-pill:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+.bt-tc-pill[aria-pressed="true"],
+.bt-tc-pill.is-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+}
+
+.bt-tc-pill.is-copper[aria-pressed="true"],
+.bt-tc-pill.is-copper.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.bt-tc-pill.is-soft {
+  background: var(--bg-subtle);
+  border-color: var(--line-soft, var(--line));
+}
+
+.bt-tc-pill.is-compact {
+  min-height: 38px;
+  padding: 5px 11px;
+  font-size: 0.79rem;
+}
+
+/* Semantic Status Badges */
+.bt-tc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill, 9999px);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.bt-tc-badge.is-good {
+  background: var(--good-bg);
+  color: var(--good);
+  border: 1px solid rgba(24, 96, 62, 0.28);
+}
+
+.bt-tc-badge.is-gold {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid rgba(217, 139, 38, 0.42);
+}
+
+.bt-tc-badge.is-sci {
+  background: var(--science-bg);
+  color: var(--science);
+  border: 1px solid var(--science-border, rgba(22, 85, 110, 0.28));
+}
+
+.bt-tc-badge.is-warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border: 1px solid rgba(133, 75, 4, 0.32);
+}
+
+.bt-tc-badge.is-bad {
+  background: var(--bad-bg);
+  color: var(--bad);
+  border: 1px solid rgba(158, 33, 29, 0.30);
+}
+
+/* Spotlight Recessed 16px Text Input Pill */
+.bt-tc-spotlight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 4px 13px;
+  border-radius: 14px;
+  background: var(--well);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-well-inset);
+  min-width: 0;
+}
+
+.bt-tc-spotlight:focus-within {
+  border-color: var(--focus, var(--accent));
+  background: var(--surface);
+}
+
+.bt-tc-spotlight input,
+.bt-tc-spotlight select {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+  min-height: 38px;
+  font-size: 16px !important;
+  color: var(--ink);
+}
+
+.bt-tc-textarea {
+  width: 100%;
+  min-height: 76px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--well);
+  color: var(--ink);
+  resize: vertical;
+  outline: none;
+}
+
+.bt-tc-textarea:focus {
+  border-color: var(--focus, var(--accent));
+  background: var(--surface);
+}
+
+/* ==================== 3. CARD 1: CUP COOLING TIMER (60 C) & IN-MUG RESCUE ==================== */
+.bt-tc-cool-livebar {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+}
+
+.bt-tc-cool-livebar.is-ready {
+  background: var(--good-bg);
+  border-color: rgba(24, 96, 62, 0.32);
+}
+
+.bt-tc-cool-clock-txt {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.bt-tc-cool-livebar.is-ready .bt-tc-cool-clock-txt {
+  color: var(--good);
+}
+
+.bt-tc-cool-progress {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.bt-tc-cool-progress > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #C95B2B 0%, #E59A2E 52%, var(--good) 100%);
+  transition: width 0.4s ease;
+}
+
+/* In-Mug Emergency Rescue Collapsible Pill & Drawer */
+.bt-tc-rescue-trigger {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 13px;
+  border: 1px dashed var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.83rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+}
+
+.bt-tc-rescue-drawer {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bt-tc-rescue-rx {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--good-bg);
+  border: 1px solid rgba(24, 96, 62, 0.25);
+  color: var(--ink);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.bt-tc-mug-svg {
+  display: block;
+  width: 100%;
+  max-width: 310px;
+  height: auto;
+  margin: 0 auto;
+  touch-action: pan-y;
+}
+
+/* ==================== 4. CARD 2: RATE FIRST, 4-WAY CHEAT-SHEET, GUIDED & PRO CUPPING ==================== */
+.bt-tc-unrated-prompt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(154, 66, 18, 0.30);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+/* 4-Way + Center Bullseye Cheat-Sheet */
+.bt-tc-cheatsheet {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+@media (max-width: 380px) {
+  .bt-tc-cheatsheet {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.bt-tc-cheat-item {
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--well);
+  font-size: 0.78rem;
+  line-height: 1.38;
+  color: var(--ink-secondary);
+}
+
+.bt-tc-cheat-item b {
+  display: block;
+  color: var(--ink);
+  font-size: 0.8rem;
+  margin-bottom: 1px;
+}
+
+.bt-tc-cheat-item.is-center {
+  grid-column: 1 / -1;
+  background: var(--good-bg);
+  border: 1px solid rgba(24, 96, 62, 0.24);
+  color: var(--ink);
+}
+
+.bt-tc-cheat-item.is-center b {
+  color: var(--good);
+}
+
+/* Guided Sensory (90s) & Pro Cupping Rows */
+.bt-tc-guided-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bt-tc-guided-row,
+.bt-tc-cva-row {
+  background: var(--well);
+  border-radius: 14px;
+  padding: 11px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.bt-tc-trait-desc {
+  margin: -2px 0 2px;
+  font-size: 0.79rem;
+  line-height: 1.38;
+  color: var(--ink-secondary);
+}
+
+.bt-tc-pro-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  font-size: 0.8rem;
+  line-height: 1.42;
+  color: var(--ink-secondary);
+}
+
+.bt-tc-pro-legend b {
+  color: var(--ink);
+}
+
+.bt-tc-anchor-scale,
+.bt-tc-scale-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  font-size: 0.74rem;
+  color: var(--ink-muted);
+  gap: 6px;
+}
+
+.bt-tc-intensity-bar {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.bt-tc-int-btn {
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.bt-tc-int-btn[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.bt-tc-liking-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.bt-tc-like-btn {
+  min-height: 40px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.bt-tc-like-btn[aria-pressed="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+}
+
+.bt-tc-cva-range {
+  width: 100%;
+  min-height: 32px;
+  accent-color: var(--accent);
+}
+
+/* ==================== 5. BLIND SCRATCH FOIL 2.0 & PALATE MATCH ==================== */
+.bt-tc-scratch-stage {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--well);
+  min-height: 126px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+.bt-tc-scratch-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+  z-index: 2;
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.bt-tc-scratch-canvas:active {
+  cursor: grabbing;
+}
+
+.bt-tc-scratch-canvas.is-peeled {
+  opacity: 0;
+  transform: scale(1.02);
+  pointer-events: none;
+}
+
+.bt-tc-match-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: var(--good-bg);
+  border: 1px solid rgba(24, 96, 62, 0.26);
+}
+
+/* ==================== 6. CARD 3: POST-RATING DIAL-IN VERDICT (#bt-nextbrew-fix) ==================== */
+#bt-nextbrew-fix.bt-tc-hero-fix {
+  background: linear-gradient(168deg, var(--surface) 0%, var(--bg-subtle) 100%);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--r-lg, 22px);
+  padding: 15px 16px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#bt-nextbrew-fix.bt-tc-hero-fix.is-awaiting {
+  border: 1.5px dashed var(--line-strong, var(--line));
+  background: var(--surface);
+}
+
+#bt-nextbrew-fix.bt-tc-hero-fix.is-sweet {
+  border-color: var(--good);
+  background: linear-gradient(168deg, var(--surface) 0%, var(--good-bg) 160%);
+}
+
+.bt-tc-coach-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bt-tc-bj-avatar {
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bt-tc-fix-headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.06rem, 3vw, 1.24rem);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.bt-tc-counterfactual {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: var(--well);
+  font-size: 0.83rem;
+  line-height: 1.42;
+  color: var(--ink-secondary);
+}
+
+.bt-tc-counterfactual b {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.bt-tc-tabu-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: var(--warn-bg);
+  border: 1px solid rgba(133, 75, 4, 0.30);
+  color: var(--warn);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.bt-tc-gold-lock-btn {
+  min-height: 48px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--gold);
+  background: linear-gradient(135deg, var(--accent-soft) 0%, var(--surface) 100%);
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.14s var(--spring-snappy), background-color 0.16s ease;
+}
+
+.bt-tc-gold-lock-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.bt-tc-gold-lock-btn.is-locked {
+  background: var(--good);
+  border-color: var(--good);
+  color: #FFFDF9;
+}
+
+/* ==================== 7. R2 DUAL-PIN SOVEREIGNTY & OFF-DAY SHIELD ==================== */
+.bt-tc-r2-card {
+  background: var(--science-bg);
+  border: 1px solid var(--science-border, rgba(22, 85, 110, 0.28));
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bt-tc-hyp-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.3fr) minmax(70px, 1fr) 44px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.79rem;
+}
+
+.bt-tc-hyp-bar {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.bt-tc-hyp-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--science);
+}
+
+.bt-tc-shield-btn {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--well);
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+}
+
+.bt-tc-shield-btn[aria-pressed="true"] {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+/* ==================== 8. STICKY THUMB-ZONE PRIMARY CTA ==================== */
+#bt-step5-sticky-cta {
+  display: contents;
+}
+
+.bt-tc-sticky-cta {
+  position: sticky;
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+  z-index: 24;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border-radius: var(--r-lg, 20px);
+  background: var(--surface-glass, var(--surface));
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--line-soft, var(--line));
+  box-shadow: var(--shadow-elevated, var(--shadow-card));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 1024px) {
+  .bt-tc-sticky-cta {
+    bottom: 12px;
+  }
+}
+
+.bt-tc-primary-btn {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  flex: 0 0 auto;
+  min-height: 54px;
+  padding: 10px 15px;
+  border-radius: var(--r-md, 16px);
+  border: 1px solid transparent;
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 0.92rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  box-shadow: 0 6px 18px rgba(27, 77, 56, 0.22);
+  transition: transform 0.14s var(--spring-snappy), background-color 0.15s ease;
+}
+
+.bt-tc-primary-btn > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-tc-primary-btn > .bt-ico {
+  flex-shrink: 0;
+}
+
+.bt-tc-primary-btn.is-prompt {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 6px 18px rgba(154, 66, 18, 0.22);
+}
+
+.bt-tc-sticky-cta > .bt-tc-primary-btn {
+  flex: 1 1 170px;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.bt-tc-save-home-btn {
+  flex: 0 0 auto;
+  min-height: 54px;
+  padding: 9px 13px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  white-space: nowrap;
+  border: 1.5px solid var(--line-strong, var(--line));
+  color: var(--ink);
+  background: var(--surface);
+}
+
+@media (max-width: 520px) {
+  .bt-tc-sticky-cta {
+    padding: 7px 8px;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .bt-tc-sticky-cta > .bt-tc-primary-btn {
+    flex: 1 1 0%;
+    min-height: 50px;
+    padding: 7px 10px;
+    font-size: 0.77rem;
+    gap: 4px;
+  }
+
+  .bt-tc-sticky-cta > .bt-tc-primary-btn > .bt-ico {
+    display: none;
+  }
+
+  .bt-tc-sticky-cta > .bt-tc-primary-btn .bt-tc-primary-sub {
+    font-size: 0.67rem;
+  }
+
+  .bt-tc-save-home-btn {
+    min-height: 50px;
+    padding: 7px 9px;
+    font-size: 0.76rem;
+  }
+}
+
+.bt-tc-primary-btn:hover:not(:disabled) {
+  background: var(--primary-hover, var(--primary));
+}
+
+.bt-tc-primary-btn.is-prompt:hover:not(:disabled) {
+  filter: brightness(1.04);
+}
+
+.bt-tc-primary-btn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.bt-tc-primary-sub {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.73rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+/* ==================== 9. TAB 2 CELLAR: SHELF, CRYO-CALENDAR, JOURNAL, CAFES & PRICES ==================== */
+.bt-cellar-bag-card {
+  background: var(--surface-card-grad, var(--surface));
+  border: 1px solid var(--line-soft, var(--line));
+  border-left: 6px solid var(--bag-roast-color, var(--roast-3, #8B5022));
+  border-radius: var(--r-lg, 20px);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.bt-cellar-meter {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.bt-cellar-meter > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--primary) 100%);
+}
+
+.bt-cryo-summary-btn {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  color: var(--ink-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bt-cryo-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  text-align: center;
+}
+
+.bt-cryo-day-cell {
+  padding: 5px 2px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft, var(--line));
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.bt-cryo-day-cell.is-peak {
+  background: var(--good-bg);
+  border-color: rgba(24, 96, 62, 0.35);
+  color: var(--good);
+  font-weight: 700;
+}
+
+.bt-cryo-day-cell.is-cryo {
+  background: var(--science-bg);
+  border-color: var(--science-border, rgba(22, 85, 110, 0.35));
+  color: var(--science);
+  font-weight: 700;
+}
+
+.bt-cryo-day-cell.is-rest {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.bt-cryo-tube-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.bt-cryo-tube-pill {
+  min-height: 44px;
+  padding: 6px 11px;
+  border-radius: 12px;
+  border: 1px solid var(--science-border, var(--line));
+  background: var(--science-bg);
+  color: var(--science);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.bt-cryo-tube-pill.is-used {
+  opacity: 0.48;
+  text-decoration: line-through;
+  background: var(--well);
+  color: var(--ink-muted);
+}
+
+/* KPI Strip (Brew Journal & Cafe Leaderboard) */
+.bt-tc-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.bt-tc-kpi-tile {
+  padding: 10px 11px;
+  border-radius: 14px;
+  background: var(--well);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bt-tc-kpi-val {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.bt-tc-kpi-lbl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Side-by-Side 2-3 Brew Comparison Table */
+.bt-compare-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+}
+
+.bt-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.bt-compare-table th,
+.bt-compare-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line-soft, var(--line));
+  text-align: left;
+  vertical-align: top;
+}
+
+.bt-compare-table th {
+  background: var(--well);
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.bt-compare-table tr.is-diff td {
+  background: rgba(154, 66, 18, 0.06);
+}
+
+/* QR Trading Card Passport Preview */
+.bt-passport-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--well);
+  text-align: center;
+}
+
+.bt-qr-real-box {
+  padding: 10px;
+  border-radius: 14px;
+  background: #FAF6F0;
+  border: 1px solid #D8C8B6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bt-qr-real-box svg {
+  display: block;
+  width: 168px;
+  height: 168px;
+}
+
+/* 4-Step Cafe Logger & Clone Home Card */
+.bt-shop-ticket {
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(154, 66, 18, 0.25);
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bt-clone-home-card {
+  background: linear-gradient(155deg, var(--primary-soft, var(--good-bg)) 0%, var(--surface) 100%);
+  border: 1.5px solid var(--primary);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+/* Detail Key-Value Fold Grid */
+.bt-detail-kv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.bt-detail-kv {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--well);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bt-detail-kv span {
+  font-size: 0.71rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+.bt-detail-kv b {
+  font-size: 0.86rem;
+  color: var(--ink);
+  word-break: break-word;
+}

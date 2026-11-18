@@ -1,0 +1,97 @@
+</style>
+</head>
+<body>
+<a href="#mount" class="bt-skip-link" id="skipLink">Skip to workspace</a>
+
+<svg id="bt-svg-defs" width="0" height="0" style="position:fixed;width:0;height:0;pointer-events:none;overflow:hidden" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="bt-mark" viewBox="0 0 200 200">
+    <g transform="translate(100 100) scale(0.215) translate(-518 -500)">
+      <path d="M 444 136 L 274 422 L 236 548 L 324 712 L 444 776 L 382 536 L 444 308 Z" fill="var(--bt-prism-left, #2E160B)"/>
+      <path d="M 444 136 L 614 422 L 652 548 L 564 712 L 444 776 L 506 536 L 444 308 Z" fill="var(--bt-prism-right, #9A4A1E)"/>
+      <path d="M 444 136 L 382 356 L 444 308 L 506 356 Z" fill="var(--bt-prism-crown, #D98B26)"/>
+      <path d="M 444 308 L 444 684 L 358 514 Z" fill="var(--bt-prism-heart, #F6BE58)"/>
+      <path d="M 444 308 L 530 514 L 444 684 Z" fill="var(--bt-prism-right, #9A4A1E)" fill-opacity="0.88"/>
+      <path d="M 118 392 L 266 456 L 444 504 L 444 522 L 258 476 L 110 412 Z" fill="var(--bt-prism-beam, #381C0D)"/>
+      <path d="M 452 500 C 552 480 652 424 756 358 C 814 322 864 306 908 304 C 872 334 820 362 762 398 C 664 458 564 500 452 514 Z" fill="var(--bt-prism-wave1, #E09224)"/>
+      <path d="M 456 510 C 572 508 688 488 798 468 C 846 460 888 460 924 468 C 886 488 842 498 792 506 C 684 522 572 528 456 524 Z" fill="var(--bt-prism-wave2, #9A4A1E)"/>
+      <path d="M 450 522 C 558 540 664 580 762 612 C 814 628 862 632 902 622 C 864 650 810 656 752 638 C 654 608 554 560 450 536 Z" fill="var(--bt-prism-wave3, #1C4A36)"/>
+      <circle cx="912" cy="303" r="12" fill="var(--bt-prism-wave1, #E09224)"/>
+      <circle cx="928" cy="468" r="11" fill="var(--bt-prism-wave2, #9A4A1E)"/>
+      <circle cx="906" cy="621" r="11" fill="var(--bt-prism-wave3, #1C4A36)"/>
+      <path d="M 256 826 C 334 868 554 868 632 826 C 552 848 336 848 256 826 Z" fill="var(--bt-prism-crown, #D98B26)"/>
+    </g>
+  </symbol>
+  <symbol id="bt-medal" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="54" fill="var(--bj-stage-bg, #F4EBDD)" stroke="var(--bt-prism-crown, #D98B26)" stroke-width="3"/>
+    <circle cx="60" cy="60" r="46" fill="none" stroke="var(--bt-prism-crown, #D98B26)" stroke-width="1.4" stroke-dasharray="2 4" opacity="0.65"/>
+    <use href="#bt-mark" x="18" y="18" width="84" height="84"/>
+  </symbol>
+  <symbol id="bt-badge" viewBox="0 0 400 356">
+    <rect x="24" y="18" width="352" height="320" rx="36" fill="var(--card, #FFFDF9)" stroke="var(--line, #D8C8B6)" stroke-width="2"/>
+    <circle cx="200" cy="142" r="82" fill="var(--bj-stage-bg, #F4EBDD)" stroke="var(--bj-stage-border, #DCC9B0)" stroke-width="1.5"/>
+    <use href="#bt-mark" x="122" y="64" width="156" height="156"/>
+    <text x="200" y="268" text-anchor="middle" font-family="Lora, Georgia, serif" font-weight="700" font-size="30" letter-spacing="-0.5" fill="var(--bt-wordmark-bean, #1F1712)">Bean<tspan fill="var(--bt-wordmark-accent, #9A4A1E)">Telligence</tspan></text>
+    <text x="200" y="296" text-anchor="middle" font-family="Plus Jakarta Sans, -apple-system, sans-serif" font-weight="600" font-size="12.5" letter-spacing="1.2" fill="var(--bt-wordmark-sub, #685244)">A LITTLE SCIENCE, A LOT OF DELICIOUS.</text>
+  </symbol>
+</svg>
+
+<div id="app-shell">
+  <aside id="side-nav" aria-label="Studio Navigation">
+    <div class="bt-rail-top-group">
+      <button type="button" class="bt-rail-wordmark" id="rail-wordmark-btn" aria-label="BeanTelligence Home"></button>
+      <nav class="bt-rail-nav" id="rail-tabs" aria-label="Primary Studio Tabs"></nav>
+    </div>
+    <div class="bt-rail-bottom-group">
+      <div class="bt-rail-box" id="rail-lens-box" role="group" aria-label="Experience Lens"></div>
+      <div class="bt-rail-box" id="rail-footer"></div>
+    </div>
+  </aside>
+
+  <div class="bt-center-stage" id="center-stage">
+    <header id="top-chrome" role="banner">
+      <div class="bt-top-left">
+        <button type="button" class="bt-top-brand" id="top-brand-btn" aria-label="BeanTelligence Home"></button>
+      </div>
+      <div class="bt-top-right">
+        <div class="bt-lens-seg" id="top-lens-seg" role="group" aria-label="Experience Lens">
+          <button type="button" data-lens-mode="starter" aria-pressed="false" title="Just Starting — warm plain English">Start</button>
+          <button type="button" data-lens-mode="comfy" aria-pressed="true" title="Comfy Brewer — everyday specialty">Comfy</button>
+          <button type="button" data-lens-mode="scientist" aria-pressed="false" title="Bean Scientist — full %TDS, %EY and citations">Sci</button>
+        </div>
+        <button type="button" class="bt-chrome-pill bt-ble-dot-btn" id="top-ble-pill" aria-label="Bluetooth and Workflow Sensors">
+          <span class="bt-status-dot" id="top-ble-dot"></span>
+        </button>
+        <button type="button" class="bt-icon-btn" id="top-theme-btn" aria-label="Toggle Light or Dark theme"></button>
+      </div>
+    </header>
+
+    <div class="bt-workspace" id="workspace-grid">
+      <main id="mount" tabindex="-1"></main>
+      <div id="detail-pane" aria-label="Selected Detail Inspector"></div>
+    </div>
+
+    <div id="cta-shelf" class="bt-cta-shelf" hidden></div>
+  </div>
+
+  <aside id="studio-aside" aria-label="Live Telemetry and Beanjamin Studio Coach"></aside>
+
+  <nav id="bottom-dock" aria-label="Primary Tabs"></nav>
+</div>
+
+<div id="sheet-backdrop" hidden aria-hidden="true"></div>
+<section id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" data-detent="half" hidden>
+  <div class="bt-sheet-grab-zone" id="sheet-grab-zone" aria-hidden="true">
+    <span class="bt-sheet-grab-pill"></span>
+  </div>
+  <header class="bt-sheet-header">
+    <h2 class="bt-sheet-title" id="sheet-title">Studio</h2>
+    <button type="button" class="bt-sheet-close" id="sheet-close-btn" aria-label="Close sheet"></button>
+  </header>
+  <div class="bt-sheet-body" id="sheet-body"></div>
+</section>
+
+<div id="keypad-host" hidden></div>
+<div id="xray-loupe" role="tooltip" hidden></div>
+<div id="toast-host" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script>
