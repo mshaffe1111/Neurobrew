@@ -1,11 +1,11 @@
 /* ============================================================================
- * BeanTelligence v6.7 — Offline-First Non-Intrusive Service Worker (sw.js)
- * Cache Version: bt-pwa-v6.7.0
+ * BeanTelligence v6.8 — Offline-First Non-Intrusive Service Worker (sw.js)
+ * Cache Version: bt-pwa-v6.8.0
  * Brew-Safe Guarantee: Never forces mid-session takeover or reload during brews
  * ============================================================================ */
 'use strict';
 
-const CACHE_NAME = 'bt-pwa-v6.7.0';
+const CACHE_NAME = 'bt-pwa-v6.8.0';
 const PRECACHE_URLS = [
   './',
   './index.html',

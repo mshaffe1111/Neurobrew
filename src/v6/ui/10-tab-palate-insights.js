@@ -966,7 +966,7 @@
         const sl = bst.slots || {};
         if ((sl.scale && sl.scale.connected) || bst.scaleConnected) bleLabels.push('Scale');
         if ((sl.kettle && sl.kettle.connected) || bst.kettleConnected) bleLabels.push('Kettle');
-        if ((sl.refract && sl.refract.connected) || bst.refractConnected) bleLabels.push('R2');
+        if ((sl.refractometer && sl.refractometer.connected) || bst.refractometerConnected || (sl.refract && sl.refract.connected) || bst.refractConnected) bleLabels.push('R2');
         if ((sl.pressure && sl.pressure.connected) || bst.pressureConnected) bleLabels.push('Pressure');
         if ((sl.omni && sl.omni.connected) || bst.omniConnected) bleLabels.push('Omni');
       }
@@ -2441,33 +2441,80 @@
             const todayIso = new Date().toISOString().slice(0, 10);
             const elevMetersStr = isElevUnk ? '' : String((ELEVATION_BAND_DEFS[sc.elevation] && ELEVATION_BAND_DEFS[sc.elevation].midMeters) || 1600);
             const cleanNotesStr = sc.notesUnsure ? '' : sc.notes.join(', ');
-            a.coffee = Object.assign({}, a.coffee || {}, {
+            const cleanFlavorsArr = sc.notesUnsure ? [] : sc.notes.slice();
+            const freshId = 'cf_buy_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+            a.coffee = {
+              id: freshId,
+              coffee_id: freshId,
               name: bagName,
               roaster: sc.roaster || '',
+              roaster_location: '',
               origin: isOrigUnk ? 'unknown' : origMeta.name,
               originUnsure: isOrigUnk ? 'yes' : '',
               origin_unknown: isOrigUnk ? 'yes' : '',
+              region: '',
+              farm: '',
+              farm_or_station: '',
+              producer: '',
+              harvest_year: '',
+              varietal: '',
+              species: 'arabica',
+              blend: '',
               process: isProcUnk ? 'unknown' : sc.process,
               processUnsure: isProcUnk ? 'yes' : '',
               process_unknown: isProcUnk ? 'yes' : '',
+              process_sub: '',
+              process_details: '',
+              decaf: '',
+              decaf_process: '',
               roast: isRoastUnk ? 'unknown' : sc.roast,
               roastUnsure: isRoastUnk ? 'yes' : '',
               roast_unknown: isRoastUnk ? 'yes' : '',
               elevation_m: elevMetersStr,
+              elevText: elevMetersStr ? (elevMetersStr + ' masl') : '',
               elevUnsure: isElevUnk ? 'yes' : '',
               elev_unknown: isElevUnk ? 'yes' : '',
+              density: '',
               bag_notes: cleanNotesStr,
+              notes: cleanNotesStr,
+              flavors: cleanFlavorsArr,
               notesUnsure: sc.notesUnsure ? 'yes' : '',
+              personal_note: '',
               roast_date: todayIso,
+              is_frozen: '',
+              frozen_date: '',
+              freeze_days_offset: '',
+              bag_weight_g: 250,
+              remaining_g: 250,
+              price: sc.price || 21,
+              currency: 'USD',
+              agtron: '',
+              bean_agtron: '',
+              ground_agtron: '',
+              roast_delta: '',
+              agtron_scale: 'gourmet',
+              dial_locked: '',
+              pendingNextRecipe: null,
+              dialAdaptation: null,
+              roasterGuide: null,
               answered: 'yes'
-            });
-            /* Canonical PRICES_KEY schema ({ id, coffee, roaster, size, price, currency, rlevel, date, notes }) */
+            };
+            if (a.brew && typeof a.brew === 'object') {
+              delete a.brew.dialAdaptation;
+              delete a.brew.pendingNextRecipe;
+              a.brew._savedDialedMethod = '';
+            }
+            if (window.BTStorage && typeof window.BTStorage.upsertCoffeeVaultRecord === 'function') {
+              try { window.BTStorage.upsertCoffeeVaultRecord(a.coffee, null, { allowClear: true, allowUnlock: true }); } catch (_) {}
+            }
+            /* Canonical PRICES_KEY schema ({ id, coffee_id, coffee, roaster, size, price, currency, rlevel, date, notes }) */
             if (window.BTStorage && typeof window.BTStorage.getPrices === 'function' && typeof window.BTStorage.savePrices === 'function') {
               try {
                 const prObj = window.BTStorage.getPrices();
                 if (prObj && Array.isArray(prObj.list)) {
                   const canonicalBag = {
                     id: 'bag_' + Date.now(),
+                    coffee_id: freshId,
                     coffee: bagName,
                     roaster: sc.roaster || '',
                     origin: isOrigUnk ? '' : origMeta.name,
@@ -2489,6 +2536,7 @@
               } catch (_) {}
             }
             saveDraftSoon();
+            if (typeof sh().flushDraft === 'function') { try { sh().flushDraft(); } catch (_) {} }
             CK.haptic('celebrate');
             notify('Added "' + bagName + '" to My Beans & loaded into Brew Studio!');
           }

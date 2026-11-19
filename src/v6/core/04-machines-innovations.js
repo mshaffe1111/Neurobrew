@@ -453,7 +453,8 @@ function snapshotMachine(machineState, coffee){
 function philipsWarnings(coffee, state){
   const c = coffee || {}, st = state || {};
   const warns = [];
-  const txt = String((c.name || '') + ' ' + (c.notes || '') + ' ' + (c.process_details || '')).toLowerCase();
+  const bagNotesTxt = Array.isArray(c.flavors) ? c.flavors.join(' ') : (c.flavors || '');
+  const txt = String((c.name || '') + ' ' + (c.bag_notes || '') + ' ' + (c.bagNotes || '') + ' ' + (c.notes || '') + ' ' + bagNotesTxt + ' ' + (c.process_details || '')).toLowerCase();
   if (/caramelized|torrefacto|sugar[-\s]*coated|flavored|hazelnut\s*syrup|vanilla\s*syrup/i.test(txt)){
     warns.push({ id:'hopper_hazard', severity:'critical', text:'NEVER put caramelized, sugar-coated, or syrup-flavored beans in the Philips ceramic hopper — sticky coatings gum up the flat ceramic burrs and void warranty. Use whole unflavored beans or a single pre-ground scoop in the bypass chute.' });
   }
@@ -1044,7 +1045,7 @@ function evaluateLivingBag(cfg){
   const prevEffDays = cfg.lastBrewEffectiveDays != null ? +cfg.lastBrewEffectiveDays : curEffDays;
 
   /* 1. Cryo-Vault Physics (-18 C -> 12.3x slowdown, +12 um grind shift, Dew-Point Condensation Guard) */
-  const isFrozen = !!(cfg.isFrozen || bean.frozen || (bSum.age && bSum.age.isFrozen));
+  const isFrozen = !!(cfg.isFrozen || bean.frozen || bean.is_frozen === 'yes' || bean.is_frozen === true || bean.isFrozen === true || (bSum.age && bSum.age.isFrozen));
   const dewPointC = calcMagnusDewPointC(ambTempC, ambRhPct);
   /* Unopened bag/tube warming from -18 C past dewPointC + 1.5 C safety margin */
   const massWarmG = Math.max(15, Math.min(350, remG || 20));
@@ -1855,7 +1856,7 @@ function cloneCafeDrinkToHome(shopVisit, homeGear){
   const owned = ownedRaw.map(b => String(b || '').toLowerCase().trim()).filter(Boolean);
   const hasBrewer = k => owned.indexOf(k) >= 0;
   const grinderKey = String(gear.grinderKey || gear.grinder || 'comandante-c40').toLowerCase().replace(/_/g, '-');
-  const bean = gear.bean || gear.coffee || { roast:v.roast || 'medium', process:v.process || 'washed', name:v.coffee || v.beanName || 'Home Specialty Beans' };
+  const bean = gear.bean || gear.coffee || { roast:v.roast || 'medium', process:v.process || 'washed', name:v.coffee || v.beanName || 'Home Specialty Beans', bag_notes:v.bag_notes || v.notes || '' };
 
   /* Normalize cafe archetype */
   let arch = 'latte';

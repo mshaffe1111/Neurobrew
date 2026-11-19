@@ -995,19 +995,44 @@
       type: 'button',
       class: 'bt-lab-chip',
       onclick: function () {
-        const pr = window.BTStorage && typeof window.BTStorage.getPrices === 'function' ? window.BTStorage.getPrices() : null;
-        const list = pr && Array.isArray(pr.list) ? pr.list : [];
+        const st = window.BTStorage || {};
+        let list = [];
+        if (typeof st.buildUnifiedCoffeesIndex === 'function') {
+          try { list = st.buildUnifiedCoffeesIndex() || []; } catch (_) { list = []; }
+        }
+        if (!list.length && typeof st.getCoffeesVaultList === 'function') {
+          try { list = st.getCoffeesVaultList() || []; } catch (_) { list = []; }
+        }
+        if (!list.length) {
+          const pr = typeof st.getPrices === 'function' ? st.getPrices() : null;
+          list = pr && Array.isArray(pr.list) ? pr.list : [];
+        }
         if (!list.length) {
           notify('No bags saved in My Beans yet — type sample names directly in each bowl below!');
           return;
         }
         const take = Math.min(5, list.length);
         sca.bowlCount = take;
+        while (sca.bowls.length < take) {
+          sca.bowls.push(makeDefaultScaBowl(sca.bowls.length));
+        }
         for (let i = 0; i < take; i++) {
-          const b = list[i];
-          sca.bowls[i].name = b.coffee || b.name || ('Sample #' + (i + 1));
-          sca.bowls[i].roaster = b.roaster || '';
-          sca.bowls[i].origin = b.origin || '';
+          const b = list[i] || {};
+          const rawC = (b.coffee && typeof b.coffee === 'object') ? b.coffee : b;
+          const bNotes = String(rawC.bag_notes || rawC.notes || (Array.isArray(rawC.flavors) ? rawC.flavors.join(', ') : '') || '').trim();
+          sca.bowls[i].coffee_id = rawC.coffee_id || rawC.id || b.coffee_id || b.id || '';
+          sca.bowls[i].name = rawC.name || rawC.coffee || b.name || b.coffee || ('Sample #' + (i + 1));
+          sca.bowls[i].roaster = rawC.roaster || b.roaster || '';
+          sca.bowls[i].origin = rawC.origin || b.origin || '';
+          sca.bowls[i].process = rawC.process || b.process || '';
+          sca.bowls[i].roast = rawC.roast || rawC.rlevel || b.roast || b.rlevel || '';
+          sca.bowls[i].varietal = rawC.varietal || b.varietal || '';
+          sca.bowls[i].farm = rawC.farm || rawC.farm_or_station || b.farm || '';
+          sca.bowls[i].elevation_m = rawC.elevation_m || b.elevation_m || '';
+          sca.bowls[i].agtron = rawC.agtron || b.agtron || '';
+          sca.bowls[i].bag_notes = bNotes;
+          sca.bowls[i].notes = bNotes;
+          sca.bowls[i].flavors = Array.isArray(rawC.flavors) ? rawC.flavors.slice() : (bNotes ? bNotes.split(/[,;/]+/).map(function (s) { return s.trim(); }).filter(Boolean) : []);
         }
         CK.haptic('snap');
         notify('Loaded ' + take + ' coffee(s) from My Beans into Cupping Bowls!');
@@ -1357,6 +1382,17 @@
           const b = sca.bowls[i];
           const sc = computeCvaBowlScore(b);
           const stars = computeBowlStars(sc);
+          const cId = b.coffee_id || ('cf_sca_' + batchTs + '_' + i);
+          b.coffee_id = cId;
+          const cupNotes = String(b.notes || '').trim();
+          const bagNotes = String(b.bag_notes || cupNotes || '').trim();
+          const flavorsArr = (Array.isArray(b.flavors) && b.flavors.length)
+            ? b.flavors.slice()
+            : (cupNotes ? cupNotes.split(/[,;/]+/).map(function (x) { return x.trim(); }).filter(Boolean) : (bagNotes ? bagNotes.split(/[,;/]+/).map(function (x) { return x.trim(); }).filter(Boolean) : []));
+          const flavorsStr = cupNotes || flavorsArr.join(', ') || bagNotes;
+          const coffeeName = b.name || ('Cupping Bowl ' + b.code);
+          const ratioVal = Math.round((sca.bowlMl / Math.max(1, dosePerBowlG)) * 10) / 10;
+          const cupSummary = 'Multi-Bowl Cupping (' + sc.toFixed(2) + ' / 100)' + (cupNotes ? (' · ' + cupNotes) : '');
           const rowObj = (typeof emptyRowObj === 'function') ? emptyRowObj() : {};
           if (typeof COLUMNS !== 'undefined' && Array.isArray(COLUMNS)) {
             COLUMNS.forEach(function (ck) { if (rowObj[ck] === undefined) rowObj[ck] = ''; });
@@ -1364,25 +1400,32 @@
           Object.assign(rowObj, {
             schema_version: '6.0',
             id: 'cup_sca_' + batchTs + '_' + i + '_' + Math.random().toString(36).slice(2, 6),
-            coffee_id: b.coffee_id || ('cf_sca_' + batchTs + '_' + i),
+            coffee_id: cId,
             saved_at: nowIso,
             cupping_date: todayIso,
             mode: 'single_cup',
-            coffee_name: b.name || ('Cupping Bowl ' + b.code),
+            coffee_name: coffeeName,
             roaster: b.roaster || '',
             origin: b.origin || '',
+            process: b.process || '',
+            roast: b.roast || '',
+            varietal: b.varietal || '',
+            farm: b.farm || '',
+            elevation_m: b.elevation_m || '',
+            agtron: b.agtron || '',
+            bag_notes: bagNotes,
             brew_method: 'cupping',
             brew_attempt: '1',
             brew_dose_g: String(dosePerBowlG),
             brew_water_g: String(sca.bowlMl),
-            brew_ratio: String(Math.round((sca.bowlMl / Math.max(1, dosePerBowlG)) * 10) / 10),
+            brew_ratio: String(ratioVal),
             brew_temp_c: '93',
             brew_temp_f: '200',
             total_score: sc.toFixed(2),
             score_kind: 'cva_affective',
             my_rating_stars: String(stars),
-            flavors_liked: b.notes || '',
-            general_notes: 'Multi-Bowl Cupping (' + sc.toFixed(2) + ' / 100)'
+            flavors_liked: flavorsStr,
+            general_notes: cupSummary
           });
           if (typeof st.keepInBrowser === 'function') {
             st.keepInBrowser(rowObj);
@@ -1390,6 +1433,37 @@
           } else if (typeof st.appendTastingRow === 'function') {
             st.appendTastingRow(rowObj);
             savedN++;
+          }
+          if (typeof st.upsertCoffeeVaultRecord === 'function') {
+            try {
+              st.upsertCoffeeVaultRecord({
+                id: cId,
+                coffee_id: cId,
+                name: coffeeName,
+                roaster: b.roaster || '',
+                origin: b.origin || '',
+                process: b.process || '',
+                roast: b.roast || '',
+                varietal: b.varietal || '',
+                farm: b.farm || '',
+                elevation_m: b.elevation_m || '',
+                agtron: b.agtron || '',
+                bag_notes: bagNotes,
+                notes: cupNotes || bagNotes,
+                flavors: flavorsArr,
+                personal_note: cupSummary
+              }, {
+                method: 'cupping',
+                dose: dosePerBowlG,
+                water: sca.bowlMl,
+                ratio: ratioVal,
+                tempC: 93,
+                tempF: 200,
+                stars: stars,
+                totalScore: +sc.toFixed(2),
+                flavors_liked: flavorsStr
+              });
+            } catch (_) {}
           }
         }
 
@@ -2818,15 +2892,25 @@
     } catch (_) {}
 
     function gatherJsonBackupString() {
+      if (typeof st.exportFullSaveBundle === 'function') {
+        try {
+          return JSON.stringify(st.exportFullSaveBundle(), null, 2);
+        } catch (_) {}
+      }
       const cleanPrefs = Object.assign({}, getApp().prefs || {});
+      let coffeesVaultRaw = '';
+      try { coffeesVaultRaw = localStorage.getItem('brew-and-cup-coffees-v1') || ''; } catch (_) {}
+      const coffeesVaultArr = typeof st.getCoffeesVaultList === 'function' ? st.getCoffeesVaultList() : [];
       return JSON.stringify({
         format: 'beantelligence-backup',
-        version: 1,
+        version: 2,
         madeAt: new Date().toISOString(),
-        appVersion: '6.2.0',
+        appVersion: '6.8.0',
         historyCsv: hist && hist.text ? hist.text : '',
         pricesCsv: pr && pr.list && typeof priceCsv === 'function' ? priceCsv(pr.list) : '',
         shopsCsv: shStore && shStore.store && typeof shopCsv === 'function' ? shopCsv(shStore.store) : '',
+        coffeesVault: coffeesVaultArr,
+        extraKeys: coffeesVaultRaw ? { 'brew-and-cup-coffees-v1': coffeesVaultRaw } : {},
         prefs: cleanPrefs,
         academy: readAcademyState()
       }, null, 2);
@@ -2856,6 +2940,125 @@
     async function handleUniversalImport(rawText, filename) {
       const txt = String(rawText || '').replace(/^\uFEFF/, '').trim();
       if (!txt) { statusLine.textContent = 'Empty file or clipboard input.'; return; }
+
+      /* 0. #btsave= Web-Address Save / Full-Save JSON Bundle (preserves all 18 keys + brew-and-cup-coffees-v1) */
+      if ((/(?:[#?&]|^)btsave(?:_v6)?=|^btsave:/i.test(txt) || (txt.charAt(0) === '{' && /"format"\s*:\s*"beantelligence-full-save"|"keys"\s*:/.test(txt))) && typeof st.importFullSaveBundle === 'function') {
+        try {
+          const fullRes = await st.importFullSaveBundle(txt, { mode: 'merge' });
+          if (fullRes && fullRes.ok) {
+            statusLine.textContent = 'Restored full save bundle (' + (fullRes.totalCoffees != null ? fullRes.totalCoffees : fullRes.coffeesImported) + ' coffees · ' + (fullRes.totalBrews != null ? fullRes.totalBrews : fullRes.brewsImported) + ' brews)!';
+            CK.haptic('celebrate');
+            if (hostEl) renderDataVaultSheet(hostEl);
+            else rerenderAcademyTab();
+            return;
+          }
+        } catch (_) {}
+      }
+
+      /* 0b. Shared Brew / Passport Codes (BT6:, #bt6=, #bp1=, #bt1=, bt1:, BT-code: V1) */
+      if (/(?:BT6:|bt1:|bp1:|BT-code:\s*V1)/i.test(txt) || /(?:^|[#?&])(?:bt6|bp1|bt1)=/i.test(txt)) {
+        const normTxt = txt.replace(/(?:^|[#?&])bp1=/i, 'bt1:').replace(/\bbp1:/i, 'bt1:').replace(/(?:^|[#?&])bt1=/i, 'bt1:');
+        const a = getApp();
+        a.brew = a.brew || {};
+        a.prefs = a.prefs || {};
+        const rxGrinder = (a.gear && (a.gear.grinder || a.gear.grinderKey))
+          || (a.prefs.gear && (a.prefs.gear.grinder || a.prefs.gear.grinderKey))
+          || 'comandante-c40';
+        const bs = window.BTBrewStudio || null;
+        const decodeFn = bs && (bs.decodeAnySharedBrew || bs.decodeSharedBrew);
+        let decoded = null;
+        if (typeof decodeFn === 'function') {
+          try {
+            const d0 = decodeFn(normTxt, a);
+            if (d0 && d0.ok && (d0.coffee || d0.methodKey)) decoded = d0;
+          } catch (_) {}
+        }
+        if (!decoded && window.BTInnovate && typeof window.BTInnovate.decodeAndLocalizePassport === 'function') {
+          try {
+            const rxPrefs = Object.assign({}, a.prefs, {
+              grinderKey: rxGrinder,
+              gear: (a.prefs && a.prefs.gear) || a.gear || {}
+            });
+            const d1 = window.BTInnovate.decodeAndLocalizePassport(normTxt, rxPrefs);
+            if (d1 && d1.ok) decoded = d1;
+          } catch (_) {}
+        }
+        if (!decoded && typeof shareRead === 'function') {
+          try {
+            const d2 = shareRead(normTxt);
+            if (d2 && d2.ok && (d2.coffee || d2.brew)) decoded = d2;
+          } catch (_) {}
+        }
+        if (decoded && (decoded.ok || decoded.coffee || decoded.bean || decoded.brew || decoded.localizedRecipe)) {
+          const srcC = decoded.coffee || decoded.bean || {};
+          const freshCid = srcC.coffee_id || srcC.id || ('cf_imp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6));
+          const notesStr = String(srcC.bag_notes || srcC.notes || (Array.isArray(srcC.flavors) ? srcC.flavors.join(', ') : '') || '').trim();
+          a.coffee = {
+            id: freshCid,
+            coffee_id: freshCid,
+            name: srcC.name || srcC.coffee_name || 'Shared Brew Passport',
+            roaster: srcC.roaster || '',
+            origin: srcC.origin || '',
+            region: srcC.region || '',
+            farm: srcC.farm || '',
+            varietal: srcC.varietal || '',
+            process: srcC.process || 'washed',
+            roast: srcC.roast || srcC.roast_level || 'medium-light',
+            elevation_m: srcC.elevation_m || '',
+            ground_agtron: srcC.ground_agtron || '',
+            agtron: srcC.agtron || srcC.ground_agtron || '',
+            bag_notes: notesStr,
+            notes: notesStr,
+            flavors: Array.isArray(srcC.flavors) ? srcC.flavors.slice() : (notesStr ? notesStr.split(/[,;/]+/).map(function (x) { return x.trim(); }).filter(Boolean) : []),
+            answered: 'yes'
+          };
+          const rx = decoded.localizedRecipe || decoded.brew || decoded;
+          const mKey = rx.methodKey || rx.method || a.brew.method || 'v60';
+          const doseVal = +(rx.doseG || rx.dose || a.brew.dose || 18);
+          const waterVal = +(rx.waterG || rx.water || a.brew.water || Math.round(doseVal * 16));
+          const ratioVal = +(rx.ratio || (waterVal / Math.max(1, doseVal))).toFixed(1);
+          const umVal = +(rx.d50Um || decoded.localizedUm || rx.grindUm || rx.grind_um || 0);
+          const tempVal = rx.tempC ? +rx.tempC : (rx.tempF ? Math.round(((+rx.tempF - 32) * 5 / 9) * 2) / 2 : (+a.brew.tempC || 93));
+          const grindSetTxt = (rx.grinderSetting && (rx.grinderSetting.shortDisplay || rx.grinderSetting.display || rx.grinderSetting.label))
+            || decoded.rxGrindSetting
+            || rx.grind_setting
+            || '';
+          a.brew.method = mKey;
+          a.brew.style = rx.style || decoded.style || 'standard';
+          a.brew.dose = doseVal;
+          a.brew.water = waterVal;
+          a.brew.ratio = ratioVal;
+          a.brew.tempC = tempVal;
+          a.brew.tempF = Math.round(tempVal * 9 / 5 + 32);
+          if (umVal > 0) {
+            a.brew.grindUm = Math.round(umVal);
+            a.brew.grind_um = Math.round(umVal);
+          }
+          if (grindSetTxt) a.brew.grind_setting = grindSetTxt;
+          a.brew.grinderKey = rx.grinderKey || rxGrinder;
+          a.brew._savedDialedMethod = mKey;
+          a.brew.customizedNote = decoded.spanNote || rx.boilCapNote || rx.waterNote || 'Imported Brew Passport';
+          if (typeof st.upsertCoffeeVaultRecord === 'function') {
+            try { st.upsertCoffeeVaultRecord(a.coffee, a.brew, { allowClear: true }); } catch (_) {}
+          }
+          const chFn = typeof changed === 'function' ? changed : sh().changed;
+          if (typeof chFn === 'function') { try { chFn(); } catch (_) {} }
+          if (typeof sh().flushDraft === 'function') { try { sh().flushDraft(); } catch (_) {} }
+          const okMsg = 'Loaded "' + a.coffee.name + '" (' + mKey.toUpperCase() + (grindSetTxt ? (' · ' + grindSetTxt) : '') + ') into Brew Studio!';
+          statusLine.textContent = okMsg;
+          CK.haptic('celebrate');
+          notify(okMsg);
+          if (typeof sh().closeSheet === 'function' && sh().isSheetOpen && sh().isSheetOpen()) {
+            try { sh().closeSheet(); } catch (_) {}
+          }
+          if (typeof sh().go === 'function') {
+            try { sh().go('brew'); } catch (_) {}
+          } else if (typeof sh().render === 'function') {
+            try { sh().render(); } catch (_) {}
+          }
+          return;
+        }
+      }
 
       /* Primary lossless multi-part classifier & applier (History + Prices + Shops + Prefs + Academy + QR) */
       if (typeof st.classifyBackup === 'function' && typeof st.applyClassifiedBackup === 'function') {
@@ -2894,31 +3097,42 @@
       if (txt.charAt(0) === '{') {
         try {
           const jb = typeof parseJsonBackup === 'function' ? parseJsonBackup(txt) : JSON.parse(txt);
-          if (jb && (jb.format === 'beantelligence-backup' || jb.historyCsv || jb.academy)) {
+          if (jb && (jb.format === 'beantelligence-backup' || jb.historyCsv || jb.academy || jb.coffeesVault || jb.extraKeys)) {
             if (jb.historyCsv && typeof readExisting === 'function' && st.setHistory) {
               const ex2 = readExisting(jb.historyCsv);
               if (!ex2.error) st.setHistory(ex2, jb.historyCsv);
             }
+            if (jb.pricesCsv && typeof priceRead === 'function' && typeof st.savePrices === 'function') {
+              const prJ = priceRead(jb.pricesCsv);
+              if (prJ && !prJ.error && Array.isArray(prJ.list)) st.savePrices(prJ.list);
+            }
+            if (jb.shopsCsv && typeof shopRead === 'function' && typeof st.saveShops === 'function') {
+              const shJ = shopRead(jb.shopsCsv);
+              if (shJ && !shJ.error && shJ.store) st.saveShops(shJ.store);
+            }
+            if (jb.prefs && typeof st.applyFullPrefs === 'function') {
+              st.applyFullPrefs(jb.prefs);
+            }
+            const vaultArr = Array.isArray(jb.coffeesVault)
+              ? jb.coffeesVault
+              : (jb.extraKeys && jb.extraKeys['brew-and-cup-coffees-v1'] ? JSON.parse(jb.extraKeys['brew-and-cup-coffees-v1']) : null);
+            if (Array.isArray(vaultArr) && vaultArr.length) {
+              if (typeof st.upsertCoffeeVaultRecord === 'function') {
+                vaultArr.forEach(function (cv) {
+                  if (cv && typeof cv === 'object') st.upsertCoffeeVaultRecord(cv, cv.lastBrew || null);
+                });
+              } else if (typeof st.saveCoffeesVaultList === 'function') {
+                st.saveCoffeesVaultList(vaultArr);
+              }
+            }
             if (jb.academy) writeAcademyState(jb.academy);
             statusLine.textContent = 'Restored structured JSON backup!';
             CK.haptic('celebrate');
+            if (hostEl) renderDataVaultSheet(hostEl);
+            else rerenderAcademyTab();
             return;
           }
         } catch (_) {}
-      }
-
-      if (/^(BT-code:\s*V1|bt1:)/i.test(txt)) {
-        if (window.BTInnovate && typeof window.BTInnovate.decodeAndLocalizePassport === 'function') {
-          window.BTInnovate.decodeAndLocalizePassport(txt, getApp().gear || {});
-          statusLine.textContent = 'Decoded & localized shared Brew Passport to your grinder & water!';
-          CK.haptic('celebrate');
-          return;
-        }
-        if (typeof shareRead === 'function') {
-          shareRead(txt);
-          statusLine.textContent = 'Loaded BT-code: V1 shared recipe!';
-          return;
-        }
       }
 
       const firstLine = txt.split(/\r?\n/)[0].toLowerCase();

@@ -92,8 +92,21 @@
   function isBrewOrCuppingActive(){
     try {
       if (global.timer && global.timer.running) return true;
-      if (global.app && (global.app.screen === 'timer' || global.app.activeSheet === 'live-cockpit')) return true;
-      if (global.BTShell && typeof global.BTShell.isBrewActive === 'function' && global.BTShell.isBrewActive()) return true;
+      const sh = global.BTShell;
+      if (sh && typeof sh.isBrewActive === 'function' && sh.isBrewActive()) return true;
+      const a = (sh && sh.app) ? sh.app : global.app;
+      if (a){
+        if (a.timerSave && a.timerSave.running) return true;
+        if (a.screen === 'timer' || a.screen === 'sca' || a.screen === 'cupping' ||
+            a.activeSheet === 'live-cockpit' || a.activeSheet === 'sca-cupping') return true;
+        if (a.activeTab === 'brew' && (a.brewStep === 'timer' || a.brewStep === 'taste')) return true;
+        if (a.activeTab === 'academy' && a.tabSegments && (a.tabSegments.academy === 'sca' || a.tabSegments.academy === 'gym')) return true;
+      }
+      if (sh && sh.BTSheet && typeof sh.BTSheet.isOpen === 'function' && sh.BTSheet.isOpen()){
+        const sk = typeof sh.BTSheet.currentKey === 'function' ? sh.BTSheet.currentKey() : '';
+        if (sk === 'live-cockpit' || sk === 'sca-cupping') return true;
+      }
+      if (global.BTBrewStudio && global.BTBrewStudio.timerSession && global.BTBrewStudio.timerSession.running) return true;
     } catch(e){}
     return false;
   }
@@ -120,8 +133,27 @@
 
   function primeAudio(){
     userGestureSeen = true;
-    const ctx = ensureAudioContext(true);
-    return !!ctx;
+    if (isSoundMuted()) return false;
+    try {
+      const Ctor = global.AudioContext || global.webkitAudioContext;
+      if (!Ctor) return false;
+      if (!audioCtx || audioCtx.state === 'closed'){
+        audioCtx = new Ctor();
+      }
+      if (audioCtx.state === 'suspended' && typeof audioCtx.resume === 'function'){
+        audioCtx.resume().catch(function(){});
+      }
+      if (typeof audioCtx.createBuffer === 'function' && typeof audioCtx.createBufferSource === 'function'){
+        const buf = audioCtx.createBuffer(1, 1, 22050);
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        src.connect(audioCtx.destination);
+        if (typeof src.start === 'function') src.start(0);
+      }
+      return audioCtx.state !== 'closed';
+    } catch(e){
+      return false;
+    }
   }
 
   if (typeof document !== 'undefined' && typeof document.addEventListener === 'function'){
@@ -421,10 +453,14 @@
         ta.setAttribute('readonly', 'readonly');
         ta.style.position = 'fixed';
         ta.style.top = '-9999px';
+        ta.style.left = '-9999px';
+        ta.style.fontSize = '16px';
         ta.style.opacity = '0';
         document.body.appendChild(ta);
+        try { ta.focus({ preventScroll:true }); } catch(e){}
         ta.select();
-        const ok = !!document.execCommand('copy');
+        try { ta.setSelectionRange(0, str.length); } catch(e){}
+        const ok = !!(typeof document.execCommand === 'function' && document.execCommand('copy'));
         document.body.removeChild(ta);
         return ok;
       }
@@ -1071,6 +1107,9 @@
     camera: camera,
     theme: theme,
     pwa: pwa,
+    copyText: copyText,
+    primeAudio: primeAudio,
+    clipboard: { writeText: copyText },
     isNative: isNative,
     getPlatform: getPlatform,
     isBrewActive: isBrewOrCuppingActive

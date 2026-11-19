@@ -324,16 +324,17 @@ function _matchDynamicList(list, s){
 const ROAST_ALIASES = {
   'ultra-light':'ultra-light', 'ultralight':'ultra-light', 'ultra light':'ultra-light', 'nordic':'ultra-light', 'nordic light':'ultra-light', 'cinnamon':'ultra-light',
   'light':'light', 'light roast':'light', 'filter light':'light', 'filter':'light',
-  'medium-light':'medium-light', 'medium light':'medium-light', 'light-medium':'medium-light', 'light medium':'medium-light', 'med-light':'medium-light', 'city':'medium-light', 'omni-light':'medium-light', 'omni':'medium-light', 'omni-roast':'medium-light',
+  'medium-light':'medium-light', 'medium light':'medium-light', 'light-medium':'medium-light', 'light medium':'medium-light', 'med-light':'medium-light', 'med light':'medium-light', 'light-med':'medium-light', 'medlight':'medium-light', 'medium / light':'medium-light', 'light / medium':'medium-light', 'city':'medium-light', 'omni-light':'medium-light', 'omni':'medium-light', 'omni-roast':'medium-light',
   'medium':'medium', 'medium roast':'medium', 'full city':'medium', 'city+':'medium',
-  'medium-dark':'medium-dark', 'medium dark':'medium-dark', 'med-dark':'medium-dark', 'dark-medium':'medium-dark', 'full city+':'medium-dark', 'vienna':'medium-dark',
+  'medium-dark':'medium-dark', 'medium dark':'medium-dark', 'med-dark':'medium-dark', 'med dark':'medium-dark', 'dark-medium':'medium-dark', 'dark medium':'medium-dark', 'meddark':'medium-dark', 'medium / dark':'medium-dark', 'dark / medium':'medium-dark', 'full city+':'medium-dark', 'vienna':'medium-dark',
   'dark':'dark', 'dark roast':'dark', 'french':'dark', 'italian':'dark', 'very dark':'dark', 'espresso dark':'dark'
 };
 function resolveRoast(val){
-  const s = _canonToken(val).replace(/\s+roast$/, '');
+  const tok = _canonToken(val);
+  const s = tok.replace(/\s+roast$/, '');
   if (!s) return '';
-  if (typeof ROASTS !== 'undefined'){ const d = _matchDynamicList(ROASTS, s) || _matchDynamicList(ROASTS, _canonToken(val)); if (d) return d; }
-  return ROAST_ALIASES[s] || ROAST_ALIASES[_canonToken(val)] || '';
+  if (typeof ROASTS !== 'undefined'){ const d = _matchDynamicList(ROASTS, s) || _matchDynamicList(ROASTS, tok); if (d) return d; }
+  return ROAST_ALIASES[s] || ROAST_ALIASES[tok] || '';
 }
 const PROCESS_ALIASES = {
   'washed':'washed', 'fully washed':'washed', 'wet':'washed', 'wet process':'washed', 'double washed':'washed', 'kenya washed':'washed',
@@ -634,7 +635,7 @@ function readV6Adaptation(rowObj){
   }
   if (!parsed) return isV6 ? { schema:'6.0', factualOnly:true } : null;
   const out = { schema:isV6 ? '6.0' : String(rowObj.schema_version || 'legacy'), factualOnly:!isV6 && !parsed.v6 };
-  ['agtron', 'bean_agtron', 'ground_agtron', 'agtron_scale', 'roast_delta', 'psd_d10_um', 'psd_d50_um', 'psd_d90_um', 'psd_span', 'ble_summary', 'machine_profile'].forEach(fk => {
+  ['agtron', 'bean_agtron', 'ground_agtron', 'agtron_scale', 'roast_delta', 'psd_d10_um', 'psd_d50_um', 'psd_d90_um', 'psd_span', 'ble_summary', 'machine_profile', 'coffee_extra', 'roaster_guide', 'next_recipe', 'dial_adaptation'].forEach(fk => {
     if (parsed[fk] !== undefined && parsed[fk] !== null) out[fk] = parsed[fk];
   });
   if (parsed.v6 && typeof parsed.v6 === 'object' && !Array.isArray(parsed.v6)){
@@ -2467,7 +2468,23 @@ function priceEntry(o){
     rlevel:rLvlVal
   };
   if (typeof o.id === 'string' && o.id.trim()) entry.id = priceText(o.id, 64);
-  if (typeof o.notes === 'string' && o.notes.trim()) entry.notes = priceText(o.notes, 200);
+  const rawNotes = typeof o.notes === 'string' && o.notes.trim() ? o.notes : (typeof o.bag_notes === 'string' && o.bag_notes.trim() ? o.bag_notes : (typeof o.bagNotes === 'string' && o.bagNotes.trim() ? o.bagNotes : ''));
+  if (rawNotes){
+    entry.notes = priceText(rawNotes, 300);
+    entry.bag_notes = priceText((typeof o.bag_notes === 'string' && o.bag_notes.trim()) ? o.bag_notes : rawNotes, 300);
+  }
+  if (typeof o.origin === 'string' && o.origin.trim()) entry.origin = priceText(o.origin, 100);
+  if (typeof o.region === 'string' && o.region.trim()) entry.region = priceText(o.region, 100);
+  if (typeof o.process === 'string' && o.process.trim()) entry.process = priceText(o.process, 60);
+  if (typeof o.varietal === 'string' && o.varietal.trim()) entry.varietal = priceText(o.varietal, 120);
+  if (o.elevation_m !== undefined && o.elevation_m !== null && String(o.elevation_m).trim() !== ''){
+    const em = parseInt(o.elevation_m, 10);
+    if (isFinite(em) && em >= 200 && em <= 3500) entry.elevation_m = em;
+    else {
+      const es = priceText(o.elevation_m, 24);
+      if (es) entry.elevation_m = es;
+    }
+  }
   if (!pods && o.rem_g !== undefined && o.rem_g !== null && String(o.rem_g).trim() !== ''){
     const rg = priceNum(o.rem_g, 1);
     const maxG = costGrams(size, unit0);
@@ -2537,7 +2554,14 @@ function priceRead(text){
       tubes_json:get(r, 'tubes_json'),
       coffee_id:unneutralize(get(r, 'coffee_id')),
       is_frozen:get(r, 'is_frozen'),
-      frozen_date:get(r, 'frozen_date')
+      frozen_date:get(r, 'frozen_date'),
+      notes:unneutralize(get(r, 'notes')),
+      bag_notes:unneutralize(get(r, 'bag_notes')),
+      origin:unneutralize(get(r, 'origin')),
+      region:unneutralize(get(r, 'region')),
+      process:unneutralize(get(r, 'process')),
+      varietal:unneutralize(get(r, 'varietal')),
+      elevation_m:get(r, 'elevation_m')
     });
     if (e && list.length < PRICE_MAX_ROWS) list.push(e); else skipped++;
   });

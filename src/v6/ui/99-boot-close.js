@@ -4,9 +4,16 @@
    Remembered WebBLE Auto-Reconnect & Non-Intrusive PWA Service Worker
    ========================================================================== */
 
-function _isBrewActivelyRunning() {
+function _isTimerOrCockpitRunning() {
   if (app && app.timerSave && app.timerSave.running) return true;
   if (BTSheet && BTSheet.currentKey && BTSheet.currentKey() === 'live-cockpit') return true;
+  if (typeof window !== 'undefined' && window.BTBrewStudio && window.BTBrewStudio.timerSession && window.BTBrewStudio.timerSession.running) return true;
+  return false;
+}
+
+function _isBrewActivelyRunning() {
+  if (_isTimerOrCockpitRunning()) return true;
+  if (typeof window !== 'undefined' && window.BTPlatform && typeof window.BTPlatform.isBrewActive === 'function' && window.BTPlatform.isBrewActive()) return true;
   return false;
 }
 
@@ -16,7 +23,21 @@ function _registerServiceWorkerSafely() {
     if (typeof location === 'undefined') return;
     const isSecureWeb = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     if (!isSecureWeb) return;
-    if (_isBrewActivelyRunning()) return;
+    if (_isTimerOrCockpitRunning()) return;
+
+    const pwa = (typeof window !== 'undefined' && window.BTPlatform && window.BTPlatform.pwa) ? window.BTPlatform.pwa : null;
+    if (pwa && typeof pwa.registerServiceWorker === 'function') {
+      if (typeof pwa.onUpdateReady === 'function' && (typeof window === 'undefined' || !window.__btSwUpdateListenerBound)) {
+        if (typeof window !== 'undefined') window.__btSwUpdateListenerBound = true;
+        pwa.onUpdateReady(function(info) {
+          if (info && info.updateAvailable && !_isTimerOrCockpitRunning()) {
+            toast('App update cached for your next reload.', { duration: 4000 });
+          }
+        });
+      }
+      Promise.resolve(pwa.registerServiceWorker('./sw.js')).catch(function() {});
+      return;
+    }
 
     navigator.serviceWorker.register('./sw.js', { scope: './' }).then(function(reg) {
       if (!reg) return;
@@ -24,7 +45,7 @@ function _registerServiceWorkerSafely() {
         const installing = reg.installing;
         if (!installing) return;
         installing.addEventListener('statechange', function() {
-          if (installing.state === 'installed' && navigator.serviceWorker.controller && !_isBrewActivelyRunning()) {
+          if (installing.state === 'installed' && navigator.serviceWorker.controller && !_isTimerOrCockpitRunning()) {
             toast('App update cached for your next reload.', { duration: 4000 });
           }
         });
@@ -82,8 +103,14 @@ function _bindGlobalShellEvents() {
 
     window.addEventListener('hashchange', function() {
       try {
-        if (typeof location !== 'undefined' && location.hash && /[?#&]btsave=/i.test(location.hash)) {
-          _checkAndOfferWebSaveRestore(location.hash);
+        if (typeof location !== 'undefined' && location.hash) {
+          if (/[?#&](?:btsave|btsave_v6)=/i.test(location.hash)) {
+            _checkAndOfferWebSaveRestore(location.hash);
+          } else if (_extractSharedBrewToken(location.hash)) {
+            if (_applySharedBrewAtBoot(location.hash)) {
+              go('brew');
+            }
+          }
         }
       } catch (e) {}
     });
@@ -159,7 +186,7 @@ function _checkAndOfferWebSaveRestore(rawHashStr) {
     const st = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
     if (!st || typeof st.decodeWebSaveUrl !== 'function' || typeof st.importFullSaveBundle !== 'function') return;
     const hashVal = String(rawHashStr || '');
-    if (!/[?#&]btsave=/i.test(hashVal) && !/^btsave=/i.test(hashVal)) return;
+    if (!/[?#&](?:btsave|btsave_v6)=/i.test(hashVal) && !/^(?:btsave|btsave_v6)=/i.test(hashVal)) return;
     if (typeof window !== 'undefined' && window.__btSelfAppliedSaveHash && window.__btSelfAppliedSaveHash === hashVal) return;
 
     const localIsEmpty = _isLocalVaultCurrentlyEmpty(st);
@@ -293,11 +320,180 @@ function _checkAndOfferWebSaveRestore(rawHashStr) {
   } catch (e) {}
 }
 
+function _parseBootSearchParams(rawSearch) {
+  const out = {};
+  const s = String(rawSearch || '').replace(/^\?/, '');
+  if (!s) return out;
+  try {
+    if (typeof URLSearchParams === 'function') {
+      const sp = new URLSearchParams(s);
+      sp.forEach(function(val, key) {
+        const k = String(key || '').trim().toLowerCase();
+        if (k && out[k] === undefined) out[k] = String(val || '').trim();
+      });
+      return out;
+    }
+  } catch (e) {}
+  s.split('&').forEach(function(pair) {
+    if (!pair) return;
+    const eq = pair.indexOf('=');
+    const rk = eq >= 0 ? pair.slice(0, eq) : pair;
+    const rv = eq >= 0 ? pair.slice(eq + 1) : '';
+    try {
+      const k = decodeURIComponent(rk.replace(/\+/g, ' ')).trim().toLowerCase();
+      const v = decodeURIComponent(rv.replace(/\+/g, ' ')).trim();
+      if (k && out[k] === undefined) out[k] = v;
+    } catch (e) {}
+  });
+  return out;
+}
+
+function _extractSharedBrewToken(rawUrlPart) {
+  let txt = String(rawUrlPart || '').trim();
+  if (!txt) return '';
+  try { txt = decodeURIComponent(txt); } catch (e) {}
+  let m = /(?:^|[#?&])bt6=([A-Za-z0-9\-_]{8,})/i.exec(txt);
+  if (m) return 'BT6:' + m[1];
+  m = /(?:^|[#?&])bt1=([A-Za-z0-9\-_]{8,})/i.exec(txt);
+  if (m) return 'bt1:' + m[1];
+  m = /(?:^|[#?&])bp1=([A-Za-z0-9\-_]{8,})/i.exec(txt);
+  if (m) return '#bp1=' + m[1];
+  m = /(?:^|#)\s*(BT6:[A-Za-z0-9\-_]{8,}|bt1:[A-Za-z0-9\-_]{8,})/i.exec(txt);
+  if (m) return m[1];
+  return '';
+}
+
+function _extractBt6ExtraMeta(token) {
+  if (!token || !/^BT6:/i.test(token)) return null;
+  try {
+    let clean = token.slice(4).replace(/-/g, '+').replace(/_/g, '/');
+    while (clean.length % 4) clean += '=';
+    if (typeof atob === 'function') {
+      const json = decodeURIComponent(escape(atob(clean)));
+      const obj = JSON.parse(json);
+      return (obj && typeof obj === 'object') ? obj : null;
+    }
+  } catch (e) {}
+  return null;
+}
+
+function _decodeSharedBrewForBoot(token) {
+  if (!token) return null;
+  const studio = (typeof window !== 'undefined' && window.BTBrewStudio) ? window.BTBrewStudio : null;
+  if (studio && typeof studio.decodeSharedBrew === 'function') {
+    const res = studio.decodeSharedBrew(token, app);
+    if (res && res.ok) return res;
+    if (/^#bp1=/i.test(token)) {
+      const res2 = studio.decodeSharedBrew('bt1:' + token.slice(5), app);
+      if (res2 && res2.ok) return res2;
+    }
+  }
+  const inn = (typeof window !== 'undefined' && window.BTInnovate) ? window.BTInnovate : null;
+  if (inn && typeof inn.decodeAndLocalizePassport === 'function') {
+    const uri = /^#bp1=/i.test(token) ? ('bt1:' + token.slice(5)) : token;
+    const dp = inn.decodeAndLocalizePassport(uri, (app && app.prefs) || {});
+    if (dp && dp.ok && dp.localizedRecipe) {
+      const lr = dp.localizedRecipe;
+      return {
+        ok: true,
+        coffee: dp.bean || {},
+        methodKey: lr.methodKey || 'v60',
+        style: 'standard',
+        doseG: +lr.doseG || 15,
+        waterG: +lr.waterG || 250,
+        ratio: +lr.ratio || 16.7,
+        tempC: lr.tempC != null ? +lr.tempC : 93,
+        localizedUm: +lr.d50Um || 560,
+        rxGrindSetting: (lr.grinderSetting && (lr.grinderSetting.shortDisplay || lr.grinderSetting.label)) || ((+lr.d50Um || 560) + ' \u00B5m')
+      };
+    }
+  }
+  if (typeof window !== 'undefined' && typeof window.shareRead === 'function') {
+    try {
+      const sr = window.shareRead(token);
+      if (sr && sr.ok && (sr.coffee || sr.brew)) {
+        const b = sr.brew || {};
+        const um = +b.grindUm || +b.um || 550;
+        return {
+          ok: true,
+          coffee: sr.coffee || { name: 'Shared Coffee' },
+          methodKey: b.method || 'v60',
+          style: b.style || 'standard',
+          doseG: +b.dose || 15,
+          waterG: +b.water || 250,
+          ratio: +b.ratio || 16.5,
+          tempC: b.tempF ? Math.round(((+b.tempF - 32) * 5 / 9) * 2) / 2 : (+b.tempC || 94),
+          localizedUm: um,
+          rxGrindSetting: b.grind_setting || (um + ' \u00B5m')
+        };
+      }
+    } catch (e) {}
+  }
+  return null;
+}
+
+function _applySharedBrewAtBoot(rawUrlPart) {
+  const token = _extractSharedBrewToken(rawUrlPart);
+  if (!token) return false;
+  const dec = _decodeSharedBrewForBoot(token);
+  if (!dec || !dec.ok) return false;
+
+  const extra = _extractBt6ExtraMeta(token) || {};
+  const dc = dec.coffee || {};
+  const rawFlavors = dc.flavors || dc.bag_notes || dc.notes || extra.fl || extra.flavors || extra.bn || extra.notes || '';
+  const bagNotesStr = Array.isArray(rawFlavors) ? rawFlavors.join(', ') : String(rawFlavors || '').trim();
+
+  const freshCoffee = (typeof newCoffee === 'function') ? newCoffee() : {};
+  app.coffee = Object.assign(freshCoffee, {
+    name: dc.name || extra.n || 'Shared Coffee',
+    roaster: dc.roaster || extra.r || '',
+    origin: dc.origin || extra.o || '',
+    region: dc.region || '',
+    varietal: dc.varietal || '',
+    process: dc.process || extra.p || 'washed',
+    roast: dc.roast || extra.rl || 'medium-light',
+    agtron: dc.ground_agtron || dc.agtron || '',
+    ground_agtron: dc.ground_agtron || dc.agtron || '',
+    roast_date: dc.roast_date || '',
+    bag_notes: bagNotesStr,
+    notes: bagNotesStr,
+    nameUnsure: '',
+    roastUnsure: '',
+    processUnsure: '',
+    originUnsure: '',
+    notesUnsure: ''
+  });
+  if (Array.isArray(dc.flavors)) app.coffee.flavors = dc.flavors.slice();
+  else if (Array.isArray(extra.fl)) app.coffee.flavors = extra.fl.slice();
+  if (typeof syncCoffeeAliases === 'function') syncCoffeeAliases(app.coffee);
+
+  app.brew = app.brew || {};
+  app.brew.method = dec.methodKey || 'v60';
+  app.brew.style = dec.style || 'standard';
+  app.brew.dose = +dec.doseG || 15;
+  app.brew.water = +dec.waterG || 250;
+  app.brew.ratio = +dec.ratio || Math.round((app.brew.water / Math.max(1, app.brew.dose)) * 10) / 10;
+  app.brew.tempC = dec.tempC != null ? +dec.tempC : 94;
+  app.brew.tempF = Math.round((app.brew.tempC * 9 / 5) + 32);
+  app.brew.grindUm = +dec.localizedUm || 550;
+  app.brew.grind_um = app.brew.grindUm;
+  app.brew.grind_setting = dec.rxGrindSetting || (app.brew.grindUm + ' \u00B5m');
+  app.brew.customizedNote = 'Shared Brew (' + app.brew.grind_setting + ')';
+  app.brew._savedDialedMethod = app.brew.method;
+  app.brew.dialAdaptation = null;
+
+  scheduleDraft();
+  toast('Loaded shared recipe: ' + (app.coffee.name || 'Coffee') + ' (' + app.brew.grind_setting + ')', { duration: 4200 });
+  return true;
+}
+
 function BTBoot() {
   if (typeof window !== 'undefined' && window.__btBooted) return;
   if (typeof window !== 'undefined') window.__btBooted = true;
 
   const initialBootHash = (typeof location !== 'undefined' && location.hash) ? String(location.hash) : '';
+  const initialBootSearch = (typeof location !== 'undefined' && location.search) ? String(location.search) : '';
+  const bootParams = _parseBootSearchParams(initialBootSearch);
 
   BTBrand.mountSprite();
   BTIcons.mountSprite();
@@ -349,15 +545,37 @@ function BTBoot() {
     if (everyFn) Promise.resolve(everyFn()).then(function() { refreshAll(); }).catch(function() {});
   } catch (e) {}
 
-  /* 4. Render Initial Route / Tab */
+  /* 4. Render Initial Route / Tab / Deep-Link / Shared Brew */
   let hashKey = '';
   try {
-    if (typeof location !== 'undefined' && location.hash && location.hash.length > 1) {
-      hashKey = decodeURIComponent(location.hash.slice(1)).trim().toLowerCase();
+    if (initialBootHash && initialBootHash.length > 1) {
+      hashKey = decodeURIComponent(initialBootHash.slice(1)).trim().toLowerCase();
     }
   } catch (e) {}
 
-  if (hashKey && (ROUTE_MAP[hashKey] || TAB_DEFS[hashKey])) {
+  const sharedBootApplied = _applySharedBrewAtBoot(initialBootHash) || _applySharedBrewAtBoot(initialBootSearch);
+  const qRouteRaw = (bootParams.route || bootParams.screen || '').toLowerCase();
+  const qStepRaw = (bootParams.step || '').toLowerCase();
+  const qTabRaw = (bootParams.tab || '').toLowerCase();
+  const qSegRaw = (bootParams.segment || '').toLowerCase();
+
+  if (sharedBootApplied) {
+    const sharedTarget = (qStepRaw && typeof normalizeBrewStep === 'function') ? normalizeBrewStep(qStepRaw) : 'brew';
+    go(sharedTarget);
+  } else if (qRouteRaw && (ROUTE_MAP[qRouteRaw] || TAB_DEFS[qRouteRaw])) {
+    go(qRouteRaw);
+  } else if (qStepRaw) {
+    const stepKey = (typeof normalizeBrewStep === 'function') ? normalizeBrewStep(qStepRaw) : qStepRaw;
+    go(ROUTE_MAP[stepKey] ? stepKey : 'door');
+  } else if (qTabRaw) {
+    const targetTab = qTabRaw === 'learn' ? 'academy' : ((qTabRaw === 'prefs' || qTabRaw === 'preferences') ? 'palate' : (TAB_DEFS[qTabRaw] ? qTabRaw : ''));
+    if (targetTab) {
+      switchTab(targetTab, qSegRaw ? { segment: qSegRaw } : undefined);
+    } else {
+      render();
+      navNote(false);
+    }
+  } else if (hashKey && (ROUTE_MAP[hashKey] || TAB_DEFS[hashKey])) {
     go(hashKey);
   } else if (app.screen && app.screen !== 'door' && ROUTE_MAP[app.screen] && !ROUTE_MAP[app.screen].sheet) {
     const mapped = ROUTE_MAP[app.screen];
@@ -370,9 +588,11 @@ function BTBoot() {
     navNote(false);
   }
 
-  /* 5. Boot-Time #btsave=... Web-Address Save Auto-Detection */
-  if (initialBootHash && /[?#&]btsave=/i.test(initialBootHash)) {
+  /* 5. Boot-Time #btsave=... / ?btsave=... Web-Address Save Auto-Detection */
+  if (initialBootHash && /[?#&](?:btsave|btsave_v6)=/i.test(initialBootHash)) {
     _checkAndOfferWebSaveRestore(initialBootHash);
+  } else if (initialBootSearch && /[?&](?:btsave|btsave_v6)=/i.test(initialBootSearch)) {
+    _checkAndOfferWebSaveRestore(initialBootSearch);
   }
 
   /* 6. Silent Remembered WebBLE Auto-Reconnect */

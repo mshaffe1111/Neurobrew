@@ -152,6 +152,38 @@
     }
   }
 
+  function syncBrewGrindFields(a, nextUm, opts) {
+    if (!a) return;
+    a.brew = a.brew || {};
+    const o = opts || {};
+    const um = Math.round(clamp(nextUm != null ? nextUm : a.brew.grindUm, 55, 1500, 550));
+    a.brew.grindUm = um;
+    a.brew.grind_um = um;
+    const rawGKey = o.grinderKey
+      || a.brew.grinderKey
+      || (a.gear && (a.gear.grinder || a.gear.grinderKey))
+      || (a.prefs && a.prefs.gear && (a.prefs.gear.grinder || a.prefs.gear.grinderKey))
+      || 'comandante-c40';
+    const gKey = String(rawGKey).trim().toLowerCase().replace(/_/g, '-');
+    a.brew.grinderKey = gKey;
+    const methodKey = String(o.methodKey || a.brew.method || 'v60').trim().toLowerCase();
+    const calib = (a.prefs && (a.prefs.pocketMicronCalib || a.prefs.calib)) || null;
+    let settingTxt = o.overrideSetting ? String(o.overrideSetting).trim() : '';
+    if (!settingTxt && window.BTCoreV6 && window.BTCoreV6.psd && typeof window.BTCoreV6.psd.mapMicronsToGrinder === 'function') {
+      try {
+        const mapped = window.BTCoreV6.psd.mapMicronsToGrinder(um, gKey, calib, methodKey);
+        if (mapped && !mapped.incompatible) {
+          settingTxt = mapped.shortDisplay || mapped.display || mapped.label || (mapped.clicks != null ? (mapped.clicks + ' ' + (mapped.unit || 'clicks')) : '');
+        }
+      } catch (_) {}
+    }
+    if (!settingTxt) {
+      settingTxt = Math.max(1, Math.round(um / 27.5)) + ' clicks';
+    }
+    a.brew.grind_setting = settingTxt;
+    return settingTxt;
+  }
+
   function applyLabToBrewAndGo(mutatorFn, opts) {
     const o = opts || {};
     const targetStep = o.targetStep || 'brew';
@@ -161,6 +193,8 @@
     a.coffee = a.coffee || {};
     a.prefs = a.prefs || {};
     a.prefs.gear = a.prefs.gear || {};
+    const prevUm = +a.brew.grindUm;
+    const prevSetting = a.brew.grind_setting;
     if (typeof mutatorFn === 'function') mutatorFn(a);
     /* Enforce finite numeric invariants so zero NaN/undefined ever leaks into app.brew */
     if (!Number.isFinite(+a.brew.dose) || +a.brew.dose <= 0) a.brew.dose = 18;
@@ -168,6 +202,12 @@
     if (!Number.isFinite(+a.brew.ratio) || +a.brew.ratio <= 0) a.brew.ratio = +(a.brew.water / Math.max(1, a.brew.dose)).toFixed(1);
     if (Number.isFinite(+a.brew.tempC) && +a.brew.tempC > 0) {
       a.brew.tempF = Math.round(+a.brew.tempC * 9 / 5 + 32);
+    }
+    if (Number.isFinite(+a.brew.grindUm) && +a.brew.grindUm > 0) {
+      if (+a.brew.grindUm !== prevUm || a.brew.grind_um !== +a.brew.grindUm || !a.brew.grind_setting) {
+        const keepExplicit = a.brew.grind_setting && a.brew.grind_setting !== prevSetting ? a.brew.grind_setting : '';
+        syncBrewGrindFields(a, +a.brew.grindUm, { overrideSetting: keepExplicit });
+      }
     }
     a.resume = returnRoute;
     a.tabSegments = a.tabSegments || {};
@@ -2809,6 +2849,18 @@
           if (rec.tds) applyLabLiveR2Reading({ tds: +rec.tds, tempC: rec.tempC || 23.4 }, { silent: true });
           if (rec.beanAgtron || rec.groundAgtron || rec.d50Um) applyLabLiveOmniReading(rec, { silent: true });
           dfMsg.textContent = 'Imported ' + parsed.records.length + ' DiFluid record(s) into Lab Studios!';
+        } else if (parsed && (parsed.latestR2 || parsed.latestOmni || (parsed.totalCount && parsed.totalCount > 0))) {
+          if (parsed.latestR2 && parsed.latestR2.tds) {
+            applyLabLiveR2Reading(parsed.latestR2, { silent: true });
+          } else if (Array.isArray(parsed.r2) && parsed.r2.length && parsed.r2[0].tds) {
+            applyLabLiveR2Reading(parsed.r2[0], { silent: true });
+          }
+          if (parsed.latestOmni) {
+            applyLabLiveOmniReading(parsed.latestOmni, { silent: true });
+          } else if (Array.isArray(parsed.omni) && parsed.omni.length) {
+            applyLabLiveOmniReading(parsed.omni[0], { silent: true });
+          }
+          dfMsg.textContent = 'Imported ' + (parsed.totalCount || 1) + ' DiFluid record(s) into Lab Studios!';
         } else {
           const tdsMatch = txt.match(/([0-9]{1,2}\.[0-9]{1,3})\s*%?\s*(?:TDS)?/i);
           if (tdsMatch) {
@@ -3546,7 +3598,7 @@
     function buildCupFlavorForecast(ey, tds, ratio) {
       const d = getDomains();
       const cf = (getApp() && getApp().coffee) || {};
-      const bagNotesRaw = String(cf.bag_notes || cf.flavors_liked || '').split(/[,;|]/).map(function (x) { return x.trim(); }).filter(Boolean);
+      const bagNotesRaw = String(cf.bag_notes || cf.notes || cf.flavors_liked || '').split(/[,;|]/).map(function (x) { return x.trim(); }).filter(Boolean);
       const roastLow = String(cf.roast || 'light').toLowerCase();
       const defaultPair = bagNotesRaw.length >= 2
         ? (bagNotesRaw[0] + ' & ' + bagNotesRaw[1])
@@ -3653,7 +3705,23 @@
 
       r2ReconcileBox.textContent = '';
       if (s.measTds > 0 && s.sensoryTag !== 'balanced') {
-        const khNow = (getApp().prefs && getApp().prefs.water && getApp().prefs.water.kh) || labState.water.kh || 45;
+        const aKh = getApp() || {};
+        const rawKhCandidates = [
+          aKh.brew && aKh.brew.waterKhPpm,
+          aKh.brew && aKh.brew.waterAlk,
+          aKh.prefs && aKh.prefs.waterKhPpm,
+          aKh.prefs && aKh.prefs.water && aKh.prefs.water.kh,
+          aKh.prefs && aKh.prefs.gear && aKh.prefs.gear.waterAlk,
+          labState.water && labState.water.kh
+        ];
+        let khNow = 45;
+        for (let ki = 0; ki < rawKhCandidates.length; ki++) {
+          const kv = rawKhCandidates[ki];
+          if (kv !== undefined && kv !== null && kv !== '' && Number.isFinite(+kv)) {
+            khNow = +kv;
+            break;
+          }
+        }
         const obsMap = {
           drying: { stars: 2.5, dx: 0.48, dy: 0, splitBitter: 'drying', symptom: 'drying' },
           sour_bitter: { stars: 2.5, dx: 0.50, dy: -0.45, splitAcid: 'sharp', splitBitter: 'drying', symptom: 'uneven' },
@@ -4928,7 +4996,7 @@
           applyLabToBrewAndGo(function (a) {
             a.brew.pullCarafeAtSec = cutSec;
             a.brew.tempC = w.kettleC;
-            a.brew.grindUm = w.d50Um;
+            syncBrewGrindFields(a, w.d50Um);
             a.brew.pourNotes = 'Pull dripper at ' + mm + ' (~' + carafeG + ' g in carafe) to block ' + blkPct + '% dry bitters';
             a.brew.customizedNote = 'Cutoff Gate ' + mm + ' (~' + carafeG + 'g · ' + blkPct + '% dry bitters blocked)';
           }, {
@@ -4947,7 +5015,7 @@
           applyLabToBrewAndGo(function (a) {
             a.brew.pullCarafeAtSec = cutSec;
             a.brew.tempC = w.kettleC;
-            a.brew.grindUm = w.d50Um;
+            syncBrewGrindFields(a, w.d50Um);
             a.brew.customizedNote = '3-Wave Tuned (' + w.kettleC + ' °C · Pull @ ' + mm + ')';
           }, {
             targetStep: 'brew',
@@ -5087,24 +5155,32 @@
             class: 'bt-lab-btn is-sm is-primary',
             onclick: function () {
               applyLabToBrewAndGo(function (a) {
-                const curUm = clamp(+a.brew.grindUm || 550, 180, 1200, 550);
+                const mLow = String((a.brew && a.brew.method) || '').toLowerCase();
+                const isEspLike = mLow === 'espresso' || mLow === 'lever_espresso' || mLow === 'turkish';
+                const umLo = isEspLike ? 120 : 200;
+                const umHi = isEspLike ? 420 : 1150;
+                const umStep = isEspLike ? 12 : 26;
+                const curUm = clamp(+a.brew.grindUm || (isEspLike ? 235 : 550), umLo, umHi, isEspLike ? 235 : 550);
                 const curT = clamp(+a.brew.tempC || 93, 80, 100, 93);
-                const curR = clamp(+a.brew.ratio || 16, 1.5, 22, 16);
+                const curR = clamp(+a.brew.ratio || (isEspLike ? 2.0 : 16), 1.2, 22, isEspLike ? 2.0 : 16);
                 const curD = clamp(+a.brew.dose || 18, 5, 120, 18);
                 if (mr.symptom === 'bitter') {
-                  a.brew.grindUm = Math.min(1150, curUm + 26);
+                  syncBrewGrindFields(a, Math.min(umHi, curUm + umStep));
                   a.brew.tempC = Math.max(84, curT - 2);
-                  a.brew.customizedNote = 'Bitter Fix: Coarser + ' + a.brew.tempC + ' °C';
+                  a.brew.customizedNote = 'Bitter Fix: Coarser (' + a.brew.grind_setting + ') + ' + a.brew.tempC + ' °C';
                 } else if (mr.symptom === 'sour') {
-                  a.brew.grindUm = Math.max(200, curUm - 26);
+                  syncBrewGrindFields(a, Math.max(umLo, curUm - umStep));
                   a.brew.tempC = Math.min(99, curT + 2);
-                  a.brew.customizedNote = 'Sour Fix: Finer + ' + a.brew.tempC + ' °C';
+                  a.brew.customizedNote = 'Sour Fix: Finer (' + a.brew.grind_setting + ') + ' + a.brew.tempC + ' °C';
                 } else if (mr.symptom === 'strong') {
-                  a.brew.ratio = +(curR + 1.0).toFixed(1);
+                  const rInc = isEspLike ? 0.3 : 1.0;
+                  a.brew.ratio = +(curR + rInc).toFixed(1);
                   a.brew.water = Math.round(curD * a.brew.ratio);
                   a.brew.customizedNote = 'Strength Fix: Wider 1:' + a.brew.ratio;
                 } else if (mr.symptom === 'weak') {
-                  a.brew.ratio = Math.max(12, +(curR - 1.2).toFixed(1));
+                  const rMin = isEspLike ? 1.2 : 11.0;
+                  const rDec = isEspLike ? 0.3 : 1.2;
+                  a.brew.ratio = Math.max(rMin, +(curR - rDec).toFixed(1));
                   a.brew.water = Math.round(curD * a.brew.ratio);
                   a.brew.customizedNote = 'Body Fix: Tighter 1:' + a.brew.ratio;
                 } else {
@@ -6092,100 +6168,115 @@
           id: 'droplet',
           hitRadiusPx: 30,
           getPos: function () { return { x: mapX(wt.kh), y: mapY(wt.gh) }; },
-          onMove: function (p) {
-            wt.kh = Math.round(invX(p.ux));
-            wt.gh = Math.round(invY(p.uy));
-            redrawWater();
-            return { detentValue: wt.kh + wt.gh, loupe: wt.gh + ' GH · ' + wt.kh + ' KH ppm' };
-          }
-        }];
-        if (wt.tapBlendOn) {
-          list.unshift({
-            id: 'tap_pin',
-            hitRadiusPx: 28,
-            getPos: function () { return { x: mapX(wt.khTap), y: mapY(wt.ghTap) }; },
             onMove: function (p) {
-              wt.khTap = Math.max(5, Math.round(invX(p.ux)));
-              wt.ghTap = Math.max(5, Math.round(invY(p.uy)));
+              wt.kh = Math.round(invX(p.ux));
+              wt.gh = Math.round(invY(p.uy));
+              syncWaterStateToAppLive({ markCustom: true, throttleSave: true });
               redrawWater();
-              return { detentValue: wt.khTap, loupe: 'Tap Assay: ' + wt.ghTap + ' GH / ' + wt.khTap + ' KH' };
+              paint4WayAndImpact();
+              return { detentValue: wt.kh + wt.gh, loupe: wt.gh + ' GH · ' + wt.kh + ' KH ppm' };
             }
-          });
-        }
-        return list;
-      },
-      onPointer: function (p) {
-        if (p.handleId) return null;
-        wt.kh = Math.round(invX(p.ux));
-        wt.gh = Math.round(invY(p.uy));
-        redrawWater();
-        return { detentValue: wt.kh, loupe: wt.gh + ' GH · ' + wt.kh + ' KH ppm' };
-      },
-      onKeyStep: function (k) {
-        wt.kh = clamp(wt.kh + k.dx * 2, 0, 320, wt.kh);
-        wt.gh = clamp(wt.gh + k.dy * 2, 0, 340, wt.gh);
-        redrawWater();
-        return { ariaNow: wt.kh };
-      }
-    });
-
-    /* 1-Tap WaterQuickFixer Presets */
-    const vibePresets = [
-      { lbl: 'Nordic Clarity (55/20)', gh: 55, kh: 20, mg: 0.75, khSalt: 'khco3' },
-      { lbl: 'SCA Sweet Spot (70/35)', gh: 70, kh: 35, mg: 0.65, khSalt: 'khco3' },
-      { lbl: 'RPavlis Boiler-Safe (0/45)', gh: 0, kh: 45, mg: 1.0, khSalt: 'khco3' },
-      { lbl: 'Citrate Clarity (65/45 Cit)', gh: 65, kh: 45, mg: 0.70, khSalt: 'k3cit' },
-      { lbl: 'Evian 2-Bottle Mix', gh: 307, kh: 295, tap: true }
-    ].map(function (vp) {
-      return domH('button', {
-        type: 'button',
-        class: 'bt-lab-chip',
-        onclick: function () {
-          if (vp.tap) {
-            wt.tapBlendOn = true;
-            wt.ghTap = 307;
-            wt.khTap = 295;
-            wt.gh = 72;
-            wt.kh = 38;
-          } else {
-            wt.tapBlendOn = false;
-            wt.gh = vp.gh;
-            wt.kh = vp.kh;
-            wt.mgShare = vp.mg;
-            wt.khSaltKey = vp.khSalt;
+          }];
+          if (wt.tapBlendOn) {
+            list.unshift({
+              id: 'tap_pin',
+              hitRadiusPx: 28,
+              getPos: function () { return { x: mapX(wt.khTap), y: mapY(wt.ghTap) }; },
+              onMove: function (p) {
+                wt.khTap = Math.max(5, Math.round(invX(p.ux)));
+                wt.ghTap = Math.max(5, Math.round(invY(p.uy)));
+                syncWaterStateToAppLive({ markCustom: true, throttleSave: true });
+                redrawWater();
+                paint4WayAndImpact();
+                return { detentValue: wt.khTap, loupe: 'Tap Assay: ' + wt.ghTap + ' GH / ' + wt.khTap + ' KH' };
+              }
+            });
           }
-          CK.haptic('snap');
+          return list;
+        },
+        onPointer: function (p) {
+          if (p.handleId) return null;
+          wt.kh = Math.round(invX(p.ux));
+          wt.gh = Math.round(invY(p.uy));
+          syncWaterStateToAppLive({ markCustom: true });
           redrawWater();
+          paint4WayAndImpact();
+          return { detentValue: wt.kh, loupe: wt.gh + ' GH · ' + wt.kh + ' KH ppm' };
+        },
+        onKeyStep: function (k) {
+          wt.kh = clamp(wt.kh + k.dx * 2, 0, 320, wt.kh);
+          wt.gh = clamp(wt.gh + k.dy * 2, 0, 340, wt.gh);
+          syncWaterStateToAppLive({ markCustom: true });
+          redrawWater();
+          paint4WayAndImpact();
+          return { ariaNow: wt.kh };
         }
-      }, vp.lbl);
-    });
+      });
 
-    const khSaltPills = [
-      { k: 'khco3', lbl: 'KHCO3' },
-      { k: 'nahco3', lbl: 'NaHCO3' },
-      { k: 'k3cit', lbl: 'K3Citrate (pH 5.0 0.45x)' },
-      { k: 'na3cit', lbl: 'Na3Citrate' }
-    ].map(function (sp) {
-      return domH('button', {
+      /* 1-Tap WaterQuickFixer Presets */
+      const vibePresets = [
+        { lbl: 'Nordic Clarity (55/20)', gh: 55, kh: 20, mg: 0.75, khSalt: 'khco3' },
+        { lbl: 'SCA Sweet Spot (70/35)', gh: 70, kh: 35, mg: 0.65, khSalt: 'khco3' },
+        { lbl: 'RPavlis Boiler-Safe (0/45)', gh: 0, kh: 45, mg: 1.0, khSalt: 'khco3' },
+        { lbl: 'Citrate Clarity (65/45 Cit)', gh: 65, kh: 45, mg: 0.70, khSalt: 'k3cit' },
+        { lbl: 'Evian 2-Bottle Mix', gh: 307, kh: 295, tap: true }
+      ].map(function (vp) {
+        return domH('button', {
+          type: 'button',
+          class: 'bt-lab-chip',
+          onclick: function () {
+            if (vp.tap) {
+              wt.tapBlendOn = true;
+              wt.ghTap = 307;
+              wt.khTap = 295;
+              wt.gh = 72;
+              wt.kh = 38;
+            } else {
+              wt.tapBlendOn = false;
+              wt.gh = vp.gh;
+              wt.kh = vp.kh;
+              wt.mgShare = vp.mg;
+              wt.khSaltKey = vp.khSalt;
+            }
+            syncWaterStateToAppLive({ markCustom: true, customLabel: vp.lbl.split(' (')[0] + ' (' + Math.round(wt.gh) + ' GH / ' + Math.round(wt.kh) + ' KH)' });
+            CK.haptic('snap');
+            redrawWater();
+            paintEverydayWater();
+            paint4WayAndImpact();
+          }
+        }, vp.lbl);
+      });
+
+      const khSaltPills = [
+        { k: 'khco3', lbl: 'KHCO3' },
+        { k: 'nahco3', lbl: 'NaHCO3' },
+        { k: 'k3cit', lbl: 'K3Citrate (pH 5.0 0.45x)' },
+        { k: 'na3cit', lbl: 'Na3Citrate' }
+      ].map(function (sp) {
+        return domH('button', {
+          type: 'button',
+          class: 'bt-lab-chip' + (wt.khSaltKey === sp.k ? ' is-active' : ''),
+          onclick: function () {
+            wt.khSaltKey = sp.k;
+            khSaltPills.forEach(function (b, bi) { b.classList.toggle('is-active', ['khco3', 'nahco3', 'k3cit', 'na3cit'][bi] === sp.k); });
+            syncWaterStateToAppLive({ markCustom: true });
+            redrawWater();
+            paint4WayAndImpact();
+          }
+        }, sp.lbl);
+      });
+
+      const tapToggle = domH('button', {
         type: 'button',
-        class: 'bt-lab-chip' + (wt.khSaltKey === sp.k ? ' is-active' : ''),
+        class: 'bt-lab-chip' + (wt.tapBlendOn ? ' is-active' : ''),
         onclick: function () {
-          wt.khSaltKey = sp.k;
-          khSaltPills.forEach(function (b, bi) { b.classList.toggle('is-active', ['khco3', 'nahco3', 'k3cit', 'na3cit'][bi] === sp.k); });
+          wt.tapBlendOn = !wt.tapBlendOn;
+          tapToggle.classList.toggle('is-active', wt.tapBlendOn);
+          syncWaterStateToAppLive({ markCustom: true });
           redrawWater();
+          paint4WayAndImpact();
         }
-      }, sp.lbl);
-    });
-
-    const tapToggle = domH('button', {
-      type: 'button',
-      class: 'bt-lab-chip' + (wt.tapBlendOn ? ' is-active' : ''),
-      onclick: function () {
-        wt.tapBlendOn = !wt.tapBlendOn;
-        tapToggle.classList.toggle('is-active', wt.tapBlendOn);
-        redrawWater();
-      }
-    }, 'Blend Tap + RO Vector');
+      }, 'Blend Tap + RO Vector');
 
     const waterHow = CK.createExplainer({
       title: '2D Water Mineral Pad (GH x KH)',
@@ -6243,30 +6334,77 @@
       }
     ];
 
-    function syncWaterStateToAppLive() {
+    function syncWaterStateToAppLive(syncOpts) {
+      const so = syncOpts || {};
       const a = getApp();
       const ghVal = Math.max(0, Math.round(wt.gh));
       const khVal = Math.max(0, Math.round(wt.kh));
-      const pKey = wt.activeProfileKey || 'tap_regular';
-      const wType = wt.activeWaterType || 'tap';
-      const wLbl = wt.activeWaterLabel || 'Regular Tap (Typical)';
+      if (so.markCustom) {
+        wt.activeProfileKey = 'custom';
+        wt.activeWaterType = 'custom';
+        wt.activeWaterLabel = so.customLabel || (wt.tapBlendOn
+          ? ('Custom 2-Bottle Mix (' + ghVal + ' GH / ' + khVal + ' KH)')
+          : ('Custom Water (' + ghVal + ' GH / ' + khVal + ' KH)'));
+      }
+      const pKey = wt.activeProfileKey || 'custom';
+      const wType = wt.activeWaterType || (pKey === 'custom' ? 'custom' : 'tap');
+      const wLbl = wt.activeWaterLabel || (pKey === 'custom' ? ('Custom Water (' + ghVal + ' GH / ' + khVal + ' KH)') : 'Regular Tap (Typical)');
       a.brew = a.brew || {};
       a.prefs = a.prefs || {};
       a.prefs.gear = a.prefs.gear || {};
+      a.gear = a.gear || {};
       a.brew.waterProfileKey = pKey;
       a.brew.waterProfile = pKey;
-      a.prefs.waterProfileKey = pKey;
-      a.prefs.gear.waterType = wType;
-      a.prefs.gear.waterProfileKey = pKey;
       a.brew.waterType = wType;
       a.brew.water_type = wType;
       a.brew.waterGH = ghVal;
       a.brew.water_gh = ghVal;
+      a.brew.waterGhPpm = ghVal;
       a.brew.waterAlk = khVal;
       a.brew.water_alk = khVal;
+      a.brew.waterKhPpm = khVal;
       a.brew.waterLabel = wLbl;
-      a.prefs.water = { gh: ghVal, kh: khVal, mgShare: wt.mgShare, khSaltKey: wt.khSaltKey, bottleKey: wt.everydayKey, profileKey: pKey };
-      saveDraftSoon();
+      a.prefs.waterProfileKey = pKey;
+      a.prefs.waterType = wType;
+      a.prefs.waterGhPpm = ghVal;
+      a.prefs.waterKhPpm = khVal;
+      a.prefs.gear.waterType = wType;
+      a.prefs.gear.waterProfileKey = pKey;
+      a.prefs.gear.waterGH = String(ghVal);
+      a.prefs.gear.waterAlk = String(khVal);
+      a.prefs.gear.waterGhPpm = ghVal;
+      a.prefs.gear.waterKhPpm = khVal;
+      a.gear.waterProfileKey = pKey;
+      a.gear.waterType = wType;
+      a.gear.waterGH = ghVal;
+      a.gear.waterAlk = khVal;
+      a.gear.waterGhPpm = ghVal;
+      a.gear.waterKhPpm = khVal;
+      a.prefs.water = {
+        gh: ghVal,
+        kh: khVal,
+        waterGhPpm: ghVal,
+        waterKhPpm: khVal,
+        waterType: wType,
+        mgShare: wt.mgShare,
+        khSaltKey: wt.khSaltKey,
+        bottleKey: wt.everydayKey,
+        profileKey: pKey,
+        tapBlendOn: !!wt.tapBlendOn,
+        ghTap: wt.ghTap,
+        khTap: wt.khTap
+      };
+      if (so.immediate) {
+        saveDraftNow();
+        if (window.BTStorage && typeof window.BTStorage.mirrorPrefsNow === 'function') {
+          try { window.BTStorage.mirrorPrefsNow(); } catch (_) {}
+        }
+      } else {
+        saveDraftSoon();
+        if (!so.throttleSave && window.BTStorage && typeof window.BTStorage.mirrorPrefsNow === 'function') {
+          try { window.BTStorage.mirrorPrefsNow(); } catch (_) {}
+        }
+      }
     }
 
     const selector4WayCard = domH('div', { class: 'bt-lab-subcard bt-water-4way-card', id: 'bt-everyday-water-4way' });
@@ -6508,7 +6646,7 @@
       id: 'bt-use-water-in-brew-btn',
       onclick: function () {
         applyLabToBrewAndGo(function () {
-          syncWaterStateToAppLive();
+          syncWaterStateToAppLive({ immediate: true });
         }, {
           targetStep: 'brew',
           returnRoute: 'water',
@@ -6554,7 +6692,7 @@
         step: 5,
         unit: '%',
         compact: true,
-        onChange: function (v) { wt.mgShare = v / 100; redrawWater(); paintEverydayWater(); paint4WayAndImpact(); }
+        onChange: function (v) { wt.mgShare = v / 100; syncWaterStateToAppLive({ markCustom: true }); redrawWater(); paintEverydayWater(); paint4WayAndImpact(); }
       }),
       CK.vernierPill({
         label: 'Batch Vol',
@@ -6590,7 +6728,7 @@
         type: 'button',
         class: 'bt-lab-btn',
         onclick: function () {
-          syncWaterStateToAppLive();
+          syncWaterStateToAppLive({ immediate: true });
           CK.haptic('celebrate');
           notify('Locked ' + Math.round(wt.gh) + ' GH / ' + Math.round(wt.kh) + ' KH as your Home Water profile!');
         }
@@ -7890,11 +8028,15 @@
     ];
 
     function getGrinderList() {
-      const src = (typeof GRINDERS !== 'undefined' && Array.isArray(GRINDERS) && GRINDERS.length)
-        ? GRINDERS
-        : (window.GRINDERS && Array.isArray(window.GRINDERS) ? window.GRINDERS : null);
+      const src = (Array.isArray(window.GRINDERS_ALL_V6) && window.GRINDERS_ALL_V6.length)
+        ? window.GRINDERS_ALL_V6
+        : ((window.BTCoreV6 && Array.isArray(window.BTCoreV6.GRINDERS_48) && window.BTCoreV6.GRINDERS_48.length)
+            ? window.BTCoreV6.GRINDERS_48
+            : ((typeof GRINDERS !== 'undefined' && Array.isArray(GRINDERS) && GRINDERS.length)
+                ? GRINDERS
+                : (window.GRINDERS && Array.isArray(window.GRINDERS) ? window.GRINDERS : null)));
       if (!src) return fallbackGrinders;
-      return src.map(function (g) {
+      return src.filter(function (g) { return g && g.kind !== 'preground'; }).map(function (g) {
         const mn = Number.isFinite(g.min) ? g.min : 1;
         const mx = Number.isFinite(g.max) ? g.max : 40;
         const uLo = Number.isFinite(g.umMin) ? g.umMin : 200;
@@ -7943,9 +8085,15 @@
     });
 
     function settingToUm(g, setting) {
-      if (typeof grinderSettingToMicrons === 'function' && g.raw) {
+      const aNow = getApp() || {};
+      const mKey = (aNow.brew && aNow.brew.method) || 'v60';
+      const calib = (aNow.prefs && (aNow.prefs.pocketMicronCalib || aNow.prefs.calib)) || null;
+      const fnCore = window.BTCoreV6 && window.BTCoreV6.psd && typeof window.BTCoreV6.psd.micronsForGrinderSetting === 'function'
+        ? window.BTCoreV6.psd.micronsForGrinderSetting
+        : (typeof micronsForGrinderSetting === 'function' ? micronsForGrinderSetting : null);
+      if (fnCore && g.raw) {
         try {
-          const u = grinderSettingToMicrons(g.key, setting);
+          const u = fnCore(g.key, setting, mKey, calib);
           if (Number.isFinite(u) && u > 50) return u;
         } catch (_) {}
       }
@@ -7953,10 +8101,16 @@
     }
 
     function umToSetting(g, um) {
-      if (typeof micronsToGrinderSetting === 'function' && g.raw) {
+      const aNow = getApp() || {};
+      const mKey = (aNow.brew && aNow.brew.method) || 'v60';
+      const calib = (aNow.prefs && (aNow.prefs.pocketMicronCalib || aNow.prefs.calib)) || null;
+      if (window.BTCoreV6 && window.BTCoreV6.psd && typeof window.BTCoreV6.psd.mapMicronsToGrinder === 'function' && g.raw) {
         try {
-          const s = micronsToGrinderSetting(g.key, um);
-          if (s !== null && s !== undefined && s !== '') return s;
+          const res = window.BTCoreV6.psd.mapMicronsToGrinder(um, g.key, calib, mKey);
+          if (res && !res.incompatible) {
+            if (res.clicks != null) return res.clicks;
+            if (res.setting != null) return res.setting;
+          }
         } catch (_) {}
       }
       const raw = (um - g.umZero) / Math.max(0.5, g.umPerStep);
@@ -8167,11 +8321,15 @@
               applyLabToBrewAndGo(function (a) {
                 a.gear = a.gear || {};
                 a.gear.grinder = gTo.key;
+                a.gear.grinderKey = gTo.key;
+                a.gear.grinderName = gTo.name;
                 a.prefs.gear.grinder = gTo.key;
+                a.prefs.gear.grinderKey = gTo.key;
+                a.prefs.gear.grinderName = gTo.name;
                 a.brew.grinderKey = gTo.key;
-                a.brew.grindUm = d50Um;
-                a.brew.grind_setting = targetSetting + ' ' + gTo.unit;
-                a.brew.customizedNote = gTo.name + ' @ ' + targetSetting + ' ' + gTo.unit + ' (~' + d50Um + ' \u00B5m)';
+                a.brew.grinderName = gTo.name;
+                const mappedSettingTxt = syncBrewGrindFields(a, d50Um, { grinderKey: gTo.key });
+                a.brew.customizedNote = gTo.name + ' @ ' + (mappedSettingTxt || (targetSetting + ' ' + gTo.unit)) + ' (~' + d50Um + ' \u00B5m)';
               }, {
                 targetStep: 'brew',
                 returnRoute: 'devices',

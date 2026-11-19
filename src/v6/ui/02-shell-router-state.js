@@ -217,18 +217,45 @@ function _defaultCaffeine() {
   return { wake: '07:00', bed: '23:00', sensitivity: 'typical', weightKg: 70, drinks: [] };
 }
 
+function syncCoffeeAliases(c) {
+  if (!c || typeof c !== 'object') return c;
+  if (c.bag_notes == null || c.bag_notes === '') {
+    const fallbackNotes = c.notes || c.bagNotes || (Array.isArray(c.flavors) ? c.flavors.join(', ') : c.flavors) || '';
+    if (fallbackNotes && c.bag_notes == null) c.bag_notes = String(fallbackNotes);
+  }
+  c.notes = c.bag_notes != null ? String(c.bag_notes) : '';
+  if (c.id && !c.coffee_id) c.coffee_id = c.id;
+  else if (c.coffee_id && !c.id) c.id = c.coffee_id;
+  if (c.farm_or_station && !c.farm) c.farm = c.farm_or_station;
+  else if (c.farm && !c.farm_or_station) c.farm_or_station = c.farm;
+  if (c.bag_weight_g !== '' && c.bag_weight_g != null) c.bagWeightG = c.bag_weight_g;
+  else if (c.bagWeightG !== '' && c.bagWeightG != null) c.bag_weight_g = c.bagWeightG;
+  if (c.price !== '' && c.price != null) c.bagPrice = c.price;
+  else if (c.bagPrice !== '' && c.bagPrice != null) c.price = c.bagPrice;
+  if (c.bag_notes && !/^(unknown|unsure|not sure|don't know|dont know)$/i.test(String(c.bag_notes).trim())) {
+    c.notesUnsure = '';
+  }
+  return c;
+}
+
 function newCoffee() {
   return {
-    id: newId(), name: '', roaster: '', origin: '', region: '', producer: '', varietal: '', species: 'arabica',
+    id: newId(), coffee_id: '', name: '', roaster: '', roaster_location: '',
+    origin: '', region: '', farm: '', farm_or_station: '', producer: '', harvest_year: '',
+    varietal: '', species: 'arabica', blend: '',
     roast: '', agtron: '', bean_agtron: '', ground_agtron: '', agtron_scale: 'gourmet', roast_delta: '',
     psd_d10_um: '', psd_d50_um: '', psd_d90_um: '', psd_span: '',
-    process: '', process_sub: '', decaf: '', decaf_process: '', density: '', elevText: '', elevation_m: '',
-    roast_date: '', is_frozen: '', frozen_date: '', freeze_days_offset: '', bag_notes: '',
+    process: '', process_sub: '', process_details: '', decaf: '', decaf_process: '',
+    density: '', elevText: '', elevation_m: '',
+    roast_date: '', is_frozen: '', frozen_date: '', freeze_days_offset: '', recommended_rest_days: '',
+    bag_notes: '', notes: '', personal_note: '',
     scanned: '', scannedFrom: '', nameUnsure: '', roastUnsure: '', processUnsure: '', originUnsure: '',
     dateUnsure: '', roasterUnsure: '', elevUnsure: '', notesUnsure: '',
     roast_unknown: '', process_unknown: '', origin_unknown: '', elev_unknown: '',
-    answered: '', blend: '', varietalUnsure: '', provenanceLabel: '',
-    roasterGuide: null, bagWeightG: '', bagPrice: '', currency: 'USD'
+    answered: '', varietalUnsure: '', provenanceLabel: '',
+    roasterGuide: null,
+    bag_weight_g: '', bagWeightG: '', remaining_g: '',
+    price: '', bagPrice: '', currency: 'USD'
   };
 }
 
@@ -550,11 +577,23 @@ function loadDraft() {
           const val = src.coffee[k];
           if (val == null) return;
           if (k === 'roasterGuide' && typeof val === 'object') {
-            a.coffee.roasterGuide = Object.assign({}, val);
-          } else if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
-            a.coffee[k] = typeof val === 'boolean' ? val : String(val).slice(0, 500);
+            try { a.coffee.roasterGuide = JSON.parse(JSON.stringify(val)); } catch (e) { a.coffee.roasterGuide = Object.assign({}, val); }
+          } else if (Array.isArray(val)) {
+            a.coffee[k] = val.slice();
+          } else if (typeof val === 'object') {
+            try { a.coffee[k] = JSON.parse(JSON.stringify(val)); } catch (e) { a.coffee[k] = Object.assign({}, val); }
+          } else if (typeof val === 'number') {
+            if (isFinite(val)) a.coffee[k] = val;
+          } else if (typeof val === 'boolean') {
+            a.coffee[k] = val;
+          } else if (typeof val === 'string') {
+            a.coffee[k] = val.slice(0, 2000);
           }
         });
+        if (!a.coffee.bag_notes && (a.coffee.notes || a.coffee.bagNotes || (Array.isArray(a.coffee.flavors) && a.coffee.flavors.length))) {
+          a.coffee.bag_notes = Array.isArray(a.coffee.flavors) ? a.coffee.flavors.join(', ') : String(a.coffee.notes || a.coffee.bagNotes || '');
+        }
+        syncCoffeeAliases(a.coffee);
       }
       if (src.brew && typeof src.brew === 'object') {
         Object.assign(a.brew, src.brew);
@@ -563,6 +602,9 @@ function loadDraft() {
         }
         a.brew.water = +src.brew.water > 0 ? +src.brew.water : a.brew.water;
         a.brew.dose = +src.brew.dose > 0 ? +src.brew.dose : a.brew.dose;
+        if (+a.brew.grind_um > 0 && !(+a.brew.grindUm > 0)) a.brew.grindUm = +a.brew.grind_um;
+        if (+a.brew.grindUm > 0 && !(+a.brew.grind_um > 0)) a.brew.grind_um = +a.brew.grindUm;
+        if (!(+a.brew.tempC > 0) && +a.brew.tempF > 0) a.brew.tempC = Math.round(((+a.brew.tempF - 32) * 5 / 9) * 2) / 2;
         if (!a.brew.method) a.brew.method = 'v60';
       }
       if (src.prefs) hydratePrefsInto(a.prefs, src.prefs);
@@ -578,6 +620,8 @@ function loadDraft() {
       a.freshCoffeeMode = src.freshCoffeeMode === true;
       a.gearOk = src.gearOk === true;
       a.recipeLocked = src.recipeLocked === true;
+      a.lockedMethod = typeof src.lockedMethod === 'string' ? src.lockedMethod : '';
+      a.provenanceLabel = typeof src.provenanceLabel === 'string' ? src.provenanceLabel : '';
       a.focusFix = src.focusFix === true;
       a.dialMethod = typeof src.dialMethod === 'string' ? src.dialMethod : '';
       a.dialNote = (src.dialNote && typeof src.dialNote === 'object') ? src.dialNote : null;
@@ -722,6 +766,7 @@ function writePrefsMirror() {
 
 function writeDraftStores() {
   try {
+    if (app && app.coffee) syncCoffeeAliases(app.coffee);
     /* Exclude shopDraft & ephemeral justSavedTasting from Home Draft JSON so drafts stay isolated */
     const homeAppCopy = Object.assign({}, app);
     delete homeAppCopy.shopDraft;
@@ -737,6 +782,7 @@ function writeDraftStores() {
 }
 
 function scheduleDraft() {
+  if (app && app.coffee) syncCoffeeAliases(app.coffee);
   draftAt = Date.now();
   clearTimeout(_draftTimer);
   _draftTimer = setTimeout(writeDraftStores, 200);
@@ -756,6 +802,7 @@ function refreshAll() {
 }
 
 function changed() {
+  if (app && app.coffee) syncCoffeeAliases(app.coffee);
   refreshAll();
   scheduleDraft();
 }
@@ -1717,6 +1764,11 @@ function _renderWorkflowToolsSheet(bodyEl, payload, api) {
           app.prefs.gear.grinderKey = gk;
           app.prefs.gear.grinderName = app.brew.grinderName;
         }
+        try {
+          if (typeof window !== 'undefined' && window.BTBrewStudio && typeof window.BTBrewStudio.synthesizeForApp === 'function') {
+            window.BTBrewStudio.synthesizeForApp(app, (app.brew && app.brew.method) || 'v60', { keepFilter: true, preserveBatch: true });
+          }
+        } catch (_) {}
         changed();
         render();
         paintChrome();
@@ -3430,6 +3482,10 @@ function paintStudioAside() {
   const roastLbl = isUnkAside(c.roast, c.roastUnsure || c.roast_unknown) ? 'Don\'t Know' : (c.roast || 'Light-Medium').replace(/_/g, '-');
   const procLbl = isUnkAside(c.process, c.processUnsure || c.process_unknown) ? 'Don\'t Know' : (c.process || 'Washed').replace(/_/g, ' ');
   const origLbl = isUnkAside(c.origin, c.originUnsure || c.origin_unknown) ? 'Don\'t Know' : (c.origin || 'Not set');
+  const regionDisp = (c.region && origLbl !== 'Not set' && origLbl !== 'Don\'t Know' && String(origLbl).toLowerCase().indexOf(String(c.region).toLowerCase()) < 0)
+    ? (origLbl + ' · ' + c.region)
+    : origLbl;
+  const asideNotes = String(c.bag_notes || c.notes || '').trim();
   const passportCard = h('div', { class: 'bt-passport-card' },
     h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px' },
       h('div', { style: 'min-width:0' },
@@ -3441,7 +3497,7 @@ function paintStudioAside() {
     h('div', { class: 'bt-passport-grid' },
       h('div', { class: 'bt-passport-cell' },
         h('span', { text: 'Origin' }),
-        h('b', { text: origLbl })
+        h('b', { text: regionDisp })
       ),
       h('div', { class: 'bt-passport-cell' },
         h('span', { text: 'Roast' }),
@@ -3459,7 +3515,7 @@ function paintStudioAside() {
         h('b', { text: c.varietal || 'Specialty Lot' })
       )
     ),
-    (c.bag_notes && !isUnkAside(c.bag_notes, c.notesUnsure)) ? h('div', { style: 'font-size:11.5px;color:var(--ink-secondary);line-height:1.35', text: 'Notes: ' + c.bag_notes }) : null,
+    (asideNotes && !isUnkAside(asideNotes, '')) ? h('div', { style: 'font-size:11.5px;color:var(--ink-secondary);line-height:1.35', text: 'Notes: ' + asideNotes }) : null,
     h('div', { style: 'display:flex;gap:6px' },
       h('button', {
         type: 'button',
@@ -3558,6 +3614,7 @@ const BTShell = {
   get state() { return state; },
   set state(v) { state = v; },
   newCoffee: newCoffee,
+  syncCoffeeAliases: syncCoffeeAliases,
   newApp: newApp,
   newCup: newCup,
   normalizeBrewStep: normalizeBrewStep,
@@ -3576,6 +3633,11 @@ const BTShell = {
   go: go,
   navGo: go,
   goBack: goBack,
+  isBrewActive: function() {
+    return !!(app && app.timerSave && app.timerSave.running) ||
+      (BTSheet.isOpen() && BTSheet.currentKey() === 'live-cockpit') ||
+      (app && app.activeTab === 'brew' && app.brewStep === 'timer');
+  },
   render: render,
   refreshAll: refreshAll,
   changed: changed,

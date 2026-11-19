@@ -1542,18 +1542,45 @@ function _defaultCaffeine() {
   return { wake: '07:00', bed: '23:00', sensitivity: 'typical', weightKg: 70, drinks: [] };
 }
 
+function syncCoffeeAliases(c) {
+  if (!c || typeof c !== 'object') return c;
+  if (c.bag_notes == null || c.bag_notes === '') {
+    const fallbackNotes = c.notes || c.bagNotes || (Array.isArray(c.flavors) ? c.flavors.join(', ') : c.flavors) || '';
+    if (fallbackNotes && c.bag_notes == null) c.bag_notes = String(fallbackNotes);
+  }
+  c.notes = c.bag_notes != null ? String(c.bag_notes) : '';
+  if (c.id && !c.coffee_id) c.coffee_id = c.id;
+  else if (c.coffee_id && !c.id) c.id = c.coffee_id;
+  if (c.farm_or_station && !c.farm) c.farm = c.farm_or_station;
+  else if (c.farm && !c.farm_or_station) c.farm_or_station = c.farm;
+  if (c.bag_weight_g !== '' && c.bag_weight_g != null) c.bagWeightG = c.bag_weight_g;
+  else if (c.bagWeightG !== '' && c.bagWeightG != null) c.bag_weight_g = c.bagWeightG;
+  if (c.price !== '' && c.price != null) c.bagPrice = c.price;
+  else if (c.bagPrice !== '' && c.bagPrice != null) c.price = c.bagPrice;
+  if (c.bag_notes && !/^(unknown|unsure|not sure|don't know|dont know)$/i.test(String(c.bag_notes).trim())) {
+    c.notesUnsure = '';
+  }
+  return c;
+}
+
 function newCoffee() {
   return {
-    id: newId(), name: '', roaster: '', origin: '', region: '', producer: '', varietal: '', species: 'arabica',
+    id: newId(), coffee_id: '', name: '', roaster: '', roaster_location: '',
+    origin: '', region: '', farm: '', farm_or_station: '', producer: '', harvest_year: '',
+    varietal: '', species: 'arabica', blend: '',
     roast: '', agtron: '', bean_agtron: '', ground_agtron: '', agtron_scale: 'gourmet', roast_delta: '',
     psd_d10_um: '', psd_d50_um: '', psd_d90_um: '', psd_span: '',
-    process: '', process_sub: '', decaf: '', decaf_process: '', density: '', elevText: '', elevation_m: '',
-    roast_date: '', is_frozen: '', frozen_date: '', freeze_days_offset: '', bag_notes: '',
+    process: '', process_sub: '', process_details: '', decaf: '', decaf_process: '',
+    density: '', elevText: '', elevation_m: '',
+    roast_date: '', is_frozen: '', frozen_date: '', freeze_days_offset: '', recommended_rest_days: '',
+    bag_notes: '', notes: '', personal_note: '',
     scanned: '', scannedFrom: '', nameUnsure: '', roastUnsure: '', processUnsure: '', originUnsure: '',
     dateUnsure: '', roasterUnsure: '', elevUnsure: '', notesUnsure: '',
     roast_unknown: '', process_unknown: '', origin_unknown: '', elev_unknown: '',
-    answered: '', blend: '', varietalUnsure: '', provenanceLabel: '',
-    roasterGuide: null, bagWeightG: '', bagPrice: '', currency: 'USD'
+    answered: '', varietalUnsure: '', provenanceLabel: '',
+    roasterGuide: null,
+    bag_weight_g: '', bagWeightG: '', remaining_g: '',
+    price: '', bagPrice: '', currency: 'USD'
   };
 }
 
@@ -1875,11 +1902,23 @@ function loadDraft() {
           const val = src.coffee[k];
           if (val == null) return;
           if (k === 'roasterGuide' && typeof val === 'object') {
-            a.coffee.roasterGuide = Object.assign({}, val);
-          } else if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
-            a.coffee[k] = typeof val === 'boolean' ? val : String(val).slice(0, 500);
+            try { a.coffee.roasterGuide = JSON.parse(JSON.stringify(val)); } catch (e) { a.coffee.roasterGuide = Object.assign({}, val); }
+          } else if (Array.isArray(val)) {
+            a.coffee[k] = val.slice();
+          } else if (typeof val === 'object') {
+            try { a.coffee[k] = JSON.parse(JSON.stringify(val)); } catch (e) { a.coffee[k] = Object.assign({}, val); }
+          } else if (typeof val === 'number') {
+            if (isFinite(val)) a.coffee[k] = val;
+          } else if (typeof val === 'boolean') {
+            a.coffee[k] = val;
+          } else if (typeof val === 'string') {
+            a.coffee[k] = val.slice(0, 2000);
           }
         });
+        if (!a.coffee.bag_notes && (a.coffee.notes || a.coffee.bagNotes || (Array.isArray(a.coffee.flavors) && a.coffee.flavors.length))) {
+          a.coffee.bag_notes = Array.isArray(a.coffee.flavors) ? a.coffee.flavors.join(', ') : String(a.coffee.notes || a.coffee.bagNotes || '');
+        }
+        syncCoffeeAliases(a.coffee);
       }
       if (src.brew && typeof src.brew === 'object') {
         Object.assign(a.brew, src.brew);
@@ -1888,6 +1927,9 @@ function loadDraft() {
         }
         a.brew.water = +src.brew.water > 0 ? +src.brew.water : a.brew.water;
         a.brew.dose = +src.brew.dose > 0 ? +src.brew.dose : a.brew.dose;
+        if (+a.brew.grind_um > 0 && !(+a.brew.grindUm > 0)) a.brew.grindUm = +a.brew.grind_um;
+        if (+a.brew.grindUm > 0 && !(+a.brew.grind_um > 0)) a.brew.grind_um = +a.brew.grindUm;
+        if (!(+a.brew.tempC > 0) && +a.brew.tempF > 0) a.brew.tempC = Math.round(((+a.brew.tempF - 32) * 5 / 9) * 2) / 2;
         if (!a.brew.method) a.brew.method = 'v60';
       }
       if (src.prefs) hydratePrefsInto(a.prefs, src.prefs);
@@ -1903,6 +1945,8 @@ function loadDraft() {
       a.freshCoffeeMode = src.freshCoffeeMode === true;
       a.gearOk = src.gearOk === true;
       a.recipeLocked = src.recipeLocked === true;
+      a.lockedMethod = typeof src.lockedMethod === 'string' ? src.lockedMethod : '';
+      a.provenanceLabel = typeof src.provenanceLabel === 'string' ? src.provenanceLabel : '';
       a.focusFix = src.focusFix === true;
       a.dialMethod = typeof src.dialMethod === 'string' ? src.dialMethod : '';
       a.dialNote = (src.dialNote && typeof src.dialNote === 'object') ? src.dialNote : null;
@@ -2047,6 +2091,7 @@ function writePrefsMirror() {
 
 function writeDraftStores() {
   try {
+    if (app && app.coffee) syncCoffeeAliases(app.coffee);
     /* Exclude shopDraft & ephemeral justSavedTasting from Home Draft JSON so drafts stay isolated */
     const homeAppCopy = Object.assign({}, app);
     delete homeAppCopy.shopDraft;
@@ -2062,6 +2107,7 @@ function writeDraftStores() {
 }
 
 function scheduleDraft() {
+  if (app && app.coffee) syncCoffeeAliases(app.coffee);
   draftAt = Date.now();
   clearTimeout(_draftTimer);
   _draftTimer = setTimeout(writeDraftStores, 200);
@@ -2081,6 +2127,7 @@ function refreshAll() {
 }
 
 function changed() {
+  if (app && app.coffee) syncCoffeeAliases(app.coffee);
   refreshAll();
   scheduleDraft();
 }
@@ -3042,6 +3089,11 @@ function _renderWorkflowToolsSheet(bodyEl, payload, api) {
           app.prefs.gear.grinderKey = gk;
           app.prefs.gear.grinderName = app.brew.grinderName;
         }
+        try {
+          if (typeof window !== 'undefined' && window.BTBrewStudio && typeof window.BTBrewStudio.synthesizeForApp === 'function') {
+            window.BTBrewStudio.synthesizeForApp(app, (app.brew && app.brew.method) || 'v60', { keepFilter: true, preserveBatch: true });
+          }
+        } catch (_) {}
         changed();
         render();
         paintChrome();
@@ -4755,6 +4807,10 @@ function paintStudioAside() {
   const roastLbl = isUnkAside(c.roast, c.roastUnsure || c.roast_unknown) ? 'Don\'t Know' : (c.roast || 'Light-Medium').replace(/_/g, '-');
   const procLbl = isUnkAside(c.process, c.processUnsure || c.process_unknown) ? 'Don\'t Know' : (c.process || 'Washed').replace(/_/g, ' ');
   const origLbl = isUnkAside(c.origin, c.originUnsure || c.origin_unknown) ? 'Don\'t Know' : (c.origin || 'Not set');
+  const regionDisp = (c.region && origLbl !== 'Not set' && origLbl !== 'Don\'t Know' && String(origLbl).toLowerCase().indexOf(String(c.region).toLowerCase()) < 0)
+    ? (origLbl + ' · ' + c.region)
+    : origLbl;
+  const asideNotes = String(c.bag_notes || c.notes || '').trim();
   const passportCard = h('div', { class: 'bt-passport-card' },
     h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px' },
       h('div', { style: 'min-width:0' },
@@ -4766,7 +4822,7 @@ function paintStudioAside() {
     h('div', { class: 'bt-passport-grid' },
       h('div', { class: 'bt-passport-cell' },
         h('span', { text: 'Origin' }),
-        h('b', { text: origLbl })
+        h('b', { text: regionDisp })
       ),
       h('div', { class: 'bt-passport-cell' },
         h('span', { text: 'Roast' }),
@@ -4784,7 +4840,7 @@ function paintStudioAside() {
         h('b', { text: c.varietal || 'Specialty Lot' })
       )
     ),
-    (c.bag_notes && !isUnkAside(c.bag_notes, c.notesUnsure)) ? h('div', { style: 'font-size:11.5px;color:var(--ink-secondary);line-height:1.35', text: 'Notes: ' + c.bag_notes }) : null,
+    (asideNotes && !isUnkAside(asideNotes, '')) ? h('div', { style: 'font-size:11.5px;color:var(--ink-secondary);line-height:1.35', text: 'Notes: ' + asideNotes }) : null,
     h('div', { style: 'display:flex;gap:6px' },
       h('button', {
         type: 'button',
@@ -4883,6 +4939,7 @@ const BTShell = {
   get state() { return state; },
   set state(v) { state = v; },
   newCoffee: newCoffee,
+  syncCoffeeAliases: syncCoffeeAliases,
   newApp: newApp,
   newCup: newCup,
   normalizeBrewStep: normalizeBrewStep,
@@ -4901,6 +4958,11 @@ const BTShell = {
   go: go,
   navGo: go,
   goBack: goBack,
+  isBrewActive: function() {
+    return !!(app && app.timerSave && app.timerSave.running) ||
+      (BTSheet.isOpen() && BTSheet.currentKey() === 'live-cockpit') ||
+      (app && app.activeTab === 'brew' && app.brewStep === 'timer');
+  },
   render: render,
   refreshAll: refreshAll,
   changed: changed,
@@ -5004,6 +5066,8 @@ var BTStorage;
   const SNAPSHOT_META_LS_KEY = 'brew-and-cup-migration-meta-v1';
   const SNAPSHOT_DATA_LS_KEY = 'brew-and-cup-safety-snapshot-v1';
   const DIFLUID_AUTH_LS_KEY = 'brew-and-cup-difluid-auth-v1';
+  const EXTRA_VAULT_COFFEES_KEY = 'brew-and-cup-coffees-v1';
+  const EXTRA_AROMA_KIT_KEY = 'brew-and-cup-aroma-kit-v1';
 
   const PROTECTED_LS_KEYS = [
     'brew-and-cup-draft-v1',
@@ -5461,6 +5525,10 @@ var BTStorage;
     histAddedIds = newIdVal && !carried.includes(newIdVal) ? carried.concat(newIdVal) : carried;
     _persistDirty(); _persistEdited(); _persistAdded();
     _autoSyncHistoryHandle();
+    try {
+      const savedObj = historyState && historyState.objs && historyState.objs.length ? historyState.objs[historyState.objs.length - 1] : null;
+      _upsertVaultFromRowObj(typeof csvOrRow === 'object' ? csvOrRow : savedObj);
+    } catch(e){}
     return true;
   }
   function _applyHistoryRowsImpl(rows){
@@ -5506,6 +5574,11 @@ var BTStorage;
     historyState.ex.header = res.header;
     _applyHistoryRowsImpl(res.rows);
     histEdited += res.changed; _persistEdited();
+    try {
+      const firstIdx = list[0];
+      const updatedObj = historyState && historyState.objs && historyState.objs[firstIdx];
+      if (updatedObj) _upsertVaultFromRowObj(updatedObj);
+    } catch(e){}
     return { changed:res.changed };
   }
   function _commitTastingEditImpl(rowIdx, edit){
@@ -5690,7 +5763,8 @@ var BTStorage;
     r.roast_date = rdIso;
     r.days_since_roast = days == null ? '' : String(days);
     r.varietal = co.varietal || '';
-    r.bag_notes = co.bag_notes || '';
+    const rawBagNotes = String(co.bag_notes || co.notes || co.bagNotes || (Array.isArray(co.flavors) ? co.flavors.join(', ') : (co.flavors || '')) || '').replace(/\r\n?/g, '\n').trim();
+    r.bag_notes = rawBagNotes;
     r.blend = _BLEND_CSV_LABELS[bKey] || '';
     r.species = cleanLine(co.species || '');
     r.decaf_process = isDecaf ? cleanLine(co.decaf_process || co.decafProcess || '') : '';
@@ -5790,7 +5864,7 @@ var BTStorage;
         try { adapOut.machine_profile = JSON.parse(JSON.stringify(mpRaw)); } catch(e){}
       }
       /* Preserve optional v6 physics/innovation envelopes inside recipe_adaptation_json & structured v6 block */
-      ['v6_diag', 'slurry_thermal', 'wave_split', 'pressure_summary', 'brew_twin_from', 'drink_lab', 'drift_shield'].forEach(vk => {
+      ['v6_diag', 'slurry_thermal', 'wave_split', 'pressure_summary', 'brew_twin_from', 'drink_lab', 'drift_shield', 'next_recipe', 'dial_adaptation'].forEach(vk => {
         if (b[vk] !== undefined && b[vk] !== null) adapOut[vk] = b[vk];
         else if (s[vk] !== undefined && s[vk] !== null) adapOut[vk] = s[vk];
       });
@@ -5858,6 +5932,47 @@ var BTStorage;
       adapOut.v6 = adapOut.v6 || {};
       adapOut.v6.omniPsd = Object.assign({ d10Um:d10, d50Um:d50, d90Um:d90, span:spVal }, (b && b.omniPsd && typeof b.omniPsd === 'object') ? b.omniPsd : {});
     }
+
+    const coffeeExtra = {};
+    const putExStr = (k, v, maxLen) => {
+      if (v === undefined || v === null || v === '') return;
+      const sVal = typeof v === 'string' ? cleanLine(v) : (typeof v === 'number' && isFinite(v) ? String(v) : '');
+      if (sVal) coffeeExtra[k] = maxLen ? sVal.slice(0, maxLen) : sVal;
+    };
+    putExStr('region', co.region, 100);
+    putExStr('roaster_location', co.roaster_location || co.roasterLocation, 100);
+    putExStr('farm', co.farm, 100);
+    putExStr('farm_or_station', co.farm_or_station || co.farm, 100);
+    putExStr('producer', co.producer, 100);
+    putExStr('harvest_year', co.harvest_year || co.harvestYear, 16);
+    putExStr('process_sub', co.process_sub || co.processSub, 48);
+    putExStr('process_details', co.process_details || co.processDetails, 240);
+    if (co.personal_note || co.personalNote){
+      const pn = String(co.personal_note || co.personalNote).trim().slice(0, 400);
+      if (pn) coffeeExtra.personal_note = pn;
+    }
+    const bwRaw = co.bag_weight_g !== undefined && co.bag_weight_g !== '' ? co.bag_weight_g : co.bagWeightG;
+    if (bwRaw !== undefined && bwRaw !== null && bwRaw !== '' && isFinite(+bwRaw) && +bwRaw > 0){
+      coffeeExtra.bag_weight_g = Math.round(+bwRaw * 10) / 10;
+    }
+    const remRaw = co.remaining_g !== undefined && co.remaining_g !== '' ? co.remaining_g : co.rem_g;
+    if (remRaw !== undefined && remRaw !== null && remRaw !== '' && isFinite(+remRaw) && +remRaw >= 0){
+      coffeeExtra.remaining_g = Math.round(+remRaw * 10) / 10;
+    }
+    const prcRaw = co.price !== undefined && co.price !== '' ? co.price : co.bagPrice;
+    if (prcRaw !== undefined && prcRaw !== null && prcRaw !== '' && isFinite(+prcRaw) && +prcRaw > 0){
+      coffeeExtra.price = Math.round(+prcRaw * 100) / 100;
+    }
+    putExStr('currency', co.currency, 8);
+    if (Array.isArray(co.flavors) && co.flavors.length) coffeeExtra.flavors = co.flavors.filter(Boolean).slice(0, 16);
+    if (co.roasterGuide && typeof co.roasterGuide === 'object' && !Array.isArray(co.roasterGuide)){
+      try { coffeeExtra.roasterGuide = JSON.parse(JSON.stringify(co.roasterGuide)); } catch(e){}
+    }
+    const restRaw = co.recommended_rest_days != null && co.recommended_rest_days !== '' ? co.recommended_rest_days : co.recommendedRestDays;
+    if (restRaw != null && restRaw !== '' && isFinite(+restRaw) && +restRaw >= 0){
+      coffeeExtra.recommended_rest_days = Math.round(+restRaw);
+    }
+    if (Object.keys(coffeeExtra).length) adapOut.coffee_extra = coffeeExtra;
 
     if (Object.keys(adapOut).length){
       try {
@@ -5953,10 +6068,13 @@ var BTStorage;
   function _populateCoffeeFromRowObj(o){
     const g = k => unneutralize((o && o[k]) || '');
     const c = (typeof newCoffee === 'function') ? newCoffee() : {
-      id:_newUid(), name:'', roaster:'', origin:'', varietal:'', species:'arabica', roast:'', process:'', decaf:'', decaf_process:'',
-      density:'', elevText:'', elevation_m:'', roast_date:'', is_frozen:'', frozen_date:'', freeze_days_offset:'', bag_notes:'', blend:'',
+      id:_newUid(), name:'', roaster:'', origin:'', region:'', farm:'', farm_or_station:'', producer:'', harvest_year:'', roaster_location:'',
+      varietal:'', species:'arabica', roast:'', process:'', process_sub:'', process_details:'', decaf:'', decaf_process:'',
+      density:'', elevText:'', elevation_m:'', roast_date:'', is_frozen:'', frozen_date:'', freeze_days_offset:'',
+      bag_notes:'', notes:'', flavors:[], personal_note:'', bag_weight_g:'', bagWeightG:'', remaining_g:'', price:'', bagPrice:'', currency:'USD', blend:'',
       agtron:'', bean_agtron:'', ground_agtron:'', agtron_scale:'gourmet', roast_delta:'', psd_d10_um:'', psd_d50_um:'', psd_d90_um:'', psd_span:'',
-      roastUnsure:'', dateUnsure:'', roasterUnsure:'', varietalUnsure:'', answered:'yes'
+      roasterGuide:null, recommended_rest_days:null,
+      roastUnsure:'', dateUnsure:'', roasterUnsure:'', varietalUnsure:'', originUnsure:'', processUnsure:'', elevUnsure:'', notesUnsure:'', answered:'yes'
     };
     if (o && o.coffee_id) c.id = o.coffee_id;
     c.name = g('coffee_name');
@@ -5964,6 +6082,7 @@ var BTStorage;
     c.origin = g('origin');
     c.varietal = g('varietal');
     c.bag_notes = g('bag_notes');
+    c.notes = c.bag_notes;
     c.decaf = (o && o.decaf === 'yes') ? 'yes' : '';
     c.species = g('species') || 'arabica';
     c.decaf_process = g('decaf_process') || '';
@@ -5988,12 +6107,52 @@ var BTStorage;
       if (adMeta.psd_d50_um != null) c.psd_d50_um = String(adMeta.psd_d50_um);
       if (adMeta.psd_d90_um != null) c.psd_d90_um = String(adMeta.psd_d90_um);
       if (adMeta.psd_span != null) c.psd_span = String(adMeta.psd_span);
+      if (adMeta.roaster_guide && typeof adMeta.roaster_guide === 'object') c.roasterGuide = adMeta.roaster_guide;
+      const ce = adMeta.coffee_extra && typeof adMeta.coffee_extra === 'object' ? adMeta.coffee_extra : null;
+      if (ce){
+        if (ce.region) c.region = String(ce.region);
+        if (ce.roaster_location) c.roaster_location = String(ce.roaster_location);
+        if (ce.farm || ce.farm_or_station){
+          c.farm = String(ce.farm || ce.farm_or_station);
+          c.farm_or_station = String(ce.farm_or_station || ce.farm);
+        }
+        if (ce.producer) c.producer = String(ce.producer);
+        if (ce.harvest_year) c.harvest_year = String(ce.harvest_year);
+        if (ce.process_sub) c.process_sub = String(ce.process_sub);
+        if (ce.process_details) c.process_details = String(ce.process_details);
+        if (ce.personal_note) c.personal_note = String(ce.personal_note);
+        if (ce.bag_weight_g != null && ce.bag_weight_g !== ''){
+          c.bag_weight_g = ce.bag_weight_g;
+          c.bagWeightG = ce.bag_weight_g;
+        }
+        if (ce.remaining_g != null && ce.remaining_g !== '') c.remaining_g = ce.remaining_g;
+        if (ce.price != null && ce.price !== ''){
+          c.price = ce.price;
+          c.bagPrice = ce.price;
+        }
+        if (ce.currency) c.currency = String(ce.currency);
+        if (Array.isArray(ce.flavors) && ce.flavors.length) c.flavors = ce.flavors.slice();
+        if (!c.bag_notes && (ce.bag_notes || ce.notes)){
+          c.bag_notes = String(ce.bag_notes || ce.notes);
+          c.notes = c.bag_notes;
+        }
+        if (ce.roasterGuide && typeof ce.roasterGuide === 'object') c.roasterGuide = ce.roasterGuide;
+        if (ce.recommended_rest_days != null && isFinite(+ce.recommended_rest_days)) c.recommended_rest_days = Math.round(+ce.recommended_rest_days);
+      }
     }
     c.answered = 'yes';
-    if (!c.roaster) c.roasterUnsure = 'yes';
-    if (!c.roast) c.roastUnsure = 'yes';
-    if (!c.roast_date) c.dateUnsure = 'yes';
-    if (!c.varietal) c.varietalUnsure = 'yes';
+    c.roasterUnsure = c.roaster ? '' : 'yes';
+    c.roastUnsure = (c.roast && c.roast !== 'unknown') ? '' : 'yes';
+    c.dateUnsure = (c.roast_date || c.is_frozen === 'yes') ? '' : 'yes';
+    c.varietalUnsure = c.varietal ? '' : 'yes';
+    c.originUnsure = (c.origin && c.origin !== 'unknown') ? '' : 'yes';
+    c.processUnsure = (c.process && c.process !== 'unknown') ? '' : 'yes';
+    c.elevUnsure = (c.elevation_m || (c.density && c.density !== 'unknown')) ? '' : 'yes';
+    c.notesUnsure = c.bag_notes ? '' : 'yes';
+    c.roast_unknown = c.roastUnsure;
+    c.process_unknown = c.processUnsure;
+    c.origin_unknown = c.originUnsure;
+    c.elev_unknown = c.elevUnsure;
     return { coffee:c, adMeta };
   }
 
@@ -6092,6 +6251,7 @@ var BTStorage;
       prState.changes++;
     }
     _persistPrices();
+    try { _upsertVaultFromPriceList(prState.list); } catch(e){}
     return prState;
   }
   function _forgetPricesImpl(){
@@ -7095,7 +7255,14 @@ var BTStorage;
     _persistShopDraft();
     try {
       ALL_18_LS_KEYS.forEach(k => { localStorage.removeItem(k); });
+      localStorage.removeItem(EXTRA_VAULT_COFFEES_KEY);
+      localStorage.removeItem(EXTRA_AROMA_KIT_KEY);
     } catch(e){}
+    _coffeesVaultCache.raw = null;
+    _coffeesVaultCache.list = [];
+    _vaultRev++;
+    _unifiedIndexCache.key = '';
+    _unifiedIndexCache.vaultRaw = '';
     if (_g.BTDiFluidApi && typeof _g.BTDiFluidApi.clearApiKey === 'function'){
       try { _g.BTDiFluidApi.clearApiKey(); } catch(e){}
     }
@@ -7135,14 +7302,401 @@ var BTStorage;
     return prevSpace && out.length ? out.slice(0, -1) : out;
   }
 
-  const _unifiedIndexCache = { key:'', list:[] };
+  const _unifiedIndexCache = { key:'', vaultRaw:'', list:[] };
+  const _coffeesVaultCache = { raw:null, list:[] };
+  let _vaultRev = 0;
 
-  function _buildUnifiedCoffeesIndexImpl(historyObjs, priceList){
+  const _isGoldenLockedRow = row => {
+    const dl = row && String(row.dial_locked == null ? '' : row.dial_locked).trim().toLowerCase();
+    return dl === 'yes' || dl === '1' || dl === 'true';
+  };
+  const _isUnknownToken = v => {
+    if (typeof v !== 'string') return false;
+    const len = v.length;
+    if (!len || len > 12) return false;
+    const low = v.trim().toLowerCase();
+    return low === 'unknown' || low === 'not sure' || low === 'unsure' || low === 'n/a' || low === 'none';
+  };
+  const _hasMeaningfulVal = (v, allowZero) => {
+    if (v === undefined || v === null || v === '') return false;
+    if (typeof v === 'string') return v.trim() !== '' && !_isUnknownToken(v);
+    if (typeof v === 'number') return isFinite(v) && (allowZero ? v >= 0 : v > 0);
+    if (Array.isArray(v)) return v.length > 0;
+    if (typeof v === 'object') return Object.keys(v).length > 0;
+    return v === true;
+  };
+  const _cloneObj = obj => {
+    if (!obj || typeof obj !== 'object') return null;
+    try { return JSON.parse(JSON.stringify(obj)); } catch(e){ return Object.assign({}, obj); }
+  };
+
+  function _getCoffeesVaultListImpl(){
+    try {
+      const raw = localStorage.getItem(EXTRA_VAULT_COFFEES_KEY);
+      if (!raw){
+        _coffeesVaultCache.raw = null;
+        _coffeesVaultCache.list = [];
+        return [];
+      }
+      if (raw === _coffeesVaultCache.raw) return _coffeesVaultCache.list.slice();
+      const arr = _parseCoffeesVaultArray(raw);
+      _coffeesVaultCache.raw = raw;
+      _coffeesVaultCache.list = arr;
+      return arr.slice();
+    } catch(e){ return []; }
+  }
+
+  function _saveCoffeesVaultListImpl(arr){
+    const clean = Array.isArray(arr) ? arr.filter(x => x && typeof x === 'object' && !Array.isArray(x)).slice(0, 2000) : [];
+    try {
+      if (clean.length){
+        const json = JSON.stringify(clean);
+        localStorage.setItem(EXTRA_VAULT_COFFEES_KEY, json);
+        _coffeesVaultCache.raw = json;
+        _coffeesVaultCache.list = clean.slice();
+      } else {
+        localStorage.removeItem(EXTRA_VAULT_COFFEES_KEY);
+        _coffeesVaultCache.raw = null;
+        _coffeesVaultCache.list = [];
+      }
+    } catch(e){ storageFailed = true; }
+    _vaultRev++;
+    _unifiedIndexCache.key = '';
+    _scheduleNativeVaultMirror();
+    return clean;
+  }
+
+  function _buildBrewSnapshot(b){
+    if (!b || typeof b !== 'object') return null;
+    const out = {};
+    const mKey = resolveMethod(b.method || b.brew_method) || cleanLine(b.method || b.brew_method || '');
+    if (mKey) out.method = mKey;
+    const strMap = [
+      ['style', b.style || b.brew_style],
+      ['filter', b.filter || b.brew_filter],
+      ['filterId', b.filterId || b.filter_id],
+      ['grind_setting', unneutralize(b.grind_setting || b.brew_grind_setting || '')],
+      ['grinderKey', b.grinderKey || b.grinder_key],
+      ['grinderName', unneutralize(b.grinderName || b.grinder_name || b.brew_grinder_name || '')],
+      ['agitation', b.agitation || b.agit || b.brew_agitation],
+      ['technique', b.technique || b.tech || b.brew_technique],
+      ['waterType', b.waterType || b.water_type || b.brew_water_type],
+      ['pourNotes', unneutralize(b.pourNotes || b.pour_notes || b.brew_pour_notes || '')]
+    ];
+    strMap.forEach(p => {
+      const sv = typeof p[1] === 'string' ? p[1].trim() : '';
+      if (sv) out[p[0]] = p[0] === 'pourNotes' ? sv : cleanLine(sv);
+    });
+    const posNum = (v, dec) => {
+      const n = typeof v === 'number' ? v : parseFloat(v);
+      if (!isFinite(n) || n <= 0) return null;
+      const mul = dec ? Math.pow(10, dec) : 1;
+      return Math.round(n * mul) / mul;
+    };
+    const dose = posNum(b.dose != null && b.dose !== '' ? b.dose : b.brew_dose_g, 2);
+    const water = posNum(b.water != null && b.water !== '' ? b.water : b.brew_water_g, 2);
+    let ratio = posNum(b.ratio != null && b.ratio !== '' ? b.ratio : b.brew_ratio, 2);
+    if (!ratio && dose && water) ratio = Math.round((water / dose) * 10) / 10;
+    if (dose != null) out.dose = dose;
+    if (water != null) out.water = water;
+    if (ratio != null) out.ratio = ratio;
+
+    let tempC = posNum(b.tempC != null && b.tempC !== '' ? b.tempC : (b.temp_c != null && b.temp_c !== '' ? b.temp_c : b.brew_temp_c), 1);
+    let tempF = posNum(b.tempF != null && b.tempF !== '' ? b.tempF : (b.temp_f != null && b.temp_f !== '' ? b.temp_f : b.brew_temp_f), 1);
+    if (tempC != null && tempF == null) tempF = Math.round((tempC * 9 / 5 + 32) * 10) / 10;
+    else if (tempF != null && tempC == null) tempC = Math.round(((tempF - 32) * 5 / 9) * 10) / 10;
+    if (tempC != null) out.tempC = tempC;
+    if (tempF != null) out.tempF = tempF;
+
+    const gUm = posNum(b.grindUm != null && b.grindUm !== '' ? b.grindUm : (b.grind_um != null && b.grind_um !== '' ? b.grind_um : b.brew_grind_target_um), 1);
+    if (gUm != null){ out.grindUm = gUm; out.grind_um = gUm; }
+    const mp = b.machineProfile || b.machine_profile;
+    if (mp && typeof mp === 'object' && !Array.isArray(mp)) out.machineProfile = _cloneObj(mp);
+    return Object.keys(out).length ? out : null;
+  }
+
+  function _extractVaultCandidate(coffeeIn, brewIn){
+    const c = (coffeeIn && coffeeIn.coffee && typeof coffeeIn.coffee === 'object') ? coffeeIn.coffee : (coffeeIn || {});
+    const b = brewIn || (coffeeIn && (coffeeIn.brew || coffeeIn.lastBrew)) || c.lastBrew || null;
+    const rawName = cleanLine(unneutralize(c.name || c.coffee_name || c.coffee || ''));
+    const rawRoaster = cleanLine(unneutralize(c.roaster || ''));
+    const cid = String(c.coffee_id || c.id || '').trim();
+    const nrKey = rawName ? (_normKeyPart(rawName) + '|' + _normKeyPart(rawRoaster)) : '';
+    if (!cid && !rawName) return null;
+
+    const cand = {
+      id:cid || _newUid(),
+      coffee_id:cid || ''
+    };
+    if (!cand.coffee_id) cand.coffee_id = cand.id;
+    const setStr = (k, val, noClean) => {
+      if (val === undefined || val === null) return;
+      const s = noClean ? String(val).replace(/\r\n?/g, '\n').trim() : cleanLine(unneutralize(val));
+      if (s && !_isUnknownToken(s)) cand[k] = s;
+    };
+    setStr('name', rawName);
+    setStr('roaster', rawRoaster);
+    const loc = c.roaster_location || c.roasterLocation || ([c.city, c.state].filter(Boolean).join(', '));
+    setStr('roaster_location', loc);
+    setStr('origin', c.origin);
+    setStr('region', c.region);
+    const farmVal = c.farm || c.farm_or_station || '';
+    const farmStVal = c.farm_or_station || c.farm || '';
+    setStr('farm', farmVal);
+    setStr('farm_or_station', farmStVal);
+    setStr('producer', c.producer);
+    setStr('harvest_year', c.harvest_year || c.harvestYear);
+    setStr('varietal', c.varietal);
+    setStr('species', c.species);
+    const bld = resolveBlend(c.blend) || (typeof c.blend === 'string' ? c.blend : '');
+    if (bld && !_isUnknownToken(bld)) cand.blend = bld;
+    const proc = resolveProcess(c.process) || (typeof c.process === 'string' ? cleanLine(unneutralize(c.process)) : '');
+    if (proc && !_isUnknownToken(proc)) cand.process = proc;
+    setStr('process_sub', c.process_sub || c.processSub);
+    setStr('process_details', c.process_details || c.processDetails);
+    if (c.decaf === 'yes' || c.decaf === true) cand.decaf = 'yes';
+    setStr('decaf_process', c.decaf_process || c.decafProcess);
+    const rst = resolveRoast(c.roast || c.roast_level || c.rlevel) || (typeof c.roast === 'string' ? cleanLine(unneutralize(c.roast)) : '');
+    if (rst && !_isUnknownToken(rst)) cand.roast = rst;
+    const rd = _btValidIsoDateRef(c.roast_date) ? c.roast_date : (_btValidIsoDateRef(c.roast) ? c.roast : '');
+    if (rd) cand.roast_date = rd;
+    if (c.is_frozen === 'yes' || c.is_frozen === true || c.isFrozen === true) cand.is_frozen = 'yes';
+    const fd = _btValidIsoDateRef(c.frozen_date || c.frozenDate) ? (c.frozen_date || c.frozenDate) : '';
+    if (fd) cand.frozen_date = fd;
+    if (c.freeze_days_offset != null && /^\d+$/.test(String(c.freeze_days_offset).trim())){
+      cand.freeze_days_offset = String(c.freeze_days_offset).trim();
+    }
+    const elevNum = (+c.elevation_m >= 200 && +c.elevation_m <= 3500) ? String(Math.round(+c.elevation_m)) : '';
+    if (elevNum){
+      cand.elevation_m = elevNum;
+      cand.elevText = cleanLine(c.elevText || '') || (elevNum + ' masl');
+    } else if (c.elevText && !_isUnknownToken(c.elevText)){
+      cand.elevText = cleanLine(c.elevText);
+      const em = _btMapElevation(cand.elevText);
+      if (em && em.m) cand.elevation_m = String(em.m);
+    }
+    const dens = resolveDensity(c.density || c.elevation_class, cand.elevation_m) || '';
+    if (dens && !_isUnknownToken(dens)) cand.density = dens;
+
+    const rawNotes = String(c.bag_notes || c.notes || c.bagNotes || (Array.isArray(c.flavors) ? c.flavors.join(', ') : (c.flavors || '')) || '').replace(/\r\n?/g, '\n').trim();
+    if (rawNotes){
+      cand.bag_notes = rawNotes;
+      cand.notes = rawNotes;
+    }
+    if (Array.isArray(c.flavors) && c.flavors.length){
+      const fl = c.flavors.map(x => cleanLine(x)).filter(Boolean);
+      if (fl.length) cand.flavors = fl;
+    } else if (typeof c.flavors === 'string' && c.flavors.trim()){
+      const fl = c.flavors.split(/[,;]+/).map(x => cleanLine(x)).filter(Boolean);
+      if (fl.length) cand.flavors = fl;
+    } else if (rawNotes){
+      const fl = rawNotes.split(/[,;/]+/).map(x => cleanLine(x)).filter(Boolean);
+      if (fl.length) cand.flavors = fl;
+    }
+    setStr('personal_note', c.personal_note || c.personalNote, true);
+
+    const bwRaw = c.bag_weight_g != null && c.bag_weight_g !== '' ? c.bag_weight_g : (c.bagWeightG != null && c.bagWeightG !== '' ? c.bagWeightG : (c.size && c.unit ? costGrams(c.size, c.unit) : null));
+    if (bwRaw != null && bwRaw !== '' && isFinite(+bwRaw) && +bwRaw > 0) cand.bag_weight_g = Math.round(+bwRaw * 10) / 10;
+    const remRaw = c.remaining_g != null && c.remaining_g !== '' ? c.remaining_g : (c.rem_g != null && c.rem_g !== '' ? c.rem_g : c.remainingG);
+    if (remRaw != null && remRaw !== '' && isFinite(+remRaw) && +remRaw >= 0) cand.remaining_g = Math.round(+remRaw * 10) / 10;
+    const prcRaw = c.price != null && c.price !== '' ? c.price : c.bagPrice;
+    if (prcRaw != null && prcRaw !== '' && isFinite(+prcRaw) && +prcRaw > 0) cand.price = Math.round(+prcRaw * 100) / 100;
+    setStr('currency', c.currency || c.sym);
+
+    ['agtron', 'bean_agtron', 'ground_agtron', 'roast_delta', 'psd_d10_um', 'psd_d50_um', 'psd_d90_um', 'psd_span'].forEach(nk => {
+      if (c[nk] !== undefined && c[nk] !== null && c[nk] !== '' && isFinite(+c[nk])) cand[nk] = String(c[nk]);
+    });
+    if (c.agtron_scale && /^(gourmet|commercial|omni|tonino|cm100)$/.test(String(c.agtron_scale))) cand.agtron_scale = String(c.agtron_scale);
+    if (c.roasterGuide && typeof c.roasterGuide === 'object' && !Array.isArray(c.roasterGuide)) cand.roasterGuide = _cloneObj(c.roasterGuide);
+    const restRaw = c.recommended_rest_days != null && c.recommended_rest_days !== '' ? c.recommended_rest_days : c.recommendedRestDays;
+    if (restRaw != null && restRaw !== '' && isFinite(+restRaw) && +restRaw >= 0) cand.recommended_rest_days = Math.round(+restRaw);
+
+    const lb = _buildBrewSnapshot(b);
+    if (lb){
+      cand.lastBrew = lb;
+      if (lb.method) cand.lastMethod = lb.method;
+    } else if (c.lastMethod){
+      const lm = resolveMethod(c.lastMethod) || cleanLine(c.lastMethod);
+      if (lm) cand.lastMethod = lm;
+    }
+    if (c.dial_locked === 'yes' || c.dial_locked === true || c.dial_locked === '1') cand.dial_locked = 'yes';
+    if (c.pendingNextRecipe && typeof c.pendingNextRecipe === 'object') cand.pendingNextRecipe = _cloneObj(c.pendingNextRecipe);
+    if (c.dialAdaptation && typeof c.dialAdaptation === 'object') cand.dialAdaptation = _cloneObj(c.dialAdaptation);
+    if (b && (b.next_recipe || b.dialAdaptation || b.dial_adaptation)){
+      if (b.next_recipe && typeof b.next_recipe === 'object') cand.pendingNextRecipe = _cloneObj(b.next_recipe);
+      const da = b.dialAdaptation || b.dial_adaptation;
+      if (da && typeof da === 'object') cand.dialAdaptation = _cloneObj(da);
+    }
+    cand._nrKey = nrKey;
+    return cand;
+  }
+
+  const _VAULT_COPY_KEYS = [
+    'name', 'roaster', 'roaster_location', 'origin', 'region', 'farm', 'farm_or_station', 'producer', 'harvest_year',
+    'varietal', 'species', 'blend', 'process', 'process_sub', 'process_details', 'decaf', 'decaf_process',
+    'roast', 'roast_date', 'is_frozen', 'frozen_date', 'freeze_days_offset', 'elevation_m', 'elevText', 'density',
+    'bag_notes', 'notes', 'flavors', 'personal_note', 'bag_weight_g', 'remaining_g', 'price', 'currency',
+    'agtron', 'bean_agtron', 'ground_agtron', 'agtron_scale', 'roast_delta',
+    'psd_d10_um', 'psd_d50_um', 'psd_d90_um', 'psd_span', 'roasterGuide', 'recommended_rest_days',
+    'lastMethod', 'dial_locked', 'pendingNextRecipe', 'dialAdaptation'
+  ];
+
+  function _upsertCoffeeVaultRecordImpl(coffeeIn, brewIn, opts){
+    opts = opts || {};
+    const cand = _extractVaultCandidate(coffeeIn, brewIn);
+    if (!cand) return null;
+    const nrKey = cand._nrKey || '';
+    delete cand._nrKey;
+
+    const list = _getCoffeesVaultListImpl();
+    let hitIdx = -1;
+    for (let i = 0; i < list.length; i++){
+      const it = list[i];
+      if (!it || typeof it !== 'object') continue;
+      const itCid = String(it.coffee_id || it.id || '').trim();
+      if (cand.coffee_id && itCid && itCid === cand.coffee_id){ hitIdx = i; break; }
+      const itNr = _normKeyPart(it.name || it.coffee_name || it.coffee || '') + '|' + _normKeyPart(it.roaster || '');
+      if (nrKey && itNr === nrKey){ hitIdx = i; break; }
+    }
+
+    const allowClear = opts.allowClear === true;
+    const rawIn = (coffeeIn && coffeeIn.coffee && typeof coffeeIn.coffee === 'object') ? coffeeIn.coffee : (coffeeIn || {});
+    const nowTs = typeof opts.updatedAt === 'number' && isFinite(opts.updatedAt) ? opts.updatedAt : (opts.updatedAt ? (Date.parse(opts.updatedAt) || Date.now()) : Date.now());
+
+    let merged;
+    if (hitIdx >= 0){
+      const existing = Object.assign({}, list[hitIdx]);
+      const exTs = +existing.updatedAt || 0;
+      const incomingOlder = opts.mergeByTimestamp === true && exTs > 0 && nowTs > 0 && nowTs < exTs;
+      if (!existing.coffee_id && cand.coffee_id) existing.coffee_id = cand.coffee_id;
+      if (!existing.id) existing.id = existing.coffee_id || cand.id;
+      _VAULT_COPY_KEYS.forEach(k => {
+        const allowZero = (k === 'remaining_g' || k === 'recommended_rest_days' || k === 'freeze_days_offset');
+        const newVal = cand[k];
+        if (allowClear && Object.prototype.hasOwnProperty.call(rawIn, k)){
+          if (newVal === undefined || newVal === null || newVal === ''){
+            delete existing[k];
+            return;
+          }
+        }
+        if (_hasMeaningfulVal(newVal, allowZero)){
+          if (incomingOlder && _hasMeaningfulVal(existing[k], allowZero)) return;
+          if (k === 'roasterGuide' || k === 'pendingNextRecipe' || k === 'dialAdaptation'){
+            existing[k] = (existing[k] && typeof existing[k] === 'object' && !Array.isArray(existing[k]))
+              ? Object.assign({}, existing[k], newVal)
+              : _cloneObj(newVal);
+          } else {
+            existing[k] = newVal;
+          }
+        }
+      });
+      if (cand.bag_notes && !cand.notes) existing.notes = cand.bag_notes;
+      if (existing.bag_notes && !existing.notes) existing.notes = existing.bag_notes;
+      if (existing.notes && !existing.bag_notes) existing.bag_notes = existing.notes;
+      if (cand.lastBrew){
+        const prevLb = (existing.lastBrew && typeof existing.lastBrew === 'object') ? existing.lastBrew : {};
+        existing.lastBrew = Object.assign({}, prevLb, cand.lastBrew);
+        if (cand.lastBrew.method) existing.lastMethod = cand.lastBrew.method;
+      }
+      const rawBrewIn = (brewIn && typeof brewIn === 'object') ? brewIn : (coffeeIn && coffeeIn.brew && typeof coffeeIn.brew === 'object' ? coffeeIn.brew : null);
+      const explicitUnlock = opts.allowUnlock === true || (Object.prototype.hasOwnProperty.call(rawIn, 'dial_locked') && !rawIn.dial_locked) || (rawBrewIn && Object.prototype.hasOwnProperty.call(rawBrewIn, 'dial_locked') && !rawBrewIn.dial_locked);
+      if (explicitUnlock){
+        delete existing.dial_locked;
+      }
+      if (existing.dial_locked === 'yes' && !allowClear && cand.pendingNextRecipe && !rawIn.pendingNextRecipe){
+        delete existing.pendingNextRecipe;
+      }
+      existing.updatedAt = Math.max(+existing.updatedAt || 0, nowTs);
+      list[hitIdx] = existing;
+      merged = existing;
+    } else {
+      cand.updatedAt = nowTs;
+      list.push(cand);
+      merged = cand;
+    }
+    _saveCoffeesVaultListImpl(list);
+    return merged;
+  }
+
+  function _upsertVaultFromRowObj(rowObj){
+    if (!rowObj || typeof rowObj !== 'object') return null;
+    const populated = _populateCoffeeFromRowObj(rowObj);
+    const c = populated.coffee || {};
+    const ad = populated.adMeta || {};
+    const a = _getApp();
+    const rCid = String(rowObj.coffee_id || c.id || '').trim();
+    const rNr = _normKeyPart(c.name || rowObj.coffee_name || '') + '|' + _normKeyPart(c.roaster || rowObj.roaster || '');
+    const appCoffee = (a && a.coffee) || null;
+    const appNr = appCoffee && appCoffee.name ? (_normKeyPart(appCoffee.name) + '|' + _normKeyPart(appCoffee.roaster || '')) : '';
+    const sameAppCoffee = !!(appCoffee && ((rCid && appCoffee.id && appCoffee.id === rCid) || (rNr && appNr && rNr === appNr)));
+
+    const mergedCoffee = sameAppCoffee ? Object.assign({}, appCoffee, c) : Object.assign({}, c);
+    if (sameAppCoffee){
+      Object.keys(appCoffee).forEach(k => {
+        if (!_hasMeaningfulVal(mergedCoffee[k], k === 'recommended_rest_days' || k === 'remaining_g') && _hasMeaningfulVal(appCoffee[k], k === 'recommended_rest_days' || k === 'remaining_g')){
+          mergedCoffee[k] = appCoffee[k];
+        }
+      });
+    }
+    if (_isGoldenLockedRow(rowObj)) mergedCoffee.dial_locked = 'yes';
+    else if (Object.prototype.hasOwnProperty.call(rowObj, 'dial_locked')) mergedCoffee.dial_locked = '';
+    if (ad.next_recipe && typeof ad.next_recipe === 'object') mergedCoffee.pendingNextRecipe = ad.next_recipe;
+    if (ad.dial_adaptation && typeof ad.dial_adaptation === 'object') mergedCoffee.dialAdaptation = ad.dial_adaptation;
+    if (rowObj.dial_symptom || rowObj.dial_change){
+      mergedCoffee.dialAdaptation = Object.assign({}, mergedCoffee.dialAdaptation || {}, {
+        dial_symptom:rowObj.dial_symptom || (mergedCoffee.dialAdaptation && mergedCoffee.dialAdaptation.dial_symptom) || '',
+        dial_change:rowObj.dial_change || (mergedCoffee.dialAdaptation && mergedCoffee.dialAdaptation.dial_change) || '',
+        locked:_isGoldenLockedRow(rowObj)
+      });
+    }
+
+    const rowBrew = _buildBrewSnapshot(rowObj) || {};
+    if (ad.machine_profile) rowBrew.machineProfile = ad.machine_profile;
+    const appBrew = (sameAppCoffee && a && a.brew) ? (_buildBrewSnapshot(a.brew) || {}) : {};
+    const mergedBrew = Object.assign({}, appBrew, rowBrew);
+    return _upsertCoffeeVaultRecordImpl(mergedCoffee, Object.keys(mergedBrew).length ? mergedBrew : null);
+  }
+
+  function _upsertVaultFromPriceList(list){
+    if (!Array.isArray(list) || !list.length) return;
+    for (let i = 0; i < list.length; i++){
+      const bag = list[i];
+      if (!bag || bag.kind === 'pods' || !bag.coffee) continue;
+      const totalG = costGrams(bag.size, bag.unit);
+      const loc = [bag.city, bag.state].filter(Boolean).join(', ');
+      _upsertCoffeeVaultRecordImpl({
+        id:bag.coffee_id || '',
+        coffee_id:bag.coffee_id || '',
+        name:bag.coffee,
+        roaster:bag.roaster || '',
+        roaster_location:loc,
+        origin:bag.origin || '',
+        region:bag.region || '',
+        process:bag.process || '',
+        varietal:bag.varietal || '',
+        elevation_m:bag.elevation_m || '',
+        roast:bag.rlevel || '',
+        roast_date:_btValidIsoDateRef(bag.roast) ? bag.roast : '',
+        is_frozen:bag.is_frozen === 'yes' ? 'yes' : '',
+        frozen_date:_btValidIsoDateRef(bag.frozen_date) ? bag.frozen_date : '',
+        bag_notes:bag.bag_notes || bag.notes || '',
+        notes:bag.notes || bag.bag_notes || '',
+        bag_weight_g:totalG > 0 ? Math.round(totalG * 10) / 10 : '',
+        remaining_g:bag.rem_g != null ? Math.round(+bag.rem_g * 10) / 10 : (totalG > 0 ? Math.round(totalG * 10) / 10 : ''),
+        price:bag.price,
+        currency:bag.currency || bag.sym || '$'
+      });
+    }
+  }
+
+  function _buildUnifiedCoffeesIndexImpl(historyObjs, priceList, vaultList){
     const hObjs = Array.isArray(historyObjs) ? historyObjs : ((historyState && historyState.objs) || []);
     const pList = Array.isArray(priceList) ? priceList : prState.list;
-    const isLiveStores = (historyObjs === undefined || (historyState && historyObjs === historyState.objs)) && (priceList === undefined || priceList === prState.list);
-    const cacheSig = isLiveStores ? (_g.__btHistoryRev + '|' + hObjs.length + '|' + pList.length + '|' + prState.changes) : '';
-    if (cacheSig && _unifiedIndexCache.key === cacheSig) return _unifiedIndexCache.list;
+    let curVaultRaw = '';
+    try { curVaultRaw = Array.isArray(vaultList) ? '' : (localStorage.getItem(EXTRA_VAULT_COFFEES_KEY) || ''); } catch(e){}
+    const isLiveStores = (historyObjs === undefined || (historyState && historyObjs === historyState.objs)) && (priceList === undefined || priceList === prState.list) && vaultList === undefined;
+    const cacheSig = isLiveStores ? (_g.__btHistoryRev + '|' + hObjs.length + '|' + pList.length + '|' + prState.changes + '|' + _vaultRev) : '';
+    if (cacheSig && _unifiedIndexCache.key === cacheSig && _unifiedIndexCache.vaultRaw === curVaultRaw) return _unifiedIndexCache.list;
 
     const todayStr = _todayIso();
     const byCid = new Map();
@@ -7156,9 +7710,17 @@ var BTStorage;
         normKey:normKey || '',
         name:'',
         roaster:'',
+        roaster_location:'',
         origin:'',
+        region:'',
+        farm:'',
+        farm_or_station:'',
+        producer:'',
+        harvest_year:'',
         varietal:'',
         process:'',
+        process_sub:'',
+        process_details:'',
         roast:'',
         blend:'',
         species:'arabica',
@@ -7167,11 +7729,19 @@ var BTStorage;
         elevation_m:'',
         elevation_class:'',
         density:'',
+        elevText:'',
         roast_date:'',
         is_frozen:'',
         frozen_date:'',
         freeze_days_offset:'',
         bag_notes:'',
+        notes:'',
+        flavors:[],
+        personal_note:'',
+        bag_weight_g:'',
+        remaining_g:'',
+        price:'',
+        currency:'',
         agtron:'',
         bean_agtron:'',
         ground_agtron:'',
@@ -7181,6 +7751,14 @@ var BTStorage;
         psd_d50_um:'',
         psd_d90_um:'',
         psd_span:'',
+        roasterGuide:null,
+        recommended_rest_days:null,
+        lastMethod:'',
+        lastBrew:null,
+        lastLikedFlavors:[],
+        pendingNextRecipe:null,
+        dialAdaptation:null,
+        updatedAt:0,
         openBag:null,
         lockedBrew:null,
         bestBrew:null,
@@ -7191,7 +7769,8 @@ var BTStorage;
         bestScore:0,
         last_brewed_at:'',
         daysSinceRoast:null,
-        isDialedIn:false
+        isDialedIn:false,
+        isGoldenLocked:false
       };
       records.push(rec);
       if (cid) byCid.set(cid, rec);
@@ -7238,23 +7817,34 @@ var BTStorage;
       const row = hObjs[i];
       if (!row) continue;
       const rawCName = row.coffee_name || '';
-      const cName = (rawCName.charCodeAt(0) === 39 ? unneutralize(rawCName) : rawCName).trim();
+      const cName0 = rawCName && rawCName.charCodeAt(0) === 39 ? unneutralize(rawCName) : rawCName;
+      const cName = cName0 && (cName0.charCodeAt(0) <= 32 || cName0.charCodeAt(cName0.length - 1) <= 32) ? cName0.trim() : cName0;
       const rawCRoast = row.roaster || '';
-      const cRoaster = (rawCRoast.charCodeAt(0) === 39 ? unneutralize(rawCRoast) : rawCRoast).trim();
+      const cRoaster0 = rawCRoast && rawCRoast.charCodeAt(0) === 39 ? unneutralize(rawCRoast) : rawCRoast;
+      const cRoaster = cRoaster0 && (cRoaster0.charCodeAt(0) <= 32 || cRoaster0.charCodeAt(cRoaster0.length - 1) <= 32) ? cRoaster0.trim() : cRoaster0;
       const cid = row.coffee_id || '';
       if (!cName && !cid) continue;
-      const rec = findOrCreate(cid, cName, cRoaster);
+      let rec = cid ? byCid.get(cid) : null;
+      if (!rec || !rec.normKey) rec = findOrCreate(cid, cName, cRoaster);
       rec.n_cups++;
 
       if (cName && cName.length > rec.name.length) rec.name = cName;
       if (cRoaster && cRoaster.length > rec.roaster.length) rec.roaster = cRoaster;
-      if (row.origin && row.origin.length > rec.origin.length) rec.origin = unneutralize(row.origin).trim();
-      if (row.varietal && row.varietal.length > rec.varietal.length) rec.varietal = unneutralize(row.varietal).trim();
+      const rawOrg = row.origin;
+      if (rawOrg){
+        const clOrg = (rawOrg.charCodeAt(0) === 39 ? unneutralize(rawOrg) : rawOrg).trim();
+        if (clOrg && clOrg !== 'unknown' && (!rec.origin || rec.origin === 'unknown' || clOrg.length > rec.origin.length) && !_isUnknownToken(clOrg)) rec.origin = clOrg;
+      }
+      const rawVar = row.varietal;
+      if (rawVar){
+        const clVar = (rawVar.charCodeAt(0) === 39 ? unneutralize(rawVar) : rawVar).trim();
+        if (clVar && (!rec.varietal || clVar.length > rec.varietal.length) && !_isUnknownToken(clVar)) rec.varietal = clVar;
+      }
       if (row.process && (!rec.process || rec.process === 'unknown')){
         const proc = fastProc(row.process);
         if (proc) rec.process = proc;
       }
-      if (row.roast_level && !rec.roast){
+      if (row.roast_level && (!rec.roast || rec.roast === 'unknown')){
         const rst = fastRoast(row.roast_level);
         if (rst) rec.roast = rst;
       }
@@ -7263,19 +7853,26 @@ var BTStorage;
         if (bld) rec.blend = bld;
       }
       if (row.species && (rec.species === 'arabica' || !rec.species)){
-        const sp = unneutralize(row.species).trim();
+        const sp = (row.species.charCodeAt(0) === 39 ? unneutralize(row.species) : row.species).trim();
         if (sp) rec.species = sp;
       }
       if (row.decaf === 'yes'){
         rec.decaf = 'yes';
-        if (row.decaf_process) rec.decaf_process = unneutralize(row.decaf_process).trim();
+        if (row.decaf_process) rec.decaf_process = (row.decaf_process.charCodeAt(0) === 39 ? unneutralize(row.decaf_process) : row.decaf_process).trim();
       }
-      if (row.elevation_m && !rec.elevation_m) rec.elevation_m = String(row.elevation_m).trim();
+      if (row.elevation_m && !rec.elevation_m){
+        rec.elevation_m = String(row.elevation_m).trim();
+        rec.elevText = rec.elevation_m + ' masl';
+      }
       if (row.elevation_class && !rec.elevation_class){
-        const eCls = unneutralize(row.elevation_class).trim();
+        const eCls = (row.elevation_class.charCodeAt(0) === 39 ? unneutralize(row.elevation_class) : row.elevation_class).trim();
         if (eCls){ rec.elevation_class = eCls; rec.density = resolveDensity(eCls, rec.elevation_m) || rec.density; }
       } else if (rec.elevation_m && !rec.density) rec.density = resolveDensity('', rec.elevation_m);
-      if (row.bag_notes && row.bag_notes.length > rec.bag_notes.length) rec.bag_notes = unneutralize(row.bag_notes).trim();
+      const rawBn = row.bag_notes;
+      if (rawBn && rawBn.length > rec.bag_notes.length){
+        const bn = (rawBn.charCodeAt(0) === 39 ? unneutralize(rawBn) : rawBn).trim();
+        if (bn && bn.length > rec.bag_notes.length){ rec.bag_notes = bn; rec.notes = bn; }
+      }
 
       const rDate = row.roast_date;
       if (rDate && rDate.length === 10 && (!rec.roast_date || rDate >= rec.roast_date) && _btValidIsoDateRef(rDate)) rec.roast_date = rDate;
@@ -7285,10 +7882,13 @@ var BTStorage;
         if (row.freeze_days_offset) rec.freeze_days_offset = String(row.freeze_days_offset);
       }
 
-      /* Extract Agtron / Omni PSD metadata only if row has recipe_adaptation_json */
+      const isNewerRow = !rec.latestBrew || isNewerOrEqRow(row, rec.latestBrew);
+
+      /* Extract Agtron / Omni PSD / coffee_extra / next_recipe metadata only if row has recipe_adaptation_json */
+      let ad = null;
       const rawAdap = row.recipe_adaptation_json;
       if (rawAdap && rawAdap.length > 2){
-        const ad = _readRowAdaptationMeta(row);
+        ad = _readRowAdaptationMeta(row);
         if (ad){
           if (ad.agtron != null) rec.agtron = String(ad.agtron);
           if (ad.bean_agtron != null) rec.bean_agtron = String(ad.bean_agtron);
@@ -7299,7 +7899,37 @@ var BTStorage;
           if (ad.psd_d50_um != null) rec.psd_d50_um = String(ad.psd_d50_um);
           if (ad.psd_d90_um != null) rec.psd_d90_um = String(ad.psd_d90_um);
           if (ad.psd_span != null) rec.psd_span = String(ad.psd_span);
+          if (ad.roaster_guide && typeof ad.roaster_guide === 'object' && (!rec.roasterGuide || isNewerRow)) rec.roasterGuide = ad.roaster_guide;
+          if (ad.next_recipe && typeof ad.next_recipe === 'object' && isNewerRow) rec.pendingNextRecipe = ad.next_recipe;
+          if (ad.dial_adaptation && typeof ad.dial_adaptation === 'object' && isNewerRow) rec.dialAdaptation = ad.dial_adaptation;
+          if (ad.machine_profile && typeof ad.machine_profile === 'object' && isNewerRow){
+            rec.lastBrew = Object.assign({}, rec.lastBrew || {}, { machineProfile:ad.machine_profile });
+          }
+          const ce = ad.coffee_extra && typeof ad.coffee_extra === 'object' ? ad.coffee_extra : null;
+          if (ce){
+            if (ce.region && (!rec.region || isNewerRow)) rec.region = String(ce.region);
+            if (ce.roaster_location && (!rec.roaster_location || isNewerRow)) rec.roaster_location = String(ce.roaster_location);
+            if (ce.farm && (!rec.farm || isNewerRow)) rec.farm = String(ce.farm);
+            if (ce.farm_or_station && (!rec.farm_or_station || isNewerRow)) rec.farm_or_station = String(ce.farm_or_station);
+            if (ce.producer && (!rec.producer || isNewerRow)) rec.producer = String(ce.producer);
+            if (ce.harvest_year && (!rec.harvest_year || isNewerRow)) rec.harvest_year = String(ce.harvest_year);
+            if (ce.process_sub && (!rec.process_sub || isNewerRow)) rec.process_sub = String(ce.process_sub);
+            if (ce.process_details && (!rec.process_details || isNewerRow)) rec.process_details = String(ce.process_details);
+            if (ce.personal_note && (!rec.personal_note || isNewerRow)) rec.personal_note = String(ce.personal_note);
+            if (ce.bag_weight_g != null && ce.bag_weight_g !== '' && (!rec.bag_weight_g || isNewerRow)) rec.bag_weight_g = ce.bag_weight_g;
+            if (ce.remaining_g != null && ce.remaining_g !== '' && (rec.remaining_g === '' || isNewerRow)) rec.remaining_g = ce.remaining_g;
+            if (ce.price != null && ce.price !== '' && (!rec.price || isNewerRow)) rec.price = ce.price;
+            if (ce.currency && (!rec.currency || isNewerRow)) rec.currency = String(ce.currency);
+            if (Array.isArray(ce.flavors) && ce.flavors.length && (!rec.flavors.length || isNewerRow)) rec.flavors = ce.flavors.slice();
+            if (ce.roasterGuide && typeof ce.roasterGuide === 'object' && (!rec.roasterGuide || isNewerRow)) rec.roasterGuide = ce.roasterGuide;
+            if (ce.recommended_rest_days != null && (rec.recommended_rest_days == null || isNewerRow)) rec.recommended_rest_days = ce.recommended_rest_days;
+          }
         }
+      }
+
+      if (row.flavors_liked && (!rec.lastLikedFlavors.length || isNewerRow)){
+        const flList = unneutralize(row.flavors_liked).split(';').map(x => x.trim()).filter(Boolean);
+        if (flList.length) rec.lastLikedFlavors = flList;
       }
 
       const mKey = fastMeth(row.brew_method);
@@ -7307,11 +7937,16 @@ var BTStorage;
         rec.methods.push(mKey);
       }
 
-      if (!rec.latestBrew || isNewerOrEqRow(row, rec.latestBrew)){
+      const dl = row.dial_locked;
+      const isGold = dl === 'yes' || dl === '1' || (dl ? _isGoldenLockedRow(row) : false);
+      if (isNewerRow){
         rec.latestBrew = row;
-        rec.last_brewed_at = row.cupping_date || (row.saved_at ? row.saved_at.slice(0, 10) : '');
+        if (mKey) rec.lastMethod = mKey;
+        if (isGold && rec.pendingNextRecipe && !(ad && ad.next_recipe)){
+          rec.pendingNextRecipe = null;
+        }
       }
-      if (row.dial_locked === 'yes' || (row.dial_locked && String(row.dial_locked).trim().toLowerCase() === 'yes')){
+      if (isGold){
         if (!rec.lockedBrew || isNewerOrEqRow(row, rec.lockedBrew)){
           rec.lockedBrew = row;
         }
@@ -7340,13 +7975,33 @@ var BTStorage;
       const rec = findOrCreate(bag.coffee_id || '', bag.coffee, bag.roaster);
       if (!rec.name) rec.name = bag.coffee;
       if (!rec.roaster && bag.roaster) rec.roaster = bag.roaster;
-      if (!rec.roast && bag.rlevel) rec.roast = fastRoast(bag.rlevel) || bag.rlevel;
+      if ((!rec.roast || rec.roast === 'unknown') && bag.rlevel) rec.roast = fastRoast(bag.rlevel) || bag.rlevel;
       if (_btValidIsoDateRef(bag.roast) && (!rec.roast_date || bag.roast >= rec.roast_date)) rec.roast_date = bag.roast;
       if (bag.is_frozen === 'yes') rec.is_frozen = 'yes';
       if (_btValidIsoDateRef(bag.frozen_date)) rec.frozen_date = bag.frozen_date;
+      const bagNotesTxt = String(bag.bag_notes || bag.notes || '').trim();
+      if (bagNotesTxt && (!rec.bag_notes || bagNotesTxt.length > rec.bag_notes.length)){
+        rec.bag_notes = bagNotesTxt;
+        rec.notes = bagNotesTxt;
+      }
+      if (bag.origin && (!rec.origin || _isUnknownToken(rec.origin))) rec.origin = bag.origin;
+      if (bag.region && !rec.region) rec.region = bag.region;
+      if (bag.process && (!rec.process || rec.process === 'unknown')) rec.process = fastProc(bag.process) || bag.process;
+      if (bag.varietal && !rec.varietal) rec.varietal = bag.varietal;
+      if (bag.elevation_m && !rec.elevation_m){
+        rec.elevation_m = String(bag.elevation_m);
+        rec.elevText = rec.elevation_m + ' masl';
+        if (!rec.density) rec.density = resolveDensity('', rec.elevation_m);
+      }
+      if (!rec.roaster_location && (bag.city || bag.state)) rec.roaster_location = [bag.city, bag.state].filter(Boolean).join(', ');
+      const bagTotalG = costGrams(bag.size, bag.unit);
+      if (bagTotalG > 0 && !rec.bag_weight_g) rec.bag_weight_g = Math.round(bagTotalG * 10) / 10;
+      if (bag.rem_g != null && rec.remaining_g === '') rec.remaining_g = Math.round(+bag.rem_g * 10) / 10;
+      if (bag.price > 0 && !rec.price) rec.price = bag.price;
+      if ((bag.currency || bag.sym) && !rec.currency) rec.currency = bag.currency || bag.sym;
 
       if (!bag.finished){
-        const totalG = costGrams(bag.size, bag.unit);
+        const totalG = bagTotalG;
         const remG = bag.rem_g != null ? +bag.rem_g : totalG;
         const candOpen = {
           bagIndex:j,
@@ -7368,11 +8023,101 @@ var BTStorage;
       }
     }
 
-    /* Pass 3: Finalize derived freshness & dial status + deterministic sort */
+    /* Pass 3: Fold lossless Bean Vault records from 'brew-and-cup-coffees-v1' */
+    const vList = Array.isArray(vaultList) ? vaultList : _getCoffeesVaultListImpl();
+    for (let vi = 0; vi < vList.length; vi++){
+      const v = vList[vi];
+      if (!v || typeof v !== 'object') continue;
+      const vName = cleanLine(unneutralize(v.name || v.coffee_name || v.coffee || ''));
+      const vRoaster = cleanLine(unneutralize(v.roaster || ''));
+      const vCid = String(v.coffee_id || v.id || '').trim();
+      if (!vName && !vCid) continue;
+      const rec = findOrCreate(vCid, vName, vRoaster);
+      const lbRow = rec.latestBrew;
+      const lbIso = lbRow ? (lbRow.saved_at || (lbRow.cupping_date ? (lbRow.cupping_date + 'T00:00:00Z') : '')) : '';
+      const recTs = rec.updatedAt || (lbIso ? (Date.parse(lbIso) || 0) : 0);
+      const vTs = typeof v.updatedAt === 'number' && isFinite(v.updatedAt) ? v.updatedAt : (v.updatedAt ? (Date.parse(v.updatedAt) || 0) : 0);
+      const vIsNewer = vTs >= recTs;
+
+      const mergeVaultVal = (k, val, allowZero) => {
+        if (!_hasMeaningfulVal(val, allowZero)) return;
+        const curEmpty = !_hasMeaningfulVal(rec[k], allowZero);
+        if (curEmpty || vIsNewer) rec[k] = val;
+      };
+      mergeVaultVal('name', vName);
+      mergeVaultVal('roaster', vRoaster);
+      mergeVaultVal('roaster_location', v.roaster_location);
+      mergeVaultVal('origin', v.origin);
+      mergeVaultVal('region', v.region);
+      mergeVaultVal('farm', v.farm || v.farm_or_station);
+      mergeVaultVal('farm_or_station', v.farm_or_station || v.farm);
+      mergeVaultVal('producer', v.producer);
+      mergeVaultVal('harvest_year', v.harvest_year);
+      mergeVaultVal('varietal', v.varietal);
+      mergeVaultVal('species', v.species);
+      mergeVaultVal('blend', resolveBlend(v.blend) || v.blend);
+      mergeVaultVal('process', resolveProcess(v.process) || v.process);
+      mergeVaultVal('process_sub', v.process_sub);
+      mergeVaultVal('process_details', v.process_details);
+      if (v.decaf === 'yes' || v.decaf === true) rec.decaf = 'yes';
+      mergeVaultVal('decaf_process', v.decaf_process);
+      mergeVaultVal('roast', fastRoast(v.roast || v.roast_level) || v.roast);
+      if (_btValidIsoDateRef(v.roast_date) && (!rec.roast_date || vIsNewer)) rec.roast_date = v.roast_date;
+      if (v.is_frozen === 'yes' || v.is_frozen === true) rec.is_frozen = 'yes';
+      if (_btValidIsoDateRef(v.frozen_date) && (!rec.frozen_date || vIsNewer)) rec.frozen_date = v.frozen_date;
+      mergeVaultVal('freeze_days_offset', v.freeze_days_offset != null ? String(v.freeze_days_offset) : '', true);
+      if (v.elevation_m != null && String(v.elevation_m).trim() !== '' && (!rec.elevation_m || vIsNewer)) rec.elevation_m = String(v.elevation_m).trim();
+      if (v.elevText && (!rec.elevText || vIsNewer)) rec.elevText = String(v.elevText);
+      mergeVaultVal('density', resolveDensity(v.density, rec.elevation_m) || v.density);
+      const vNotes = String(v.bag_notes || v.notes || '').trim();
+      if (vNotes && (!rec.bag_notes || vIsNewer || vNotes.length > rec.bag_notes.length)){
+        rec.bag_notes = vNotes;
+        rec.notes = vNotes;
+      }
+      if (Array.isArray(v.flavors) && v.flavors.length && (!rec.flavors.length || vIsNewer)) rec.flavors = v.flavors.slice();
+      mergeVaultVal('personal_note', v.personal_note);
+      mergeVaultVal('bag_weight_g', v.bag_weight_g);
+      mergeVaultVal('remaining_g', v.remaining_g, true);
+      mergeVaultVal('price', v.price);
+      mergeVaultVal('currency', v.currency);
+      ['agtron', 'bean_agtron', 'ground_agtron', 'agtron_scale', 'roast_delta', 'psd_d10_um', 'psd_d50_um', 'psd_d90_um', 'psd_span'].forEach(ak => {
+        if (v[ak] != null && v[ak] !== '' && (rec[ak] === '' || rec[ak] == null || vIsNewer)) rec[ak] = String(v[ak]);
+      });
+      if (v.roasterGuide && typeof v.roasterGuide === 'object' && (!rec.roasterGuide || vIsNewer)) rec.roasterGuide = _cloneObj(v.roasterGuide);
+      if (v.recommended_rest_days != null && isFinite(+v.recommended_rest_days) && (rec.recommended_rest_days == null || vIsNewer)){
+        rec.recommended_rest_days = Math.round(+v.recommended_rest_days);
+      }
+      if (v.lastMethod){
+        const lm = fastMeth(v.lastMethod) || String(v.lastMethod);
+        if (!rec.lastMethod || vIsNewer) rec.lastMethod = lm;
+        if (lm && rec.methods.indexOf(lm) < 0) rec.methods.push(lm);
+      }
+      if (v.lastBrew && typeof v.lastBrew === 'object'){
+        rec.lastBrew = vIsNewer ? Object.assign({}, rec.lastBrew || {}, v.lastBrew) : Object.assign({}, v.lastBrew, rec.lastBrew || {});
+      }
+      if (v.pendingNextRecipe && typeof v.pendingNextRecipe === 'object' && (!rec.pendingNextRecipe || vIsNewer)){
+        rec.pendingNextRecipe = _cloneObj(v.pendingNextRecipe);
+      }
+      if (v.dialAdaptation && typeof v.dialAdaptation === 'object' && (!rec.dialAdaptation || vIsNewer)){
+        rec.dialAdaptation = _cloneObj(v.dialAdaptation);
+      }
+      if (vTs > rec.updatedAt) rec.updatedAt = vTs;
+    }
+
+    /* Pass 4: Finalize derived freshness & dial status + deterministic sort */
     for (let k = 0; k < records.length; k++){
       const rec = records[k];
+      if (rec.latestBrew && !rec.last_brewed_at){
+        const lb = rec.latestBrew;
+        rec.last_brewed_at = lb.cupping_date || (lb.saved_at ? lb.saved_at.slice(0, 10) : '');
+      }
+      if (rec.bag_notes && !rec.notes) rec.notes = rec.bag_notes;
+      if (rec.notes && !rec.bag_notes) rec.bag_notes = rec.notes;
+      if (rec.elevation_m && !rec.elevText) rec.elevText = rec.elevation_m + ' masl';
+      if (rec.elevation_m && !rec.density) rec.density = resolveDensity('', rec.elevation_m);
       const activeRoast = (rec.openBag && rec.openBag.roast) ? rec.openBag.roast : rec.roast_date;
       rec.daysSinceRoast = activeRoast ? priceDaysSince(activeRoast, todayStr) : null;
+      rec.isGoldenLocked = !!rec.lockedBrew;
       rec.isDialedIn = !!(rec.lockedBrew || rec.bestStars >= 4.5);
     }
 
@@ -7392,24 +8137,59 @@ var BTStorage;
 
     if (cacheSig){
       _unifiedIndexCache.key = cacheSig;
+      _unifiedIndexCache.vaultRaw = curVaultRaw;
       _unifiedIndexCache.list = records;
     }
     return records;
   }
 
-  function _selectSavedCoffeeImpl(recInput, opts){
+  function _applyBrewSnapshotToApp(bObj, aBrew){
+    if (!bObj || typeof bObj !== 'object' || !aBrew) return;
+    const mk = resolveMethod(bObj.method || bObj.methodKey || bObj.brew_method);
+    if (mk) aBrew.method = mk;
+    const doseRaw = bObj.dose != null && bObj.dose !== '' ? bObj.dose : (bObj.doseG != null && bObj.doseG !== '' ? bObj.doseG : bObj.brew_dose_g);
+    const waterRaw = bObj.water != null && bObj.water !== '' ? bObj.water : (bObj.waterG != null && bObj.waterG !== '' ? bObj.waterG : bObj.brew_water_g);
+    if (+doseRaw > 0) aBrew.dose = +doseRaw;
+    if (+waterRaw > 0) aBrew.water = +waterRaw;
+    if (+bObj.ratio > 0) aBrew.ratio = +bObj.ratio;
+    if (+bObj.tempF > 0){
+      aBrew.tempF = +bObj.tempF;
+      aBrew.tempC = +bObj.tempC > 0 ? +bObj.tempC : Math.round(((+bObj.tempF - 32) * 5 / 9) * 10) / 10;
+    } else if (+bObj.tempC > 0){
+      aBrew.tempC = +bObj.tempC;
+      aBrew.tempF = Math.round((+bObj.tempC * 9 / 5 + 32) * 10) / 10;
+    }
+    const gUm = +(bObj.grindUm != null && bObj.grindUm !== '' ? bObj.grindUm : (bObj.grind_um != null && bObj.grind_um !== '' ? bObj.grind_um : (bObj.d50Um != null && bObj.d50Um !== '' ? bObj.d50Um : bObj.brew_grind_target_um)));
+    if (gUm > 0){ aBrew.grindUm = gUm; aBrew.grind_um = gUm; }
+    const gSet = bObj.grind_setting || bObj.grindSetting || (bObj.grinderSetting && typeof bObj.grinderSetting === 'object' ? (bObj.grinderSetting.shortDisplay || bObj.grinderSetting.label || bObj.grinderSetting.display || '') : (typeof bObj.grinderSetting === 'string' ? bObj.grinderSetting : '')) || bObj.brew_grind_setting || '';
+    if (gSet) aBrew.grind_setting = unneutralize(gSet);
+    if (bObj.style) aBrew.style = unneutralize(bObj.style);
+    if (bObj.filter) aBrew.filter = unneutralize(bObj.filter);
+    if (bObj.filterId) aBrew.filterId = String(bObj.filterId);
+    if (bObj.grinderKey) aBrew.grinderKey = String(bObj.grinderKey);
+    if (bObj.grinderName) aBrew.grinderName = unneutralize(bObj.grinderName);
+    if (bObj.agitation && ['gentle', 'standard', 'active'].includes(bObj.agitation)) aBrew.agitation = bObj.agitation;
+    if (bObj.technique) aBrew.technique = resolveTechCsv(bObj.technique) || bObj.technique;
+    if (bObj.waterType) aBrew.waterType = String(bObj.waterType);
+    if (bObj.pourNotes) aBrew.pourNotes = unneutralize(bObj.pourNotes);
+    if (bObj.machineProfile && typeof bObj.machineProfile === 'object'){
+      aBrew.machineProfile = _cloneObj(bObj.machineProfile);
+    }
+  }
+
+  function _hydrateCoffeeIntoAppImpl(recOrCoffee, opts){
     opts = opts || {};
-    let rec = recInput;
-    if (typeof recInput === 'string'){
+    let rec = recOrCoffee;
+    if (typeof recOrCoffee === 'string'){
       const idx = _buildUnifiedCoffeesIndexImpl();
-      rec = idx.find(r => r.coffee_id === recInput || r.key === recInput || r.name === recInput) || null;
-    } else if (recInput && recInput.coffee_name !== undefined && recInput.lockedBrew === undefined){
+      rec = idx.find(r => r.coffee_id === recOrCoffee || r.key === recOrCoffee || r.name === recOrCoffee) || null;
+    } else if (recOrCoffee && recOrCoffee.coffee_name !== undefined && recOrCoffee.lockedBrew === undefined){
       const idx = _buildUnifiedCoffeesIndexImpl();
-      rec = idx.find(r => (recInput.coffee_id && r.coffee_id === recInput.coffee_id) || (r.name === unneutralize(recInput.coffee_name) && r.roaster === unneutralize(recInput.roaster || ''))) || {
-        coffee_id:recInput.coffee_id || _newUid(),
-        name:unneutralize(recInput.coffee_name || ''),
-        roaster:unneutralize(recInput.roaster || ''),
-        latestBrew:recInput,
+      rec = idx.find(r => (recOrCoffee.coffee_id && r.coffee_id === recOrCoffee.coffee_id) || (r.name === unneutralize(recOrCoffee.coffee_name) && r.roaster === unneutralize(recOrCoffee.roaster || ''))) || {
+        coffee_id:recOrCoffee.coffee_id || _newUid(),
+        name:unneutralize(recOrCoffee.coffee_name || ''),
+        roaster:unneutralize(recOrCoffee.roaster || ''),
+        latestBrew:recOrCoffee,
         n_cups:1
       };
     }
@@ -7420,26 +8200,66 @@ var BTStorage;
     const baseFromAnchor = anchorRow ? _populateCoffeeFromRowObj(anchorRow) : { coffee:(typeof newCoffee === 'function' ? newCoffee() : {}), adMeta:null };
     const c = baseFromAnchor.coffee;
 
-    /* Overlay rich folded UnifiedCoffeeRecord fields so 100% of bean + Omni/Agtron fields restore */
-    c.id = rec.coffee_id || c.id || _newUid();
-    if (rec.name) c.name = rec.name;
-    if (rec.roaster) c.roaster = rec.roaster;
-    if (rec.origin) c.origin = rec.origin;
-    if (rec.varietal) c.varietal = rec.varietal;
-    if (rec.process) c.process = rec.process;
-    if (rec.roast) c.roast = rec.roast;
-    if (rec.blend) c.blend = rec.blend;
-    if (rec.species) c.species = rec.species;
-    if (rec.decaf) c.decaf = rec.decaf;
-    if (rec.decaf_process) c.decaf_process = rec.decaf_process;
-    if (rec.density) c.density = rec.density;
-    if (rec.elevation_m){ c.elevation_m = String(rec.elevation_m); c.elevText = c.elevation_m + ' masl'; }
-    if (rec.bag_notes) c.bag_notes = rec.bag_notes;
+    c.id = rec.coffee_id || rec.id || c.id || _newUid();
+    const setIfMeaningful = (k, val, allowZero) => {
+      if (_hasMeaningfulVal(val, allowZero)) c[k] = val;
+    };
+    setIfMeaningful('name', rec.name);
+    setIfMeaningful('roaster', rec.roaster);
+    setIfMeaningful('roaster_location', rec.roaster_location);
+    setIfMeaningful('origin', rec.origin);
+    setIfMeaningful('region', rec.region);
+    if (_hasMeaningfulVal(rec.farm || rec.farm_or_station)){
+      c.farm = rec.farm || rec.farm_or_station;
+      c.farm_or_station = rec.farm_or_station || rec.farm;
+    }
+    setIfMeaningful('producer', rec.producer);
+    setIfMeaningful('harvest_year', rec.harvest_year);
+    setIfMeaningful('varietal', rec.varietal);
+    setIfMeaningful('process', resolveProcess(rec.process) || rec.process);
+    setIfMeaningful('process_sub', rec.process_sub);
+    setIfMeaningful('process_details', rec.process_details);
+    setIfMeaningful('roast', resolveRoast(rec.roast) || rec.roast);
+    setIfMeaningful('blend', resolveBlend(rec.blend) || rec.blend);
+    setIfMeaningful('species', rec.species);
+    if (rec.decaf === 'yes' || rec.decaf === true) c.decaf = 'yes';
+    setIfMeaningful('decaf_process', rec.decaf_process);
+    setIfMeaningful('density', resolveDensity(rec.density, rec.elevation_m) || rec.density);
+    if (rec.elevation_m != null && String(rec.elevation_m).trim() !== ''){
+      c.elevation_m = String(rec.elevation_m).trim();
+      c.elevText = rec.elevText || (c.elevation_m + ' masl');
+    } else if (rec.elevText && !_isUnknownToken(rec.elevText)){
+      c.elevText = String(rec.elevText);
+    }
+    const notesVal = String(rec.bag_notes || rec.notes || c.bag_notes || c.notes || '').trim();
+    if (notesVal){
+      c.bag_notes = notesVal;
+      c.notes = notesVal;
+    }
+    if (Array.isArray(rec.flavors) && rec.flavors.length) c.flavors = rec.flavors.slice();
+    setIfMeaningful('personal_note', rec.personal_note);
+    if (rec.bag_weight_g != null && rec.bag_weight_g !== ''){
+      c.bag_weight_g = rec.bag_weight_g;
+      c.bagWeightG = rec.bag_weight_g;
+    } else if (c.bag_weight_g != null && c.bag_weight_g !== ''){
+      c.bagWeightG = c.bag_weight_g;
+    }
+    if (rec.remaining_g != null && rec.remaining_g !== '') c.remaining_g = rec.remaining_g;
+    if (rec.price != null && rec.price !== ''){
+      c.price = rec.price;
+      c.bagPrice = rec.price;
+    } else if (c.price != null && c.price !== ''){
+      c.bagPrice = c.price;
+    }
+    setIfMeaningful('currency', rec.currency);
+    if (rec.roasterGuide && typeof rec.roasterGuide === 'object') c.roasterGuide = _cloneObj(rec.roasterGuide);
+    if (rec.recommended_rest_days != null && isFinite(+rec.recommended_rest_days)) c.recommended_rest_days = Math.round(+rec.recommended_rest_days);
+
     const bestRoastDate = (rec.openBag && _btValidIsoDateRef(rec.openBag.roast)) ? rec.openBag.roast : (rec.roast_date || c.roast_date || '');
     c.roast_date = bestRoastDate;
-    c.is_frozen = rec.is_frozen || '';
-    c.frozen_date = rec.frozen_date || '';
-    c.freeze_days_offset = rec.freeze_days_offset || '';
+    c.is_frozen = rec.is_frozen || c.is_frozen || '';
+    c.frozen_date = rec.frozen_date || c.frozen_date || '';
+    c.freeze_days_offset = rec.freeze_days_offset || c.freeze_days_offset || '';
     if (rec.agtron !== '' && rec.agtron != null) c.agtron = String(rec.agtron);
     if (rec.bean_agtron !== '' && rec.bean_agtron != null) c.bean_agtron = String(rec.bean_agtron);
     if (rec.ground_agtron !== '' && rec.ground_agtron != null) c.ground_agtron = String(rec.ground_agtron);
@@ -7450,52 +8270,135 @@ var BTStorage;
     if (rec.psd_d90_um !== '' && rec.psd_d90_um != null) c.psd_d90_um = String(rec.psd_d90_um);
     if (rec.psd_span !== '' && rec.psd_span != null) c.psd_span = String(rec.psd_span);
 
-    /* Mark 100% answered so the user is NEVER re-prompted with onboarding questions */
+    /* Clear bogus *Unsure flags whenever values exist, and mark answered */
     c.answered = 'yes';
     c.roasterUnsure = c.roaster ? '' : 'yes';
-    c.roastUnsure = c.roast ? '' : 'yes';
-    c.dateUnsure = c.roast_date ? '' : 'yes';
+    c.roastUnsure = (c.roast && c.roast !== 'unknown') ? '' : 'yes';
+    c.dateUnsure = (c.roast_date || c.is_frozen === 'yes') ? '' : 'yes';
     c.varietalUnsure = c.varietal ? '' : 'yes';
+    c.originUnsure = (c.origin && c.origin !== 'unknown') ? '' : 'yes';
+    c.processUnsure = (c.process && c.process !== 'unknown') ? '' : 'yes';
+    c.elevUnsure = (c.elevation_m || (c.density && c.density !== 'unknown')) ? '' : 'yes';
+    c.notesUnsure = c.bag_notes ? '' : 'yes';
+    c.roast_unknown = c.roastUnsure;
+    c.process_unknown = c.processUnsure;
+    c.origin_unknown = c.originUnsure;
+    c.elev_unknown = c.elevUnsure;
+    c.date_unknown = c.dateUnsure;
+    c.notes_unknown = c.notesUnsure;
 
     a.coffee = Object.assign(a.coffee || {}, c);
     a.attempt = rec.n_cups || 0;
 
     let methodKey = (opts.methodKey && resolveMethod(opts.methodKey)) || '';
-    let provenanceLabel = 'Loaded ' + (c.name || 'saved coffee');
-    if (anchorRow){
+    const isGoldenLocked = !!(anchorRow && _isGoldenLockedRow(anchorRow)) || !!(rec.dial_locked === 'yes' && !anchorRow);
+    a.recipeLocked = isGoldenLocked;
+
+    if (rec.lastBrew && typeof rec.lastBrew === 'object' && a.brew){
+      if (!methodKey && rec.lastBrew.method) methodKey = resolveMethod(rec.lastBrew.method) || rec.lastBrew.method;
+      _applyBrewSnapshotToApp(rec.lastBrew, a.brew);
+    }
+    if (anchorRow && a.brew){
       const rowMethod = resolveMethod(anchorRow.brew_method);
       if (!methodKey && rowMethod) methodKey = rowMethod;
-      if (a.brew){
-        if (methodKey) a.brew.method = methodKey;
-        if (+anchorRow.brew_dose_g > 0) a.brew.dose = +anchorRow.brew_dose_g;
-        if (+anchorRow.brew_water_g > 0) a.brew.water = +anchorRow.brew_water_g;
-        if (+anchorRow.brew_ratio > 0) a.brew.ratio = +anchorRow.brew_ratio;
-        if (+anchorRow.brew_temp_f > 0) a.brew.tempF = +anchorRow.brew_temp_f;
-        if (anchorRow.brew_style) a.brew.style = unneutralize(anchorRow.brew_style);
-        if (anchorRow.brew_agitation && ['gentle', 'standard', 'active'].includes(anchorRow.brew_agitation)) a.brew.agitation = anchorRow.brew_agitation;
-        if (anchorRow.brew_technique) a.brew.technique = resolveTechCsv(anchorRow.brew_technique);
-        if (anchorRow.brew_grind_setting) a.brew.grind_setting = unneutralize(anchorRow.brew_grind_setting);
-        if (+anchorRow.brew_grind_target_um > 0) a.brew.grind_um = +anchorRow.brew_grind_target_um;
-        const ad = baseFromAnchor.adMeta;
-        if (ad && ad.machine_profile){
-          try { a.brew.machineProfile = JSON.parse(JSON.stringify(ad.machine_profile)); } catch(e){}
+      _applyBrewSnapshotToApp({
+        method:methodKey || rowMethod,
+        dose:anchorRow.brew_dose_g,
+        water:anchorRow.brew_water_g,
+        ratio:anchorRow.brew_ratio,
+        tempF:anchorRow.brew_temp_f,
+        tempC:anchorRow.brew_temp_c,
+        style:anchorRow.brew_style,
+        filter:anchorRow.brew_filter,
+        grinderName:anchorRow.brew_grinder_name,
+        agitation:anchorRow.brew_agitation,
+        technique:anchorRow.brew_technique,
+        waterType:anchorRow.brew_water_type,
+        pourNotes:anchorRow.brew_pour_notes,
+        grind_setting:anchorRow.brew_grind_setting,
+        grindUm:anchorRow.brew_grind_target_um,
+        machineProfile:(baseFromAnchor.adMeta && baseFromAnchor.adMeta.machine_profile) || null
+      }, a.brew);
+      if (rec.lastBrew && (!methodKey || !rec.lastBrew.method || resolveMethod(rec.lastBrew.method) === methodKey)){
+        if (rec.lastBrew.filterId && !a.brew.filterId) a.brew.filterId = rec.lastBrew.filterId;
+        if (rec.lastBrew.grinderKey && !a.brew.grinderKey) a.brew.grinderKey = rec.lastBrew.grinderKey;
+        if (rec.lastBrew.pourNotes && !a.brew.pourNotes) a.brew.pourNotes = rec.lastBrew.pourNotes;
+        if (rec.lastBrew.waterType && !a.brew.waterType) a.brew.waterType = rec.lastBrew.waterType;
+      }
+    } else if (!anchorRow && !rec.lastBrew && rec.openBag && a.brew){
+      if (!methodKey && rec.lastMethod) methodKey = resolveMethod(rec.lastMethod) || rec.lastMethod;
+      if (!methodKey && a.brew.method) methodKey = a.brew.method;
+      if (methodKey) a.brew.method = methodKey;
+      if (rec.openBag.total_g > 0 && !(a.brew.dose > 0)) a.brew.dose = 15;
+    }
+
+    /* Closed-Loop Rule: ONLY Golden-locked brews keep clicks fixed; unlocked brews apply next_recipe / BTCoreV6 solver */
+    if (a.brew){
+      delete a.brew.dialAdaptation;
+      if (!isGoldenLocked){
+        let adapted = null;
+        const core = _g.BTCoreV6;
+        const activeM = methodKey || a.brew.method || 'v60';
+        const hAll = (historyState && Array.isArray(historyState.objs)) ? historyState.objs : (anchorRow ? [anchorRow] : []);
+        if (core && typeof core.computeClosedLoopNextRecipe === 'function'){
+          try {
+            const gearArg = (a.prefs && a.prefs.gear) || a.prefs || null;
+            const solverOut = core.computeClosedLoopNextRecipe(a.coffee, activeM, hAll, gearArg);
+            if (solverOut && solverOut.dialAdaptation && (solverOut.dialAdaptation.adapted === true || solverOut.dialAdaptation.locked === true)){
+              adapted = solverOut;
+            }
+          } catch(e){}
+        }
+        if (!adapted){
+          const candNext = rec.pendingNextRecipe || (baseFromAnchor.adMeta && baseFromAnchor.adMeta.next_recipe) || null;
+          if (candNext && typeof candNext === 'object'){
+            const nextM = candNext.method ? (resolveMethod(candNext.method) || candNext.method) : (candNext.methodKey ? (resolveMethod(candNext.methodKey) || candNext.methodKey) : activeM);
+            if (!activeM || nextM === activeM) adapted = candNext;
+          }
+        }
+        if (adapted && typeof adapted === 'object'){
+          _applyBrewSnapshotToApp(adapted, a.brew);
+          const daSrc = adapted.dialAdaptation || rec.dialAdaptation || (baseFromAnchor.adMeta && baseFromAnchor.adMeta.dial_adaptation) || null;
+          if (daSrc && typeof daSrc === 'object'){
+            if (daSrc.adapted !== false || daSrc.locked === true) a.brew.dialAdaptation = _cloneObj(daSrc);
+          } else if (adapted.adapted !== false){
+            a.brew.dialAdaptation = _cloneObj(adapted);
+          }
         }
       }
+    }
+
+    return { coffee:a.coffee, rec, anchorRow, baseFromAnchor, methodKey:methodKey || (a.brew && a.brew.method) || 'v60', isGoldenLocked };
+  }
+
+  function _selectSavedCoffeeImpl(recInput, opts){
+    opts = opts || {};
+    const hyd = _hydrateCoffeeIntoAppImpl(recInput, opts);
+    if (!hyd) return null;
+
+    const a = _getApp();
+    const rec = hyd.rec;
+    const anchorRow = hyd.anchorRow;
+    const c = hyd.coffee;
+    const methodKey = hyd.methodKey;
+
+    let provenanceLabel = 'Loaded ' + (c.name || 'saved coffee');
+    if (anchorRow){
       const mDef = _btAllMethods().find(m => m.key === methodKey);
       const mLabel = mDef ? mDef.label : (methodKey || 'Brew');
       const st = validStars(anchorRow.my_rating_stars);
       const scoreTxt = st > 0 ? (st + ' rating ') : (+anchorRow.total_score > 0 ? ((+anchorRow.total_score).toFixed(1) + ' pt ') : '');
       const tryTxt = +anchorRow.brew_attempt > 0 ? (' (Try #' + anchorRow.brew_attempt + ')') : '';
-      if (rec.lockedBrew && anchorRow === rec.lockedBrew){
+      if (hyd.isGoldenLocked || (rec.lockedBrew && anchorRow === rec.lockedBrew)){
         provenanceLabel = 'Loaded Locked ' + scoreTxt + mLabel + ' recipe' + tryTxt;
+      } else if (a.brew && a.brew.dialAdaptation){
+        provenanceLabel = 'Adapted ' + mLabel + ' recipe from Try #' + (anchorRow.brew_attempt || rec.n_cups || 1);
       } else if (rec.bestBrew && anchorRow === rec.bestBrew && (st > 0 || +anchorRow.total_score > 0)){
         provenanceLabel = 'Loaded Best ' + scoreTxt + mLabel + ' recipe' + tryTxt;
       } else {
         provenanceLabel = 'Loaded Latest ' + mLabel + ' recipe' + tryTxt;
       }
     } else if (rec.openBag){
-      if (!methodKey && a.brew && a.brew.method) methodKey = a.brew.method;
-      if (rec.openBag.total_g > 0 && a.brew && !(a.brew.dose > 0)) a.brew.dose = 15;
       provenanceLabel = 'Loaded from Open Bag Shelf';
     }
     a.provenanceLabel = provenanceLabel;
@@ -7626,8 +8529,6 @@ var BTStorage;
   /* ==========================================================================
      v6.5 PORTABLE 18-KEY FULL SAVE BUNDLE & BOOKMARKABLE WEB-ADDRESS ENGINE
      ========================================================================== */
-  const EXTRA_VAULT_COFFEES_KEY = 'brew-and-cup-coffees-v1';
-  const EXTRA_AROMA_KIT_KEY = 'brew-and-cup-aroma-kit-v1';
 
   function _makeThenableResult(resObj){
     const plain = Object.assign({}, resObj);
@@ -8204,7 +9105,7 @@ var BTStorage;
         const b2 = _unpackWireToBundle(inputStrOrObj);
         if (b2) return { bundle:b2 };
       }
-      if (inputStrOrObj.format === 'beantelligence-backup' || inputStrOrObj.historyCsv || inputStrOrObj.pricesCsv || inputStrOrObj.shopsCsv || inputStrOrObj.prefs || inputStrOrObj.academy){
+      if (inputStrOrObj.format === 'beantelligence-backup' || inputStrOrObj.historyCsv || inputStrOrObj.pricesCsv || inputStrOrObj.shopsCsv || inputStrOrObj.prefs || inputStrOrObj.academy || inputStrOrObj.coffeesVault || inputStrOrObj[EXTRA_VAULT_COFFEES_KEY]){
         const kMap = {};
         if (typeof inputStrOrObj.historyCsv === 'string' && inputStrOrObj.historyCsv.trim()) kMap[HISTORY_LS_KEY] = inputStrOrObj.historyCsv;
         else if (Array.isArray(inputStrOrObj.history)){
@@ -8215,7 +9116,15 @@ var BTStorage;
         if (typeof inputStrOrObj.shopsCsv === 'string' && inputStrOrObj.shopsCsv.trim()) kMap[SHOPS_LS_KEY] = inputStrOrObj.shopsCsv;
         if (inputStrOrObj.prefs && typeof inputStrOrObj.prefs === 'object') kMap[PREFS_MIRROR_LS_KEY] = JSON.stringify(cleanFullPrefs(inputStrOrObj.prefs));
         if (inputStrOrObj.academy && typeof inputStrOrObj.academy === 'object') kMap[ACADEMY_LS_KEY] = JSON.stringify(inputStrOrObj.academy);
-        return { bundle:_unpackWireToBundle({ exportedAt:inputStrOrObj.madeAt || '', keys:kMap }) };
+        const exMap = {};
+        const cvRaw = inputStrOrObj[EXTRA_VAULT_COFFEES_KEY] != null ? inputStrOrObj[EXTRA_VAULT_COFFEES_KEY] : (inputStrOrObj.coffeesVault != null ? inputStrOrObj.coffeesVault : (inputStrOrObj.extraKeys && inputStrOrObj.extraKeys[EXTRA_VAULT_COFFEES_KEY]));
+        if (cvRaw != null && cvRaw !== ''){
+          exMap[EXTRA_VAULT_COFFEES_KEY] = typeof cvRaw === 'string' ? cvRaw : JSON.stringify(cvRaw);
+        }
+        if (inputStrOrObj.extraKeys && inputStrOrObj.extraKeys[EXTRA_AROMA_KIT_KEY] != null){
+          exMap[EXTRA_AROMA_KIT_KEY] = String(inputStrOrObj.extraKeys[EXTRA_AROMA_KIT_KEY]);
+        }
+        return { bundle:_unpackWireToBundle({ exportedAt:inputStrOrObj.madeAt || '', keys:kMap, extraKeys:exMap }) };
       }
       return { error:'Unrecognized save object format.' };
     }
@@ -8365,6 +9274,9 @@ var BTStorage;
           else localStorage.removeItem(xk);
         } catch(e){}
       });
+      _coffeesVaultCache.raw = null;
+      _coffeesVaultCache.list = [];
+      _vaultRev++;
 
       /* Reset live in-memory state cleanly before re-hydrating */
       historyState = null;
@@ -8465,21 +9377,15 @@ var BTStorage;
       }
       const incCoffeesArr = _parseCoffeesVaultArray(xm[EXTRA_VAULT_COFFEES_KEY] || km[EXTRA_VAULT_COFFEES_KEY]);
       if (incCoffeesArr.length){
-        /* Also merge brew-and-cup-coffees-v1 key directly by id or name+roaster */
+        /* Losslessly merge brew-and-cup-coffees-v1 entries so richer metadata / bag_notes / pendingNextRecipe enrich existing bags */
         try {
-          const curCv = _parseCoffeesVaultArray(localStorage.getItem(EXTRA_VAULT_COFFEES_KEY));
-          const cvSeen = new Set(curCv.map(x => (x.id || x.coffee_id || '') + '::' + _normKeyPart(x.name || x.coffee || '') + '|' + _normKeyPart(x.roaster || '')));
-          const cvByNr = new Set(curCv.map(x => _normKeyPart(x.name || x.coffee || '') + '|' + _normKeyPart(x.roaster || '')));
           incCoffeesArr.forEach(item => {
-            const idKey = String(item.id || item.coffee_id || '').trim();
-            const nrKey = _normKeyPart(item.name || item.coffee || item.coffee_name || '') + '|' + _normKeyPart(item.roaster || '');
-            if (!cvSeen.has(idKey + '::' + nrKey) && !cvByNr.has(nrKey)){
-              curCv.push(item);
-              cvSeen.add(idKey + '::' + nrKey);
-              cvByNr.add(nrKey);
-            }
+            if (!item || typeof item !== 'object') return;
+            _upsertCoffeeVaultRecordImpl(item, item.lastBrew || null, {
+              updatedAt:item.updatedAt != null ? item.updatedAt : Date.now(),
+              mergeByTimestamp:true
+            });
           });
-          localStorage.setItem(EXTRA_VAULT_COFFEES_KEY, JSON.stringify(curCv));
         } catch(e){}
         bagCandidates = bagCandidates.concat(incCoffeesArr.map(_coffeeVaultObjToPriceCandidate).filter(Boolean));
       }
@@ -8650,6 +9556,7 @@ var BTStorage;
     forgetHistory:_forgetHistoryImpl,
     keepInBrowser:_keepInBrowserImpl,
     appendTastingRow:row => _keepInBrowserImpl(row),
+    appendHistoryRow:row => _keepInBrowserImpl(row),
     setHistory:_setHistoryImpl,
     applyHistoryRows:_applyHistoryRowsImpl,
     deleteByIdx:_deleteByIdxImpl,
@@ -8674,8 +9581,8 @@ var BTStorage;
     loadPrices:_loadPricesImpl,
     savePrices:_savePricesImpl,
     forgetPrices:_forgetPricesImpl,
-    addPriceBag:(bag, again) => { const r = priceAdd(prState.list, bag, again !== false); if (r.added){ prState.list = r.list; prState.changes++; _persistPrices(); } return r; },
-    updatePriceBag:(idx, patch) => { const r = priceSet(prState.list, idx, patch); if (r.ok){ prState.list = r.list; prState.changes++; _persistPrices(); } return r; },
+    addPriceBag:(bag, again) => { const r = priceAdd(prState.list, bag, again !== false); if (r.added){ prState.list = r.list; prState.changes++; _persistPrices(); try { _upsertVaultFromPriceList([r.list[r.list.length - 1]]); } catch(e){} } return r; },
+    updatePriceBag:(idx, patch) => { const r = priceSet(prState.list, idx, patch); if (r.ok){ prState.list = r.list; prState.changes++; _persistPrices(); try { _upsertVaultFromPriceList([r.list[idx]]); } catch(e){} } return r; },
     finishPriceBag:(idx, fin) => { const r = priceSet(prState.list, idx, { finished:fin ? _todayIso() : '' }); if (r.ok){ prState.list = r.list; prState.changes++; _persistPrices(); } return r; },
     deletePriceBag:idx => { const e = prState.list[idx]; if (!e) return false; prState.undo = { e, at:idx, t:Date.now() }; prState.list = prState.list.filter((_, k) => k !== idx); prState.changes++; _persistPrices(); return true; },
     undoPriceDelete:() => { if (!prState.undo) return false; const l = prState.list.slice(); l.splice(Math.min(prState.undo.at, l.length), 0, prState.undo.e); prState.list = l; prState.changes = Math.max(0, prState.changes - 1); prState.undo = null; _persistPrices(); return true; },
@@ -8747,6 +9654,10 @@ var BTStorage;
     clearEverything:_clearEverythingImpl,
 
     /* Directive #132 — Zero Re-Entry Past Coffee Vault (<2 ms for 500+ rows) */
+    getCoffeesVaultList:_getCoffeesVaultListImpl,
+    saveCoffeesVaultList:_saveCoffeesVaultListImpl,
+    upsertCoffeeVaultRecord:_upsertCoffeeVaultRecordImpl,
+    hydrateCoffeeIntoApp:_hydrateCoffeeIntoAppImpl,
     buildUnifiedCoffeesIndex:_buildUnifiedCoffeesIndexImpl,
     selectSavedCoffee:_selectSavedCoffeeImpl,
     applyFreshBagRoastDate:_applyFreshBagRoastDateImpl,
@@ -8817,9 +9728,13 @@ function ensurePreMigrationSnapshot(opts){ return BTStorage.ensurePreMigrationSn
 function restoreSafetySnapshot(opts){ return BTStorage.restoreSafetySnapshot(opts); }
 function readStorageWithFallback(){ return BTStorage.readStorageWithFallback(); }
 function clearEverything(){ return BTStorage.clearEverything(); }
-function buildUnifiedCoffeesIndex(historyObjs, priceList){ return BTStorage.buildUnifiedCoffeesIndex(historyObjs, priceList); }
+function buildUnifiedCoffeesIndex(historyObjs, priceList, vaultList){ return BTStorage.buildUnifiedCoffeesIndex(historyObjs, priceList, vaultList); }
 function selectSavedCoffee(rec, opts){ return BTStorage.selectSavedCoffee(rec, opts); }
 function applyFreshBagRoastDate(recOrCoffee, isoRoastDate, bagOpts){ return BTStorage.applyFreshBagRoastDate(recOrCoffee, isoRoastDate, bagOpts); }
+function getCoffeesVaultList(){ return BTStorage.getCoffeesVaultList(); }
+function saveCoffeesVaultList(arr){ return BTStorage.saveCoffeesVaultList(arr); }
+function upsertCoffeeVaultRecord(coffeeIn, brewIn, opts){ return BTStorage.upsertCoffeeVaultRecord(coffeeIn, brewIn, opts); }
+function hydrateCoffeeIntoApp(recOrCoffee, opts){ return BTStorage.hydrateCoffeeIntoApp(recOrCoffee, opts); }
 /* ==========================================================================
    BeanTelligence v6.0 — 03-tactile-primitives.js
    Zero-Form Direct-Manipulation Tactile Coffee Instruments:
@@ -15190,6 +16105,159 @@ var BTBrewCellarShared = (function () {
     } catch (_) {}
   }
 
+  var VAULT_COFFEES_KEY = 'brew-and-cup-coffees-v1';
+
+  var COFFEE_ALL_FIELDS = [
+    'id', 'coffee_id', 'name', 'roaster', 'roaster_location', 'origin', 'region',
+    'farm', 'farm_or_station', 'producer', 'harvest_year', 'varietal', 'species',
+    'blend', 'process', 'process_sub', 'process_details', 'decaf', 'decaf_process',
+    'roast', 'roast_date', 'is_frozen', 'frozen_date', 'freeze_days_offset',
+    'elevation_m', 'elevText', 'density', 'bag_notes', 'notes', 'flavors',
+    'personal_note', 'bag_weight_g', 'remaining_g', 'price', 'currency',
+    'agtron', 'bean_agtron', 'ground_agtron', 'agtron_scale', 'roast_delta',
+    'psd_d10_um', 'psd_d50_um', 'psd_d90_um', 'psd_span', 'roasterGuide',
+    'recommended_rest_days'
+  ];
+
+  function normCoffeeIdentity(roaster, name) {
+    var r = String(roaster || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    var n = String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    return r + '|' + n;
+  }
+
+  function isMeaningfulBeanVal(v) {
+    if (v == null) return false;
+    if (typeof v === 'number') return isFinite(v);
+    if (typeof v === 'object') return Array.isArray(v) ? v.length > 0 : Object.keys(v).length > 0;
+    var s = String(v).trim();
+    return !!s && s.toLowerCase() !== 'unknown';
+  }
+
+  function getCoffeesVaultListSafe() {
+    try {
+      var st = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
+      if (st && typeof st.getCoffeesVaultList === 'function') {
+        var list = st.getCoffeesVaultList();
+        if (Array.isArray(list)) return list;
+      }
+      if (typeof localStorage !== 'undefined') {
+        var raw = localStorage.getItem(VAULT_COFFEES_KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  function findMatchingVaultRecord(rec, vaultList) {
+    if (!rec) return null;
+    var list = Array.isArray(vaultList) ? vaultList : getCoffeesVaultListSafe();
+    if (!list.length) return null;
+    var targetId = String(rec.coffee_id || rec.id || '').trim().toLowerCase();
+    var targetNr = normCoffeeIdentity(rec.roaster, rec.name || rec.coffee_name || rec.coffee);
+    var hasNr = targetNr && targetNr !== '|';
+    var best = null;
+    for (var i = 0; i < list.length; i++) {
+      var vr = list[i];
+      if (!vr || typeof vr !== 'object') continue;
+      var vId = String(vr.coffee_id || vr.id || '').trim().toLowerCase();
+      var vNr = normCoffeeIdentity(vr.roaster, vr.name || vr.coffee_name);
+      var idHit = !!(targetId && vId && targetId === vId);
+      var nrHit = !!(hasNr && vNr === targetNr);
+      if (idHit || nrHit) {
+        if (!best || (+vr.updatedAt || 0) >= (+best.updatedAt || 0)) {
+          best = vr;
+        }
+      }
+    }
+    return best;
+  }
+
+  function buildLastBrewSnapshot(brew) {
+    if (!brew || typeof brew !== 'object') return null;
+    var snap = {};
+    [
+      'method', 'style', 'filter', 'filterId', 'dose', 'water', 'ratio',
+      'tempC', 'tempF', 'grindUm', 'grind_um', 'grind_setting',
+      'grinderKey', 'grinderName', 'agitation', 'technique',
+      'waterType', 'pourNotes', 'machineProfile'
+    ].forEach(function (k) {
+      if (brew[k] != null && brew[k] !== '') snap[k] = brew[k];
+    });
+    if (snap.grindUm != null && snap.grind_um == null) snap.grind_um = snap.grindUm;
+    if (snap.grind_um != null && snap.grindUm == null) snap.grindUm = snap.grind_um;
+    return Object.keys(snap).length ? snap : null;
+  }
+
+  /* Save all entered Step 1 / AI Scan coffee fields into BTStorage lossless bean vault (with localStorage fallback). */
+  function upsertStep1CoffeeToVault(c, brew) {
+    if (!c || typeof c !== 'object') return null;
+    var rawNotes = String(c.bag_notes || c.notes || c.flavors || '').trim();
+    if (rawNotes) {
+      c.bag_notes = rawNotes;
+      c.notes = rawNotes;
+    }
+    var payload = {};
+    COFFEE_ALL_FIELDS.forEach(function (k) {
+      if (c[k] != null && c[k] !== '') payload[k] = c[k];
+    });
+    payload.id = c.id || c.coffee_id || ('cf_' + Date.now());
+    payload.coffee_id = payload.id;
+    payload.name = String(c.name || '').trim();
+    payload.roaster = String(c.roaster || '').trim();
+    if (rawNotes) {
+      payload.bag_notes = rawNotes;
+      payload.notes = rawNotes;
+    }
+    if (c.farm_or_station && !payload.farm) payload.farm = c.farm_or_station;
+    if (c.farm && !payload.farm_or_station) payload.farm_or_station = c.farm;
+
+    try {
+      var st = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
+      if (st && typeof st.upsertCoffeeVaultRecord === 'function') {
+        return st.upsertCoffeeVaultRecord(payload, brew);
+      }
+      if (typeof localStorage !== 'undefined') {
+        var list = getCoffeesVaultListSafe().slice();
+        var targetId = String(payload.coffee_id || '').trim().toLowerCase();
+        var targetNr = normCoffeeIdentity(payload.roaster, payload.name);
+        var matchIdx = -1;
+        for (var i = 0; i < list.length; i++) {
+          var ex = list[i];
+          if (!ex) continue;
+          var eId = String(ex.coffee_id || ex.id || '').trim().toLowerCase();
+          var eNr = normCoffeeIdentity(ex.roaster, ex.name);
+          if ((targetId && eId === targetId) || (targetNr !== '|' && eNr === targetNr)) {
+            matchIdx = i;
+            break;
+          }
+        }
+        var merged = matchIdx >= 0 ? Object.assign({}, list[matchIdx]) : {};
+        COFFEE_ALL_FIELDS.forEach(function (k) {
+          if (isMeaningfulBeanVal(payload[k])) merged[k] = payload[k];
+        });
+        if (payload.name) merged.name = payload.name;
+        if (payload.roaster) merged.roaster = payload.roaster;
+        merged.id = merged.id || payload.id;
+        merged.coffee_id = merged.coffee_id || merged.id;
+        if (merged.bag_notes) merged.notes = merged.bag_notes;
+        var bSnap = buildLastBrewSnapshot(brew);
+        if (bSnap) {
+          merged.lastMethod = bSnap.method || merged.lastMethod || '';
+          merged.lastBrew = Object.assign({}, merged.lastBrew || {}, bSnap);
+        }
+        merged.updatedAt = Date.now();
+        if (matchIdx >= 0) list[matchIdx] = merged;
+        else list.unshift(merged);
+        localStorage.setItem(VAULT_COFFEES_KEY, JSON.stringify(list));
+        return merged;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   function buildUnifiedCoffeesSafe() {
     var hObjs = getHistoryObjs();
     var pList = getPriceList();
@@ -15212,6 +16280,22 @@ var BTBrewCellarShared = (function () {
       if (id && String(id).trim()) return 'id:' + String(id).trim().toLowerCase();
       return nrKey(name, roaster);
     }
+    function mergeBeanFields(target, src, preferSrc) {
+      if (!target || !src) return;
+      COFFEE_ALL_FIELDS.forEach(function (f) {
+        if (f === 'id' || f === 'coffee_id' || f === 'name' || f === 'roaster') return;
+        if (!isMeaningfulBeanVal(src[f])) return;
+        if (preferSrc || !isMeaningfulBeanVal(target[f])) {
+          target[f] = src[f];
+        }
+      });
+      var notesVal = target.bag_notes || target.notes || target.flavors || '';
+      if (notesVal) {
+        target.bag_notes = notesVal;
+        target.notes = notesVal;
+      }
+    }
+
     pList.forEach(function (bag, idxBag) {
       if (!bag || !bag.coffee) return;
       var k = normKey(bag.coffee, bag.roaster, bag.coffee_id);
@@ -15224,9 +16308,20 @@ var BTBrewCellarShared = (function () {
           name: bag.coffee,
           roaster: bag.roaster || '',
           origin: bag.origin || '',
+          region: bag.region || '',
+          varietal: bag.varietal || '',
+          elevation_m: bag.elevation_m || '',
           process: bag.process || '',
-          roast: bag.rlevel || 'medium',
+          roast: bag.rlevel || bag.roast || 'medium',
           roast_date: bag.roast || bag.rdate || '',
+          is_frozen: bag.is_frozen || '',
+          frozen_date: bag.frozen_date || '',
+          bag_notes: bag.bag_notes || bag.notes || '',
+          notes: bag.bag_notes || bag.notes || '',
+          price: bag.price || '',
+          bag_weight_g: bag.size || '',
+          remaining_g: bag.rem_g != null ? bag.rem_g : '',
+          currency: bag.currency || '',
           decaf: '',
           openBag: !bag.finished ? Object.assign({ _idx: idxBag }, bag) : null,
           lockedBrew: null,
@@ -15239,10 +16334,29 @@ var BTBrewCellarShared = (function () {
         map[k] = existing;
         byNameRoaster[nr] = existing;
         order.push(existing);
-      } else if (!bag.finished && !existing.openBag) {
-        existing.openBag = Object.assign({ _idx: idxBag }, bag);
+      } else {
+        mergeBeanFields(existing, {
+          origin: bag.origin,
+          region: bag.region,
+          varietal: bag.varietal,
+          elevation_m: bag.elevation_m,
+          process: bag.process,
+          roast: bag.rlevel || bag.roast,
+          roast_date: bag.roast || bag.rdate,
+          is_frozen: bag.is_frozen,
+          frozen_date: bag.frozen_date,
+          bag_notes: bag.bag_notes || bag.notes,
+          price: bag.price,
+          bag_weight_g: bag.size,
+          remaining_g: bag.rem_g,
+          currency: bag.currency
+        }, false);
+        if (!bag.finished && !existing.openBag) {
+          existing.openBag = Object.assign({ _idx: idxBag }, bag);
+        }
       }
     });
+
     hObjs.forEach(function (row) {
       if (!row || !(row.coffee_name || row.roaster)) return;
       var k = normKey(row.coffee_name, row.roaster, row.coffee_id);
@@ -15263,7 +16377,8 @@ var BTBrewCellarShared = (function () {
           species: row.species || '',
           decaf: row.decaf || '',
           decaf_process: row.decaf_process || '',
-          bag_notes: row.bag_notes || '',
+          bag_notes: row.bag_notes || row.notes || '',
+          notes: row.bag_notes || row.notes || '',
           is_frozen: row.is_frozen || '',
           frozen_date: row.frozen_date || '',
           openBag: null,
@@ -15282,18 +16397,40 @@ var BTBrewCellarShared = (function () {
         byNameRoaster[nr] = rec;
         if (row.coffee_id && String(rec.coffee_id || '').indexOf('cf_') === 0) rec.coffee_id = row.coffee_id;
       }
-      ['origin', 'process', 'roast_date', 'elevation_m', 'varietal', 'species', 'decaf', 'decaf_process', 'bag_notes', 'is_frozen', 'frozen_date'].forEach(function (f) {
-        if (!rec[f] && row[f]) rec[f] = row[f];
-      });
-      if (row.roast_level && (!rec.roast || rec.roast === 'medium')) rec.roast = row.roast_level;
+      mergeBeanFields(rec, {
+        origin: row.origin,
+        process: row.process,
+        roast_date: row.roast_date,
+        elevation_m: row.elevation_m,
+        varietal: row.varietal,
+        species: row.species,
+        decaf: row.decaf,
+        decaf_process: row.decaf_process,
+        bag_notes: row.bag_notes || row.notes,
+        is_frozen: row.is_frozen,
+        frozen_date: row.frozen_date
+      }, false);
+      if (row.roast_level && (!rec.roast || rec.roast === 'medium' || rec.roast === 'unknown')) rec.roast = row.roast_level;
       if (row.recipe_adaptation_json) {
         try {
           var ad = JSON.parse(row.recipe_adaptation_json);
-          if (ad.bean_agtron != null) rec.bean_agtron = ad.bean_agtron;
-          if (ad.ground_agtron != null) rec.ground_agtron = ad.ground_agtron;
-          if (ad.roast_delta != null) rec.roast_delta = ad.roast_delta;
-          if (ad.psd_d50_um != null) rec.psd_d50_um = ad.psd_d50_um;
-          if (ad.roaster_guide != null) rec.roasterGuide = ad.roaster_guide;
+          if (ad && typeof ad === 'object') {
+            if (ad.agtron != null && rec.agtron == null) rec.agtron = ad.agtron;
+            if (ad.bean_agtron != null) rec.bean_agtron = ad.bean_agtron;
+            if (ad.ground_agtron != null) rec.ground_agtron = ad.ground_agtron;
+            if (ad.agtron_scale != null) rec.agtron_scale = ad.agtron_scale;
+            if (ad.roast_delta != null) rec.roast_delta = ad.roast_delta;
+            if (ad.psd_d10_um != null) rec.psd_d10_um = ad.psd_d10_um;
+            if (ad.psd_d50_um != null) rec.psd_d50_um = ad.psd_d50_um;
+            if (ad.psd_d90_um != null) rec.psd_d90_um = ad.psd_d90_um;
+            if (ad.psd_span != null) rec.psd_span = ad.psd_span;
+            if (ad.roaster_guide != null) rec.roasterGuide = ad.roaster_guide;
+            if (ad.roasterGuide != null) rec.roasterGuide = ad.roasterGuide;
+            if (ad.machine_profile != null && !rec.machineProfile) rec.machineProfile = ad.machine_profile;
+            if (ad.coffee_extra && typeof ad.coffee_extra === 'object') {
+              mergeBeanFields(rec, ad.coffee_extra, false);
+            }
+          }
         } catch (_) {}
       }
       rec.nCups = (rec.nCups || 0) + 1;
@@ -15309,6 +16446,53 @@ var BTBrewCellarShared = (function () {
         rec.latestBrew = row;
       }
     });
+
+    /* Pass 3: Fold lossless Bean Vault ('brew-and-cup-coffees-v1') */
+    var vaultList = getCoffeesVaultListSafe();
+    vaultList.forEach(function (vr) {
+      if (!vr || !(vr.name || vr.coffee_name || vr.roaster)) return;
+      var vName = vr.name || vr.coffee_name || 'Unnamed Coffee';
+      var vId = vr.coffee_id || vr.id || '';
+      var k = normKey(vName, vr.roaster, vId);
+      var nr = nrKey(vName, vr.roaster);
+      var rec = map[k] || byNameRoaster[nr];
+      if (!rec) {
+        rec = {
+          key: k,
+          coffee_id: vId || ('cf_' + order.length),
+          name: vName,
+          roaster: vr.roaster || '',
+          origin: vr.origin || '',
+          process: vr.process || '',
+          roast: vr.roast || 'medium',
+          roast_date: vr.roast_date || '',
+          decaf: vr.decaf || '',
+          openBag: null,
+          lockedBrew: null,
+          bestBrew: null,
+          latestBrew: null,
+          bestStars: 0,
+          nCups: 0,
+          methods: []
+        };
+        map[k] = rec;
+        byNameRoaster[nr] = rec;
+        order.push(rec);
+      } else {
+        map[k] = rec;
+        byNameRoaster[nr] = rec;
+        if (vId && (!rec.coffee_id || String(rec.coffee_id).indexOf('cf_') === 0)) rec.coffee_id = vId;
+      }
+      var preferVault = !rec.updatedAt || (+vr.updatedAt || 0) >= (+rec.updatedAt || 0);
+      mergeBeanFields(rec, vr, preferVault);
+      if (vr.lastBrew && typeof vr.lastBrew === 'object') {
+        rec.lastBrew = Object.assign({}, rec.lastBrew || {}, vr.lastBrew);
+      }
+      if (vr.lastMethod && !rec.lastMethod) rec.lastMethod = vr.lastMethod;
+      if (vr.updatedAt) rec.updatedAt = Math.max(+rec.updatedAt || 0, +vr.updatedAt || 0);
+      if (rec.lastMethod && rec.methods.indexOf(rec.lastMethod) < 0) rec.methods.push(rec.lastMethod);
+    });
+
     return order;
   }
 
@@ -15842,6 +17026,11 @@ var BTBrewCellarShared = (function () {
     getHistoryObjs: getHistoryObjs,
     getPriceList: getPriceList,
     savePriceList: savePriceList,
+    normCoffeeIdentity: normCoffeeIdentity,
+    isMeaningfulBeanVal: isMeaningfulBeanVal,
+    getCoffeesVaultListSafe: getCoffeesVaultListSafe,
+    findMatchingVaultRecord: findMatchingVaultRecord,
+    upsertStep1CoffeeToVault: upsertStep1CoffeeToVault,
     buildUnifiedCoffeesSafe: buildUnifiedCoffeesSafe,
     openPrecisionPad: openPrecisionPad,
     makeVernierOrDrum: makeVernierOrDrum,
@@ -16136,9 +17325,17 @@ if (typeof window !== 'undefined') {
     if (!txt) return null;
     if (isPromptEchoText(txt)) return { _isPromptEcho: true };
 
-    /* 1. Handle BT-code / bt1: / BT6: shared recipe/coffee codes */
-    if (/^(?:BT-code:|bt1:|BT6:)/i.test(txt)) {
+    /* 1. Handle BT6: / #bt6= / BT-code: / bt1: shared recipe/coffee codes */
+    if (/^(?:BT-code:|bt1:|BT6:|#?bt6=)/i.test(txt)) {
       try {
+        var bs = (typeof window !== 'undefined' && window.BTBrewStudio) ? window.BTBrewStudio : null;
+        if (bs && typeof bs.decodeAnySharedBrew === 'function') {
+          var dec6 = bs.decodeAnySharedBrew(txt);
+          var c6 = dec6 && (dec6.coffee || dec6.bean);
+          if (c6 && typeof c6 === 'object') {
+            return Object.assign({ _sourceKind: 'share_code' }, c6);
+          }
+        }
         var inn = (typeof window !== 'undefined' && window.BTInnovate) ? window.BTInnovate : null;
         if (inn && typeof inn.decodeAndLocalizePassport === 'function') {
           var loc = inn.decodeAndLocalizePassport(txt, S.getApp().prefs);
@@ -16275,23 +17472,31 @@ if (typeof window !== 'undefined') {
       }
     }
 
+    var prevBag = existIdx >= 0 ? (list[existIdx] || {}) : {};
+    var cleanNotes = String(c.bag_notes || c.notes || prevBag.bag_notes || prevBag.notes || '').trim();
+    var cleanElev = (isFinite(+c.elevation_m) && +c.elevation_m > 0) ? Math.round(+c.elevation_m) : (prevBag.elevation_m || '');
     var record = {
       kind: 'bag',
-      coffee_id: c.id || '',
+      coffee_id: c.id || prevBag.coffee_id || '',
       coffee: String(c.name).trim(),
-      roaster: String(c.roaster || '').trim(),
-      origin: c.origin || '',
-      process: c.process || '',
+      roaster: String(c.roaster || prevBag.roaster || '').trim(),
+      origin: (c.origin && String(c.origin).toLowerCase() !== 'unknown') ? c.origin : (prevBag.origin || ''),
+      region: c.region || prevBag.region || '',
+      process: (c.process && String(c.process).toLowerCase() !== 'unknown') ? c.process : (prevBag.process || ''),
+      varietal: c.varietal || prevBag.varietal || '',
+      elevation_m: cleanElev,
+      bag_notes: cleanNotes,
+      notes: cleanNotes,
       sym: sym,
-      currency: String(c.currency || 'USD').toUpperCase(),
-      price: hasPrice ? Math.round(+c.price * 100) / 100 : (existIdx >= 0 && +list[existIdx].price > 0 ? +list[existIdx].price : 20),
+      currency: String(c.currency || prevBag.currency || 'USD').toUpperCase(),
+      price: hasPrice ? Math.round(+c.price * 100) / 100 : (existIdx >= 0 && +prevBag.price > 0 ? +prevBag.price : 20),
       size: sizeG,
-      rem_g: existIdx >= 0 && list[existIdx].rem_g != null ? +list[existIdx].rem_g : sizeG,
+      rem_g: existIdx >= 0 && prevBag.rem_g != null ? +prevBag.rem_g : sizeG,
       unit: 'g',
-      date: existIdx >= 0 && list[existIdx].date ? list[existIdx].date : S.isoDaysAgo(0),
-      roast: c.roast_date || (existIdx >= 0 ? (list[existIdx].roast || '') : ''),
-      rdate: c.roast_date || (existIdx >= 0 ? (list[existIdx].rdate || list[existIdx].roast || '') : ''),
-      rlevel: c.roast || 'light'
+      date: existIdx >= 0 && prevBag.date ? prevBag.date : S.isoDaysAgo(0),
+      roast: c.roast_date || (existIdx >= 0 ? (prevBag.roast || '') : ''),
+      rdate: c.roast_date || (existIdx >= 0 ? (prevBag.rdate || prevBag.roast || '') : ''),
+      rlevel: (c.roast && c.roast !== 'unknown') ? c.roast : (prevBag.rlevel || 'light')
     };
 
     if (existIdx >= 0) list[existIdx] = Object.assign({}, list[existIdx], record);
@@ -16859,109 +18064,367 @@ if (typeof window !== 'undefined') {
     var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
     var selRes = null;
     if (storage && typeof storage.selectSavedCoffee === 'function') {
-      try { selRes = storage.selectSavedCoffee(rec, { seedRecipe: true }); } catch (_) {}
+      try { selRes = storage.selectSavedCoffee(rec, { seedRecipe: true, silent: true }); } catch (_) {}
     }
 
+    var vaultList = S.getCoffeesVaultListSafe();
+    var vaultRec = S.findMatchingVaultRecord(rec, vaultList) || {};
     var anchor = (selRes && selRes.anchorRow) || rec.lockedBrew || rec.bestBrew || rec.latestBrew || null;
-    a.coffee = a.coffee || {};
-    var c = a.coffee;
-    c.id = rec.coffee_id || rec.id || c.id || ('cf_' + Date.now());
-    c.name = rec.name || rec.coffee_name || (anchor && anchor.coffee_name) || 'Saved Specialty Coffee';
-    c.roaster = rec.roaster || (anchor && anchor.roaster) || '';
-    c.nameUnsure = '';
-    c.roasterUnsure = c.roaster ? '' : 'yes';
+    var openBag = rec.openBag || null;
+    var anchorAd = {};
+    if (anchor && anchor.recipe_adaptation_json) {
+      try {
+        var parsedAd = typeof anchor.recipe_adaptation_json === 'string'
+          ? JSON.parse(anchor.recipe_adaptation_json)
+          : anchor.recipe_adaptation_json;
+        if (parsedAd && typeof parsedAd === 'object') anchorAd = parsedAd;
+      } catch (_) {}
+    }
+    var anchorExtra = (anchorAd.coffee_extra && typeof anchorAd.coffee_extra === 'object') ? anchorAd.coffee_extra : {};
 
-    var rawOrigin = String(rec.origin || (anchor && anchor.origin) || '').trim();
-    if (rawOrigin && rawOrigin.toLowerCase() !== 'unknown') {
-      c.origin = rawOrigin;
-      c.originUnsure = '';
-      c.origin_unknown = '';
-    } else {
-      c.origin = '';
-      c.originUnsure = 'yes';
-      c.origin_unknown = 'yes';
+    /* Prefer vaultRec when its edit timestamp is >= rec.updatedAt, otherwise rec -> vaultRec -> anchor -> openBag */
+    var preferVault = !!(vaultRec && ((+vaultRec.updatedAt || 0) >= (+rec.updatedAt || 0)));
+    var orderedSources = preferVault
+      ? [vaultRec, rec, anchor, anchorExtra, anchorAd, openBag]
+      : [rec, vaultRec, anchor, anchorExtra, anchorAd, openBag];
+
+    function pickTextField(keys) {
+      var kList = Array.isArray(keys) ? keys : [keys];
+      for (var si = 0; si < orderedSources.length; si++) {
+        var src = orderedSources[si];
+        if (!src || typeof src !== 'object') continue;
+        for (var ki = 0; ki < kList.length; ki++) {
+          var v = src[kList[ki]];
+          if (v == null) continue;
+          var s = String(v).trim();
+          if (s && s.toLowerCase() !== 'unknown') return s;
+        }
+      }
+      return '';
+    }
+    function pickValField(keys) {
+      var kList = Array.isArray(keys) ? keys : [keys];
+      for (var si = 0; si < orderedSources.length; si++) {
+        var src = orderedSources[si];
+        if (!src || typeof src !== 'object') continue;
+        for (var ki = 0; ki < kList.length; ki++) {
+          var v = src[kList[ki]];
+          if (S.isMeaningfulBeanVal(v)) return v;
+        }
+      }
+      return '';
+    }
+    function pickPosNum(keys) {
+      var kList = Array.isArray(keys) ? keys : [keys];
+      for (var si = 0; si < orderedSources.length; si++) {
+        var src = orderedSources[si];
+        if (!src || typeof src !== 'object') continue;
+        for (var ki = 0; ki < kList.length; ki++) {
+          var n = parseFloat(src[kList[ki]]);
+          if (isFinite(n) && n > 0) return n;
+        }
+      }
+      return '';
     }
 
-    var rawProc = String(rec.process || (anchor && anchor.process) || '').trim();
-    var normP = normProcessKey(rawProc) || (rawProc && rawProc.toLowerCase() !== 'unknown' ? rawProc.toLowerCase() : '');
+    var nextC = {};
+    nextC.id = pickTextField(['coffee_id', 'id']) || ('cf_' + Date.now());
+    nextC.name = pickTextField(['name', 'coffee_name', 'coffee']) || 'Saved Specialty Coffee';
+    nextC.roaster = pickTextField('roaster');
+    nextC.roaster_location = pickTextField('roaster_location');
+    nextC.nameUnsure = '';
+    nextC.roasterUnsure = nextC.roaster ? '' : 'yes';
+
+    var rawOrigin = pickTextField('origin');
+    if (rawOrigin) {
+      nextC.origin = rawOrigin;
+      nextC.originUnsure = '';
+      nextC.origin_unknown = '';
+    } else {
+      nextC.origin = '';
+      nextC.originUnsure = 'yes';
+      nextC.origin_unknown = 'yes';
+    }
+    nextC.region = pickTextField('region');
+    nextC.farm_or_station = pickTextField(['farm_or_station', 'farm']);
+    nextC.farm = pickTextField(['farm', 'farm_or_station']) || nextC.farm_or_station;
+    nextC.producer = pickTextField('producer');
+    nextC.harvest_year = pickTextField('harvest_year');
+    nextC.blend = pickTextField('blend');
+
+    var rawProc = pickTextField('process');
+    var normP = normProcessKey(rawProc) || rawProc.toLowerCase();
     if (normP && normP !== 'unknown') {
-      c.process = normP;
-      c.processUnsure = '';
-      c.process_unknown = '';
+      nextC.process = normP;
+      nextC.processUnsure = '';
+      nextC.process_unknown = '';
     } else {
-      c.process = 'unknown';
-      c.processUnsure = 'yes';
-      c.process_unknown = 'yes';
+      nextC.process = 'unknown';
+      nextC.processUnsure = 'yes';
+      nextC.process_unknown = 'yes';
     }
+    nextC.process_sub = pickTextField('process_sub');
+    nextC.process_details = pickTextField('process_details');
 
-    var rawRoast = String(rec.roast || (anchor && anchor.roast_level) || '').trim();
-    var normR = normRoastKey(rawRoast, rec.ground_agtron || rec.agtron) || (rawRoast && rawRoast.toLowerCase() !== 'unknown' ? rawRoast.toLowerCase() : '');
+    var agGround = pickPosNum('ground_agtron');
+    var agBean = pickPosNum('bean_agtron');
+    var agAny = pickPosNum('agtron');
+    if (agAny !== '') nextC.agtron = agAny;
+    if (agBean !== '') nextC.bean_agtron = agBean;
+    if (agGround !== '') nextC.ground_agtron = agGround;
+    var agScale = pickTextField('agtron_scale');
+    nextC.agtron_scale = agScale || 'gourmet';
+    var rDelta = pickValField('roast_delta');
+    if (rDelta !== '') nextC.roast_delta = rDelta;
+
+    var rawRoast = pickTextField(['roast', 'roast_level', 'rlevel']);
+    var normR = normRoastKey(rawRoast, agGround || agAny) || rawRoast.toLowerCase();
     if (normR && normR !== 'unknown') {
-      c.roast = normR;
-      c.roastUnsure = '';
-      c.roast_unknown = '';
+      nextC.roast = normR;
+      nextC.roastUnsure = '';
+      nextC.roast_unknown = '';
     } else {
-      c.roast = 'unknown';
-      c.roastUnsure = 'yes';
-      c.roast_unknown = 'yes';
+      nextC.roast = 'unknown';
+      nextC.roastUnsure = 'yes';
+      nextC.roast_unknown = 'yes';
     }
 
-    c.roast_date = extraOpts.roastDateOverride != null ? extraOpts.roastDateOverride : (rec.roast_date || (rec.openBag && (rec.openBag.roast || rec.openBag.rdate)) || (anchor && anchor.roast_date) || '');
-    c.is_frozen = extraOpts.isFrozen != null ? (extraOpts.isFrozen ? 'yes' : '') : (rec.is_frozen || '');
-    c.frozen_date = extraOpts.frozenDateOverride != null ? extraOpts.frozenDateOverride : (extraOpts.isFrozen ? S.isoDaysAgo(0) : (rec.frozen_date || ''));
-    c.dateUnsure = (c.roast_date || c.is_frozen === 'yes') ? '' : 'yes';
-    c.date_unknown = c.dateUnsure;
+    nextC.roast_date = extraOpts.roastDateOverride != null
+      ? extraOpts.roastDateOverride
+      : pickTextField(['roast_date', 'roast', 'rdate']);
+    /* Do not confuse roast level string like 'light' from openBag.roast with an ISO date */
+    if (nextC.roast_date && !/^\d{4}-\d{2}-\d{2}/.test(nextC.roast_date)) {
+      var isoTry = normIsoDate(nextC.roast_date);
+      nextC.roast_date = isoTry || '';
+    }
+    if (!nextC.roast_date && extraOpts.roastDateOverride == null) {
+      var bagRDate = (openBag && (openBag.rdate || (/^\d{4}-\d{2}-\d{2}/.test(String(openBag.roast || '')) ? openBag.roast : ''))) || '';
+      var ancRDate = (anchor && anchor.roast_date) || '';
+      nextC.roast_date = normIsoDate(rec.roast_date || vaultRec.roast_date || bagRDate || ancRDate) || '';
+    }
+    nextC.is_frozen = extraOpts.isFrozen != null ? (extraOpts.isFrozen ? 'yes' : '') : pickTextField('is_frozen');
+    nextC.frozen_date = extraOpts.frozenDateOverride != null
+      ? extraOpts.frozenDateOverride
+      : (extraOpts.isFrozen ? S.isoDaysAgo(0) : pickTextField('frozen_date'));
+    var fzOffset = pickValField('freeze_days_offset');
+    if (fzOffset !== '') nextC.freeze_days_offset = fzOffset;
+    nextC.dateUnsure = (nextC.roast_date || nextC.is_frozen === 'yes') ? '' : 'yes';
+    nextC.date_unknown = nextC.dateUnsure;
 
-    var rawElev = rec.elevation_m || (anchor && anchor.elevation_m) || '';
-    if (isFinite(+rawElev) && +rawElev > 0) {
-      c.elevation_m = Math.round(+rawElev);
-      c.elevText = c.elevation_m + ' masl';
-      c.density = c.elevation_m >= 1950 ? 'very-high' : c.elevation_m >= 1600 ? 'high' : c.elevation_m >= 1200 ? 'mid' : 'low';
-      c.elevUnsure = '';
-      c.elev_unknown = '';
+    var rawElev = pickPosNum('elevation_m');
+    var rawDensity = pickTextField('density');
+    if (rawElev !== '' && rawElev > 0) {
+      nextC.elevation_m = Math.round(rawElev);
+      nextC.elevText = nextC.elevation_m + ' masl';
+      nextC.density = nextC.elevation_m >= 1950 ? 'very-high' : nextC.elevation_m >= 1600 ? 'high' : nextC.elevation_m >= 1200 ? 'mid' : 'low';
+      nextC.elevUnsure = '';
+      nextC.elev_unknown = '';
+    } else if (['low', 'mid', 'high', 'very-high'].indexOf(rawDensity) >= 0) {
+      nextC.elevation_m = '';
+      nextC.elevText = pickTextField('elevText');
+      nextC.density = rawDensity;
+      nextC.elevUnsure = '';
+      nextC.elev_unknown = '';
     } else {
-      c.elevation_m = '';
-      c.elevText = '';
-      c.density = 'unknown';
-      c.elevUnsure = 'yes';
-      c.elev_unknown = 'yes';
+      nextC.elevation_m = '';
+      nextC.elevText = '';
+      nextC.density = 'unknown';
+      nextC.elevUnsure = 'yes';
+      nextC.elev_unknown = 'yes';
     }
 
-    c.varietal = rec.varietal || (anchor && anchor.varietal) || '';
-    c.varietalUnsure = '';
-    c.species = rec.species || (anchor && anchor.species) || 'arabica';
-    c.decaf = rec.decaf || (anchor && anchor.decaf) || '';
-    c.decaf_process = rec.decaf_process || (anchor && anchor.decaf_process) || '';
-    c.bag_notes = rec.bag_notes || (anchor && anchor.bag_notes) || '';
-    c.notesUnsure = String(c.bag_notes || '').trim() ? '' : 'yes';
-    c.notes_unknown = c.notesUnsure;
-    if (rec.bean_agtron != null) c.bean_agtron = rec.bean_agtron;
-    if (rec.ground_agtron != null) c.ground_agtron = rec.ground_agtron;
-    if (rec.roast_delta != null) c.roast_delta = rec.roast_delta;
-    if (rec.psd_d50_um != null) c.psd_d50_um = rec.psd_d50_um;
-    if (rec.roasterGuide) c.roasterGuide = rec.roasterGuide;
-    c._v64Touched = 'yes';
-    c.answered = 'yes';
+    nextC.varietal = pickTextField('varietal');
+    nextC.varietalUnsure = '';
+    nextC.species = pickTextField('species') || 'arabica';
+    nextC.decaf = pickTextField('decaf');
+    nextC.decaf_process = pickTextField('decaf_process');
+
+    var rawBagNotes = pickTextField(['bag_notes', 'notes', 'flavors', 'tasting_notes']);
+    nextC.bag_notes = rawBagNotes;
+    nextC.notes = rawBagNotes;
+    nextC.notesUnsure = rawBagNotes ? '' : 'yes';
+    nextC.notes_unknown = nextC.notesUnsure;
+
+    nextC.personal_note = pickTextField('personal_note');
+    var bw = pickPosNum(['bag_weight_g', 'size']);
+    if (bw !== '') nextC.bag_weight_g = Math.round(bw);
+    var remG = pickValField(['remaining_g', 'rem_g']);
+    if (remG !== '' && isFinite(+remG)) nextC.remaining_g = +remG;
+    var pr = pickPosNum('price');
+    if (pr !== '') nextC.price = pr;
+    nextC.currency = pickTextField('currency') || 'USD';
+
+    var psd10 = pickPosNum('psd_d10_um'); if (psd10 !== '') nextC.psd_d10_um = psd10;
+    var psd50 = pickPosNum('psd_d50_um'); if (psd50 !== '') nextC.psd_d50_um = psd50;
+    var psd90 = pickPosNum('psd_d90_um'); if (psd90 !== '') nextC.psd_d90_um = psd90;
+    var psdSpan = pickPosNum('psd_span'); if (psdSpan !== '') nextC.psd_span = psdSpan;
+
+    var rgVal = pickValField(['roasterGuide', 'roaster_guide', 'roaster_brew_guide']);
+    if (rgVal && typeof rgVal === 'object') nextC.roasterGuide = rgVal;
+    var restVal = pickValField('recommended_rest_days');
+    if (restVal !== '') nextC.recommended_rest_days = restVal;
+
+    nextC._v64Touched = 'yes';
+    nextC.answered = 'yes';
+    nextC._loadedCoffeeSig = S.normCoffeeIdentity(nextC.roaster, nextC.name);
+    a.coffee = nextC;
+    var c = a.coffee;
+
+    /* Clear transient UI search & disclosure state so previous coffee inputs never hide newly loaded fields */
+    if (typeof ceUi !== 'undefined' && ceUi) {
+      ceUi.originSearch = '';
+      ceUi.varietalSearch = '';
+      ceUi.customNoteDraft = '';
+      ceUi.moreDetailsOverride = null;
+      ceUi.moreDetailsCoffeeId = String(c.id || '');
+      ceUi.validationPromptOpen = false;
+      ceUi.pulseFieldKey = '';
+      ceUi.showDatePicker = false;
+      ceUi.justLockedNotes = Object.create(null);
+    }
+    if (typeof document !== 'undefined') {
+      var noteInps = document.querySelectorAll('input[data-bt-bag-note-input="1"]');
+      for (var ni = 0; ni < noteInps.length; ni++) noteInps[ni].value = '';
+    }
 
     a.brew = a.brew || {};
+    var lastBrew = (vaultRec && vaultRec.lastBrew && typeof vaultRec.lastBrew === 'object')
+      ? vaultRec.lastBrew
+      : ((rec.lastBrew && typeof rec.lastBrew === 'object') ? rec.lastBrew : ((selRes && selRes.lastBrew) || null));
+    var isGoldenLocked = !!(anchor && (anchor.dial_locked === 'yes' || anchor.dial_locked === '1')) || !!(rec.dial_locked === 'yes' && !anchor);
+    var pendingNext = (!isGoldenLocked && (
+      (selRes && (selRes.nextRecipe || selRes.adaptedRecipe)) ||
+      (vaultRec && vaultRec.pendingNextRecipe) ||
+      rec.pendingNextRecipe ||
+      (anchorAd && anchorAd.next_recipe)
+    )) || null;
+    var existingDa = a.brew && a.brew.dialAdaptation;
+    if (existingDa && existingDa.adapted === false && existingDa.locked !== true) {
+      delete a.brew.dialAdaptation;
+      existingDa = null;
+    }
+    var daFromSel = (selRes && selRes.dialAdaptation) || existingDa || null;
+    var isRealDialAdapt = !!(daFromSel && (daFromSel.adapted === true || daFromSel.locked === true));
+    var selDidAdapt = isRealDialAdapt || !!(selRes && (selRes.nextRecipe || selRes.adaptedRecipe || selRes.adaptedFromClosedLoop));
+
+    /* Always restore non-recipe hardware/setup metadata cleanly */
     if (anchor) {
       if (storage && typeof storage.useCoffeeFromRow === 'function' && !selRes) {
         try { storage.useCoffeeFromRow(anchor, true, true); } catch (_) {}
       }
       var mk = (selRes && selRes.methodKey) || (typeof resolveMethod === 'function' ? resolveMethod(anchor.brew_method) : '') || String(anchor.brew_method || 'v60').toLowerCase();
       if (mk) a.brew.method = mk;
-      if (+anchor.brew_dose_g > 0) a.brew.dose = +anchor.brew_dose_g;
-      if (+anchor.brew_water_g > 0) a.brew.water = +anchor.brew_water_g;
-      if (+anchor.brew_ratio > 0) a.brew.ratio = +anchor.brew_ratio;
-      if (+anchor.brew_temp_c > 0) a.brew.tempC = +anchor.brew_temp_c;
-      else if (+anchor.brew_temp_f > 0) a.brew.tempC = Math.round(((+anchor.brew_temp_f - 32) * 5 / 9) * 2) / 2;
-      if (+anchor.brew_grind_target_um > 0) a.brew.grindUm = +anchor.brew_grind_target_um;
-      if (anchor.brew_grind_setting) a.brew.grind_setting = anchor.brew_grind_setting;
+      if (anchor.grinder) a.brew.grinderKey = anchor.grinder;
+      if (anchor.grinder_name) a.brew.grinderName = anchor.grinder_name;
+      if (anchor.filter_type || anchor.filter) a.brew.filter = anchor.filter_type || anchor.filter;
+      if (anchor.filter_id || anchorAd.filter_id) a.brew.filterId = anchor.filter_id || anchorAd.filter_id;
       if (anchor.brew_style) a.brew.style = anchor.brew_style;
-      if (anchor.dial_locked === 'yes' || anchor.dial_locked === '1') a.recipeLocked = true;
+      if (anchor.agitation) a.brew.agitation = anchor.agitation;
+      if (anchor.technique) a.brew.technique = anchor.technique;
+      if (anchor.water_type) a.brew.waterType = anchor.water_type;
+      if (anchor.pour_notes) a.brew.pourNotes = anchor.pour_notes;
+      if (anchorAd.machine_profile) a.brew.machineProfile = anchorAd.machine_profile;
+    }
+    if (lastBrew) {
+      var lbMk = lastBrew.method ? ((typeof resolveMethod === 'function' ? resolveMethod(lastBrew.method) : '') || String(lastBrew.method).toLowerCase()) : '';
+      if (lbMk && (!anchor || !a.brew.method)) a.brew.method = lbMk;
+      [
+        'style', 'filter', 'filterId', 'grinderKey', 'grinderName',
+        'agitation', 'technique', 'waterType', 'pourNotes', 'machineProfile'
+      ].forEach(function (bk) {
+        if ((!anchor || !a.brew[bk]) && lastBrew[bk] != null && lastBrew[bk] !== '') {
+          a.brew[bk] = lastBrew[bk];
+        }
+      });
     }
 
-    var prov = (selRes && selRes.provenanceLabel) ? S.stripEmojis(selRes.provenanceLabel) : formatProvenanceBadge(anchor);
+    function applyRecipeNumericParams(src) {
+      if (!src || typeof src !== 'object') return;
+      var mRaw = src.methodKey || src.method || src.brew_method;
+      if (mRaw) {
+        var mNorm = (typeof resolveMethod === 'function' ? resolveMethod(mRaw) : '') || String(mRaw).toLowerCase();
+        if (mNorm) a.brew.method = mNorm;
+      }
+      var dVal = +(src.dose != null ? src.dose : (src.doseG != null ? src.doseG : src.brew_dose_g));
+      var wVal = +(src.water != null ? src.water : (src.waterG != null ? src.waterG : src.brew_water_g));
+      var rVal = +(src.ratio != null ? src.ratio : src.brew_ratio);
+      var tcVal = +(src.tempC != null ? src.tempC : src.brew_temp_c);
+      var tfVal = +(src.tempF != null ? src.tempF : src.brew_temp_f);
+      var gUmVal = +(src.grindUm != null ? src.grindUm : (src.grind_um != null ? src.grind_um : (src.d50Um != null ? src.d50Um : src.brew_grind_target_um)));
+      var gsObj = (src.grinderSetting && typeof src.grinderSetting === 'object') ? src.grinderSetting : null;
+      var gSet = src.grind_setting != null ? src.grind_setting
+        : (src.grindSetting != null && typeof src.grindSetting !== 'object' ? src.grindSetting
+          : (gsObj ? (gsObj.shortDisplay || gsObj.label || gsObj.setting || '')
+            : (src.brew_grind_setting != null ? src.brew_grind_setting : src.clicks)));
+      if (isFinite(dVal) && dVal > 0) a.brew.dose = dVal;
+      if (isFinite(wVal) && wVal > 0) a.brew.water = wVal;
+      if (isFinite(rVal) && rVal > 0) a.brew.ratio = rVal;
+      if (isFinite(tcVal) && tcVal > 0) {
+        a.brew.tempC = tcVal;
+        a.brew.tempF = (isFinite(tfVal) && tfVal > 0) ? tfVal : Math.round((tcVal * 9 / 5 + 32) * 10) / 10;
+      } else if (isFinite(tfVal) && tfVal > 0) {
+        a.brew.tempF = tfVal;
+        a.brew.tempC = Math.round(((tfVal - 32) * 5 / 9) * 2) / 2;
+      }
+      if (isFinite(gUmVal) && gUmVal > 0) {
+        a.brew.grindUm = gUmVal;
+        a.brew.grind_um = gUmVal;
+      }
+      if (gSet != null && gSet !== '') a.brew.grind_setting = String(gSet);
+      if (src.style) a.brew.style = src.style;
+      if (src.filterId) a.brew.filterId = src.filterId;
+    }
+
+    a.recipeLocked = isGoldenLocked;
+    if (isGoldenLocked) {
+      applyRecipeNumericParams(anchor);
+      a.dialNote = null;
+      if (a.brew) delete a.brew.dialAdaptation;
+    } else if (selDidAdapt) {
+      /* BTStorage.selectSavedCoffee already computed/loaded the adapted next recipe onto a.brew */
+      var adaptedNote = (a.brew && a.brew.dialAdaptation) || (selRes && selRes.dialAdaptation) || null;
+      if (adaptedNote && adaptedNote.adapted !== false) a.dialNote = adaptedNote;
+      if (!a.brew.grind_um && a.brew.grindUm) a.brew.grind_um = a.brew.grindUm;
+    } else if (pendingNext && typeof pendingNext === 'object') {
+      applyRecipeNumericParams(pendingNext);
+      var dialAd = (vaultRec && vaultRec.dialAdaptation) || rec.dialAdaptation || (anchorAd && anchorAd.dial_adaptation) || null;
+      if (dialAd && dialAd.adapted !== false) {
+        a.dialNote = dialAd;
+        a.brew.dialAdaptation = dialAd;
+      }
+    } else {
+      var coreV6 = (typeof window !== 'undefined' && window.BTCoreV6) ? window.BTCoreV6 : null;
+      var closedLoopRes = null;
+      if (coreV6 && typeof coreV6.computeClosedLoopNextRecipe === 'function') {
+        try {
+          closedLoopRes = coreV6.computeClosedLoopNextRecipe(c, a.brew.method || 'v60', getHistoryObjs(), {
+            grinderKey: a.brew.grinderKey || (a.gear && a.gear.grinderKey) || '',
+            filterId: a.brew.filterId || ''
+          });
+        } catch (_) { closedLoopRes = null; }
+      }
+      var clAdapted = !!(closedLoopRes && typeof closedLoopRes === 'object' &&
+        (closedLoopRes.adapted === true || (closedLoopRes.dialAdaptation && closedLoopRes.dialAdaptation.adapted === true)));
+      if (clAdapted && (closedLoopRes.grindUm > 0 || closedLoopRes.d50Um > 0 || closedLoopRes.dose > 0 || closedLoopRes.doseG > 0)) {
+        applyRecipeNumericParams(closedLoopRes);
+        var clNote = closedLoopRes.dialAdaptation || closedLoopRes;
+        a.dialNote = clNote;
+        a.brew.dialAdaptation = clNote;
+      } else {
+        if (anchor) applyRecipeNumericParams(anchor);
+        if (lastBrew) {
+          if (!anchor) applyRecipeNumericParams(lastBrew);
+          if (!a.brew.grind_um && a.brew.grindUm) a.brew.grind_um = a.brew.grindUm;
+        }
+        if (a.brew && a.brew.dialAdaptation && a.brew.dialAdaptation.adapted === false) {
+          delete a.brew.dialAdaptation;
+        }
+      }
+    }
+
+    var prov = (selRes && selRes.provenanceLabel)
+      ? S.stripEmojis(selRes.provenanceLabel)
+      : (anchor ? formatProvenanceBadge(anchor) : (lastBrew ? 'Loaded saved coffee & last recipe' : 'Loaded saved coffee'));
     if (extraOpts.freshNote) prov += ' · ' + extraOpts.freshNote;
     st.vaultProvenance = prov;
     c.provenanceLabel = prov;
@@ -17165,6 +18628,7 @@ if (typeof window !== 'undefined') {
         return;
       }
 
+      var prevSig = S.normCoffeeIdentity(a.coffee.roaster, a.coffee.name);
       var shouldSyncPrice = false;
       checkedItems.forEach(function (it) {
         if (!it.patch) return;
@@ -17177,20 +18641,62 @@ if (typeof window !== 'undefined') {
         });
       });
 
+      if (!String(a.coffee.bag_notes || '').trim() && String(a.coffee.notes || '').trim()) {
+        a.coffee.bag_notes = String(a.coffee.notes).trim();
+      }
+      a.coffee.notes = a.coffee.bag_notes || '';
+      if (String(a.coffee.bag_notes || '').trim()) {
+        a.coffee.notesUnsure = '';
+        a.coffee.notes_unknown = '';
+      }
+      if (String(a.coffee.origin || '').trim() && String(a.coffee.origin).toLowerCase() !== 'unknown') {
+        a.coffee.originUnsure = '';
+        a.coffee.origin_unknown = '';
+      }
+      if (a.coffee.roast && a.coffee.roast !== 'unknown') {
+        a.coffee.roastUnsure = '';
+        a.coffee.roast_unknown = '';
+      }
+      if (a.coffee.process && a.coffee.process !== 'unknown') {
+        a.coffee.processUnsure = '';
+        a.coffee.process_unknown = '';
+      }
+      if (a.coffee.roast_date || a.coffee.is_frozen === 'yes') {
+        a.coffee.dateUnsure = '';
+        a.coffee.date_unknown = '';
+      }
+      if ((isFinite(+a.coffee.elevation_m) && +a.coffee.elevation_m > 0) || ['low', 'mid', 'high', 'very-high'].indexOf(a.coffee.density) >= 0) {
+        a.coffee.elevUnsure = '';
+        a.coffee.elev_unknown = '';
+      }
+      if (String(a.coffee.varietal || '').trim()) {
+        a.coffee.varietalUnsure = '';
+      }
+
       a.coffee.scanned = 'yes';
       a.coffee.scannedFrom = rm.sourceKind || 'scan_v6';
       a.coffee.from_bag_photo = rm.fromBagPhoto || [];
       a.coffee.from_official_web = rm.fromOfficialWeb || [];
       a.coffee.source_urls = rm.sourceUrls || [];
       a.coffee.unclear = rm.unclear || [];
-      a.coffee.id = 'cf_' + Date.now();
+      var nextScanSig = S.normCoffeeIdentity(a.coffee.roaster, a.coffee.name);
+      var keepExistingId = !a.freshCoffeeMode && String(a.coffee.id || '').trim() && prevSig !== '|' && prevSig === nextScanSig;
+      if (!keepExistingId) {
+        a.coffee.id = 'cf_' + Date.now();
+        a.attempt = 0;
+        a.recipeLocked = false;
+        a.dialNote = null;
+      }
+      a.coffee._loadedCoffeeSig = nextScanSig;
       a.coffee._v64Touched = 'yes';
       a.coffee.answered = getMissingRequiredFields(a.coffee).length === 0 ? 'yes' : '';
       ceUi.validationPromptOpen = false;
       ceUi.pulseFieldKey = '';
-      a.attempt = 0;
-      a.recipeLocked = false;
-      a.dialNote = null;
+      ceUi.originSearch = '';
+      ceUi.varietalSearch = '';
+      ceUi.customNoteDraft = '';
+      ceUi.moreDetailsOverride = null;
+      ceUi.moreDetailsCoffeeId = String(a.coffee.id || '');
       a.cupBrew = null;
       a.freshCoffeeMode = false;
       if (a.brew) {
@@ -17209,6 +18715,7 @@ if (typeof window !== 'undefined') {
       if (shouldSyncPrice) {
         syncBagPriceToLedger(a.coffee);
       }
+      S.upsertStep1CoffeeToVault(a.coffee, a.brew);
 
       pasteUi.rawText = '';
       pasteUi.reviewModel = null;
@@ -17698,13 +19205,13 @@ if (typeof window !== 'undefined') {
       return { state: 'needed', valueText: 'Needed' };
     }
     if (key === 'notes') {
-      if (c.notesUnsure === 'yes' || c.notes_unknown === 'yes') {
-        return { state: 'unsure', valueText: 'Don\'t Know' };
-      }
-      var nList = parseBagNotesList(c.bag_notes);
+      var nList = parseBagNotesList(c.bag_notes || c.notes);
       if (nList.length > 0) {
         var nTxt = nList.slice(0, 3).join(', ') + (nList.length > 3 ? ' +' + (nList.length - 3) : '');
         return { state: 'answered', valueText: nTxt };
+      }
+      if (c.notesUnsure === 'yes' || c.notes_unknown === 'yes') {
+        return { state: 'unsure', valueText: 'Don\'t Know' };
       }
       return { state: 'needed', valueText: 'Needed' };
     }
@@ -17805,13 +19312,54 @@ if (typeof window !== 'undefined') {
 
   function fillRemainingAsDontKnow(c) {
     if (!c) return 0;
+    /* Mirror notes <-> bag_notes and clear bogus unsure flags for any populated field */
+    var rawNotes = String(c.bag_notes || c.notes || c.flavors || '').trim();
+    if (rawNotes) {
+      c.bag_notes = rawNotes;
+      c.notes = rawNotes;
+      c.notesUnsure = '';
+      c.notes_unknown = '';
+    }
+    if (String(c.origin || '').trim() && String(c.origin).trim().toLowerCase() !== 'unknown') {
+      c.originUnsure = '';
+      c.origin_unknown = '';
+    }
+    if (c.roast && c.roast !== 'unknown') {
+      c.roastUnsure = '';
+      c.roast_unknown = '';
+    }
+    if (c.process && c.process !== 'unknown') {
+      c.processUnsure = '';
+      c.process_unknown = '';
+    }
+    if (c.roast_date || c.is_frozen === 'yes') {
+      c.dateUnsure = '';
+      c.date_unknown = '';
+    }
+    if ((isFinite(+c.elevation_m) && +c.elevation_m > 0) || ['low', 'mid', 'high', 'very-high'].indexOf(c.density) >= 0) {
+      c.elevUnsure = '';
+      c.elev_unknown = '';
+    }
+    if (String(c.varietal || '').trim()) {
+      c.varietalUnsure = '';
+    }
+
     var missing = getMissingRequiredFields(c);
+    var filledCount = 0;
     missing.forEach(function (f) {
+      if (f.key === 'name' && (String(c.name || '').trim() || String(c.roaster || '').trim())) return;
+      if (f.key === 'roast' && c.roast && c.roast !== 'unknown') return;
+      if (f.key === 'process' && c.process && c.process !== 'unknown') return;
+      if (f.key === 'origin' && String(c.origin || '').trim() && String(c.origin).trim().toLowerCase() !== 'unknown') return;
+      if (f.key === 'date' && (c.roast_date || c.is_frozen === 'yes')) return;
+      if (f.key === 'elevation' && ((isFinite(+c.elevation_m) && +c.elevation_m > 0) || ['low', 'mid', 'high', 'very-high'].indexOf(c.density) >= 0)) return;
+      if (f.key === 'notes' && (String(c.bag_notes || '').trim() || String(c.notes || '').trim())) return;
       setFieldDontKnow(c, f.key, true);
+      filledCount++;
     });
     ceUi.validationPromptOpen = false;
     ceUi.pulseFieldKey = '';
-    return missing.length;
+    return filledCount;
   }
 
   function buildCoffeeFieldHelpSheet(payload) {
@@ -17997,6 +19545,7 @@ if (typeof window !== 'undefined') {
         }
       });
     c.bag_notes = cur.join(', ');
+    c.notes = c.bag_notes;
     if (cur.length > 0) {
       c.notesUnsure = '';
       c.notes_unknown = '';
@@ -18089,6 +19638,7 @@ if (typeof window !== 'undefined') {
       var low = String(noteName || '').toLowerCase();
       var next = parseBagNotesList(c.bag_notes).filter(function (x) { return x.toLowerCase() !== low; });
       c.bag_notes = next.join(', ');
+      c.notes = c.bag_notes;
       delete ceUi.justLockedNotes[low];
       S.haptic('tick');
       paintTrayAndChips();
@@ -18116,6 +19666,7 @@ if (typeof window !== 'undefined') {
               text: 'Clear all',
               onclick: function () {
                 c.bag_notes = '';
+                c.notes = '';
                 ceUi.justLockedNotes = Object.create(null);
                 S.haptic('tick');
                 paintTrayAndChips();
@@ -19229,10 +20780,12 @@ if (typeof window !== 'undefined') {
       c.nameUnsure = '';
     }
 
-    var initialCoffeeSig = [String(c.roaster || '').trim().toLowerCase(), String(c.name || '').trim().toLowerCase()].join('::');
+    var initialCoffeeSig = c._loadedCoffeeSig || S.normCoffeeIdentity(c.roaster, c.name);
 
     function resetToFreshBlankCoffee() {
       ceUi.customNoteDraft = '';
+      ceUi.originSearch = '';
+      ceUi.varietalSearch = '';
       ceUi.aiQuery = '';
       ceUi.freshRolloverKey = '';
       ceUi.selectedArchetype = '';
@@ -19246,16 +20799,21 @@ if (typeof window !== 'undefined') {
         id: 'cf_' + Date.now(),
         name: '',
         roaster: '',
+        roaster_location: '',
         nameUnsure: '',
         roasterUnsure: '',
         origin: '',
         region: '',
+        farm: '',
         producer: '',
         farm_or_station: '',
         harvest_year: '',
+        blend: '',
         originUnsure: '',
         origin_unknown: '',
         process: '',
+        process_sub: '',
+        process_details: '',
         processUnsure: '',
         process_unknown: '',
         roast: '',
@@ -19275,22 +20833,34 @@ if (typeof window !== 'undefined') {
         decaf: '',
         decaf_process: '',
         bag_notes: '',
+        notes: '',
+        personal_note: '',
         notesUnsure: '',
         notes_unknown: '',
         bag_weight_g: '',
+        remaining_g: '',
         price: '',
+        currency: 'USD',
         agtron: '',
         bean_agtron: '',
         ground_agtron: '',
         agtron_scale: 'gourmet',
+        roast_delta: '',
+        psd_d10_um: '',
+        psd_d50_um: '',
+        psd_d90_um: '',
+        psd_span: '',
+        roasterGuide: null,
+        recommended_rest_days: '',
         is_frozen: '',
         frozen_date: '',
+        freeze_days_offset: '',
         answered: ''
       };
       a.coffee = freshC;
       c = a.coffee;
       ceUi.moreDetailsCoffeeId = String(c.id || '');
-      initialCoffeeSig = '::';
+      initialCoffeeSig = '|';
       a.attempt = 0;
       a.recipeLocked = false;
       a.dialNote = null;
@@ -19364,16 +20934,25 @@ if (typeof window !== 'undefined') {
       if (c.elevUnsure === 'yes') {
         c.elev_unknown = 'yes';
       }
-      if (c.notesUnsure === 'yes') {
+      if (c.notesUnsure === 'yes' && !String(c.bag_notes || c.notes || '').trim()) {
         c.notes_unknown = 'yes';
+      } else if (String(c.bag_notes || c.notes || '').trim()) {
+        c.bag_notes = String(c.bag_notes || c.notes || '').trim();
+        c.notes = c.bag_notes;
+        c.notesUnsure = '';
+        c.notes_unknown = '';
       }
-      var nextCoffeeSig = [String(c.roaster || '').trim().toLowerCase(), String(c.name || '').trim().toLowerCase()].join('::');
-      if (a.freshCoffeeMode || (nextCoffeeSig !== initialCoffeeSig)) {
+      var nextCoffeeSig = S.normCoffeeIdentity(c.roaster, c.name);
+      var loadedSig = c._loadedCoffeeSig || initialCoffeeSig;
+      var sameIdentity = !a.freshCoffeeMode && String(c.id || '').trim() && (nextCoffeeSig === loadedSig || nextCoffeeSig === initialCoffeeSig);
+      if (!sameIdentity) {
         c.id = 'cf_' + Date.now();
         a.attempt = 0;
         a.recipeLocked = false;
         a.dialNote = null;
       }
+      c._loadedCoffeeSig = nextCoffeeSig;
+      initialCoffeeSig = nextCoffeeSig;
       a.freshCoffeeMode = false;
       a.cupBrew = null;
       if (a.brew) {
@@ -19392,6 +20971,15 @@ if (typeof window !== 'undefined') {
           window.BTTasteStep.resetSession();
         }
       } catch (_) {}
+      /* Save all entered Step 1 fields to lossless Bean Vault (even if price & bag_weight_g are blank) */
+      if ((String(c.name || '').trim() && c.name !== 'Unlabeled Coffee') ||
+          String(c.roaster || '').trim() ||
+          String(c.origin || '').trim() ||
+          String(c.bag_notes || '').trim() ||
+          String(c.varietal || '').trim() ||
+          (isFinite(+c.elevation_m) && +c.elevation_m > 0)) {
+        S.upsertStep1CoffeeToVault(c, a.brew);
+      }
       if ((isFinite(+c.price) && +c.price > 0) || (isFinite(+c.bag_weight_g) && +c.bag_weight_g > 0)) {
         syncBagPriceToLedger(c);
       }
@@ -19405,6 +20993,8 @@ if (typeof window !== 'undefined') {
     function applyArchetypePreset(ar) {
       ceUi.selectedArchetype = ar.id;
       ceUi.customNoteDraft = '';
+      ceUi.originSearch = '';
+      ceUi.varietalSearch = '';
       ceUi.validationPromptOpen = false;
       ceUi.pulseFieldKey = '';
       ceUi.moreDetailsOverride = null;
@@ -19428,6 +21018,9 @@ if (typeof window !== 'undefined') {
       c.date_unknown = '';
       c.varietalUnsure = '';
       Object.keys(ar.data).forEach(function (k) { c[k] = ar.data[k]; });
+      c.notes = c.bag_notes || c.notes || '';
+      c._loadedCoffeeSig = S.normCoffeeIdentity(c.roaster, c.name);
+      initialCoffeeSig = c._loadedCoffeeSig;
       if (ar.data.dateUnsure === 'yes') {
         c.dateUnsure = 'yes';
         c.date_unknown = 'yes';
@@ -19632,6 +21225,7 @@ if (typeof window !== 'undefined') {
     _activeStep1Hook = function () {
       if (root.isConnected) {
         c = S.getApp().coffee || c;
+        initialCoffeeSig = c._loadedCoffeeSig || S.normCoffeeIdentity(c.roaster, c.name);
         repaintAll();
         return true;
       }
@@ -19957,15 +21551,19 @@ if (typeof window !== 'undefined') {
       String(c.region || '').trim() ||
       String(c.producer || '').trim() ||
       String(c.farm_or_station || '').trim() ||
+      String(c.farm || '').trim() ||
+      String(c.roaster_location || '').trim() ||
       String(c.varietal || '').trim() ||
       (isFinite(+c.elevation_m) && +c.elevation_m > 0) ||
       (['low', 'mid', 'high', 'very-high'].indexOf(c.density) >= 0) ||
       String(c.harvest_year || '').trim() ||
       (isFinite(+c.bag_weight_g) && +c.bag_weight_g > 0) ||
+      (isFinite(+c.remaining_g) && +c.remaining_g > 0) ||
       (isFinite(+c.price) && +c.price > 0) ||
+      String(c.personal_note || '').trim() ||
       c.decaf === 'yes' || c.decaf === 'half-caf' ||
       c.process === 'wet-hulled' ||
-      (!omniConnectedNow && c.agtron_scale !== 'omni' && ((isFinite(+c.bean_agtron) && +c.bean_agtron > 0) || (isFinite(+c.ground_agtron) && +c.ground_agtron > 0)))
+      (!omniConnectedNow && c.agtron_scale !== 'omni' && ((isFinite(+c.agtron) && +c.agtron > 0) || (isFinite(+c.bean_agtron) && +c.bean_agtron > 0) || (isFinite(+c.ground_agtron) && +c.ground_agtron > 0)))
     );
     var isMoreOpen = ceUi.moreDetailsOverride !== null ? ceUi.moreDetailsOverride : hasMorePopulated;
 
@@ -20949,7 +22547,7 @@ if (typeof window !== 'undefined') {
         var qLow = String(vaultUi.query || '').trim().toLowerCase();
         var filtered = allRecs.filter(function (r) {
           if (qLow) {
-            var hay = [r.name, r.roaster, r.origin, r.process, r.varietal, r.bag_notes].join(' ').toLowerCase();
+            var hay = [r.name, r.roaster, r.origin, r.region, r.producer, r.process, r.varietal, r.bag_notes, r.notes, r.flavors].join(' ').toLowerCase();
             if (hay.indexOf(qLow) < 0) return false;
           }
           var rl = String(r.roast || '').toLowerCase();
@@ -21026,17 +22624,52 @@ if (typeof window !== 'undefined') {
             );
           }
 
+          var rowNotesStr = String(rec.bag_notes || rec.notes || rec.flavors || (anchor && anchor.bag_notes) || '').trim();
+          var rowNotesList = parseBagNotesList(rowNotesStr);
+          var rowRoastStop = S.ROAST_STOPS.find(function (rs) { return rs.key === normRoastKey(rec.roast, rec.ground_agtron || rec.agtron); });
+          var rowChips = [];
+          if (rowRoastStop) {
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', style: 'display:inline-flex;align-items:center;gap:4px' },
+              S.h('span', { class: 'bt-ce-roast-dot', style: 'background:' + rowRoastStop.hex }),
+              S.h('span', { text: rowRoastStop.label })
+            ));
+          }
+          if (rec.origin && String(rec.origin).toLowerCase() !== 'unknown') {
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: rec.region ? (rec.origin + ' · ' + rec.region) : rec.origin }));
+          }
+          if (rec.process && String(rec.process).toLowerCase() !== 'unknown') {
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: formatProcessDisplay(rec.process) }));
+          }
+          if (rec.varietal) {
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: rec.varietal }));
+          }
+          if (isFinite(+rec.elevation_m) && +rec.elevation_m > 0) {
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: Math.round(+rec.elevation_m) + 'm' }));
+          }
+
           listHost.appendChild(S.h('div', {
             class: 'bt-vault-row-v62',
             style: '--bag-roast-col:' + rCol
           },
             S.h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap' },
               S.h('div', { style: 'min-width:0;flex:1' },
-                S.h('div', { class: 'bt-ce-bag-roaster', text: [rec.roaster, rec.origin, rec.process].filter(Boolean).join(' · ') || 'Saved Coffee' }),
+                S.h('div', { class: 'bt-ce-bag-roaster', text: rec.roaster || 'Saved Coffee' }),
                 S.h('div', { class: 'bt-ce-bag-name', style: 'font-size:15px', text: rec.name || 'Unnamed Coffee' }),
-                S.h('div', { style: 'font-size:12px;color:var(--ink-secondary);margin-top:2px', text: formatProvenanceBadge(anchor) })
+                rowChips.length ? S.h('div', { style: 'display:flex;flex-wrap:wrap;gap:4px;margin-top:4px' }, rowChips) : null,
+                rowNotesList.length ? S.h('div', { style: 'display:flex;flex-wrap:wrap;gap:4px;margin-top:4px' },
+                  rowNotesList.slice(0, 6).map(function (fl) {
+                    return S.h('span', { class: 'bt-ce-badge is-good', text: fl });
+                  })
+                ) : null,
+                S.h('div', { style: 'font-size:12px;color:var(--ink-secondary);margin-top:4px', text: anchor ? formatProvenanceBadge(anchor) : (rec.lastBrew ? 'Saved bean + last recipe' : 'Saved bean profile') })
               ),
-              S.h('div', { style: 'display:flex;gap:6px' },
+              S.h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' },
+                S.h('button', {
+                  type: 'button',
+                  class: 'bt-ce-bag-fresh',
+                  text: 'Edit Bean',
+                  onclick: function () { applySavedCoffeeSelection(rec, { targetRoute: 'coffee' }); }
+                }),
                 S.h('button', {
                   type: 'button',
                   class: 'bt-ce-bag-brew',
@@ -21630,9 +23263,24 @@ if (typeof window !== 'undefined') {
     if (sh && sh.BTSheet && typeof sh.BTSheet.close === 'function') sh.BTSheet.close();
   }
 
+  function upsertStep2ToVault(a) {
+    try {
+      a = a || getApp();
+      if (!a || !a.coffee || !String(a.coffee.name || '').trim()) return;
+      syncCoffeeObjAliases(a.coffee);
+      syncBrewUnitAliases(a.brew);
+      if (typeof window !== 'undefined' && window.BTStorage && typeof window.BTStorage.upsertCoffeeVaultRecord === 'function') {
+        window.BTStorage.upsertCoffeeVaultRecord(a.coffee, a.brew);
+      }
+    } catch (_) {}
+  }
+
   function goBrewStep(stepKey, extra) {
     var a = getApp();
     if (stepKey !== 'timer') stopActiveTimerSession(false);
+    if (stepKey === 'brew' && a && a.brewStep === 'method' && a.coffee && String(a.coffee.name || '').trim()) {
+      upsertStep2ToVault(a);
+    }
     a.activeTab = 'brew';
     a.brewStep = stepKey;
     a.screen = stepKey;
@@ -21664,6 +23312,37 @@ if (typeof window !== 'undefined') {
     rerender();
   }
 
+  function copyTextSafe(txt) {
+    var s = String(txt == null ? '' : txt);
+    try {
+      if (typeof window !== 'undefined' && window.BTPlatform && typeof window.BTPlatform.copyText === 'function') {
+        window.BTPlatform.copyText(s);
+        return true;
+      }
+    } catch (_) {}
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(s).catch(function () {});
+        return true;
+      }
+    } catch (_) {}
+    try {
+      if (typeof document !== 'undefined' && document.body) {
+        var ta = document.createElement('textarea');
+        ta.value = s;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   function readBleHardwareSummary() {
     var out = { scale: false, kettle: false, refract: false, pressure: false, omni: false, count: 0, labels: [] };
     try {
@@ -21673,7 +23352,7 @@ if (typeof window !== 'undefined') {
       var sl = st.slots || {};
       out.scale = !!((sl.scale && sl.scale.connected) || st.scaleConnected);
       out.kettle = !!((sl.kettle && sl.kettle.connected) || st.kettleConnected);
-      out.refract = !!((sl.refract && sl.refract.connected) || st.refractConnected);
+      out.refract = !!((sl.refractometer && sl.refractometer.connected) || (sl.refract && sl.refract.connected) || st.refractometerConnected || st.refractConnected);
       out.pressure = !!((sl.pressure && sl.pressure.connected) || st.pressureConnected);
       out.omni = !!((sl.omni && sl.omni.connected) || st.omniConnected);
       if (out.scale) out.labels.push('Scale');
@@ -21834,6 +23513,18 @@ if (typeof window !== 'undefined') {
     );
   }
 
+  function _isDecafCoffee(coffee) {
+    if (!coffee || typeof coffee !== 'object') return false;
+    var dStr = String(coffee.decaf == null ? '' : coffee.decaf).trim().toLowerCase();
+    var decafFlag = coffee.decaf === true || coffee.isDecaf === true ||
+      (!!dStr && dStr !== 'no' && dStr !== 'false' && dStr !== '0' && dStr !== 'none' && dStr !== 'unknown' && dStr !== 'na' && dStr !== 'n/a' && dStr !== 'regular' && dStr !== 'caf');
+    var dpStr = String(coffee.decaf_process == null ? '' : coffee.decaf_process).trim().toLowerCase();
+    var hasDecafProc = !!dpStr && dpStr !== 'no' && dpStr !== 'false' && dpStr !== '0' && dpStr !== 'none' && dpStr !== 'unknown' && dpStr !== 'na' && dpStr !== 'n/a';
+    var procStr = String(coffee.process || '').toLowerCase();
+    var nameStr = String(coffee.name || '').toLowerCase();
+    return decafFlag || hasDecafProc || /\bdecaf\b/i.test(procStr + ' ' + nameStr);
+  }
+
   function computePourAgitationCue(stage, stageIdx, totalStages, ctx) {
     ctx = ctx || {};
     var a = ctx.a || {};
@@ -21847,7 +23538,7 @@ if (typeof window !== 'undefined') {
     var proc = String(coffee.process || '').toLowerCase();
     var roast = String(coffee.roast || '').toLowerCase();
     var cName = String(coffee.name || '').toLowerCase();
-    var isDecaf = !!(coffee.decaf || coffee.isDecaf || /decaf/i.test(proc + ' ' + cName));
+    var isDecaf = _isDecafCoffee(coffee);
 
     if (mObj.outRatio || methodKey === 'espresso' || methodKey === 'lever_espresso') {
       if (stageIdx === 0) {
@@ -22565,7 +24256,7 @@ if (typeof window !== 'undefined') {
     a.brew.water_alk = kh;
     a.brew.waterLabel = wObj.label || wObj.short || wObj.key;
     if (!opts.skipSynth && !isRecipeLockedFor(a, a.brew.method)) {
-      synthesizeScienceIntoApp(a, a.brew.method, { keepFilter: true, preserveBatch: true });
+      synthesizeScienceIntoApp(a, a.brew.method, { keepFilter: true, preserveBatch: true, force: true });
     }
     saveDraft();
   }
@@ -22767,8 +24458,284 @@ if (typeof window !== 'undefined') {
   }
 
   function isRecipeLockedFor(a, methodKey) {
-    if (a.recipeLocked && (!a.lockedMethod || a.lockedMethod === methodKey)) return true;
+    if (a && a.recipeLocked && (!a.lockedMethod || a.lockedMethod === methodKey)) return true;
     return false;
+  }
+
+  function _normVaultKeyPart(s) {
+    return String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function _isCleanCoffeeVal(v) {
+    var s = String(v == null ? '' : v).trim();
+    if (!s) return false;
+    return !/^(unknown|unsure|not sure|don't know|dont know|n\/a|none)$/i.test(s);
+  }
+
+  function syncCoffeeObjAliases(c) {
+    if (!c || typeof c !== 'object') return c;
+    var sh = getShell();
+    if (sh && typeof sh.syncCoffeeAliases === 'function') {
+      return sh.syncCoffeeAliases(c);
+    }
+    if (c.bag_notes == null || c.bag_notes === '') {
+      var fb = c.notes || c.bagNotes || (Array.isArray(c.flavors) ? c.flavors.join(', ') : c.flavors) || '';
+      if (fb && c.bag_notes == null) c.bag_notes = String(fb);
+    }
+    c.notes = c.bag_notes != null ? String(c.bag_notes) : '';
+    if (c.id && !c.coffee_id) c.coffee_id = c.id;
+    else if (c.coffee_id && !c.id) c.id = c.coffee_id;
+    if (c.farm_or_station && !c.farm) c.farm = c.farm_or_station;
+    else if (c.farm && !c.farm_or_station) c.farm_or_station = c.farm;
+    if (c.bag_weight_g !== '' && c.bag_weight_g != null) c.bagWeightG = c.bag_weight_g;
+    else if (c.bagWeightG !== '' && c.bagWeightG != null) c.bag_weight_g = c.bagWeightG;
+    if (c.price !== '' && c.price != null) c.bagPrice = c.price;
+    else if (c.bagPrice !== '' && c.bagPrice != null) c.price = c.bagPrice;
+    if (_isCleanCoffeeVal(c.bag_notes)) c.notesUnsure = '';
+    return c;
+  }
+
+  function syncBrewUnitAliases(b) {
+    if (!b || typeof b !== 'object') return b;
+    if (!(b.grindUm > 0) && +b.grind_um > 0) b.grindUm = +b.grind_um;
+    if (!(b.grind_um > 0) && +b.grindUm > 0) b.grind_um = +b.grindUm;
+    if (!(b.tempC > 0) && +b.tempF > 0) b.tempC = Math.round(((+b.tempF - 32) * 5 / 9) * 2) / 2;
+    if (!(b.tempF > 0) && +b.tempC > 0) b.tempF = Math.round(+b.tempC * 9 / 5 + 32);
+    if (!(b.ratio > 0) && +b.dose > 0 && +b.water > 0) {
+      b.ratio = Math.round((+b.water / +b.dose) * 10) / 10;
+    }
+    return b;
+  }
+
+  function getHistoryObjsSafe() {
+    try {
+      if (typeof window !== 'undefined' && window.BTStorage && typeof window.BTStorage.getHistory === 'function') {
+        var h = window.BTStorage.getHistory();
+        if (h && Array.isArray(h.objs)) return h.objs;
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  function findVaultCoffeeMatch(coffeeOrRec) {
+    if (!coffeeOrRec || typeof coffeeOrRec !== 'object') return null;
+    try {
+      if (typeof window === 'undefined' || !window.BTStorage || typeof window.BTStorage.getCoffeesVaultList !== 'function') return null;
+      var list = window.BTStorage.getCoffeesVaultList();
+      if (!Array.isArray(list) || !list.length) return null;
+      var cid = String(coffeeOrRec.coffee_id || coffeeOrRec.id || '').trim();
+      var cname = _normVaultKeyPart(coffeeOrRec.name || coffeeOrRec.coffee_name || coffeeOrRec.coffee || '');
+      var croast = _normVaultKeyPart(coffeeOrRec.roaster || '');
+      if (cid) {
+        var byId = list.find(function (v) { return v && (String(v.coffee_id || '').trim() === cid || String(v.id || '').trim() === cid); });
+        if (byId) return byId;
+      }
+      if (cname) {
+        var byName = list.find(function (v) {
+          return v && _normVaultKeyPart(v.name || v.coffee_name || v.coffee || '') === cname &&
+            (!croast || !_normVaultKeyPart(v.roaster) || _normVaultKeyPart(v.roaster) === croast);
+        });
+        if (byName) return byName;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  var _RICH_COFFEE_KEYS = [
+    'id', 'coffee_id', 'name', 'roaster', 'roaster_location', 'origin', 'region',
+    'farm', 'farm_or_station', 'producer', 'harvest_year', 'varietal', 'species', 'blend',
+    'process', 'process_sub', 'process_details', 'decaf', 'decaf_process', 'roast',
+    'roast_date', 'is_frozen', 'frozen_date', 'freeze_days_offset', 'recommended_rest_days',
+    'elevation_m', 'elevText', 'density', 'bag_notes', 'notes', 'personal_note',
+    'bag_weight_g', 'bagWeightG', 'remaining_g', 'price', 'bagPrice', 'currency',
+    'agtron', 'bean_agtron', 'ground_agtron', 'agtron_scale', 'roast_delta',
+    'psd_d10_um', 'psd_d50_um', 'psd_d90_um', 'psd_span'
+  ];
+
+  function mergeRichCoffeeFields(target, src, onlyMissing) {
+    if (!target || typeof target !== 'object' || !src || typeof src !== 'object') return target;
+    _RICH_COFFEE_KEYS.forEach(function (k) {
+      var val = src[k];
+      if (val == null || val === '') return;
+      if (typeof val === 'string' && !_isCleanCoffeeVal(val) && k !== 'name' && k !== 'roaster') return;
+      var cur = target[k];
+      var curEmpty = cur == null || cur === '' || (typeof cur === 'string' && !_isCleanCoffeeVal(cur));
+      if (!onlyMissing || curEmpty) {
+        target[k] = val;
+      }
+    });
+    if ((!target.bag_notes || !_isCleanCoffeeVal(target.bag_notes)) && (src.bagNotes || src.flavors || src.tasting_notes)) {
+      var altNotes = src.bagNotes || src.tasting_notes || (Array.isArray(src.flavors) ? src.flavors.join(', ') : src.flavors);
+      if (_isCleanCoffeeVal(altNotes)) target.bag_notes = String(altNotes);
+    }
+    if (src.roasterGuide && typeof src.roasterGuide === 'object' && (!onlyMissing || !target.roasterGuide)) {
+      try { target.roasterGuide = JSON.parse(JSON.stringify(src.roasterGuide)); } catch (_) { target.roasterGuide = Object.assign({}, src.roasterGuide); }
+    }
+    if (!target.elevation_m && src.openBag && +src.openBag.elevation_m > 0) target.elevation_m = String(src.openBag.elevation_m);
+    if (!target.bag_weight_g && src.openBag && +src.openBag.total_g > 0) target.bag_weight_g = src.openBag.total_g;
+    if (!target.remaining_g && src.openBag && src.openBag.rem_g != null) target.remaining_g = src.openBag.rem_g;
+    if (!target.price && src.openBag && +src.openBag.price > 0) target.price = src.openBag.price;
+    if (!target.currency && src.openBag && src.openBag.currency) target.currency = src.openBag.currency;
+    if (_isCleanCoffeeVal(target.bag_notes)) target.notesUnsure = '';
+    if (_isCleanCoffeeVal(target.origin)) { target.originUnsure = ''; target.origin_unknown = ''; }
+    if (_isCleanCoffeeVal(target.roast)) { target.roastUnsure = ''; target.roast_unknown = ''; }
+    if (_isCleanCoffeeVal(target.process)) { target.processUnsure = ''; target.process_unknown = ''; }
+    if (_isCleanCoffeeVal(target.roaster)) target.roasterUnsure = '';
+    if (_isCleanCoffeeVal(target.roast_date)) target.dateUnsure = '';
+    if (_isCleanCoffeeVal(target.varietal)) target.varietalUnsure = '';
+    if (+target.elevation_m > 0 || _isCleanCoffeeVal(target.elevText)) { target.elevUnsure = ''; target.elev_unknown = ''; }
+    syncCoffeeObjAliases(target);
+    return target;
+  }
+
+  function applySavedBrewSnapshot(a, brewSnap, isLocked, onlyMissing) {
+    if (!a || !a.brew || !brewSnap || typeof brewSnap !== 'object') return;
+    var b = a.brew;
+    var canSet = function (curVal) {
+      if (!onlyMissing) return true;
+      return curVal == null || curVal === '' || curVal === 0;
+    };
+    if ((brewSnap.method || brewSnap.methodKey) && canSet(b.method)) b.method = getMethodObj(brewSnap.method || brewSnap.methodKey).key;
+    if (brewSnap.style && canSet(b.style)) b.style = brewSnap.style;
+    if (brewSnap.filter && canSet(b.filter)) b.filter = brewSnap.filter;
+    if (brewSnap.filterId && canSet(b.filterId)) b.filterId = brewSnap.filterId;
+    var dVal = +brewSnap.dose > 0 ? +brewSnap.dose : (+brewSnap.doseG > 0 ? +brewSnap.doseG : 0);
+    if (dVal > 0 && canSet(b.dose)) b.dose = dVal;
+    var wVal = +brewSnap.water > 0 ? +brewSnap.water : (+brewSnap.waterG > 0 ? +brewSnap.waterG : 0);
+    if (wVal > 0 && canSet(b.water)) b.water = wVal;
+    if (+brewSnap.ratio > 0 && canSet(b.ratio)) b.ratio = +brewSnap.ratio;
+    var tCVal = +brewSnap.tempC > 0 ? +brewSnap.tempC : (+brewSnap.kettleTempC > 0 ? +brewSnap.kettleTempC : 0);
+    if (tCVal > 0 && canSet(b.tempC)) b.tempC = tCVal;
+    if (+brewSnap.tempF > 0 && canSet(b.tempF)) b.tempF = +brewSnap.tempF;
+    var gUmVal = +brewSnap.grindUm > 0 ? +brewSnap.grindUm : (+brewSnap.grind_um > 0 ? +brewSnap.grind_um : (+brewSnap.d50Um > 0 ? +brewSnap.d50Um : 0));
+    if (gUmVal > 0 && canSet(b.grindUm)) b.grindUm = gUmVal;
+    var gSetStr = brewSnap.grind_setting || brewSnap.grindSetting || (brewSnap.grinderSetting && brewSnap.grinderSetting.shortDisplay) || '';
+    if (gSetStr && canSet(b.grind_setting)) b.grind_setting = gSetStr;
+    if (brewSnap.grinderKey && canSet(b.grinderKey)) b.grinderKey = normalizeGrinderKey(brewSnap.grinderKey);
+    if (brewSnap.grinderName && canSet(b.grinderName)) b.grinderName = brewSnap.grinderName;
+    if (brewSnap.agitation && canSet(b.agitation)) b.agitation = brewSnap.agitation;
+    if (brewSnap.technique && canSet(b.technique)) b.technique = brewSnap.technique;
+    if (brewSnap.waterType && canSet(b.waterType)) b.waterType = brewSnap.waterType;
+    if (brewSnap.pourNotes && canSet(b.pourNotes)) b.pourNotes = brewSnap.pourNotes;
+    if (brewSnap.machineProfile && typeof brewSnap.machineProfile === 'object' && canSet(b.machineProfile)) {
+      try { b.machineProfile = JSON.parse(JSON.stringify(brewSnap.machineProfile)); } catch (_) { b.machineProfile = brewSnap.machineProfile; }
+    }
+    if (brewSnap.dialAdaptation && typeof brewSnap.dialAdaptation === 'object' && !b.dialAdaptation) {
+      b.dialAdaptation = brewSnap.dialAdaptation;
+    }
+    syncBrewUnitAliases(b);
+    if (b.dose > 0 && b.water > 0 && b.grindUm > 0) {
+      b._savedDialedMethod = b.method || '';
+    }
+    if (isLocked === true) {
+      a.recipeLocked = true;
+      a.lockedMethod = b.method || '';
+    } else if (isLocked === false) {
+      a.recipeLocked = false;
+      a.lockedMethod = '';
+    }
+  }
+
+  function hydrateFromVaultRecord(a, rec, opts) {
+    opts = opts || {};
+    if (!a || !rec) return a;
+    var vaultMatch = findVaultCoffeeMatch(rec);
+    var selectedRes = null;
+    if (typeof window !== 'undefined' && window.BTStorage && typeof window.BTStorage.selectSavedCoffee === 'function') {
+      try {
+        selectedRes = window.BTStorage.selectSavedCoffee(rec, { seedRecipe: opts.seedRecipe !== false, silent: true });
+      } catch (_) {}
+    }
+    a.coffee = a.coffee || {};
+    mergeRichCoffeeFields(a.coffee, vaultMatch, false);
+    mergeRichCoffeeFields(a.coffee, rec, true);
+
+    var lockedRow = rec.lockedBrew || (vaultMatch && vaultMatch.lockedBrew) || null;
+    var explicitLocked = !!(
+      (lockedRow && (String(lockedRow.dial_locked || '').toLowerCase() === 'yes' || lockedRow.dial_locked === '1')) ||
+      (vaultMatch && (String(vaultMatch.dial_locked || '').toLowerCase() === 'yes' || vaultMatch.dial_locked === '1')) ||
+      (String(rec.dial_locked || '').toLowerCase() === 'yes' || rec.dial_locked === '1')
+    );
+
+    var alreadyHydratedBrew = !!(selectedRes && a.brew && a.brew.dose > 0 && a.brew.water > 0 && (+a.brew.grindUm > 0 || +a.brew.grind_um > 0));
+    var snap = (rec.pendingNextRecipe && typeof rec.pendingNextRecipe === 'object' && !explicitLocked)
+      ? rec.pendingNextRecipe
+      : ((vaultMatch && vaultMatch.pendingNextRecipe && !explicitLocked)
+        ? vaultMatch.pendingNextRecipe
+        : ((vaultMatch && vaultMatch.lastBrew) || rec.lastBrew || null));
+    if (snap && opts.seedRecipe !== false) {
+      applySavedBrewSnapshot(a, snap, explicitLocked, alreadyHydratedBrew || !!(a.brew && a.brew.dialAdaptation));
+    } else {
+      syncBrewUnitAliases(a.brew);
+      if (explicitLocked) {
+        a.recipeLocked = true;
+        a.lockedMethod = (a.brew && a.brew.method) || '';
+      } else {
+        a.recipeLocked = false;
+        a.lockedMethod = '';
+      }
+      if (a.brew && a.brew.dose > 0 && a.brew.water > 0 && a.brew.grindUm > 0) {
+        a.brew._savedDialedMethod = a.brew.method || '';
+      }
+    }
+    if ((!a.brew.dialAdaptation || a.brew.dialAdaptation.adapted === false) && rec.dialAdaptation && rec.dialAdaptation.adapted !== false) {
+      a.brew.dialAdaptation = rec.dialAdaptation;
+    } else if ((!a.brew.dialAdaptation || a.brew.dialAdaptation.adapted === false) && vaultMatch && vaultMatch.dialAdaptation && vaultMatch.dialAdaptation.adapted !== false) {
+      a.brew.dialAdaptation = vaultMatch.dialAdaptation;
+    }
+    a.freshCoffeeMode = false;
+    return a;
+  }
+
+  function formatCoffeeAttrSummary(coffee) {
+    if (!coffee || typeof coffee !== 'object') return '';
+    var parts = [];
+    var rawNotes = _isCleanCoffeeVal(coffee.bag_notes) ? String(coffee.bag_notes).trim()
+      : (_isCleanCoffeeVal(coffee.notes) ? String(coffee.notes).trim()
+        : (_isCleanCoffeeVal(coffee.bagNotes) ? String(coffee.bagNotes).trim() : ''));
+    if (rawNotes) parts.push('Notes: ' + rawNotes);
+    var rawProc = _isCleanCoffeeVal(coffee.process_sub) ? String(coffee.process_sub).trim()
+      : (_isCleanCoffeeVal(coffee.process) ? String(coffee.process).trim() : '');
+    if (rawProc) {
+      var procPretty = rawProc.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
+      parts.push(procPretty);
+    } else if (_isCleanCoffeeVal(coffee.roast)) {
+      var roastPretty = String(coffee.roast).trim().replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
+      parts.push(roastPretty + ' Roast');
+    }
+    var origTxt = _isCleanCoffeeVal(coffee.origin) ? String(coffee.origin).trim() : '';
+    var regTxt = _isCleanCoffeeVal(coffee.region) ? String(coffee.region).trim() : '';
+    var elevNum = isFinite(+coffee.elevation_m) && +coffee.elevation_m > 0 ? Math.round(+coffee.elevation_m) : 0;
+    var elevStr = elevNum ? (elevNum.toLocaleString('en-US') + 'm') : (_isCleanCoffeeVal(coffee.elevText) ? String(coffee.elevText).trim() : '');
+    var geoParts = [];
+    if (origTxt) geoParts.push(origTxt);
+    if (regTxt && origTxt.toLowerCase().indexOf(regTxt.toLowerCase()) < 0) geoParts.push(regTxt);
+    var geoStr = geoParts.join(', ');
+    if (elevStr) geoStr = geoStr ? (geoStr + ' ' + elevStr) : elevStr;
+    if (geoStr) parts.push(geoStr);
+    if (_isCleanCoffeeVal(coffee.varietal)) parts.push(String(coffee.varietal).trim());
+    return parts.join(' \u00B7 ');
+  }
+
+  function formatDialAdaptationBanner(da) {
+    if (!da || typeof da !== 'object' || da.locked || da.adapted === false || da.source === 'first_principles') return '';
+    if (da.summaryBanner && typeof da.summaryBanner === 'string') return da.summaryBanner;
+    if (da.summary && typeof da.summary === 'string') return da.summary;
+    var tryStr = da.fromTry ? ('Try #' + da.fromTry) : 'last brew';
+    var cues = [];
+    if (da.stars != null && +da.stars > 0) cues.push((+da.stars) + '/5');
+    if (da.tdsPct != null && +da.tdsPct > 0) cues.push((+da.tdsPct).toFixed(2) + '% TDS');
+    if (da.symptom || da.dial_symptom) cues.push(String(da.symptom || da.dial_symptom));
+    var cueStr = cues.length ? (' (' + cues.join(' \u00B7 ') + ')') : '';
+    var moveStr = '';
+    if (da.prevClicks != null && da.nextClicks != null && da.prevClicks !== da.nextClicks) {
+      moveStr = ': ' + da.prevClicks + ' \u2192 ' + da.nextClicks + ' clicks';
+    } else if (da.prevUm != null && da.nextUm != null && da.prevUm !== da.nextUm) {
+      moveStr = ': ' + da.prevUm + ' \u2192 ' + da.nextUm + ' \u00B5m';
+    } else if (da.headline || da.dial_change || da.reason) {
+      moveStr = ': ' + (da.headline || da.dial_change || da.reason);
+    }
+    return 'Adjusted from ' + tryStr + cueStr + moveStr;
   }
 
   function plainKitchenGrindWords(um) {
@@ -22828,6 +24795,8 @@ if (typeof window !== 'undefined') {
     a.coffee = a.coffee || {};
     a.brew = a.brew || {};
     a.prefs = a.prefs || {};
+    syncCoffeeObjAliases(a.coffee);
+    syncBrewUnitAliases(a.brew);
     if (!a.prefs.tempUnit) a.prefs.tempUnit = 'F';
     if (!a.prefs.coffeeUnit) a.prefs.coffeeUnit = 'g';
     if (!a.prefs.waterUnit) a.prefs.waterUnit = 'g';
@@ -22842,31 +24811,43 @@ if (typeof window !== 'undefined') {
   /* Fixes Bug 05:1786 — Synthesizes fresh bean-adapted science recipe on brewer/bean/submode change */
   function synthesizeScienceIntoApp(a, methodKey, opts) {
     opts = opts || {};
+    a.coffee = a.coffee || {};
+    a.brew = a.brew || {};
+    syncCoffeeObjAliases(a.coffee);
+    syncBrewUnitAliases(a.brew);
     var mKey = String(methodKey || a.brew.method || 'v60').toLowerCase();
     var mObj = getMethodObj(mKey);
     a.brew.method = mObj.key;
 
-    if (!opts.force && isRecipeLockedFor(a, mObj.key) && a.brew.dose > 0 && a.brew.water > 0 && a.brew.grindUm > 0) {
+    var hasCompleteSaved = !!(a.brew.dose > 0 && a.brew.water > 0 && a.brew.ratio > 0 && a.brew.tempC > 0 && a.brew.grindUm > 0);
+    var isLocked = isRecipeLockedFor(a, mObj.key);
+    var isSavedDialed = !!(a.brew._savedDialedMethod && a.brew._savedDialedMethod === mObj.key);
+    if (!opts.force && hasCompleteSaved && (isLocked || isSavedDialed || opts.preserveExisting)) {
       return runCurrentSynthesis(a);
     }
 
     var subModes = getSubModesFor(mObj.key);
-    var activeStyle = a.brew.style || (subModes[0] && subModes[0].id) || 'standard';
+    var existingStyleValid = !!(a.brew.style && subModes.some(function (s) { return s.id === a.brew.style; }));
+    var activeStyle = ((opts.preserveExisting || isLocked || isSavedDialed) && existingStyleValid)
+      ? a.brew.style
+      : (a.brew.style || (subModes[0] && subModes[0].id) || 'standard');
     var smObj = subModes.find(function (s) { return s.id === activeStyle; }) || subModes[0] || null;
     if (!smObj && subModes.length) {
       activeStyle = subModes[0].id;
       smObj = subModes[0];
     }
     a.brew.style = activeStyle;
-    if (smObj && smObj.filterId && !opts.keepFilter) {
+    if (smObj && smObj.filterId && !opts.keepFilter && !((opts.preserveExisting || isLocked) && (a.brew.filterId || a.brew.filter))) {
       a.brew.filterId = smObj.filterId;
     }
 
     var gKey = getActiveGrinderKey(a);
     var altM = a.brew.altitudeM != null ? +a.brew.altitudeM : ((a.prefs && a.prefs.gear && a.prefs.gear.altitudeFt) ? (+a.prefs.gear.altitudeFt * 0.3048) : 0);
     var waterCfg = getActiveWaterConfig(a);
-    var keepBatch = !!(opts.preserveExisting || opts.preserveBatch);
+    var keepBatch = !!(opts.preserveExisting || opts.preserveBatch || (!opts.force && (isLocked || isSavedDialed)));
+    var preserveParams = !!(opts.preserveExisting || (!opts.force && (isLocked || isSavedDialed)));
     var core = (typeof window !== 'undefined' && window.BTCoreV6) ? window.BTCoreV6 : null;
+    var histObjs = getHistoryObjsSafe();
 
     var syn = null;
     if (core && typeof core.synthesizeRecipe === 'function') {
@@ -22874,6 +24855,7 @@ if (typeof window !== 'undefined') {
         syn = core.synthesizeRecipe({
           bean: a.coffee,
           coffee: a.coffee,
+          history: histObjs,
           method: mObj.key,
           methodKey: mObj.key,
           style: activeStyle,
@@ -22884,8 +24866,8 @@ if (typeof window !== 'undefined') {
           ratio: (keepBatch && a.brew.ratio > 0) ? +a.brew.ratio : (smObj && smObj.ratio ? smObj.ratio : undefined),
           doseG: (keepBatch && a.brew.dose > 0) ? +a.brew.dose : undefined,
           waterG: (keepBatch && a.brew.water > 0) ? +a.brew.water : undefined,
-          tempC: (opts.preserveExisting && a.brew.tempC > 0) ? +a.brew.tempC : (smObj && smObj.tempC != null ? smObj.tempC : undefined),
-          d50Um: (opts.preserveExisting && a.brew.grindUm > 0) ? +a.brew.grindUm : (smObj && smObj.d50Um ? smObj.d50Um : undefined),
+          tempC: (preserveParams && a.brew.tempC > 0) ? +a.brew.tempC : (smObj && smObj.tempC != null ? smObj.tempC : undefined),
+          d50Um: (preserveParams && a.brew.grindUm > 0) ? +a.brew.grindUm : (smObj && smObj.d50Um ? smObj.d50Um : undefined),
           calib: a.prefs && (a.prefs.pocketMicronCalib || a.prefs.calib),
           immersionBasis: (a.prefs && a.prefs.immersionBasis) || 'liang'
         });
@@ -22898,29 +24880,32 @@ if (typeof window !== 'undefined') {
       var synWater = +(syn.waterG || syn.water || Math.round(synDose * synRatio));
       var synTempC = syn.kettleTempC != null ? +syn.kettleTempC : (syn.tempC != null ? +syn.tempC : 94);
       var synUm = +(syn.d50Um || syn.grindUm || mObj.d50AnchorUm || 550);
-      if (smObj && smObj.d50Mult && !opts.preserveExisting) {
+      if (smObj && smObj.d50Mult && !preserveParams) {
         synUm = Math.round((synUm * smObj.d50Mult) / 5) * 5;
       }
-      if (smObj && smObj.iced && !opts.preserveExisting) {
+      if (smObj && smObj.iced && !preserveParams) {
         synUm = Math.max(200, Math.round((synUm * 0.91) / 5) * 5);
       }
       /* Apply retail filter umMult if selected */
       if (typeof window !== 'undefined' && typeof window.filterV6For === 'function' && (a.brew.filter || a.brew.filterId)) {
         try {
           var fV6 = window.filterV6For(a.brew.filter || a.brew.filterId, mObj.key);
-          if (fV6 && fV6.umMult && fV6.umMult !== 1 && !opts.preserveExisting) {
+          if (fV6 && fV6.umMult && fV6.umMult !== 1 && !preserveParams) {
             synUm = Math.round((synUm * fV6.umMult) / 5) * 5;
           }
         } catch (_) {}
       }
-      a.brew.dose = Math.round(synDose * 10) / 10;
-      a.brew.ratio = Math.round(synRatio * (mObj.outRatio ? 100 : 10)) / (mObj.outRatio ? 100 : 10);
-      a.brew.water = mObj.outRatio ? Math.round(a.brew.dose * a.brew.ratio * 2) / 2 : Math.round(synWater);
-      a.brew.tempC = Math.round(synTempC * 2) / 2;
+      a.brew.dose = (keepBatch && a.brew.dose > 0) ? +a.brew.dose : (Math.round(synDose * 10) / 10);
+      a.brew.ratio = (keepBatch && a.brew.ratio > 0) ? +a.brew.ratio : (Math.round(synRatio * (mObj.outRatio ? 100 : 10)) / (mObj.outRatio ? 100 : 10));
+      a.brew.water = (keepBatch && a.brew.water > 0) ? +a.brew.water : (mObj.outRatio ? Math.round(a.brew.dose * a.brew.ratio * 2) / 2 : Math.round(synWater));
+      a.brew.tempC = (preserveParams && a.brew.tempC > 0) ? +a.brew.tempC : (Math.round(synTempC * 2) / 2);
       a.brew.tempF = Math.round(a.brew.tempC * 9 / 5 + 32);
       a.brew.baseSynthTempC = a.brew.tempC;
-      a.brew.baseSynthUm = synUm;
-      a.brew.grindUm = synUm;
+      a.brew.baseSynthUm = (preserveParams && a.brew.grindUm > 0) ? +a.brew.grindUm : synUm;
+      a.brew.grindUm = a.brew.baseSynthUm;
+      a.brew.grind_um = a.brew.grindUm;
+      if (syn.dialAdaptation) a.brew.dialAdaptation = syn.dialAdaptation;
+      else if (opts.force) a.brew.dialAdaptation = null;
     } else {
       var rFallback = (keepBatch && a.brew.ratio > 0) ? +a.brew.ratio : ((smObj && smObj.ratio) || mObj.ratio || 16.5);
       var dFallback = (keepBatch && a.brew.dose > 0) ? +a.brew.dose : (mObj.dose || (mObj.outRatio ? 18 : 15));
@@ -22931,13 +24916,15 @@ if (typeof window !== 'undefined') {
       a.brew.dose = dFallback;
       a.brew.ratio = rFallback;
       a.brew.water = (keepBatch && a.brew.water > 0) ? +a.brew.water : (mObj.outRatio ? Math.round(dFallback * rFallback * 2) / 2 : Math.round(dFallback * rFallback));
-      a.brew.tempC = (smObj && smObj.tempC != null) ? smObj.tempC : tFallback;
+      a.brew.tempC = (preserveParams && a.brew.tempC > 0) ? +a.brew.tempC : ((smObj && smObj.tempC != null) ? smObj.tempC : tFallback);
       a.brew.tempF = Math.round(a.brew.tempC * 9 / 5 + 32);
-      a.brew.grindUm = (smObj && smObj.d50Um) || mObj.d50AnchorUm || 550;
+      a.brew.grindUm = (preserveParams && a.brew.grindUm > 0) ? +a.brew.grindUm : ((smObj && smObj.d50Um) || mObj.d50AnchorUm || 550);
+      a.brew.grind_um = a.brew.grindUm;
       a.brew.baseSynthTempC = a.brew.tempC;
       a.brew.baseSynthUm = a.brew.grindUm;
     }
 
+    if (opts.force) a.brew._savedDialedMethod = '';
     var gm = mapGrinderClicks(a.brew.grindUm, gKey, mObj.key, a);
     a.brew.grind_setting = gm.short;
     if (!opts.preserveExisting && !opts.preserveBatch) a.brew.customizedNote = '';
@@ -22946,11 +24933,14 @@ if (typeof window !== 'undefined') {
 
   function runCurrentSynthesis(a) {
     ensureBrewState(a);
+    syncCoffeeObjAliases(a.coffee);
+    syncBrewUnitAliases(a.brew);
     var mObj = getMethodObj(a.brew.method);
     var gKey = getActiveGrinderKey(a);
     var gObj = getActiveGrinderObj(a);
     var waterCfg = getActiveWaterConfig(a);
     var core = (typeof window !== 'undefined' && window.BTCoreV6) ? window.BTCoreV6 : null;
+    var histObjs = getHistoryObjsSafe();
     var styleId = a.brew.style || 'standard';
     var isIced = /iced|flash/i.test(styleId);
     var totalWaterG = +a.brew.water || 250;
@@ -22975,6 +24965,7 @@ if (typeof window !== 'undefined') {
         syn = core.synthesizeRecipe({
           bean: a.coffee,
           coffee: a.coffee,
+          history: histObjs,
           method: mObj.key,
           methodKey: mObj.key,
           style: styleId,
@@ -23066,6 +25057,8 @@ if (typeof window !== 'undefined') {
       ];
     }
 
+    var synAdapt = (syn && syn.dialAdaptation && (syn.dialAdaptation.adapted || syn.dialAdaptation.locked)) ? syn.dialAdaptation : null;
+    var brewAdapt = (a.brew && a.brew.dialAdaptation && (a.brew.dialAdaptation.adapted !== false || a.brew.dialAdaptation.locked)) ? a.brew.dialAdaptation : null;
     return {
       method: mObj,
       grinder: gObj,
@@ -23088,6 +25081,7 @@ if (typeof window !== 'undefined') {
       kettleG: kettleG,
       usesPaper: usesPaper,
       pregroundInfo: pregroundInfo,
+      dialAdaptation: synAdapt || brewAdapt || null,
       explanations: (syn && syn.explanations) || [],
       steps: rawSteps
     };
@@ -23428,9 +25422,26 @@ if (typeof window !== 'undefined') {
     var lens = getExperienceLens();
     var vaultCoffees = getSavedVaultCoffees();
     var hasLiveCoffee = !!(a.coffee && String(a.coffee.name || '').trim());
-    if (hasLiveCoffee) a.freshCoffeeMode = false;
+    if (hasLiveCoffee) {
+      a.freshCoffeeMode = false;
+      syncCoffeeObjAliases(a.coffee);
+      var liveMatch = findVaultCoffeeMatch(a.coffee);
+      if (liveMatch) mergeRichCoffeeFields(a.coffee, liveMatch, true);
+    }
     var topVaultBag = vaultCoffees.find(function (r) { return !!r.openBag; }) || vaultCoffees[0] || null;
-    var heroCoffee = hasLiveCoffee ? a.coffee : (a.freshCoffeeMode ? null : topVaultBag);
+    if (topVaultBag) {
+      var topRich = findVaultCoffeeMatch(topVaultBag);
+      if (topRich) {
+        var mergedTop = Object.assign({}, topRich, topVaultBag);
+        if (!mergedTop.bag_notes && topRich.bag_notes) mergedTop.bag_notes = topRich.bag_notes;
+        if (!mergedTop.notes && (mergedTop.bag_notes || topRich.notes)) mergedTop.notes = mergedTop.bag_notes || topRich.notes;
+        topVaultBag = mergedTop;
+      }
+    }
+    if (!hasLiveCoffee && !a.freshCoffeeMode && topVaultBag) {
+      hydrateFromVaultRecord(a, topVaultBag, { seedRecipe: true, silent: true });
+    }
+    var heroCoffee = (a.coffee && String(a.coffee.name || '').trim()) ? a.coffee : (a.freshCoffeeMode ? null : topVaultBag);
     var isMidBrew = hasLiveCoffee && (_timerSession.running || _timerSession.stopped || _timerSession.elapsedS > 0 || !!a.cupBrew);
     var shopInfo = readActiveShopDraftInfo(a);
     var rec = runCurrentSynthesis(a);
@@ -23500,11 +25511,16 @@ if (typeof window !== 'undefined') {
       var degas = computeDegassingBadge(heroCoffee);
       var bagName = heroCoffee.name || 'Specialty Coffee';
       var bagRoaster = heroCoffee.roaster || 'Home Counter Bag';
-      var lockedTag = (a.recipeLocked || heroCoffee.lockedBrew) ? dom('span', { class: 'bt-badge-v62 is-gold', text: 'Gold-Seal Locked' }) : null;
+      var heroLockedExplicit = !!(
+        a.recipeLocked ||
+        (heroCoffee.lockedBrew && (String(heroCoffee.lockedBrew.dial_locked || '').toLowerCase() === 'yes' || heroCoffee.lockedBrew.dial_locked === '1'))
+      );
+      var lockedTag = heroLockedExplicit ? dom('span', { class: 'bt-badge-v62 is-gold', text: 'Gold-Seal Locked' }) : null;
       var tryNum = Math.max(1, (a.attempt || (heroCoffee.n_cups || 0)) + 1);
       var primaryBtnText = isMidBrew
         ? (a.cupBrew ? 'Continue to Taste \u2192' : 'Continue Active Timer \u2192')
         : (hasLiveCoffee ? 'Brew This Coffee \u2192' : 'Load & Brew Bag \u2192');
+      var heroAttrSummary = formatCoffeeAttrSummary(heroCoffee);
 
       stageEl.appendChild(dom('section', {
         class: 'bt-hero-bag-card',
@@ -23521,6 +25537,12 @@ if (typeof window !== 'undefined') {
         dom('div', null,
           dom('div', { style: 'font-size:0.74rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: bagRoaster }),
           dom('h2', { class: 'bt-card-title', style: 'font-size:1.25rem;margin-top:2px', text: bagName }),
+          heroAttrSummary ? dom('p', {
+            id: 'bt-door-hero-coffee-summary',
+            class: 'bt-screen-sub',
+            style: 'margin-top:3px;font-weight:600;color:var(--ink-secondary);line-height:1.35',
+            text: heroAttrSummary
+          }) : null,
           dom('p', {
             class: 'bt-screen-sub',
             text: rec.method.label + ' · ' + rec.grindMap.short + ' on ' + (rec.grinder.short || rec.grinder.name) + ' · ' + rec.doseG + ' g : ' + rec.waterG + ' g'
@@ -23532,8 +25554,8 @@ if (typeof window !== 'undefined') {
             class: 'bt-cta-btn',
             style: 'min-height:46px;padding:8px 16px;font-size:0.88rem',
             onclick: function () {
-              if (!hasLiveCoffee && topVaultBag && typeof window !== 'undefined' && window.BTStorage && typeof window.BTStorage.selectSavedCoffee === 'function') {
-                try { window.BTStorage.selectSavedCoffee(topVaultBag); } catch (_) {}
+              if (!a.freshCoffeeMode && topVaultBag && (!(a.coffee && a.coffee.name) || !hasLiveCoffee)) {
+                hydrateFromVaultRecord(a, topVaultBag, { seedRecipe: true, silent: true });
               }
               a.freshCoffeeMode = false;
               haptic('snap');
@@ -23556,6 +25578,9 @@ if (typeof window !== 'undefined') {
             class: 'bt-secondary-cta',
             style: 'min-height:46px',
             onclick: function () {
+              if (!a.freshCoffeeMode && topVaultBag && !(a.coffee && a.coffee.name)) {
+                hydrateFromVaultRecord(a, topVaultBag, { seedRecipe: true, silent: true });
+              }
               haptic('tick');
               goBrewStep('coffee');
             }
@@ -23748,17 +25773,17 @@ if (typeof window !== 'undefined') {
         dom('button', {
           type: 'button',
           class: 'bt-chip-v6 bt-chip-soft',
-          onclick: function () { a.brew.method = 'philips5500'; haptic('tick'); goBrewStep('brew'); }
+          onclick: function () { a.brew.method = 'philips5500'; synthesizeScienceIntoApp(a, 'philips5500', { force: !isRecipeLockedFor(a, 'philips5500') }); haptic('tick'); goBrewStep('brew'); }
         }, brewerIco('philips5500', 16), dom('span', { text: 'Philips 5500' })),
         dom('button', {
           type: 'button',
           class: 'bt-chip-v6 bt-chip-soft',
-          onclick: function () { a.brew.method = 'aiden'; synthesizeScienceIntoApp(a, 'aiden'); haptic('tick'); goBrewStep('brew'); }
+          onclick: function () { a.brew.method = 'aiden'; synthesizeScienceIntoApp(a, 'aiden', { force: !isRecipeLockedFor(a, 'aiden') }); haptic('tick'); goBrewStep('brew'); }
         }, brewerIco('aiden', 16), dom('span', { text: 'Fellow Aiden' })),
         dom('button', {
           type: 'button',
           class: 'bt-chip-v6 bt-chip-soft',
-          onclick: function () { a.brew.method = 'xbloom'; synthesizeScienceIntoApp(a, 'xbloom'); haptic('tick'); goBrewStep('brew'); }
+          onclick: function () { a.brew.method = 'xbloom'; synthesizeScienceIntoApp(a, 'xbloom', { force: !isRecipeLockedFor(a, 'xbloom') }); haptic('tick'); goBrewStep('brew'); }
         }, brewerIco('xbloom', 16), dom('span', { text: 'xBloom Studio' })),
         dom('button', {
           type: 'button',
@@ -23775,7 +25800,7 @@ if (typeof window !== 'undefined') {
             if (typeof window !== 'undefined' && window.BTBackupCenter && typeof window.BTBackupCenter.open === 'function') {
               window.BTBackupCenter.open();
             } else {
-              navGoRoute('vault');
+              navGoRoute('backup');
             }
           }
         }, ico('vault', 16), dom('span', { text: 'Backup / Load Saves & Web Link' }))
@@ -23848,6 +25873,7 @@ if (typeof window !== 'undefined') {
     }
 
     /* 1. Header */
+    var step2CoffeeSummary = formatCoffeeAttrSummary(a.coffee);
     stageEl.appendChild(dom('div', { class: 'bt-screen-head' },
       dom('div', null,
         dom('div', { class: 'bt-screen-kicker', text: 'Step 2 of 5 · Gear, Brewer & Filter' }),
@@ -23858,6 +25884,19 @@ if (typeof window !== 'undefined') {
         })
       )
     ));
+    if (a.coffee && String(a.coffee.name || '').trim()) {
+      stageEl.appendChild(dom('div', { class: 'bt-step-context-strip', id: 'bt-step2-coffee-summary' },
+        dom('span', {
+          class: 'bt-step-context-copy',
+          text: cName + (step2CoffeeSummary ? (' \u00B7 ' + step2CoffeeSummary) : '')
+        }),
+        dom('button', {
+          type: 'button',
+          class: 'bt-step-context-link',
+          onclick: function () { haptic('tick'); goBrewStep('coffee'); }
+        }, dom('span', { text: 'Edit Bag \u2192' }))
+      ));
+    }
 
     /* 2. Top "My Gear" Switcher Card (Grinder + Saved Brewers + Cupping + BLE + Catalog Disclosure) */
     var grinderSelect = dom('select', {
@@ -23869,7 +25908,10 @@ if (typeof window !== 'undefined') {
         a.brew.grinderKey = gk;
         a.prefs.gear = a.prefs.gear || {};
         a.prefs.gear.grinderKey = gk;
-        synthesizeScienceIntoApp(a, curMethodObj.key, { keepFilter: true });
+        var gObjNext = getActiveGrinderObj(a);
+        a.brew.grinderName = gObjNext.name || gObjNext.short || gk;
+        a.prefs.gear.grinderName = a.brew.grinderName;
+        synthesizeScienceIntoApp(a, curMethodObj.key, { keepFilter: true, preserveBatch: true });
         haptic('tick');
         saveDraft();
         rerender();
@@ -24165,7 +26207,7 @@ if (typeof window !== 'undefined') {
         var hit = compatFilters.find(function (f) { return f.name === pickedName; });
         a.brew.filter = pickedName;
         if (hit && hit.id) a.brew.filterId = hit.id;
-        synthesizeScienceIntoApp(a, curMethodObj.key, { keepFilter: true });
+        synthesizeScienceIntoApp(a, curMethodObj.key, { keepFilter: true, preserveBatch: true, force: !isRecipeLockedFor(a, curMethodObj.key) });
         haptic('tick');
         saveDraft();
         rerender();
@@ -24908,9 +26950,7 @@ if (typeof window !== 'undefined') {
           text: 'Copy Fellow Profile JSON',
           onclick: function () {
             var jsonOut = JSON.stringify(synAiden ? synAiden.json : { title: 'BT Aiden', ratio: a.brew.ratio, bloomRatio: bloomRatio, bloomDuration: bloomSecs, bloomTemperature: bloomTempC, ssPulseTemperatures: pulseTemps }, null, 2);
-            if (typeof window !== 'undefined' && window.BTPlatform && typeof window.BTPlatform.copyText === 'function') {
-              window.BTPlatform.copyText(jsonOut);
-            }
+            copyTextSafe(jsonOut);
             showToast('Copied Fellow Aiden Profile JSON to clipboard!');
           }
         })
@@ -25219,17 +27259,38 @@ if (typeof window !== 'undefined') {
       }, dom('span', { text: tempUnit === 'F' ? '°F / °C' : '°C / °F' }))
     ));
 
+    var step3CoffeeSummary = formatCoffeeAttrSummary(a.coffee);
     stageEl.appendChild(dom('div', { class: 'bt-step-context-strip' },
-      dom('span', {
-        class: 'bt-step-context-copy',
-        text: (rec.grinder.short || rec.grinder.name) + ' · ' + (a.brew.filter || 'Standard Filter') + ' · ' + (step3Water.short || step3Water.label)
-      }),
+      dom('div', { style: 'min-width:0;display:flex;flex-direction:column;gap:2px;flex:1' },
+        dom('span', {
+          class: 'bt-step-context-copy',
+          text: (rec.grinder.short || rec.grinder.name) + ' · ' + (a.brew.filter || 'Standard Filter') + ' · ' + (step3Water.short || step3Water.label)
+        }),
+        step3CoffeeSummary ? dom('span', {
+          id: 'bt-step3-coffee-context',
+          style: 'font-size:0.74rem;color:var(--ink-secondary);font-weight:600;line-height:1.3',
+          text: step3CoffeeSummary
+        }) : null
+      ),
       dom('button', {
         type: 'button',
         class: 'bt-step-context-link',
         onclick: function () { haptic('tick'); goBrewStep('method'); }
       }, dom('span', { text: 'Change Gear \u2192' }))
     ));
+
+    /* Closed-Loop Dial Adaptation Banner (when unlocked brew adapted from prior rating/TDS/sensory feedback) */
+    var dialAdapt = rec.dialAdaptation || (a.brew && a.brew.dialAdaptation) || null;
+    var dialAdaptText = (!a.recipeLocked && dialAdapt) ? formatDialAdaptationBanner(dialAdapt) : '';
+    if (dialAdaptText) {
+      stageEl.appendChild(dom('div', {
+        id: 'bt-step3-dial-adaptation-banner',
+        style: 'padding:8px 12px;border-radius:12px;background:var(--accent-soft, rgba(27,77,56,0.08));border:1px solid rgba(27,77,56,0.28);display:flex;flex-direction:column;gap:2px;font-size:0.78rem;line-height:1.35'
+      },
+        dom('b', { style: 'color:var(--accent)', text: dialAdaptText }),
+        dialAdapt.reason && dialAdaptText.indexOf(dialAdapt.reason) < 0 ? dom('span', { style: 'color:var(--ink-secondary)', text: dialAdapt.reason }) : null
+      ));
+    }
 
     /* Customized / Locked Banner */
     if (a.brew.customizedNote || a.recipeLocked) {
@@ -27928,21 +29989,30 @@ if (typeof window !== 'undefined') {
             type: 'button',
             class: 'bt-cta-btn is-centered',
             onclick: function () {
-              a.coffee = Object.assign(a.coffee || {}, {
-                name: dec.coffee.name || 'Shared Coffee',
-                roaster: dec.coffee.roaster || '',
-                origin: dec.coffee.origin || '',
-                process: dec.coffee.process || 'washed',
-                roast: dec.coffee.roast || 'medium-light'
-              });
+              var shRef = getShell();
+              var freshC = (shRef && typeof shRef.newCoffee === 'function') ? shRef.newCoffee() : {};
+              a.coffee = freshC;
+              mergeRichCoffeeFields(a.coffee, dec.coffee, false);
+              if (!a.coffee.name) a.coffee.name = 'Shared Coffee';
+              if (!a.coffee.process) a.coffee.process = 'washed';
+              if (!a.coffee.roast) a.coffee.roast = 'medium-light';
+              syncCoffeeObjAliases(a.coffee);
+              a.freshCoffeeMode = false;
+              a.recipeLocked = false;
+              a.lockedMethod = '';
+              a.attempt = 0;
               a.brew.method = dec.methodKey;
               a.brew.style = dec.style || 'standard';
               a.brew.dose = dec.doseG;
               a.brew.water = dec.waterG;
               a.brew.ratio = dec.ratio;
               a.brew.tempC = dec.tempC;
+              a.brew.tempF = Math.round(dec.tempC * 9 / 5 + 32);
               a.brew.grindUm = dec.localizedUm;
+              a.brew.grind_um = dec.localizedUm;
               a.brew.grind_setting = dec.rxGrindSetting;
+              a.brew._savedDialedMethod = dec.methodKey;
+              a.brew.dialAdaptation = null;
               a.brew.customizedNote = 'Shared Brew (' + dec.rxGrindSetting + ')';
               haptic('celebrate');
               saveDraft();
@@ -28012,9 +30082,7 @@ if (typeof window !== 'undefined') {
             type: 'button',
             class: 'bt-cta-btn is-centered',
             onclick: function () {
-              if (typeof window !== 'undefined' && window.BTPlatform && typeof window.BTPlatform.copyText === 'function') {
-                window.BTPlatform.copyText(bundle.bt6Code);
-              }
+              copyTextSafe(bundle.bt6Code);
               haptic('snap');
               showToast('Copied BT6: Recipe Code to clipboard!');
             }
@@ -28083,7 +30151,12 @@ if (typeof window !== 'undefined') {
               a.brew.water = tgtWater;
               a.brew.ratio = tgtRatio;
               a.brew.grindUm = tgtUm;
+              a.brew.grind_um = tgtUm;
+              a.brew.grind_setting = gDisp.short;
               a.brew.tempC = tgtTemp;
+              a.brew.tempF = Math.round(tgtTemp * 9 / 5 + 32);
+              a.brew._savedDialedMethod = targetKey;
+              a.brew.dialAdaptation = null;
               a.brew.customizedNote = 'Brew Twin \u2192 ' + tgtObj.short;
               haptic('celebrate');
               saveDraft();
@@ -28296,7 +30369,7 @@ if (typeof window !== 'undefined') {
 
         var d50Um = Math.round(safeNum(isPhilips ? phSnap.grindUm : rec.d50Um, 550, 0));
         var anchorUm = Math.round(safeNum(isPhilips ? 290 : (rec.method.d50AnchorUm || 550), 550, 0));
-        var isDecaf = c.decaf === 'yes' || c.decaf === true || /decaf/i.test(String(c.name || ''));
+        var isDecaf = _isDecafCoffee(c);
         var roastUmDelta = isPhilips ? 0 : Math.round(anchorUm * (rawRoast.indexOf('dark') >= 0 ? 0.06 : rawRoast.indexOf('light') >= 0 ? -0.04 : 0) + (isDecaf ? (rec.method.outRatio ? -16 : 42) : 0));
         var degasInfo = computeDegassingBadge(c);
         var procAgeFrac = (/anaerobic|natural|infused/.test(rawProc) ? 0.035 : 0) + (degasInfo.days <= 3 ? 0.025 : degasInfo.days >= 28 ? -0.03 : 0);
@@ -28734,6 +30807,10 @@ if (typeof window !== 'undefined') {
       ['door', 'coffee', 'method', 'brew', 'recipe', 'timer', 'taste', 'tasting', 'perfect'].forEach(function (rk) {
         shInit.registerRoute(rk, function () {
           var a = getApp();
+          var prevStep = a.brewStep;
+          if ((rk === 'brew' || rk === 'recipe') && prevStep === 'method' && a.coffee && String(a.coffee.name || '').trim()) {
+            upsertStep2ToVault(a);
+          }
           a.activeTab = 'brew';
           if (rk === 'perfect') a.focusFix = true;
           a.brewStep = rk === 'recipe' ? 'brew' : (rk === 'tasting' || rk === 'perfect' ? 'taste' : rk);
@@ -29312,7 +31389,7 @@ var BTTasteCellarShared = (function () {
     var totalG = unit === 'pods' ? size : (typeof costGrams === 'function' ? costGrams(size, unit) : size * (unit === 'oz' ? 28.3495 : unit === 'lb' ? 453.592 : unit === 'kg' ? 1000 : 1));
     var remG = raw.rem_g != null && isFinite(+raw.rem_g) ? Math.max(0, Math.round(+raw.rem_g * 10) / 10) : Math.round(totalG * 10) / 10;
 
-    return {
+    var outBag = {
       id: String(raw.id || raw.coffee_id || ('bag_' + (idx != null ? idx : Date.now()))),
       coffee_id: String(raw.coffee_id || raw.id || ''),
       kind: raw.kind === 'pods' || unit === 'pods' ? 'pods' : 'bag',
@@ -29337,6 +31414,15 @@ var BTTasteCellarShared = (function () {
       frozen_date: isIsoDateStr(raw.frozen_date) ? String(raw.frozen_date).trim() : '',
       tubes_json: raw.tubes_json || ''
     };
+    var optBagNotes = String(raw.bag_notes || raw.bagNotes || '').trim();
+    if (optBagNotes) outBag.bag_notes = optBagNotes;
+    if (raw.origin) outBag.origin = String(raw.origin).trim();
+    if (raw.region) outBag.region = String(raw.region).trim();
+    if (raw.process) outBag.process = String(raw.process).trim();
+    if (raw.varietal) outBag.varietal = String(raw.varietal).trim();
+    if (raw.elevation_m) outBag.elevation_m = String(raw.elevation_m).trim();
+    if (+raw.bag_weight_g > 0) outBag.bag_weight_g = +raw.bag_weight_g;
+    return outBag;
   }
 
   function getNormalizedPrices() {
@@ -30250,12 +32336,17 @@ if (typeof window !== 'undefined') {
     var core = (typeof window !== 'undefined' && window.BTCoreV6) ? window.BTCoreV6 : null;
     var coreDiag = null;
     var coreFn = core && (core.computeDialInPrescription || core.diagnoseAndPrescribe || core.solveMakeItPerfect);
+    var obsSymptom = dx < -0.20 ? 'sour'
+      : (dx > 0.20 ? (tSt.guidedLike && tSt.guidedLike.finish === 'too_much' ? 'astringent' : 'bitter')
+      : (dy < -0.20 ? 'thin'
+      : (dy > 0.20 ? 'strong' : 'balanced')));
     if (typeof coreFn === 'function') {
       try {
         coreDiag = coreFn.call(core, {
           coffee_id: a.coffee && a.coffee.id,
           coffee_name: a.coffee && a.coffee.name,
           methodKey: methodKey,
+          method: methodKey,
           doseG: doseG,
           waterG: waterG,
           ratio: curRatio,
@@ -30270,18 +32361,30 @@ if (typeof window !== 'undefined') {
           targetTimeS: targetS || undefined,
           grinderKey: gInfo.grinderKey,
           calib: a.prefs && a.prefs.pocketMicronCalib,
-          bean: a.coffee
+          bean: a.coffee,
+          coffee: a.coffee
         }, {
           stars: effStars,
+          rating: effStars,
           dx: dx,
           dy: dy,
           padX: dx,
           padY: dy,
           ring: ringObj.ring,
+          symptom: obsSymptom,
           actualTimeS: actualS || undefined,
           timeDeltaS: timeDeltaS,
+          tds: +tSt.tdsPct > 0 ? +tSt.tdsPct : null,
+          tdsPct: +tSt.tdsPct > 0 ? +tSt.tdsPct : null,
           measuredTdsPct: +tSt.tdsPct > 0 ? +tSt.tdsPct : null,
-          measuredEyPct: measEy
+          ey: measEy,
+          eyPct: measEy,
+          measuredEyPct: measEy,
+          bevOutG: outG,
+          outG: outG,
+          exclude_learning: !!(tSt.excludeLearning || tSt.notMyStyle),
+          excludeLearning: !!(tSt.excludeLearning || tSt.notMyStyle),
+          dialLocked: !!tSt.goldLocked
         }, chronRows);
       } catch (_) {}
     }
@@ -30292,8 +32395,9 @@ if (typeof window !== 'undefined') {
       ? ('Very fresh roast (Day ' + ageDays + ') holds extra CO2 gas \u2014 give the bloom 45 seconds before making big grind jumps.')
       : '';
 
-    var inGoldZone = ringInfoForXY(rawDx, rawDy).ring === 0 && (effStars >= 4.25);
-    var isBalanced = inGoldZone && !(measEy != null && measEy < 18.8 && rawDx > 0.25);
+    var tdsOffTarget = measEy != null && (measEy < 18.2 || measEy > 22.8);
+    var inGoldZone = ringInfoForXY(rawDx, rawDy).ring === 0 && (effStars >= 4.25) && !(tdsOffTarget && effStars < 4.75);
+    var isBalanced = inGoldZone && !(measEy != null && measEy < 18.8 && rawDx > 0.25) && !(coreDiag && coreDiag.isBalanced === false && (effStars < 4.5 || tdsOffTarget));
 
     var nextUm = curUm;
     var nextTempC = curTempC;
@@ -30307,7 +32411,46 @@ if (typeof window !== 'undefined') {
     var thermalSpilloverNote = '';
     var flowNoteInRx = '';
 
-    if (!isBalanced) {
+    var usedCoreDiag = false;
+    if (!isBalanced && coreDiag && coreDiag.ok && coreDiag.nextRecipe && !coreDiag.isBalanced) {
+      var cRx = coreDiag.nextRecipe;
+      var cUm = +cRx.grindUm || +cRx.d50Um || curUm;
+      var cTemp = +cRx.tempC > 0 ? +cRx.tempC : curTempC;
+      var cRat = +cRx.ratio > 0 ? +cRx.ratio : curRatio;
+      var cWater = +cRx.waterG > 0 ? +cRx.waterG : Math.round(doseG * cRat);
+      var cDose = +cRx.doseG > 0 ? +cRx.doseG : doseG;
+      var movedAny = (Math.abs(cUm - curUm) >= 1) || (Math.abs(cTemp - curTempC) >= 0.5) || (Math.abs(cRat - curRatio) >= 0.05) || (cRx.agitation && cRx.agitation !== nextAgitation);
+      if (movedAny) {
+        usedCoreDiag = true;
+        nextUm = clamp(Math.round(cUm), isEsp ? 130 : 250, isEsp ? 420 : 1150);
+        nextTempC = clamp(cTemp, 80, 99);
+        nextRatio = clamp(Math.round(cRat * (isEsp ? 20 : 10)) / (isEsp ? 20 : 10), isEsp ? 1.2 : 11.5, isEsp ? 4.2 : 20.5);
+        nextDoseG = cDose;
+        nextWaterG = Math.round(cWater);
+        if (cRx.agitation) nextAgitation = cRx.agitation;
+        if (coreDiag.convergenceMode && String(coreDiag.convergenceMode).indexOf('channel') >= 0) primaryLever = 'channeling';
+        else if (Math.abs(nextUm - curUm) >= 1) primaryLever = 'grind';
+        else if (Math.abs(nextTempC - curTempC) >= 0.5) primaryLever = 'temp_pivot';
+        else primaryLever = 'ratio';
+
+        if (coreDiag.tabuPivotApplied) {
+          tabuPivotReason = 'Smart Dial Memory (Skipping Past Dip): Pivoted axis instead of repeating a failed move.';
+        }
+        if (coreDiag.steppedThermalSpilloverC) {
+          thermalSpilloverNote = 'Fine-Tune Between Grinder Clicks: paired with ' + nextTempC + ' \u00B0C water so extraction lands in the sweet spot.';
+        }
+        if (coreDiag.primaryActionHuman) {
+          headline = String(coreDiag.primaryActionHuman);
+        } else if (primaryLever === 'grind') {
+          var gCoreNext = mapNextGrinderDisplay(nextUm, gInfo, a, methodKey);
+          var dCl = Math.max(1, Math.abs(Math.round((nextUm - curUm) / Math.max(1, gInfo.umPerStep))));
+          headline = 'Move ' + gInfo.grinderLabel + ' ' + dCl + ' ' + (dCl === 1 ? gInfo.unit.replace(/s$/, '') : gInfo.unit) + ' ' + (nextUm < curUm ? 'finer' : 'coarser') +
+            ' (' + gInfo.curClicks + ' \u2192 ' + gCoreNext.clicks + ')' + (nextTempC !== curTempC ? (' \u00B7 Water ' + nextTempC + ' \u00B0C') : '');
+        }
+      }
+    }
+
+    if (!isBalanced && !usedCoreDiag) {
       var mx = nonlinMag(dx);
       var my = nonlinMag(dy);
       var jx = (Math.abs(mx) * 4.68) / 0.90;
@@ -30329,7 +32472,7 @@ if (typeof window !== 'undefined') {
         headline = gInfo.grindLocked
           ? 'Pour gently in the center (skip heavy swirling) to stop uneven channeling'
           : ('Move ' + gInfo.grinderLabel + ' ' + coarseClicks + ' ' + gInfo.unit.replace(/s$/, '') + ' coarser (' + gInfo.curClicks + ' \u2192 ' + gChNext.clicks + ') + calm center pour');
-      } else if (jx >= jy * 0.95 && Math.abs(dx) >= 0.20) {
+      } else if (jx >= jy * 0.95 && Math.abs(dx) >= 0.18) {
         var wantFiner = dx < 0;
         var blockedReason = wantFiner ? tabu.grindFiner : tabu.grindCoarser;
 
@@ -30360,6 +32503,10 @@ if (typeof window !== 'undefined') {
           if (timeDeltaS < -18 && wantFiner) rawDeltaUm *= 1.15;
           else if (timeDeltaS > 20 && !wantFiner) rawDeltaUm *= 1.15;
           var rawClicks = Math.round(rawDeltaUm / gInfo.umPerStep);
+          /* Never quantize a real extraction error down to 0 clicks unless grinder is locked */
+          if (rawClicks === 0 && (Math.abs(dx) >= 0.28 || effStars < 4.25 || tdsOffTarget)) {
+            rawClicks = wantFiner ? -1 : 1;
+          }
 
           if (rawClicks === 0) {
             var spillOnlyT = clamp(Math.round((-0.092 * rawDeltaUm) * 2) / 2, -2.5, 2.5);
@@ -30650,6 +32797,108 @@ if (typeof window !== 'undefined') {
     tSt.padY = clamp(ny, -0.95, 0.95);
   }
 
+  function isStep5CoffeeUnknownVal(val) {
+    var s = String(val == null ? '' : val).trim().toLowerCase();
+    if (!s) return false;
+    var compact = s.replace(/[^a-z0-9]/g, '');
+    return compact === 'unknown' || compact === 'unsure' || compact === 'notsure' ||
+      compact === 'dontknow' || compact === 'idontknow' || compact === 'unlisted' ||
+      compact === 'unlabeled' || compact === 'none' || compact === 'nonelisted' ||
+      compact === 'notonbag' || compact === 'na';
+  }
+
+  function resolveStep5CoffeeBagNotes(a) {
+    a = a || S.getApp();
+    if (!a || typeof a !== 'object') return '';
+    a.coffee = a.coffee || {};
+    var co = a.coffee;
+    var direct = String(co.bag_notes || co.bagNotes || co.notes || co.flavors || '').trim();
+    if (direct && !isStep5CoffeeUnknownVal(direct)) {
+      co.bag_notes = direct;
+      co.notes = direct;
+      co.notesUnsure = '';
+      co.bagNotesUnsure = '';
+      co.notes_unknown = '';
+      return direct;
+    }
+
+    var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
+    var normPart = function (v) { return String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); };
+    var cid = String(co.id || co.coffee_id || '').trim();
+    if (cid === 'cf_1' || /^uf_|^bag_/i.test(cid)) cid = '';
+    var cName = normPart(co.name || co.coffee_name || '');
+    var cRoast = normPart(co.roaster || '');
+    var matchesRec = function (rec) {
+      if (!rec || typeof rec !== 'object') return false;
+      var rid = String(rec.coffee_id || rec.id || '').trim();
+      if (cid && rid && rid === cid) return true;
+      var rName = normPart(rec.name || rec.coffee_name || rec.coffee || '');
+      var rRoast = normPart(rec.roaster || '');
+      if (cName && rName === cName) {
+        if (!cRoast || !rRoast || cRoast === rRoast) return true;
+      }
+      return false;
+    };
+
+    var vaultRec = null;
+    try {
+      var vList = (storage && typeof storage.getCoffeesVaultList === 'function') ? storage.getCoffeesVaultList() : null;
+      if (!Array.isArray(vList) && typeof localStorage !== 'undefined') {
+        var rawV = localStorage.getItem('brew-and-cup-coffees-v1');
+        if (rawV) {
+          var parsedV = JSON.parse(rawV);
+          vList = Array.isArray(parsedV) ? parsedV : (parsedV && Array.isArray(parsedV.list) ? parsedV.list : null);
+        }
+      }
+      if (Array.isArray(vList)) vaultRec = vList.find(matchesRec) || null;
+    } catch (_) {}
+
+    var uRec = null;
+    try {
+      if (storage && typeof storage.buildUnifiedCoffeesIndex === 'function') {
+        var uList = storage.buildUnifiedCoffeesIndex();
+        if (Array.isArray(uList)) uRec = uList.find(matchesRec) || null;
+      }
+    } catch (_) {}
+
+    var mergeFields = [
+      'origin', 'region', 'farm', 'farm_or_station', 'producer', 'harvest_year',
+      'varietal', 'species', 'blend', 'process', 'process_sub', 'process_details',
+      'decaf', 'decaf_process', 'roast', 'roast_date', 'is_frozen', 'frozen_date',
+      'elevation_m', 'elevText', 'density', 'personal_note', 'agtron',
+      'bean_agtron', 'ground_agtron', 'agtron_scale', 'roast_delta',
+      'psd_d10_um', 'psd_d50_um', 'psd_d90_um', 'psd_span'
+    ];
+    [vaultRec, uRec].forEach(function (src) {
+      if (!src) return;
+      mergeFields.forEach(function (fk) {
+        if ((!co[fk] || isStep5CoffeeUnknownVal(co[fk])) && src[fk] && !isStep5CoffeeUnknownVal(src[fk])) {
+          co[fk] = src[fk];
+        }
+      });
+    });
+
+    var foundNotes = '';
+    [vaultRec, uRec].some(function (src) {
+      if (!src) return false;
+      var cand = String(src.bag_notes || src.bagNotes || src.notes || src.flavors || '').trim();
+      if (cand && !isStep5CoffeeUnknownVal(cand)) {
+        foundNotes = cand;
+        return true;
+      }
+      return false;
+    });
+    if (foundNotes) {
+      co.bag_notes = foundNotes;
+      co.notes = foundNotes;
+      co.notesUnsure = '';
+      co.bagNotesUnsure = '';
+      co.notes_unknown = '';
+      return foundNotes;
+    }
+    return '';
+  }
+
   /* Persist Lossless 129-Column History Row + Deduct Bag Grams + Apply Next-Cup Fix / Gold Lock */
   function saveStep5TastingAndApply(tSt, rx, opts) {
     opts = opts || {};
@@ -30657,7 +32906,7 @@ if (typeof window !== 'undefined') {
     var st = S.getState();
     var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
     var effStars = +tSt.stars > 0 ? +tSt.stars : 4.25;
-    var lockGold = !!(opts.lockGold != null ? opts.lockGold : (tSt.goldLocked || (rx.inGoldZone && !tSt.excludeLearning && !tSt.notMyStyle)));
+    var lockGold = !!(opts.lockGold != null ? opts.lockGold : tSt.goldLocked);
     if (tSt.excludeLearning || tSt.notMyStyle) lockGold = false;
 
     st.stars = effStars;
@@ -30721,7 +32970,8 @@ if (typeof window !== 'undefined') {
       st.cva = { cur: 0 };
     }
 
-    var matchInfo = computeWcrFlavorMatch(tSt.userNotes, a.coffee && a.coffee.bag_notes);
+    var restoredStep5BagNotes = resolveStep5CoffeeBagNotes(a);
+    var matchInfo = computeWcrFlavorMatch(tSt.userNotes, restoredStep5BagNotes || (a.coffee && a.coffee.bag_notes));
     st.scratchReveal = {
       revealed: !!tSt.foilRevealed,
       matchPct: matchInfo.matchPct,
@@ -30739,7 +32989,31 @@ if (typeof window !== 'undefined') {
       st.id = mintFreshRowId();
     }
 
-    var overrides = { id: st.id };
+    var co = (a && a.coffee) || {};
+    var isCoffeeUnknownVal = isStep5CoffeeUnknownVal;
+    var actualBagNotes = String(co.bag_notes || co.bagNotes || co.notes || restoredStep5BagNotes || '').trim();
+    var hasActualBagNotes = !!(actualBagNotes && !isCoffeeUnknownVal(actualBagNotes));
+    if (hasActualBagNotes) {
+      co.bag_notes = actualBagNotes;
+      co.notes = actualBagNotes;
+      co.notesUnsure = '';
+      co.bagNotesUnsure = '';
+      co.notes_unknown = '';
+    }
+    var hasActualRoast = !!(co.roast && !isCoffeeUnknownVal(co.roast));
+    var hasActualProc = !!(co.process && !isCoffeeUnknownVal(co.process));
+    var hasActualOrig = !!(co.origin && !isCoffeeUnknownVal(co.origin));
+    var hasActualElev = !!((+co.elevation_m >= 100 && +co.elevation_m <= 3600) || (co.density && !isCoffeeUnknownVal(co.density)));
+    var hasActualDate = !!(co.roast_date && !isCoffeeUnknownVal(co.roast_date));
+
+    var roastIsUnk = !hasActualRoast && !!(co.roastUnsure === 'yes' || co.roastUnsure === true || co.roast_unknown === 'yes' || co.roast_unknown === true || isCoffeeUnknownVal(co.roast));
+    var procIsUnk = !hasActualProc && !!(co.processUnsure === 'yes' || co.processUnsure === true || co.process_unknown === 'yes' || co.process_unknown === true || isCoffeeUnknownVal(co.process));
+    var origIsUnk = !hasActualOrig && !!(co.originUnsure === 'yes' || co.originUnsure === true || co.origin_unknown === 'yes' || co.origin_unknown === true || isCoffeeUnknownVal(co.origin));
+    var elevIsUnk = !hasActualElev && !!(co.elevUnsure === 'yes' || co.elevUnsure === true || co.elevationUnsure === 'yes' || co.elev_unknown === 'yes' || co.elev_unknown === true || isCoffeeUnknownVal(co.elevation_m) || isCoffeeUnknownVal(co.elevText));
+    var dateIsUnk = !hasActualDate && !!(co.dateUnsure === 'yes' || co.dateUnsure === true || co.roastDateUnsure === 'yes' || isCoffeeUnknownVal(co.roast_date));
+    var notesIsUnk = !hasActualBagNotes && !!(co.notesUnsure === 'yes' || co.notesUnsure === true || co.bagNotesUnsure === 'yes' || isCoffeeUnknownVal(actualBagNotes));
+
+    var overrides = { id: st.id, coffee: co };
     if (+tSt.tdsPct > 0) overrides.brew_tds_pct = +tSt.tdsPct;
     if (+rx.bevOutG > 0) overrides.brew_out_g = +rx.bevOutG;
     if (+rx.actualTimeS > 0) overrides.brew_actual_time_s = String(rx.actualTimeS);
@@ -30747,23 +33021,6 @@ if (typeof window !== 'undefined') {
     if (tSt.inMugLogged) {
       overrides.pour_notes = ((a.brew && a.brew.pourNotes) ? a.brew.pourNotes + ' \u00B7 ' : '') + 'In-Mug Rescue: ' + tSt.inMugLogged;
     }
-
-    var co = (a && a.coffee) || {};
-    var isCoffeeUnknownVal = function (val) {
-      var s = String(val == null ? '' : val).trim().toLowerCase();
-      if (!s) return false;
-      var compact = s.replace(/[^a-z0-9]/g, '');
-      return compact === 'unknown' || compact === 'unsure' || compact === 'notsure' ||
-        compact === 'dontknow' || compact === 'idontknow' || compact === 'unlisted' ||
-        compact === 'unlabeled' || compact === 'none' || compact === 'nonelisted' ||
-        compact === 'notonbag' || compact === 'na';
-    };
-    var roastIsUnk = !!(co.roastUnsure === 'yes' || co.roastUnsure === true || co.roast_unknown === 'yes' || co.roast_unknown === true || isCoffeeUnknownVal(co.roast));
-    var procIsUnk = !!(co.processUnsure === 'yes' || co.processUnsure === true || co.process_unknown === 'yes' || co.process_unknown === true || isCoffeeUnknownVal(co.process));
-    var origIsUnk = !!(co.originUnsure === 'yes' || co.originUnsure === true || co.origin_unknown === 'yes' || co.origin_unknown === true || isCoffeeUnknownVal(co.origin));
-    var elevIsUnk = !!(co.elevUnsure === 'yes' || co.elevUnsure === true || co.elevationUnsure === 'yes' || co.elev_unknown === 'yes' || co.elev_unknown === true || isCoffeeUnknownVal(co.elevation_m) || isCoffeeUnknownVal(co.elevText));
-    var dateIsUnk = !!(co.dateUnsure === 'yes' || co.dateUnsure === true || co.roastDateUnsure === 'yes' || isCoffeeUnknownVal(co.roast_date));
-    var notesIsUnk = !!(co.notesUnsure === 'yes' || co.notesUnsure === true || co.bagNotesUnsure === 'yes' || isCoffeeUnknownVal(co.bag_notes));
 
     var built = null;
     if (storage && typeof storage.buildRow === 'function') {
@@ -30792,7 +33049,7 @@ if (typeof window !== 'undefined') {
         elevation_m: parsedElevFallback,
         elevation_class: elevIsUnk ? 'unknown' : (co.density || ''),
         roast_date: dateIsUnk ? '' : (co.roast_date || ''),
-        bag_notes: notesIsUnk ? '' : (co.bag_notes || ''),
+        bag_notes: hasActualBagNotes ? actualBagNotes : (notesIsUnk ? '' : ''),
         brew_method: rx.nextRecipe.methodKey,
         brew_attempt: String(rx.tryNum),
         brew_dose_g: String((a.brew && a.brew.dose) || 15),
@@ -30840,10 +33097,10 @@ if (typeof window !== 'undefined') {
         built.roast_date = '';
         built.days_since_roast = '';
       }
-      if (notesIsUnk) {
+      if (hasActualBagNotes) {
+        built.bag_notes = actualBagNotes;
+      } else if (notesIsUnk) {
         built.bag_notes = '';
-      } else if (!built.bag_notes && (co.bag_notes || co.bagNotes || co.notes)) {
-        built.bag_notes = String(co.bag_notes || co.bagNotes || co.notes).trim();
       }
       if (rx.actualTimeS > 0) built.brew_actual_time_s = String(rx.actualTimeS);
       if (rx.targetTimeS > 0 && !built.brew_time_s) built.brew_time_s = String(rx.targetTimeS);
@@ -30864,6 +33121,42 @@ if (typeof window !== 'undefined') {
       }
     }
 
+    if (built) {
+      built.dial_locked = lockGold ? 'yes' : '';
+      built.dial_symptom = sym;
+      built.dial_change = (!lockGold && rx && rx.headline) ? String(rx.headline) : '';
+      try {
+        var adapObj = {};
+        if (built.recipe_adaptation_json) {
+          var parsedAd = JSON.parse(built.recipe_adaptation_json);
+          if (parsedAd && typeof parsedAd === 'object' && !Array.isArray(parsedAd)) adapObj = parsedAd;
+        }
+        adapObj.dial_symptom = sym;
+        adapObj.dial_change = built.dial_change;
+        if (rx && rx.nextRecipe) {
+          adapObj.next_recipe = {
+            methodKey: rx.nextRecipe.methodKey,
+            doseG: rx.nextRecipe.doseG,
+            waterG: rx.nextRecipe.waterG,
+            ratio: rx.nextRecipe.ratio,
+            grindUm: rx.nextRecipe.grindUm,
+            d50Um: rx.nextRecipe.grindUm,
+            grindSetting: rx.nextRecipe.grindSetting || '',
+            tempC: rx.nextRecipe.tempC,
+            tempF: rx.nextRecipe.tempF,
+            agitation: rx.nextRecipe.agitation || 'standard',
+            fromTry: rx.tryNum,
+            stars: effStars,
+            tdsPct: +tSt.tdsPct > 0 ? +tSt.tdsPct : null,
+            symptom: sym,
+            headline: rx.headline || '',
+            locked: !!lockGold
+          };
+        }
+        built.recipe_adaptation_json = JSON.stringify(adapObj);
+      } catch (_) {}
+    }
+
     if (storage && typeof storage.keepInBrowser === 'function') {
       try { storage.keepInBrowser(built); } catch (_) {}
     } else if (storage && typeof storage.appendHistoryRow === 'function') {
@@ -30876,9 +33169,14 @@ if (typeof window !== 'undefined') {
       try { storage.deductBagGrams(a.coffee, usedDose, { silent: true }); } catch (_) {}
     }
 
+    var prevUmBeforeSave = +((a.cupBrew && (a.cupBrew.grind_um || a.cupBrew.grindUm)) || (a.brew && (a.brew.grindUm || a.brew.grind_um)) || (built && built.brew_grind_target_um) || 0);
     if (!tSt.excludeLearning && !tSt.notMyStyle) {
       if (lockGold) {
         a.recipeLocked = true;
+        if (a.brew) {
+          a.brew._savedDialedMethod = a.brew.method || '';
+          a.brew.dialAdaptation = { adapted: false, locked: true, fromTry: rx.tryNum, stars: effStars };
+        }
         if (storage && typeof storage.commitDialLock === 'function') {
           try {
             var hAll = S.getHistoryObjs();
@@ -30888,6 +33186,7 @@ if (typeof window !== 'undefined') {
         }
       } else if (rx.nextRecipe && a.brew) {
         a.recipeLocked = false;
+        if (rx.nextRecipe.methodKey) a.brew.method = rx.nextRecipe.methodKey;
         a.brew.dose = rx.nextRecipe.doseG;
         a.brew.water = rx.nextRecipe.waterG;
         a.brew.ratio = rx.nextRecipe.ratio;
@@ -30897,6 +33196,19 @@ if (typeof window !== 'undefined') {
         a.brew.tempC = rx.nextRecipe.tempC;
         a.brew.tempF = rx.nextRecipe.tempF;
         a.brew.agitation = rx.nextRecipe.agitation;
+        a.brew._savedDialedMethod = a.brew.method || '';
+        a.brew.dialAdaptation = {
+          adapted: true,
+          locked: false,
+          fromTry: rx.tryNum,
+          stars: effStars,
+          tdsPct: +tSt.tdsPct > 0 ? +tSt.tdsPct : null,
+          symptom: sym,
+          prevUm: prevUmBeforeSave,
+          nextUm: rx.nextRecipe.grindUm,
+          headline: rx.headline || '',
+          summaryBanner: rx.headline || ''
+        };
         a.attempt = rx.tryNum;
         a.dialNote = {
           symptom: sym,
@@ -30904,6 +33216,10 @@ if (typeof window !== 'undefined') {
           fromId: built.id || ''
         };
       }
+    }
+
+    if (storage && typeof storage.upsertCoffeeVaultRecord === 'function') {
+      try { storage.upsertCoffeeVaultRecord(co, built); } catch (_) {}
     }
 
     st.id = mintFreshRowId();
@@ -30988,7 +33304,7 @@ if (typeof window !== 'undefined') {
   /* Blind-First Rose-Copper Scratch Foil 2.0 Card + Tabbed Flavor Note Selector */
   function buildScratchFoilCard(tSt, onUpdate, allowBeanjaminHere) {
     var a = S.getApp();
-    var bagNotesStr = (a.coffee && a.coffee.bag_notes) || '';
+    var bagNotesStr = resolveStep5CoffeeBagNotes(a);
     var match = computeWcrFlavorMatch(tSt.userNotes, bagNotesStr);
 
     var flavorPickerHost = S.h('div', { id: 'bt-step5-flavor-picker', style: 'display:flex;flex-direction:column;gap:9px' });
@@ -31214,7 +33530,9 @@ if (typeof window !== 'undefined') {
           var foilHeadline = 'SCRATCH COPPER FOIL TO REVEAL BAG NOTES';
           var foilSubline = tSt.userNotes.length
             ? (tSt.userNotes.length + ' blind note' + (tSt.userNotes.length === 1 ? '' : 's') + ' picked \u2014 rub foil to reveal!')
-            : 'Tap flavors you taste above, then scratch here!';
+            : (match.hasBagNotes
+              ? ('Tap flavors you taste above, then scratch to reveal ' + match.roasterNotes.length + ' bag note' + (match.roasterNotes.length === 1 ? '' : 's') + '!')
+              : 'Tap flavors you taste above, then scratch here!');
           var headPx = wCss < 360 ? 11.5 : 13;
           ctx.fillStyle = '#231108';
           ctx.textAlign = 'center';
@@ -31479,6 +33797,7 @@ if (typeof window !== 'undefined') {
     ensureR2BleListeners();
     var a = S.getApp();
     var st = S.getState();
+    resolveStep5CoffeeBagNotes(a);
     var bleNow = getBleStateSafe();
     if (!st.brewFinishedAtMs) st.brewFinishedAtMs = Date.now();
     var coffeeId = (a.coffee && (a.coffee.id || a.coffee.name)) || 'default';
@@ -31778,10 +34097,7 @@ if (typeof window !== 'undefined') {
         } catch (_) {}
       }
 
-      var shouldSaveGold = !!(rx.inGoldZone && (tSt.goldLocked || !tSt._goldExplicitlyOff) && !tSt.excludeLearning && !tSt.notMyStyle);
-      if (rx.inGoldZone && tSt.goldLocked === false) {
-        shouldSaveGold = !tSt.excludeLearning && !tSt.notMyStyle;
-      }
+      var shouldSaveGold = !!(tSt.goldLocked && rx.inGoldZone && !tSt.excludeLearning && !tSt.notMyStyle);
 
       /* In-Place Gold Recipe Toggle (NEVER yanks/teleports user without explicit Save!) */
       if (rx.inGoldZone && !tSt.excludeLearning && !tSt.notMyStyle) {
@@ -33430,6 +35746,7 @@ if (typeof window !== 'undefined') {
     confirmCloneUntil: 0,
     lastSavedCafeDrink: null,
     priceAddOpen: false,
+    priceEditIdx: -1,
     priceShow: 'open', /* 'open' | 'finished' | 'all' */
     priceSort: 'use_first', /* 'use_first' | 'newest' | 'cheap' | 'name' */
     priceQ: '',
@@ -33443,7 +35760,12 @@ if (typeof window !== 'undefined') {
       rlevel: 'light',
       date: '',
       roast: '',
-      notes: ''
+      notes: '',
+      bag_notes: '',
+      origin: '',
+      process: '',
+      varietal: '',
+      elevation_m: ''
     }
   };
 
@@ -33494,37 +35816,377 @@ if (typeof window !== 'undefined') {
     S.navGo('recipe');
   }
 
-  /* Complete Row/Bag -> app.brew Sync (syncs BOTH grindUm & grind_um, tempC & tempF, and recipeLocked) */
+  function normCoffeeKeyPart(v) {
+    return String(v == null ? '' : v).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  function isSyntheticCoffeeId(id) {
+    var s = String(id == null ? '' : id).trim();
+    return !s || s === 'cf_1' || /^uf_|^bag_/i.test(s);
+  }
+
+  function isIsoDateCellar(v) {
+    return /^\d{4}-\d{2}(?:-\d{2})?$/.test(String(v == null ? '' : v).trim());
+  }
+
+  function unneutCellar(v) {
+    var s = String(v == null ? '' : v);
+    if (typeof unneutralize === 'function') {
+      try { s = unneutralize(s); } catch (_) {}
+    }
+    return s.trim();
+  }
+
+  function isUnkCoffeeVal(v) {
+    var s = String(v == null ? '' : v).trim().toLowerCase();
+    if (!s) return true;
+    var compact = s.replace(/[^a-z0-9]/g, '');
+    return compact === 'unknown' || compact === 'unsure' || compact === 'notsure' ||
+      compact === 'dontknow' || compact === 'idontknow' || compact === 'unlisted' ||
+      compact === 'unlabeled' || compact === 'none' || compact === 'nonelisted' ||
+      compact === 'notonbag' || compact === 'na';
+  }
+
+  function pickRichStr() {
+    for (var i = 0; i < arguments.length; i++) {
+      var val = arguments[i];
+      if (val == null) continue;
+      var s = unneutCellar(val);
+      if (s && !isUnkCoffeeVal(s)) return s;
+    }
+    return '';
+  }
+
+  function pickPosNum() {
+    for (var i = 0; i < arguments.length; i++) {
+      var n = +arguments[i];
+      if (isFinite(n) && n > 0) return n;
+    }
+    return null;
+  }
+
+  function pickNonNegNum() {
+    for (var i = 0; i < arguments.length; i++) {
+      var raw = arguments[i];
+      if (raw === '' || raw == null) continue;
+      var n = +raw;
+      if (isFinite(n) && n >= 0) return n;
+    }
+    return null;
+  }
+
+  function readRowAdapMetaSafe(row) {
+    if (!row || typeof row !== 'object') return null;
+    var raw = row.recipe_adaptation_json;
+    if (!raw) return null;
+    try {
+      var parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function getCoffeesVaultSafe() {
+    var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
+    try {
+      if (storage && typeof storage.getCoffeesVaultList === 'function') {
+        var arr = storage.getCoffeesVaultList();
+        if (Array.isArray(arr)) return arr;
+      }
+      if (typeof localStorage !== 'undefined') {
+        var raw = localStorage.getItem('brew-and-cup-coffees-v1');
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+          if (parsed && Array.isArray(parsed.list)) return parsed.list;
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  function upsertVaultSafe(coffeeIn, brewIn, opts) {
+    var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
+    if (storage && typeof storage.upsertCoffeeVaultRecord === 'function') {
+      try { return storage.upsertCoffeeVaultRecord(coffeeIn, brewIn, opts); } catch (_) {}
+    }
+    return null;
+  }
+
+  function findCoffeeRecordsMatch(cid, rawName, rawRoaster, preloaded) {
+    preloaded = preloaded || {};
+    var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
+    var cleanCid = isSyntheticCoffeeId(cid) ? '' : String(cid).trim();
+    var nName = normCoffeeKeyPart(unneutCellar(rawName || ''));
+    var nRoast = normCoffeeKeyPart(unneutCellar(rawRoaster || ''));
+
+    var findBest = function (list, nameKeys) {
+      if (!Array.isArray(list) || !list.length) return null;
+      if (cleanCid) {
+        var cidHit = list.find(function (it) {
+          if (!it) return false;
+          var ic = String(it.coffee_id || it.id || '').trim();
+          return !isSyntheticCoffeeId(ic) && ic === cleanCid;
+        });
+        if (cidHit) return cidHit;
+      }
+      if (!nName) return null;
+      var exactHit = list.find(function (it) {
+        if (!it) return false;
+        var iname = '';
+        for (var k = 0; k < nameKeys.length; k++) {
+          if (it[nameKeys[k]]) { iname = normCoffeeKeyPart(unneutCellar(it[nameKeys[k]])); break; }
+        }
+        var iroast = normCoffeeKeyPart(unneutCellar(it.roaster || ''));
+        return iname === nName && nRoast && iroast === nRoast;
+      });
+      if (exactHit) return exactHit;
+      return list.find(function (it) {
+        if (!it) return false;
+        var iname = '';
+        for (var k = 0; k < nameKeys.length; k++) {
+          if (it[nameKeys[k]]) { iname = normCoffeeKeyPart(unneutCellar(it[nameKeys[k]])); break; }
+        }
+        var iroast = normCoffeeKeyPart(unneutCellar(it.roaster || ''));
+        return iname === nName && (!nRoast || !iroast);
+      }) || null;
+    };
+
+    var vaultList = Array.isArray(preloaded.vaultList) ? preloaded.vaultList : getCoffeesVaultSafe();
+    var unifiedList = Array.isArray(preloaded.unified)
+      ? preloaded.unified
+      : ((storage && typeof storage.buildUnifiedCoffeesIndex === 'function') ? storage.buildUnifiedCoffeesIndex() : []);
+    var priceList = Array.isArray(preloaded.prices) ? preloaded.prices : S.getNormalizedPrices();
+
+    return {
+      vaultRec: findBest(vaultList, ['name', 'coffee_name', 'coffee']),
+      uRec: findBest(unifiedList, ['name', 'coffee_name', 'coffee']),
+      priceBag: findBest(priceList, ['coffee', 'name', 'coffee_name'])
+    };
+  }
+
+  /* Complete Lossless Row/Bag -> app.coffee + app.brew Sync (Vault + Unified + Row + Bag) */
   function hydrateBrewFromRowOrBag(row, uRec, bag) {
     var a = S.getApp();
     var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
-    var anchor = row || (uRec && (uRec.lockedBrew || uRec.bestBrew || uRec.latestBrew)) || null;
+    var lookupCid = (uRec && uRec.coffee_id) || (row && row.coffee_id) || (bag && (bag.coffee_id || (!isSyntheticCoffeeId(bag.id) ? bag.id : ''))) || '';
+    var lookupName = (uRec && uRec.name) || (row && unneutCellar(row.coffee_name)) || (bag && (bag.coffee || bag.name)) || '';
+    var lookupRoaster = (uRec && uRec.roaster) || (row && unneutCellar(row.roaster)) || (bag && bag.roaster) || '';
+    var matched = findCoffeeRecordsMatch(lookupCid, lookupName, lookupRoaster);
 
-    if (uRec && storage && typeof storage.selectSavedCoffee === 'function') {
-      try { storage.selectSavedCoffee(uRec, { anchorRow: anchor || undefined, silent: true }); } catch (_) {}
+    var vaultRec = matched.vaultRec || null;
+    var resolvedU = uRec || matched.uRec || null;
+    var resolvedBag = bag || matched.priceBag || (resolvedU && resolvedU.openBag) || null;
+    var anchor = row || (resolvedU && (resolvedU.lockedBrew || resolvedU.bestBrew || resolvedU.latestBrew)) || null;
+
+    var recForSelect = null;
+    if (resolvedU || vaultRec) {
+      recForSelect = Object.assign({}, vaultRec || {}, resolvedU || {});
+      if (vaultRec) {
+        var mergeKeys = [
+          'name', 'roaster', 'roaster_location', 'origin', 'region', 'farm', 'farm_or_station',
+          'producer', 'harvest_year', 'varietal', 'species', 'blend', 'process', 'process_sub',
+          'process_details', 'decaf', 'decaf_process', 'roast', 'roast_date', 'is_frozen',
+          'frozen_date', 'freeze_days_offset', 'elevation_m', 'elevText', 'density',
+          'bag_notes', 'notes', 'personal_note', 'bag_weight_g', 'remaining_g', 'price',
+          'currency', 'agtron', 'bean_agtron', 'ground_agtron', 'agtron_scale', 'roast_delta',
+          'psd_d10_um', 'psd_d50_um', 'psd_d90_um', 'psd_span', 'roasterGuide',
+          'recommended_rest_days', 'lastBrew'
+        ];
+        mergeKeys.forEach(function (k) {
+          if ((!recForSelect[k] || isUnkCoffeeVal(recForSelect[k])) && vaultRec[k] && !isUnkCoffeeVal(vaultRec[k])) {
+            recForSelect[k] = vaultRec[k];
+          }
+        });
+      }
+      if (resolvedBag) {
+        if (!recForSelect.roast_date && isIsoDateCellar(resolvedBag.roast_date || resolvedBag.roast)) {
+          recForSelect.roast_date = resolvedBag.roast_date || resolvedBag.roast;
+        }
+        if (!recForSelect.roast && resolvedBag.rlevel) recForSelect.roast = resolvedBag.rlevel;
+        if (!recForSelect.bag_notes && (resolvedBag.bag_notes || resolvedBag.notes)) {
+          recForSelect.bag_notes = resolvedBag.bag_notes || resolvedBag.notes;
+        }
+      }
+    }
+
+    if (recForSelect && storage && typeof storage.selectSavedCoffee === 'function') {
+      try { storage.selectSavedCoffee(recForSelect, { anchorRow: anchor || undefined, silent: true }); } catch (_) {}
     } else if (anchor && storage && typeof storage.useCoffeeFromRow === 'function') {
       try { storage.useCoffeeFromRow(anchor, true, true); } catch (_) {}
-    } else if (bag) {
-      a.coffee = Object.assign({}, a.coffee || {}, {
-        name: bag.coffee || bag.name || '',
-        roaster: bag.roaster || '',
-        roast: bag.rlevel || 'light',
-        roast_date: bag.roast || '',
-        is_frozen: bag.is_frozen || '',
-        answered: 'yes'
+    }
+
+    var v = vaultRec || {};
+    var u = resolvedU || {};
+    var r = anchor || {};
+    var b = resolvedBag || {};
+    var pb = matched.priceBag || {};
+    var ad = readRowAdapMetaSafe(r) || {};
+    var ce = (ad && ad.coffee_extra && typeof ad.coffee_extra === 'object') ? ad.coffee_extra : {};
+    var curC = (a && a.coffee && typeof a.coffee === 'object') ? a.coffee : {};
+
+    var finalCid = '';
+    [u.coffee_id, v.coffee_id, v.id, r.coffee_id, b.coffee_id, (!isSyntheticCoffeeId(b.id) ? b.id : ''), curC.id].some(function (cand) {
+      if (cand && !isSyntheticCoffeeId(cand)) { finalCid = String(cand).trim(); return true; }
+      return false;
+    });
+    if (!finalCid) finalCid = 'cf_' + Date.now().toString(36);
+
+    var bagLevelFromB = pickRichStr(b.rlevel, (!isIsoDateCellar(b.roast) ? b.roast : ''), pb.rlevel);
+    var rawRoast = pickRichStr(v.roast, u.roast, r.roast_level, bagLevelFromB, curC.roast);
+    var normRoast = rawRoast ? ((typeof resolveRoast === 'function' ? resolveRoast(rawRoast) : '') || rawRoast.toLowerCase()) : 'light';
+
+    var rawProc = pickRichStr(v.process, u.process, r.process, b.process, pb.process, curC.process);
+    var normProc = rawProc ? ((typeof resolveProcess === 'function' ? resolveProcess(rawProc) : '') || rawProc.toLowerCase()) : '';
+
+    var bagNotesVal = pickRichStr(
+      v.bag_notes, v.notes, v.flavors,
+      u.bag_notes, u.notes, u.flavors,
+      r.bag_notes,
+      b.bag_notes, b.bagNotes, b.flavors, b.tasting_notes, b.notes,
+      pb.bag_notes, pb.notes
+    );
+
+    var elevRaw = pickRichStr(v.elevation_m, u.elevation_m, r.elevation_m, b.elevation_m, pb.elevation_m, ce.elevation_m);
+    var elevNum = parseInt(String(elevRaw).replace(/[^0-9]/g, ''), 10);
+    var finalElevM = (isFinite(elevNum) && elevNum >= 100 && elevNum <= 3600) ? String(elevNum) : (elevRaw || '');
+    var finalElevText = pickRichStr(v.elevText, u.elevText, b.elevText) || (finalElevM ? (finalElevM + ' masl') : '');
+    var finalDensity = pickRichStr(v.density, u.density, r.elevation_class, b.density) ||
+      ((finalElevM && typeof resolveDensity === 'function') ? (resolveDensity('', finalElevM) || '') : '');
+
+    var explicitFrozen = (bag && bag.is_frozen === 'yes') ? 'yes'
+      : ((v.is_frozen === 'yes' || u.is_frozen === 'yes' || r.is_frozen === 'yes' || b.is_frozen === 'yes' || pb.is_frozen === 'yes') ? 'yes' : '');
+    var bestRoastDate = '';
+    [
+      (bag && isIsoDateCellar(bag.roast) ? bag.roast : ''),
+      (bag && isIsoDateCellar(bag.roast_date) ? bag.roast_date : ''),
+      v.roast_date, u.roast_date, (u.openBag && u.openBag.roast),
+      r.roast_date,
+      (isIsoDateCellar(b.roast_date) ? b.roast_date : (isIsoDateCellar(b.roast) ? b.roast : '')),
+      (isIsoDateCellar(pb.roast) ? pb.roast : '')
+    ].some(function (dt) {
+      if (isIsoDateCellar(dt)) { bestRoastDate = String(dt).trim(); return true; }
+      return false;
+    });
+    var bestFrozenDate = '';
+    if (explicitFrozen === 'yes') {
+      [bag && bag.frozen_date, v.frozen_date, u.frozen_date, r.frozen_date, b.frozen_date, pb.frozen_date].some(function (dt) {
+        if (isIsoDateCellar(dt)) { bestFrozenDate = String(dt).trim(); return true; }
+        return false;
       });
     }
 
+    var bagWeightG = pickPosNum(v.bag_weight_g, u.bag_weight_g, ce.bag_weight_g, (u.openBag && u.openBag.total_g), b.bag_weight_g, (b.unit === 'g' ? b.size : null), (pb.unit === 'g' ? pb.size : null));
+    var remG = pickNonNegNum(b.rem_g, v.remaining_g, u.remaining_g, (u.openBag && u.openBag.rem_g), ce.remaining_g, pb.rem_g);
+    var priceVal = pickPosNum(b.price, v.price, u.price, ce.price, (u.openBag && u.openBag.price), pb.price);
+    var currVal = pickRichStr(b.currency, b.sym, v.currency, u.currency, ce.currency, pb.currency, pb.sym);
+
+    var nextC = Object.assign({}, curC, {
+      id: finalCid,
+      name: pickRichStr(v.name, u.name, r.coffee_name, b.coffee, b.name, pb.coffee, curC.name),
+      roaster: pickRichStr(v.roaster, u.roaster, r.roaster, b.roaster, pb.roaster),
+      roaster_location: pickRichStr(v.roaster_location, u.roaster_location, ce.roaster_location, b.roaster_location),
+      bag_notes: bagNotesVal,
+      notes: bagNotesVal,
+      origin: pickRichStr(v.origin, u.origin, r.origin, b.origin, pb.origin, ce.origin),
+      region: pickRichStr(v.region, u.region, ce.region, b.region, pb.region),
+      farm: pickRichStr(v.farm, u.farm, ce.farm, b.farm),
+      farm_or_station: pickRichStr(v.farm_or_station, u.farm_or_station, ce.farm_or_station, v.farm, u.farm, b.farm_or_station),
+      producer: pickRichStr(v.producer, u.producer, ce.producer, b.producer),
+      harvest_year: pickRichStr(v.harvest_year, u.harvest_year, ce.harvest_year, b.harvest_year),
+      varietal: pickRichStr(v.varietal, u.varietal, r.varietal, b.varietal, pb.varietal),
+      species: pickRichStr(v.species, u.species, r.species, b.species) || 'arabica',
+      blend: pickRichStr(v.blend, u.blend, r.blend, b.blend),
+      process: normProc,
+      process_sub: pickRichStr(v.process_sub, u.process_sub, ce.process_sub, b.process_sub),
+      process_details: pickRichStr(v.process_details, u.process_details, ce.process_details, b.process_details),
+      decaf: (v.decaf === 'yes' || u.decaf === 'yes' || r.decaf === 'yes' || b.decaf === 'yes') ? 'yes' : '',
+      decaf_process: pickRichStr(v.decaf_process, u.decaf_process, r.decaf_process, b.decaf_process),
+      roast: normRoast,
+      roast_date: bestRoastDate,
+      is_frozen: explicitFrozen,
+      frozen_date: bestFrozenDate,
+      freeze_days_offset: pickRichStr(v.freeze_days_offset, u.freeze_days_offset, r.freeze_days_offset, b.freeze_days_offset),
+      elevation_m: finalElevM,
+      elevText: finalElevText,
+      density: finalDensity,
+      personal_note: pickRichStr(v.personal_note, u.personal_note, ce.personal_note, b.personal_note),
+      bag_weight_g: bagWeightG != null ? bagWeightG : '',
+      remaining_g: remG != null ? remG : '',
+      price: priceVal != null ? priceVal : '',
+      currency: currVal || '$',
+      agtron: pickRichStr(v.agtron, u.agtron, ad.agtron, b.agtron),
+      bean_agtron: pickRichStr(v.bean_agtron, u.bean_agtron, ad.bean_agtron, b.bean_agtron),
+      ground_agtron: pickRichStr(v.ground_agtron, u.ground_agtron, ad.ground_agtron, b.ground_agtron),
+      agtron_scale: pickRichStr(v.agtron_scale, u.agtron_scale, ad.agtron_scale, b.agtron_scale) || 'gourmet',
+      roast_delta: pickRichStr(v.roast_delta, u.roast_delta, ad.roast_delta, b.roast_delta),
+      psd_d10_um: pickRichStr(v.psd_d10_um, u.psd_d10_um, ad.psd_d10_um, b.psd_d10_um),
+      psd_d50_um: pickRichStr(v.psd_d50_um, u.psd_d50_um, ad.psd_d50_um, b.psd_d50_um),
+      psd_d90_um: pickRichStr(v.psd_d90_um, u.psd_d90_um, ad.psd_d90_um, b.psd_d90_um),
+      psd_span: pickRichStr(v.psd_span, u.psd_span, ad.psd_span, b.psd_span),
+      roasterGuide: v.roasterGuide || u.roasterGuide || ce.roasterGuide || b.roasterGuide || null,
+      recommended_rest_days: pickRichStr(v.recommended_rest_days, u.recommended_rest_days, ce.recommended_rest_days, b.recommended_rest_days),
+      answered: 'yes',
+      _v64Touched: 'yes'
+    });
+
+    /* Clear bogus *Unsure flags whenever fields exist or switching coffees */
+    nextC.nameUnsure = '';
+    nextC.roasterUnsure = nextC.roaster ? '' : 'yes';
+    nextC.roastUnsure = (nextC.roast && !isUnkCoffeeVal(nextC.roast)) ? '' : 'yes';
+    nextC.roast_unknown = nextC.roastUnsure;
+    nextC.processUnsure = (nextC.process && !isUnkCoffeeVal(nextC.process)) ? '' : 'yes';
+    nextC.process_unknown = nextC.processUnsure;
+    nextC.originUnsure = nextC.origin ? '' : 'yes';
+    nextC.origin_unknown = nextC.originUnsure;
+    nextC.elevUnsure = (nextC.elevation_m || nextC.density) ? '' : 'yes';
+    nextC.elevationUnsure = nextC.elevUnsure;
+    nextC.elev_unknown = nextC.elevUnsure;
+    nextC.dateUnsure = (nextC.roast_date || nextC.is_frozen === 'yes') ? '' : 'yes';
+    nextC.roastDateUnsure = nextC.dateUnsure;
+    nextC.date_unknown = nextC.dateUnsure;
+    nextC.varietalUnsure = '';
+    nextC.notesUnsure = nextC.bag_notes ? '' : 'yes';
+    nextC.bagNotesUnsure = nextC.notesUnsure;
+    nextC.notes_unknown = nextC.notesUnsure;
+    a.coffee = nextC;
+
+    /* Restore saved brew parameters (Row -> Vault lastBrew -> Unified lastBrew) */
     a.brew = a.brew || {};
+    var savedBrew = v.lastBrew || u.lastBrew || null;
     if (anchor) {
       var mKey = (typeof resolveMethod === 'function' ? resolveMethod(anchor.brew_method) : '') || anchor.brew_method;
       if (mKey) a.brew.method = mKey;
+      if (anchor.brew_style) a.brew.style = unneutCellar(anchor.brew_style);
+      if (anchor.brew_filter) a.brew.filter = unneutCellar(anchor.brew_filter);
+      if (ad && ad.filterId) a.brew.filterId = ad.filterId;
+      else if (savedBrew && savedBrew.filterId) a.brew.filterId = savedBrew.filterId;
       if (+anchor.brew_dose_g > 0) a.brew.dose = +anchor.brew_dose_g;
       if (+anchor.brew_water_g > 0) a.brew.water = +anchor.brew_water_g;
       if (+anchor.brew_ratio > 0) a.brew.ratio = +anchor.brew_ratio;
+      else if (+a.brew.dose > 0 && +a.brew.water > 0) a.brew.ratio = Math.round((+a.brew.water / +a.brew.dose) * 10) / 10;
       if (+anchor.brew_grind_target_um > 0) {
         a.brew.grindUm = +anchor.brew_grind_target_um;
         a.brew.grind_um = +anchor.brew_grind_target_um;
+      }
+      if (anchor.brew_grind_setting) a.brew.grind_setting = unneutCellar(anchor.brew_grind_setting);
+      if (ad && ad.grinderKey) a.brew.grinderKey = ad.grinderKey;
+      else if (savedBrew && savedBrew.grinderKey) a.brew.grinderKey = savedBrew.grinderKey;
+      if (anchor.brew_grinder_name) a.brew.grinderName = unneutCellar(anchor.brew_grinder_name);
+      else if (savedBrew && savedBrew.grinderName) a.brew.grinderName = savedBrew.grinderName;
+      if (anchor.brew_agitation && ['gentle', 'standard', 'active'].indexOf(anchor.brew_agitation) >= 0) {
+        a.brew.agitation = anchor.brew_agitation;
+      }
+      if (anchor.brew_technique) {
+        a.brew.technique = (typeof resolveTechCsv === 'function' ? resolveTechCsv(anchor.brew_technique) : anchor.brew_technique);
+      }
+      if (anchor.brew_water_type) a.brew.waterType = unneutCellar(anchor.brew_water_type);
+      if (anchor.brew_pour_notes) a.brew.pourNotes = unneutCellar(anchor.brew_pour_notes);
+      if (ad && ad.machine_profile) {
+        try { a.brew.machineProfile = JSON.parse(JSON.stringify(ad.machine_profile)); } catch (_) {}
+      } else if (savedBrew && savedBrew.machineProfile) {
+        try { a.brew.machineProfile = JSON.parse(JSON.stringify(savedBrew.machineProfile)); } catch (_) {}
       }
       if (+anchor.brew_temp_c > 0) {
         a.brew.tempC = +anchor.brew_temp_c;
@@ -33533,8 +36195,109 @@ if (typeof window !== 'undefined') {
         a.brew.tempF = +anchor.brew_temp_f;
         a.brew.tempC = Math.round(((+anchor.brew_temp_f - 32) * 5 / 9) * 2) / 2;
       }
-      a.recipeLocked = anchor.dial_locked === 'yes' || anchor.dial_locked === '1';
+    } else if (savedBrew && typeof savedBrew === 'object') {
+      var sbM = (typeof resolveMethod === 'function' ? resolveMethod(savedBrew.method) : '') || savedBrew.method;
+      if (sbM) a.brew.method = sbM;
+      if (savedBrew.style) a.brew.style = savedBrew.style;
+      if (savedBrew.filter) a.brew.filter = savedBrew.filter;
+      if (savedBrew.filterId) a.brew.filterId = savedBrew.filterId;
+      if (+savedBrew.dose > 0) a.brew.dose = +savedBrew.dose;
+      if (+savedBrew.water > 0) a.brew.water = +savedBrew.water;
+      if (+savedBrew.ratio > 0) a.brew.ratio = +savedBrew.ratio;
+      if (+savedBrew.tempC > 0) {
+        a.brew.tempC = +savedBrew.tempC;
+        a.brew.tempF = +savedBrew.tempF > 0 ? +savedBrew.tempF : Math.round(+savedBrew.tempC * 9 / 5 + 32);
+      } else if (+savedBrew.tempF > 0) {
+        a.brew.tempF = +savedBrew.tempF;
+        a.brew.tempC = Math.round(((+savedBrew.tempF - 32) * 5 / 9) * 2) / 2;
+      }
+      var sbUm = +savedBrew.grindUm || +savedBrew.grind_um || 0;
+      if (sbUm > 0) { a.brew.grindUm = sbUm; a.brew.grind_um = sbUm; }
+      if (savedBrew.grind_setting) a.brew.grind_setting = savedBrew.grind_setting;
+      if (savedBrew.grinderKey) a.brew.grinderKey = savedBrew.grinderKey;
+      if (savedBrew.grinderName) a.brew.grinderName = savedBrew.grinderName;
+      if (savedBrew.agitation) a.brew.agitation = savedBrew.agitation;
+      if (savedBrew.technique) a.brew.technique = savedBrew.technique;
+      if (savedBrew.waterType) a.brew.waterType = savedBrew.waterType;
+      if (savedBrew.pourNotes) a.brew.pourNotes = savedBrew.pourNotes;
+      if (savedBrew.machineProfile) {
+        try { a.brew.machineProfile = JSON.parse(JSON.stringify(savedBrew.machineProfile)); } catch (_) {}
+      }
     }
+
+    /* Closed-Loop Golden Lock rule: ONLY lock if dial_locked === 'yes'/'1'; otherwise apply pendingNextRecipe / computeClosedLoopNextRecipe */
+    var isExplicitGoldLock = !!(anchor && (anchor.dial_locked === 'yes' || anchor.dial_locked === '1'));
+    a.recipeLocked = isExplicitGoldLock;
+
+    if (isExplicitGoldLock) {
+      a.brew._savedDialedMethod = a.brew.method || '';
+      a.brew.dialAdaptation = { adapted: false, locked: true };
+    } else {
+      var core = (typeof window !== 'undefined' && window.BTCoreV6) ? window.BTCoreV6 : null;
+      var closedRx = null;
+      if (!row && core && typeof core.computeClosedLoopNextRecipe === 'function') {
+        try {
+          closedRx = core.computeClosedLoopNextRecipe(a.coffee, a.brew.method || 'v60', S.getHistoryObjs(), (a.prefs && a.prefs.gear) || a.prefs || {});
+        } catch (_) {}
+      }
+      var closedAdapt = (closedRx && closedRx.dialAdaptation) ? closedRx.dialAdaptation : null;
+      var pendingNext = (closedRx && (closedRx.nextRecipe || closedRx)) ||
+        (ad && ad.next_recipe) ||
+        (v && v.pendingNextRecipe) ||
+        (u && u.pendingNextRecipe) ||
+        null;
+      var rawDialAdapt = closedAdapt ||
+        (v && v.dialAdaptation) ||
+        (u && u.dialAdaptation) ||
+        (ad && ad.dial_adaptation) ||
+        null;
+
+      if (pendingNext && typeof pendingNext === 'object' && (!row || (ad && ad.next_recipe))) {
+        var pnM = (typeof resolveMethod === 'function' ? resolveMethod(pendingNext.methodKey || pendingNext.method) : '') || pendingNext.methodKey || pendingNext.method;
+        if (pnM) a.brew.method = pnM;
+        var pnUm = +pendingNext.grindUm || +pendingNext.d50Um || 0;
+        if (pnUm > 0) { a.brew.grindUm = pnUm; a.brew.grind_um = pnUm; }
+        var pnSet = pendingNext.grindSetting || (pendingNext.grinderSetting && (pendingNext.grinderSetting.shortDisplay || pendingNext.grinderSetting.display)) || pendingNext.grind_setting || '';
+        if (pnSet) a.brew.grind_setting = pnSet;
+        if (+pendingNext.tempC > 0) {
+          a.brew.tempC = +pendingNext.tempC;
+          a.brew.tempF = +pendingNext.tempF > 0 ? +pendingNext.tempF : Math.round(+pendingNext.tempC * 9 / 5 + 32);
+        }
+        if (+pendingNext.ratio > 0) a.brew.ratio = +pendingNext.ratio;
+        if (+pendingNext.doseG > 0) a.brew.dose = +pendingNext.doseG;
+        if (+pendingNext.waterG > 0) a.brew.water = +pendingNext.waterG;
+        if (pendingNext.agitation) a.brew.agitation = pendingNext.agitation;
+      }
+
+      if (anchor || savedBrew || (pendingNext && (!row || (ad && ad.next_recipe)))) {
+        a.brew._savedDialedMethod = a.brew.method || '';
+      }
+
+      if (rawDialAdapt && rawDialAdapt.adapted !== false && (rawDialAdapt.adapted || rawDialAdapt.headline || rawDialAdapt.summaryBanner || rawDialAdapt.dial_change)) {
+        a.brew.dialAdaptation = Object.assign({ adapted: true }, rawDialAdapt);
+      } else if (!closedAdapt && pendingNext && (!row || (ad && ad.next_recipe)) && (pendingNext.headline || pendingNext.symptom)) {
+        a.brew.dialAdaptation = {
+          adapted: true,
+          fromTry: pendingNext.fromTry || 1,
+          stars: pendingNext.stars,
+          tdsPct: pendingNext.tdsPct,
+          symptom: pendingNext.symptom || '',
+          nextUm: +pendingNext.grindUm || +pendingNext.d50Um || a.brew.grindUm,
+          headline: pendingNext.headline || '',
+          summaryBanner: pendingNext.headline || ''
+        };
+      } else {
+        a.brew.dialAdaptation = null;
+      }
+    }
+
+    a.attempt = (resolvedU && resolvedU.n_cups) || (anchor && +anchor.brew_attempt) || a.attempt || 0;
+    a.cupBrew = null;
+    if (a.brew) {
+      a.brew.actualSecs = null;
+      a.brew.actualFromTimer = false;
+    }
+    S.saveDraftSafe();
   }
 
   /* Evaluate Living Bag Freshness & Freezer Slowdown */
@@ -33917,7 +36680,15 @@ if (typeof window !== 'undefined') {
                   return;
                 }
                 ui.confirmOverwriteKey = '';
-                hydrateBrewFromRowOrBag(lockedRow || latest, null, null);
+                var trailMatched = findCoffeeRecordsMatch(latest && latest.coffee_id, grp.coffee, grp.roaster);
+                var trailURec = trailMatched.uRec || {
+                  coffee_id: (latest && latest.coffee_id) || '',
+                  name: grp.coffee,
+                  roaster: grp.roaster,
+                  lockedBrew: lockedRow,
+                  latestBrew: latest
+                };
+                hydrateBrewFromRowOrBag(lockedRow || null, trailURec, null);
                 navigateToHomeRecipe();
               }
             })
@@ -33942,31 +36713,78 @@ if (typeof window !== 'undefined') {
     }
 
     /* B. Open Shelf Bags + Freshness + Collapsed Freezer Vault + Fresh Bag + Real QR */
+    var vaultList = getCoffeesVaultSafe();
     var openBags = priceList.map(function (b, idx) {
       return Object.assign({ _priceIdx: idx }, b);
     }).filter(function (b) { return !b.finished; });
 
+    var hasOpenBagMatch = function (cid, name, roaster) {
+      var cleanCid = isSyntheticCoffeeId(cid) ? '' : String(cid).trim();
+      var nName = normCoffeeKeyPart(name);
+      var nRoast = normCoffeeKeyPart(roaster);
+      return openBags.some(function (ob) {
+        var obCid = isSyntheticCoffeeId(ob.coffee_id || ob.id) ? '' : String(ob.coffee_id || ob.id).trim();
+        if (cleanCid && obCid && cleanCid === obCid) return true;
+        var obName = normCoffeeKeyPart(ob.coffee);
+        var obRoast = normCoffeeKeyPart(ob.roaster);
+        return nName && obName === nName && (!nRoast || !obRoast || obRoast === nRoast);
+      });
+    };
+
     unified.forEach(function (u) {
       if (!u || !u.name) return;
-      var exists = openBags.some(function (ob) {
-        return ob.coffee.toLowerCase() === String(u.name).toLowerCase();
-      });
-      if (!exists && openBags.length < 8) {
+      if (!hasOpenBagMatch(u.coffee_id, u.name, u.roaster) && openBags.length < 12) {
         openBags.push({
           _priceIdx: -1,
           _unifiedRec: u,
-          id: u.coffee_id || 'uf_' + openBags.length,
+          id: u.coffee_id || ('uf_' + openBags.length),
+          coffee_id: u.coffee_id || '',
           coffee: u.name,
           roaster: u.roaster || '',
-          size: 250,
+          size: +u.bag_weight_g || (u.openBag && +u.openBag.total_g) || 250,
           unit: 'g',
-          price: 21,
-          currency: '$',
+          price: +u.price || (u.openBag && +u.openBag.price) || 21,
+          currency: u.currency || '$',
           rlevel: u.roast || 'light',
           roast: u.roast_date || '',
-          rem_g: 180,
+          rem_g: (u.openBag && u.openBag.rem_g != null) ? +u.openBag.rem_g : (u.remaining_g != null && u.remaining_g !== '' ? +u.remaining_g : (+u.bag_weight_g || 180)),
           is_frozen: u.is_frozen || '',
-          frozen_date: u.frozen_date || ''
+          frozen_date: u.frozen_date || '',
+          bag_notes: u.bag_notes || '',
+          origin: u.origin || '',
+          region: u.region || '',
+          process: u.process || '',
+          varietal: u.varietal || '',
+          elevation_m: u.elevation_m || ''
+        });
+      }
+    });
+
+    vaultList.forEach(function (vr) {
+      if (!vr || !vr.name) return;
+      if (!hasOpenBagMatch(vr.coffee_id || vr.id, vr.name, vr.roaster) && openBags.length < 12) {
+        openBags.push({
+          _priceIdx: -1,
+          _vaultRec: vr,
+          id: vr.coffee_id || vr.id || ('uf_' + openBags.length),
+          coffee_id: vr.coffee_id || vr.id || '',
+          coffee: vr.name,
+          roaster: vr.roaster || '',
+          size: +vr.bag_weight_g || 250,
+          unit: 'g',
+          price: +vr.price || 21,
+          currency: vr.currency || '$',
+          rlevel: vr.roast || 'light',
+          roast: vr.roast_date || '',
+          rem_g: (vr.remaining_g != null && vr.remaining_g !== '') ? +vr.remaining_g : (+vr.bag_weight_g || 250),
+          is_frozen: vr.is_frozen || '',
+          frozen_date: vr.frozen_date || '',
+          bag_notes: vr.bag_notes || vr.notes || '',
+          origin: vr.origin || '',
+          region: vr.region || '',
+          process: vr.process || '',
+          varietal: vr.varietal || '',
+          elevation_m: vr.elevation_m || ''
         });
       }
     });
@@ -34023,13 +36841,42 @@ if (typeof window !== 'undefined') {
     }
 
     openBags.forEach(function (bag, bIdx) {
-      var uRec = bag._unifiedRec || unified.find(function (u) {
-        return String(u.name || '').toLowerCase() === bag.coffee.toLowerCase();
-      }) || null;
-      var ev = evaluateShelfBag(bag, uRec);
+      var matchedBag = findCoffeeRecordsMatch(bag.coffee_id || bag.id, bag.coffee, bag.roaster, {
+        unified: unified,
+        prices: priceList,
+        vaultList: vaultList
+      });
+      var uRec = bag._unifiedRec || matchedBag.uRec || null;
+      var vRec = bag._vaultRec || matchedBag.vaultRec || null;
+      var ev = evaluateShelfBag(bag, uRec || vRec);
       var bagKey = bag.id || (bag.coffee + '_' + bIdx);
       var isLocked = !!(uRec && uRec.lockedBrew);
       var pullDose = +(a.brew && a.brew.dose) || +(bag.dose) || 15;
+
+      var cardOrigin = pickRichStr(vRec && vRec.origin, uRec && uRec.origin, bag.origin);
+      var cardRegion = pickRichStr(vRec && vRec.region, uRec && uRec.region, bag.region);
+      var cardProc = pickRichStr(vRec && vRec.process, uRec && uRec.process, bag.process);
+      var cardRoast = pickRichStr(vRec && vRec.roast, uRec && uRec.roast, bag.rlevel);
+      var cardVarietal = pickRichStr(vRec && vRec.varietal, uRec && uRec.varietal, bag.varietal);
+      var cardElev = pickRichStr(vRec && vRec.elevation_m, uRec && uRec.elevation_m, bag.elevation_m);
+      var cardBagNotes = pickRichStr(
+        vRec && vRec.bag_notes, vRec && vRec.notes,
+        uRec && uRec.bag_notes,
+        bag.bag_notes, bag.notes
+      );
+      var cardFlavorChips = String(cardBagNotes || '')
+        .split(/[;,/|]/)
+        .map(function (s) { return s.trim(); })
+        .filter(Boolean)
+        .slice(0, 5);
+      var cardOriginLine = [cardOrigin, cardRegion].filter(Boolean).join(' \u00B7 ');
+      var cardMetaChips = [
+        cardOriginLine,
+        cardProc ? cardProc.replace(/\b[a-z]/g, function (ch) { return ch.toUpperCase(); }) : '',
+        cardRoast ? (cardRoast.replace(/-/g, ' ').replace(/\b[a-z]/g, function (ch) { return ch.toUpperCase(); }) + ' Roast') : '',
+        cardVarietal,
+        cardElev ? (cardElev + ' masl') : ''
+      ].filter(Boolean);
 
       var tubes = [];
       if (bag.tubes_json) {
@@ -34095,8 +36942,15 @@ if (typeof window !== 'undefined') {
                     S.saveNormalizedPrices(list);
                   }
                 } else if (storage && typeof storage.applyFreshBagRoastDate === 'function') {
-                  storage.applyFreshBagRoastDate(uRec || bag, bag.roast || S.isoDaysAgo(7), { freeze: !!nextFrz, addToShelf: true });
+                  storage.applyFreshBagRoastDate(uRec || vRec || bag, bag.roast || S.isoDaysAgo(7), { freeze: !!nextFrz, addToShelf: true });
                 }
+                upsertVaultSafe({
+                  id: (uRec && uRec.coffee_id) || (vRec && (vRec.coffee_id || vRec.id)) || bag.coffee_id || '',
+                  name: bag.coffee,
+                  roaster: bag.roaster || '',
+                  is_frozen: nextFrz,
+                  frozen_date: nextFrz ? S.isoDaysAgo(0) : ''
+                });
                 S.toastSafe(nextFrz ? 'Bag marked Frozen at -18 \u00B0C (12\u00D7 slower aging)!' : 'Moved bag back to counter shelf');
                 repaint();
               }
@@ -34115,6 +36969,13 @@ if (typeof window !== 'undefined') {
                     S.saveNormalizedPrices(list);
                   }
                 }
+                upsertVaultSafe({
+                  id: (uRec && uRec.coffee_id) || (vRec && (vRec.coffee_id || vRec.id)) || bag.coffee_id || '',
+                  name: bag.coffee,
+                  roaster: bag.roaster || '',
+                  is_frozen: 'yes',
+                  remaining_g: nextRem
+                });
                 hydrateBrewFromRowOrBag(null, uRec, Object.assign({}, bag, { is_frozen: 'yes' }));
                 a.brew.dose = pullDose;
                 if (ui.frozenGrindOffset) {
@@ -34145,7 +37006,7 @@ if (typeof window !== 'undefined') {
       function applyRolloverIso(iso) {
         if (!iso) return;
         if (storage && typeof storage.applyFreshBagRoastDate === 'function') {
-          try { storage.applyFreshBagRoastDate(uRec || bag, iso, { resetBagGrams: true, addToShelf: true }); } catch (_) {}
+          try { storage.applyFreshBagRoastDate(uRec || vRec || bag, iso, { resetBagGrams: true, addToShelf: true }); } catch (_) {}
         }
         if (bag._priceIdx >= 0) {
           var list = S.getNormalizedPrices();
@@ -34156,6 +37017,15 @@ if (typeof window !== 'undefined') {
             S.saveNormalizedPrices(list);
           }
         }
+        upsertVaultSafe({
+          id: (uRec && uRec.coffee_id) || (vRec && (vRec.coffee_id || vRec.id)) || bag.coffee_id || '',
+          name: bag.coffee,
+          roaster: bag.roaster || '',
+          roast_date: iso,
+          is_frozen: '',
+          frozen_date: '',
+          remaining_g: ev.totalG
+        });
         ui.freshRolloverMap[bagKey] = false;
         S.toastSafe('Started Fresh Bag roasted ' + iso + ' (Gold Recipe preserved)!');
         repaint();
@@ -34194,7 +37064,7 @@ if (typeof window !== 'undefined') {
 
       wrap.appendChild(S.h('article', {
         class: 'bt-cellar-bag-card',
-        style: '--bag-roast-color:' + S.roastColorFor(bag.rlevel)
+        style: '--bag-roast-color:' + S.roastColorFor(cardRoast || bag.rlevel)
       },
         S.h('div', { class: 'bt-tc-row-between' },
           S.h('div', { style: 'display:flex;align-items:center;gap:8px;min-width:0' },
@@ -34206,6 +37076,16 @@ if (typeof window !== 'undefined') {
           ),
           S.h('span', { class: 'bt-tc-badge ' + ev.windowTone, text: ev.windowLabel })
         ),
+        cardMetaChips.length ? S.h('div', { class: 'bt-journal-flavor-row' },
+          cardMetaChips.map(function (mc) {
+            return S.h('span', { class: 'bt-tc-badge is-sci', text: mc });
+          })
+        ) : null,
+        cardFlavorChips.length ? S.h('div', { class: 'bt-journal-flavor-row' },
+          cardFlavorChips.map(function (fc) {
+            return S.h('span', { class: 'bt-tc-badge is-soft', style: 'font-weight:700', text: fc });
+          })
+        ) : null,
         S.h('div', { class: 'bt-tc-row-between' },
           S.h('span', { class: 'mono', style: 'font-size:0.8rem;color:var(--ink-secondary)', text: ev.remG + ' g / ' + ev.totalG + ' g remaining (' + ev.pctLeft + '%)' }),
           isLocked ? S.h('span', { class: 'bt-tc-badge is-gold', text: 'Gold Recipe Locked' }) : null
@@ -34231,6 +37111,17 @@ if (typeof window !== 'undefined') {
               navigateToHomeRecipe();
             }
           }, S.iconEl('brew', { size: 16 }), S.h('span', { text: bagGuardArmed ? 'Confirm Switch \u2192' : '1-Tap Brew \u2192' })),
+          S.h('button', {
+            type: 'button',
+            class: 'bt-tc-pill is-copper',
+            text: 'Edit in Step 1 \u2192',
+            onclick: function () {
+              hydrateBrewFromRowOrBag(null, uRec, bag);
+              if (a && a.tabSegments) a.tabSegments.cellar = ui.seg;
+              S.saveDraftSafe();
+              S.navGo('coffee');
+            }
+          }),
           S.h('button', {
             type: 'button',
             class: 'bt-tc-pill is-soft',
@@ -34311,7 +37202,7 @@ if (typeof window !== 'undefined') {
         S.h('div', { class: 'bt-tc-spotlight', style: 'flex:1;min-width:190px' },
           S.h('input', {
             type: 'text',
-            placeholder: 'Paste BT-code: V1 or bt1: passport code...',
+            placeholder: 'Paste BT6:, BT-code: V1, or bt1: passport code...',
             value: ui.passportCodeInput,
             'aria-label': 'Import shared brew passport code',
             oninput: function (e) { ui.passportCodeInput = e.target.value; }
@@ -34325,26 +37216,45 @@ if (typeof window !== 'undefined') {
             var raw = ui.passportCodeInput.trim();
             if (!raw) return;
             var inn = (typeof window !== 'undefined' && window.BTInnovate) ? window.BTInnovate : null;
+            var bs = (typeof window !== 'undefined' && window.BTBrewStudio) ? window.BTBrewStudio : null;
             var a = S.getApp();
-            var res = (inn && typeof inn.decodeAndLocalizePassport === 'function')
-              ? inn.decodeAndLocalizePassport(raw, a.prefs)
-              : (typeof shareRead === 'function' ? shareRead(raw) : null);
+            var res = null;
+            if (bs && typeof bs.decodeAnySharedBrew === 'function') {
+              try {
+                var bt6Res = bs.decodeAnySharedBrew(raw);
+                if (bt6Res && bt6Res.ok && (bt6Res.coffee || bt6Res.brew)) res = bt6Res;
+              } catch (_) {}
+            }
+            if (!res) {
+              res = (inn && typeof inn.decodeAndLocalizePassport === 'function')
+                ? inn.decodeAndLocalizePassport(raw, a.prefs)
+                : (typeof shareRead === 'function' ? shareRead(raw) : null);
+            }
             if (res && (res.ok || res.coffee || res.bean)) {
-              if (res.bean || res.coffee) a.coffee = Object.assign(a.coffee || {}, res.bean || res.coffee, { answered: 'yes' });
+              if (res.bean || res.coffee) {
+                a.coffee = Object.assign(a.coffee || {}, res.bean || res.coffee, { answered: 'yes' });
+                if (a.coffee.bag_notes && !a.coffee.notes) a.coffee.notes = a.coffee.bag_notes;
+              }
               var locRx = res.localizedRecipe || res.brew || {};
               if (a.brew) {
                 if (locRx.methodKey || locRx.method) a.brew.method = locRx.methodKey || locRx.method;
                 if (locRx.doseG || locRx.dose) a.brew.dose = locRx.doseG || locRx.dose;
                 if (locRx.waterG || locRx.water) a.brew.water = locRx.waterG || locRx.water;
-                if (locRx.d50Um) { a.brew.grindUm = locRx.d50Um; a.brew.grind_um = locRx.d50Um; }
+                if (locRx.d50Um || locRx.grindUm || locRx.grind_um) {
+                  var impUm = +(locRx.d50Um || locRx.grindUm || locRx.grind_um);
+                  a.brew.grindUm = impUm;
+                  a.brew.grind_um = impUm;
+                }
                 if (locRx.tempC) { a.brew.tempC = locRx.tempC; a.brew.tempF = Math.round(locRx.tempC * 9 / 5 + 32); }
+                else if (locRx.tempF) { a.brew.tempF = locRx.tempF; a.brew.tempC = Math.round(((locRx.tempF - 32) * 5 / 9) * 2) / 2; }
+                a.brew._savedDialedMethod = a.brew.method || '';
               }
               ui.passportMsg = 'Matched "' + ((a.coffee && a.coffee.name) || 'Shared Recipe') + '" to your grinder & loaded into Brew Studio!';
               S.saveDraftSafe();
               S.toastSafe(ui.passportMsg);
               repaint();
             } else {
-              ui.passportMsg = 'Could not read code \u2014 check that it starts with BT-code: V1 or bt1:.';
+              ui.passportMsg = 'Could not read code \u2014 check that it starts with BT6:, BT-code: V1, or bt1:.';
               repaint();
             }
           }
@@ -35427,11 +38337,36 @@ if (typeof window !== 'undefined') {
      SEGMENT 4: `Bag Prices & Value Tracker`
      ======================================================================== */
   function buildBagPricesSegment(repaint) {
+    var a = S.getApp();
     var list = S.getNormalizedPrices();
+    var hObjs = S.getHistoryObjs();
     var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
+    var unified = (storage && typeof storage.buildUnifiedCoffeesIndex === 'function')
+      ? storage.buildUnifiedCoffeesIndex(hObjs, list)
+      : [];
+    var vaultList = getCoffeesVaultSafe();
     var pd = ui.priceDraft;
     if (!pd.date) pd.date = S.isoDaysAgo(0);
     if (!pd.roast) pd.roast = S.isoDaysAgo(4);
+
+    var resetPriceDraft = function () {
+      ui.priceEditIdx = -1;
+      pd.coffee = '';
+      pd.roaster = '';
+      pd.size = 250;
+      pd.unit = 'g';
+      pd.price = 21.00;
+      pd.currency = '$';
+      pd.rlevel = 'light';
+      pd.date = S.isoDaysAgo(0);
+      pd.roast = S.isoDaysAgo(4);
+      pd.notes = '';
+      pd.bag_notes = '';
+      pd.origin = '';
+      pd.process = '';
+      pd.varietal = '';
+      pd.elevation_m = '';
+    };
 
     var wrap = S.h('div', { style: 'display:flex;flex-direction:column;gap:14px' });
 
@@ -35445,7 +38380,11 @@ if (typeof window !== 'undefined') {
           type: 'button',
           class: 'bt-tc-pill is-compact is-copper',
           text: ui.priceAddOpen ? 'Close Form' : '+ Log Bag Purchase',
-          onclick: function () { ui.priceAddOpen = !ui.priceAddOpen; repaint(); }
+          onclick: function () {
+            if (ui.priceAddOpen) { ui.priceAddOpen = false; resetPriceDraft(); }
+            else { resetPriceDraft(); ui.priceAddOpen = true; }
+            repaint();
+          }
         }),
         list.length ? S.h('button', {
           type: 'button',
@@ -35459,8 +38398,9 @@ if (typeof window !== 'undefined') {
     ));
 
     if (ui.priceAddOpen) {
+      var isEditingPrice = ui.priceEditIdx >= 0 && !!list[ui.priceEditIdx];
       wrap.appendChild(S.h('section', { class: 'bt-tc-card' },
-        S.h('div', { class: 'bt-tc-kicker', text: 'Add Bag to Shelf & Price Tracker' }),
+        S.h('div', { class: 'bt-tc-kicker', text: isEditingPrice ? 'Edit Saved Bag & Price Entry' : 'Add Bag to Shelf & Price Tracker' }),
         S.h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px' },
           S.h('div', { class: 'bt-tc-spotlight' },
             S.h('input', {
@@ -35478,6 +38418,30 @@ if (typeof window !== 'undefined') {
               value: pd.roaster,
               'aria-label': 'Bag roaster',
               oninput: function (e) { pd.roaster = e.target.value; }
+            })
+          )
+        ),
+        S.h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px' },
+          S.h('div', { class: 'bt-tc-spotlight' },
+            S.h('input', {
+              type: 'text',
+              placeholder: 'Bag Flavors (e.g. Jasmine, Peach, Bergamot)',
+              value: pd.bag_notes || '',
+              'aria-label': 'Bag tasting notes',
+              oninput: function (e) { pd.bag_notes = e.target.value; }
+            })
+          ),
+          S.h('div', { class: 'bt-tc-spotlight' },
+            S.h('input', {
+              type: 'text',
+              placeholder: 'Origin & Process (e.g. Ethiopia, Washed)',
+              value: [pd.origin || '', pd.process || ''].filter(Boolean).join(', '),
+              'aria-label': 'Bag origin and process',
+              oninput: function (e) {
+                var parts = String(e.target.value || '').split(',');
+                pd.origin = (parts[0] || '').trim();
+                pd.process = parts.slice(1).join(',').trim();
+              }
             })
           )
         ),
@@ -35552,7 +38516,7 @@ if (typeof window !== 'undefined') {
         S.h('div', { class: 'bt-tc-spotlight' },
           S.h('input', {
             type: 'text',
-            placeholder: 'Optional purchase notes (store, sale, origin)...',
+            placeholder: 'Optional purchase notes (store, sale, varietal)...',
             value: pd.notes,
             'aria-label': 'Purchase notes',
             oninput: function (e) { pd.notes = e.target.value; }
@@ -35567,31 +38531,60 @@ if (typeof window !== 'undefined') {
               S.toastSafe('Enter a coffee name first');
               return;
             }
+            var prevBag = isEditingPrice ? list[ui.priceEditIdx] : null;
+            var bagNotesTrim = String(pd.bag_notes || '').trim();
             var canonicalEntry = S.normalizePriceBag({
-              id: 'bag_' + Date.now(),
+              id: (prevBag && prevBag.id) || ('bag_' + Date.now()),
+              coffee_id: (prevBag && prevBag.coffee_id) || '',
               coffee: cTrim,
               roaster: pd.roaster.trim(),
               size: +pd.size || 250,
-              unit: 'g',
+              unit: (prevBag && prevBag.unit) || 'g',
               price: +pd.price || 20,
               currency: pd.currency || '$',
               sym: pd.currency || '$',
               rlevel: pd.rlevel || 'light',
               date: pd.date || S.isoDaysAgo(0),
               roast: pd.roast || '',
-              rem_g: +pd.size || 250,
-              notes: pd.notes.trim()
+              rem_g: prevBag ? prevBag.rem_g : (+pd.size || 250),
+              finished: prevBag ? prevBag.finished : '',
+              is_frozen: prevBag ? prevBag.is_frozen : '',
+              frozen_date: prevBag ? prevBag.frozen_date : '',
+              notes: pd.notes.trim() || bagNotesTrim,
+              bag_notes: bagNotesTrim,
+              origin: String(pd.origin || '').trim(),
+              process: String(pd.process || '').trim(),
+              varietal: String(pd.varietal || '').trim(),
+              elevation_m: String(pd.elevation_m || '').trim()
             });
-            var next = [canonicalEntry].concat(list);
+            var next = list.slice();
+            if (isEditingPrice) next[ui.priceEditIdx] = canonicalEntry;
+            else next = [canonicalEntry].concat(list);
             S.saveNormalizedPrices(next);
-            pd.coffee = '';
-            pd.notes = '';
+            upsertVaultSafe({
+              id: canonicalEntry.coffee_id || (!isSyntheticCoffeeId(canonicalEntry.id) ? canonicalEntry.id : ''),
+              name: canonicalEntry.coffee,
+              roaster: canonicalEntry.roaster,
+              roast: canonicalEntry.rlevel || 'light',
+              roast_date: canonicalEntry.roast || '',
+              bag_weight_g: canonicalEntry.size,
+              remaining_g: canonicalEntry.rem_g,
+              price: canonicalEntry.price,
+              currency: canonicalEntry.currency || canonicalEntry.sym || '$',
+              bag_notes: canonicalEntry.bag_notes || canonicalEntry.notes || '',
+              notes: canonicalEntry.bag_notes || canonicalEntry.notes || '',
+              origin: canonicalEntry.origin || '',
+              process: canonicalEntry.process || '',
+              varietal: canonicalEntry.varietal || '',
+              elevation_m: canonicalEntry.elevation_m || ''
+            });
+            resetPriceDraft();
             ui.priceAddOpen = false;
             S.haptic('celebrate');
-            S.toastSafe('Saved ' + canonicalEntry.coffee + ' to Shelf & Price Tracker!');
+            S.toastSafe((isEditingPrice ? 'Updated ' : 'Saved ') + canonicalEntry.coffee + ' to Shelf & Price Tracker!');
             repaint();
           }
-        }, S.h('span', { text: 'Save Bag to Shelf & Tracker \u2192' }), S.iconEl('check-seal', { size: 18 }))
+        }, S.h('span', { text: isEditingPrice ? 'Update Bag in Shelf & Tracker \u2192' : 'Save Bag to Shelf & Tracker \u2192' }), S.iconEl('check-seal', { size: 18 }))
       ));
     }
 
@@ -35614,7 +38607,14 @@ if (typeof window !== 'undefined') {
       })
     ));
 
-    var rows = list.map(function (b, idx) { return { b: b, idx: idx, ev: evaluateShelfBag(b, null) }; }).filter(function (it) {
+    var rows = list.map(function (b, idx) {
+      var matchedP = findCoffeeRecordsMatch(b.coffee_id || b.id, b.coffee, b.roaster, {
+        unified: unified,
+        prices: list,
+        vaultList: vaultList
+      });
+      return { b: b, idx: idx, uRec: matchedP.uRec, vRec: matchedP.vaultRec, ev: evaluateShelfBag(b, matchedP.uRec || matchedP.vaultRec) };
+    }).filter(function (it) {
       if (ui.priceShow === 'open' && it.b.finished) return false;
       if (ui.priceShow === 'finished' && !it.b.finished) return false;
       return true;
@@ -35637,10 +38637,16 @@ if (typeof window !== 'undefined') {
 
     rows.forEach(function (it) {
       var b = it.b;
+      var uRec = it.uRec;
+      var vRec = it.vRec;
       var ev = it.ev;
       var eq12oz = (ev.per100g * 3.40).toFixed(2);
       var chg = (typeof priceChange === 'function') ? priceChange(list, b) : { ok: false };
       var sym = b.sym || (b.currency === 'EUR' ? '\u20AC' : b.currency === 'GBP' ? '\u00A3' : b.currency === 'CAD' ? 'CA$' : b.currency === 'AUD' ? 'A$' : '$');
+      var pBagNotes = pickRichStr(vRec && vRec.bag_notes, vRec && vRec.notes, uRec && uRec.bag_notes, b.bag_notes, b.notes);
+      var pOrigin = pickRichStr(vRec && vRec.origin, uRec && uRec.origin, b.origin);
+      var pProc = pickRichStr(vRec && vRec.process, uRec && uRec.process, b.process);
+      var pMeta = [pOrigin, pProc].filter(Boolean).join(' \u00B7 ');
 
       wrap.appendChild(S.h('article', {
         class: 'bt-cellar-bag-card',
@@ -35648,10 +38654,10 @@ if (typeof window !== 'undefined') {
       },
         S.h('div', { class: 'bt-tc-row-between' },
           S.h('div', null,
-            S.h('div', { class: 'bt-tc-kicker', text: [b.roaster || 'Roaster', b.date, b.rlevel].filter(Boolean).join(' \u00B7 ') }),
+            S.h('div', { class: 'bt-tc-kicker', text: [b.roaster || 'Roaster', b.date, b.rlevel, pMeta].filter(Boolean).join(' \u00B7 ') }),
             S.h('b', { style: 'font-size:1rem;font-family:var(--font-display)', text: b.coffee }),
             S.h('div', { class: 'mono', style: 'font-size:0.79rem;color:var(--ink-secondary)', text: sym + b.price.toFixed(2) + ' / ' + b.size + b.unit + ' \u00B7 ' + sym + ev.perCup.toFixed(2) + '/15g cup \u00B7 ' + sym + eq12oz + ' per 12oz eq.' }),
-            b.notes ? S.h('div', { style: 'font-size:0.77rem;color:var(--ink-muted);margin-top:2px', text: b.notes }) : null
+            pBagNotes ? S.h('div', { style: 'font-size:0.78rem;color:var(--ink-secondary);margin-top:2px', text: 'Notes: ' + pBagNotes }) : null
           ),
           chg && chg.ok && chg.dir !== 'same' ? S.h('span', {
             class: 'bt-tc-badge ' + (chg.dir === 'up' ? 'is-warn' : 'is-good'),
@@ -35664,8 +38670,44 @@ if (typeof window !== 'undefined') {
             class: 'bt-tc-pill is-compact is-active',
             text: 'Brew \u2192',
             onclick: function () {
-              hydrateBrewFromRowOrBag(null, null, b);
+              hydrateBrewFromRowOrBag(null, uRec, b);
               navigateToHomeRecipe();
+            }
+          }),
+          S.h('button', {
+            type: 'button',
+            class: 'bt-tc-pill is-compact is-copper',
+            text: 'Edit in Step 1 \u2192',
+            onclick: function () {
+              hydrateBrewFromRowOrBag(null, uRec, b);
+              if (a && a.tabSegments) a.tabSegments.cellar = ui.seg;
+              S.saveDraftSafe();
+              S.navGo('coffee');
+            }
+          }),
+          S.h('button', {
+            type: 'button',
+            class: 'bt-tc-pill is-compact is-soft',
+            text: 'Edit Bag',
+            onclick: function () {
+              ui.priceEditIdx = it.idx;
+              ui.priceAddOpen = true;
+              pd.coffee = b.coffee || '';
+              pd.roaster = b.roaster || '';
+              pd.size = +b.size || 250;
+              pd.unit = b.unit || 'g';
+              pd.price = +b.price || 20;
+              pd.currency = sym;
+              pd.rlevel = b.rlevel || 'light';
+              pd.date = b.date || S.isoDaysAgo(0);
+              pd.roast = b.roast || S.isoDaysAgo(4);
+              pd.notes = b.notes || '';
+              pd.bag_notes = pBagNotes || '';
+              pd.origin = pOrigin || '';
+              pd.process = pProc || '';
+              pd.varietal = pickRichStr(vRec && vRec.varietal, uRec && uRec.varietal, b.varietal);
+              pd.elevation_m = pickRichStr(vRec && vRec.elevation_m, uRec && uRec.elevation_m, b.elevation_m);
+              repaint();
             }
           }),
           S.h('button', {
@@ -35883,13 +38925,18 @@ if (typeof window !== 'undefined') {
       notes: un(r.general_notes),
       quick: { stars: parseFloat(r.my_rating_stars) || 4.25, makeAgain: r.make_again || 'yes', sym: r.fix_symptom || '' }
     };
+    var rowAdMeta = readRowAdapMetaSafe(r) || {};
+    var rowCe = (rowAdMeta && rowAdMeta.coffee_extra) || {};
     var coffeeEdit = {
       coffee_name: un(r.coffee_name),
       roaster: un(r.roaster),
       origin: un(r.origin),
+      region: un(rowCe.region || ''),
       process: un(r.process),
       roast_level: un(r.roast_level),
       varietal: un(r.varietal),
+      elevation_m: un(r.elevation_m),
+      roast_date: un(r.roast_date),
       bag_notes: un(r.bag_notes)
     };
 
@@ -35988,6 +39035,19 @@ if (typeof window !== 'undefined') {
                   S.toastSafe(res.error);
                   return;
                 }
+                var updatedObjs = S.getHistoryObjs();
+                var updatedRow = updatedObjs[rIdx] || r;
+                upsertVaultSafe({
+                  id: updatedRow.coffee_id || '',
+                  name: un(updatedRow.coffee_name),
+                  roaster: un(updatedRow.roaster),
+                  origin: un(updatedRow.origin),
+                  process: un(updatedRow.process),
+                  roast: un(updatedRow.roast_level),
+                  varietal: un(updatedRow.varietal),
+                  bag_notes: un(updatedRow.bag_notes),
+                  notes: un(updatedRow.bag_notes)
+                }, updatedRow);
                 S.toastSafe('Saved tasting update!', {
                   durationMs: 10000,
                   actionLabel: 'Undo',
@@ -36007,9 +39067,13 @@ if (typeof window !== 'undefined') {
             ['Coffee Name', 'coffee_name'],
             ['Roaster', 'roaster'],
             ['Origin', 'origin'],
+            ['Region', 'region'],
             ['Process', 'process'],
+            ['Roast Level', 'roast_level'],
             ['Varietal', 'varietal'],
-            ['Bag Notes', 'bag_notes']
+            ['Elevation (m)', 'elevation_m'],
+            ['Roast Date (YYYY-MM-DD)', 'roast_date'],
+            ['Bag Notes / Flavors', 'bag_notes']
           ].map(function (cf) {
             return S.h('label', { style: 'font-size:0.75rem;font-weight:700;display:flex;flex-direction:column;gap:4px' },
               S.h('span', { text: cf[0] }),
@@ -36044,6 +39108,35 @@ if (typeof window !== 'undefined') {
                 });
                 var res = storage.commitCoffeeEdit(matchIdxs.length ? matchIdxs : [rIdx], coffeeEdit);
                 if (res && res.error) { S.toastSafe(res.error); return; }
+                var editedCoffeePayload = {
+                  id: cid || '',
+                  name: coffeeEdit.coffee_name,
+                  roaster: coffeeEdit.roaster,
+                  origin: coffeeEdit.origin,
+                  region: coffeeEdit.region,
+                  process: coffeeEdit.process,
+                  roast: coffeeEdit.roast_level,
+                  varietal: coffeeEdit.varietal,
+                  elevation_m: coffeeEdit.elevation_m,
+                  roast_date: coffeeEdit.roast_date,
+                  bag_notes: coffeeEdit.bag_notes,
+                  notes: coffeeEdit.bag_notes
+                };
+                upsertVaultSafe(editedCoffeePayload, r);
+                var aLive = S.getApp();
+                if (aLive && aLive.coffee && ((cid && aLive.coffee.id === cid) || normCoffeeKeyPart(aLive.coffee.name) === normCoffeeKeyPart(cOrig))) {
+                  if (coffeeEdit.coffee_name) aLive.coffee.name = coffeeEdit.coffee_name;
+                  if (coffeeEdit.roaster) aLive.coffee.roaster = coffeeEdit.roaster;
+                  if (coffeeEdit.origin) { aLive.coffee.origin = coffeeEdit.origin; aLive.coffee.originUnsure = ''; }
+                  if (coffeeEdit.region) aLive.coffee.region = coffeeEdit.region;
+                  if (coffeeEdit.process) { aLive.coffee.process = coffeeEdit.process; aLive.coffee.processUnsure = ''; }
+                  if (coffeeEdit.roast_level) { aLive.coffee.roast = coffeeEdit.roast_level; aLive.coffee.roastUnsure = ''; }
+                  if (coffeeEdit.varietal) { aLive.coffee.varietal = coffeeEdit.varietal; aLive.coffee.varietalUnsure = ''; }
+                  if (coffeeEdit.elevation_m) { aLive.coffee.elevation_m = coffeeEdit.elevation_m; aLive.coffee.elevText = coffeeEdit.elevation_m + ' masl'; aLive.coffee.elevUnsure = ''; }
+                  if (coffeeEdit.roast_date) { aLive.coffee.roast_date = coffeeEdit.roast_date; aLive.coffee.dateUnsure = ''; }
+                  if (coffeeEdit.bag_notes) { aLive.coffee.bag_notes = coffeeEdit.bag_notes; aLive.coffee.notes = coffeeEdit.bag_notes; aLive.coffee.notesUnsure = ''; }
+                  S.saveDraftSafe();
+                }
                 S.toastSafe('Updated coffee details across ' + (res.changed || matchIdxs.length) + ' brew(s)!');
                 S.closeSheetSafe();
                 S.rerenderSafe();
@@ -36408,6 +39501,38 @@ if (typeof window !== 'undefined') {
     }
   }
 
+  function syncBrewGrindFields(a, nextUm, opts) {
+    if (!a) return;
+    a.brew = a.brew || {};
+    const o = opts || {};
+    const um = Math.round(clamp(nextUm != null ? nextUm : a.brew.grindUm, 55, 1500, 550));
+    a.brew.grindUm = um;
+    a.brew.grind_um = um;
+    const rawGKey = o.grinderKey
+      || a.brew.grinderKey
+      || (a.gear && (a.gear.grinder || a.gear.grinderKey))
+      || (a.prefs && a.prefs.gear && (a.prefs.gear.grinder || a.prefs.gear.grinderKey))
+      || 'comandante-c40';
+    const gKey = String(rawGKey).trim().toLowerCase().replace(/_/g, '-');
+    a.brew.grinderKey = gKey;
+    const methodKey = String(o.methodKey || a.brew.method || 'v60').trim().toLowerCase();
+    const calib = (a.prefs && (a.prefs.pocketMicronCalib || a.prefs.calib)) || null;
+    let settingTxt = o.overrideSetting ? String(o.overrideSetting).trim() : '';
+    if (!settingTxt && window.BTCoreV6 && window.BTCoreV6.psd && typeof window.BTCoreV6.psd.mapMicronsToGrinder === 'function') {
+      try {
+        const mapped = window.BTCoreV6.psd.mapMicronsToGrinder(um, gKey, calib, methodKey);
+        if (mapped && !mapped.incompatible) {
+          settingTxt = mapped.shortDisplay || mapped.display || mapped.label || (mapped.clicks != null ? (mapped.clicks + ' ' + (mapped.unit || 'clicks')) : '');
+        }
+      } catch (_) {}
+    }
+    if (!settingTxt) {
+      settingTxt = Math.max(1, Math.round(um / 27.5)) + ' clicks';
+    }
+    a.brew.grind_setting = settingTxt;
+    return settingTxt;
+  }
+
   function applyLabToBrewAndGo(mutatorFn, opts) {
     const o = opts || {};
     const targetStep = o.targetStep || 'brew';
@@ -36417,6 +39542,8 @@ if (typeof window !== 'undefined') {
     a.coffee = a.coffee || {};
     a.prefs = a.prefs || {};
     a.prefs.gear = a.prefs.gear || {};
+    const prevUm = +a.brew.grindUm;
+    const prevSetting = a.brew.grind_setting;
     if (typeof mutatorFn === 'function') mutatorFn(a);
     /* Enforce finite numeric invariants so zero NaN/undefined ever leaks into app.brew */
     if (!Number.isFinite(+a.brew.dose) || +a.brew.dose <= 0) a.brew.dose = 18;
@@ -36424,6 +39551,12 @@ if (typeof window !== 'undefined') {
     if (!Number.isFinite(+a.brew.ratio) || +a.brew.ratio <= 0) a.brew.ratio = +(a.brew.water / Math.max(1, a.brew.dose)).toFixed(1);
     if (Number.isFinite(+a.brew.tempC) && +a.brew.tempC > 0) {
       a.brew.tempF = Math.round(+a.brew.tempC * 9 / 5 + 32);
+    }
+    if (Number.isFinite(+a.brew.grindUm) && +a.brew.grindUm > 0) {
+      if (+a.brew.grindUm !== prevUm || a.brew.grind_um !== +a.brew.grindUm || !a.brew.grind_setting) {
+        const keepExplicit = a.brew.grind_setting && a.brew.grind_setting !== prevSetting ? a.brew.grind_setting : '';
+        syncBrewGrindFields(a, +a.brew.grindUm, { overrideSetting: keepExplicit });
+      }
     }
     a.resume = returnRoute;
     a.tabSegments = a.tabSegments || {};
@@ -39065,6 +42198,18 @@ if (typeof window !== 'undefined') {
           if (rec.tds) applyLabLiveR2Reading({ tds: +rec.tds, tempC: rec.tempC || 23.4 }, { silent: true });
           if (rec.beanAgtron || rec.groundAgtron || rec.d50Um) applyLabLiveOmniReading(rec, { silent: true });
           dfMsg.textContent = 'Imported ' + parsed.records.length + ' DiFluid record(s) into Lab Studios!';
+        } else if (parsed && (parsed.latestR2 || parsed.latestOmni || (parsed.totalCount && parsed.totalCount > 0))) {
+          if (parsed.latestR2 && parsed.latestR2.tds) {
+            applyLabLiveR2Reading(parsed.latestR2, { silent: true });
+          } else if (Array.isArray(parsed.r2) && parsed.r2.length && parsed.r2[0].tds) {
+            applyLabLiveR2Reading(parsed.r2[0], { silent: true });
+          }
+          if (parsed.latestOmni) {
+            applyLabLiveOmniReading(parsed.latestOmni, { silent: true });
+          } else if (Array.isArray(parsed.omni) && parsed.omni.length) {
+            applyLabLiveOmniReading(parsed.omni[0], { silent: true });
+          }
+          dfMsg.textContent = 'Imported ' + (parsed.totalCount || 1) + ' DiFluid record(s) into Lab Studios!';
         } else {
           const tdsMatch = txt.match(/([0-9]{1,2}\.[0-9]{1,3})\s*%?\s*(?:TDS)?/i);
           if (tdsMatch) {
@@ -39802,7 +42947,7 @@ if (typeof window !== 'undefined') {
     function buildCupFlavorForecast(ey, tds, ratio) {
       const d = getDomains();
       const cf = (getApp() && getApp().coffee) || {};
-      const bagNotesRaw = String(cf.bag_notes || cf.flavors_liked || '').split(/[,;|]/).map(function (x) { return x.trim(); }).filter(Boolean);
+      const bagNotesRaw = String(cf.bag_notes || cf.notes || cf.flavors_liked || '').split(/[,;|]/).map(function (x) { return x.trim(); }).filter(Boolean);
       const roastLow = String(cf.roast || 'light').toLowerCase();
       const defaultPair = bagNotesRaw.length >= 2
         ? (bagNotesRaw[0] + ' & ' + bagNotesRaw[1])
@@ -39909,7 +43054,23 @@ if (typeof window !== 'undefined') {
 
       r2ReconcileBox.textContent = '';
       if (s.measTds > 0 && s.sensoryTag !== 'balanced') {
-        const khNow = (getApp().prefs && getApp().prefs.water && getApp().prefs.water.kh) || labState.water.kh || 45;
+        const aKh = getApp() || {};
+        const rawKhCandidates = [
+          aKh.brew && aKh.brew.waterKhPpm,
+          aKh.brew && aKh.brew.waterAlk,
+          aKh.prefs && aKh.prefs.waterKhPpm,
+          aKh.prefs && aKh.prefs.water && aKh.prefs.water.kh,
+          aKh.prefs && aKh.prefs.gear && aKh.prefs.gear.waterAlk,
+          labState.water && labState.water.kh
+        ];
+        let khNow = 45;
+        for (let ki = 0; ki < rawKhCandidates.length; ki++) {
+          const kv = rawKhCandidates[ki];
+          if (kv !== undefined && kv !== null && kv !== '' && Number.isFinite(+kv)) {
+            khNow = +kv;
+            break;
+          }
+        }
         const obsMap = {
           drying: { stars: 2.5, dx: 0.48, dy: 0, splitBitter: 'drying', symptom: 'drying' },
           sour_bitter: { stars: 2.5, dx: 0.50, dy: -0.45, splitAcid: 'sharp', splitBitter: 'drying', symptom: 'uneven' },
@@ -41184,7 +44345,7 @@ if (typeof window !== 'undefined') {
           applyLabToBrewAndGo(function (a) {
             a.brew.pullCarafeAtSec = cutSec;
             a.brew.tempC = w.kettleC;
-            a.brew.grindUm = w.d50Um;
+            syncBrewGrindFields(a, w.d50Um);
             a.brew.pourNotes = 'Pull dripper at ' + mm + ' (~' + carafeG + ' g in carafe) to block ' + blkPct + '% dry bitters';
             a.brew.customizedNote = 'Cutoff Gate ' + mm + ' (~' + carafeG + 'g · ' + blkPct + '% dry bitters blocked)';
           }, {
@@ -41203,7 +44364,7 @@ if (typeof window !== 'undefined') {
           applyLabToBrewAndGo(function (a) {
             a.brew.pullCarafeAtSec = cutSec;
             a.brew.tempC = w.kettleC;
-            a.brew.grindUm = w.d50Um;
+            syncBrewGrindFields(a, w.d50Um);
             a.brew.customizedNote = '3-Wave Tuned (' + w.kettleC + ' °C · Pull @ ' + mm + ')';
           }, {
             targetStep: 'brew',
@@ -41343,24 +44504,32 @@ if (typeof window !== 'undefined') {
             class: 'bt-lab-btn is-sm is-primary',
             onclick: function () {
               applyLabToBrewAndGo(function (a) {
-                const curUm = clamp(+a.brew.grindUm || 550, 180, 1200, 550);
+                const mLow = String((a.brew && a.brew.method) || '').toLowerCase();
+                const isEspLike = mLow === 'espresso' || mLow === 'lever_espresso' || mLow === 'turkish';
+                const umLo = isEspLike ? 120 : 200;
+                const umHi = isEspLike ? 420 : 1150;
+                const umStep = isEspLike ? 12 : 26;
+                const curUm = clamp(+a.brew.grindUm || (isEspLike ? 235 : 550), umLo, umHi, isEspLike ? 235 : 550);
                 const curT = clamp(+a.brew.tempC || 93, 80, 100, 93);
-                const curR = clamp(+a.brew.ratio || 16, 1.5, 22, 16);
+                const curR = clamp(+a.brew.ratio || (isEspLike ? 2.0 : 16), 1.2, 22, isEspLike ? 2.0 : 16);
                 const curD = clamp(+a.brew.dose || 18, 5, 120, 18);
                 if (mr.symptom === 'bitter') {
-                  a.brew.grindUm = Math.min(1150, curUm + 26);
+                  syncBrewGrindFields(a, Math.min(umHi, curUm + umStep));
                   a.brew.tempC = Math.max(84, curT - 2);
-                  a.brew.customizedNote = 'Bitter Fix: Coarser + ' + a.brew.tempC + ' °C';
+                  a.brew.customizedNote = 'Bitter Fix: Coarser (' + a.brew.grind_setting + ') + ' + a.brew.tempC + ' °C';
                 } else if (mr.symptom === 'sour') {
-                  a.brew.grindUm = Math.max(200, curUm - 26);
+                  syncBrewGrindFields(a, Math.max(umLo, curUm - umStep));
                   a.brew.tempC = Math.min(99, curT + 2);
-                  a.brew.customizedNote = 'Sour Fix: Finer + ' + a.brew.tempC + ' °C';
+                  a.brew.customizedNote = 'Sour Fix: Finer (' + a.brew.grind_setting + ') + ' + a.brew.tempC + ' °C';
                 } else if (mr.symptom === 'strong') {
-                  a.brew.ratio = +(curR + 1.0).toFixed(1);
+                  const rInc = isEspLike ? 0.3 : 1.0;
+                  a.brew.ratio = +(curR + rInc).toFixed(1);
                   a.brew.water = Math.round(curD * a.brew.ratio);
                   a.brew.customizedNote = 'Strength Fix: Wider 1:' + a.brew.ratio;
                 } else if (mr.symptom === 'weak') {
-                  a.brew.ratio = Math.max(12, +(curR - 1.2).toFixed(1));
+                  const rMin = isEspLike ? 1.2 : 11.0;
+                  const rDec = isEspLike ? 0.3 : 1.2;
+                  a.brew.ratio = Math.max(rMin, +(curR - rDec).toFixed(1));
                   a.brew.water = Math.round(curD * a.brew.ratio);
                   a.brew.customizedNote = 'Body Fix: Tighter 1:' + a.brew.ratio;
                 } else {
@@ -42348,100 +45517,115 @@ if (typeof window !== 'undefined') {
           id: 'droplet',
           hitRadiusPx: 30,
           getPos: function () { return { x: mapX(wt.kh), y: mapY(wt.gh) }; },
-          onMove: function (p) {
-            wt.kh = Math.round(invX(p.ux));
-            wt.gh = Math.round(invY(p.uy));
-            redrawWater();
-            return { detentValue: wt.kh + wt.gh, loupe: wt.gh + ' GH · ' + wt.kh + ' KH ppm' };
-          }
-        }];
-        if (wt.tapBlendOn) {
-          list.unshift({
-            id: 'tap_pin',
-            hitRadiusPx: 28,
-            getPos: function () { return { x: mapX(wt.khTap), y: mapY(wt.ghTap) }; },
             onMove: function (p) {
-              wt.khTap = Math.max(5, Math.round(invX(p.ux)));
-              wt.ghTap = Math.max(5, Math.round(invY(p.uy)));
+              wt.kh = Math.round(invX(p.ux));
+              wt.gh = Math.round(invY(p.uy));
+              syncWaterStateToAppLive({ markCustom: true, throttleSave: true });
               redrawWater();
-              return { detentValue: wt.khTap, loupe: 'Tap Assay: ' + wt.ghTap + ' GH / ' + wt.khTap + ' KH' };
+              paint4WayAndImpact();
+              return { detentValue: wt.kh + wt.gh, loupe: wt.gh + ' GH · ' + wt.kh + ' KH ppm' };
             }
-          });
-        }
-        return list;
-      },
-      onPointer: function (p) {
-        if (p.handleId) return null;
-        wt.kh = Math.round(invX(p.ux));
-        wt.gh = Math.round(invY(p.uy));
-        redrawWater();
-        return { detentValue: wt.kh, loupe: wt.gh + ' GH · ' + wt.kh + ' KH ppm' };
-      },
-      onKeyStep: function (k) {
-        wt.kh = clamp(wt.kh + k.dx * 2, 0, 320, wt.kh);
-        wt.gh = clamp(wt.gh + k.dy * 2, 0, 340, wt.gh);
-        redrawWater();
-        return { ariaNow: wt.kh };
-      }
-    });
-
-    /* 1-Tap WaterQuickFixer Presets */
-    const vibePresets = [
-      { lbl: 'Nordic Clarity (55/20)', gh: 55, kh: 20, mg: 0.75, khSalt: 'khco3' },
-      { lbl: 'SCA Sweet Spot (70/35)', gh: 70, kh: 35, mg: 0.65, khSalt: 'khco3' },
-      { lbl: 'RPavlis Boiler-Safe (0/45)', gh: 0, kh: 45, mg: 1.0, khSalt: 'khco3' },
-      { lbl: 'Citrate Clarity (65/45 Cit)', gh: 65, kh: 45, mg: 0.70, khSalt: 'k3cit' },
-      { lbl: 'Evian 2-Bottle Mix', gh: 307, kh: 295, tap: true }
-    ].map(function (vp) {
-      return domH('button', {
-        type: 'button',
-        class: 'bt-lab-chip',
-        onclick: function () {
-          if (vp.tap) {
-            wt.tapBlendOn = true;
-            wt.ghTap = 307;
-            wt.khTap = 295;
-            wt.gh = 72;
-            wt.kh = 38;
-          } else {
-            wt.tapBlendOn = false;
-            wt.gh = vp.gh;
-            wt.kh = vp.kh;
-            wt.mgShare = vp.mg;
-            wt.khSaltKey = vp.khSalt;
+          }];
+          if (wt.tapBlendOn) {
+            list.unshift({
+              id: 'tap_pin',
+              hitRadiusPx: 28,
+              getPos: function () { return { x: mapX(wt.khTap), y: mapY(wt.ghTap) }; },
+              onMove: function (p) {
+                wt.khTap = Math.max(5, Math.round(invX(p.ux)));
+                wt.ghTap = Math.max(5, Math.round(invY(p.uy)));
+                syncWaterStateToAppLive({ markCustom: true, throttleSave: true });
+                redrawWater();
+                paint4WayAndImpact();
+                return { detentValue: wt.khTap, loupe: 'Tap Assay: ' + wt.ghTap + ' GH / ' + wt.khTap + ' KH' };
+              }
+            });
           }
-          CK.haptic('snap');
+          return list;
+        },
+        onPointer: function (p) {
+          if (p.handleId) return null;
+          wt.kh = Math.round(invX(p.ux));
+          wt.gh = Math.round(invY(p.uy));
+          syncWaterStateToAppLive({ markCustom: true });
           redrawWater();
+          paint4WayAndImpact();
+          return { detentValue: wt.kh, loupe: wt.gh + ' GH · ' + wt.kh + ' KH ppm' };
+        },
+        onKeyStep: function (k) {
+          wt.kh = clamp(wt.kh + k.dx * 2, 0, 320, wt.kh);
+          wt.gh = clamp(wt.gh + k.dy * 2, 0, 340, wt.gh);
+          syncWaterStateToAppLive({ markCustom: true });
+          redrawWater();
+          paint4WayAndImpact();
+          return { ariaNow: wt.kh };
         }
-      }, vp.lbl);
-    });
+      });
 
-    const khSaltPills = [
-      { k: 'khco3', lbl: 'KHCO3' },
-      { k: 'nahco3', lbl: 'NaHCO3' },
-      { k: 'k3cit', lbl: 'K3Citrate (pH 5.0 0.45x)' },
-      { k: 'na3cit', lbl: 'Na3Citrate' }
-    ].map(function (sp) {
-      return domH('button', {
+      /* 1-Tap WaterQuickFixer Presets */
+      const vibePresets = [
+        { lbl: 'Nordic Clarity (55/20)', gh: 55, kh: 20, mg: 0.75, khSalt: 'khco3' },
+        { lbl: 'SCA Sweet Spot (70/35)', gh: 70, kh: 35, mg: 0.65, khSalt: 'khco3' },
+        { lbl: 'RPavlis Boiler-Safe (0/45)', gh: 0, kh: 45, mg: 1.0, khSalt: 'khco3' },
+        { lbl: 'Citrate Clarity (65/45 Cit)', gh: 65, kh: 45, mg: 0.70, khSalt: 'k3cit' },
+        { lbl: 'Evian 2-Bottle Mix', gh: 307, kh: 295, tap: true }
+      ].map(function (vp) {
+        return domH('button', {
+          type: 'button',
+          class: 'bt-lab-chip',
+          onclick: function () {
+            if (vp.tap) {
+              wt.tapBlendOn = true;
+              wt.ghTap = 307;
+              wt.khTap = 295;
+              wt.gh = 72;
+              wt.kh = 38;
+            } else {
+              wt.tapBlendOn = false;
+              wt.gh = vp.gh;
+              wt.kh = vp.kh;
+              wt.mgShare = vp.mg;
+              wt.khSaltKey = vp.khSalt;
+            }
+            syncWaterStateToAppLive({ markCustom: true, customLabel: vp.lbl.split(' (')[0] + ' (' + Math.round(wt.gh) + ' GH / ' + Math.round(wt.kh) + ' KH)' });
+            CK.haptic('snap');
+            redrawWater();
+            paintEverydayWater();
+            paint4WayAndImpact();
+          }
+        }, vp.lbl);
+      });
+
+      const khSaltPills = [
+        { k: 'khco3', lbl: 'KHCO3' },
+        { k: 'nahco3', lbl: 'NaHCO3' },
+        { k: 'k3cit', lbl: 'K3Citrate (pH 5.0 0.45x)' },
+        { k: 'na3cit', lbl: 'Na3Citrate' }
+      ].map(function (sp) {
+        return domH('button', {
+          type: 'button',
+          class: 'bt-lab-chip' + (wt.khSaltKey === sp.k ? ' is-active' : ''),
+          onclick: function () {
+            wt.khSaltKey = sp.k;
+            khSaltPills.forEach(function (b, bi) { b.classList.toggle('is-active', ['khco3', 'nahco3', 'k3cit', 'na3cit'][bi] === sp.k); });
+            syncWaterStateToAppLive({ markCustom: true });
+            redrawWater();
+            paint4WayAndImpact();
+          }
+        }, sp.lbl);
+      });
+
+      const tapToggle = domH('button', {
         type: 'button',
-        class: 'bt-lab-chip' + (wt.khSaltKey === sp.k ? ' is-active' : ''),
+        class: 'bt-lab-chip' + (wt.tapBlendOn ? ' is-active' : ''),
         onclick: function () {
-          wt.khSaltKey = sp.k;
-          khSaltPills.forEach(function (b, bi) { b.classList.toggle('is-active', ['khco3', 'nahco3', 'k3cit', 'na3cit'][bi] === sp.k); });
+          wt.tapBlendOn = !wt.tapBlendOn;
+          tapToggle.classList.toggle('is-active', wt.tapBlendOn);
+          syncWaterStateToAppLive({ markCustom: true });
           redrawWater();
+          paint4WayAndImpact();
         }
-      }, sp.lbl);
-    });
-
-    const tapToggle = domH('button', {
-      type: 'button',
-      class: 'bt-lab-chip' + (wt.tapBlendOn ? ' is-active' : ''),
-      onclick: function () {
-        wt.tapBlendOn = !wt.tapBlendOn;
-        tapToggle.classList.toggle('is-active', wt.tapBlendOn);
-        redrawWater();
-      }
-    }, 'Blend Tap + RO Vector');
+      }, 'Blend Tap + RO Vector');
 
     const waterHow = CK.createExplainer({
       title: '2D Water Mineral Pad (GH x KH)',
@@ -42499,30 +45683,77 @@ if (typeof window !== 'undefined') {
       }
     ];
 
-    function syncWaterStateToAppLive() {
+    function syncWaterStateToAppLive(syncOpts) {
+      const so = syncOpts || {};
       const a = getApp();
       const ghVal = Math.max(0, Math.round(wt.gh));
       const khVal = Math.max(0, Math.round(wt.kh));
-      const pKey = wt.activeProfileKey || 'tap_regular';
-      const wType = wt.activeWaterType || 'tap';
-      const wLbl = wt.activeWaterLabel || 'Regular Tap (Typical)';
+      if (so.markCustom) {
+        wt.activeProfileKey = 'custom';
+        wt.activeWaterType = 'custom';
+        wt.activeWaterLabel = so.customLabel || (wt.tapBlendOn
+          ? ('Custom 2-Bottle Mix (' + ghVal + ' GH / ' + khVal + ' KH)')
+          : ('Custom Water (' + ghVal + ' GH / ' + khVal + ' KH)'));
+      }
+      const pKey = wt.activeProfileKey || 'custom';
+      const wType = wt.activeWaterType || (pKey === 'custom' ? 'custom' : 'tap');
+      const wLbl = wt.activeWaterLabel || (pKey === 'custom' ? ('Custom Water (' + ghVal + ' GH / ' + khVal + ' KH)') : 'Regular Tap (Typical)');
       a.brew = a.brew || {};
       a.prefs = a.prefs || {};
       a.prefs.gear = a.prefs.gear || {};
+      a.gear = a.gear || {};
       a.brew.waterProfileKey = pKey;
       a.brew.waterProfile = pKey;
-      a.prefs.waterProfileKey = pKey;
-      a.prefs.gear.waterType = wType;
-      a.prefs.gear.waterProfileKey = pKey;
       a.brew.waterType = wType;
       a.brew.water_type = wType;
       a.brew.waterGH = ghVal;
       a.brew.water_gh = ghVal;
+      a.brew.waterGhPpm = ghVal;
       a.brew.waterAlk = khVal;
       a.brew.water_alk = khVal;
+      a.brew.waterKhPpm = khVal;
       a.brew.waterLabel = wLbl;
-      a.prefs.water = { gh: ghVal, kh: khVal, mgShare: wt.mgShare, khSaltKey: wt.khSaltKey, bottleKey: wt.everydayKey, profileKey: pKey };
-      saveDraftSoon();
+      a.prefs.waterProfileKey = pKey;
+      a.prefs.waterType = wType;
+      a.prefs.waterGhPpm = ghVal;
+      a.prefs.waterKhPpm = khVal;
+      a.prefs.gear.waterType = wType;
+      a.prefs.gear.waterProfileKey = pKey;
+      a.prefs.gear.waterGH = String(ghVal);
+      a.prefs.gear.waterAlk = String(khVal);
+      a.prefs.gear.waterGhPpm = ghVal;
+      a.prefs.gear.waterKhPpm = khVal;
+      a.gear.waterProfileKey = pKey;
+      a.gear.waterType = wType;
+      a.gear.waterGH = ghVal;
+      a.gear.waterAlk = khVal;
+      a.gear.waterGhPpm = ghVal;
+      a.gear.waterKhPpm = khVal;
+      a.prefs.water = {
+        gh: ghVal,
+        kh: khVal,
+        waterGhPpm: ghVal,
+        waterKhPpm: khVal,
+        waterType: wType,
+        mgShare: wt.mgShare,
+        khSaltKey: wt.khSaltKey,
+        bottleKey: wt.everydayKey,
+        profileKey: pKey,
+        tapBlendOn: !!wt.tapBlendOn,
+        ghTap: wt.ghTap,
+        khTap: wt.khTap
+      };
+      if (so.immediate) {
+        saveDraftNow();
+        if (window.BTStorage && typeof window.BTStorage.mirrorPrefsNow === 'function') {
+          try { window.BTStorage.mirrorPrefsNow(); } catch (_) {}
+        }
+      } else {
+        saveDraftSoon();
+        if (!so.throttleSave && window.BTStorage && typeof window.BTStorage.mirrorPrefsNow === 'function') {
+          try { window.BTStorage.mirrorPrefsNow(); } catch (_) {}
+        }
+      }
     }
 
     const selector4WayCard = domH('div', { class: 'bt-lab-subcard bt-water-4way-card', id: 'bt-everyday-water-4way' });
@@ -42764,7 +45995,7 @@ if (typeof window !== 'undefined') {
       id: 'bt-use-water-in-brew-btn',
       onclick: function () {
         applyLabToBrewAndGo(function () {
-          syncWaterStateToAppLive();
+          syncWaterStateToAppLive({ immediate: true });
         }, {
           targetStep: 'brew',
           returnRoute: 'water',
@@ -42810,7 +46041,7 @@ if (typeof window !== 'undefined') {
         step: 5,
         unit: '%',
         compact: true,
-        onChange: function (v) { wt.mgShare = v / 100; redrawWater(); paintEverydayWater(); paint4WayAndImpact(); }
+        onChange: function (v) { wt.mgShare = v / 100; syncWaterStateToAppLive({ markCustom: true }); redrawWater(); paintEverydayWater(); paint4WayAndImpact(); }
       }),
       CK.vernierPill({
         label: 'Batch Vol',
@@ -42846,7 +46077,7 @@ if (typeof window !== 'undefined') {
         type: 'button',
         class: 'bt-lab-btn',
         onclick: function () {
-          syncWaterStateToAppLive();
+          syncWaterStateToAppLive({ immediate: true });
           CK.haptic('celebrate');
           notify('Locked ' + Math.round(wt.gh) + ' GH / ' + Math.round(wt.kh) + ' KH as your Home Water profile!');
         }
@@ -44146,11 +47377,15 @@ if (typeof window !== 'undefined') {
     ];
 
     function getGrinderList() {
-      const src = (typeof GRINDERS !== 'undefined' && Array.isArray(GRINDERS) && GRINDERS.length)
-        ? GRINDERS
-        : (window.GRINDERS && Array.isArray(window.GRINDERS) ? window.GRINDERS : null);
+      const src = (Array.isArray(window.GRINDERS_ALL_V6) && window.GRINDERS_ALL_V6.length)
+        ? window.GRINDERS_ALL_V6
+        : ((window.BTCoreV6 && Array.isArray(window.BTCoreV6.GRINDERS_48) && window.BTCoreV6.GRINDERS_48.length)
+            ? window.BTCoreV6.GRINDERS_48
+            : ((typeof GRINDERS !== 'undefined' && Array.isArray(GRINDERS) && GRINDERS.length)
+                ? GRINDERS
+                : (window.GRINDERS && Array.isArray(window.GRINDERS) ? window.GRINDERS : null)));
       if (!src) return fallbackGrinders;
-      return src.map(function (g) {
+      return src.filter(function (g) { return g && g.kind !== 'preground'; }).map(function (g) {
         const mn = Number.isFinite(g.min) ? g.min : 1;
         const mx = Number.isFinite(g.max) ? g.max : 40;
         const uLo = Number.isFinite(g.umMin) ? g.umMin : 200;
@@ -44199,9 +47434,15 @@ if (typeof window !== 'undefined') {
     });
 
     function settingToUm(g, setting) {
-      if (typeof grinderSettingToMicrons === 'function' && g.raw) {
+      const aNow = getApp() || {};
+      const mKey = (aNow.brew && aNow.brew.method) || 'v60';
+      const calib = (aNow.prefs && (aNow.prefs.pocketMicronCalib || aNow.prefs.calib)) || null;
+      const fnCore = window.BTCoreV6 && window.BTCoreV6.psd && typeof window.BTCoreV6.psd.micronsForGrinderSetting === 'function'
+        ? window.BTCoreV6.psd.micronsForGrinderSetting
+        : (typeof micronsForGrinderSetting === 'function' ? micronsForGrinderSetting : null);
+      if (fnCore && g.raw) {
         try {
-          const u = grinderSettingToMicrons(g.key, setting);
+          const u = fnCore(g.key, setting, mKey, calib);
           if (Number.isFinite(u) && u > 50) return u;
         } catch (_) {}
       }
@@ -44209,10 +47450,16 @@ if (typeof window !== 'undefined') {
     }
 
     function umToSetting(g, um) {
-      if (typeof micronsToGrinderSetting === 'function' && g.raw) {
+      const aNow = getApp() || {};
+      const mKey = (aNow.brew && aNow.brew.method) || 'v60';
+      const calib = (aNow.prefs && (aNow.prefs.pocketMicronCalib || aNow.prefs.calib)) || null;
+      if (window.BTCoreV6 && window.BTCoreV6.psd && typeof window.BTCoreV6.psd.mapMicronsToGrinder === 'function' && g.raw) {
         try {
-          const s = micronsToGrinderSetting(g.key, um);
-          if (s !== null && s !== undefined && s !== '') return s;
+          const res = window.BTCoreV6.psd.mapMicronsToGrinder(um, g.key, calib, mKey);
+          if (res && !res.incompatible) {
+            if (res.clicks != null) return res.clicks;
+            if (res.setting != null) return res.setting;
+          }
         } catch (_) {}
       }
       const raw = (um - g.umZero) / Math.max(0.5, g.umPerStep);
@@ -44423,11 +47670,15 @@ if (typeof window !== 'undefined') {
               applyLabToBrewAndGo(function (a) {
                 a.gear = a.gear || {};
                 a.gear.grinder = gTo.key;
+                a.gear.grinderKey = gTo.key;
+                a.gear.grinderName = gTo.name;
                 a.prefs.gear.grinder = gTo.key;
+                a.prefs.gear.grinderKey = gTo.key;
+                a.prefs.gear.grinderName = gTo.name;
                 a.brew.grinderKey = gTo.key;
-                a.brew.grindUm = d50Um;
-                a.brew.grind_setting = targetSetting + ' ' + gTo.unit;
-                a.brew.customizedNote = gTo.name + ' @ ' + targetSetting + ' ' + gTo.unit + ' (~' + d50Um + ' \u00B5m)';
+                a.brew.grinderName = gTo.name;
+                const mappedSettingTxt = syncBrewGrindFields(a, d50Um, { grinderKey: gTo.key });
+                a.brew.customizedNote = gTo.name + ' @ ' + (mappedSettingTxt || (targetSetting + ' ' + gTo.unit)) + ' (~' + d50Um + ' \u00B5m)';
               }, {
                 targetStep: 'brew',
                 returnRoute: 'devices',
@@ -45758,7 +49009,7 @@ if (typeof window !== 'undefined') {
         const sl = bst.slots || {};
         if ((sl.scale && sl.scale.connected) || bst.scaleConnected) bleLabels.push('Scale');
         if ((sl.kettle && sl.kettle.connected) || bst.kettleConnected) bleLabels.push('Kettle');
-        if ((sl.refract && sl.refract.connected) || bst.refractConnected) bleLabels.push('R2');
+        if ((sl.refractometer && sl.refractometer.connected) || bst.refractometerConnected || (sl.refract && sl.refract.connected) || bst.refractConnected) bleLabels.push('R2');
         if ((sl.pressure && sl.pressure.connected) || bst.pressureConnected) bleLabels.push('Pressure');
         if ((sl.omni && sl.omni.connected) || bst.omniConnected) bleLabels.push('Omni');
       }
@@ -47233,33 +50484,80 @@ if (typeof window !== 'undefined') {
             const todayIso = new Date().toISOString().slice(0, 10);
             const elevMetersStr = isElevUnk ? '' : String((ELEVATION_BAND_DEFS[sc.elevation] && ELEVATION_BAND_DEFS[sc.elevation].midMeters) || 1600);
             const cleanNotesStr = sc.notesUnsure ? '' : sc.notes.join(', ');
-            a.coffee = Object.assign({}, a.coffee || {}, {
+            const cleanFlavorsArr = sc.notesUnsure ? [] : sc.notes.slice();
+            const freshId = 'cf_buy_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+            a.coffee = {
+              id: freshId,
+              coffee_id: freshId,
               name: bagName,
               roaster: sc.roaster || '',
+              roaster_location: '',
               origin: isOrigUnk ? 'unknown' : origMeta.name,
               originUnsure: isOrigUnk ? 'yes' : '',
               origin_unknown: isOrigUnk ? 'yes' : '',
+              region: '',
+              farm: '',
+              farm_or_station: '',
+              producer: '',
+              harvest_year: '',
+              varietal: '',
+              species: 'arabica',
+              blend: '',
               process: isProcUnk ? 'unknown' : sc.process,
               processUnsure: isProcUnk ? 'yes' : '',
               process_unknown: isProcUnk ? 'yes' : '',
+              process_sub: '',
+              process_details: '',
+              decaf: '',
+              decaf_process: '',
               roast: isRoastUnk ? 'unknown' : sc.roast,
               roastUnsure: isRoastUnk ? 'yes' : '',
               roast_unknown: isRoastUnk ? 'yes' : '',
               elevation_m: elevMetersStr,
+              elevText: elevMetersStr ? (elevMetersStr + ' masl') : '',
               elevUnsure: isElevUnk ? 'yes' : '',
               elev_unknown: isElevUnk ? 'yes' : '',
+              density: '',
               bag_notes: cleanNotesStr,
+              notes: cleanNotesStr,
+              flavors: cleanFlavorsArr,
               notesUnsure: sc.notesUnsure ? 'yes' : '',
+              personal_note: '',
               roast_date: todayIso,
+              is_frozen: '',
+              frozen_date: '',
+              freeze_days_offset: '',
+              bag_weight_g: 250,
+              remaining_g: 250,
+              price: sc.price || 21,
+              currency: 'USD',
+              agtron: '',
+              bean_agtron: '',
+              ground_agtron: '',
+              roast_delta: '',
+              agtron_scale: 'gourmet',
+              dial_locked: '',
+              pendingNextRecipe: null,
+              dialAdaptation: null,
+              roasterGuide: null,
               answered: 'yes'
-            });
-            /* Canonical PRICES_KEY schema ({ id, coffee, roaster, size, price, currency, rlevel, date, notes }) */
+            };
+            if (a.brew && typeof a.brew === 'object') {
+              delete a.brew.dialAdaptation;
+              delete a.brew.pendingNextRecipe;
+              a.brew._savedDialedMethod = '';
+            }
+            if (window.BTStorage && typeof window.BTStorage.upsertCoffeeVaultRecord === 'function') {
+              try { window.BTStorage.upsertCoffeeVaultRecord(a.coffee, null, { allowClear: true, allowUnlock: true }); } catch (_) {}
+            }
+            /* Canonical PRICES_KEY schema ({ id, coffee_id, coffee, roaster, size, price, currency, rlevel, date, notes }) */
             if (window.BTStorage && typeof window.BTStorage.getPrices === 'function' && typeof window.BTStorage.savePrices === 'function') {
               try {
                 const prObj = window.BTStorage.getPrices();
                 if (prObj && Array.isArray(prObj.list)) {
                   const canonicalBag = {
                     id: 'bag_' + Date.now(),
+                    coffee_id: freshId,
                     coffee: bagName,
                     roaster: sc.roaster || '',
                     origin: isOrigUnk ? '' : origMeta.name,
@@ -47281,6 +50579,7 @@ if (typeof window !== 'undefined') {
               } catch (_) {}
             }
             saveDraftSoon();
+            if (typeof sh().flushDraft === 'function') { try { sh().flushDraft(); } catch (_) {} }
             CK.haptic('celebrate');
             notify('Added "' + bagName + '" to My Beans & loaded into Brew Studio!');
           }
@@ -49009,19 +52308,44 @@ if (typeof window !== 'undefined') {
       type: 'button',
       class: 'bt-lab-chip',
       onclick: function () {
-        const pr = window.BTStorage && typeof window.BTStorage.getPrices === 'function' ? window.BTStorage.getPrices() : null;
-        const list = pr && Array.isArray(pr.list) ? pr.list : [];
+        const st = window.BTStorage || {};
+        let list = [];
+        if (typeof st.buildUnifiedCoffeesIndex === 'function') {
+          try { list = st.buildUnifiedCoffeesIndex() || []; } catch (_) { list = []; }
+        }
+        if (!list.length && typeof st.getCoffeesVaultList === 'function') {
+          try { list = st.getCoffeesVaultList() || []; } catch (_) { list = []; }
+        }
+        if (!list.length) {
+          const pr = typeof st.getPrices === 'function' ? st.getPrices() : null;
+          list = pr && Array.isArray(pr.list) ? pr.list : [];
+        }
         if (!list.length) {
           notify('No bags saved in My Beans yet — type sample names directly in each bowl below!');
           return;
         }
         const take = Math.min(5, list.length);
         sca.bowlCount = take;
+        while (sca.bowls.length < take) {
+          sca.bowls.push(makeDefaultScaBowl(sca.bowls.length));
+        }
         for (let i = 0; i < take; i++) {
-          const b = list[i];
-          sca.bowls[i].name = b.coffee || b.name || ('Sample #' + (i + 1));
-          sca.bowls[i].roaster = b.roaster || '';
-          sca.bowls[i].origin = b.origin || '';
+          const b = list[i] || {};
+          const rawC = (b.coffee && typeof b.coffee === 'object') ? b.coffee : b;
+          const bNotes = String(rawC.bag_notes || rawC.notes || (Array.isArray(rawC.flavors) ? rawC.flavors.join(', ') : '') || '').trim();
+          sca.bowls[i].coffee_id = rawC.coffee_id || rawC.id || b.coffee_id || b.id || '';
+          sca.bowls[i].name = rawC.name || rawC.coffee || b.name || b.coffee || ('Sample #' + (i + 1));
+          sca.bowls[i].roaster = rawC.roaster || b.roaster || '';
+          sca.bowls[i].origin = rawC.origin || b.origin || '';
+          sca.bowls[i].process = rawC.process || b.process || '';
+          sca.bowls[i].roast = rawC.roast || rawC.rlevel || b.roast || b.rlevel || '';
+          sca.bowls[i].varietal = rawC.varietal || b.varietal || '';
+          sca.bowls[i].farm = rawC.farm || rawC.farm_or_station || b.farm || '';
+          sca.bowls[i].elevation_m = rawC.elevation_m || b.elevation_m || '';
+          sca.bowls[i].agtron = rawC.agtron || b.agtron || '';
+          sca.bowls[i].bag_notes = bNotes;
+          sca.bowls[i].notes = bNotes;
+          sca.bowls[i].flavors = Array.isArray(rawC.flavors) ? rawC.flavors.slice() : (bNotes ? bNotes.split(/[,;/]+/).map(function (s) { return s.trim(); }).filter(Boolean) : []);
         }
         CK.haptic('snap');
         notify('Loaded ' + take + ' coffee(s) from My Beans into Cupping Bowls!');
@@ -49371,6 +52695,17 @@ if (typeof window !== 'undefined') {
           const b = sca.bowls[i];
           const sc = computeCvaBowlScore(b);
           const stars = computeBowlStars(sc);
+          const cId = b.coffee_id || ('cf_sca_' + batchTs + '_' + i);
+          b.coffee_id = cId;
+          const cupNotes = String(b.notes || '').trim();
+          const bagNotes = String(b.bag_notes || cupNotes || '').trim();
+          const flavorsArr = (Array.isArray(b.flavors) && b.flavors.length)
+            ? b.flavors.slice()
+            : (cupNotes ? cupNotes.split(/[,;/]+/).map(function (x) { return x.trim(); }).filter(Boolean) : (bagNotes ? bagNotes.split(/[,;/]+/).map(function (x) { return x.trim(); }).filter(Boolean) : []));
+          const flavorsStr = cupNotes || flavorsArr.join(', ') || bagNotes;
+          const coffeeName = b.name || ('Cupping Bowl ' + b.code);
+          const ratioVal = Math.round((sca.bowlMl / Math.max(1, dosePerBowlG)) * 10) / 10;
+          const cupSummary = 'Multi-Bowl Cupping (' + sc.toFixed(2) + ' / 100)' + (cupNotes ? (' · ' + cupNotes) : '');
           const rowObj = (typeof emptyRowObj === 'function') ? emptyRowObj() : {};
           if (typeof COLUMNS !== 'undefined' && Array.isArray(COLUMNS)) {
             COLUMNS.forEach(function (ck) { if (rowObj[ck] === undefined) rowObj[ck] = ''; });
@@ -49378,25 +52713,32 @@ if (typeof window !== 'undefined') {
           Object.assign(rowObj, {
             schema_version: '6.0',
             id: 'cup_sca_' + batchTs + '_' + i + '_' + Math.random().toString(36).slice(2, 6),
-            coffee_id: b.coffee_id || ('cf_sca_' + batchTs + '_' + i),
+            coffee_id: cId,
             saved_at: nowIso,
             cupping_date: todayIso,
             mode: 'single_cup',
-            coffee_name: b.name || ('Cupping Bowl ' + b.code),
+            coffee_name: coffeeName,
             roaster: b.roaster || '',
             origin: b.origin || '',
+            process: b.process || '',
+            roast: b.roast || '',
+            varietal: b.varietal || '',
+            farm: b.farm || '',
+            elevation_m: b.elevation_m || '',
+            agtron: b.agtron || '',
+            bag_notes: bagNotes,
             brew_method: 'cupping',
             brew_attempt: '1',
             brew_dose_g: String(dosePerBowlG),
             brew_water_g: String(sca.bowlMl),
-            brew_ratio: String(Math.round((sca.bowlMl / Math.max(1, dosePerBowlG)) * 10) / 10),
+            brew_ratio: String(ratioVal),
             brew_temp_c: '93',
             brew_temp_f: '200',
             total_score: sc.toFixed(2),
             score_kind: 'cva_affective',
             my_rating_stars: String(stars),
-            flavors_liked: b.notes || '',
-            general_notes: 'Multi-Bowl Cupping (' + sc.toFixed(2) + ' / 100)'
+            flavors_liked: flavorsStr,
+            general_notes: cupSummary
           });
           if (typeof st.keepInBrowser === 'function') {
             st.keepInBrowser(rowObj);
@@ -49404,6 +52746,37 @@ if (typeof window !== 'undefined') {
           } else if (typeof st.appendTastingRow === 'function') {
             st.appendTastingRow(rowObj);
             savedN++;
+          }
+          if (typeof st.upsertCoffeeVaultRecord === 'function') {
+            try {
+              st.upsertCoffeeVaultRecord({
+                id: cId,
+                coffee_id: cId,
+                name: coffeeName,
+                roaster: b.roaster || '',
+                origin: b.origin || '',
+                process: b.process || '',
+                roast: b.roast || '',
+                varietal: b.varietal || '',
+                farm: b.farm || '',
+                elevation_m: b.elevation_m || '',
+                agtron: b.agtron || '',
+                bag_notes: bagNotes,
+                notes: cupNotes || bagNotes,
+                flavors: flavorsArr,
+                personal_note: cupSummary
+              }, {
+                method: 'cupping',
+                dose: dosePerBowlG,
+                water: sca.bowlMl,
+                ratio: ratioVal,
+                tempC: 93,
+                tempF: 200,
+                stars: stars,
+                totalScore: +sc.toFixed(2),
+                flavors_liked: flavorsStr
+              });
+            } catch (_) {}
           }
         }
 
@@ -50832,15 +54205,25 @@ if (typeof window !== 'undefined') {
     } catch (_) {}
 
     function gatherJsonBackupString() {
+      if (typeof st.exportFullSaveBundle === 'function') {
+        try {
+          return JSON.stringify(st.exportFullSaveBundle(), null, 2);
+        } catch (_) {}
+      }
       const cleanPrefs = Object.assign({}, getApp().prefs || {});
+      let coffeesVaultRaw = '';
+      try { coffeesVaultRaw = localStorage.getItem('brew-and-cup-coffees-v1') || ''; } catch (_) {}
+      const coffeesVaultArr = typeof st.getCoffeesVaultList === 'function' ? st.getCoffeesVaultList() : [];
       return JSON.stringify({
         format: 'beantelligence-backup',
-        version: 1,
+        version: 2,
         madeAt: new Date().toISOString(),
-        appVersion: '6.2.0',
+        appVersion: '6.8.0',
         historyCsv: hist && hist.text ? hist.text : '',
         pricesCsv: pr && pr.list && typeof priceCsv === 'function' ? priceCsv(pr.list) : '',
         shopsCsv: shStore && shStore.store && typeof shopCsv === 'function' ? shopCsv(shStore.store) : '',
+        coffeesVault: coffeesVaultArr,
+        extraKeys: coffeesVaultRaw ? { 'brew-and-cup-coffees-v1': coffeesVaultRaw } : {},
         prefs: cleanPrefs,
         academy: readAcademyState()
       }, null, 2);
@@ -50870,6 +54253,125 @@ if (typeof window !== 'undefined') {
     async function handleUniversalImport(rawText, filename) {
       const txt = String(rawText || '').replace(/^\uFEFF/, '').trim();
       if (!txt) { statusLine.textContent = 'Empty file or clipboard input.'; return; }
+
+      /* 0. #btsave= Web-Address Save / Full-Save JSON Bundle (preserves all 18 keys + brew-and-cup-coffees-v1) */
+      if ((/(?:[#?&]|^)btsave(?:_v6)?=|^btsave:/i.test(txt) || (txt.charAt(0) === '{' && /"format"\s*:\s*"beantelligence-full-save"|"keys"\s*:/.test(txt))) && typeof st.importFullSaveBundle === 'function') {
+        try {
+          const fullRes = await st.importFullSaveBundle(txt, { mode: 'merge' });
+          if (fullRes && fullRes.ok) {
+            statusLine.textContent = 'Restored full save bundle (' + (fullRes.totalCoffees != null ? fullRes.totalCoffees : fullRes.coffeesImported) + ' coffees · ' + (fullRes.totalBrews != null ? fullRes.totalBrews : fullRes.brewsImported) + ' brews)!';
+            CK.haptic('celebrate');
+            if (hostEl) renderDataVaultSheet(hostEl);
+            else rerenderAcademyTab();
+            return;
+          }
+        } catch (_) {}
+      }
+
+      /* 0b. Shared Brew / Passport Codes (BT6:, #bt6=, #bp1=, #bt1=, bt1:, BT-code: V1) */
+      if (/(?:BT6:|bt1:|bp1:|BT-code:\s*V1)/i.test(txt) || /(?:^|[#?&])(?:bt6|bp1|bt1)=/i.test(txt)) {
+        const normTxt = txt.replace(/(?:^|[#?&])bp1=/i, 'bt1:').replace(/\bbp1:/i, 'bt1:').replace(/(?:^|[#?&])bt1=/i, 'bt1:');
+        const a = getApp();
+        a.brew = a.brew || {};
+        a.prefs = a.prefs || {};
+        const rxGrinder = (a.gear && (a.gear.grinder || a.gear.grinderKey))
+          || (a.prefs.gear && (a.prefs.gear.grinder || a.prefs.gear.grinderKey))
+          || 'comandante-c40';
+        const bs = window.BTBrewStudio || null;
+        const decodeFn = bs && (bs.decodeAnySharedBrew || bs.decodeSharedBrew);
+        let decoded = null;
+        if (typeof decodeFn === 'function') {
+          try {
+            const d0 = decodeFn(normTxt, a);
+            if (d0 && d0.ok && (d0.coffee || d0.methodKey)) decoded = d0;
+          } catch (_) {}
+        }
+        if (!decoded && window.BTInnovate && typeof window.BTInnovate.decodeAndLocalizePassport === 'function') {
+          try {
+            const rxPrefs = Object.assign({}, a.prefs, {
+              grinderKey: rxGrinder,
+              gear: (a.prefs && a.prefs.gear) || a.gear || {}
+            });
+            const d1 = window.BTInnovate.decodeAndLocalizePassport(normTxt, rxPrefs);
+            if (d1 && d1.ok) decoded = d1;
+          } catch (_) {}
+        }
+        if (!decoded && typeof shareRead === 'function') {
+          try {
+            const d2 = shareRead(normTxt);
+            if (d2 && d2.ok && (d2.coffee || d2.brew)) decoded = d2;
+          } catch (_) {}
+        }
+        if (decoded && (decoded.ok || decoded.coffee || decoded.bean || decoded.brew || decoded.localizedRecipe)) {
+          const srcC = decoded.coffee || decoded.bean || {};
+          const freshCid = srcC.coffee_id || srcC.id || ('cf_imp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6));
+          const notesStr = String(srcC.bag_notes || srcC.notes || (Array.isArray(srcC.flavors) ? srcC.flavors.join(', ') : '') || '').trim();
+          a.coffee = {
+            id: freshCid,
+            coffee_id: freshCid,
+            name: srcC.name || srcC.coffee_name || 'Shared Brew Passport',
+            roaster: srcC.roaster || '',
+            origin: srcC.origin || '',
+            region: srcC.region || '',
+            farm: srcC.farm || '',
+            varietal: srcC.varietal || '',
+            process: srcC.process || 'washed',
+            roast: srcC.roast || srcC.roast_level || 'medium-light',
+            elevation_m: srcC.elevation_m || '',
+            ground_agtron: srcC.ground_agtron || '',
+            agtron: srcC.agtron || srcC.ground_agtron || '',
+            bag_notes: notesStr,
+            notes: notesStr,
+            flavors: Array.isArray(srcC.flavors) ? srcC.flavors.slice() : (notesStr ? notesStr.split(/[,;/]+/).map(function (x) { return x.trim(); }).filter(Boolean) : []),
+            answered: 'yes'
+          };
+          const rx = decoded.localizedRecipe || decoded.brew || decoded;
+          const mKey = rx.methodKey || rx.method || a.brew.method || 'v60';
+          const doseVal = +(rx.doseG || rx.dose || a.brew.dose || 18);
+          const waterVal = +(rx.waterG || rx.water || a.brew.water || Math.round(doseVal * 16));
+          const ratioVal = +(rx.ratio || (waterVal / Math.max(1, doseVal))).toFixed(1);
+          const umVal = +(rx.d50Um || decoded.localizedUm || rx.grindUm || rx.grind_um || 0);
+          const tempVal = rx.tempC ? +rx.tempC : (rx.tempF ? Math.round(((+rx.tempF - 32) * 5 / 9) * 2) / 2 : (+a.brew.tempC || 93));
+          const grindSetTxt = (rx.grinderSetting && (rx.grinderSetting.shortDisplay || rx.grinderSetting.display || rx.grinderSetting.label))
+            || decoded.rxGrindSetting
+            || rx.grind_setting
+            || '';
+          a.brew.method = mKey;
+          a.brew.style = rx.style || decoded.style || 'standard';
+          a.brew.dose = doseVal;
+          a.brew.water = waterVal;
+          a.brew.ratio = ratioVal;
+          a.brew.tempC = tempVal;
+          a.brew.tempF = Math.round(tempVal * 9 / 5 + 32);
+          if (umVal > 0) {
+            a.brew.grindUm = Math.round(umVal);
+            a.brew.grind_um = Math.round(umVal);
+          }
+          if (grindSetTxt) a.brew.grind_setting = grindSetTxt;
+          a.brew.grinderKey = rx.grinderKey || rxGrinder;
+          a.brew._savedDialedMethod = mKey;
+          a.brew.customizedNote = decoded.spanNote || rx.boilCapNote || rx.waterNote || 'Imported Brew Passport';
+          if (typeof st.upsertCoffeeVaultRecord === 'function') {
+            try { st.upsertCoffeeVaultRecord(a.coffee, a.brew, { allowClear: true }); } catch (_) {}
+          }
+          const chFn = typeof changed === 'function' ? changed : sh().changed;
+          if (typeof chFn === 'function') { try { chFn(); } catch (_) {} }
+          if (typeof sh().flushDraft === 'function') { try { sh().flushDraft(); } catch (_) {} }
+          const okMsg = 'Loaded "' + a.coffee.name + '" (' + mKey.toUpperCase() + (grindSetTxt ? (' · ' + grindSetTxt) : '') + ') into Brew Studio!';
+          statusLine.textContent = okMsg;
+          CK.haptic('celebrate');
+          notify(okMsg);
+          if (typeof sh().closeSheet === 'function' && sh().isSheetOpen && sh().isSheetOpen()) {
+            try { sh().closeSheet(); } catch (_) {}
+          }
+          if (typeof sh().go === 'function') {
+            try { sh().go('brew'); } catch (_) {}
+          } else if (typeof sh().render === 'function') {
+            try { sh().render(); } catch (_) {}
+          }
+          return;
+        }
+      }
 
       /* Primary lossless multi-part classifier & applier (History + Prices + Shops + Prefs + Academy + QR) */
       if (typeof st.classifyBackup === 'function' && typeof st.applyClassifiedBackup === 'function') {
@@ -50908,31 +54410,42 @@ if (typeof window !== 'undefined') {
       if (txt.charAt(0) === '{') {
         try {
           const jb = typeof parseJsonBackup === 'function' ? parseJsonBackup(txt) : JSON.parse(txt);
-          if (jb && (jb.format === 'beantelligence-backup' || jb.historyCsv || jb.academy)) {
+          if (jb && (jb.format === 'beantelligence-backup' || jb.historyCsv || jb.academy || jb.coffeesVault || jb.extraKeys)) {
             if (jb.historyCsv && typeof readExisting === 'function' && st.setHistory) {
               const ex2 = readExisting(jb.historyCsv);
               if (!ex2.error) st.setHistory(ex2, jb.historyCsv);
             }
+            if (jb.pricesCsv && typeof priceRead === 'function' && typeof st.savePrices === 'function') {
+              const prJ = priceRead(jb.pricesCsv);
+              if (prJ && !prJ.error && Array.isArray(prJ.list)) st.savePrices(prJ.list);
+            }
+            if (jb.shopsCsv && typeof shopRead === 'function' && typeof st.saveShops === 'function') {
+              const shJ = shopRead(jb.shopsCsv);
+              if (shJ && !shJ.error && shJ.store) st.saveShops(shJ.store);
+            }
+            if (jb.prefs && typeof st.applyFullPrefs === 'function') {
+              st.applyFullPrefs(jb.prefs);
+            }
+            const vaultArr = Array.isArray(jb.coffeesVault)
+              ? jb.coffeesVault
+              : (jb.extraKeys && jb.extraKeys['brew-and-cup-coffees-v1'] ? JSON.parse(jb.extraKeys['brew-and-cup-coffees-v1']) : null);
+            if (Array.isArray(vaultArr) && vaultArr.length) {
+              if (typeof st.upsertCoffeeVaultRecord === 'function') {
+                vaultArr.forEach(function (cv) {
+                  if (cv && typeof cv === 'object') st.upsertCoffeeVaultRecord(cv, cv.lastBrew || null);
+                });
+              } else if (typeof st.saveCoffeesVaultList === 'function') {
+                st.saveCoffeesVaultList(vaultArr);
+              }
+            }
             if (jb.academy) writeAcademyState(jb.academy);
             statusLine.textContent = 'Restored structured JSON backup!';
             CK.haptic('celebrate');
+            if (hostEl) renderDataVaultSheet(hostEl);
+            else rerenderAcademyTab();
             return;
           }
         } catch (_) {}
-      }
-
-      if (/^(BT-code:\s*V1|bt1:)/i.test(txt)) {
-        if (window.BTInnovate && typeof window.BTInnovate.decodeAndLocalizePassport === 'function') {
-          window.BTInnovate.decodeAndLocalizePassport(txt, getApp().gear || {});
-          statusLine.textContent = 'Decoded & localized shared Brew Passport to your grinder & water!';
-          CK.haptic('celebrate');
-          return;
-        }
-        if (typeof shareRead === 'function') {
-          shareRead(txt);
-          statusLine.textContent = 'Loaded BT-code: V1 shared recipe!';
-          return;
-        }
       }
 
       const firstLine = txt.split(/\r?\n/)[0].toLowerCase();
@@ -51423,9 +54936,16 @@ if (typeof window !== 'undefined') {
    Remembered WebBLE Auto-Reconnect & Non-Intrusive PWA Service Worker
    ========================================================================== */
 
-function _isBrewActivelyRunning() {
+function _isTimerOrCockpitRunning() {
   if (app && app.timerSave && app.timerSave.running) return true;
   if (BTSheet && BTSheet.currentKey && BTSheet.currentKey() === 'live-cockpit') return true;
+  if (typeof window !== 'undefined' && window.BTBrewStudio && window.BTBrewStudio.timerSession && window.BTBrewStudio.timerSession.running) return true;
+  return false;
+}
+
+function _isBrewActivelyRunning() {
+  if (_isTimerOrCockpitRunning()) return true;
+  if (typeof window !== 'undefined' && window.BTPlatform && typeof window.BTPlatform.isBrewActive === 'function' && window.BTPlatform.isBrewActive()) return true;
   return false;
 }
 
@@ -51435,7 +54955,21 @@ function _registerServiceWorkerSafely() {
     if (typeof location === 'undefined') return;
     const isSecureWeb = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     if (!isSecureWeb) return;
-    if (_isBrewActivelyRunning()) return;
+    if (_isTimerOrCockpitRunning()) return;
+
+    const pwa = (typeof window !== 'undefined' && window.BTPlatform && window.BTPlatform.pwa) ? window.BTPlatform.pwa : null;
+    if (pwa && typeof pwa.registerServiceWorker === 'function') {
+      if (typeof pwa.onUpdateReady === 'function' && (typeof window === 'undefined' || !window.__btSwUpdateListenerBound)) {
+        if (typeof window !== 'undefined') window.__btSwUpdateListenerBound = true;
+        pwa.onUpdateReady(function(info) {
+          if (info && info.updateAvailable && !_isTimerOrCockpitRunning()) {
+            toast('App update cached for your next reload.', { duration: 4000 });
+          }
+        });
+      }
+      Promise.resolve(pwa.registerServiceWorker('./sw.js')).catch(function() {});
+      return;
+    }
 
     navigator.serviceWorker.register('./sw.js', { scope: './' }).then(function(reg) {
       if (!reg) return;
@@ -51443,7 +54977,7 @@ function _registerServiceWorkerSafely() {
         const installing = reg.installing;
         if (!installing) return;
         installing.addEventListener('statechange', function() {
-          if (installing.state === 'installed' && navigator.serviceWorker.controller && !_isBrewActivelyRunning()) {
+          if (installing.state === 'installed' && navigator.serviceWorker.controller && !_isTimerOrCockpitRunning()) {
             toast('App update cached for your next reload.', { duration: 4000 });
           }
         });
@@ -51501,8 +55035,14 @@ function _bindGlobalShellEvents() {
 
     window.addEventListener('hashchange', function() {
       try {
-        if (typeof location !== 'undefined' && location.hash && /[?#&]btsave=/i.test(location.hash)) {
-          _checkAndOfferWebSaveRestore(location.hash);
+        if (typeof location !== 'undefined' && location.hash) {
+          if (/[?#&](?:btsave|btsave_v6)=/i.test(location.hash)) {
+            _checkAndOfferWebSaveRestore(location.hash);
+          } else if (_extractSharedBrewToken(location.hash)) {
+            if (_applySharedBrewAtBoot(location.hash)) {
+              go('brew');
+            }
+          }
         }
       } catch (e) {}
     });
@@ -51578,7 +55118,7 @@ function _checkAndOfferWebSaveRestore(rawHashStr) {
     const st = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
     if (!st || typeof st.decodeWebSaveUrl !== 'function' || typeof st.importFullSaveBundle !== 'function') return;
     const hashVal = String(rawHashStr || '');
-    if (!/[?#&]btsave=/i.test(hashVal) && !/^btsave=/i.test(hashVal)) return;
+    if (!/[?#&](?:btsave|btsave_v6)=/i.test(hashVal) && !/^(?:btsave|btsave_v6)=/i.test(hashVal)) return;
     if (typeof window !== 'undefined' && window.__btSelfAppliedSaveHash && window.__btSelfAppliedSaveHash === hashVal) return;
 
     const localIsEmpty = _isLocalVaultCurrentlyEmpty(st);
@@ -51712,11 +55252,180 @@ function _checkAndOfferWebSaveRestore(rawHashStr) {
   } catch (e) {}
 }
 
+function _parseBootSearchParams(rawSearch) {
+  const out = {};
+  const s = String(rawSearch || '').replace(/^\?/, '');
+  if (!s) return out;
+  try {
+    if (typeof URLSearchParams === 'function') {
+      const sp = new URLSearchParams(s);
+      sp.forEach(function(val, key) {
+        const k = String(key || '').trim().toLowerCase();
+        if (k && out[k] === undefined) out[k] = String(val || '').trim();
+      });
+      return out;
+    }
+  } catch (e) {}
+  s.split('&').forEach(function(pair) {
+    if (!pair) return;
+    const eq = pair.indexOf('=');
+    const rk = eq >= 0 ? pair.slice(0, eq) : pair;
+    const rv = eq >= 0 ? pair.slice(eq + 1) : '';
+    try {
+      const k = decodeURIComponent(rk.replace(/\+/g, ' ')).trim().toLowerCase();
+      const v = decodeURIComponent(rv.replace(/\+/g, ' ')).trim();
+      if (k && out[k] === undefined) out[k] = v;
+    } catch (e) {}
+  });
+  return out;
+}
+
+function _extractSharedBrewToken(rawUrlPart) {
+  let txt = String(rawUrlPart || '').trim();
+  if (!txt) return '';
+  try { txt = decodeURIComponent(txt); } catch (e) {}
+  let m = /(?:^|[#?&])bt6=([A-Za-z0-9\-_]{8,})/i.exec(txt);
+  if (m) return 'BT6:' + m[1];
+  m = /(?:^|[#?&])bt1=([A-Za-z0-9\-_]{8,})/i.exec(txt);
+  if (m) return 'bt1:' + m[1];
+  m = /(?:^|[#?&])bp1=([A-Za-z0-9\-_]{8,})/i.exec(txt);
+  if (m) return '#bp1=' + m[1];
+  m = /(?:^|#)\s*(BT6:[A-Za-z0-9\-_]{8,}|bt1:[A-Za-z0-9\-_]{8,})/i.exec(txt);
+  if (m) return m[1];
+  return '';
+}
+
+function _extractBt6ExtraMeta(token) {
+  if (!token || !/^BT6:/i.test(token)) return null;
+  try {
+    let clean = token.slice(4).replace(/-/g, '+').replace(/_/g, '/');
+    while (clean.length % 4) clean += '=';
+    if (typeof atob === 'function') {
+      const json = decodeURIComponent(escape(atob(clean)));
+      const obj = JSON.parse(json);
+      return (obj && typeof obj === 'object') ? obj : null;
+    }
+  } catch (e) {}
+  return null;
+}
+
+function _decodeSharedBrewForBoot(token) {
+  if (!token) return null;
+  const studio = (typeof window !== 'undefined' && window.BTBrewStudio) ? window.BTBrewStudio : null;
+  if (studio && typeof studio.decodeSharedBrew === 'function') {
+    const res = studio.decodeSharedBrew(token, app);
+    if (res && res.ok) return res;
+    if (/^#bp1=/i.test(token)) {
+      const res2 = studio.decodeSharedBrew('bt1:' + token.slice(5), app);
+      if (res2 && res2.ok) return res2;
+    }
+  }
+  const inn = (typeof window !== 'undefined' && window.BTInnovate) ? window.BTInnovate : null;
+  if (inn && typeof inn.decodeAndLocalizePassport === 'function') {
+    const uri = /^#bp1=/i.test(token) ? ('bt1:' + token.slice(5)) : token;
+    const dp = inn.decodeAndLocalizePassport(uri, (app && app.prefs) || {});
+    if (dp && dp.ok && dp.localizedRecipe) {
+      const lr = dp.localizedRecipe;
+      return {
+        ok: true,
+        coffee: dp.bean || {},
+        methodKey: lr.methodKey || 'v60',
+        style: 'standard',
+        doseG: +lr.doseG || 15,
+        waterG: +lr.waterG || 250,
+        ratio: +lr.ratio || 16.7,
+        tempC: lr.tempC != null ? +lr.tempC : 93,
+        localizedUm: +lr.d50Um || 560,
+        rxGrindSetting: (lr.grinderSetting && (lr.grinderSetting.shortDisplay || lr.grinderSetting.label)) || ((+lr.d50Um || 560) + ' \u00B5m')
+      };
+    }
+  }
+  if (typeof window !== 'undefined' && typeof window.shareRead === 'function') {
+    try {
+      const sr = window.shareRead(token);
+      if (sr && sr.ok && (sr.coffee || sr.brew)) {
+        const b = sr.brew || {};
+        const um = +b.grindUm || +b.um || 550;
+        return {
+          ok: true,
+          coffee: sr.coffee || { name: 'Shared Coffee' },
+          methodKey: b.method || 'v60',
+          style: b.style || 'standard',
+          doseG: +b.dose || 15,
+          waterG: +b.water || 250,
+          ratio: +b.ratio || 16.5,
+          tempC: b.tempF ? Math.round(((+b.tempF - 32) * 5 / 9) * 2) / 2 : (+b.tempC || 94),
+          localizedUm: um,
+          rxGrindSetting: b.grind_setting || (um + ' \u00B5m')
+        };
+      }
+    } catch (e) {}
+  }
+  return null;
+}
+
+function _applySharedBrewAtBoot(rawUrlPart) {
+  const token = _extractSharedBrewToken(rawUrlPart);
+  if (!token) return false;
+  const dec = _decodeSharedBrewForBoot(token);
+  if (!dec || !dec.ok) return false;
+
+  const extra = _extractBt6ExtraMeta(token) || {};
+  const dc = dec.coffee || {};
+  const rawFlavors = dc.flavors || dc.bag_notes || dc.notes || extra.fl || extra.flavors || extra.bn || extra.notes || '';
+  const bagNotesStr = Array.isArray(rawFlavors) ? rawFlavors.join(', ') : String(rawFlavors || '').trim();
+
+  const freshCoffee = (typeof newCoffee === 'function') ? newCoffee() : {};
+  app.coffee = Object.assign(freshCoffee, {
+    name: dc.name || extra.n || 'Shared Coffee',
+    roaster: dc.roaster || extra.r || '',
+    origin: dc.origin || extra.o || '',
+    region: dc.region || '',
+    varietal: dc.varietal || '',
+    process: dc.process || extra.p || 'washed',
+    roast: dc.roast || extra.rl || 'medium-light',
+    agtron: dc.ground_agtron || dc.agtron || '',
+    ground_agtron: dc.ground_agtron || dc.agtron || '',
+    roast_date: dc.roast_date || '',
+    bag_notes: bagNotesStr,
+    notes: bagNotesStr,
+    nameUnsure: '',
+    roastUnsure: '',
+    processUnsure: '',
+    originUnsure: '',
+    notesUnsure: ''
+  });
+  if (Array.isArray(dc.flavors)) app.coffee.flavors = dc.flavors.slice();
+  else if (Array.isArray(extra.fl)) app.coffee.flavors = extra.fl.slice();
+  if (typeof syncCoffeeAliases === 'function') syncCoffeeAliases(app.coffee);
+
+  app.brew = app.brew || {};
+  app.brew.method = dec.methodKey || 'v60';
+  app.brew.style = dec.style || 'standard';
+  app.brew.dose = +dec.doseG || 15;
+  app.brew.water = +dec.waterG || 250;
+  app.brew.ratio = +dec.ratio || Math.round((app.brew.water / Math.max(1, app.brew.dose)) * 10) / 10;
+  app.brew.tempC = dec.tempC != null ? +dec.tempC : 94;
+  app.brew.tempF = Math.round((app.brew.tempC * 9 / 5) + 32);
+  app.brew.grindUm = +dec.localizedUm || 550;
+  app.brew.grind_um = app.brew.grindUm;
+  app.brew.grind_setting = dec.rxGrindSetting || (app.brew.grindUm + ' \u00B5m');
+  app.brew.customizedNote = 'Shared Brew (' + app.brew.grind_setting + ')';
+  app.brew._savedDialedMethod = app.brew.method;
+  app.brew.dialAdaptation = null;
+
+  scheduleDraft();
+  toast('Loaded shared recipe: ' + (app.coffee.name || 'Coffee') + ' (' + app.brew.grind_setting + ')', { duration: 4200 });
+  return true;
+}
+
 function BTBoot() {
   if (typeof window !== 'undefined' && window.__btBooted) return;
   if (typeof window !== 'undefined') window.__btBooted = true;
 
   const initialBootHash = (typeof location !== 'undefined' && location.hash) ? String(location.hash) : '';
+  const initialBootSearch = (typeof location !== 'undefined' && location.search) ? String(location.search) : '';
+  const bootParams = _parseBootSearchParams(initialBootSearch);
 
   BTBrand.mountSprite();
   BTIcons.mountSprite();
@@ -51768,15 +55477,37 @@ function BTBoot() {
     if (everyFn) Promise.resolve(everyFn()).then(function() { refreshAll(); }).catch(function() {});
   } catch (e) {}
 
-  /* 4. Render Initial Route / Tab */
+  /* 4. Render Initial Route / Tab / Deep-Link / Shared Brew */
   let hashKey = '';
   try {
-    if (typeof location !== 'undefined' && location.hash && location.hash.length > 1) {
-      hashKey = decodeURIComponent(location.hash.slice(1)).trim().toLowerCase();
+    if (initialBootHash && initialBootHash.length > 1) {
+      hashKey = decodeURIComponent(initialBootHash.slice(1)).trim().toLowerCase();
     }
   } catch (e) {}
 
-  if (hashKey && (ROUTE_MAP[hashKey] || TAB_DEFS[hashKey])) {
+  const sharedBootApplied = _applySharedBrewAtBoot(initialBootHash) || _applySharedBrewAtBoot(initialBootSearch);
+  const qRouteRaw = (bootParams.route || bootParams.screen || '').toLowerCase();
+  const qStepRaw = (bootParams.step || '').toLowerCase();
+  const qTabRaw = (bootParams.tab || '').toLowerCase();
+  const qSegRaw = (bootParams.segment || '').toLowerCase();
+
+  if (sharedBootApplied) {
+    const sharedTarget = (qStepRaw && typeof normalizeBrewStep === 'function') ? normalizeBrewStep(qStepRaw) : 'brew';
+    go(sharedTarget);
+  } else if (qRouteRaw && (ROUTE_MAP[qRouteRaw] || TAB_DEFS[qRouteRaw])) {
+    go(qRouteRaw);
+  } else if (qStepRaw) {
+    const stepKey = (typeof normalizeBrewStep === 'function') ? normalizeBrewStep(qStepRaw) : qStepRaw;
+    go(ROUTE_MAP[stepKey] ? stepKey : 'door');
+  } else if (qTabRaw) {
+    const targetTab = qTabRaw === 'learn' ? 'academy' : ((qTabRaw === 'prefs' || qTabRaw === 'preferences') ? 'palate' : (TAB_DEFS[qTabRaw] ? qTabRaw : ''));
+    if (targetTab) {
+      switchTab(targetTab, qSegRaw ? { segment: qSegRaw } : undefined);
+    } else {
+      render();
+      navNote(false);
+    }
+  } else if (hashKey && (ROUTE_MAP[hashKey] || TAB_DEFS[hashKey])) {
     go(hashKey);
   } else if (app.screen && app.screen !== 'door' && ROUTE_MAP[app.screen] && !ROUTE_MAP[app.screen].sheet) {
     const mapped = ROUTE_MAP[app.screen];
@@ -51789,9 +55520,11 @@ function BTBoot() {
     navNote(false);
   }
 
-  /* 5. Boot-Time #btsave=... Web-Address Save Auto-Detection */
-  if (initialBootHash && /[?#&]btsave=/i.test(initialBootHash)) {
+  /* 5. Boot-Time #btsave=... / ?btsave=... Web-Address Save Auto-Detection */
+  if (initialBootHash && /[?#&](?:btsave|btsave_v6)=/i.test(initialBootHash)) {
     _checkAndOfferWebSaveRestore(initialBootHash);
+  } else if (initialBootSearch && /[?&](?:btsave|btsave_v6)=/i.test(initialBootSearch)) {
+    _checkAndOfferWebSaveRestore(initialBootSearch);
   }
 
   /* 6. Silent Remembered WebBLE Auto-Reconnect */

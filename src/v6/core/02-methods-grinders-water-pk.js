@@ -298,7 +298,7 @@ function effectiveBeanAge(c, now){
   if (raw == null || raw < 0) {
     return { rawDays:raw, effectiveDays:null, roomDays:null, frozenDays:0, savedDays:0, isFrozen:false, cryoFactor:CRYO_SLOWDOWN_18C };
   }
-  const frozenOn = c.is_frozen === 'yes' || c.is_frozen === true || (!!c.frozen_date && c.is_frozen !== 'no');
+  const frozenOn = c.is_frozen === 'yes' || c.is_frozen === true || c.isFrozen === true || c.frozen === 'yes' || c.frozen === true || (!!c.frozen_date && c.is_frozen !== 'no' && c.is_frozen !== false);
   if (!frozenOn) {
     return { rawDays:raw, effectiveDays:raw, roomDays:raw, frozenDays:0, savedDays:0, isFrozen:false, cryoFactor:CRYO_SLOWDOWN_18C };
   }
@@ -309,6 +309,9 @@ function effectiveBeanAge(c, now){
       fDays = Math.min(raw, dFreezeToNow);
       rDays = Math.max(0, raw - fDays);
     }
+  } else if (c.freeze_days_offset != null && c.freeze_days_offset !== '' && isFinite(+c.freeze_days_offset) && +c.freeze_days_offset >= 0) {
+    rDays = Math.min(raw, Math.round(+c.freeze_days_offset));
+    fDays = Math.max(0, raw - rDays);
   } else {
     rDays = Math.min(raw, 7);
     fDays = Math.max(0, raw - rDays);
@@ -1261,8 +1264,18 @@ const PREGROUND_PROFILES = {
 
 function interpKnots(knots, um){
   if (!knots || !knots.length) return null;
-  if (um <= knots[0][0]) return knots[0][1];
+  if (knots.length >= 2 && um < knots[0][0]){
+    const a = knots[0], b = knots[1];
+    const slope = b[0] === a[0] ? 0 : (b[1] - a[1]) / (b[0] - a[0]);
+    return Math.max(0, a[1] + (um - a[0]) * slope);
+  }
   const last = knots[knots.length - 1];
+  if (knots.length >= 2 && um > last[0]){
+    const a = knots[knots.length - 2], b = last;
+    const slope = b[0] === a[0] ? 0 : (b[1] - a[1]) / (b[0] - a[0]);
+    return b[1] + (um - b[0]) * slope;
+  }
+  if (um <= knots[0][0]) return knots[0][1];
   if (um >= last[0]) return last[1];
   for (let i = 0; i < knots.length - 1; i++){
     const a = knots[i], b = knots[i + 1];
@@ -1276,8 +1289,18 @@ function interpKnots(knots, um){
 
 function invertKnotsToUm(knots, rawVal){
   if (!knots || !knots.length || !isFinite(rawVal)) return null;
-  if (rawVal <= knots[0][1]) return knots[0][0];
+  if (knots.length >= 2 && rawVal < knots[0][1]){
+    const a = knots[0], b = knots[1];
+    const invSlope = b[1] === a[1] ? 0 : (b[0] - a[0]) / (b[1] - a[1]);
+    return Math.max(45, a[0] + (rawVal - a[1]) * invSlope);
+  }
   const last = knots[knots.length - 1];
+  if (knots.length >= 2 && rawVal > last[1]){
+    const a = knots[knots.length - 2], b = last;
+    const invSlope = b[1] === a[1] ? 0 : (b[0] - a[0]) / (b[1] - a[1]);
+    return Math.min(2200, b[0] + (rawVal - b[1]) * invSlope);
+  }
+  if (rawVal <= knots[0][1]) return knots[0][0];
   if (rawVal >= last[1]) return last[0];
   for (let i = 0; i < knots.length - 1; i++){
     const a = knots[i], b = knots[i + 1];
@@ -1707,8 +1730,8 @@ function grindBase(g, methodKey, um){
     const raw = interpKnots(kn, um);
     const lo = cv.minSafeRaw != null ? cv.minSafeRaw : (g.min || 0);
     const hi = cv.maxRaw != null ? cv.maxRaw : (g.max == null ? Infinity : g.max);
-    const isDec = ['quarter_step', 'half_step', 'tenth_step', 'chestnut_x_5'].includes(cv.fmt);
-    const snapped = isDec ? Math.round(raw * 20) / 20 : Math.round(raw);
+    const isDec = ['quarter_step', 'half_step', 'tenth_step', 'chestnut_x_5', 'sette_31E'].includes(cv.fmt);
+    const snapped = cv.fmt === 'sette_31E' ? (Math.round(raw * 10) / 10) : (isDec ? Math.round(raw * 20) / 20 : Math.round(raw));
     const base = Math.max(lo, Math.min(hi, snapped));
     const slope = slopeAtUm(kn, um);
     const cObj = (g.cats && g.cats[ck]) || { label:mMeta.label.toLowerCase(), clicks:[rnd(interpKnots(kn, mMeta.range[0]), 1), rnd(interpKnots(kn, mMeta.range[1]), 1)] };
@@ -1839,6 +1862,12 @@ function micronsForGrinderSetting(grinderKey, settingOrText, methodKey, calib){
   }
   const raw = typeof settingOrText === 'number' ? settingOrText : parseGrinderInput(g.key, settingOrText);
   if (raw == null || !isFinite(raw)) return null;
+  if (calib && typeof calib === 'object' && !Array.isArray(calib) && calib.slopeM > 0){
+    const normG = String(g.key || '').toLowerCase().replace(/_/g, '-');
+    if (!calib.grinderKey || String(calib.grinderKey).toLowerCase().replace(/_/g, '-') === normG){
+      return rnd(clampNum((+calib.d0OffsetUm || 100) + (+calib.slopeM) * raw, 55, 1600, 560), 1);
+    }
+  }
   const cv = GRINDER_CURVES[g.key];
   const kn = cv && (cv.knots || cv.refKnots);
   if (!kn) return null;
@@ -3300,15 +3329,25 @@ function calcBulkTrapCompare(bagA, bagB, shared){
 /* Bean Physics Summary & 23-Method Recommender */
 function beanPhysicsSummary(c, now){
   c = c || {};
-  const roastKey = c.roast || 'medium', roastAssumed = !c.roast && !c.agtron && !c.ground_agtron;
+  const rawRoastIn = c.roast || c.roast_level || '';
+  const normRoast = typeof G.resolveRoast === 'function' ? G.resolveRoast(rawRoastIn) : String(rawRoastIn).toLowerCase().trim();
+  const roastKey = normRoast || 'medium';
+  const roastAssumed = !rawRoastIn && !c.agtron && !c.ground_agtron;
   const roastObj = ROASTS.find(r => r.v === roastKey) || ROASTS[3];
-  const procKey = c.process || 'unknown';
+  const rawProcIn = c.process || c.process_sub || '';
+  const normProc = typeof G.resolveProcess === 'function' ? G.resolveProcess(rawProcIn) : String(rawProcIn).toLowerCase().trim();
+  const procKey = normProc || 'unknown';
   const procObj = PROCESSES.find(p => p.v === procKey) || PROCESSES[PROCESSES.length - 1];
   const age = effectiveBeanAge(c, now);
+  const bagNotes = String(c.bag_notes || c.bagNotes || c.notes || (Array.isArray(c.flavors) ? c.flavors.join(', ') : (c.flavors || '')) || '').trim();
   const isEth = /ethiopia|yirgachef|sidam|guji|gedeb|chelbesa|worka|harrar|heirloom|landrace|74110|74112|74158/i.test((c.origin || '') + ' ' + (c.name || '') + ' ' + (c.varietal || ''));
   const isGesha = /gei?sha/i.test((c.varietal || '') + ' ' + (c.name || ''));
-  const isDecaf = c.decaf === 'yes' || (c.decaf_process && c.decaf_process !== '' && c.decaf_process !== 'half-caf');
-  const sp = SPECIES_OPTS.find(s => s.v === (c.species || 'arabica')) || SPECIES_OPTS[0];
+  const isFloralTea = /\b(jasmine|bergamot|hibiscus|rose|lavender|earl\s*grey|chamomile|white\s*tea|black\s*tea|oolong|blossom|honeysuckle|violet)\b/i.test(bagNotes);
+  const isChocolateNut = /\b(chocolate|cocoa|cacao|fudge|hazelnut|almond|walnut|praline|toffee|molasses|brown\s*sugar)\b/i.test(bagNotes);
+  const isFermentFruit = /\b(boozy|winey|rum|brandy|passion\s*fruit|guava|lychee|mango|ferment|funk)\b/i.test(bagNotes);
+  const isDecaf = c.decaf === 'yes' || c.decaf === true || (c.decaf_process && c.decaf_process !== '' && c.decaf_process !== 'half-caf');
+  const spKey = String(c.species || 'arabica').toLowerCase().trim();
+  const sp = SPECIES_OPTS.find(s => s.v === spKey) || SPECIES_OPTS[0];
   const rawGroundAg = parseFloat(c.ground_agtron != null && c.ground_agtron !== '' ? c.ground_agtron : c.agtron);
   const rawBeanAg = parseFloat(c.bean_agtron);
   const agVal = (isFinite(rawGroundAg) && rawGroundAg >= 15 && rawGroundAg <= 120)
@@ -3323,9 +3362,11 @@ function beanPhysicsSummary(c, now){
   if (rdInfo && rdInfo.tempCompC) tempC = Math.max(83, tempC + rdInfo.tempCompC);
   if (isFerment(procKey) || procKey === 'black-honey') tempC = Math.max(83, tempC - 2.5);
   else if (procKey === 'natural' || isHoneyProc(procKey)) tempC = Math.max(83, tempC - 1.0);
+  else if (procKey === 'unknown' && isFermentFruit) tempC = Math.max(83, tempC - 1.0);
 
   return {
     roastObj, roastAssumed, agtron:agVal, roastDelta:rdInfo, procObj, sp, age,
+    bagNotes, isFloralTea, isChocolateNut, isFermentFruit,
     isEthLandrace:isEth, isGesha, isDecaf, tempC:r5(tempC),
     caffeineMgG:beanCaffeineMgPerG(c).mid
   };
@@ -3346,6 +3387,8 @@ function methodAdvice(coffee, now){
       score += 1.2; whyParts.push('Balanced solubility suits medium-roast sweetness.');
     }
     if (s.isGesha && ['v60','origami','orea','pulsar','chemex','siphon'].includes(m.key)) { score += 0.8; whyParts.unshift('Zero-silt filtration frames delicate Gesha florals.'); }
+    if (s.isFloralTea && ['v60','origami','orea','chemex','siphon'].includes(m.key)) { score += 0.4; if (!whyParts.length) whyParts.unshift('Paper/cloth clarity preserves delicate floral and tea aromatics.'); }
+    if (s.isChocolateNut && ['press','kalita','nel','clever','espresso','moka'].includes(m.key)) { score += 0.3; }
     if (s.isDecaf && ['switch','clever','aeropress','kalita','pulsar'].includes(m.key)) { score += 0.7; whyParts.unshift('Steep/flat-bed control prevents porous decaf fines from stalling.'); }
     if (s.isEthLandrace && ['orea','kalita','switch','clever','pulsar'].includes(m.key)) { score += 0.5; }
     if (s.age.effectiveDays != null && s.age.effectiveDays < 6 && ['espresso','lever_espresso','philips5500'].includes(m.key)) {
