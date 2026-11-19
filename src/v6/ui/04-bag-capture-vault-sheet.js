@@ -5183,6 +5183,138 @@ if (typeof window !== 'undefined') {
     );
   }
 
+  function buildLiveBeanChemistryStrip(c, a) {
+    var stripEl = S.h('section', {
+      class: 'bt-bean-chem-strip',
+      id: 'bt-step1-bean-chem-strip',
+      'aria-label': 'Live Bean Chemistry Profile',
+      style: 'width:100%;max-width:100%;box-sizing:border-box;min-width:0;padding:10px 12px;border-radius:var(--r-lg,16px);background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-xs);display:flex;flex-direction:column;gap:8px'
+    });
+
+    function renderStripBody() {
+      stripEl.textContent = '';
+      var activeC = (a && a.coffee) || c || {};
+      var core = (typeof window !== 'undefined' && window.BTCoreV6) ? window.BTCoreV6 : null;
+      var bSum = null;
+      var simRx = null;
+      var mKey = (a && a.brew && a.brew.method) || 'v60';
+      try {
+        if (core && typeof core.beanPhysicsSummary === 'function') {
+          bSum = core.beanPhysicsSummary(activeC);
+        }
+        if (core && typeof core.synthesizeRecipe === 'function') {
+          simRx = core.synthesizeRecipe({ coffee: activeC, methodKey: mKey, prefs: a && a.prefs });
+        }
+      } catch (_) {}
+
+      var freshInfo = computeSmrkeFreshnessStatus(activeC);
+      var roastKey = String(activeC.roast || (bSum && bSum.roastObj && bSum.roastObj.v) || '').toLowerCase();
+      var roastStop = S.ROAST_STOPS.find(function (r) { return r.key === roastKey; });
+      var rawAg = parseFloat(activeC.ground_agtron || activeC.bean_agtron || activeC.agtron);
+      var agVal = (isFinite(rawAg) && rawAg >= 15 && rawAg <= 120)
+        ? Math.round(rawAg)
+        : (bSum && isFinite(+bSum.agtron) ? Math.round(+bSum.agtron) : (roastStop ? roastStop.agtron : 58));
+
+      var procKey = String(activeC.process || '').toLowerCase();
+      var isProcUnk = activeC.processUnsure === 'yes' || activeC.process_unknown === 'yes' || !procKey || procKey === 'unknown';
+      var isRoastUnk = activeC.roastUnsure === 'yes' || activeC.roast_unknown === 'yes' || (!activeC.roast && !(isFinite(rawAg) && rawAg > 0));
+      var procPorosityBoost = 0;
+      if (!isProcUnk) {
+        if (/natural|black-honey/.test(procKey)) procPorosityBoost = 4;
+        else if (/honey/.test(procKey)) procPorosityBoost = 2;
+        else if (/anaerobic|carbonic|thermal|yeast|co-ferment|infused/.test(procKey)) procPorosityBoost = 5;
+        else if (procKey === 'wet-hulled') procPorosityBoost = 6;
+      }
+      if (activeC.decaf === 'yes') procPorosityBoost += 6;
+      else if (activeC.decaf === 'half-caf') procPorosityBoost += 3;
+
+      var basePorosity = Math.round(Math.max(32, Math.min(68, 66 - ((agVal - 30) * 0.48) + procPorosityBoost)));
+      var porosityTier = basePorosity <= 42 ? 'Tight Matrix' : (basePorosity <= 52 ? 'Balanced Open' : 'High Porosity');
+      var porosityTxt = isRoastUnk
+        ? ('~' + basePorosity + '% · Baseline')
+        : (basePorosity + '% · ' + porosityTier + ((isFinite(rawAg) && rawAg > 0) ? (' (Ag ' + agVal + ')') : ''));
+
+      var elevM = parseFloat(activeC.elevation_m);
+      var densKey = String(activeC.density || '').toLowerCase();
+      var isElevUnk = activeC.elevUnsure === 'yes' || activeC.elev_unknown === 'yes' || densKey === 'unknown';
+      var densityTxt = 'Mid Baseline';
+      if (!isElevUnk) {
+        if (isFinite(elevM) && elevM > 0) {
+          var eRound = Math.round(elevM);
+          var dBand = eRound >= 1950 ? 'SHB Ultra' : (eRound >= 1600 ? 'High' : (eRound >= 1200 ? 'Medium' : 'Lower'));
+          densityTxt = dBand + ' (' + eRound + 'm)';
+        } else if (densKey === 'very-high') densityTxt = 'SHB Ultra (2,000m+)';
+        else if (densKey === 'high') densityTxt = 'High (1,600m+)';
+        else if (densKey === 'mid') densityTxt = 'Medium (1,200–1,600m)';
+        else if (densKey === 'low') densityTxt = 'Lower (<1,200m)';
+      }
+
+      var targetRatioVal = (simRx && isFinite(+simRx.ratio) && +simRx.ratio > 0) ? (+simRx.ratio).toFixed(1) : '16.5';
+      var targetTempC = (simRx && isFinite(+simRx.tempC) && +simRx.tempC > 0) ? Math.round(+simRx.tempC) : (bSum && isFinite(+bSum.tempC) ? Math.round(+bSum.tempC) : 93);
+      var useF = a && a.prefs && a.prefs.tempUnit === 'F';
+      var targetTempDisp = useF ? (Math.round(targetTempC * 9 / 5 + 32) + '°F') : (targetTempC + '°C');
+      var targetRatioTxt = '1:' + targetRatioVal + ' · ' + targetTempDisp;
+
+      var degasTxt = '';
+      var degasToneColor = 'var(--ink)';
+      if (activeC.is_frozen === 'yes') {
+        degasTxt = 'Cryo Peak (Day ' + Math.round(freshInfo.effectiveDays) + ')';
+        degasToneColor = 'var(--science)';
+      } else if (activeC.dateUnsure === 'yes' || !activeC.roast_date) {
+        degasTxt = 'Peak ' + freshInfo.window.ready + '–' + freshInfo.window.peakEnd + 'd (35s bloom)';
+      } else {
+        degasTxt = (freshInfo.shortState || 'Peak Window') + ' (Day ' + Math.round(freshInfo.effectiveDays) + ')';
+        if (freshInfo.tone === 'is-good') degasToneColor = 'var(--good)';
+        else if (freshInfo.tone === 'is-warn') degasToneColor = 'var(--warn)';
+      }
+
+      var statusParts = [];
+      if (!isRoastUnk && roastStop) statusParts.push(roastStop.label);
+      if (!isProcUnk) statusParts.push(formatProcessDisplay(activeC.process));
+      if (activeC.decaf === 'yes') statusParts.push('Decaf');
+      else if (activeC.decaf === 'half-caf') statusParts.push('Half-Caf');
+      var statusPillTxt = statusParts.length ? statusParts.join(' · ') : 'Baseline Defaults';
+
+      var cells = [
+        { k: 'Roast Porosity', v: porosityTxt, color: 'var(--ink)' },
+        { k: 'Elevation Density', v: densityTxt, color: 'var(--ink)' },
+        { k: 'Est. Target Ratio', v: targetRatioTxt, color: 'var(--accent)' },
+        { k: 'Optimal Degas / Peak', v: degasTxt, color: degasToneColor }
+      ];
+
+      stripEl.appendChild(S.h('div', {
+        style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;min-width:0'
+      },
+        S.h('span', {
+          style: 'display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--science)'
+        }, S.iconEl('refract-prism', { size: 13 }), S.h('span', { text: 'Live Bean Profile' })),
+        S.h('span', {
+          class: 'bt-ce-badge is-soft',
+          style: 'font-size:11px;padding:2px 8px;max-width:100%;white-space:normal',
+          text: statusPillTxt
+        })
+      ));
+
+      stripEl.appendChild(S.h('div', {
+        style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:6px;width:100%;max-width:100%;min-width:0'
+      }, cells.map(function (cell) {
+        return S.h('div', {
+          style: 'min-width:0;padding:6px 8px;border-radius:10px;background:var(--well,var(--bg-subtle));border:1px solid var(--line-soft,var(--line));display:flex;flex-direction:column;gap:2px;box-sizing:border-box'
+        },
+          S.h('span', { style: 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-muted);line-height:1.2', text: cell.k }),
+          S.h('b', {
+            class: 'mono',
+            style: 'font-size:11.5px;font-weight:700;line-height:1.25;color:' + cell.color + ';overflow-wrap:anywhere;word-break:break-word',
+            text: cell.v
+          })
+        );
+      })));
+    }
+
+    renderStripBody();
+    return { el: stripEl, sync: renderStripBody };
+  }
+
   function renderStep1(containerEl, opts) {
     ensureStep1OmniListeners();
     opts = opts || {};
@@ -5643,6 +5775,11 @@ if (typeof window !== 'undefined') {
       ));
 
       root.appendChild(sourceStrip);
+
+      /* ==================== LIVE BEAN CHEMISTRY READOUT STRIP ==================== */
+      var beanChemCtrl = buildLiveBeanChemistryStrip(c, a);
+      liveCardSyncFns.push(beanChemCtrl.sync);
+      root.appendChild(beanChemCtrl.el);
 
       /* ==================== ACTIVE ENTRY MODE BODY ==================== */
       if (ceUi.mode === 'guided') {

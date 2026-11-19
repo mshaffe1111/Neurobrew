@@ -984,9 +984,9 @@
 
     return domH('section', { class: 'bt-studio-card bt-prefs-gear-card', id: 'bt-prefs-my-gear-card' },
       domH('div', { class: 'bt-lab-card-head' },
-        domH('div', { class: 'bt-lab-title-group' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1 1 210px' },
           ic('sliders', { size: 22 }),
-          domH('div', null,
+          domH('div', { style: 'min-width:0;flex:1 1 160px' },
             domH('h3', { text: 'My Gear & Active Hardware' }),
             domH('p', {
               class: 'bt-lab-sub',
@@ -1041,6 +1041,133 @@
   /* ==========================================================================
    * SEGMENT 1: Coffee Belt World Map (52 Origins) + Radar + 4-Level EB Drill-In
    * ========================================================================== */
+  function buildPalateGoldenShowcase(allRows) {
+    if (!Array.isArray(allRows) || allRows.length === 0 || palateState.demoMode) return null;
+    const un = function (v) { return typeof unneutralize === 'function' ? unneutralize(v || '') : String(v || ''); };
+    const candidates = [];
+    allRows.forEach(function (r, idx) {
+      if (!r || !r.coffee_name) return;
+      const isGold = r.dial_locked === 'yes' || r.dial_locked === '1';
+      const stars = parseFloat(r.my_rating_stars) || 0;
+      if (!isGold && stars < 4.5) return;
+      candidates.push({ r: r, idx: idx, isGold: isGold, stars: stars, sca: parseFloat(r.total_score) || 0 });
+    });
+    if (!candidates.length) return null;
+    candidates.sort(function (a, b) {
+      if (a.isGold !== b.isGold) return a.isGold ? -1 : 1;
+      if (Math.abs(b.stars - a.stars) > 0.01) return b.stars - a.stars;
+      if (Math.abs(b.sca - a.sca) > 0.1) return b.sca - a.sca;
+      return b.idx - a.idx;
+    });
+    const seen = Object.create(null);
+    const top3 = [];
+    for (let i = 0; i < candidates.length && top3.length < 3; i++) {
+      const r = candidates[i].r;
+      const k = (un(r.coffee_name) + '|' + un(r.roaster || '') + '|' + String(r.brew_method || '')).toLowerCase();
+      if (seen[k]) continue;
+      seen[k] = true;
+      top3.push(r);
+    }
+    if (!top3.length) return null;
+
+    function quickBrewFromPalate(r) {
+      if (window.BTCellarTab && typeof window.BTCellarTab.hydrateAndBrewRow === 'function') {
+        window.BTCellarTab.hydrateAndBrewRow(r);
+        return;
+      }
+      const applyFn = function (a) {
+        a.coffee = Object.assign(a.coffee || {}, {
+          coffee_id: r.coffee_id || (a.coffee && a.coffee.coffee_id) || '',
+          name: un(r.coffee_name) || 'Golden Brew',
+          roaster: un(r.roaster),
+          origin: un(r.origin),
+          process: un(r.process),
+          roast: un(r.roast_level) || 'light',
+          answered: 'yes'
+        });
+        a.brew = a.brew || {};
+        if (r.brew_method) a.brew.method = r.brew_method;
+        if (+r.brew_dose_g > 0) a.brew.dose = +r.brew_dose_g;
+        if (+r.brew_water_g > 0) a.brew.water = +r.brew_water_g;
+        if (+r.brew_ratio > 0) a.brew.ratio = +r.brew_ratio;
+        if (+r.brew_temp_c > 0) {
+          a.brew.tempC = +r.brew_temp_c;
+          a.brew.tempF = Math.round(+r.brew_temp_c * 9 / 5 + 32);
+        }
+        if (+r.brew_grind_target_um > 0) {
+          a.brew.grindUm = +r.brew_grind_target_um;
+          a.brew.grind_um = +r.brew_grind_target_um;
+        }
+        if (r.brew_grind_setting) a.brew.grind_setting = un(r.brew_grind_setting);
+        a.recipeLocked = (r.dial_locked === 'yes' || r.dial_locked === '1');
+      };
+      if (typeof window.__btApplyAndNavigateWithBack === 'function') {
+        window.__btApplyAndNavigateWithBack(applyFn, {
+          targetStep: 'brew',
+          returnRoute: 'palate',
+          toast: 'Loaded "' + (un(r.coffee_name) || 'Golden Recipe') + '" into Brew Studio!'
+        });
+      } else {
+        applyFn(getApp());
+        saveDraftSoon();
+        if (typeof sh().go === 'function') sh().go('recipe');
+      }
+    }
+
+    return domH('section', { class: 'bt-studio-card bt-golden-showcase', id: 'bt-palate-golden-showcase', 'aria-label': 'Best and Golden Recipes' },
+      domH('div', { class: 'bt-lab-card-head' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1 1 200px' },
+          ic('spark-star', { size: 22 }),
+          domH('div', { style: 'min-width:0;flex:1 1 160px' },
+            domH('h3', { text: 'Best & Golden Recipes' }),
+            domH('p', { class: 'bt-lab-sub', text: 'Your top 4.5+ and Golden-locked brews — launch any champion recipe in 1 tap.' })
+          )
+        ),
+        domH('span', { class: 'bt-tc-badge is-gold', text: top3.length + ' Top Brew' + (top3.length === 1 ? '' : 's') })
+      ),
+      domH('div', {
+        class: 'bt-golden-showcase-grid',
+        style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:9px;margin-top:8px;min-width:0'
+      },
+        top3.map(function (r) {
+          const isGold = r.dial_locked === 'yes' || r.dial_locked === '1';
+          const stars = parseFloat(r.my_rating_stars) || 0;
+          const cName = un(r.coffee_name) || 'Golden Brew';
+          const rName = un(r.roaster);
+          const tempC = +r.brew_temp_c > 0 ? Math.round(+r.brew_temp_c) : (+r.brew_temp_f > 0 ? Math.round((+r.brew_temp_f - 32) * 5 / 9) : 0);
+          const specs = [
+            String(r.brew_method || 'v60').toUpperCase(),
+            (r.brew_dose_g && r.brew_water_g) ? (r.brew_dose_g + 'g:' + r.brew_water_g + 'g') : '',
+            un(r.brew_grind_setting) || (r.brew_grind_target_um ? (r.brew_grind_target_um + ' \u00B5m') : ''),
+            tempC > 0 ? (tempC + '\u00B0C') : ''
+          ].filter(Boolean).join(' \u00B7 ');
+          return domH('article', {
+            class: 'bt-lab-subcard bt-golden-showcase-item',
+            style: 'display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-width:0'
+          },
+            domH('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:6px;flex-wrap:wrap' },
+              domH('div', { style: 'min-width:0;flex:1' },
+                rName ? domH('span', { class: 'bt-pref-tile-lbl', style: 'display:block', text: rName }) : null,
+                domH('strong', { style: 'display:block;font-size:0.92rem;overflow-wrap:anywhere', text: cName })
+              ),
+              domH('span', {
+                class: 'bt-tc-badge num-tab ' + (isGold ? 'is-gold' : 'is-good'),
+                text: (isGold ? 'Golden' : '') + (isGold && stars > 0 ? ' \u00B7 ' : '') + (stars > 0 ? (stars.toFixed(2) + ' / 5') : '')
+              })
+            ),
+            domH('span', { class: 'bt-lab-hint num-tab', text: specs }),
+            domH('button', {
+              type: 'button',
+              class: 'bt-lab-btn is-sm is-primary',
+              text: 'Brew \u2192',
+              onclick: function () { quickBrewFromPalate(r); }
+            })
+          );
+        })
+      )
+    );
+  }
+
   function renderPalateDnaSegment() {
     const wrap = domH('div', { class: 'bt-palate-seg' });
     wrap.appendChild(buildPrefsMyGearCard());
@@ -1153,9 +1280,9 @@
 
     const prefsCard = domH('section', { class: 'bt-studio-card bt-prefs-summary-card', id: 'bt-top-preferences-card' },
       domH('div', { class: 'bt-lab-card-head' },
-        domH('div', { class: 'bt-lab-title-group' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1 1 210px' },
           ic('palate', { size: 22 }),
-          domH('div', null,
+          domH('div', { style: 'min-width:0;flex:1 1 160px' },
             domH('h3', { text: 'Your Top Coffee Preferences' }),
             domH('p', {
               class: 'bt-lab-sub',
@@ -1203,6 +1330,8 @@
       ) : null
     );
     wrap.appendChild(prefsCard);
+    const palateGolden = buildPalateGoldenShowcase(allRows);
+    if (palateGolden) wrap.appendChild(palateGolden);
 
     /* 1. Real Cartographic Coffee Belt World Map (52 Origins + 4 Regional Zoom Pills) */
     const mapCard = domH('section', { class: 'bt-studio-card', id: 'bt-palate-world-map' });
@@ -3157,15 +3286,15 @@
 
     const palateHeadRow = domH('header', {
       class: 'bt-palate-top-head',
-      style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px'
+      style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;min-width:0'
     },
       domH('div', { style: 'flex:1 1 200px;min-width:0' },
         domH('span', {
-          style: 'display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent,#9A4212)',
+          style: 'display:block;font-size:0.74rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent)',
           text: 'Tab 4 \u00B7 Preferences & Palate'
         }),
         domH('h1', {
-          style: 'margin:2px 0 0;font-size:1.18rem;line-height:1.22',
+          style: 'margin:2px 0 0;font-family:var(--font-display);font-size:1.22rem;line-height:1.22;color:var(--ink)',
           text: 'Your Taste DNA, Origins & Bag Guide'
         })
       ),

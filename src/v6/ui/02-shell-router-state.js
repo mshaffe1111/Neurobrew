@@ -3487,52 +3487,73 @@ function paintStudioAside() {
   const regionDisp = (c.region && origLbl !== 'Not set' && origLbl !== 'Don\'t Know' && String(origLbl).toLowerCase().indexOf(String(c.region).toLowerCase()) < 0)
     ? (origLbl + ' · ' + c.region)
     : origLbl;
-  const asideNotes = String(c.bag_notes || c.notes || '').trim();
-  const passportCard = h('div', { class: 'bt-passport-card' },
-    h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px' },
-      h('div', { style: 'min-width:0' },
-        h('div', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: croaster || 'Active Coffee Bag' }),
-        h('div', { class: 'bt-serif', style: 'font-size:16px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere', text: cname || 'Add a Coffee Bag' })
+    const asideNotes = String(c.bag_notes || c.notes || '').trim();
+    const asidePersonal = String(c.personal_note || '').trim();
+    const asideElev = (isFinite(+c.elevation_m) && +c.elevation_m > 0) ? (Math.round(+c.elevation_m) + ' masl') : '';
+    const asideProducer = String(c.producer || c.farm_or_station || '').trim();
+    const hasNotesWell = (asideNotes && !isUnkAside(asideNotes, '')) || asidePersonal || asideElev || asideProducer;
+    const notesWellEl = hasNotesWell ? h('div', {
+      class: 'bt-aside-notes-well',
+      style: 'padding:8px 10px;border-radius:var(--r-xs);background:var(--bg-subtle);border:1px solid var(--line-soft);display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--ink-secondary);line-height:1.4;overflow-wrap:anywhere'
+    },
+      (asideNotes && !isUnkAside(asideNotes, '')) ? h('div', null,
+        h('b', { style: 'color:var(--ink);font-weight:700', text: 'Tasting Notes: ' }),
+        h('span', { text: asideNotes })
+      ) : null,
+      (asideElev || asideProducer) ? h('div', { style: 'font-size:11px;color:var(--ink-muted)' },
+        [asideProducer ? ('Lot: ' + asideProducer) : '', asideElev ? ('Elevation: ' + asideElev) : ''].filter(Boolean).join(' · ')
+      ) : null,
+      asidePersonal ? h('div', { style: 'font-size:11px;color:var(--ink-secondary)' },
+        h('b', { style: 'color:var(--ink)', text: 'My Note: ' }),
+        h('span', { text: asidePersonal })
+      ) : null
+    ) : null;
+
+    const passportCard = h('div', { class: 'bt-passport-card' },
+      h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px' },
+        h('div', { style: 'min-width:0' },
+          h('div', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: croaster || 'Active Coffee Bag' }),
+          h('div', { class: 'bt-serif', style: 'font-size:16px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere', text: cname || 'Add a Coffee Bag' })
+        ),
+        h('span', { class: 'bt-badge good', text: _formatFreshnessBadge(c) })
       ),
-      h('span', { class: 'bt-badge good', text: _formatFreshnessBadge(c) })
-    ),
-    h('div', { class: 'bt-passport-grid' },
-      h('div', { class: 'bt-passport-cell' },
-        h('span', { text: 'Origin' }),
-        h('b', { style: 'white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25;overflow-wrap:anywhere', text: regionDisp })
-      ),
-      h('div', { class: 'bt-passport-cell' },
-        h('span', { text: 'Roast' }),
-        h('b', null,
-          h('span', { style: 'display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:' + _roastColorFor(c.roast) }),
-          roastLbl + (lv === 'scientist' && c.agtron ? ' · Ag ' + c.agtron : '')
+      h('div', { class: 'bt-passport-grid' },
+        h('div', { class: 'bt-passport-cell' },
+          h('span', { text: 'Origin' }),
+          h('b', { style: 'white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25;overflow-wrap:anywhere', text: regionDisp })
+        ),
+        h('div', { class: 'bt-passport-cell' },
+          h('span', { text: 'Roast' }),
+          h('b', null,
+            h('span', { style: 'display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:' + _roastColorFor(c.roast) }),
+            roastLbl + (lv === 'scientist' && c.agtron ? ' · Ag ' + c.agtron : '')
+          )
+        ),
+        h('div', { class: 'bt-passport-cell' },
+          h('span', { text: 'Process' }),
+          h('b', { text: procLbl })
+        ),
+        h('div', { class: 'bt-passport-cell' },
+          h('span', { text: 'Varietal' }),
+          h('b', { text: c.varietal || 'Specialty Lot' })
         )
       ),
-      h('div', { class: 'bt-passport-cell' },
-        h('span', { text: 'Process' }),
-        h('b', { text: procLbl })
-      ),
-      h('div', { class: 'bt-passport-cell' },
-        h('span', { text: 'Varietal' }),
-        h('b', { text: c.varietal || 'Specialty Lot' })
+      notesWellEl,
+      h('div', { style: 'display:flex;gap:6px' },
+        h('button', {
+          type: 'button',
+          class: 'bt-chip',
+          style: 'flex:1;min-height:34px;font-size:12px',
+          onclick: function() { go('coffee'); }
+        }, BTIcons.el('edit-pen', { size: 13 }), h('span', { text: cname ? 'Edit Bag' : 'Enter Coffee' })),
+        _sheetRegistry.has('my-coffees') ? h('button', {
+          type: 'button',
+          class: 'bt-chip',
+          style: 'min-height:34px;font-size:12px',
+          onclick: function() { BTSheet.open('my-coffees', null, { detent: 'full' }); }
+        }, BTIcons.el('cellar', { size: 13 }), h('span', { text: 'Vault' })) : null
       )
-    ),
-    (asideNotes && !isUnkAside(asideNotes, '')) ? h('div', { style: 'font-size:11.5px;color:var(--ink-secondary);line-height:1.35', text: 'Notes: ' + asideNotes }) : null,
-    h('div', { style: 'display:flex;gap:6px' },
-      h('button', {
-        type: 'button',
-        class: 'bt-chip',
-        style: 'flex:1;min-height:34px;font-size:12px',
-        onclick: function() { go('coffee'); }
-      }, BTIcons.el('edit-pen', { size: 13 }), h('span', { text: cname ? 'Edit Bag' : 'Enter Coffee' })),
-      _sheetRegistry.has('my-coffees') ? h('button', {
-        type: 'button',
-        class: 'bt-chip',
-        style: 'min-height:34px;font-size:12px',
-        onclick: function() { BTSheet.open('my-coffees', null, { detent: 'full' }); }
-      }, BTIcons.el('cellar', { size: 13 }), h('span', { text: 'Vault' })) : null
-    )
-  );
+    );
 
   /* Live Recipe & Physics / BLE Telemetry Card */
   const doseG = +b.dose > 0 ? +b.dose : 15;
@@ -3559,12 +3580,40 @@ function paintStudioAside() {
     }
   } catch (e) {}
 
+  const dialAd = (b && b.dialAdaptation && (b.dialAdaptation.adapted || b.dialAdaptation.locked)) ? b.dialAdaptation : null;
+  const dialTryNext = dialAd ? (dialAd.nextTry || ((+dialAd.fromTry || 1) + 1)) : 2;
+  const dialBadgeText = dialAd
+    ? (dialAd.locked
+      ? ('Gold Lock · Try #' + (+dialAd.fromTry || 1))
+      : ('Try #' + dialTryNext + ' Fix Loaded'))
+    : '';
+  const dialSummaryText = dialAd
+    ? (dialAd.summaryBanner || (dialAd.prevClickDisplay && dialAd.nextClickDisplay ? (dialAd.prevClickDisplay + ' \u2192 ' + dialAd.nextClickDisplay) : (dialAd.reason || '')))
+    : '';
+
+  const printIcon = h('span', { 'aria-hidden': 'true', style: 'display:inline-flex;align-items:center' });
+  printIcon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+
   const shopActive = !!(app.shopDraft && app.shopDraft.on && (app.shopDraft.name || app.shopDraft.shop || app.shopDraft.drink));
   const telemetryCard = h('div', { class: 'bt-passport-card' },
-    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px' },
+    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
       h('span', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: 'Live Recipe & Telemetry' }),
-      h('span', { class: 'bt-badge sci mono', text: String(b.method || 'v60').toUpperCase() })
+      h('div', { style: 'display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap' },
+        dialAd ? h('span', {
+          id: 'bt-aside-dial-badge',
+          class: 'bt-aside-dial-badge bt-badge ' + (dialAd.locked ? 'good' : ''),
+          style: dialAd.locked
+            ? 'font-size:10px;padding:2px 7px'
+            : 'font-size:10px;padding:2px 7px;background:var(--accent-soft);color:var(--accent);border:1px solid rgba(217,139,38,0.42)',
+          text: dialBadgeText
+        }) : null,
+        h('span', { class: 'bt-badge sci mono', text: String(b.method || 'v60').toUpperCase() })
+      )
     ),
+    dialSummaryText ? h('div', {
+      style: 'font-size:11px;line-height:1.35;padding:6px 8px;border-radius:var(--r-xs);background:' + (dialAd && dialAd.locked ? 'var(--good-bg)' : 'var(--accent-soft)') + ';color:' + (dialAd && dialAd.locked ? 'var(--good)' : 'var(--ink)') + ';font-weight:600;overflow-wrap:anywhere',
+      text: dialSummaryText
+    }) : null,
     h('div', { class: 'bt-passport-grid' },
       h('div', { class: 'bt-passport-cell' },
         h('span', { text: 'Dose : Water' }),
@@ -3590,12 +3639,35 @@ function paintStudioAside() {
       ),
       bleState.lastTds ? h('b', { class: 'mono', style: 'color:var(--science)', text: (+bleState.lastTds).toFixed(2) + '% TDS' }) : h('span', { class: 'mono', style: 'color:var(--ink-muted)', text: tempDisp.split(' ')[0] })
     ),
+    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px' },
+      h('button', {
+        type: 'button',
+        id: 'bt-aside-print-btn',
+        class: 'bt-chip',
+        title: 'Print or Save Recipe PDF (Ctrl+P)',
+        style: 'flex:1;min-height:32px;font-size:11.5px;justify-content:space-between;padding:4px 9px',
+        onclick: function() { if (typeof window !== 'undefined' && typeof window.print === 'function') window.print(); }
+      },
+        h('span', { style: 'display:inline-flex;align-items:center;gap:6px' }, printIcon, h('span', { text: 'Print Recipe' })),
+        h('kbd', { style: 'font-family:var(--font-mono);font-size:10px;padding:1px 5px;border-radius:5px;border:1px solid var(--line);background:var(--bg-subtle);color:var(--ink-muted)', text: 'Ctrl+P' })
+      )
+    ),
     shopActive ? h('div', { style: 'font-size:11px;color:var(--ink-secondary);line-height:1.35' },
       'Dual Drafts Isolated: Cafe visit (' + (app.shopDraft.name || app.shopDraft.shop || 'Cafe') + ') saved separately.'
     ) : null
   );
 
   aside.append(coachCard, passportCard, telemetryCard);
+}
+
+if (typeof window !== 'undefined' && !window._btPrintShortcutBound) {
+  window._btPrintShortcutBound = true;
+  window.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && String(e.key || '').toLowerCase() === 'p') {
+      e.preventDefault();
+      if (typeof window.print === 'function') window.print();
+    }
+  });
 }
 
 /* ==================== PUBLIC BTShell OBJECT ==================== */

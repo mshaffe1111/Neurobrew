@@ -512,7 +512,7 @@ const BTChartKit = (function () {
         return;
       }
       activeHandle = chosen;
-      activePointerId = e.pointerId;
+      activePointerId = e.pointerId !== undefined ? e.pointerId : -1;
       lastDetentBucket = null;
       lastMoveTs = performance.now ? performance.now() : Date.now();
       startPxX = pt.pxX;
@@ -552,7 +552,8 @@ const BTChartKit = (function () {
         }
         return;
       }
-      if (e.pointerId !== activePointerId) return;
+      const eid = e.pointerId !== undefined ? e.pointerId : -1;
+      if (eid !== activePointerId) return;
       const pt = mapClientToSurface(svgOrCanvasEl, e.clientX, e.clientY, c);
 
       if (touchPending) {
@@ -603,7 +604,8 @@ const BTChartKit = (function () {
     }
 
     function endGesture(e, cancelled) {
-      if (activePointerId === null || (e && e.pointerId !== undefined && e.pointerId !== activePointerId)) return;
+      const eid = e && e.pointerId !== undefined ? e.pointerId : -1;
+      if (activePointerId === null || (e && eid !== activePointerId)) return;
       const pid = activePointerId;
       const wasPendingTap = touchPending;
       activePointerId = null;
@@ -651,11 +653,15 @@ const BTChartKit = (function () {
       hideLoupe();
     }
 
+    function onPointerUp(e) { endGesture(e, false); }
+    function onPointerCancel(e) { endGesture(e, true); }
+    function onLostPointerCapture(e) { endGesture(e, true); }
+
     svgOrCanvasEl.addEventListener('pointerdown', onPointerDown);
     svgOrCanvasEl.addEventListener('pointermove', onPointerMove);
-    svgOrCanvasEl.addEventListener('pointerup', function (e) { endGesture(e, false); });
-    svgOrCanvasEl.addEventListener('pointercancel', function (e) { endGesture(e, true); });
-    svgOrCanvasEl.addEventListener('lostpointercapture', function (e) { endGesture(e, true); });
+    svgOrCanvasEl.addEventListener('pointerup', onPointerUp);
+    svgOrCanvasEl.addEventListener('pointercancel', onPointerCancel);
+    svgOrCanvasEl.addEventListener('lostpointercapture', onLostPointerCapture);
     svgOrCanvasEl.addEventListener('pointerleave', onPointerLeave);
     svgOrCanvasEl.addEventListener('keydown', onKeyDown);
 
@@ -671,6 +677,9 @@ const BTChartKit = (function () {
       destroy: function () {
         svgOrCanvasEl.removeEventListener('pointerdown', onPointerDown);
         svgOrCanvasEl.removeEventListener('pointermove', onPointerMove);
+        svgOrCanvasEl.removeEventListener('pointerup', onPointerUp);
+        svgOrCanvasEl.removeEventListener('pointercancel', onPointerCancel);
+        svgOrCanvasEl.removeEventListener('lostpointercapture', onLostPointerCapture);
         svgOrCanvasEl.removeEventListener('pointerleave', onPointerLeave);
         svgOrCanvasEl.removeEventListener('keydown', onKeyDown);
         if (loupeEl && loupeEl.parentNode) loupeEl.parentNode.removeChild(loupeEl);
@@ -1690,14 +1699,14 @@ const BTChartKit = (function () {
     const sweetTop = mapY(sweetHi).toFixed(1);
     const sweetH = Math.max(4, mapY(sweetLo) - mapY(sweetHi)).toFixed(1);
 
-    let svg = '<svg class="bt-dial-sparkline" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' +
+    let svg = '<svg class="bt-dial-sparkline" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" style="max-width:100%;height:auto;" role="img" aria-label="' +
       esc(cfg.ariaLabel || 'Dial-in convergence sparkline') + '" xmlns="http://www.w3.org/2000/svg">';
 
     /* Sweet-Spot Emerald Band */
     const lv = lensLevel();
     const sweetBadge = cfg.sweetLabel || (lv === 'starter' ? 'Best Cup Zone' : 'Sweet Spot');
     const sweetBadgeX = (predictedNext && pts.length >= 1)
-      ? Math.max(L + 64, mapX(pts.length) - 14).toFixed(1)
+      ? clamp(mapX(pts.length) - 14, L + 68, R - 5, R - 5).toFixed(1)
       : String(R - 5);
     svg += '<rect x="' + L + '" y="' + sweetTop + '" width="' + PW + '" height="' + sweetH +
       '" rx="6" class="bt-spark-sweet-band"/>';
@@ -1741,7 +1750,7 @@ const BTChartKit = (function () {
         '" class="bt-spark-node ' + cls + '"/>';
       svg += '<text x="' + p.x.toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" class="bt-spark-axis">#' + (i + 1) + '</text>';
       if (i > 0 && p.label) {
-        const mx = (pts[i - 1].x + p.x) * 0.5;
+        const mx = clamp((pts[i - 1].x + p.x) * 0.5, L + 16, R - 16, (pts[i - 1].x + p.x) * 0.5);
         const my = Math.min(pts[i - 1].y, p.y) - 7;
         const oCls = p.outcome === 'helped' ? 'is-helped' : (p.outcome === 'hurt' ? 'is-hurt' : '');
         svg += '<text x="' + mx.toFixed(1) + '" y="' + Math.max(12, my).toFixed(1) +
@@ -1899,9 +1908,10 @@ const BTChartKit = (function () {
       if (yLabel) {
         const yw = Math.max(44, String(yLabel).length * 6.0 + 12);
         const clampedPillY = clamp(cy, b.T + 9, b.B - 9, cy);
-        yBg.setAttribute('x', (-yw - 4).toFixed(1));
+        const yBgX = Math.max(2 - b.L, -yw - 4);
+        yBg.setAttribute('x', yBgX.toFixed(1));
         yBg.setAttribute('width', yw.toFixed(1));
-        yTxt.setAttribute('x', (-yw * 0.5 - 4).toFixed(1));
+        yTxt.setAttribute('x', (yBgX + yw * 0.5).toFixed(1));
         yTxt.textContent = String(yLabel);
         yPillG.setAttribute('transform', 'translate(' + b.L.toFixed(1) + ',' + clampedPillY.toFixed(1) + ')');
         yPillG.removeAttribute('display');
@@ -1911,6 +1921,7 @@ const BTChartKit = (function () {
 
       g.setAttribute('opacity', '1');
       g.classList.toggle('is-subtle', activeMode === 'subtle');
+      g.classList.toggle('is-active', activeMode === 'active');
       if (activeMode === 'active') g.classList.add('is-scrubbing');
       else g.classList.remove('is-scrubbing');
     }
@@ -1921,6 +1932,7 @@ const BTChartKit = (function () {
       update: update,
       hide: function () {
         g.setAttribute('opacity', '0');
+        g.classList.remove('is-active');
         g.classList.remove('is-scrubbing');
       }
     };

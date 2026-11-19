@@ -4812,52 +4812,73 @@ function paintStudioAside() {
   const regionDisp = (c.region && origLbl !== 'Not set' && origLbl !== 'Don\'t Know' && String(origLbl).toLowerCase().indexOf(String(c.region).toLowerCase()) < 0)
     ? (origLbl + ' · ' + c.region)
     : origLbl;
-  const asideNotes = String(c.bag_notes || c.notes || '').trim();
-  const passportCard = h('div', { class: 'bt-passport-card' },
-    h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px' },
-      h('div', { style: 'min-width:0' },
-        h('div', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: croaster || 'Active Coffee Bag' }),
-        h('div', { class: 'bt-serif', style: 'font-size:16px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere', text: cname || 'Add a Coffee Bag' })
+    const asideNotes = String(c.bag_notes || c.notes || '').trim();
+    const asidePersonal = String(c.personal_note || '').trim();
+    const asideElev = (isFinite(+c.elevation_m) && +c.elevation_m > 0) ? (Math.round(+c.elevation_m) + ' masl') : '';
+    const asideProducer = String(c.producer || c.farm_or_station || '').trim();
+    const hasNotesWell = (asideNotes && !isUnkAside(asideNotes, '')) || asidePersonal || asideElev || asideProducer;
+    const notesWellEl = hasNotesWell ? h('div', {
+      class: 'bt-aside-notes-well',
+      style: 'padding:8px 10px;border-radius:var(--r-xs);background:var(--bg-subtle);border:1px solid var(--line-soft);display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--ink-secondary);line-height:1.4;overflow-wrap:anywhere'
+    },
+      (asideNotes && !isUnkAside(asideNotes, '')) ? h('div', null,
+        h('b', { style: 'color:var(--ink);font-weight:700', text: 'Tasting Notes: ' }),
+        h('span', { text: asideNotes })
+      ) : null,
+      (asideElev || asideProducer) ? h('div', { style: 'font-size:11px;color:var(--ink-muted)' },
+        [asideProducer ? ('Lot: ' + asideProducer) : '', asideElev ? ('Elevation: ' + asideElev) : ''].filter(Boolean).join(' · ')
+      ) : null,
+      asidePersonal ? h('div', { style: 'font-size:11px;color:var(--ink-secondary)' },
+        h('b', { style: 'color:var(--ink)', text: 'My Note: ' }),
+        h('span', { text: asidePersonal })
+      ) : null
+    ) : null;
+
+    const passportCard = h('div', { class: 'bt-passport-card' },
+      h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px' },
+        h('div', { style: 'min-width:0' },
+          h('div', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: croaster || 'Active Coffee Bag' }),
+          h('div', { class: 'bt-serif', style: 'font-size:16px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere', text: cname || 'Add a Coffee Bag' })
+        ),
+        h('span', { class: 'bt-badge good', text: _formatFreshnessBadge(c) })
       ),
-      h('span', { class: 'bt-badge good', text: _formatFreshnessBadge(c) })
-    ),
-    h('div', { class: 'bt-passport-grid' },
-      h('div', { class: 'bt-passport-cell' },
-        h('span', { text: 'Origin' }),
-        h('b', { style: 'white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25;overflow-wrap:anywhere', text: regionDisp })
-      ),
-      h('div', { class: 'bt-passport-cell' },
-        h('span', { text: 'Roast' }),
-        h('b', null,
-          h('span', { style: 'display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:' + _roastColorFor(c.roast) }),
-          roastLbl + (lv === 'scientist' && c.agtron ? ' · Ag ' + c.agtron : '')
+      h('div', { class: 'bt-passport-grid' },
+        h('div', { class: 'bt-passport-cell' },
+          h('span', { text: 'Origin' }),
+          h('b', { style: 'white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25;overflow-wrap:anywhere', text: regionDisp })
+        ),
+        h('div', { class: 'bt-passport-cell' },
+          h('span', { text: 'Roast' }),
+          h('b', null,
+            h('span', { style: 'display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:' + _roastColorFor(c.roast) }),
+            roastLbl + (lv === 'scientist' && c.agtron ? ' · Ag ' + c.agtron : '')
+          )
+        ),
+        h('div', { class: 'bt-passport-cell' },
+          h('span', { text: 'Process' }),
+          h('b', { text: procLbl })
+        ),
+        h('div', { class: 'bt-passport-cell' },
+          h('span', { text: 'Varietal' }),
+          h('b', { text: c.varietal || 'Specialty Lot' })
         )
       ),
-      h('div', { class: 'bt-passport-cell' },
-        h('span', { text: 'Process' }),
-        h('b', { text: procLbl })
-      ),
-      h('div', { class: 'bt-passport-cell' },
-        h('span', { text: 'Varietal' }),
-        h('b', { text: c.varietal || 'Specialty Lot' })
+      notesWellEl,
+      h('div', { style: 'display:flex;gap:6px' },
+        h('button', {
+          type: 'button',
+          class: 'bt-chip',
+          style: 'flex:1;min-height:34px;font-size:12px',
+          onclick: function() { go('coffee'); }
+        }, BTIcons.el('edit-pen', { size: 13 }), h('span', { text: cname ? 'Edit Bag' : 'Enter Coffee' })),
+        _sheetRegistry.has('my-coffees') ? h('button', {
+          type: 'button',
+          class: 'bt-chip',
+          style: 'min-height:34px;font-size:12px',
+          onclick: function() { BTSheet.open('my-coffees', null, { detent: 'full' }); }
+        }, BTIcons.el('cellar', { size: 13 }), h('span', { text: 'Vault' })) : null
       )
-    ),
-    (asideNotes && !isUnkAside(asideNotes, '')) ? h('div', { style: 'font-size:11.5px;color:var(--ink-secondary);line-height:1.35', text: 'Notes: ' + asideNotes }) : null,
-    h('div', { style: 'display:flex;gap:6px' },
-      h('button', {
-        type: 'button',
-        class: 'bt-chip',
-        style: 'flex:1;min-height:34px;font-size:12px',
-        onclick: function() { go('coffee'); }
-      }, BTIcons.el('edit-pen', { size: 13 }), h('span', { text: cname ? 'Edit Bag' : 'Enter Coffee' })),
-      _sheetRegistry.has('my-coffees') ? h('button', {
-        type: 'button',
-        class: 'bt-chip',
-        style: 'min-height:34px;font-size:12px',
-        onclick: function() { BTSheet.open('my-coffees', null, { detent: 'full' }); }
-      }, BTIcons.el('cellar', { size: 13 }), h('span', { text: 'Vault' })) : null
-    )
-  );
+    );
 
   /* Live Recipe & Physics / BLE Telemetry Card */
   const doseG = +b.dose > 0 ? +b.dose : 15;
@@ -4884,12 +4905,40 @@ function paintStudioAside() {
     }
   } catch (e) {}
 
+  const dialAd = (b && b.dialAdaptation && (b.dialAdaptation.adapted || b.dialAdaptation.locked)) ? b.dialAdaptation : null;
+  const dialTryNext = dialAd ? (dialAd.nextTry || ((+dialAd.fromTry || 1) + 1)) : 2;
+  const dialBadgeText = dialAd
+    ? (dialAd.locked
+      ? ('Gold Lock · Try #' + (+dialAd.fromTry || 1))
+      : ('Try #' + dialTryNext + ' Fix Loaded'))
+    : '';
+  const dialSummaryText = dialAd
+    ? (dialAd.summaryBanner || (dialAd.prevClickDisplay && dialAd.nextClickDisplay ? (dialAd.prevClickDisplay + ' \u2192 ' + dialAd.nextClickDisplay) : (dialAd.reason || '')))
+    : '';
+
+  const printIcon = h('span', { 'aria-hidden': 'true', style: 'display:inline-flex;align-items:center' });
+  printIcon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+
   const shopActive = !!(app.shopDraft && app.shopDraft.on && (app.shopDraft.name || app.shopDraft.shop || app.shopDraft.drink));
   const telemetryCard = h('div', { class: 'bt-passport-card' },
-    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px' },
+    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
       h('span', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: 'Live Recipe & Telemetry' }),
-      h('span', { class: 'bt-badge sci mono', text: String(b.method || 'v60').toUpperCase() })
+      h('div', { style: 'display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap' },
+        dialAd ? h('span', {
+          id: 'bt-aside-dial-badge',
+          class: 'bt-aside-dial-badge bt-badge ' + (dialAd.locked ? 'good' : ''),
+          style: dialAd.locked
+            ? 'font-size:10px;padding:2px 7px'
+            : 'font-size:10px;padding:2px 7px;background:var(--accent-soft);color:var(--accent);border:1px solid rgba(217,139,38,0.42)',
+          text: dialBadgeText
+        }) : null,
+        h('span', { class: 'bt-badge sci mono', text: String(b.method || 'v60').toUpperCase() })
+      )
     ),
+    dialSummaryText ? h('div', {
+      style: 'font-size:11px;line-height:1.35;padding:6px 8px;border-radius:var(--r-xs);background:' + (dialAd && dialAd.locked ? 'var(--good-bg)' : 'var(--accent-soft)') + ';color:' + (dialAd && dialAd.locked ? 'var(--good)' : 'var(--ink)') + ';font-weight:600;overflow-wrap:anywhere',
+      text: dialSummaryText
+    }) : null,
     h('div', { class: 'bt-passport-grid' },
       h('div', { class: 'bt-passport-cell' },
         h('span', { text: 'Dose : Water' }),
@@ -4915,12 +4964,35 @@ function paintStudioAside() {
       ),
       bleState.lastTds ? h('b', { class: 'mono', style: 'color:var(--science)', text: (+bleState.lastTds).toFixed(2) + '% TDS' }) : h('span', { class: 'mono', style: 'color:var(--ink-muted)', text: tempDisp.split(' ')[0] })
     ),
+    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px' },
+      h('button', {
+        type: 'button',
+        id: 'bt-aside-print-btn',
+        class: 'bt-chip',
+        title: 'Print or Save Recipe PDF (Ctrl+P)',
+        style: 'flex:1;min-height:32px;font-size:11.5px;justify-content:space-between;padding:4px 9px',
+        onclick: function() { if (typeof window !== 'undefined' && typeof window.print === 'function') window.print(); }
+      },
+        h('span', { style: 'display:inline-flex;align-items:center;gap:6px' }, printIcon, h('span', { text: 'Print Recipe' })),
+        h('kbd', { style: 'font-family:var(--font-mono);font-size:10px;padding:1px 5px;border-radius:5px;border:1px solid var(--line);background:var(--bg-subtle);color:var(--ink-muted)', text: 'Ctrl+P' })
+      )
+    ),
     shopActive ? h('div', { style: 'font-size:11px;color:var(--ink-secondary);line-height:1.35' },
       'Dual Drafts Isolated: Cafe visit (' + (app.shopDraft.name || app.shopDraft.shop || 'Cafe') + ') saved separately.'
     ) : null
   );
 
   aside.append(coachCard, passportCard, telemetryCard);
+}
+
+if (typeof window !== 'undefined' && !window._btPrintShortcutBound) {
+  window._btPrintShortcutBound = true;
+  window.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && String(e.key || '').toLowerCase() === 'p') {
+      e.preventDefault();
+      if (typeof window.print === 'function') window.print();
+    }
+  });
 }
 
 /* ==================== PUBLIC BTShell OBJECT ==================== */
@@ -14232,7 +14304,7 @@ const BTChartKit = (function () {
         return;
       }
       activeHandle = chosen;
-      activePointerId = e.pointerId;
+      activePointerId = e.pointerId !== undefined ? e.pointerId : -1;
       lastDetentBucket = null;
       lastMoveTs = performance.now ? performance.now() : Date.now();
       startPxX = pt.pxX;
@@ -14272,7 +14344,8 @@ const BTChartKit = (function () {
         }
         return;
       }
-      if (e.pointerId !== activePointerId) return;
+      const eid = e.pointerId !== undefined ? e.pointerId : -1;
+      if (eid !== activePointerId) return;
       const pt = mapClientToSurface(svgOrCanvasEl, e.clientX, e.clientY, c);
 
       if (touchPending) {
@@ -14323,7 +14396,8 @@ const BTChartKit = (function () {
     }
 
     function endGesture(e, cancelled) {
-      if (activePointerId === null || (e && e.pointerId !== undefined && e.pointerId !== activePointerId)) return;
+      const eid = e && e.pointerId !== undefined ? e.pointerId : -1;
+      if (activePointerId === null || (e && eid !== activePointerId)) return;
       const pid = activePointerId;
       const wasPendingTap = touchPending;
       activePointerId = null;
@@ -14371,11 +14445,15 @@ const BTChartKit = (function () {
       hideLoupe();
     }
 
+    function onPointerUp(e) { endGesture(e, false); }
+    function onPointerCancel(e) { endGesture(e, true); }
+    function onLostPointerCapture(e) { endGesture(e, true); }
+
     svgOrCanvasEl.addEventListener('pointerdown', onPointerDown);
     svgOrCanvasEl.addEventListener('pointermove', onPointerMove);
-    svgOrCanvasEl.addEventListener('pointerup', function (e) { endGesture(e, false); });
-    svgOrCanvasEl.addEventListener('pointercancel', function (e) { endGesture(e, true); });
-    svgOrCanvasEl.addEventListener('lostpointercapture', function (e) { endGesture(e, true); });
+    svgOrCanvasEl.addEventListener('pointerup', onPointerUp);
+    svgOrCanvasEl.addEventListener('pointercancel', onPointerCancel);
+    svgOrCanvasEl.addEventListener('lostpointercapture', onLostPointerCapture);
     svgOrCanvasEl.addEventListener('pointerleave', onPointerLeave);
     svgOrCanvasEl.addEventListener('keydown', onKeyDown);
 
@@ -14391,6 +14469,9 @@ const BTChartKit = (function () {
       destroy: function () {
         svgOrCanvasEl.removeEventListener('pointerdown', onPointerDown);
         svgOrCanvasEl.removeEventListener('pointermove', onPointerMove);
+        svgOrCanvasEl.removeEventListener('pointerup', onPointerUp);
+        svgOrCanvasEl.removeEventListener('pointercancel', onPointerCancel);
+        svgOrCanvasEl.removeEventListener('lostpointercapture', onLostPointerCapture);
         svgOrCanvasEl.removeEventListener('pointerleave', onPointerLeave);
         svgOrCanvasEl.removeEventListener('keydown', onKeyDown);
         if (loupeEl && loupeEl.parentNode) loupeEl.parentNode.removeChild(loupeEl);
@@ -15410,14 +15491,14 @@ const BTChartKit = (function () {
     const sweetTop = mapY(sweetHi).toFixed(1);
     const sweetH = Math.max(4, mapY(sweetLo) - mapY(sweetHi)).toFixed(1);
 
-    let svg = '<svg class="bt-dial-sparkline" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' +
+    let svg = '<svg class="bt-dial-sparkline" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" style="max-width:100%;height:auto;" role="img" aria-label="' +
       esc(cfg.ariaLabel || 'Dial-in convergence sparkline') + '" xmlns="http://www.w3.org/2000/svg">';
 
     /* Sweet-Spot Emerald Band */
     const lv = lensLevel();
     const sweetBadge = cfg.sweetLabel || (lv === 'starter' ? 'Best Cup Zone' : 'Sweet Spot');
     const sweetBadgeX = (predictedNext && pts.length >= 1)
-      ? Math.max(L + 64, mapX(pts.length) - 14).toFixed(1)
+      ? clamp(mapX(pts.length) - 14, L + 68, R - 5, R - 5).toFixed(1)
       : String(R - 5);
     svg += '<rect x="' + L + '" y="' + sweetTop + '" width="' + PW + '" height="' + sweetH +
       '" rx="6" class="bt-spark-sweet-band"/>';
@@ -15461,7 +15542,7 @@ const BTChartKit = (function () {
         '" class="bt-spark-node ' + cls + '"/>';
       svg += '<text x="' + p.x.toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" class="bt-spark-axis">#' + (i + 1) + '</text>';
       if (i > 0 && p.label) {
-        const mx = (pts[i - 1].x + p.x) * 0.5;
+        const mx = clamp((pts[i - 1].x + p.x) * 0.5, L + 16, R - 16, (pts[i - 1].x + p.x) * 0.5);
         const my = Math.min(pts[i - 1].y, p.y) - 7;
         const oCls = p.outcome === 'helped' ? 'is-helped' : (p.outcome === 'hurt' ? 'is-hurt' : '');
         svg += '<text x="' + mx.toFixed(1) + '" y="' + Math.max(12, my).toFixed(1) +
@@ -15619,9 +15700,10 @@ const BTChartKit = (function () {
       if (yLabel) {
         const yw = Math.max(44, String(yLabel).length * 6.0 + 12);
         const clampedPillY = clamp(cy, b.T + 9, b.B - 9, cy);
-        yBg.setAttribute('x', (-yw - 4).toFixed(1));
+        const yBgX = Math.max(2 - b.L, -yw - 4);
+        yBg.setAttribute('x', yBgX.toFixed(1));
         yBg.setAttribute('width', yw.toFixed(1));
-        yTxt.setAttribute('x', (-yw * 0.5 - 4).toFixed(1));
+        yTxt.setAttribute('x', (yBgX + yw * 0.5).toFixed(1));
         yTxt.textContent = String(yLabel);
         yPillG.setAttribute('transform', 'translate(' + b.L.toFixed(1) + ',' + clampedPillY.toFixed(1) + ')');
         yPillG.removeAttribute('display');
@@ -15631,6 +15713,7 @@ const BTChartKit = (function () {
 
       g.setAttribute('opacity', '1');
       g.classList.toggle('is-subtle', activeMode === 'subtle');
+      g.classList.toggle('is-active', activeMode === 'active');
       if (activeMode === 'active') g.classList.add('is-scrubbing');
       else g.classList.remove('is-scrubbing');
     }
@@ -15641,6 +15724,7 @@ const BTChartKit = (function () {
       update: update,
       hide: function () {
         g.setAttribute('opacity', '0');
+        g.classList.remove('is-active');
         g.classList.remove('is-scrubbing');
       }
     };
@@ -20858,6 +20942,138 @@ if (typeof window !== 'undefined') {
     );
   }
 
+  function buildLiveBeanChemistryStrip(c, a) {
+    var stripEl = S.h('section', {
+      class: 'bt-bean-chem-strip',
+      id: 'bt-step1-bean-chem-strip',
+      'aria-label': 'Live Bean Chemistry Profile',
+      style: 'width:100%;max-width:100%;box-sizing:border-box;min-width:0;padding:10px 12px;border-radius:var(--r-lg,16px);background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-xs);display:flex;flex-direction:column;gap:8px'
+    });
+
+    function renderStripBody() {
+      stripEl.textContent = '';
+      var activeC = (a && a.coffee) || c || {};
+      var core = (typeof window !== 'undefined' && window.BTCoreV6) ? window.BTCoreV6 : null;
+      var bSum = null;
+      var simRx = null;
+      var mKey = (a && a.brew && a.brew.method) || 'v60';
+      try {
+        if (core && typeof core.beanPhysicsSummary === 'function') {
+          bSum = core.beanPhysicsSummary(activeC);
+        }
+        if (core && typeof core.synthesizeRecipe === 'function') {
+          simRx = core.synthesizeRecipe({ coffee: activeC, methodKey: mKey, prefs: a && a.prefs });
+        }
+      } catch (_) {}
+
+      var freshInfo = computeSmrkeFreshnessStatus(activeC);
+      var roastKey = String(activeC.roast || (bSum && bSum.roastObj && bSum.roastObj.v) || '').toLowerCase();
+      var roastStop = S.ROAST_STOPS.find(function (r) { return r.key === roastKey; });
+      var rawAg = parseFloat(activeC.ground_agtron || activeC.bean_agtron || activeC.agtron);
+      var agVal = (isFinite(rawAg) && rawAg >= 15 && rawAg <= 120)
+        ? Math.round(rawAg)
+        : (bSum && isFinite(+bSum.agtron) ? Math.round(+bSum.agtron) : (roastStop ? roastStop.agtron : 58));
+
+      var procKey = String(activeC.process || '').toLowerCase();
+      var isProcUnk = activeC.processUnsure === 'yes' || activeC.process_unknown === 'yes' || !procKey || procKey === 'unknown';
+      var isRoastUnk = activeC.roastUnsure === 'yes' || activeC.roast_unknown === 'yes' || (!activeC.roast && !(isFinite(rawAg) && rawAg > 0));
+      var procPorosityBoost = 0;
+      if (!isProcUnk) {
+        if (/natural|black-honey/.test(procKey)) procPorosityBoost = 4;
+        else if (/honey/.test(procKey)) procPorosityBoost = 2;
+        else if (/anaerobic|carbonic|thermal|yeast|co-ferment|infused/.test(procKey)) procPorosityBoost = 5;
+        else if (procKey === 'wet-hulled') procPorosityBoost = 6;
+      }
+      if (activeC.decaf === 'yes') procPorosityBoost += 6;
+      else if (activeC.decaf === 'half-caf') procPorosityBoost += 3;
+
+      var basePorosity = Math.round(Math.max(32, Math.min(68, 66 - ((agVal - 30) * 0.48) + procPorosityBoost)));
+      var porosityTier = basePorosity <= 42 ? 'Tight Matrix' : (basePorosity <= 52 ? 'Balanced Open' : 'High Porosity');
+      var porosityTxt = isRoastUnk
+        ? ('~' + basePorosity + '% · Baseline')
+        : (basePorosity + '% · ' + porosityTier + ((isFinite(rawAg) && rawAg > 0) ? (' (Ag ' + agVal + ')') : ''));
+
+      var elevM = parseFloat(activeC.elevation_m);
+      var densKey = String(activeC.density || '').toLowerCase();
+      var isElevUnk = activeC.elevUnsure === 'yes' || activeC.elev_unknown === 'yes' || densKey === 'unknown';
+      var densityTxt = 'Mid Baseline';
+      if (!isElevUnk) {
+        if (isFinite(elevM) && elevM > 0) {
+          var eRound = Math.round(elevM);
+          var dBand = eRound >= 1950 ? 'SHB Ultra' : (eRound >= 1600 ? 'High' : (eRound >= 1200 ? 'Medium' : 'Lower'));
+          densityTxt = dBand + ' (' + eRound + 'm)';
+        } else if (densKey === 'very-high') densityTxt = 'SHB Ultra (2,000m+)';
+        else if (densKey === 'high') densityTxt = 'High (1,600m+)';
+        else if (densKey === 'mid') densityTxt = 'Medium (1,200–1,600m)';
+        else if (densKey === 'low') densityTxt = 'Lower (<1,200m)';
+      }
+
+      var targetRatioVal = (simRx && isFinite(+simRx.ratio) && +simRx.ratio > 0) ? (+simRx.ratio).toFixed(1) : '16.5';
+      var targetTempC = (simRx && isFinite(+simRx.tempC) && +simRx.tempC > 0) ? Math.round(+simRx.tempC) : (bSum && isFinite(+bSum.tempC) ? Math.round(+bSum.tempC) : 93);
+      var useF = a && a.prefs && a.prefs.tempUnit === 'F';
+      var targetTempDisp = useF ? (Math.round(targetTempC * 9 / 5 + 32) + '°F') : (targetTempC + '°C');
+      var targetRatioTxt = '1:' + targetRatioVal + ' · ' + targetTempDisp;
+
+      var degasTxt = '';
+      var degasToneColor = 'var(--ink)';
+      if (activeC.is_frozen === 'yes') {
+        degasTxt = 'Cryo Peak (Day ' + Math.round(freshInfo.effectiveDays) + ')';
+        degasToneColor = 'var(--science)';
+      } else if (activeC.dateUnsure === 'yes' || !activeC.roast_date) {
+        degasTxt = 'Peak ' + freshInfo.window.ready + '–' + freshInfo.window.peakEnd + 'd (35s bloom)';
+      } else {
+        degasTxt = (freshInfo.shortState || 'Peak Window') + ' (Day ' + Math.round(freshInfo.effectiveDays) + ')';
+        if (freshInfo.tone === 'is-good') degasToneColor = 'var(--good)';
+        else if (freshInfo.tone === 'is-warn') degasToneColor = 'var(--warn)';
+      }
+
+      var statusParts = [];
+      if (!isRoastUnk && roastStop) statusParts.push(roastStop.label);
+      if (!isProcUnk) statusParts.push(formatProcessDisplay(activeC.process));
+      if (activeC.decaf === 'yes') statusParts.push('Decaf');
+      else if (activeC.decaf === 'half-caf') statusParts.push('Half-Caf');
+      var statusPillTxt = statusParts.length ? statusParts.join(' · ') : 'Baseline Defaults';
+
+      var cells = [
+        { k: 'Roast Porosity', v: porosityTxt, color: 'var(--ink)' },
+        { k: 'Elevation Density', v: densityTxt, color: 'var(--ink)' },
+        { k: 'Est. Target Ratio', v: targetRatioTxt, color: 'var(--accent)' },
+        { k: 'Optimal Degas / Peak', v: degasTxt, color: degasToneColor }
+      ];
+
+      stripEl.appendChild(S.h('div', {
+        style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;min-width:0'
+      },
+        S.h('span', {
+          style: 'display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--science)'
+        }, S.iconEl('refract-prism', { size: 13 }), S.h('span', { text: 'Live Bean Profile' })),
+        S.h('span', {
+          class: 'bt-ce-badge is-soft',
+          style: 'font-size:11px;padding:2px 8px;max-width:100%;white-space:normal',
+          text: statusPillTxt
+        })
+      ));
+
+      stripEl.appendChild(S.h('div', {
+        style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:6px;width:100%;max-width:100%;min-width:0'
+      }, cells.map(function (cell) {
+        return S.h('div', {
+          style: 'min-width:0;padding:6px 8px;border-radius:10px;background:var(--well,var(--bg-subtle));border:1px solid var(--line-soft,var(--line));display:flex;flex-direction:column;gap:2px;box-sizing:border-box'
+        },
+          S.h('span', { style: 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-muted);line-height:1.2', text: cell.k }),
+          S.h('b', {
+            class: 'mono',
+            style: 'font-size:11.5px;font-weight:700;line-height:1.25;color:' + cell.color + ';overflow-wrap:anywhere;word-break:break-word',
+            text: cell.v
+          })
+        );
+      })));
+    }
+
+    renderStripBody();
+    return { el: stripEl, sync: renderStripBody };
+  }
+
   function renderStep1(containerEl, opts) {
     ensureStep1OmniListeners();
     opts = opts || {};
@@ -21318,6 +21534,11 @@ if (typeof window !== 'undefined') {
       ));
 
       root.appendChild(sourceStrip);
+
+      /* ==================== LIVE BEAN CHEMISTRY READOUT STRIP ==================== */
+      var beanChemCtrl = buildLiveBeanChemistryStrip(c, a);
+      liveCardSyncFns.push(beanChemCtrl.sync);
+      root.appendChild(beanChemCtrl.el);
 
       /* ==================== ACTIVE ENTRY MODE BODY ==================== */
       if (ceUi.mode === 'guided') {
@@ -23576,6 +23797,25 @@ if (typeof window !== 'undefined') {
     };
   }
 
+  function makePrintIcon(size) {
+    var sz = size || 15;
+    return dom('svg', {
+      viewBox: '0 0 24 24',
+      width: String(sz),
+      height: String(sz),
+      fill: 'none',
+      stroke: 'currentColor',
+      'stroke-width': '2',
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round',
+      'aria-hidden': 'true'
+    },
+      dom('path', { d: 'M6 9V4h12v5' }),
+      dom('path', { d: 'M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2' }),
+      dom('rect', { x: '6', y: '14', width: '12', height: '6', rx: '1' })
+    );
+  }
+
   function buildKettleWarmBanner(a, rec, pillId, extraRightNode, onToggled) {
     var plan = computeKettleWarmPlan(a, rec);
     var targetEl = dom('strong', {
@@ -23588,6 +23828,50 @@ if (typeof window !== 'undefined') {
       text: plan.breakdown
     });
 
+    var segBrewEl = dom('span', {
+      class: 'bt-kettle-seg-brew',
+      style: 'display:block;height:100%;min-width:0;background:var(--accent,#9a4212);transition:width 0.2s ease'
+    });
+    var segRinseEl = dom('span', {
+      class: 'bt-kettle-seg-rinse',
+      style: 'display:block;height:100%;min-width:0;background:var(--science,#2563eb);transition:width 0.2s ease'
+    });
+    var segSteamEl = dom('span', {
+      class: 'bt-kettle-seg-steam',
+      style: 'display:block;height:100%;min-width:0;background:var(--gold,#d98b26);transition:width 0.2s ease'
+    });
+    var barTrackEl = dom('div', {
+      class: 'bt-kettle-bar',
+      role: 'img',
+      'aria-label': 'Kettle water breakdown',
+      style: 'display:flex;width:100%;height:7px;border-radius:999px;overflow:hidden;gap:2px;background:var(--bg-subtle,rgba(0,0,0,0.08))'
+    }, segBrewEl, segRinseEl, segSteamEl);
+
+    var legBrewTxt = dom('span', null);
+    var legRinseWrap = dom('span', { style: 'display:inline-flex;align-items:center;gap:4px' },
+      dom('span', { style: 'width:7px;height:7px;border-radius:50%;background:var(--science,#2563eb);display:inline-block;flex-shrink:0' }),
+      dom('span', null)
+    );
+    var legSteamTxt = dom('span', null);
+    var barLegendEl = dom('div', {
+      class: 'bt-kettle-bar-legend bt-num',
+      style: 'display:flex;flex-wrap:wrap;gap:6px 12px;font-size:0.69rem;font-weight:700;color:var(--ink-secondary);line-height:1.25'
+    },
+      dom('span', { style: 'display:inline-flex;align-items:center;gap:4px' },
+        dom('span', { style: 'width:7px;height:7px;border-radius:50%;background:var(--accent,#9a4212);display:inline-block;flex-shrink:0' }),
+        legBrewTxt
+      ),
+      legRinseWrap,
+      dom('span', { style: 'display:inline-flex;align-items:center;gap:4px' },
+        dom('span', { style: 'width:7px;height:7px;border-radius:50%;background:var(--gold,#d98b26);display:inline-block;flex-shrink:0' }),
+        legSteamTxt
+      )
+    );
+    var barWrapEl = dom('div', {
+      class: 'bt-kettle-bar-wrap',
+      style: 'flex:1 0 100%;display:flex;flex-direction:column;gap:5px;min-width:0;margin-top:2px'
+    }, barTrackEl, barLegendEl);
+
     var skipBtn = null;
     function paintBanner() {
       var curPlan = computeKettleWarmPlan(a, rec);
@@ -23597,6 +23881,28 @@ if (typeof window !== 'undefined') {
         skipBtn.className = 'bt-chip-v6 bt-kettle-skip-btn' + (curPlan.skipRinse ? ' is-active' : '');
         skipBtn.setAttribute('aria-pressed', String(!!curPlan.skipRinse));
         skipBtn.textContent = curPlan.skipRinse ? 'Rinse Skipped' : 'Skip Rinse';
+      }
+      var showGauge = (curPlan.kind === 'kettle' || curPlan.kind === 'smart-tank') && curPlan.totalKettleG > 0 && (curPlan.rinseAndWarmG > 0 || curPlan.evapAndHeelG > 0);
+      barWrapEl.hidden = !showGauge;
+      barWrapEl.style.display = showGauge ? 'flex' : 'none';
+      if (showGauge) {
+        var tot = Math.max(1, curPlan.totalKettleG);
+        var bPct = (curPlan.brewWaterG / tot) * 100;
+        var rPct = (curPlan.rinseAndWarmG / tot) * 100;
+        var sPct = Math.max(0, 100 - bPct - rPct);
+        segBrewEl.style.width = bPct.toFixed(1) + '%';
+        segRinseEl.style.width = rPct.toFixed(1) + '%';
+        segRinseEl.style.display = curPlan.rinseAndWarmG > 0 ? 'block' : 'none';
+        segSteamEl.style.width = sPct.toFixed(1) + '%';
+        segSteamEl.style.display = curPlan.evapAndHeelG > 0 ? 'block' : 'none';
+        legBrewTxt.textContent = 'Brew Water ' + curPlan.brewWaterG + ' g';
+        if (curPlan.rinseAndWarmG > 0) {
+          legRinseWrap.style.display = 'inline-flex';
+          legRinseWrap.lastChild.textContent = (rec && rec.usesPaper && !curPlan.skipRinse ? 'Paper Rinse ' : 'Vessel Warm ') + curPlan.rinseAndWarmG + ' g';
+        } else {
+          legRinseWrap.style.display = 'none';
+        }
+        legSteamTxt.textContent = (curPlan.kind === 'smart-tank' ? 'Tank Reserve ' : 'Steam & Preheat ') + curPlan.evapAndHeelG + ' g';
       }
     }
 
@@ -23619,6 +23925,8 @@ if (typeof window !== 'undefined') {
       });
     }
 
+    paintBanner();
+
     return dom('div', { class: 'bt-kettle-warm-card is-' + plan.kind },
       dom('div', { class: 'bt-kettle-warm-lhs' },
         dom('span', { class: 'bt-kettle-warm-ico' }, ico(plan.kind === 'cold' ? 'droplet' : 'kettle-gooseneck', 18)),
@@ -23630,7 +23938,8 @@ if (typeof window !== 'undefined') {
       (skipBtn || extraRightNode) ? dom('div', { class: 'bt-kettle-warm-rhs' },
         skipBtn,
         extraRightNode || null
-      ) : null
+      ) : null,
+      barWrapEl
     );
   }
 
@@ -23667,6 +23976,10 @@ if (typeof window !== 'undefined') {
           tone: 'gentle',
           shortChip: 'Low-Pressure Soak · Anti-Channel',
           badge: 'Gentle Pre-Infusion · Even Puck Wetting',
+          height: 'Group Head',
+          pattern: 'Low-Pressure Soak',
+          disturbance: 'Zero Puck Disturbance',
+          scienceWhy: 'Even low-pressure saturation expels trapped air before 9-bar ramp so water cannot carve fast channels.',
           guide: 'Ramp gently to saturate the full puck evenly before full pressure so water cannot channel.',
           spoken: 'Gentle pre-infusion wetting to prevent puck channeling.'
         };
@@ -23675,6 +23988,10 @@ if (typeof window !== 'undefined') {
         tone: 'spiral',
         shortChip: 'Steady Flow · Watch Blonding',
         badge: 'Steady Pressure · Hold Flow Even',
+        height: 'Group Head',
+        pattern: 'Steady Puck Flow',
+        disturbance: 'Hold Pressure Smooth',
+        scienceWhy: 'Constant puck resistance preserves sweet mid-extraction and avoids late bitter channeling streaks.',
         guide: 'Maintain steady pressure and stop cleanly before pale blonding or channeling streaks appear.',
         spoken: 'Steady extraction flow. Watch for even blonding.'
       };
@@ -23696,6 +24013,10 @@ if (typeof window !== 'undefined') {
           tone: 'gentle',
           shortChip: 'Close & Gentle · Leave Still',
           badge: 'Close · Leave Still (~3 cm)',
+          height: '~3 cm',
+          pattern: 'Center-Out Wetting',
+          disturbance: 'Leave Still',
+          scienceWhy: 'High-fines coffees clog paper pores if swirled aggressively; low spout height wets dry pockets cleanly.',
           guide: 'Wet evenly at ~3 cm without swirling; avoid hard jetting dry pockets to prevent fines migration & channels.',
           spoken: 'Pour close at 3 centimeters and leave bed still.'
         };
@@ -23704,6 +24025,10 @@ if (typeof window !== 'undefined') {
         tone: 'swirl',
         shortChip: 'Gentle Swirl (~3 cm)',
         badge: 'Close Saturation + Gentle Swirl (~3 cm)',
+        height: '~3 cm',
+        pattern: 'Center-Out Wetting',
+        disturbance: '1 Gentle Swirl',
+        scienceWhy: 'Low pour height prevents dry clumps while 1 light swirl equalizes CO2 degassing across the bed.',
         guide: 'Wet evenly at ~3 cm with 1 gentle swirl; avoid hard jetting dry pockets to prevent channels.',
         spoken: 'Pour close at 3 centimeters with one gentle swirl.'
       };
@@ -23715,6 +24040,10 @@ if (typeof window !== 'undefined') {
         tone: 'gentle',
         shortChip: 'Close & Gentle · No Agitation',
         badge: 'Leave Still · Zero Agitation',
+        height: 'Kettle Off',
+        pattern: 'Passive Drawdown',
+        disturbance: 'Zero Agitation',
+        scienceWhy: 'Leaving the slurry undisturbed lets fines settle cleanly on top of the bed instead of choking the filter.',
         guide: 'Keep spout off and do not stir so fines stay suspended and the bed drains flat without channels.',
         spoken: 'Do not agitate. Let the bed drain flat.'
       };
@@ -23732,6 +24061,10 @@ if (typeof window !== 'undefined') {
         tone: 'gentle',
         shortChip: 'Close & Gentle · No Agitation',
         badge: 'Close Center Pour · Zero Agitation (~2 cm)',
+        height: '~2 cm',
+        pattern: 'Calm Center Stream',
+        disturbance: 'Zero Agitation',
+        scienceWhy: 'Gentle center flow maintains thermal mass without knocking high-and-dry bitter walls into the cup.',
         guide: 'Finish gentle down the center so fines stay suspended and bed drains flat without channels.',
         spoken: 'Pour close down the center at 2 centimeters with zero agitation.'
       };
@@ -23743,6 +24076,10 @@ if (typeof window !== 'undefined') {
         tone: 'gentle',
         shortChip: 'Close & Gentle · No Agitation',
         badge: 'Pour Close & Calm · DO NOT Agitate (~2\u20133 cm)',
+        height: '~2\u20133 cm',
+        pattern: 'Tight Center Spiral',
+        disturbance: 'No Stir / No Swirl',
+        scienceWhy: 'Low-impact stream minimizes vertical turbulence so fragile fines do not migrate and stall drawdown.',
         guide: 'Keep spout low over center; stirring or high pour drives fines migration & channeling.',
         spoken: 'Pour close and calm at 2 to 3 centimeters. Do not agitate.'
       };
@@ -23752,6 +24089,10 @@ if (typeof window !== 'undefined') {
       tone: 'spiral',
       shortChip: 'Controlled Spiral (~5\u20136 cm)',
       badge: 'Steady Spiral · Controlled Agitation (~5\u20136 cm)',
+      height: '~5\u20136 cm',
+      pattern: 'Concentric Spiral',
+      disturbance: 'Controlled Turbulence',
+      scienceWhy: 'Moderate stream momentum lifts sweetness evenly across the bed without blasting filter paper walls.',
       guide: 'Medium-flow concentric spiral lifts even sweetness without blasting filter walls.',
       spoken: 'Steady concentric spiral at 5 to 6 centimeters for even agitation.'
     };
@@ -25561,6 +25902,27 @@ if (typeof window !== 'undefined') {
     }
   }
 
+  function findLatestTastingForCoffee(coffee) {
+    if (!coffee || typeof coffee !== 'object') return null;
+    var hist = getHistoryObjsSafe();
+    if (!Array.isArray(hist) || !hist.length) return null;
+    var cid = String(coffee.coffee_id || coffee.id || '').trim();
+    var cname = _normVaultKeyPart(coffee.name || coffee.coffee_name || coffee.coffee || '');
+    var croast = _normVaultKeyPart(coffee.roaster || '');
+    for (var i = hist.length - 1; i >= 0; i--) {
+      var r = hist[i];
+      if (!r || typeof r !== 'object') continue;
+      var rCid = String(r.coffee_id || '').trim();
+      if (cid && rCid && cid === rCid) return r;
+      var rName = _normVaultKeyPart(r.coffee_name || r.coffee || r.name || '');
+      var rRoast = _normVaultKeyPart(r.roaster || '');
+      if (cname && rName === cname && (!croast || !rRoast || rRoast === croast)) {
+        return r;
+      }
+    }
+    return null;
+  }
+
   function renderDoorScreen(stageEl, a) {
     ensureBrewState(a);
     var lens = getExperienceLens();
@@ -25665,6 +26027,36 @@ if (typeof window !== 'undefined') {
         ? (a.cupBrew ? 'Continue to Taste \u2192' : 'Continue Active Timer \u2192')
         : (hasLiveCoffee ? 'Brew This Coffee \u2192' : 'Load & Brew Bag \u2192');
       var heroAttrSummary = formatCoffeeAttrSummary(heroCoffee);
+      var lastTastingRow = findLatestTastingForCoffee(heroCoffee);
+      var heroDialAdapt = !heroLockedExplicit
+        ? (rec.dialAdaptation || (a.brew && a.brew.dialAdaptation) || (heroCoffee && heroCoffee.dialAdaptation) || null)
+        : null;
+      var heroPendingNr = (!heroLockedExplicit && heroCoffee && heroCoffee.pendingNextRecipe && typeof heroCoffee.pendingNextRecipe === 'object')
+        ? heroCoffee.pendingNextRecipe
+        : null;
+      var heroAdaptRaw = formatDialAdaptationBanner(heroDialAdapt);
+      var heroStatusText = '';
+      var heroStatusCls = 'bt-badge-v62 is-good';
+      if (heroLockedExplicit) {
+        heroStatusText = 'Golden Recipe Locked';
+        heroStatusCls = 'bt-badge-v62 is-gold';
+      } else if (heroDialAdapt && heroDialAdapt.summaryBanner && typeof heroDialAdapt.summaryBanner === 'string') {
+        heroStatusText = heroDialAdapt.summaryBanner;
+        heroStatusCls = 'bt-badge-v62 is-sci';
+      } else if (heroAdaptRaw) {
+        heroStatusText = /^next fix/i.test(heroAdaptRaw) ? heroAdaptRaw : ('Next Fix Ready: ' + heroAdaptRaw);
+        heroStatusCls = 'bt-badge-v62 is-sci';
+      } else if (heroPendingNr) {
+        var nrParts = [];
+        if (heroPendingNr.grindSetting) nrParts.push(heroPendingNr.grindSetting);
+        if (heroPendingNr.tempC > 0) nrParts.push(Math.round(+heroPendingNr.tempC) + ' \u00B0C');
+        heroStatusText = 'Next Fix Ready: ' + (heroPendingNr.headline || (nrParts.length ? nrParts.join(' \u00B7 ') : 'Tuned Recipe Loaded'));
+        heroStatusCls = 'bt-badge-v62 is-sci';
+      }
+      var lastRatingNum = lastTastingRow && parseFloat(lastTastingRow.my_rating_stars);
+      var lastTastingBtnText = (lastRatingNum > 0)
+        ? ('Last Tasting (' + lastRatingNum.toFixed(1) + '\u2605) \u2192')
+        : 'Last Tasting \u2192';
 
       stageEl.appendChild(dom('section', {
         class: 'bt-hero-bag-card',
@@ -25690,9 +26082,17 @@ if (typeof window !== 'undefined') {
           dom('p', {
             class: 'bt-screen-sub',
             text: rec.method.label + ' · ' + rec.grindMap.short + ' on ' + (rec.grinder.short || rec.grinder.name) + ' · ' + rec.doseG + ' g : ' + rec.waterG + ' g'
-          })
+          }),
+          heroStatusText ? dom('div', { style: 'margin-top:7px;display:flex;flex-wrap:wrap;gap:6px;align-items:center' },
+            dom('span', {
+              id: 'bt-door-adaptation-pill',
+              class: heroStatusCls,
+              style: 'max-width:100%;white-space:normal;text-align:left;line-height:1.3;padding:4px 10px',
+              text: heroStatusText
+            })
+          ) : null
         ),
-        dom('div', { class: 'bt-pill-wrap' },
+        dom('div', { class: 'bt-pill-wrap', style: 'gap:8px;align-items:center' },
           dom('button', {
             type: 'button',
             class: 'bt-cta-btn',
@@ -25708,6 +26108,26 @@ if (typeof window !== 'undefined') {
               else goBrewStep('brew');
             }
           }, dom('span', { text: primaryBtnText }), ico('chevron-right', 17)),
+          lastTastingRow ? dom('button', {
+            type: 'button',
+            id: 'bt-door-last-tasting-btn',
+            class: 'bt-secondary-cta',
+            style: 'min-height:46px;padding:8px 13px',
+            title: 'Inspect your most recent tasting passport for this coffee',
+            onclick: function () {
+              haptic('tick');
+              var cj = (typeof window !== 'undefined')
+                ? (window.BTCellarJournal && typeof window.BTCellarJournal.openDetail === 'function'
+                    ? window.BTCellarJournal
+                    : (window.BTCellarTab && typeof window.BTCellarTab.openDetail === 'function' ? window.BTCellarTab : null))
+                : null;
+              if (cj) {
+                cj.openDetail(lastTastingRow);
+              } else {
+                navGoRoute('cellar');
+              }
+            }
+          }, ico('spark-star', 15), dom('span', { text: lastTastingBtnText })) : null,
           dom('button', {
             type: 'button',
             class: 'bt-secondary-cta',
@@ -25826,11 +26246,12 @@ if (typeof window !== 'undefined') {
     ));
 
     /* 4. Quick Studio Launchers: Open Cupping Table + At a Coffee Shop + Import Shared Brew */
-    stageEl.appendChild(dom('div', { class: 'bt-door-grid-launchers' },
+    stageEl.appendChild(dom('div', { class: 'bt-door-grid-launchers', style: 'gap:10px' },
       dom('button', {
         type: 'button',
         class: 'bt-door-action-card bt-door-cupping-card',
         id: 'bt-door-cupping-btn',
+        style: 'width:100%;box-sizing:border-box;padding:14px;gap:10px',
         onclick: function () {
           haptic('snap');
           navGoRoute('sca');
@@ -25840,10 +26261,10 @@ if (typeof window !== 'undefined') {
           ico('cupping', 20),
           dom('span', { class: 'bt-badge-v62 is-good', text: '5-Bowl Blind Table' })
         ),
-        dom('div', null,
+        dom('div', { style: 'width:100%;min-width:0' },
           dom('b', { style: 'font-size:0.95rem;display:block;color:var(--ink)', text: 'Open Cupping Table' }),
           dom('span', {
-            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.35;display:block;margin-top:3px',
+            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px',
             text: 'Side-by-side 5-bowl blind tasting, reveal cards & CVA 100-pt scoring \u2192'
           })
         )
@@ -25852,6 +26273,7 @@ if (typeof window !== 'undefined') {
         type: 'button',
         class: 'bt-door-action-card',
         id: 'bt-door-cafe-btn',
+        style: 'width:100%;box-sizing:border-box;padding:14px;gap:10px',
         onclick: function () {
           haptic('snap');
           navGoRoute('shop');
@@ -25864,10 +26286,10 @@ if (typeof window !== 'undefined') {
             text: shopInfo ? ('Resume Step ' + shopInfo.step + '/4') : '4-Step Logger'
           })
         ),
-        dom('div', null,
+        dom('div', { style: 'width:100%;min-width:0' },
           dom('b', { style: 'font-size:0.95rem;display:block;color:var(--ink)', text: 'At a Coffee Shop' }),
           dom('span', {
-            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.35;display:block;margin-top:3px',
+            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px',
             text: shopInfo
               ? ('Continue ' + shopInfo.drinkName + ' at ' + shopInfo.shopName + ' (home draft untouched)')
               : 'Log a cafe drink & reverse-engineer it for your home gear \u2192'
@@ -25878,6 +26300,7 @@ if (typeof window !== 'undefined') {
         type: 'button',
         class: 'bt-door-action-card',
         id: 'bt-door-import-btn',
+        style: 'width:100%;box-sizing:border-box;padding:14px;gap:10px',
         onclick: function () {
           haptic('snap');
           openSheet('import-shared-brew', {}, { title: 'Import Shared Brew & Translate Grinder', detent: 'half' });
@@ -25887,10 +26310,10 @@ if (typeof window !== 'undefined') {
           ico('paste-card', 20),
           dom('span', { class: 'bt-badge-v62 is-sci', text: lens === 'scientist' ? 'Darcy-D32 Auto' : 'Auto-Matched to Your Grinder' })
         ),
-        dom('div', null,
+        dom('div', { style: 'width:100%;min-width:0' },
           dom('b', { style: 'font-size:0.95rem;display:block;color:var(--ink)', text: 'Import Shared Brew' }),
           dom('span', {
-            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.35;display:block;margin-top:3px',
+            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px',
             text: 'Paste a friend\'s BT6: code or link & auto-translate clicks to your grinder \u2192'
           })
         )
@@ -27513,6 +27936,60 @@ if (typeof window !== 'undefined') {
 
     var strengthGl = Math.round(1000 / Math.max(1, rec.ratio));
 
+    /* 1-Tap Batch Size Quick Chips (hidden cleanly on espresso/single/machine/cold modes) */
+    var mKeyS3 = String(rec.method.key || '').toLowerCase();
+    var showBatchChips = !isPhilips && !rec.method.outRatio &&
+      mKeyS3 !== 'moka' && mKeyS3 !== 'turkish' && mKeyS3 !== 'phin' &&
+      mKeyS3 !== 'cold' && mKeyS3 !== 'cold_drip' && a.brew.methodVariant !== 'cupping';
+    var batchChipStrip = null;
+    if (showBatchChips) {
+      var applyBatchChip = function (targetDoseG, toggleIced) {
+        var activeRatio = (+a.brew.ratio > 0) ? +a.brew.ratio : (rec.ratio || 16);
+        var subModesList = getSubModesFor(rec.method.key);
+        var stdStyleId = (subModesList[0] && subModesList[0].id) || 'standard';
+        if (toggleIced) {
+          var icedMode = subModesList.find(function (sm) { return sm.iced || /iced|flash/i.test(sm.id); });
+          a.brew.style = rec.isIced ? stdStyleId : ((icedMode && icedMode.id) || 'flash-iced');
+          a.brew.customizedNote = /iced|flash/i.test(a.brew.style)
+            ? ('Flash Iced (' + a.brew.dose + 'g : ' + a.brew.water + 'g)')
+            : ('Hot Batch (' + a.brew.dose + 'g : ' + a.brew.water + 'g)');
+        } else {
+          if (rec.isIced) a.brew.style = stdStyleId;
+          a.brew.dose = targetDoseG;
+          a.brew.water = Math.round(targetDoseG * activeRatio);
+          a.brew.ratio = +activeRatio;
+          a.brew.customizedNote = 'Batch ' + targetDoseG + 'g : ' + a.brew.water + 'g (1:' + activeRatio + ')';
+        }
+        syncBrewUnitAliases(a.brew);
+        haptic('snap');
+        saveDraft();
+        rerender();
+      };
+      var batchDefs = [
+        { id: '15',   label: '1 Cup \u00B7 15g',  dose: 15, iced: false, active: !rec.isIced && Math.abs(rec.doseG - 15) <= 0.5 },
+        { id: '20',   label: 'Tall \u00B7 20g',   dose: 20, iced: false, active: !rec.isIced && Math.abs(rec.doseG - 20) <= 0.5 },
+        { id: '30',   label: 'Carafe \u00B7 30g', dose: 30, iced: false, active: !rec.isIced && Math.abs(rec.doseG - 30) <= 0.5 },
+        { id: 'iced', label: 'Flash Iced',        dose: 0,  iced: true,  active: !!rec.isIced }
+      ];
+      batchChipStrip = dom('div', {
+        id: 'bt-step3-batch-chips',
+        class: 'bt-pill-wrap bt-step3-batch-strip no-print',
+        role: 'group',
+        'aria-label': 'Batch Size Quick Presets',
+        style: 'gap:6px;align-items:center'
+      }, batchDefs.map(function (bd) {
+        return dom('button', {
+          type: 'button',
+          id: 'bt-step3-batch-' + bd.id,
+          'data-batch-chip': bd.id,
+          class: 'bt-chip-v6' + (bd.active ? ' is-active' : ' bt-chip-soft'),
+          'aria-pressed': String(!!bd.active),
+          style: 'min-height:38px;padding:5px 11px;font-size:0.78rem;font-weight:700',
+          onclick: function () { applyBatchChip(bd.dose, bd.iced); }
+        }, bd.iced ? ico('ice-cube', 13) : null, dom('span', { text: bd.label }));
+      }));
+    }
+
     function makeHeroRecipeTile(lbl, whyKey, primaryNode, subTxt, onTune, hideTuneBadge) {
       function fireTune(ev) {
         if (ev && ev.target && ev.target.closest && ev.target.closest('[data-science-why]')) return;
@@ -27619,7 +28096,7 @@ if (typeof window !== 'undefined') {
 
     /* 3. Single-Row Action Pills (NO multi-line wrapping!) */
     var stylePills = getSubModesFor(rec.method.key).slice(0, 3);
-    var actionStrip = dom('div', { class: 'bt-action-row-1line', role: 'toolbar', 'aria-label': 'Recipe Quick Actions' },
+    var actionStrip = dom('div', { class: 'bt-action-row-1line no-print', role: 'toolbar', 'aria-label': 'Recipe Quick Actions' },
       roasterGuide ? dom('button', {
         type: 'button',
         class: 'bt-chip-v6 bt-chip-accent is-active',
@@ -27674,7 +28151,21 @@ if (typeof window !== 'undefined') {
         type: 'button',
         class: 'bt-chip-v6 bt-chip-soft',
         onclick: function () { openSheet('share-qr-passport', {}, { title: 'Share QR Recipe Passport', detent: 'full' }); }
-      }, ico('qr-passport', 15), dom('span', { text: 'Share QR Passport' }))
+      }, ico('qr-passport', 15), dom('span', { text: 'Share QR Passport' })),
+      dom('button', {
+        type: 'button',
+        id: 'bt-step3-print-card-btn',
+        class: 'bt-chip-v6 bt-chip-soft no-print',
+        title: 'Print or Save PDF Brew Card',
+        onclick: function () {
+          haptic('tick');
+          if (typeof window !== 'undefined' && typeof window.print === 'function') {
+            window.print();
+          } else {
+            showToast('Use your browser Print menu to save as PDF.');
+          }
+        }
+      }, makePrintIcon(15), dom('span', { text: 'Print / Save PDF Brew Card' }))
     );
 
     /* 4. Top-of-Card Kettle Warm Target (#bt-step3-kettle-fill-pill) + 1-Tap BLE Kettle Target Sync Pill (#bt-step3-kettle-ble-btn) */
@@ -27780,6 +28271,7 @@ if (typeof window !== 'undefined') {
 
     stageEl.appendChild(dom('section', { class: 'bt-card-v6 bt-card-hero' },
       kettleWarmHero,
+      batchChipStrip,
       tiles6,
       heroScienceBtn,
       actionStrip
@@ -27856,11 +28348,24 @@ if (typeof window !== 'undefined') {
               dom('b', { style: 'font-size:0.86rem;display:block;color:var(--ink)', text: s.title }),
               dom('span', { style: 'font-size:0.78rem;color:var(--ink-secondary);line-height:1.36;display:block', text: s.human }),
               dom('div', { class: 'bt-agitation-row' },
-                dom('span', {
-                  class: 'bt-agitation-pill is-' + cue.tone,
-                  text: 'Anti-Channeling: ' + cue.shortChip
-                }),
-                dom('span', { class: 'bt-agitation-guide', text: cue.badge + ' \u2014 ' + cue.guide })
+                dom('div', {
+                  class: 'bt-pour-posture-meta',
+                  style: 'display:flex;flex-wrap:wrap;gap:5px;align-items:center'
+                },
+                  dom('span', {
+                    class: 'bt-agitation-pill is-' + cue.tone,
+                    text: 'Height ' + cue.height
+                  }),
+                  dom('span', {
+                    class: 'bt-agitation-pill',
+                    text: 'Flow: ' + cue.pattern
+                  }),
+                  dom('span', {
+                    class: 'bt-agitation-pill',
+                    text: 'Swirl / Agitation: ' + cue.disturbance
+                  })
+                ),
+                dom('span', { class: 'bt-agitation-guide', text: 'Why: ' + (cue.scienceWhy || cue.guide) })
               ),
               lens === 'scientist' && s.scientist ? dom('span', { style: 'font-size:0.71rem;color:var(--science);display:block;margin-top:1px', text: s.scientist }) : null
             ),
@@ -28574,6 +29079,63 @@ if (typeof window !== 'undefined') {
     container.appendChild(step4KettleCard);
 
     container.appendChild(audioBar);
+
+    /* 1B. Phase Progress + Next Cue Countdown Header Strip (#bt-timer-phase-strip) */
+    function shortPhaseLabel(rawTitle, idx, total) {
+      var t = String(rawTitle || '').trim();
+      if (/bloom|wet/i.test(t)) return 'Bloom';
+      if (/drain|drawdown|flat/i.test(t)) return 'Drawdown';
+      if (/final|finish|last/i.test(t)) return 'Final';
+      if (/main|spiral/i.test(t)) return 'Main Pour';
+      var cut = t.split(':')[0].split('(')[0].trim();
+      return cut.length > 14 ? (cut.slice(0, 12) + '..') : (cut || ('Step ' + (idx + 1)));
+    }
+    var phasePillNodes = [];
+    var phaseProgressBarEl = dom('div', {
+      class: 'bt-phase-progress',
+      role: 'list',
+      'aria-label': 'Brew Phase Progress',
+      style: 'display:flex;align-items:center;flex-wrap:wrap;gap:4px 5px;min-width:0'
+    });
+    steps.forEach(function (stP, pIdx) {
+      if (pIdx > 0) {
+        phaseProgressBarEl.appendChild(dom('span', {
+          class: 'bt-phase-sep',
+          'aria-hidden': 'true',
+          style: 'font-size:0.72rem;color:var(--ink-muted);font-weight:700',
+          text: '\u2192'
+        }));
+      }
+      var pNode = dom('span', {
+        class: 'bt-phase-pill' + (pIdx === 0 ? ' is-active' : ' is-upcoming'),
+        role: 'listitem',
+        style: 'display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:0.71rem;font-weight:800;line-height:1.25;border:1px solid var(--line);background:var(--bg-subtle);color:var(--ink-secondary);white-space:nowrap',
+        text: shortPhaseLabel(stP.title, pIdx, steps.length)
+      });
+      phasePillNodes.push(pNode);
+      phaseProgressBarEl.appendChild(pNode);
+    });
+    var phaseNextCueEl = dom('span', {
+      id: 'bt-timer-next-cue-text',
+      class: 'bt-num',
+      style: 'font-size:0.77rem;font-weight:800;color:var(--ink);min-width:0'
+    });
+    var phaseNextFlowEl = dom('span', {
+      id: 'bt-timer-next-cue-flow',
+      class: 'bt-num',
+      style: 'font-size:0.74rem;font-weight:700;color:var(--accent);white-space:nowrap'
+    });
+    var phaseStripEl = dom('div', {
+      id: 'bt-timer-phase-strip',
+      class: 'bt-next-cue-banner',
+      style: 'display:flex;flex-direction:column;gap:6px;padding:8px 11px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-card);min-width:0;max-width:100%;box-sizing:border-box'
+    },
+      phaseProgressBarEl,
+      dom('div', {
+        style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;min-width:0'
+      }, phaseNextCueEl, phaseNextFlowEl)
+    );
+    container.appendChild(phaseStripEl);
 
     /* 2. FULL-WIDTH STADIUM KITCHEN STOPWATCH (#bt-timer-giant-clock) + LIVE APPROX GRAMS PACER (#bt-timer-approx-grams-hero) + Collapsible BTChronoDial */
     var initElapsedS = _timerSession.stopped && _timerSession.actualStoppedS != null ? _timerSession.actualStoppedS : _timerSession.elapsedS;
@@ -29320,7 +29882,51 @@ if (typeof window !== 'undefined') {
         shownFlowLbl = stepFlowInfo.label;
       }
 
-      /* 1. Full-Width Stadium Kitchen Stopwatch (#bt-timer-giant-clock) */
+      /* 1. Full-Width Stadium Kitchen Stopwatch (#bt-timer-giant-clock) + Phase Progress Strip */
+      phasePillNodes.forEach(function (pEl, pIdx) {
+        var isDoneP = _timerSession.stopped || pIdx < curIdx;
+        var isActiveP = !_timerSession.stopped && pIdx === curIdx;
+        pEl.className = 'bt-phase-pill' + (isDoneP ? ' is-done' : (isActiveP ? ' is-active' : ' is-upcoming'));
+        if (isActiveP) {
+          pEl.setAttribute('aria-current', 'step');
+          pEl.style.background = 'var(--accent)';
+          pEl.style.color = '#fff';
+          pEl.style.borderColor = 'var(--accent)';
+        } else if (isDoneP) {
+          pEl.removeAttribute('aria-current');
+          pEl.style.background = 'var(--good-bg)';
+          pEl.style.color = 'var(--good)';
+          pEl.style.borderColor = 'rgba(24,96,62,0.3)';
+        } else {
+          pEl.removeAttribute('aria-current');
+          pEl.style.background = 'var(--bg-subtle)';
+          pEl.style.color = 'var(--ink-secondary)';
+          pEl.style.borderColor = 'var(--line)';
+        }
+      });
+      var remToNextCue = nextSt ? Math.max(0, Math.ceil(nextSt.t - elS)) : Math.max(0, Math.ceil(totalTargetS - elS));
+      var curStepTgtG = curSt && curSt.targetG != null ? +curSt.targetG : 0;
+      var nextStepTgtG = nextSt && nextSt.targetG != null ? +nextSt.targetG : Math.round(rec.hotPourG);
+      var nextStepAddG = Math.max(0, Math.round(nextStepTgtG - curStepTgtG));
+      if (_timerSession.stopped) {
+        phaseNextCueEl.textContent = 'Brew complete \u00B7 ' + fmtClock(elS, false) + ' total';
+      } else if (isOvertime) {
+        phaseNextCueEl.textContent = 'Overtime +' + overSec + 's \u00B7 Tap Stop when bed drains flat';
+      } else if (nextSt) {
+        phaseNextCueEl.textContent = 'Next step in ' + remToNextCue + 's' + (nextStepAddG > 0 ? (' (+' + nextStepAddG + 'g)') : ' (Drawdown)');
+      } else {
+        phaseNextCueEl.textContent = 'Target drawdown in ' + remToNextCue + 's (' + Math.round(rec.hotPourG) + 'g)';
+      }
+      if (_timerSession.stopped) {
+        phaseNextFlowEl.textContent = 'Target 0.0 g/s \u00B7 Stopped';
+      } else if (isReconnectingScale) {
+        phaseNextFlowEl.textContent = 'Target ' + stepFlowInfo.rate.toFixed(1) + ' g/s \u00B7 Scale Reconnecting...';
+      } else if (hasScale) {
+        phaseNextFlowEl.textContent = 'Target ' + stepFlowInfo.rate.toFixed(1) + ' g/s \u00B7 Live ' + shownFlowGs.toFixed(1) + ' g/s';
+      } else {
+        phaseNextFlowEl.textContent = 'Target ' + stepFlowInfo.rate.toFixed(1) + ' g/s';
+      }
+
       setGiantClockText(elS, !_timerSession.stopped);
       giantClockEl.classList.toggle('is-overtime', isOvertime && !_timerSession.stopped);
       giantClockEl.classList.toggle('is-stopped', !!_timerSession.stopped);
@@ -30297,7 +30903,7 @@ if (typeof window !== 'undefined') {
           value: bundle.bt6Code,
           'aria-label': 'BT6 shareable recipe code'
         }),
-        dom('div', { class: 'bt-pill-wrap', style: 'justify-content:center;width:100%' },
+        dom('div', { class: 'bt-pill-wrap no-print', style: 'justify-content:center;width:100%' },
           dom('button', {
             type: 'button',
             class: 'bt-cta-btn is-centered',
@@ -30306,7 +30912,15 @@ if (typeof window !== 'undefined') {
               haptic('snap');
               showToast('Copied BT6: Recipe Code to clipboard!');
             }
-          }, ico('paste-card', 17), dom('span', { text: 'Copy BT6: Recipe Code' }))
+          }, ico('paste-card', 17), dom('span', { text: 'Copy BT6: Recipe Code' })),
+          dom('button', {
+            type: 'button',
+            class: 'bt-secondary-cta',
+            onclick: function () {
+              haptic('tick');
+              if (typeof window !== 'undefined' && typeof window.print === 'function') window.print();
+            }
+          }, makePrintIcon(16), dom('span', { text: 'Print / Save PDF' }))
         )
       ));
     });
@@ -32523,6 +33137,7 @@ if (typeof window !== 'undefined') {
     var curRatio = +brew.ratio || +(a.brew && a.brew.ratio) || Math.round((waterG / Math.max(1, doseG)) * 10) / 10;
     var curTempC = +brew.temp_c || +(a.brew && a.brew.tempC) || (+brew.tempF > 0 ? Math.round(((+brew.tempF - 32) * 5 / 9) * 2) / 2 : 93);
     var curUm = +brew.grind_um || +(a.brew && a.brew.grindUm) || +(a.brew && a.brew.grind_um) || (isEsp ? 235 : 550);
+    var curAgitation = String(brew.agitation || (a.brew && a.brew.agitation) || 'standard').toLowerCase();
     var outG = +tSt.bevOutG > 0 ? +tSt.bevOutG : (+brew.out_g || +brew.yieldOut || Math.max(18, isEsp ? waterG : Math.round(waterG - doseG * 2.05)));
 
     var actualS = +tSt.actualS > 0 ? +tSt.actualS : flowInfo.actualS;
@@ -32845,6 +33460,20 @@ if (typeof window !== 'undefined') {
       thermalSpilloverNote: thermalSpilloverNote,
       ultraFreshNote: ultraFreshNote,
       hypotheses: (coreDiag && Array.isArray(coreDiag.hypotheses)) ? coreDiag.hypotheses : [],
+      curRecipe: {
+        methodKey: methodKey,
+        doseG: doseG,
+        waterG: waterG,
+        ratio: curRatio,
+        grindUm: curUm,
+        grindSetting: gInfo.curDisplay || ((a.brew && a.brew.grind_setting) || (curUm + ' \u00B5m')),
+        grindClicks: gInfo.curClicks,
+        unit: gInfo.unit || 'clicks',
+        grinderLabel: gInfo.grinderLabel || '',
+        tempC: curTempC,
+        tempF: Math.round(curTempC * 9 / 5 + 32),
+        agitation: curAgitation
+      },
       nextRecipe: {
         methodKey: methodKey,
         doseG: nextDoseG,
@@ -32852,11 +33481,133 @@ if (typeof window !== 'undefined') {
         ratio: nextRatio,
         grindUm: nextUm,
         grindSetting: nextDisp.display,
+        grindClicks: nextDisp.clicks,
         tempC: nextTempC,
         tempF: Math.round(nextTempC * 9 / 5 + 32),
         agitation: nextAgitation
       }
     };
+  }
+
+  function buildStep5DiffGrid(rx, lens) {
+    if (!rx || rx.inGoldZone || !rx.nextRecipe || !rx.curRecipe) return null;
+    var cur = rx.curRecipe;
+    var nxt = rx.nextRecipe;
+    var rows = [];
+
+    function fmtCap(s) {
+      var str = String(s || 'standard').replace(/[_-]+/g, ' ').trim();
+      return str ? (str.charAt(0).toUpperCase() + str.slice(1)) : 'Standard';
+    }
+
+    var grindChanged = Math.abs((+nxt.grindUm || 0) - (+cur.grindUm || 0)) >= 1 ||
+      (cur.grindSetting && nxt.grindSetting && cur.grindSetting !== nxt.grindSetting) ||
+      (cur.grindClicks != null && nxt.grindClicks != null && cur.grindClicks !== nxt.grindClicks);
+    if (grindChanged) {
+      var gDeltaTxt = '';
+      if (cur.grindClicks != null && nxt.grindClicks != null && cur.grindClicks !== nxt.grindClicks) {
+        var dCl = Math.round((nxt.grindClicks - cur.grindClicks) * 10) / 10;
+        gDeltaTxt = (dCl > 0 ? '+' : '') + dCl + ' ' + (cur.unit || 'clicks') + (nxt.grindUm < cur.grindUm ? ' · Finer' : ' · Coarser');
+      } else {
+        gDeltaTxt = nxt.grindUm < cur.grindUm ? 'Finer' : 'Coarser';
+      }
+      if (lens === 'scientist' && Math.abs(nxt.grindUm - cur.grindUm) >= 1) {
+        gDeltaTxt += ' (' + Math.round(cur.grindUm) + '\u2192' + Math.round(nxt.grindUm) + '\u00B5m)';
+      }
+      rows.push({
+        label: 'Grind',
+        before: cur.grindSetting || (Math.round(cur.grindUm) + ' \u00B5m'),
+        after: nxt.grindSetting || (Math.round(nxt.grindUm) + ' \u00B5m'),
+        delta: gDeltaTxt
+      });
+    }
+
+    if (Math.abs((+nxt.tempC || 0) - (+cur.tempC || 0)) >= 0.4) {
+      var dTemp = Math.round((nxt.tempC - cur.tempC) * 10) / 10;
+      rows.push({
+        label: 'Water',
+        before: cur.tempC + '\u00B0C',
+        after: nxt.tempC + '\u00B0C',
+        delta: (dTemp > 0 ? '+' : '') + dTemp + '\u00B0C'
+      });
+    }
+
+    var ratioChanged = Math.abs((+nxt.ratio || 0) - (+cur.ratio || 0)) >= 0.05;
+    if (ratioChanged) {
+      var waterNote = Math.abs((+nxt.waterG || 0) - (+cur.waterG || 0)) >= 1
+        ? (' \u00B7 ' + Math.round(cur.waterG) + '\u2192' + Math.round(nxt.waterG) + 'g')
+        : '';
+      rows.push({
+        label: 'Ratio',
+        before: '1:' + cur.ratio,
+        after: '1:' + nxt.ratio,
+        delta: (nxt.ratio > cur.ratio ? 'Wider' : 'Richer') + waterNote
+      });
+    } else if (Math.abs((+nxt.waterG || 0) - (+cur.waterG || 0)) >= 1) {
+      rows.push({
+        label: 'Water Mass',
+        before: Math.round(cur.waterG) + 'g',
+        after: Math.round(nxt.waterG) + 'g',
+        delta: (nxt.waterG > cur.waterG ? '+' : '') + Math.round(nxt.waterG - cur.waterG) + 'g'
+      });
+    }
+
+    if (Math.abs((+nxt.doseG || 0) - (+cur.doseG || 0)) >= 0.1) {
+      rows.push({
+        label: 'Dose',
+        before: cur.doseG + 'g',
+        after: nxt.doseG + 'g',
+        delta: (nxt.doseG > cur.doseG ? '+' : '') + (Math.round((nxt.doseG - cur.doseG) * 10) / 10) + 'g'
+      });
+    }
+
+    var curAg = String(cur.agitation || 'standard').toLowerCase();
+    var nxtAg = String(nxt.agitation || 'standard').toLowerCase();
+    if (curAg !== nxtAg) {
+      rows.push({
+        label: 'Agitation',
+        before: fmtCap(curAg),
+        after: fmtCap(nxtAg),
+        delta: nxtAg === 'gentle' ? 'Calmer Pour' : 'Updated'
+      });
+    }
+
+    if (!rows.length) {
+      rows.push({
+        label: 'Target',
+        before: cur.grindSetting || (Math.round(cur.grindUm) + ' \u00B5m'),
+        after: nxt.grindSetting || (Math.round(nxt.grindUm) + ' \u00B5m'),
+        delta: 'Hold & Refine'
+      });
+    }
+
+    return S.h('div', {
+      style: 'width:100%;max-width:100%;box-sizing:border-box;min-width:0;padding:10px 11px;border-radius:14px;background:var(--well,var(--bg-subtle));border:1px solid var(--line);display:flex;flex-direction:column;gap:8px'
+    },
+      S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap' },
+        S.h('span', { style: 'font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-secondary)', text: 'Try #' + rx.tryNum + ' \u2192 Try #' + rx.nextTryNum + ' Lever Changes' }),
+        S.h('span', { class: 'bt-tc-badge is-gold', style: 'font-size:10.5px;padding:2px 8px', text: rows.length + (rows.length === 1 ? ' tweak saved' : ' tweaks saved') })
+      ),
+      S.h('div', {
+        class: 'bt-step5-diff-grid',
+        id: 'bt-step5-diff-grid',
+        style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:7px;width:100%;max-width:100%;min-width:0'
+      }, rows.map(function (r) {
+        return S.h('div', {
+          style: 'min-width:0;padding:7px 9px;border-radius:10px;background:var(--surface);border:1px solid var(--line-soft,var(--line));display:flex;flex-direction:column;gap:3px;box-sizing:border-box'
+        },
+          S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:4px;flex-wrap:wrap' },
+            S.h('span', { style: 'font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-muted)', text: r.label }),
+            r.delta ? S.h('span', { class: 'mono', style: 'font-size:10px;font-weight:700;color:var(--accent)', text: r.delta }) : null
+          ),
+          S.h('div', { class: 'mono', style: 'display:flex;align-items:baseline;flex-wrap:wrap;gap:5px;font-size:12px;line-height:1.25;overflow-wrap:anywhere' },
+            S.h('span', { style: 'color:var(--ink-muted);text-decoration:line-through', text: r.before }),
+            S.h('span', { style: 'color:var(--ink-muted)', text: '\u2192' }),
+            S.h('b', { style: 'color:var(--ink);font-weight:800', text: r.after })
+          )
+        );
+      }))
+    );
   }
 
   /* Exact Pro Cupping (SCA-104-2024) Score Formula: 0.65625 * sum8 + 52.75 - 2*u - 4*d */
@@ -34390,6 +35141,11 @@ if (typeof window !== 'undefined') {
         heroBox.appendChild(S.h('div', { class: 'mono', style: 'font-size:0.76rem;color:var(--science);font-weight:700', text: rx.xrayLine }));
       }
 
+      if (!rx.inGoldZone && rx.nextRecipe) {
+        var diffEl = buildStep5DiffGrid(rx, lens);
+        if (diffEl) heroBox.appendChild(diffEl);
+      }
+
       var ck = (typeof window !== 'undefined' && window.BTChartKit) ? window.BTChartKit : null;
       if (ck && typeof ck.dialInSparklineSvg === 'function' && rx.chronRows.length >= 1) {
         try {
@@ -34411,6 +35167,14 @@ if (typeof window !== 'undefined') {
 
       /* In-Place Gold Recipe Toggle (NEVER yanks/teleports user without explicit Save!) */
       if (rx.inGoldZone && !tSt.excludeLearning && !tSt.notMyStyle) {
+        var goldCur = rx.curRecipe || {};
+        var goldSummaryTxt = [
+          goldCur.grindSetting || (goldCur.grindUm ? (Math.round(goldCur.grindUm) + ' \u00B5m') : ''),
+          goldCur.tempC ? (goldCur.tempC + '\u00B0C') : '',
+          goldCur.ratio ? ('1:' + goldCur.ratio) : '',
+          (goldCur.doseG && goldCur.waterG) ? (goldCur.doseG + 'g:' + Math.round(goldCur.waterG) + 'g') : ''
+        ].filter(Boolean).join(' \u00B7 ');
+
         heroBox.appendChild(S.h('div', { style: 'display:flex;flex-direction:column;gap:7px' },
           S.h('button', {
             type: 'button',
@@ -34429,7 +35193,21 @@ if (typeof window !== 'undefined') {
             S.buildGoldSealSvg(20),
             S.h('span', { text: tSt.goldLocked ? 'Locked as My Gold Recipe (Tap to Unlock)' : 'Lock as My Gold Recipe' })
           ),
-          tSt.goldLocked ? S.h('div', { class: 'bt-tc-badge is-gold', style: 'align-self:flex-start;white-space:normal', text: 'Gold Seal Ready \u2014 Finish any notes you want, then tap Save Gold Recipe \u2192 Preferences below!' }) : null
+          shouldSaveGold ? S.h('div', {
+            id: 'bt-step5-gold-summary',
+            class: 'bt-step5-gold-summary',
+            style: 'width:100%;max-width:100%;box-sizing:border-box;padding:9px 11px;border-radius:12px;background:var(--good-bg);border:1px solid rgba(24,96,62,0.32);display:flex;flex-direction:column;gap:4px'
+          },
+            S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
+              S.h('span', { style: 'display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--good);letter-spacing:0.03em;text-transform:uppercase' },
+                S.buildGoldSealSvg(16),
+                S.h('span', { text: 'Golden Recipe Locked \u00B7 Try #' + rx.tryNum })
+              ),
+              S.h('span', { class: 'bt-tc-badge is-good', style: 'font-size:10.5px;padding:2px 7px', text: tSt.stars.toFixed(2) + '/5 Beans' })
+            ),
+            S.h('div', { class: 'mono', style: 'font-size:12.5px;font-weight:800;color:var(--ink);line-height:1.35;overflow-wrap:anywhere', text: goldSummaryTxt }),
+            S.h('span', { style: 'font-size:11px;color:var(--ink-secondary);line-height:1.3', text: 'Gold Seal Ready \u2014 Tap Save Gold \u2192 Preferences below to lock for future brews.' })
+          ) : null
         ));
       }
 
@@ -36310,6 +37088,195 @@ if (typeof window !== 'undefined') {
     );
   }
 
+  function getCoffeeHistoryChronological(coffeeName, roaster, coffeeId, hObjs) {
+    var list = Array.isArray(hObjs) ? hObjs : S.getHistoryObjs();
+    var cleanCid = isSyntheticCoffeeId(coffeeId) ? '' : String(coffeeId).trim();
+    var nName = normCoffeeKeyPart(unneutCellar(coffeeName || ''));
+    var nRoast = normCoffeeKeyPart(unneutCellar(roaster || ''));
+    if (!cleanCid && !nName) return [];
+
+    var matches = [];
+    list.forEach(function (r, idx) {
+      if (!r || typeof r !== 'object') return;
+      var rCid = isSyntheticCoffeeId(r.coffee_id) ? '' : String(r.coffee_id).trim();
+      var rName = normCoffeeKeyPart(unneutCellar(r.coffee_name || ''));
+      var rRoast = normCoffeeKeyPart(unneutCellar(r.roaster || ''));
+      var hit = false;
+      if (cleanCid && rCid && cleanCid === rCid) hit = true;
+      else if (nName && rName === nName && (!nRoast || !rRoast || rRoast === nRoast)) hit = true;
+      if (hit) matches.push({ r: r, idx: idx });
+    });
+
+    matches.sort(function (a, b) {
+      var ta = String(a.r.saved_at || a.r.cupping_date || '');
+      var tb = String(b.r.saved_at || b.r.cupping_date || '');
+      if (ta !== tb) return ta.localeCompare(tb);
+      var aa = +(a.r.brew_attempt) || 0;
+      var ab = +(b.r.brew_attempt) || 0;
+      if (aa !== ab) return aa - ab;
+      return a.idx - b.idx;
+    });
+    return matches.map(function (m) { return m.r; });
+  }
+
+  function buildDialInConvergenceTimeline(chronRows, currentRow, opts) {
+    opts = opts || {};
+    if (!Array.isArray(chronRows) || chronRows.length < 2) return null;
+    var hasAnyGold = chronRows.some(function (tr) { return tr && (tr.dial_locked === 'yes' || tr.dial_locked === '1'); });
+    var nodes = [];
+    chronRows.forEach(function (tr, idx) {
+      if (!tr) return;
+      var tryNum = (+tr.brew_attempt > 0) ? Math.round(+tr.brew_attempt) : (idx + 1);
+      var clicksTxt = unneutCellar(tr.brew_grind_setting || '') || (+tr.brew_grind_target_um > 0 ? (+tr.brew_grind_target_um + ' \u00B5m') : '');
+      var tempC = +tr.brew_temp_c > 0 ? Math.round(+tr.brew_temp_c) : (+tr.brew_temp_f > 0 ? Math.round((+tr.brew_temp_f - 32) * 5 / 9) : 0);
+      var tempTxt = tempC > 0 ? (tempC + '\u00B0C') : '';
+      var tdsEyTxt = tr.brew_tds_pct ? (tr.brew_tds_pct + '% TDS' + (tr.brew_ey_pct ? (' / ' + tr.brew_ey_pct + '% EY') : '')) : '';
+      var starsVal = parseFloat(tr.my_rating_stars) || 0;
+      var scaVal = parseFloat(tr.total_score) || 0;
+      var isGold = tr.dial_locked === 'yes' || tr.dial_locked === '1';
+      var isCur = !!(currentRow && (tr === currentRow || (currentRow.id && tr.id === currentRow.id)));
+      var specParts = [clicksTxt, tempTxt, tdsEyTxt].filter(Boolean);
+      if (!specParts.length) specParts.push(S.humanMethodName(tr.brew_method));
+
+      var nodeBtn = S.h('button', {
+        type: 'button',
+        class: 'bt-dial-node' + (isGold ? ' is-locked' : '') + (isCur ? ' is-current' : ''),
+        style: 'min-width:0;max-width:100%;text-align:left',
+        'aria-label': 'Inspect Try #' + tryNum + (isGold ? ' Golden Locked' : ''),
+        onclick: function (e) {
+          if (e && e.stopPropagation) e.stopPropagation();
+          openTastingDetailSheet(tr);
+        }
+      },
+        S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:5px;flex-wrap:wrap' },
+          S.h('span', { class: 'mono', style: 'font-weight:800;font-size:0.78rem', text: '#' + tryNum }),
+          isGold ? S.h('span', { style: 'display:inline-flex;align-items:center;gap:3px' }, buildGoldSealSvg(14)) : null,
+          starsVal > 0 ? S.h('span', { class: 'mono', style: 'display:inline-flex;align-items:center;gap:2px;font-size:0.76rem;font-weight:700' },
+            S.iconEl('spark-star', { size: 12 }),
+            S.h('span', { text: starsVal.toFixed(2) })
+          ) : (scaVal > 0 ? S.h('span', { class: 'mono', style: 'font-size:0.74rem;font-weight:700', text: scaVal.toFixed(1) + ' SCA' }) : null)
+        ),
+        S.h('div', { class: 'mono', style: 'font-size:0.72rem;color:var(--ink-secondary);line-height:1.3;overflow-wrap:anywhere', text: specParts.join(' \u00B7 ') })
+      );
+      nodes.push(nodeBtn);
+      if (idx < chronRows.length - 1) {
+        nodes.push(S.h('span', { class: 'bt-dial-arrow', 'aria-hidden': 'true', style: 'align-self:center;font-weight:800;color:var(--ink-muted)', text: '\u2192' }));
+      }
+    });
+
+    return S.h('section', {
+      class: 'bt-dial-timeline',
+      'aria-label': 'Dial-In Convergence Timeline',
+      style: 'display:flex;flex-direction:column;gap:7px;min-width:0;max-width:100%'
+    },
+      S.h('div', { class: 'bt-tc-row-between' },
+        S.h('span', { class: 'bt-tc-kicker', text: 'Dial-In Convergence (' + chronRows.length + ' Tries)' }),
+        hasAnyGold ? S.h('span', { class: 'bt-tc-badge is-gold', text: 'Golden Locked' }) : S.h('span', { class: 'bt-tc-badge is-sci', text: 'Try #1 \u2192 #' + chronRows.length })
+      ),
+      S.h('div', {
+        class: 'bt-dial-timeline-track',
+        style: 'display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;min-width:0;max-width:100%'
+      }, nodes)
+    );
+  }
+
+  function pickTopGoldenRecipes(hObjs, limit) {
+    var list = Array.isArray(hObjs) ? hObjs : [];
+    var maxN = limit || 3;
+    var candidates = [];
+    list.forEach(function (r, idx) {
+      if (!r || !r.coffee_name) return;
+      var isGold = r.dial_locked === 'yes' || r.dial_locked === '1';
+      var stars = parseFloat(r.my_rating_stars) || 0;
+      if (!isGold && stars < 4.5) return;
+      candidates.push({ r: r, idx: idx, isGold: isGold, stars: stars, sca: parseFloat(r.total_score) || 0 });
+    });
+    candidates.sort(function (a, b) {
+      if (a.isGold !== b.isGold) return a.isGold ? -1 : 1;
+      if (Math.abs(b.stars - a.stars) > 0.01) return b.stars - a.stars;
+      if (Math.abs(b.sca - a.sca) > 0.1) return b.sca - a.sca;
+      return b.idx - a.idx;
+    });
+    var seen = Object.create(null);
+    var out = [];
+    for (var i = 0; i < candidates.length && out.length < maxN; i++) {
+      var r = candidates[i].r;
+      var k = normCoffeeKeyPart(unneutCellar(r.coffee_name)) + '|' + normCoffeeKeyPart(unneutCellar(r.roaster || '')) + '|' + String(r.brew_method || '').toLowerCase();
+      if (seen[k]) continue;
+      seen[k] = true;
+      out.push(r);
+    }
+    return out;
+  }
+
+  function buildGoldenShowcaseSection(hObjs) {
+    var top = pickTopGoldenRecipes(hObjs, 3);
+    if (!top.length) return null;
+    return S.h('section', {
+      class: 'bt-tc-card bt-golden-showcase',
+      'aria-label': 'Best and Golden Recipes'
+    },
+      S.h('div', { class: 'bt-tc-row-between' },
+        S.h('div', { style: 'min-width:0;flex:1 1 180px' },
+          S.h('div', { class: 'bt-tc-kicker', text: 'Hall of Fame \u00B7 4.5+ & Golden Locked' }),
+          S.h('b', { style: 'font-size:1rem', text: 'Best & Golden Recipes' })
+        ),
+        S.h('span', { class: 'bt-tc-badge is-gold', text: top.length + ' Top Brew' + (top.length === 1 ? '' : 's') })
+      ),
+      S.h('div', {
+        class: 'bt-golden-showcase-grid',
+        style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px;min-width:0'
+      },
+        top.map(function (r) {
+          var isGold = r.dial_locked === 'yes' || r.dial_locked === '1';
+          var stars = parseFloat(r.my_rating_stars) || 0;
+          var cName = unneutCellar(r.coffee_name || '') || 'Golden Brew';
+          var rName = unneutCellar(r.roaster || '');
+          var tempC = +r.brew_temp_c > 0 ? Math.round(+r.brew_temp_c) : (+r.brew_temp_f > 0 ? Math.round((+r.brew_temp_f - 32) * 5 / 9) : 0);
+          var specs = [
+            S.humanMethodName(r.brew_method),
+            (r.brew_dose_g && r.brew_water_g) ? (r.brew_dose_g + 'g:' + r.brew_water_g + 'g') : '',
+            unneutCellar(r.brew_grind_setting || '') || (r.brew_grind_target_um ? (r.brew_grind_target_um + ' \u00B5m') : ''),
+            tempC > 0 ? (tempC + '\u00B0C') : ''
+          ].filter(Boolean).join(' \u00B7 ');
+          return S.h('article', {
+            class: 'bt-tc-well bt-golden-showcase-item',
+            style: 'min-width:0;justify-content:space-between'
+          },
+            S.h('div', { class: 'bt-tc-row-between', style: 'align-items:flex-start' },
+              S.h('div', { style: 'display:flex;align-items:center;gap:7px;min-width:0;flex:1' },
+                isGold ? buildGoldSealSvg(20) : S.iconEl('spark-star', { size: 17 }),
+                S.h('div', { style: 'min-width:0' },
+                  rName ? S.h('div', { class: 'bt-tc-kicker', text: rName }) : null,
+                  S.h('b', { style: 'font-size:0.9rem;display:block;overflow-wrap:anywhere', text: cName })
+                )
+              ),
+              stars > 0 ? S.h('span', { class: 'bt-tc-badge mono ' + (isGold ? 'is-gold' : 'is-good'), text: stars.toFixed(2) + ' / 5' }) : null
+            ),
+            S.h('div', { class: 'mono', style: 'font-size:0.75rem;color:var(--ink-secondary);line-height:1.35', text: specs }),
+            S.h('div', { class: 'bt-tc-pill-wrap' },
+              S.h('button', {
+                type: 'button',
+                class: 'bt-tc-pill is-compact is-active',
+                text: 'Brew \u2192',
+                onclick: function () {
+                  hydrateBrewFromRowOrBag(r, null, null);
+                  navigateToHomeRecipe();
+                }
+              }),
+              S.h('button', {
+                type: 'button',
+                class: 'bt-tc-pill is-compact is-soft',
+                text: 'Inspect',
+                onclick: function () { openTastingDetailSheet(r); }
+              })
+            )
+          );
+        })
+      )
+    );
+  }
+
   function getCoffeesVaultSafe() {
     var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
     try {
@@ -36899,7 +37866,25 @@ if (typeof window !== 'undefined') {
       btTextCode = 'BT-code: V1 ' + btUri;
     }
 
-    var realQrSvg = S.encodeRealQrSvg(btUri, { size: 176, margin: 3, fg: '#1A1412', bg: '#FAF6F0' });
+    var qrOpts = { size: 184, margin: 3, fg: '#1A1412', bg: '#FAF6F0', label: 'BeanTelligence Scannable Brew Passport QR Code' };
+    var realQrSvg = '';
+    var encodeDirect = function (payloadStr) {
+      if (typeof window !== 'undefined' && typeof window.encodeQrSvg === 'function') {
+        try { return window.encodeQrSvg(payloadStr, qrOpts); } catch (_) {}
+      }
+      if (typeof encodeQrSvg === 'function') {
+        try { return encodeQrSvg(payloadStr, qrOpts); } catch (_) {}
+      }
+      return '';
+    };
+    realQrSvg = encodeDirect(btUri);
+    if (!realQrSvg || realQrSvg.indexOf('<path') < 0) {
+      var compactUri = 'bt1:' + cName.slice(0, 24) + '|' + method + '|' + doseG + ':' + waterG + '@' + um;
+      realQrSvg = encodeDirect(compactUri);
+      if (!realQrSvg || realQrSvg.indexOf('<path') < 0) {
+        realQrSvg = S.encodeRealQrSvg(compactUri, qrOpts);
+      }
+    }
 
     var safeEsc = function (s) {
       return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -36929,7 +37914,17 @@ if (typeof window !== 'undefined') {
       textCode: btTextCode,
       qrSvg: realQrSvg,
       tradingCardSvg: tradingCardSvg,
-      title: cName
+      title: cName,
+      meta: {
+        roaster: cRoaster,
+        originLine: [cOrigin, cProc, cRoast].filter(Boolean).join(' \u00B7 '),
+        methodLabel: S.humanMethodName(method),
+        recipeLine: doseG + ' g \u2192 ' + waterG + ' g (1:' + ratio + ')',
+        grindTempLine: gSet + ' (~' + um + ' \u00B5m) \u00B7 ' + tempC + ' \u00B0C',
+        stars: stars,
+        isLocked: !!(rowOrBag && (rowOrBag.dial_locked === 'yes' || rowOrBag.dial_locked === '1')),
+        notes: notes
+      }
     };
   }
 
@@ -37087,6 +38082,10 @@ if (typeof window !== 'undefined') {
       : [];
 
     var wrap = S.h('div', { style: 'display:flex;flex-direction:column;gap:14px' });
+
+    /* 0. Best & Golden Recipes Hall-of-Fame Strip (only when >=1 qualifying brew exists) */
+    var goldenShowcase = buildGoldenShowcaseSection(hObjs);
+    if (goldenShowcase) wrap.appendChild(goldenShowcase);
 
     /* A. Active Dial-In Trail Sparklines */
     var trailGroups = Object.create(null);
@@ -37547,6 +38546,8 @@ if (typeof window !== 'undefined') {
       var bagGuardKey = 'shelf_' + bagKey;
       var bagGuardArmed = ui.confirmOverwriteKey === bagGuardKey && ui.confirmOverwriteUntil > Date.now();
       var bagSym = bag.sym || (bag.currency === 'EUR' ? '\u20AC' : bag.currency === 'GBP' ? '\u00A3' : '$');
+      var bagChron = getCoffeeHistoryChronological(bag.coffee, bag.roaster, bag.coffee_id || (uRec && uRec.coffee_id), hObjs);
+      var bagTimeline = buildDialInConvergenceTimeline(bagChron, null, { compact: true });
 
       wrap.appendChild(S.h('article', {
         class: 'bt-cellar-bag-card',
@@ -37577,6 +38578,7 @@ if (typeof window !== 'undefined') {
           isLocked ? S.h('span', { class: 'bt-tc-badge is-gold', text: 'Gold Recipe Locked' }) : null
         ),
         S.h('div', { class: 'bt-cellar-meter' }, S.h('i', { style: 'width:' + ev.pctLeft + '%' })),
+        bagTimeline,
         ev.oddTail ? S.h('div', { class: 'bt-tc-tabu-banner' },
           S.h('span', { text: 'Last-Dose Bag Rescue (' + ev.oddTail.remG + ' g left): Brew ' + ev.oddTail.remG + ' g coffee : ' + ev.oddTail.waterG + ' g water slightly finer so a shallow bed stays sweet!' })
         ) : null,
@@ -39245,10 +40247,18 @@ if (typeof window !== 'undefined') {
     var art = (payload && payload.art) || buildPassportArtifacts(payload && payload.item);
     var fromDetailIdx = payload && payload.fromDetailIdx != null ? +payload.fromDetailIdx : null;
     var qrBox = S.h('div', { class: 'bt-qr-real-box' });
-    qrBox.innerHTML = art.qrSvg;
+    var qrMarkup = art && art.qrSvg ? String(art.qrSvg) : '';
+    if ((!qrMarkup || qrMarkup.indexOf('<path') < 0) && typeof window !== 'undefined' && typeof window.encodeQrSvg === 'function') {
+      try {
+        qrMarkup = window.encodeQrSvg((art && (art.uri || art.textCode)) || 'bt1:passport', { size: 184, margin: 3, fg: '#1A1412', bg: '#FAF6F0' });
+      } catch (_) {}
+    }
+    qrBox.innerHTML = qrMarkup;
 
-    return S.h('div', { class: 'bt-tc-sheet', style: 'display:flex;flex-direction:column;gap:12px' },
-      S.h('div', { class: 'bt-sheet-back-bar' },
+    var m = (art && art.meta) || {};
+
+    return S.h('div', { class: 'bt-tc-sheet', id: 'bt-passport-qr-sheet', style: 'display:flex;flex-direction:column;gap:12px' },
+      S.h('div', { class: 'bt-sheet-back-bar no-print' },
         S.h('button', {
           type: 'button',
           class: 'bt-tc-back-pill',
@@ -39260,11 +40270,20 @@ if (typeof window !== 'undefined') {
       ),
       S.h('div', { class: 'bt-passport-preview' },
         S.h('div', { class: 'bt-tc-kicker', text: 'Offline Scannable Brew Passport' }),
-        S.h('b', { style: 'font-family:var(--font-display);font-size:1.15rem', text: art.title }),
+        S.h('div', { style: 'display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap' },
+          m.isLocked ? buildGoldSealSvg(22) : null,
+          S.h('b', { style: 'font-family:var(--font-display);font-size:1.18rem', text: art.title })
+        ),
+        (m.roaster || m.originLine) ? S.h('div', { style: 'font-size:0.82rem;color:var(--ink-secondary);font-weight:600', text: [m.roaster, m.originLine].filter(Boolean).join(' \u00B7 ') }) : null,
+        (m.methodLabel || m.recipeLine) ? S.h('div', { class: 'bt-tc-well', style: 'width:100%;max-width:420px;align-items:center;text-align:center;gap:3px' },
+          S.h('div', { class: 'mono', style: 'font-size:0.82rem;font-weight:800;color:var(--ink)', text: [m.methodLabel, m.recipeLine].filter(Boolean).join(' \u00B7 ') }),
+          m.grindTempLine ? S.h('div', { class: 'mono', style: 'font-size:0.76rem;color:var(--ink-secondary)', text: m.grindTempLine }) : null,
+          m.stars > 0 ? S.h('div', { class: 'mono', style: 'font-size:0.76rem;font-weight:700;color:var(--accent)', text: 'Rated ' + m.stars.toFixed(2) + ' / 5.00' + (m.isLocked ? ' \u00B7 Golden Recipe' : '') }) : null
+        ) : null,
         qrBox,
         S.h('div', { class: 'mono', style: 'font-size:0.74rem;word-break:break-all;color:var(--ink-secondary)', text: art.textCode })
       ),
-      S.h('div', { class: 'bt-tc-pill-wrap', style: 'justify-content:center' },
+      S.h('div', { class: 'bt-tc-pill-wrap no-print', style: 'justify-content:center' },
         S.h('button', {
           type: 'button',
           class: 'bt-tc-pill is-active',
@@ -39290,7 +40309,15 @@ if (typeof window !== 'undefined') {
               setTimeout(function () { link.remove(); URL.revokeObjectURL(url); }, 1000);
             } catch (_) {}
           }
-        })
+        }),
+        S.h('button', {
+          type: 'button',
+          id: 'bt-qr-passport-print-btn',
+          class: 'bt-tc-pill is-soft',
+          onclick: function () {
+            try { if (typeof window !== 'undefined' && typeof window.print === 'function') window.print(); } catch (_) {}
+          }
+        }, S.iconEl('share-card', { size: 15 }), S.h('span', { text: 'Print / Save PDF' }))
       )
     );
   });
@@ -39304,6 +40331,8 @@ if (typeof window !== 'undefined') {
     var un = function (v) { return typeof unneutralize === 'function' ? unneutralize(v || '') : String(v || ''); };
     var isLocked = r.dial_locked === 'yes' || r.dial_locked === '1';
     var timeSecs = +(r.brew_actual_time_s || r.brew_time_s) || 0;
+    var detailChron = getCoffeeHistoryChronological(r.coffee_name, r.roaster, r.coffee_id, hObjs);
+    var detailTimeline = buildDialInConvergenceTimeline(detailChron, r, { compact: false });
 
     var kvPairs = [
       ['Date', r.cupping_date],
@@ -39327,7 +40356,7 @@ if (typeof window !== 'undefined') {
     ].filter(function (p) { return !!p[1]; });
 
     return S.h('div', { class: 'bt-tc-sheet', id: 'bt-screen-detail', style: 'display:flex;flex-direction:column;gap:12px' },
-      S.h('div', { class: 'bt-sheet-back-bar' },
+      S.h('div', { class: 'bt-sheet-back-bar no-print' },
         S.h('button', {
           type: 'button',
           class: 'bt-tc-back-pill',
@@ -39359,8 +40388,9 @@ if (typeof window !== 'undefined') {
         S.h('span', { class: 'bt-tc-kicker', text: 'Tasting Notes' }),
         S.h('div', { style: 'font-size:0.86rem', text: un(r.general_notes) })
       ) : null,
+      detailTimeline,
       (!isLocked && extractRowRecommendation(r).hasRec) ? buildSavedNextBrewCallout(r, false) : null,
-      S.h('div', { class: 'bt-tc-pill-wrap' },
+      S.h('div', { class: 'bt-tc-pill-wrap no-print' },
         S.h('button', {
           type: 'button',
           class: 'bt-tc-pill is-active',
@@ -39405,7 +40435,15 @@ if (typeof window !== 'undefined') {
           class: 'bt-tc-pill is-soft',
           text: 'QR Trading Card',
           onclick: function () { openQrPassportSheet(r, { fromDetailIdx: rIdx }); }
-        })
+        }),
+        S.h('button', {
+          type: 'button',
+          id: 'bt-detail-print-btn',
+          class: 'bt-tc-pill is-soft',
+          onclick: function () {
+            try { if (typeof window !== 'undefined' && typeof window.print === 'function') window.print(); } catch (_) {}
+          }
+        }, S.iconEl('share-card', { size: 15 }), S.h('span', { text: 'Print / Save PDF' }))
       )
     );
   });
@@ -39775,6 +40813,11 @@ if (typeof window !== 'undefined') {
       openDetail: openTastingDetailSheet,
       openEdit: openTastingEditSheet,
       openQrPassport: openQrPassportSheet,
+      hydrateAndBrewRow: function (r) {
+        if (!r) return;
+        hydrateBrewFromRowOrBag(r, null, null);
+        navigateToHomeRecipe();
+      },
       cloneCafeDrinkToHome: solveCloneCafeDrinkSafe
     };
   }
@@ -44654,13 +45697,13 @@ if (typeof window !== 'undefined') {
           const sy = ty(sim.samples[i].tempC);
           if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
         }
-        ctx.strokeStyle = '#195A73';
+        ctx.strokeStyle = isDark ? '#63C4E8' : '#195A73';
         ctx.lineWidth = 1.8;
         ctx.stroke();
         ctx.setLineDash([]);
 
         /* Lower Band: Laminar Sweet-Spot Flow Ribbon + dM/dt */
-        ctx.fillStyle = 'rgba(46, 125, 79, 0.16)';
+        ctx.fillStyle = isDark ? 'rgba(66, 184, 128, 0.16)' : 'rgba(46, 125, 79, 0.16)';
         ctx.fillRect(L, fy(6.5), PW, fy(3.0) - fy(6.5));
         ctx.beginPath();
         for (let i = 0; i < sim.samples.length; i++) {
@@ -44668,7 +45711,7 @@ if (typeof window !== 'undefined') {
           const sy = fy(sim.samples[i].flow);
           if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
         }
-        ctx.strokeStyle = '#C46824';
+        ctx.strokeStyle = isDark ? '#F09148' : '#C46824';
         ctx.lineWidth = 1.8;
         ctx.stroke();
 
@@ -45016,7 +46059,7 @@ if (typeof window !== 'undefined') {
       }, ic('check-seal', { size: 16 }), cutGateBtnSpan),
       domH('button', {
         type: 'button',
-        class: 'bt-lab-btn',
+        class: 'bt-lab-btn is-accent',
         onclick: function () {
           const curA = getApp();
           const curM = String((curA && curA.brew && curA.brew.method) || '').toLowerCase();
@@ -45039,8 +46082,18 @@ if (typeof window !== 'undefined') {
             toast: 'Applied 3-Wave temp, grind & ' + mm + ' Cutoff Gate to your recipe!'
           });
         }
-      }, 'Apply to My Recipe \u2192')
+      }, ic('brew', { size: 15 }), domH('span', { text: 'Apply to Active Recipe \u2192' }))
     ));
+
+    if (typeof MutationObserver === 'function' && typeof document !== 'undefined' && document.documentElement) {
+      try {
+        const waveThemeObs = new MutationObserver(function () {
+          if (!card.isConnected) { waveThemeObs.disconnect(); return; }
+          renderWaveCanvasAndOverlay();
+        });
+        waveThemeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      } catch (_) {}
+    }
 
     renderWaveCanvasAndOverlay();
     return card;
@@ -45303,6 +46356,13 @@ if (typeof window !== 'undefined') {
 
     const readoutBanner = domH('div', { class: 'bt-studio-readout-banner' });
     const safeSipHero = domH('div', { class: 'bt-pk-safesip-hero', id: 'bt-pk-safesip-hero' });
+    const scheduleSummaryPill = domH('div', {
+      class: 'bt-pk-daily-schedule-pill num-tab',
+      id: 'bt-pk-daily-schedule-pill',
+      role: 'region',
+      'aria-label': 'Daily Coffee Budget and Cutoff Schedule',
+      style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px;padding:10px 12px;border-radius:14px;background:var(--bg-subtle, #F2EAE0);border:1px solid var(--line, #DCCDBE);box-sizing:border-box;min-width:0;max-width:100%;'
+    });
     const inspectorRow = domH('div', { class: 'bt-pk-cup-inspector' });
 
     function persistCaffeinePrefs() {
@@ -45657,9 +46717,53 @@ if (typeof window !== 'undefined') {
         })
       ));
 
-      /* Readout Banner */
+      /* Readout Banner & Daily Coffee Budget & Cutoff Summary Pill */
       const totalDailyMg = pk.cups.reduce(function (acc, c) { return acc + c.mg; }, 0);
-      const cutoffRef = cutoffRefFlag;
+      const budgetRemainingMg = Math.max(0, cyp.dailyCapMg - totalDailyMg);
+      const gateHeadroomMg = Math.round(pk.swsGateMg - bedMg);
+      const wakeShort = fmtClock(pk.wakeHour).replace(':00 ', '').toLowerCase();
+      const peakWinText = fmtClock(pfStartH) + '–' + fmtClock(pfEndH);
+      const cutoffText = cutoffRefFlag == null ? 'No safe time today' : fmtClock(cutoffRefFlag);
+      const gateRemainingText = gatePass
+        ? (gateHeadroomMg + ' mg under ' + pk.swsGateMg + ' mg gate')
+        : ('+' + Math.abs(gateHeadroomMg) + ' mg over ' + pk.swsGateMg + ' mg gate');
+
+      scheduleSummaryPill.textContent = '';
+      scheduleSummaryPill.appendChild(domH('div', {
+        class: 'bt-pk-sched-item',
+        style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
+      },
+        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Wake & Budget' }),
+        domH('strong', { style: 'font-size:0.84rem;color:var(--ink, #1C130E);', text: 'Wake ' + wakeShort + ' · ' + budgetRemainingMg + ' mg left' })
+      ));
+      scheduleSummaryPill.appendChild(domH('div', {
+        class: 'bt-pk-sched-item',
+        style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
+      },
+        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Peak Window' }),
+        domH('strong', { style: 'font-size:0.84rem;color:var(--good, #1B6341);', text: peakWinText })
+      ));
+      scheduleSummaryPill.appendChild(domH('div', {
+        class: 'bt-pk-sched-item',
+        style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
+      },
+        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Cutoff Time' }),
+        domH('strong', {
+          style: 'font-size:0.84rem;color:' + (cutoffRefFlag == null ? 'var(--bad, #A1231F)' : 'var(--primary, #1B4D38)') + ';',
+          text: cutoffText
+        })
+      ));
+      scheduleSummaryPill.appendChild(domH('div', {
+        class: 'bt-pk-sched-item',
+        style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
+      },
+        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Bedtime Gate (' + fmtClock(bed) + ')' }),
+        domH('strong', {
+          style: 'font-size:0.84rem;color:' + (gatePass ? 'var(--good, #1B6341)' : 'var(--bad, #A1231F)') + ';',
+          text: gateRemainingText
+        })
+      ));
+
       const midDayBorb = borbelyAlertnessAt(pk.wakeHour + 7.5, pk.wakeHour, bed, activeCaffeineMgAt(pk.cups, pk.wakeHour + 7.5, cyp.halfLifeH, pk.steadyState, pk.fedMode), pk.bodyKg);
 
       readoutBanner.textContent = '';
@@ -45901,6 +47005,7 @@ if (typeof window !== 'undefined') {
     const cafCupOut = domH('div', { class: 'bt-cafcup-readout' });
     const drinkSel = domH('select', {
       class: 'bt-lab-select',
+      style: 'min-width:0;width:100%;max-width:100%;box-sizing:border-box;',
       'aria-label': 'Select cafe or home coffee drink',
       onchange: function () {
         cc.drinkKey = drinkSel.value;
@@ -46022,6 +47127,7 @@ if (typeof window !== 'undefined') {
     ));
     card.appendChild(pkHow.panel);
     card.appendChild(safeSipHero);
+    card.appendChild(scheduleSummaryPill);
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
       domH('span', { class: 'bt-lab-inline-lbl', text: 'Caffeine Metabolism Speed:' }),
       cypBtns,
@@ -46509,6 +47615,7 @@ if (typeof window !== 'undefined') {
 
     const bottleSel = domH('select', {
       class: 'bt-lab-select',
+      style: 'min-width:0;width:100%;max-width:100%;box-sizing:border-box;',
       'aria-label': 'Choose supermarket bottled water or city tap profile',
       onchange: function () {
         wt.everydayKey = bottleSel.value;
@@ -47070,7 +48177,7 @@ if (typeof window !== 'undefined') {
           }, 'Apply Cooler Steam Fix (' + Math.min(56, Math.max(48, vs.steamTempC - 10)) + ' °C)') : null,
           domH('button', {
             type: 'button',
-            class: 'bt-lab-btn is-sm',
+            class: 'bt-lab-btn is-sm is-accent',
             onclick: function () {
               applyLabToBrewAndGo(function (a) {
                 a.brew.milkPlan = {
@@ -48225,11 +49332,14 @@ if (typeof window !== 'undefined') {
     if (!gList.some(function (g) { return g.key === gl.toKey; })) gl.toKey = (gList[5] || gList[1] || gList[0]).key;
 
     const fromSel = domH('select', {
-      class: 'bt-lab-select', 'aria-label': 'Source grinder',
-      onchange: function () { gl.fromKey = fromSel.value; paintGrinder(); }
+      class: 'bt-lab-select',
+      style: 'min-width:0;width:100%;max-width:100%;box-sizing:border-box;',
+      'aria-label': 'Source grinder'
     });
     const toSel = domH('select', {
-      class: 'bt-lab-select', 'aria-label': 'Target grinder',
+      class: 'bt-lab-select',
+      style: 'min-width:0;width:100%;max-width:100%;box-sizing:border-box;',
+      'aria-label': 'Target grinder',
       onchange: function () { gl.toKey = toSel.value; paintGrinder(); }
     });
     gList.forEach(function (g) {
@@ -48551,6 +49661,7 @@ if (typeof window !== 'undefined') {
     );
 
     fromSel.addEventListener('change', function () {
+      gl.fromKey = fromSel.value;
       _omniOverrideUm = 0;
       gl.useOmniOverride = false;
       const gCur = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
@@ -48560,15 +49671,73 @@ if (typeof window !== 'undefined') {
         gl.fromSetting = clamp(gl.fromSetting, gCur.min, gCur.max, gCur.min);
         fromSetIn.value = String(gl.fromSetting);
       }
+      paintGrinder();
     });
     fromSetIn.addEventListener('input', function () {
       _omniOverrideUm = 0;
       gl.useOmniOverride = false;
     });
 
+    function describeGrindReferenceBand(d50Um) {
+      const u = Math.round(clamp(d50Um, 80, 1600, 580));
+      if (u < 200) return { band: 'Ultra-Fine · Turkish / Ibrik', hint: 'Turkish <200 \u00B5m · Espresso 220–320 \u00B5m · V60 500–760 \u00B5m · French Press 850–1150 \u00B5m' };
+      if (u < 350) return { band: 'Fine · Espresso / Moka', hint: 'Espresso 220–320 \u00B5m · V60 / Filter 500–760 \u00B5m · French Press 850–1150 \u00B5m' };
+      if (u < 500) return { band: 'Medium-Fine · AeroPress / Fine Filter', hint: 'Fine Filter 380–500 \u00B5m · V60 500–760 \u00B5m · French Press 850–1150 \u00B5m' };
+      if (u <= 760) return { band: 'Medium · V60 / Pour-Over / Filter', hint: 'Espresso 220–320 \u00B5m · V60 / Filter 500–760 \u00B5m · French Press 850–1150 \u00B5m' };
+      if (u <= 1020) return { band: 'Medium-Coarse · Chemex / French Press', hint: 'Espresso 220–320 \u00B5m · V60 / Filter 500–760 \u00B5m · French Press 850–1150 \u00B5m' };
+      return { band: 'Coarse · French Press / Cold Brew', hint: 'Espresso 220–320 \u00B5m · V60 / Filter 500–760 \u00B5m · Coarse / Cold Brew >1020 \u00B5m' };
+    }
+
+    const swapGrindersBtn = domH('button', {
+      type: 'button',
+      id: 'bt-grinder-swap-btn',
+      class: 'bt-lab-btn is-sm bt-grinder-swap-btn',
+      style: 'min-height:44px;width:100%;justify-content:center;',
+      'aria-label': 'Swap From and To grinders',
+      onclick: function () {
+        if (gl.fromKey === gl.toKey) {
+          CK.haptic('tick');
+          notify('Same Grinder selected — pick a different target grinder to swap.');
+          return;
+        }
+        const prevFrom = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
+        const prevTo = gList.find(function (x) { return x.key === gl.toKey; }) || gList[1] || gList[0];
+        const hasVal = gl.fromSetting != null && Number.isFinite(+gl.fromSetting);
+        let revSetting = null;
+        if (hasVal || _omniOverrideUm > 0) {
+          const curUm = _omniOverrideUm > 0 ? _omniOverrideUm : Math.round(settingToUm(prevFrom, gl.fromSetting));
+          const revInfo = umToSettingInfo(prevTo, curUm);
+          if (revInfo && revInfo.num != null && !revInfo.incompatible) {
+            revSetting = clamp(revInfo.num, prevTo.min, prevTo.max, prevTo.min);
+          }
+        }
+        const tmpKey = gl.fromKey;
+        gl.fromKey = gl.toKey;
+        gl.toKey = tmpKey;
+        fromSel.value = gl.fromKey;
+        toSel.value = gl.toKey;
+        const nextFrom = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
+        fromSetIn.min = String(nextFrom.min);
+        fromSetIn.max = String(nextFrom.max);
+        if (revSetting != null && Number.isFinite(revSetting)) {
+          gl.fromSetting = revSetting;
+          fromSetIn.value = String(revSetting);
+          _omniOverrideUm = 0;
+          gl.useOmniOverride = false;
+        } else if (gl.fromSetting != null && Number.isFinite(+gl.fromSetting)) {
+          gl.fromSetting = clamp(gl.fromSetting, nextFrom.min, nextFrom.max, nextFrom.min);
+          fromSetIn.value = String(gl.fromSetting);
+        }
+        CK.haptic('snap');
+        paintGrinder();
+        notify('Swapped: ' + prevTo.name + ' <-> ' + prevFrom.name);
+      }
+    }, 'Swap Grinders (<->)');
+
     function paintGrinder() {
       const gFrom = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
       const gTo = gList.find(function (x) { return x.key === gl.toKey; }) || gList[1] || gList[0];
+      const sameGrinder = gFrom.key === gTo.key;
       const hasInput = gl.fromSetting != null && Number.isFinite(+gl.fromSetting);
       const dClick = gl.calPt2Click - gl.calPt1Click;
       const dUm = gl.calPt2Um - gl.calPt1Um;
@@ -48583,8 +49752,15 @@ if (typeof window !== 'undefined') {
       outBox.textContent = '';
       if (!hasInput && !(_omniOverrideUm > 0)) {
         outBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
+          sameGrinder ? domH('div', { class: 'bt-lab-chip-row', style: 'margin-bottom:6px' },
+            domH('span', { class: 'bt-epistemic-pill is-craft', id: 'bt-grinder-same-guard', text: 'Same Grinder' })
+          ) : null,
           domH('div', { class: 'bt-studio-human-line num-tab', id: 'bt-grinder-live-readout' },
-            domH('strong', { text: 'Enter a setting for ' + gFrom.name + ' to translate to ' + gTo.name + '.' })
+            domH('strong', {
+              text: sameGrinder
+                ? ('Same Grinder selected (' + gFrom.name + '). Pick a different target grinder to translate.')
+                : ('Enter a setting for ' + gFrom.name + ' to translate to ' + gTo.name + '.')
+            })
           ),
           domH('p', { class: 'bt-lab-hint num-tab', text: calHintText })
         ));
@@ -48593,24 +49769,43 @@ if (typeof window !== 'undefined') {
       }
 
       const d50Um = _omniOverrideUm > 0 ? _omniOverrideUm : Math.round(settingToUm(gFrom, gl.fromSetting));
+      const bandMeta = describeGrindReferenceBand(d50Um);
       const targetInfo = umToSettingInfo(gTo, d50Um);
       const targetDisp = targetInfo.display || (targetInfo.num + ' ' + fmtGrinderUnit(gTo.unit, targetInfo.num));
 
       outBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
+        domH('div', { class: 'bt-lab-chip-row', style: 'margin-bottom:6px' },
+          domH('span', {
+            class: 'bt-epistemic-pill is-verified num-tab bt-grinder-band-pill',
+            id: 'bt-grinder-ref-band',
+            text: bandMeta.band + ' (~' + d50Um + ' \u00B5m)'
+          }),
+          sameGrinder ? domH('span', {
+            class: 'bt-epistemic-pill is-craft',
+            id: 'bt-grinder-same-guard',
+            text: 'Same Grinder'
+          }) : null
+        ),
         domH('div', { class: 'bt-studio-human-line num-tab', id: 'bt-grinder-live-readout' },
           domH('strong', {
-            text: gFrom.name + ' @ ' + (hasInput ? (gl.fromSetting + ' ' + fmtGrinderUnit(gFrom.unit, gl.fromSetting)) : 'Omni D50') + ' (~' + d50Um + ' \u00B5m D50)  \u2192  ' +
-              gTo.name + ' @ ' + targetDisp
+            text: sameGrinder
+              ? ('Same Grinder (' + gFrom.name + ' @ ' + (hasInput ? (gl.fromSetting + ' ' + fmtGrinderUnit(gFrom.unit, gl.fromSetting)) : 'Omni D50') + ' · ~' + d50Um + ' \u00B5m) — select a different grinder to translate.')
+              : (gFrom.name + ' @ ' + (hasInput ? (gl.fromSetting + ' ' + fmtGrinderUnit(gFrom.unit, gl.fromSetting)) : 'Omni D50') + ' (~' + d50Um + ' \u00B5m D50)  \u2192  ' +
+                  gTo.name + ' @ ' + targetDisp)
           })
         ),
         domH('p', {
           class: 'bt-lab-hint num-tab',
+          text: 'Reference Bands: ' + bandMeta.hint
+        }),
+        domH('p', {
+          class: 'bt-lab-hint num-tab',
           text: calHintText
         }),
-        domH('div', { class: 'bt-lab-btn-row', style: 'margin-top:8px' },
+        domH('div', { class: 'bt-chart-cta-bar', style: 'margin-top:8px' },
           domH('button', {
             type: 'button',
-            class: 'bt-lab-btn is-sm is-primary',
+            class: 'bt-lab-btn is-primary bt-chart-cta-btn',
             onclick: function () {
               applyLabToBrewAndGo(function (a) {
                 a.gear = a.gear || {};
@@ -48630,7 +49825,7 @@ if (typeof window !== 'undefined') {
                 toast: 'Applied ' + gTo.name + ' @ ' + targetDisp + ' (~' + d50Um + ' \u00B5m) to your recipe!'
               });
             }
-          }, ic('grinder-burr', { size: 14 }), domH('span', { text: 'Apply Translated Setting to My Recipe \u2192' }))
+          }, ic('grinder-burr', { size: 15 }), domH('span', { text: 'Apply Translated Setting to Active Recipe \u2192' }))
         )
       ));
       renderOmniPsdHistogram();
@@ -48646,9 +49841,13 @@ if (typeof window !== 'undefined') {
       ),
       epistemicBadge('calibrated_biophysics')
     ));
-    card.appendChild(domH('div', { class: 'bt-lab-inline-inputs' },
+    card.appendChild(domH('div', {
+      class: 'bt-lab-inline-inputs bt-grinder-translator-grid',
+      style: 'grid-template-columns:repeat(auto-fit,minmax(160px,1fr));align-items:end;'
+    },
       domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'From Grinder' }), fromSel),
       domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Setting' }), fromSetIn),
+      domH('div', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Direction' }), swapGrindersBtn),
       domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Translate To' }), toSel)
     ));
     card.appendChild(outBox);
@@ -48699,11 +49898,51 @@ if (typeof window !== 'undefined') {
    *   - Single-row horizontal 5-Studio Pill Bar
    * ========================================================================== */
   const STUDIO_TABS = [
-    { id: 'ey', label: '1. Touch-to-Brew Chart', icon: 'refract-prism', build: buildStudioBrewControl },
-    { id: 'rescue', label: '2. Rescue & Mug Fix', icon: 'spark-star', build: buildStudioRescueHub },
-    { id: 'water', label: '3. Water & Ratio', icon: 'water-drop', build: buildStudioWaterAndRatioHub },
-    { id: 'caffeine', label: '4. Caffeine & Cost', icon: 'moon-dark', build: buildStudioCaffeineAndCostHub },
-    { id: 'devices', label: '5. Bluetooth & Grinder Lab', icon: 'ble-wave', build: buildStudioBluetoothAndGrinderHub }
+    {
+      id: 'ey',
+      label: '1. Touch-to-Brew Chart',
+      icon: 'refract-prism',
+      kicker: 'Studio 1 of 5 · Extraction & Strength',
+      intro: 'Tap or drag your target %EY x %TDS sweet spot, read DiFluid R2 %TDS, and load the exact dose & water straight to Step 3.',
+      jumps: [{ id: 'bt-studio-ey', label: 'Sweet-Spot Chart' }, { id: 'bt-lab-r2-live-bar', label: 'R2 %TDS & %EY' }],
+      build: buildStudioBrewControl
+    },
+    {
+      id: 'rescue',
+      label: '2. Rescue & Mug Fix',
+      icon: 'spark-star',
+      kicker: 'Studio 2 of 5 · Cup Rescue & Pour Waves',
+      intro: 'Fix a bitter, sour, or watery mug right now — or tune 3-Wave extraction timing & carafe cutoff gate for your next pour.',
+      jumps: [{ id: 'bt-studio-mug-rescue', label: 'In-Mug Rescue' }, { id: 'bt-studio-waves', label: '3-Wave Cutoff' }],
+      build: buildStudioRescueHub
+    },
+    {
+      id: 'water',
+      label: '3. Water & Ratio',
+      icon: 'water-drop',
+      kicker: 'Studio 3 of 5 · Water, Ratio & Vessel',
+      intro: 'Dial in GH/KH water chemistry, solve 4-anchor dose/water/yield ratios, and plan Flash-Iced or steamed milk drinks.',
+      jumps: [{ id: 'bt-studio-water', label: 'Water & Minerals' }, { id: 'bt-studio-ratio-yield', label: '4-Anchor Ratio' }, { id: 'bt-studio-vessel', label: 'Carafe & Milk' }],
+      build: buildStudioWaterAndRatioHub
+    },
+    {
+      id: 'caffeine',
+      label: '4. Caffeine & Cost',
+      icon: 'moon-dark',
+      kicker: 'Studio 4 of 5 · Circadian PK & Cost ROI',
+      intro: 'Protect deep sleep with your daily caffeine budget & cutoff time, compare bag freshness/value, and track gear payback.',
+      jumps: [{ id: 'bt-studio-caffeine', label: 'Caffeine & Cutoff' }, { id: 'bt-studio-bagcmp', label: 'Compare 2 Bags' }, { id: 'bt-studio-cost-roi', label: 'True Cup ROI' }],
+      build: buildStudioCaffeineAndCostHub
+    },
+    {
+      id: 'devices',
+      label: '5. Bluetooth & Grinder Lab',
+      icon: 'ble-wave',
+      kicker: 'Studio 5 of 5 · BLE Gear, Grinder & Agtron',
+      intro: 'Connect 15+ WebBLE scales, refractometers & kettles, swap & translate clicks across grinders, and check Agtron roast freshness.',
+      jumps: [{ id: 'bt-studio-grinder-lab', label: 'Grinder Translator' }, { id: 'bt-studio-agtron', label: 'Agtron & Freshness' }],
+      build: buildStudioBluetoothAndGrinderHub
+    }
   ];
 
   function normalizeStudioId(rawId) {
@@ -48806,7 +50045,10 @@ if (typeof window !== 'undefined') {
 
   function renderLabTab(mountEl, ctx) {
     ensureLabBleListeners();
-    const page = domH('div', { class: 'bt-tab-page bt-lab-page' });
+    const page = domH('div', {
+      class: 'bt-tab-page bt-lab-page',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box;'
+    });
     const a = getApp();
     a.tabSegments = a.tabSegments || {};
     if (ctx && ctx.segment) {
@@ -48818,9 +50060,58 @@ if (typeof window !== 'undefined') {
     }
     a.tabSegments.lab = labState.activeStudio;
 
-    const studioStage = domH('div', { class: 'bt-lab-studios-stage' });
-    const navBar = domH('nav', { class: 'bt-studio-pill-nav', 'aria-label': 'Lab & Rescue Studios' });
+    const studioIntroBanner = domH('div', {
+      class: 'bt-lab-studio-intro',
+      id: 'bt-lab-studio-intro',
+      role: 'region',
+      'aria-label': 'Active Lab Studio Summary',
+      style: 'display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;padding:10px 14px;border-radius:16px;background:var(--surface, #FFFFFF);border:1px solid var(--line, #DCCDBE);border-left:3.5px solid var(--primary, #1B4D38);min-width:0;max-width:100%;box-sizing:border-box;'
+    });
+    const studioStage = domH('div', { class: 'bt-lab-studios-stage', style: 'min-width:0;max-width:100%;' });
+    const navBar = domH('nav', {
+      class: 'bt-studio-pill-nav',
+      'aria-label': 'Lab & Rescue Studios',
+      style: 'max-width:100%;box-sizing:border-box;'
+    });
     let pillBtns = [];
+
+    function paintStudioIntro(activeId) {
+      const st = STUDIO_TABS.find(function (t) { return t.id === activeId; }) || STUDIO_TABS[0];
+      studioIntroBanner.textContent = '';
+      const copyWrap = domH('div', { style: 'flex:1 1 230px;min-width:0;' },
+        domH('span', {
+          class: 'bt-kicker',
+          style: 'display:block;font-size:0.7rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--accent, #9A4212);margin-bottom:2px;',
+          text: st.kicker || st.label
+        }),
+        domH('p', {
+          class: 'bt-lab-sub',
+          style: 'margin:0;font-size:0.82rem;line-height:1.4;color:var(--ink-secondary, #534034);',
+          text: st.intro || ''
+        })
+      );
+      studioIntroBanner.appendChild(copyWrap);
+      if (Array.isArray(st.jumps) && st.jumps.length > 1) {
+        const jumpRow = domH('div', {
+          class: 'bt-lab-chip-row',
+          style: 'gap:6px;flex:0 1 auto;'
+        });
+        st.jumps.forEach(function (jp) {
+          jumpRow.appendChild(domH('button', {
+            type: 'button',
+            class: 'bt-lab-chip',
+            style: 'min-height:36px;padding:5px 11px;font-size:0.78rem;',
+            onclick: function () {
+              const target = document.getElementById(jp.id);
+              if (target && typeof target.scrollIntoView === 'function') {
+                try { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
+              }
+            }
+          }, jp.label));
+        });
+        studioIntroBanner.appendChild(jumpRow);
+      }
+    }
 
     function selectStudio(nextId) {
       const id = normalizeStudioId(nextId);
@@ -48838,6 +50129,7 @@ if (typeof window !== 'undefined') {
         b.classList.toggle('is-active', on);
         b.setAttribute('aria-pressed', String(on));
       });
+      paintStudioIntro(id);
       mountActiveStudio();
     }
 
@@ -48880,6 +50172,8 @@ if (typeof window !== 'undefined') {
     pillBtns.forEach(function (b) { navBar.appendChild(b); });
 
     page.appendChild(navBar);
+    paintStudioIntro(labState.activeStudio);
+    page.appendChild(studioIntroBanner);
     page.appendChild(studioStage);
     mountActiveStudio();
 
@@ -49973,9 +51267,9 @@ if (typeof window !== 'undefined') {
 
     return domH('section', { class: 'bt-studio-card bt-prefs-gear-card', id: 'bt-prefs-my-gear-card' },
       domH('div', { class: 'bt-lab-card-head' },
-        domH('div', { class: 'bt-lab-title-group' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1 1 210px' },
           ic('sliders', { size: 22 }),
-          domH('div', null,
+          domH('div', { style: 'min-width:0;flex:1 1 160px' },
             domH('h3', { text: 'My Gear & Active Hardware' }),
             domH('p', {
               class: 'bt-lab-sub',
@@ -50030,6 +51324,133 @@ if (typeof window !== 'undefined') {
   /* ==========================================================================
    * SEGMENT 1: Coffee Belt World Map (52 Origins) + Radar + 4-Level EB Drill-In
    * ========================================================================== */
+  function buildPalateGoldenShowcase(allRows) {
+    if (!Array.isArray(allRows) || allRows.length === 0 || palateState.demoMode) return null;
+    const un = function (v) { return typeof unneutralize === 'function' ? unneutralize(v || '') : String(v || ''); };
+    const candidates = [];
+    allRows.forEach(function (r, idx) {
+      if (!r || !r.coffee_name) return;
+      const isGold = r.dial_locked === 'yes' || r.dial_locked === '1';
+      const stars = parseFloat(r.my_rating_stars) || 0;
+      if (!isGold && stars < 4.5) return;
+      candidates.push({ r: r, idx: idx, isGold: isGold, stars: stars, sca: parseFloat(r.total_score) || 0 });
+    });
+    if (!candidates.length) return null;
+    candidates.sort(function (a, b) {
+      if (a.isGold !== b.isGold) return a.isGold ? -1 : 1;
+      if (Math.abs(b.stars - a.stars) > 0.01) return b.stars - a.stars;
+      if (Math.abs(b.sca - a.sca) > 0.1) return b.sca - a.sca;
+      return b.idx - a.idx;
+    });
+    const seen = Object.create(null);
+    const top3 = [];
+    for (let i = 0; i < candidates.length && top3.length < 3; i++) {
+      const r = candidates[i].r;
+      const k = (un(r.coffee_name) + '|' + un(r.roaster || '') + '|' + String(r.brew_method || '')).toLowerCase();
+      if (seen[k]) continue;
+      seen[k] = true;
+      top3.push(r);
+    }
+    if (!top3.length) return null;
+
+    function quickBrewFromPalate(r) {
+      if (window.BTCellarTab && typeof window.BTCellarTab.hydrateAndBrewRow === 'function') {
+        window.BTCellarTab.hydrateAndBrewRow(r);
+        return;
+      }
+      const applyFn = function (a) {
+        a.coffee = Object.assign(a.coffee || {}, {
+          coffee_id: r.coffee_id || (a.coffee && a.coffee.coffee_id) || '',
+          name: un(r.coffee_name) || 'Golden Brew',
+          roaster: un(r.roaster),
+          origin: un(r.origin),
+          process: un(r.process),
+          roast: un(r.roast_level) || 'light',
+          answered: 'yes'
+        });
+        a.brew = a.brew || {};
+        if (r.brew_method) a.brew.method = r.brew_method;
+        if (+r.brew_dose_g > 0) a.brew.dose = +r.brew_dose_g;
+        if (+r.brew_water_g > 0) a.brew.water = +r.brew_water_g;
+        if (+r.brew_ratio > 0) a.brew.ratio = +r.brew_ratio;
+        if (+r.brew_temp_c > 0) {
+          a.brew.tempC = +r.brew_temp_c;
+          a.brew.tempF = Math.round(+r.brew_temp_c * 9 / 5 + 32);
+        }
+        if (+r.brew_grind_target_um > 0) {
+          a.brew.grindUm = +r.brew_grind_target_um;
+          a.brew.grind_um = +r.brew_grind_target_um;
+        }
+        if (r.brew_grind_setting) a.brew.grind_setting = un(r.brew_grind_setting);
+        a.recipeLocked = (r.dial_locked === 'yes' || r.dial_locked === '1');
+      };
+      if (typeof window.__btApplyAndNavigateWithBack === 'function') {
+        window.__btApplyAndNavigateWithBack(applyFn, {
+          targetStep: 'brew',
+          returnRoute: 'palate',
+          toast: 'Loaded "' + (un(r.coffee_name) || 'Golden Recipe') + '" into Brew Studio!'
+        });
+      } else {
+        applyFn(getApp());
+        saveDraftSoon();
+        if (typeof sh().go === 'function') sh().go('recipe');
+      }
+    }
+
+    return domH('section', { class: 'bt-studio-card bt-golden-showcase', id: 'bt-palate-golden-showcase', 'aria-label': 'Best and Golden Recipes' },
+      domH('div', { class: 'bt-lab-card-head' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1 1 200px' },
+          ic('spark-star', { size: 22 }),
+          domH('div', { style: 'min-width:0;flex:1 1 160px' },
+            domH('h3', { text: 'Best & Golden Recipes' }),
+            domH('p', { class: 'bt-lab-sub', text: 'Your top 4.5+ and Golden-locked brews — launch any champion recipe in 1 tap.' })
+          )
+        ),
+        domH('span', { class: 'bt-tc-badge is-gold', text: top3.length + ' Top Brew' + (top3.length === 1 ? '' : 's') })
+      ),
+      domH('div', {
+        class: 'bt-golden-showcase-grid',
+        style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:9px;margin-top:8px;min-width:0'
+      },
+        top3.map(function (r) {
+          const isGold = r.dial_locked === 'yes' || r.dial_locked === '1';
+          const stars = parseFloat(r.my_rating_stars) || 0;
+          const cName = un(r.coffee_name) || 'Golden Brew';
+          const rName = un(r.roaster);
+          const tempC = +r.brew_temp_c > 0 ? Math.round(+r.brew_temp_c) : (+r.brew_temp_f > 0 ? Math.round((+r.brew_temp_f - 32) * 5 / 9) : 0);
+          const specs = [
+            String(r.brew_method || 'v60').toUpperCase(),
+            (r.brew_dose_g && r.brew_water_g) ? (r.brew_dose_g + 'g:' + r.brew_water_g + 'g') : '',
+            un(r.brew_grind_setting) || (r.brew_grind_target_um ? (r.brew_grind_target_um + ' \u00B5m') : ''),
+            tempC > 0 ? (tempC + '\u00B0C') : ''
+          ].filter(Boolean).join(' \u00B7 ');
+          return domH('article', {
+            class: 'bt-lab-subcard bt-golden-showcase-item',
+            style: 'display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-width:0'
+          },
+            domH('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:6px;flex-wrap:wrap' },
+              domH('div', { style: 'min-width:0;flex:1' },
+                rName ? domH('span', { class: 'bt-pref-tile-lbl', style: 'display:block', text: rName }) : null,
+                domH('strong', { style: 'display:block;font-size:0.92rem;overflow-wrap:anywhere', text: cName })
+              ),
+              domH('span', {
+                class: 'bt-tc-badge num-tab ' + (isGold ? 'is-gold' : 'is-good'),
+                text: (isGold ? 'Golden' : '') + (isGold && stars > 0 ? ' \u00B7 ' : '') + (stars > 0 ? (stars.toFixed(2) + ' / 5') : '')
+              })
+            ),
+            domH('span', { class: 'bt-lab-hint num-tab', text: specs }),
+            domH('button', {
+              type: 'button',
+              class: 'bt-lab-btn is-sm is-primary',
+              text: 'Brew \u2192',
+              onclick: function () { quickBrewFromPalate(r); }
+            })
+          );
+        })
+      )
+    );
+  }
+
   function renderPalateDnaSegment() {
     const wrap = domH('div', { class: 'bt-palate-seg' });
     wrap.appendChild(buildPrefsMyGearCard());
@@ -50142,9 +51563,9 @@ if (typeof window !== 'undefined') {
 
     const prefsCard = domH('section', { class: 'bt-studio-card bt-prefs-summary-card', id: 'bt-top-preferences-card' },
       domH('div', { class: 'bt-lab-card-head' },
-        domH('div', { class: 'bt-lab-title-group' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1 1 210px' },
           ic('palate', { size: 22 }),
-          domH('div', null,
+          domH('div', { style: 'min-width:0;flex:1 1 160px' },
             domH('h3', { text: 'Your Top Coffee Preferences' }),
             domH('p', {
               class: 'bt-lab-sub',
@@ -50192,6 +51613,8 @@ if (typeof window !== 'undefined') {
       ) : null
     );
     wrap.appendChild(prefsCard);
+    const palateGolden = buildPalateGoldenShowcase(allRows);
+    if (palateGolden) wrap.appendChild(palateGolden);
 
     /* 1. Real Cartographic Coffee Belt World Map (52 Origins + 4 Regional Zoom Pills) */
     const mapCard = domH('section', { class: 'bt-studio-card', id: 'bt-palate-world-map' });
@@ -52146,15 +53569,15 @@ if (typeof window !== 'undefined') {
 
     const palateHeadRow = domH('header', {
       class: 'bt-palate-top-head',
-      style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px'
+      style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;min-width:0'
     },
       domH('div', { style: 'flex:1 1 200px;min-width:0' },
         domH('span', {
-          style: 'display:block;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent,#9A4212)',
+          style: 'display:block;font-size:0.74rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent)',
           text: 'Tab 4 \u00B7 Preferences & Palate'
         }),
         domH('h1', {
-          style: 'margin:2px 0 0;font-size:1.18rem;line-height:1.22',
+          style: 'margin:2px 0 0;font-family:var(--font-display);font-size:1.22rem;line-height:1.22;color:var(--ink)',
           text: 'Your Taste DNA, Origins & Bag Guide'
         })
       ),
@@ -53196,7 +54619,11 @@ if (typeof window !== 'undefined') {
     const sca = acadUi.sca;
     const dosePerBowlG = +((8.25 * sca.bowlMl) / 150).toFixed(2);
 
-    const card = domH('section', { class: 'bt-studio-card bt-sca-cockpit-card', id: 'bt-sca-5bowl-table' });
+    const card = domH('section', {
+      class: 'bt-studio-card bt-sca-cockpit-card',
+      id: 'bt-sca-5bowl-table',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box'
+    });
     const phaseBanner = domH('p', { class: 'bt-lab-hint', text: '' });
     const liveClockPill = domH('span', { class: 'bt-sca-mmss-pill num-tab', id: 'bt-sca-live-mmss', text: fmtMmSs(sca.elapsedSec || 0) + ' · ~93 °C' });
 
@@ -53631,8 +55058,8 @@ if (typeof window !== 'undefined') {
 
         syncBowlCardVisuals();
 
-        bowlsGrid.appendChild(domH('div', { class: 'bt-sca-bowl-card' },
-          domH('div', { class: 'bt-sca-bowl-top' },
+        bowlsGrid.appendChild(domH('div', { class: 'bt-sca-bowl-card', style: 'min-width:0;max-width:100%;box-sizing:border-box' },
+          domH('div', { class: 'bt-sca-bowl-top', style: 'flex-wrap:wrap;min-width:0;gap:6px' },
             domH('span', { class: 'bt-sca-bowl-badge', text: 'Bowl ' + bObj.code }),
             scoreBadge
           ),
@@ -53860,37 +55287,45 @@ if (typeof window !== 'undefined') {
       }
     }, acadUi.scaReturnToTaste ? '\u2190 Back to Tasting' : '\u2190 Back') : null;
 
-    card.appendChild(domH('div', { class: 'bt-lab-card-head' },
-      domH('div', { class: 'bt-lab-title-group' },
+    card.appendChild(domH('div', {
+      class: 'bt-lab-card-head bt-sca-header-row',
+      style: 'flex-wrap:wrap;align-items:flex-start;gap:10px;min-width:0;max-width:100%'
+    },
+      domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1 1 200px' },
         ic('cafe-cup', { size: 22 }),
-        domH('div', null,
-          domH('h3', { text: '1–5 Bowl Side-by-Side Coffee Cupping Table' }),
-          domH('p', { class: 'bt-lab-sub num-tab', text: 'Dose: ' + dosePerBowlG + ' g per ' + sca.bowlMl + ' mL bowl (93 °C) · Voice cues at 04:00 Break, 08:00 Skim & 12:00 Slurp' })
+        domH('div', { style: 'min-width:0;flex:1 1 160px' },
+          domH('h3', { style: 'margin:0;overflow-wrap:anywhere', text: '1–5 Bowl Side-by-Side Coffee Cupping Table' }),
+          domH('p', { class: 'bt-lab-sub num-tab', style: 'overflow-wrap:anywhere', text: 'Dose: ' + dosePerBowlG + ' g per ' + sca.bowlMl + ' mL bowl (93 °C) · Voice cues at 04:00 Break, 08:00 Skim & 12:00 Slurp' })
         )
       ),
-      domH('div', { class: 'bt-lab-chip-row' }, topEscapeBtn, epistemicPill('verified_science'))
+      domH('div', { class: 'bt-lab-chip-row', style: 'flex-wrap:wrap;min-width:0;max-width:100%;gap:6px' }, topEscapeBtn, epistemicPill('verified_science'))
     ));
     card.appendChild(scaHeroHost);
     card.appendChild(domH('div', { class: 'bt-cupping-4steps-grid', 'aria-label': 'How to cup coffee at home in 4 steps' }, stepCardNodes));
-    card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
+    card.appendChild(domH('div', {
+      class: 'bt-lab-chip-row bt-sca-controls-row',
+      style: 'flex-wrap:wrap;align-items:center;gap:6px;min-width:0;max-width:100%'
+    },
       bowlCountPills,
       loadCellarBtn,
       blindToggleBtn,
       voiceToggleBtn,
-      CK.vernierPill({
-        label: 'Bowl Vol',
-        value: sca.bowlMl,
-        min: 120,
-        max: 300,
-        step: 10,
-        unit: 'mL',
-        compact: true,
-        onChange: function (v) {
-          sca.bowlMl = v;
-          if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
-          else rerenderAcademyTab();
-        }
-      })
+      domH('div', { style: 'max-width:100%;min-width:0' },
+        CK.vernierPill({
+          label: 'Bowl Vol',
+          value: sca.bowlMl,
+          min: 120,
+          max: 300,
+          step: 10,
+          unit: 'mL',
+          compact: true,
+          onChange: function (v) {
+            sca.bowlMl = v;
+            if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
+            else rerenderAcademyTab();
+          }
+        })
+      )
     ));
     card.appendChild(domH('div', { class: 'bt-chrono-gym-deck' },
       domH('div', { class: 'bt-chrono-dial-col' }, scaChrono.el),

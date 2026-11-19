@@ -3092,4 +3092,93 @@
   color: var(--ink-secondary);
 }
 
+/* ==================== 18. v7.1 LIVE BEAN CHEMISTRY READOUT STRIP ==================== */
+.bt-bean-chem-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 7px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--surface-card-grad, var(--surface));
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-xs);
+  box-sizing: border-box;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.bt-bean-chem-cell,
+.bt-bean-chem-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 9px;
+  border-radius: 11px;
+  background: var(--well);
+  border: 1px solid var(--line-hairline);
+  box-sizing: border-box;
+}
+
+.bt-bean-chem-lbl {
+  font-size: 0.67rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+  line-height: 1.2;
+}
+
+.bt-bean-chem-val {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.bt-bean-chem-sub {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.bt-bean-chem-sub.is-peak,
+.bt-bean-chem-val.is-peak {
+  color: var(--good);
+}
+
+.bt-bean-chem-sub.is-rest,
+.bt-bean-chem-val.is-rest {
+  color: var(--science);
+}
+
+.bt-bean-chem-sub.is-fresh,
+.bt-bean-chem-val.is-fresh {
+  color: var(--warn);
+}
+
+@media (max-width: 420px) {
+  .bt-bean-chem-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .bt-bean-chem-cell,
+  .bt-bean-chem-item {
+    padding: 6px 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bt-bean-chem-strip {
+    transition: none !important;
+  }
+}
+
 

@@ -4805,13 +4805,13 @@
           const sy = ty(sim.samples[i].tempC);
           if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
         }
-        ctx.strokeStyle = '#195A73';
+        ctx.strokeStyle = isDark ? '#63C4E8' : '#195A73';
         ctx.lineWidth = 1.8;
         ctx.stroke();
         ctx.setLineDash([]);
 
         /* Lower Band: Laminar Sweet-Spot Flow Ribbon + dM/dt */
-        ctx.fillStyle = 'rgba(46, 125, 79, 0.16)';
+        ctx.fillStyle = isDark ? 'rgba(66, 184, 128, 0.16)' : 'rgba(46, 125, 79, 0.16)';
         ctx.fillRect(L, fy(6.5), PW, fy(3.0) - fy(6.5));
         ctx.beginPath();
         for (let i = 0; i < sim.samples.length; i++) {
@@ -4819,7 +4819,7 @@
           const sy = fy(sim.samples[i].flow);
           if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
         }
-        ctx.strokeStyle = '#C46824';
+        ctx.strokeStyle = isDark ? '#F09148' : '#C46824';
         ctx.lineWidth = 1.8;
         ctx.stroke();
 
@@ -5167,7 +5167,7 @@
       }, ic('check-seal', { size: 16 }), cutGateBtnSpan),
       domH('button', {
         type: 'button',
-        class: 'bt-lab-btn',
+        class: 'bt-lab-btn is-accent',
         onclick: function () {
           const curA = getApp();
           const curM = String((curA && curA.brew && curA.brew.method) || '').toLowerCase();
@@ -5190,8 +5190,18 @@
             toast: 'Applied 3-Wave temp, grind & ' + mm + ' Cutoff Gate to your recipe!'
           });
         }
-      }, 'Apply to My Recipe \u2192')
+      }, ic('brew', { size: 15 }), domH('span', { text: 'Apply to Active Recipe \u2192' }))
     ));
+
+    if (typeof MutationObserver === 'function' && typeof document !== 'undefined' && document.documentElement) {
+      try {
+        const waveThemeObs = new MutationObserver(function () {
+          if (!card.isConnected) { waveThemeObs.disconnect(); return; }
+          renderWaveCanvasAndOverlay();
+        });
+        waveThemeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      } catch (_) {}
+    }
 
     renderWaveCanvasAndOverlay();
     return card;
@@ -5454,6 +5464,13 @@
 
     const readoutBanner = domH('div', { class: 'bt-studio-readout-banner' });
     const safeSipHero = domH('div', { class: 'bt-pk-safesip-hero', id: 'bt-pk-safesip-hero' });
+    const scheduleSummaryPill = domH('div', {
+      class: 'bt-pk-daily-schedule-pill num-tab',
+      id: 'bt-pk-daily-schedule-pill',
+      role: 'region',
+      'aria-label': 'Daily Coffee Budget and Cutoff Schedule',
+      style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px;padding:10px 12px;border-radius:14px;background:var(--bg-subtle, #F2EAE0);border:1px solid var(--line, #DCCDBE);box-sizing:border-box;min-width:0;max-width:100%;'
+    });
     const inspectorRow = domH('div', { class: 'bt-pk-cup-inspector' });
 
     function persistCaffeinePrefs() {
@@ -5808,9 +5825,53 @@
         })
       ));
 
-      /* Readout Banner */
+      /* Readout Banner & Daily Coffee Budget & Cutoff Summary Pill */
       const totalDailyMg = pk.cups.reduce(function (acc, c) { return acc + c.mg; }, 0);
-      const cutoffRef = cutoffRefFlag;
+      const budgetRemainingMg = Math.max(0, cyp.dailyCapMg - totalDailyMg);
+      const gateHeadroomMg = Math.round(pk.swsGateMg - bedMg);
+      const wakeShort = fmtClock(pk.wakeHour).replace(':00 ', '').toLowerCase();
+      const peakWinText = fmtClock(pfStartH) + '–' + fmtClock(pfEndH);
+      const cutoffText = cutoffRefFlag == null ? 'No safe time today' : fmtClock(cutoffRefFlag);
+      const gateRemainingText = gatePass
+        ? (gateHeadroomMg + ' mg under ' + pk.swsGateMg + ' mg gate')
+        : ('+' + Math.abs(gateHeadroomMg) + ' mg over ' + pk.swsGateMg + ' mg gate');
+
+      scheduleSummaryPill.textContent = '';
+      scheduleSummaryPill.appendChild(domH('div', {
+        class: 'bt-pk-sched-item',
+        style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
+      },
+        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Wake & Budget' }),
+        domH('strong', { style: 'font-size:0.84rem;color:var(--ink, #1C130E);', text: 'Wake ' + wakeShort + ' · ' + budgetRemainingMg + ' mg left' })
+      ));
+      scheduleSummaryPill.appendChild(domH('div', {
+        class: 'bt-pk-sched-item',
+        style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
+      },
+        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Peak Window' }),
+        domH('strong', { style: 'font-size:0.84rem;color:var(--good, #1B6341);', text: peakWinText })
+      ));
+      scheduleSummaryPill.appendChild(domH('div', {
+        class: 'bt-pk-sched-item',
+        style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
+      },
+        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Cutoff Time' }),
+        domH('strong', {
+          style: 'font-size:0.84rem;color:' + (cutoffRefFlag == null ? 'var(--bad, #A1231F)' : 'var(--primary, #1B4D38)') + ';',
+          text: cutoffText
+        })
+      ));
+      scheduleSummaryPill.appendChild(domH('div', {
+        class: 'bt-pk-sched-item',
+        style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
+      },
+        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Bedtime Gate (' + fmtClock(bed) + ')' }),
+        domH('strong', {
+          style: 'font-size:0.84rem;color:' + (gatePass ? 'var(--good, #1B6341)' : 'var(--bad, #A1231F)') + ';',
+          text: gateRemainingText
+        })
+      ));
+
       const midDayBorb = borbelyAlertnessAt(pk.wakeHour + 7.5, pk.wakeHour, bed, activeCaffeineMgAt(pk.cups, pk.wakeHour + 7.5, cyp.halfLifeH, pk.steadyState, pk.fedMode), pk.bodyKg);
 
       readoutBanner.textContent = '';
@@ -6052,6 +6113,7 @@
     const cafCupOut = domH('div', { class: 'bt-cafcup-readout' });
     const drinkSel = domH('select', {
       class: 'bt-lab-select',
+      style: 'min-width:0;width:100%;max-width:100%;box-sizing:border-box;',
       'aria-label': 'Select cafe or home coffee drink',
       onchange: function () {
         cc.drinkKey = drinkSel.value;
@@ -6173,6 +6235,7 @@
     ));
     card.appendChild(pkHow.panel);
     card.appendChild(safeSipHero);
+    card.appendChild(scheduleSummaryPill);
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
       domH('span', { class: 'bt-lab-inline-lbl', text: 'Caffeine Metabolism Speed:' }),
       cypBtns,
@@ -6660,6 +6723,7 @@
 
     const bottleSel = domH('select', {
       class: 'bt-lab-select',
+      style: 'min-width:0;width:100%;max-width:100%;box-sizing:border-box;',
       'aria-label': 'Choose supermarket bottled water or city tap profile',
       onchange: function () {
         wt.everydayKey = bottleSel.value;
@@ -7221,7 +7285,7 @@
           }, 'Apply Cooler Steam Fix (' + Math.min(56, Math.max(48, vs.steamTempC - 10)) + ' °C)') : null,
           domH('button', {
             type: 'button',
-            class: 'bt-lab-btn is-sm',
+            class: 'bt-lab-btn is-sm is-accent',
             onclick: function () {
               applyLabToBrewAndGo(function (a) {
                 a.brew.milkPlan = {
@@ -8376,11 +8440,14 @@
     if (!gList.some(function (g) { return g.key === gl.toKey; })) gl.toKey = (gList[5] || gList[1] || gList[0]).key;
 
     const fromSel = domH('select', {
-      class: 'bt-lab-select', 'aria-label': 'Source grinder',
-      onchange: function () { gl.fromKey = fromSel.value; paintGrinder(); }
+      class: 'bt-lab-select',
+      style: 'min-width:0;width:100%;max-width:100%;box-sizing:border-box;',
+      'aria-label': 'Source grinder'
     });
     const toSel = domH('select', {
-      class: 'bt-lab-select', 'aria-label': 'Target grinder',
+      class: 'bt-lab-select',
+      style: 'min-width:0;width:100%;max-width:100%;box-sizing:border-box;',
+      'aria-label': 'Target grinder',
       onchange: function () { gl.toKey = toSel.value; paintGrinder(); }
     });
     gList.forEach(function (g) {
@@ -8702,6 +8769,7 @@
     );
 
     fromSel.addEventListener('change', function () {
+      gl.fromKey = fromSel.value;
       _omniOverrideUm = 0;
       gl.useOmniOverride = false;
       const gCur = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
@@ -8711,15 +8779,73 @@
         gl.fromSetting = clamp(gl.fromSetting, gCur.min, gCur.max, gCur.min);
         fromSetIn.value = String(gl.fromSetting);
       }
+      paintGrinder();
     });
     fromSetIn.addEventListener('input', function () {
       _omniOverrideUm = 0;
       gl.useOmniOverride = false;
     });
 
+    function describeGrindReferenceBand(d50Um) {
+      const u = Math.round(clamp(d50Um, 80, 1600, 580));
+      if (u < 200) return { band: 'Ultra-Fine · Turkish / Ibrik', hint: 'Turkish <200 \u00B5m · Espresso 220–320 \u00B5m · V60 500–760 \u00B5m · French Press 850–1150 \u00B5m' };
+      if (u < 350) return { band: 'Fine · Espresso / Moka', hint: 'Espresso 220–320 \u00B5m · V60 / Filter 500–760 \u00B5m · French Press 850–1150 \u00B5m' };
+      if (u < 500) return { band: 'Medium-Fine · AeroPress / Fine Filter', hint: 'Fine Filter 380–500 \u00B5m · V60 500–760 \u00B5m · French Press 850–1150 \u00B5m' };
+      if (u <= 760) return { band: 'Medium · V60 / Pour-Over / Filter', hint: 'Espresso 220–320 \u00B5m · V60 / Filter 500–760 \u00B5m · French Press 850–1150 \u00B5m' };
+      if (u <= 1020) return { band: 'Medium-Coarse · Chemex / French Press', hint: 'Espresso 220–320 \u00B5m · V60 / Filter 500–760 \u00B5m · French Press 850–1150 \u00B5m' };
+      return { band: 'Coarse · French Press / Cold Brew', hint: 'Espresso 220–320 \u00B5m · V60 / Filter 500–760 \u00B5m · Coarse / Cold Brew >1020 \u00B5m' };
+    }
+
+    const swapGrindersBtn = domH('button', {
+      type: 'button',
+      id: 'bt-grinder-swap-btn',
+      class: 'bt-lab-btn is-sm bt-grinder-swap-btn',
+      style: 'min-height:44px;width:100%;justify-content:center;',
+      'aria-label': 'Swap From and To grinders',
+      onclick: function () {
+        if (gl.fromKey === gl.toKey) {
+          CK.haptic('tick');
+          notify('Same Grinder selected — pick a different target grinder to swap.');
+          return;
+        }
+        const prevFrom = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
+        const prevTo = gList.find(function (x) { return x.key === gl.toKey; }) || gList[1] || gList[0];
+        const hasVal = gl.fromSetting != null && Number.isFinite(+gl.fromSetting);
+        let revSetting = null;
+        if (hasVal || _omniOverrideUm > 0) {
+          const curUm = _omniOverrideUm > 0 ? _omniOverrideUm : Math.round(settingToUm(prevFrom, gl.fromSetting));
+          const revInfo = umToSettingInfo(prevTo, curUm);
+          if (revInfo && revInfo.num != null && !revInfo.incompatible) {
+            revSetting = clamp(revInfo.num, prevTo.min, prevTo.max, prevTo.min);
+          }
+        }
+        const tmpKey = gl.fromKey;
+        gl.fromKey = gl.toKey;
+        gl.toKey = tmpKey;
+        fromSel.value = gl.fromKey;
+        toSel.value = gl.toKey;
+        const nextFrom = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
+        fromSetIn.min = String(nextFrom.min);
+        fromSetIn.max = String(nextFrom.max);
+        if (revSetting != null && Number.isFinite(revSetting)) {
+          gl.fromSetting = revSetting;
+          fromSetIn.value = String(revSetting);
+          _omniOverrideUm = 0;
+          gl.useOmniOverride = false;
+        } else if (gl.fromSetting != null && Number.isFinite(+gl.fromSetting)) {
+          gl.fromSetting = clamp(gl.fromSetting, nextFrom.min, nextFrom.max, nextFrom.min);
+          fromSetIn.value = String(gl.fromSetting);
+        }
+        CK.haptic('snap');
+        paintGrinder();
+        notify('Swapped: ' + prevTo.name + ' <-> ' + prevFrom.name);
+      }
+    }, 'Swap Grinders (<->)');
+
     function paintGrinder() {
       const gFrom = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
       const gTo = gList.find(function (x) { return x.key === gl.toKey; }) || gList[1] || gList[0];
+      const sameGrinder = gFrom.key === gTo.key;
       const hasInput = gl.fromSetting != null && Number.isFinite(+gl.fromSetting);
       const dClick = gl.calPt2Click - gl.calPt1Click;
       const dUm = gl.calPt2Um - gl.calPt1Um;
@@ -8734,8 +8860,15 @@
       outBox.textContent = '';
       if (!hasInput && !(_omniOverrideUm > 0)) {
         outBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
+          sameGrinder ? domH('div', { class: 'bt-lab-chip-row', style: 'margin-bottom:6px' },
+            domH('span', { class: 'bt-epistemic-pill is-craft', id: 'bt-grinder-same-guard', text: 'Same Grinder' })
+          ) : null,
           domH('div', { class: 'bt-studio-human-line num-tab', id: 'bt-grinder-live-readout' },
-            domH('strong', { text: 'Enter a setting for ' + gFrom.name + ' to translate to ' + gTo.name + '.' })
+            domH('strong', {
+              text: sameGrinder
+                ? ('Same Grinder selected (' + gFrom.name + '). Pick a different target grinder to translate.')
+                : ('Enter a setting for ' + gFrom.name + ' to translate to ' + gTo.name + '.')
+            })
           ),
           domH('p', { class: 'bt-lab-hint num-tab', text: calHintText })
         ));
@@ -8744,24 +8877,43 @@
       }
 
       const d50Um = _omniOverrideUm > 0 ? _omniOverrideUm : Math.round(settingToUm(gFrom, gl.fromSetting));
+      const bandMeta = describeGrindReferenceBand(d50Um);
       const targetInfo = umToSettingInfo(gTo, d50Um);
       const targetDisp = targetInfo.display || (targetInfo.num + ' ' + fmtGrinderUnit(gTo.unit, targetInfo.num));
 
       outBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
+        domH('div', { class: 'bt-lab-chip-row', style: 'margin-bottom:6px' },
+          domH('span', {
+            class: 'bt-epistemic-pill is-verified num-tab bt-grinder-band-pill',
+            id: 'bt-grinder-ref-band',
+            text: bandMeta.band + ' (~' + d50Um + ' \u00B5m)'
+          }),
+          sameGrinder ? domH('span', {
+            class: 'bt-epistemic-pill is-craft',
+            id: 'bt-grinder-same-guard',
+            text: 'Same Grinder'
+          }) : null
+        ),
         domH('div', { class: 'bt-studio-human-line num-tab', id: 'bt-grinder-live-readout' },
           domH('strong', {
-            text: gFrom.name + ' @ ' + (hasInput ? (gl.fromSetting + ' ' + fmtGrinderUnit(gFrom.unit, gl.fromSetting)) : 'Omni D50') + ' (~' + d50Um + ' \u00B5m D50)  \u2192  ' +
-              gTo.name + ' @ ' + targetDisp
+            text: sameGrinder
+              ? ('Same Grinder (' + gFrom.name + ' @ ' + (hasInput ? (gl.fromSetting + ' ' + fmtGrinderUnit(gFrom.unit, gl.fromSetting)) : 'Omni D50') + ' · ~' + d50Um + ' \u00B5m) — select a different grinder to translate.')
+              : (gFrom.name + ' @ ' + (hasInput ? (gl.fromSetting + ' ' + fmtGrinderUnit(gFrom.unit, gl.fromSetting)) : 'Omni D50') + ' (~' + d50Um + ' \u00B5m D50)  \u2192  ' +
+                  gTo.name + ' @ ' + targetDisp)
           })
         ),
         domH('p', {
           class: 'bt-lab-hint num-tab',
+          text: 'Reference Bands: ' + bandMeta.hint
+        }),
+        domH('p', {
+          class: 'bt-lab-hint num-tab',
           text: calHintText
         }),
-        domH('div', { class: 'bt-lab-btn-row', style: 'margin-top:8px' },
+        domH('div', { class: 'bt-chart-cta-bar', style: 'margin-top:8px' },
           domH('button', {
             type: 'button',
-            class: 'bt-lab-btn is-sm is-primary',
+            class: 'bt-lab-btn is-primary bt-chart-cta-btn',
             onclick: function () {
               applyLabToBrewAndGo(function (a) {
                 a.gear = a.gear || {};
@@ -8781,7 +8933,7 @@
                 toast: 'Applied ' + gTo.name + ' @ ' + targetDisp + ' (~' + d50Um + ' \u00B5m) to your recipe!'
               });
             }
-          }, ic('grinder-burr', { size: 14 }), domH('span', { text: 'Apply Translated Setting to My Recipe \u2192' }))
+          }, ic('grinder-burr', { size: 15 }), domH('span', { text: 'Apply Translated Setting to Active Recipe \u2192' }))
         )
       ));
       renderOmniPsdHistogram();
@@ -8797,9 +8949,13 @@
       ),
       epistemicBadge('calibrated_biophysics')
     ));
-    card.appendChild(domH('div', { class: 'bt-lab-inline-inputs' },
+    card.appendChild(domH('div', {
+      class: 'bt-lab-inline-inputs bt-grinder-translator-grid',
+      style: 'grid-template-columns:repeat(auto-fit,minmax(160px,1fr));align-items:end;'
+    },
       domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'From Grinder' }), fromSel),
       domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Setting' }), fromSetIn),
+      domH('div', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Direction' }), swapGrindersBtn),
       domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Translate To' }), toSel)
     ));
     card.appendChild(outBox);
@@ -8850,11 +9006,51 @@
    *   - Single-row horizontal 5-Studio Pill Bar
    * ========================================================================== */
   const STUDIO_TABS = [
-    { id: 'ey', label: '1. Touch-to-Brew Chart', icon: 'refract-prism', build: buildStudioBrewControl },
-    { id: 'rescue', label: '2. Rescue & Mug Fix', icon: 'spark-star', build: buildStudioRescueHub },
-    { id: 'water', label: '3. Water & Ratio', icon: 'water-drop', build: buildStudioWaterAndRatioHub },
-    { id: 'caffeine', label: '4. Caffeine & Cost', icon: 'moon-dark', build: buildStudioCaffeineAndCostHub },
-    { id: 'devices', label: '5. Bluetooth & Grinder Lab', icon: 'ble-wave', build: buildStudioBluetoothAndGrinderHub }
+    {
+      id: 'ey',
+      label: '1. Touch-to-Brew Chart',
+      icon: 'refract-prism',
+      kicker: 'Studio 1 of 5 · Extraction & Strength',
+      intro: 'Tap or drag your target %EY x %TDS sweet spot, read DiFluid R2 %TDS, and load the exact dose & water straight to Step 3.',
+      jumps: [{ id: 'bt-studio-ey', label: 'Sweet-Spot Chart' }, { id: 'bt-lab-r2-live-bar', label: 'R2 %TDS & %EY' }],
+      build: buildStudioBrewControl
+    },
+    {
+      id: 'rescue',
+      label: '2. Rescue & Mug Fix',
+      icon: 'spark-star',
+      kicker: 'Studio 2 of 5 · Cup Rescue & Pour Waves',
+      intro: 'Fix a bitter, sour, or watery mug right now — or tune 3-Wave extraction timing & carafe cutoff gate for your next pour.',
+      jumps: [{ id: 'bt-studio-mug-rescue', label: 'In-Mug Rescue' }, { id: 'bt-studio-waves', label: '3-Wave Cutoff' }],
+      build: buildStudioRescueHub
+    },
+    {
+      id: 'water',
+      label: '3. Water & Ratio',
+      icon: 'water-drop',
+      kicker: 'Studio 3 of 5 · Water, Ratio & Vessel',
+      intro: 'Dial in GH/KH water chemistry, solve 4-anchor dose/water/yield ratios, and plan Flash-Iced or steamed milk drinks.',
+      jumps: [{ id: 'bt-studio-water', label: 'Water & Minerals' }, { id: 'bt-studio-ratio-yield', label: '4-Anchor Ratio' }, { id: 'bt-studio-vessel', label: 'Carafe & Milk' }],
+      build: buildStudioWaterAndRatioHub
+    },
+    {
+      id: 'caffeine',
+      label: '4. Caffeine & Cost',
+      icon: 'moon-dark',
+      kicker: 'Studio 4 of 5 · Circadian PK & Cost ROI',
+      intro: 'Protect deep sleep with your daily caffeine budget & cutoff time, compare bag freshness/value, and track gear payback.',
+      jumps: [{ id: 'bt-studio-caffeine', label: 'Caffeine & Cutoff' }, { id: 'bt-studio-bagcmp', label: 'Compare 2 Bags' }, { id: 'bt-studio-cost-roi', label: 'True Cup ROI' }],
+      build: buildStudioCaffeineAndCostHub
+    },
+    {
+      id: 'devices',
+      label: '5. Bluetooth & Grinder Lab',
+      icon: 'ble-wave',
+      kicker: 'Studio 5 of 5 · BLE Gear, Grinder & Agtron',
+      intro: 'Connect 15+ WebBLE scales, refractometers & kettles, swap & translate clicks across grinders, and check Agtron roast freshness.',
+      jumps: [{ id: 'bt-studio-grinder-lab', label: 'Grinder Translator' }, { id: 'bt-studio-agtron', label: 'Agtron & Freshness' }],
+      build: buildStudioBluetoothAndGrinderHub
+    }
   ];
 
   function normalizeStudioId(rawId) {
@@ -8957,7 +9153,10 @@
 
   function renderLabTab(mountEl, ctx) {
     ensureLabBleListeners();
-    const page = domH('div', { class: 'bt-tab-page bt-lab-page' });
+    const page = domH('div', {
+      class: 'bt-tab-page bt-lab-page',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box;'
+    });
     const a = getApp();
     a.tabSegments = a.tabSegments || {};
     if (ctx && ctx.segment) {
@@ -8969,9 +9168,58 @@
     }
     a.tabSegments.lab = labState.activeStudio;
 
-    const studioStage = domH('div', { class: 'bt-lab-studios-stage' });
-    const navBar = domH('nav', { class: 'bt-studio-pill-nav', 'aria-label': 'Lab & Rescue Studios' });
+    const studioIntroBanner = domH('div', {
+      class: 'bt-lab-studio-intro',
+      id: 'bt-lab-studio-intro',
+      role: 'region',
+      'aria-label': 'Active Lab Studio Summary',
+      style: 'display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;padding:10px 14px;border-radius:16px;background:var(--surface, #FFFFFF);border:1px solid var(--line, #DCCDBE);border-left:3.5px solid var(--primary, #1B4D38);min-width:0;max-width:100%;box-sizing:border-box;'
+    });
+    const studioStage = domH('div', { class: 'bt-lab-studios-stage', style: 'min-width:0;max-width:100%;' });
+    const navBar = domH('nav', {
+      class: 'bt-studio-pill-nav',
+      'aria-label': 'Lab & Rescue Studios',
+      style: 'max-width:100%;box-sizing:border-box;'
+    });
     let pillBtns = [];
+
+    function paintStudioIntro(activeId) {
+      const st = STUDIO_TABS.find(function (t) { return t.id === activeId; }) || STUDIO_TABS[0];
+      studioIntroBanner.textContent = '';
+      const copyWrap = domH('div', { style: 'flex:1 1 230px;min-width:0;' },
+        domH('span', {
+          class: 'bt-kicker',
+          style: 'display:block;font-size:0.7rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--accent, #9A4212);margin-bottom:2px;',
+          text: st.kicker || st.label
+        }),
+        domH('p', {
+          class: 'bt-lab-sub',
+          style: 'margin:0;font-size:0.82rem;line-height:1.4;color:var(--ink-secondary, #534034);',
+          text: st.intro || ''
+        })
+      );
+      studioIntroBanner.appendChild(copyWrap);
+      if (Array.isArray(st.jumps) && st.jumps.length > 1) {
+        const jumpRow = domH('div', {
+          class: 'bt-lab-chip-row',
+          style: 'gap:6px;flex:0 1 auto;'
+        });
+        st.jumps.forEach(function (jp) {
+          jumpRow.appendChild(domH('button', {
+            type: 'button',
+            class: 'bt-lab-chip',
+            style: 'min-height:36px;padding:5px 11px;font-size:0.78rem;',
+            onclick: function () {
+              const target = document.getElementById(jp.id);
+              if (target && typeof target.scrollIntoView === 'function') {
+                try { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
+              }
+            }
+          }, jp.label));
+        });
+        studioIntroBanner.appendChild(jumpRow);
+      }
+    }
 
     function selectStudio(nextId) {
       const id = normalizeStudioId(nextId);
@@ -8989,6 +9237,7 @@
         b.classList.toggle('is-active', on);
         b.setAttribute('aria-pressed', String(on));
       });
+      paintStudioIntro(id);
       mountActiveStudio();
     }
 
@@ -9031,6 +9280,8 @@
     pillBtns.forEach(function (b) { navBar.appendChild(b); });
 
     page.appendChild(navBar);
+    paintStudioIntro(labState.activeStudio);
+    page.appendChild(studioIntroBanner);
     page.appendChild(studioStage);
     mountActiveStudio();
 

@@ -386,6 +386,25 @@
     };
   }
 
+  function makePrintIcon(size) {
+    var sz = size || 15;
+    return dom('svg', {
+      viewBox: '0 0 24 24',
+      width: String(sz),
+      height: String(sz),
+      fill: 'none',
+      stroke: 'currentColor',
+      'stroke-width': '2',
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round',
+      'aria-hidden': 'true'
+    },
+      dom('path', { d: 'M6 9V4h12v5' }),
+      dom('path', { d: 'M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2' }),
+      dom('rect', { x: '6', y: '14', width: '12', height: '6', rx: '1' })
+    );
+  }
+
   function buildKettleWarmBanner(a, rec, pillId, extraRightNode, onToggled) {
     var plan = computeKettleWarmPlan(a, rec);
     var targetEl = dom('strong', {
@@ -398,6 +417,50 @@
       text: plan.breakdown
     });
 
+    var segBrewEl = dom('span', {
+      class: 'bt-kettle-seg-brew',
+      style: 'display:block;height:100%;min-width:0;background:var(--accent,#9a4212);transition:width 0.2s ease'
+    });
+    var segRinseEl = dom('span', {
+      class: 'bt-kettle-seg-rinse',
+      style: 'display:block;height:100%;min-width:0;background:var(--science,#2563eb);transition:width 0.2s ease'
+    });
+    var segSteamEl = dom('span', {
+      class: 'bt-kettle-seg-steam',
+      style: 'display:block;height:100%;min-width:0;background:var(--gold,#d98b26);transition:width 0.2s ease'
+    });
+    var barTrackEl = dom('div', {
+      class: 'bt-kettle-bar',
+      role: 'img',
+      'aria-label': 'Kettle water breakdown',
+      style: 'display:flex;width:100%;height:7px;border-radius:999px;overflow:hidden;gap:2px;background:var(--bg-subtle,rgba(0,0,0,0.08))'
+    }, segBrewEl, segRinseEl, segSteamEl);
+
+    var legBrewTxt = dom('span', null);
+    var legRinseWrap = dom('span', { style: 'display:inline-flex;align-items:center;gap:4px' },
+      dom('span', { style: 'width:7px;height:7px;border-radius:50%;background:var(--science,#2563eb);display:inline-block;flex-shrink:0' }),
+      dom('span', null)
+    );
+    var legSteamTxt = dom('span', null);
+    var barLegendEl = dom('div', {
+      class: 'bt-kettle-bar-legend bt-num',
+      style: 'display:flex;flex-wrap:wrap;gap:6px 12px;font-size:0.69rem;font-weight:700;color:var(--ink-secondary);line-height:1.25'
+    },
+      dom('span', { style: 'display:inline-flex;align-items:center;gap:4px' },
+        dom('span', { style: 'width:7px;height:7px;border-radius:50%;background:var(--accent,#9a4212);display:inline-block;flex-shrink:0' }),
+        legBrewTxt
+      ),
+      legRinseWrap,
+      dom('span', { style: 'display:inline-flex;align-items:center;gap:4px' },
+        dom('span', { style: 'width:7px;height:7px;border-radius:50%;background:var(--gold,#d98b26);display:inline-block;flex-shrink:0' }),
+        legSteamTxt
+      )
+    );
+    var barWrapEl = dom('div', {
+      class: 'bt-kettle-bar-wrap',
+      style: 'flex:1 0 100%;display:flex;flex-direction:column;gap:5px;min-width:0;margin-top:2px'
+    }, barTrackEl, barLegendEl);
+
     var skipBtn = null;
     function paintBanner() {
       var curPlan = computeKettleWarmPlan(a, rec);
@@ -407,6 +470,28 @@
         skipBtn.className = 'bt-chip-v6 bt-kettle-skip-btn' + (curPlan.skipRinse ? ' is-active' : '');
         skipBtn.setAttribute('aria-pressed', String(!!curPlan.skipRinse));
         skipBtn.textContent = curPlan.skipRinse ? 'Rinse Skipped' : 'Skip Rinse';
+      }
+      var showGauge = (curPlan.kind === 'kettle' || curPlan.kind === 'smart-tank') && curPlan.totalKettleG > 0 && (curPlan.rinseAndWarmG > 0 || curPlan.evapAndHeelG > 0);
+      barWrapEl.hidden = !showGauge;
+      barWrapEl.style.display = showGauge ? 'flex' : 'none';
+      if (showGauge) {
+        var tot = Math.max(1, curPlan.totalKettleG);
+        var bPct = (curPlan.brewWaterG / tot) * 100;
+        var rPct = (curPlan.rinseAndWarmG / tot) * 100;
+        var sPct = Math.max(0, 100 - bPct - rPct);
+        segBrewEl.style.width = bPct.toFixed(1) + '%';
+        segRinseEl.style.width = rPct.toFixed(1) + '%';
+        segRinseEl.style.display = curPlan.rinseAndWarmG > 0 ? 'block' : 'none';
+        segSteamEl.style.width = sPct.toFixed(1) + '%';
+        segSteamEl.style.display = curPlan.evapAndHeelG > 0 ? 'block' : 'none';
+        legBrewTxt.textContent = 'Brew Water ' + curPlan.brewWaterG + ' g';
+        if (curPlan.rinseAndWarmG > 0) {
+          legRinseWrap.style.display = 'inline-flex';
+          legRinseWrap.lastChild.textContent = (rec && rec.usesPaper && !curPlan.skipRinse ? 'Paper Rinse ' : 'Vessel Warm ') + curPlan.rinseAndWarmG + ' g';
+        } else {
+          legRinseWrap.style.display = 'none';
+        }
+        legSteamTxt.textContent = (curPlan.kind === 'smart-tank' ? 'Tank Reserve ' : 'Steam & Preheat ') + curPlan.evapAndHeelG + ' g';
       }
     }
 
@@ -429,6 +514,8 @@
       });
     }
 
+    paintBanner();
+
     return dom('div', { class: 'bt-kettle-warm-card is-' + plan.kind },
       dom('div', { class: 'bt-kettle-warm-lhs' },
         dom('span', { class: 'bt-kettle-warm-ico' }, ico(plan.kind === 'cold' ? 'droplet' : 'kettle-gooseneck', 18)),
@@ -440,7 +527,8 @@
       (skipBtn || extraRightNode) ? dom('div', { class: 'bt-kettle-warm-rhs' },
         skipBtn,
         extraRightNode || null
-      ) : null
+      ) : null,
+      barWrapEl
     );
   }
 
@@ -477,6 +565,10 @@
           tone: 'gentle',
           shortChip: 'Low-Pressure Soak · Anti-Channel',
           badge: 'Gentle Pre-Infusion · Even Puck Wetting',
+          height: 'Group Head',
+          pattern: 'Low-Pressure Soak',
+          disturbance: 'Zero Puck Disturbance',
+          scienceWhy: 'Even low-pressure saturation expels trapped air before 9-bar ramp so water cannot carve fast channels.',
           guide: 'Ramp gently to saturate the full puck evenly before full pressure so water cannot channel.',
           spoken: 'Gentle pre-infusion wetting to prevent puck channeling.'
         };
@@ -485,6 +577,10 @@
         tone: 'spiral',
         shortChip: 'Steady Flow · Watch Blonding',
         badge: 'Steady Pressure · Hold Flow Even',
+        height: 'Group Head',
+        pattern: 'Steady Puck Flow',
+        disturbance: 'Hold Pressure Smooth',
+        scienceWhy: 'Constant puck resistance preserves sweet mid-extraction and avoids late bitter channeling streaks.',
         guide: 'Maintain steady pressure and stop cleanly before pale blonding or channeling streaks appear.',
         spoken: 'Steady extraction flow. Watch for even blonding.'
       };
@@ -506,6 +602,10 @@
           tone: 'gentle',
           shortChip: 'Close & Gentle · Leave Still',
           badge: 'Close · Leave Still (~3 cm)',
+          height: '~3 cm',
+          pattern: 'Center-Out Wetting',
+          disturbance: 'Leave Still',
+          scienceWhy: 'High-fines coffees clog paper pores if swirled aggressively; low spout height wets dry pockets cleanly.',
           guide: 'Wet evenly at ~3 cm without swirling; avoid hard jetting dry pockets to prevent fines migration & channels.',
           spoken: 'Pour close at 3 centimeters and leave bed still.'
         };
@@ -514,6 +614,10 @@
         tone: 'swirl',
         shortChip: 'Gentle Swirl (~3 cm)',
         badge: 'Close Saturation + Gentle Swirl (~3 cm)',
+        height: '~3 cm',
+        pattern: 'Center-Out Wetting',
+        disturbance: '1 Gentle Swirl',
+        scienceWhy: 'Low pour height prevents dry clumps while 1 light swirl equalizes CO2 degassing across the bed.',
         guide: 'Wet evenly at ~3 cm with 1 gentle swirl; avoid hard jetting dry pockets to prevent channels.',
         spoken: 'Pour close at 3 centimeters with one gentle swirl.'
       };
@@ -525,6 +629,10 @@
         tone: 'gentle',
         shortChip: 'Close & Gentle · No Agitation',
         badge: 'Leave Still · Zero Agitation',
+        height: 'Kettle Off',
+        pattern: 'Passive Drawdown',
+        disturbance: 'Zero Agitation',
+        scienceWhy: 'Leaving the slurry undisturbed lets fines settle cleanly on top of the bed instead of choking the filter.',
         guide: 'Keep spout off and do not stir so fines stay suspended and the bed drains flat without channels.',
         spoken: 'Do not agitate. Let the bed drain flat.'
       };
@@ -542,6 +650,10 @@
         tone: 'gentle',
         shortChip: 'Close & Gentle · No Agitation',
         badge: 'Close Center Pour · Zero Agitation (~2 cm)',
+        height: '~2 cm',
+        pattern: 'Calm Center Stream',
+        disturbance: 'Zero Agitation',
+        scienceWhy: 'Gentle center flow maintains thermal mass without knocking high-and-dry bitter walls into the cup.',
         guide: 'Finish gentle down the center so fines stay suspended and bed drains flat without channels.',
         spoken: 'Pour close down the center at 2 centimeters with zero agitation.'
       };
@@ -553,6 +665,10 @@
         tone: 'gentle',
         shortChip: 'Close & Gentle · No Agitation',
         badge: 'Pour Close & Calm · DO NOT Agitate (~2\u20133 cm)',
+        height: '~2\u20133 cm',
+        pattern: 'Tight Center Spiral',
+        disturbance: 'No Stir / No Swirl',
+        scienceWhy: 'Low-impact stream minimizes vertical turbulence so fragile fines do not migrate and stall drawdown.',
         guide: 'Keep spout low over center; stirring or high pour drives fines migration & channeling.',
         spoken: 'Pour close and calm at 2 to 3 centimeters. Do not agitate.'
       };
@@ -562,6 +678,10 @@
       tone: 'spiral',
       shortChip: 'Controlled Spiral (~5\u20136 cm)',
       badge: 'Steady Spiral · Controlled Agitation (~5\u20136 cm)',
+      height: '~5\u20136 cm',
+      pattern: 'Concentric Spiral',
+      disturbance: 'Controlled Turbulence',
+      scienceWhy: 'Moderate stream momentum lifts sweetness evenly across the bed without blasting filter paper walls.',
       guide: 'Medium-flow concentric spiral lifts even sweetness without blasting filter walls.',
       spoken: 'Steady concentric spiral at 5 to 6 centimeters for even agitation.'
     };
@@ -2371,6 +2491,27 @@
     }
   }
 
+  function findLatestTastingForCoffee(coffee) {
+    if (!coffee || typeof coffee !== 'object') return null;
+    var hist = getHistoryObjsSafe();
+    if (!Array.isArray(hist) || !hist.length) return null;
+    var cid = String(coffee.coffee_id || coffee.id || '').trim();
+    var cname = _normVaultKeyPart(coffee.name || coffee.coffee_name || coffee.coffee || '');
+    var croast = _normVaultKeyPart(coffee.roaster || '');
+    for (var i = hist.length - 1; i >= 0; i--) {
+      var r = hist[i];
+      if (!r || typeof r !== 'object') continue;
+      var rCid = String(r.coffee_id || '').trim();
+      if (cid && rCid && cid === rCid) return r;
+      var rName = _normVaultKeyPart(r.coffee_name || r.coffee || r.name || '');
+      var rRoast = _normVaultKeyPart(r.roaster || '');
+      if (cname && rName === cname && (!croast || !rRoast || rRoast === croast)) {
+        return r;
+      }
+    }
+    return null;
+  }
+
   function renderDoorScreen(stageEl, a) {
     ensureBrewState(a);
     var lens = getExperienceLens();
@@ -2475,6 +2616,36 @@
         ? (a.cupBrew ? 'Continue to Taste \u2192' : 'Continue Active Timer \u2192')
         : (hasLiveCoffee ? 'Brew This Coffee \u2192' : 'Load & Brew Bag \u2192');
       var heroAttrSummary = formatCoffeeAttrSummary(heroCoffee);
+      var lastTastingRow = findLatestTastingForCoffee(heroCoffee);
+      var heroDialAdapt = !heroLockedExplicit
+        ? (rec.dialAdaptation || (a.brew && a.brew.dialAdaptation) || (heroCoffee && heroCoffee.dialAdaptation) || null)
+        : null;
+      var heroPendingNr = (!heroLockedExplicit && heroCoffee && heroCoffee.pendingNextRecipe && typeof heroCoffee.pendingNextRecipe === 'object')
+        ? heroCoffee.pendingNextRecipe
+        : null;
+      var heroAdaptRaw = formatDialAdaptationBanner(heroDialAdapt);
+      var heroStatusText = '';
+      var heroStatusCls = 'bt-badge-v62 is-good';
+      if (heroLockedExplicit) {
+        heroStatusText = 'Golden Recipe Locked';
+        heroStatusCls = 'bt-badge-v62 is-gold';
+      } else if (heroDialAdapt && heroDialAdapt.summaryBanner && typeof heroDialAdapt.summaryBanner === 'string') {
+        heroStatusText = heroDialAdapt.summaryBanner;
+        heroStatusCls = 'bt-badge-v62 is-sci';
+      } else if (heroAdaptRaw) {
+        heroStatusText = /^next fix/i.test(heroAdaptRaw) ? heroAdaptRaw : ('Next Fix Ready: ' + heroAdaptRaw);
+        heroStatusCls = 'bt-badge-v62 is-sci';
+      } else if (heroPendingNr) {
+        var nrParts = [];
+        if (heroPendingNr.grindSetting) nrParts.push(heroPendingNr.grindSetting);
+        if (heroPendingNr.tempC > 0) nrParts.push(Math.round(+heroPendingNr.tempC) + ' \u00B0C');
+        heroStatusText = 'Next Fix Ready: ' + (heroPendingNr.headline || (nrParts.length ? nrParts.join(' \u00B7 ') : 'Tuned Recipe Loaded'));
+        heroStatusCls = 'bt-badge-v62 is-sci';
+      }
+      var lastRatingNum = lastTastingRow && parseFloat(lastTastingRow.my_rating_stars);
+      var lastTastingBtnText = (lastRatingNum > 0)
+        ? ('Last Tasting (' + lastRatingNum.toFixed(1) + '\u2605) \u2192')
+        : 'Last Tasting \u2192';
 
       stageEl.appendChild(dom('section', {
         class: 'bt-hero-bag-card',
@@ -2500,9 +2671,17 @@
           dom('p', {
             class: 'bt-screen-sub',
             text: rec.method.label + ' · ' + rec.grindMap.short + ' on ' + (rec.grinder.short || rec.grinder.name) + ' · ' + rec.doseG + ' g : ' + rec.waterG + ' g'
-          })
+          }),
+          heroStatusText ? dom('div', { style: 'margin-top:7px;display:flex;flex-wrap:wrap;gap:6px;align-items:center' },
+            dom('span', {
+              id: 'bt-door-adaptation-pill',
+              class: heroStatusCls,
+              style: 'max-width:100%;white-space:normal;text-align:left;line-height:1.3;padding:4px 10px',
+              text: heroStatusText
+            })
+          ) : null
         ),
-        dom('div', { class: 'bt-pill-wrap' },
+        dom('div', { class: 'bt-pill-wrap', style: 'gap:8px;align-items:center' },
           dom('button', {
             type: 'button',
             class: 'bt-cta-btn',
@@ -2518,6 +2697,26 @@
               else goBrewStep('brew');
             }
           }, dom('span', { text: primaryBtnText }), ico('chevron-right', 17)),
+          lastTastingRow ? dom('button', {
+            type: 'button',
+            id: 'bt-door-last-tasting-btn',
+            class: 'bt-secondary-cta',
+            style: 'min-height:46px;padding:8px 13px',
+            title: 'Inspect your most recent tasting passport for this coffee',
+            onclick: function () {
+              haptic('tick');
+              var cj = (typeof window !== 'undefined')
+                ? (window.BTCellarJournal && typeof window.BTCellarJournal.openDetail === 'function'
+                    ? window.BTCellarJournal
+                    : (window.BTCellarTab && typeof window.BTCellarTab.openDetail === 'function' ? window.BTCellarTab : null))
+                : null;
+              if (cj) {
+                cj.openDetail(lastTastingRow);
+              } else {
+                navGoRoute('cellar');
+              }
+            }
+          }, ico('spark-star', 15), dom('span', { text: lastTastingBtnText })) : null,
           dom('button', {
             type: 'button',
             class: 'bt-secondary-cta',
@@ -2636,11 +2835,12 @@
     ));
 
     /* 4. Quick Studio Launchers: Open Cupping Table + At a Coffee Shop + Import Shared Brew */
-    stageEl.appendChild(dom('div', { class: 'bt-door-grid-launchers' },
+    stageEl.appendChild(dom('div', { class: 'bt-door-grid-launchers', style: 'gap:10px' },
       dom('button', {
         type: 'button',
         class: 'bt-door-action-card bt-door-cupping-card',
         id: 'bt-door-cupping-btn',
+        style: 'width:100%;box-sizing:border-box;padding:14px;gap:10px',
         onclick: function () {
           haptic('snap');
           navGoRoute('sca');
@@ -2650,10 +2850,10 @@
           ico('cupping', 20),
           dom('span', { class: 'bt-badge-v62 is-good', text: '5-Bowl Blind Table' })
         ),
-        dom('div', null,
+        dom('div', { style: 'width:100%;min-width:0' },
           dom('b', { style: 'font-size:0.95rem;display:block;color:var(--ink)', text: 'Open Cupping Table' }),
           dom('span', {
-            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.35;display:block;margin-top:3px',
+            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px',
             text: 'Side-by-side 5-bowl blind tasting, reveal cards & CVA 100-pt scoring \u2192'
           })
         )
@@ -2662,6 +2862,7 @@
         type: 'button',
         class: 'bt-door-action-card',
         id: 'bt-door-cafe-btn',
+        style: 'width:100%;box-sizing:border-box;padding:14px;gap:10px',
         onclick: function () {
           haptic('snap');
           navGoRoute('shop');
@@ -2674,10 +2875,10 @@
             text: shopInfo ? ('Resume Step ' + shopInfo.step + '/4') : '4-Step Logger'
           })
         ),
-        dom('div', null,
+        dom('div', { style: 'width:100%;min-width:0' },
           dom('b', { style: 'font-size:0.95rem;display:block;color:var(--ink)', text: 'At a Coffee Shop' }),
           dom('span', {
-            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.35;display:block;margin-top:3px',
+            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px',
             text: shopInfo
               ? ('Continue ' + shopInfo.drinkName + ' at ' + shopInfo.shopName + ' (home draft untouched)')
               : 'Log a cafe drink & reverse-engineer it for your home gear \u2192'
@@ -2688,6 +2889,7 @@
         type: 'button',
         class: 'bt-door-action-card',
         id: 'bt-door-import-btn',
+        style: 'width:100%;box-sizing:border-box;padding:14px;gap:10px',
         onclick: function () {
           haptic('snap');
           openSheet('import-shared-brew', {}, { title: 'Import Shared Brew & Translate Grinder', detent: 'half' });
@@ -2697,10 +2899,10 @@
           ico('paste-card', 20),
           dom('span', { class: 'bt-badge-v62 is-sci', text: lens === 'scientist' ? 'Darcy-D32 Auto' : 'Auto-Matched to Your Grinder' })
         ),
-        dom('div', null,
+        dom('div', { style: 'width:100%;min-width:0' },
           dom('b', { style: 'font-size:0.95rem;display:block;color:var(--ink)', text: 'Import Shared Brew' }),
           dom('span', {
-            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.35;display:block;margin-top:3px',
+            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px',
             text: 'Paste a friend\'s BT6: code or link & auto-translate clicks to your grinder \u2192'
           })
         )
@@ -4323,6 +4525,60 @@
 
     var strengthGl = Math.round(1000 / Math.max(1, rec.ratio));
 
+    /* 1-Tap Batch Size Quick Chips (hidden cleanly on espresso/single/machine/cold modes) */
+    var mKeyS3 = String(rec.method.key || '').toLowerCase();
+    var showBatchChips = !isPhilips && !rec.method.outRatio &&
+      mKeyS3 !== 'moka' && mKeyS3 !== 'turkish' && mKeyS3 !== 'phin' &&
+      mKeyS3 !== 'cold' && mKeyS3 !== 'cold_drip' && a.brew.methodVariant !== 'cupping';
+    var batchChipStrip = null;
+    if (showBatchChips) {
+      var applyBatchChip = function (targetDoseG, toggleIced) {
+        var activeRatio = (+a.brew.ratio > 0) ? +a.brew.ratio : (rec.ratio || 16);
+        var subModesList = getSubModesFor(rec.method.key);
+        var stdStyleId = (subModesList[0] && subModesList[0].id) || 'standard';
+        if (toggleIced) {
+          var icedMode = subModesList.find(function (sm) { return sm.iced || /iced|flash/i.test(sm.id); });
+          a.brew.style = rec.isIced ? stdStyleId : ((icedMode && icedMode.id) || 'flash-iced');
+          a.brew.customizedNote = /iced|flash/i.test(a.brew.style)
+            ? ('Flash Iced (' + a.brew.dose + 'g : ' + a.brew.water + 'g)')
+            : ('Hot Batch (' + a.brew.dose + 'g : ' + a.brew.water + 'g)');
+        } else {
+          if (rec.isIced) a.brew.style = stdStyleId;
+          a.brew.dose = targetDoseG;
+          a.brew.water = Math.round(targetDoseG * activeRatio);
+          a.brew.ratio = +activeRatio;
+          a.brew.customizedNote = 'Batch ' + targetDoseG + 'g : ' + a.brew.water + 'g (1:' + activeRatio + ')';
+        }
+        syncBrewUnitAliases(a.brew);
+        haptic('snap');
+        saveDraft();
+        rerender();
+      };
+      var batchDefs = [
+        { id: '15',   label: '1 Cup \u00B7 15g',  dose: 15, iced: false, active: !rec.isIced && Math.abs(rec.doseG - 15) <= 0.5 },
+        { id: '20',   label: 'Tall \u00B7 20g',   dose: 20, iced: false, active: !rec.isIced && Math.abs(rec.doseG - 20) <= 0.5 },
+        { id: '30',   label: 'Carafe \u00B7 30g', dose: 30, iced: false, active: !rec.isIced && Math.abs(rec.doseG - 30) <= 0.5 },
+        { id: 'iced', label: 'Flash Iced',        dose: 0,  iced: true,  active: !!rec.isIced }
+      ];
+      batchChipStrip = dom('div', {
+        id: 'bt-step3-batch-chips',
+        class: 'bt-pill-wrap bt-step3-batch-strip no-print',
+        role: 'group',
+        'aria-label': 'Batch Size Quick Presets',
+        style: 'gap:6px;align-items:center'
+      }, batchDefs.map(function (bd) {
+        return dom('button', {
+          type: 'button',
+          id: 'bt-step3-batch-' + bd.id,
+          'data-batch-chip': bd.id,
+          class: 'bt-chip-v6' + (bd.active ? ' is-active' : ' bt-chip-soft'),
+          'aria-pressed': String(!!bd.active),
+          style: 'min-height:38px;padding:5px 11px;font-size:0.78rem;font-weight:700',
+          onclick: function () { applyBatchChip(bd.dose, bd.iced); }
+        }, bd.iced ? ico('ice-cube', 13) : null, dom('span', { text: bd.label }));
+      }));
+    }
+
     function makeHeroRecipeTile(lbl, whyKey, primaryNode, subTxt, onTune, hideTuneBadge) {
       function fireTune(ev) {
         if (ev && ev.target && ev.target.closest && ev.target.closest('[data-science-why]')) return;
@@ -4429,7 +4685,7 @@
 
     /* 3. Single-Row Action Pills (NO multi-line wrapping!) */
     var stylePills = getSubModesFor(rec.method.key).slice(0, 3);
-    var actionStrip = dom('div', { class: 'bt-action-row-1line', role: 'toolbar', 'aria-label': 'Recipe Quick Actions' },
+    var actionStrip = dom('div', { class: 'bt-action-row-1line no-print', role: 'toolbar', 'aria-label': 'Recipe Quick Actions' },
       roasterGuide ? dom('button', {
         type: 'button',
         class: 'bt-chip-v6 bt-chip-accent is-active',
@@ -4484,7 +4740,21 @@
         type: 'button',
         class: 'bt-chip-v6 bt-chip-soft',
         onclick: function () { openSheet('share-qr-passport', {}, { title: 'Share QR Recipe Passport', detent: 'full' }); }
-      }, ico('qr-passport', 15), dom('span', { text: 'Share QR Passport' }))
+      }, ico('qr-passport', 15), dom('span', { text: 'Share QR Passport' })),
+      dom('button', {
+        type: 'button',
+        id: 'bt-step3-print-card-btn',
+        class: 'bt-chip-v6 bt-chip-soft no-print',
+        title: 'Print or Save PDF Brew Card',
+        onclick: function () {
+          haptic('tick');
+          if (typeof window !== 'undefined' && typeof window.print === 'function') {
+            window.print();
+          } else {
+            showToast('Use your browser Print menu to save as PDF.');
+          }
+        }
+      }, makePrintIcon(15), dom('span', { text: 'Print / Save PDF Brew Card' }))
     );
 
     /* 4. Top-of-Card Kettle Warm Target (#bt-step3-kettle-fill-pill) + 1-Tap BLE Kettle Target Sync Pill (#bt-step3-kettle-ble-btn) */
@@ -4590,6 +4860,7 @@
 
     stageEl.appendChild(dom('section', { class: 'bt-card-v6 bt-card-hero' },
       kettleWarmHero,
+      batchChipStrip,
       tiles6,
       heroScienceBtn,
       actionStrip
@@ -4666,11 +4937,24 @@
               dom('b', { style: 'font-size:0.86rem;display:block;color:var(--ink)', text: s.title }),
               dom('span', { style: 'font-size:0.78rem;color:var(--ink-secondary);line-height:1.36;display:block', text: s.human }),
               dom('div', { class: 'bt-agitation-row' },
-                dom('span', {
-                  class: 'bt-agitation-pill is-' + cue.tone,
-                  text: 'Anti-Channeling: ' + cue.shortChip
-                }),
-                dom('span', { class: 'bt-agitation-guide', text: cue.badge + ' \u2014 ' + cue.guide })
+                dom('div', {
+                  class: 'bt-pour-posture-meta',
+                  style: 'display:flex;flex-wrap:wrap;gap:5px;align-items:center'
+                },
+                  dom('span', {
+                    class: 'bt-agitation-pill is-' + cue.tone,
+                    text: 'Height ' + cue.height
+                  }),
+                  dom('span', {
+                    class: 'bt-agitation-pill',
+                    text: 'Flow: ' + cue.pattern
+                  }),
+                  dom('span', {
+                    class: 'bt-agitation-pill',
+                    text: 'Swirl / Agitation: ' + cue.disturbance
+                  })
+                ),
+                dom('span', { class: 'bt-agitation-guide', text: 'Why: ' + (cue.scienceWhy || cue.guide) })
               ),
               lens === 'scientist' && s.scientist ? dom('span', { style: 'font-size:0.71rem;color:var(--science);display:block;margin-top:1px', text: s.scientist }) : null
             ),
@@ -5384,6 +5668,63 @@
     container.appendChild(step4KettleCard);
 
     container.appendChild(audioBar);
+
+    /* 1B. Phase Progress + Next Cue Countdown Header Strip (#bt-timer-phase-strip) */
+    function shortPhaseLabel(rawTitle, idx, total) {
+      var t = String(rawTitle || '').trim();
+      if (/bloom|wet/i.test(t)) return 'Bloom';
+      if (/drain|drawdown|flat/i.test(t)) return 'Drawdown';
+      if (/final|finish|last/i.test(t)) return 'Final';
+      if (/main|spiral/i.test(t)) return 'Main Pour';
+      var cut = t.split(':')[0].split('(')[0].trim();
+      return cut.length > 14 ? (cut.slice(0, 12) + '..') : (cut || ('Step ' + (idx + 1)));
+    }
+    var phasePillNodes = [];
+    var phaseProgressBarEl = dom('div', {
+      class: 'bt-phase-progress',
+      role: 'list',
+      'aria-label': 'Brew Phase Progress',
+      style: 'display:flex;align-items:center;flex-wrap:wrap;gap:4px 5px;min-width:0'
+    });
+    steps.forEach(function (stP, pIdx) {
+      if (pIdx > 0) {
+        phaseProgressBarEl.appendChild(dom('span', {
+          class: 'bt-phase-sep',
+          'aria-hidden': 'true',
+          style: 'font-size:0.72rem;color:var(--ink-muted);font-weight:700',
+          text: '\u2192'
+        }));
+      }
+      var pNode = dom('span', {
+        class: 'bt-phase-pill' + (pIdx === 0 ? ' is-active' : ' is-upcoming'),
+        role: 'listitem',
+        style: 'display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:0.71rem;font-weight:800;line-height:1.25;border:1px solid var(--line);background:var(--bg-subtle);color:var(--ink-secondary);white-space:nowrap',
+        text: shortPhaseLabel(stP.title, pIdx, steps.length)
+      });
+      phasePillNodes.push(pNode);
+      phaseProgressBarEl.appendChild(pNode);
+    });
+    var phaseNextCueEl = dom('span', {
+      id: 'bt-timer-next-cue-text',
+      class: 'bt-num',
+      style: 'font-size:0.77rem;font-weight:800;color:var(--ink);min-width:0'
+    });
+    var phaseNextFlowEl = dom('span', {
+      id: 'bt-timer-next-cue-flow',
+      class: 'bt-num',
+      style: 'font-size:0.74rem;font-weight:700;color:var(--accent);white-space:nowrap'
+    });
+    var phaseStripEl = dom('div', {
+      id: 'bt-timer-phase-strip',
+      class: 'bt-next-cue-banner',
+      style: 'display:flex;flex-direction:column;gap:6px;padding:8px 11px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-card);min-width:0;max-width:100%;box-sizing:border-box'
+    },
+      phaseProgressBarEl,
+      dom('div', {
+        style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;min-width:0'
+      }, phaseNextCueEl, phaseNextFlowEl)
+    );
+    container.appendChild(phaseStripEl);
 
     /* 2. FULL-WIDTH STADIUM KITCHEN STOPWATCH (#bt-timer-giant-clock) + LIVE APPROX GRAMS PACER (#bt-timer-approx-grams-hero) + Collapsible BTChronoDial */
     var initElapsedS = _timerSession.stopped && _timerSession.actualStoppedS != null ? _timerSession.actualStoppedS : _timerSession.elapsedS;
@@ -6130,7 +6471,51 @@
         shownFlowLbl = stepFlowInfo.label;
       }
 
-      /* 1. Full-Width Stadium Kitchen Stopwatch (#bt-timer-giant-clock) */
+      /* 1. Full-Width Stadium Kitchen Stopwatch (#bt-timer-giant-clock) + Phase Progress Strip */
+      phasePillNodes.forEach(function (pEl, pIdx) {
+        var isDoneP = _timerSession.stopped || pIdx < curIdx;
+        var isActiveP = !_timerSession.stopped && pIdx === curIdx;
+        pEl.className = 'bt-phase-pill' + (isDoneP ? ' is-done' : (isActiveP ? ' is-active' : ' is-upcoming'));
+        if (isActiveP) {
+          pEl.setAttribute('aria-current', 'step');
+          pEl.style.background = 'var(--accent)';
+          pEl.style.color = '#fff';
+          pEl.style.borderColor = 'var(--accent)';
+        } else if (isDoneP) {
+          pEl.removeAttribute('aria-current');
+          pEl.style.background = 'var(--good-bg)';
+          pEl.style.color = 'var(--good)';
+          pEl.style.borderColor = 'rgba(24,96,62,0.3)';
+        } else {
+          pEl.removeAttribute('aria-current');
+          pEl.style.background = 'var(--bg-subtle)';
+          pEl.style.color = 'var(--ink-secondary)';
+          pEl.style.borderColor = 'var(--line)';
+        }
+      });
+      var remToNextCue = nextSt ? Math.max(0, Math.ceil(nextSt.t - elS)) : Math.max(0, Math.ceil(totalTargetS - elS));
+      var curStepTgtG = curSt && curSt.targetG != null ? +curSt.targetG : 0;
+      var nextStepTgtG = nextSt && nextSt.targetG != null ? +nextSt.targetG : Math.round(rec.hotPourG);
+      var nextStepAddG = Math.max(0, Math.round(nextStepTgtG - curStepTgtG));
+      if (_timerSession.stopped) {
+        phaseNextCueEl.textContent = 'Brew complete \u00B7 ' + fmtClock(elS, false) + ' total';
+      } else if (isOvertime) {
+        phaseNextCueEl.textContent = 'Overtime +' + overSec + 's \u00B7 Tap Stop when bed drains flat';
+      } else if (nextSt) {
+        phaseNextCueEl.textContent = 'Next step in ' + remToNextCue + 's' + (nextStepAddG > 0 ? (' (+' + nextStepAddG + 'g)') : ' (Drawdown)');
+      } else {
+        phaseNextCueEl.textContent = 'Target drawdown in ' + remToNextCue + 's (' + Math.round(rec.hotPourG) + 'g)';
+      }
+      if (_timerSession.stopped) {
+        phaseNextFlowEl.textContent = 'Target 0.0 g/s \u00B7 Stopped';
+      } else if (isReconnectingScale) {
+        phaseNextFlowEl.textContent = 'Target ' + stepFlowInfo.rate.toFixed(1) + ' g/s \u00B7 Scale Reconnecting...';
+      } else if (hasScale) {
+        phaseNextFlowEl.textContent = 'Target ' + stepFlowInfo.rate.toFixed(1) + ' g/s \u00B7 Live ' + shownFlowGs.toFixed(1) + ' g/s';
+      } else {
+        phaseNextFlowEl.textContent = 'Target ' + stepFlowInfo.rate.toFixed(1) + ' g/s';
+      }
+
       setGiantClockText(elS, !_timerSession.stopped);
       giantClockEl.classList.toggle('is-overtime', isOvertime && !_timerSession.stopped);
       giantClockEl.classList.toggle('is-stopped', !!_timerSession.stopped);
@@ -7107,7 +7492,7 @@
           value: bundle.bt6Code,
           'aria-label': 'BT6 shareable recipe code'
         }),
-        dom('div', { class: 'bt-pill-wrap', style: 'justify-content:center;width:100%' },
+        dom('div', { class: 'bt-pill-wrap no-print', style: 'justify-content:center;width:100%' },
           dom('button', {
             type: 'button',
             class: 'bt-cta-btn is-centered',
@@ -7116,7 +7501,15 @@
               haptic('snap');
               showToast('Copied BT6: Recipe Code to clipboard!');
             }
-          }, ico('paste-card', 17), dom('span', { text: 'Copy BT6: Recipe Code' }))
+          }, ico('paste-card', 17), dom('span', { text: 'Copy BT6: Recipe Code' })),
+          dom('button', {
+            type: 'button',
+            class: 'bt-secondary-cta',
+            onclick: function () {
+              haptic('tick');
+              if (typeof window !== 'undefined' && typeof window.print === 'function') window.print();
+            }
+          }, makePrintIcon(16), dom('span', { text: 'Print / Save PDF' }))
         )
       ));
     });

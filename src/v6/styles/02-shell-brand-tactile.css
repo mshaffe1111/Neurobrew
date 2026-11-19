@@ -702,6 +702,7 @@ html.bt-kb-open #bottom-dock {
 }
 .bt-dock-tab[aria-current="page"] {
   color: var(--ink);
+  background: linear-gradient(180deg, var(--accent-soft) 0%, transparent 90%);
 }
 .bt-dock-tab[aria-current="page"] .bt-ico {
   color: var(--accent);
@@ -715,6 +716,7 @@ html.bt-kb-open #bottom-dock {
   height: 3px;
   border-radius: 0 0 3px 3px;
   background: var(--accent);
+  box-shadow: 0 2px 8px var(--tab-active-glow, var(--accent-glow));
 }
 
 /* ==================== DESKTOP 3-COLUMN SPLIT-STUDIO (>= 1024px) ==================== */
@@ -815,8 +817,8 @@ html.bt-kb-open #bottom-dock {
     background: var(--surface);
     color: var(--ink);
     font-weight: 700;
-    border-color: var(--line-soft);
-    box-shadow: var(--shadow-xs);
+    border-color: var(--accent-border, var(--line-soft));
+    box-shadow: var(--shadow-xs), 0 0 0 1px var(--tab-active-glow, var(--accent-glow));
   }
   .bt-rail-tab[aria-current="page"] .bt-ico {
     color: var(--accent);
@@ -3027,4 +3029,212 @@ select.bt-input {
 }
 .bt-sheet-body {
   padding-bottom: calc(76px + var(--safe-bottom));
+}
+
+/* ==================== v7.1 ELEVATION, TRANSITIONS & PRINT / PDF PASSPORT ==================== */
+.bt-card,
+.bt-passport-card {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+@media (hover: hover) {
+  .bt-card:hover,
+  .bt-passport-card:hover {
+    border-color: var(--line);
+  }
+}
+
+@media print {
+  @page {
+    margin: 12mm 14mm;
+  }
+
+  html,
+  body {
+    background: #FFFFFF !important;
+    background-image: none !important;
+    color: #111111 !important;
+    font-size: 11pt;
+    line-height: 1.45;
+    min-height: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide app chrome, navigation rails, sidebars, overlays, and non-print controls */
+  #top-chrome,
+  #bottom-dock,
+  #side-nav,
+  #studio-aside,
+  .bt-studio-aside-col,
+  #cta-shelf,
+  #sheet-backdrop,
+  #sheet:not(.is-open),
+  .bt-sheet-host:not(.is-open),
+  #keypad-host,
+  #xray-loupe,
+  #toast-host,
+  .bt-skip-link,
+  .bt-trail-bar,
+  .bt-top-back-btn,
+  .bt-sheet-grab-zone,
+  .bt-sheet-close,
+  .bt-sheet-back-bar,
+  .bt-ce-sheet-topbar,
+  .bt-tc-back-pill,
+  .bt-explainer-btn,
+  .bt-step-context-link,
+  .bt-kettle-skip-btn,
+  .bt-drum-nudge,
+  .bt-drum-lock,
+  .bt-drum-track,
+  .bt-drum-presets,
+  .bt-batch-chips,
+  .bt-batch-chips-row,
+  .bt-studio-pill-nav,
+  .bt-tc-seg-bar,
+  .bt-tc-mode-bar-row,
+  .bt-cta-btn,
+  .bt-hero-cta,
+  .bt-saved-palate-dismiss,
+  .bt-pill-wrap:has(button),
+  .bt-tc-pill-wrap:has(button),
+  .bt-tc-actions-row,
+  .no-print {
+    display: none !important;
+  }
+
+  /* When a sheet (e.g., Share QR Passport or Tasting Detail) is open, print ONLY the sheet cleanly */
+  body:has(#sheet.is-open) #app-shell,
+  body:has(.bt-sheet-host.is-open) #app-shell {
+    display: none !important;
+  }
+
+  #sheet.is-open,
+  .bt-sheet-host.is-open .bt-sheet-panel {
+    position: static !important;
+    inset: auto !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 680px !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 auto !important;
+    padding: 20px 24px !important;
+    background: #FFFFFF !important;
+    color: #111111 !important;
+    border: 1.5px solid #1F1712 !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  #sheet.is-open .bt-sheet-header {
+    padding: 0 0 12px 0 !important;
+    margin-bottom: 14px !important;
+    border-bottom: 1.5px solid #1F1712 !important;
+  }
+
+  #sheet.is-open .bt-sheet-title {
+    color: #111111 !important;
+    font-size: 16pt !important;
+  }
+
+  #sheet.is-open .bt-sheet-body {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Main workspace print normalization */
+  #app-shell,
+  .bt-center-stage,
+  .bt-workspace {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  #mount,
+  #detail-pane {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Clean black-on-white cards with page-break guards */
+  .bt-card,
+  .bt-card-v6,
+  .bt-studio-card,
+  .bt-tile-v6,
+  .bt-kettle-warm-card,
+  .bt-step-context-strip,
+  .bt-tc-card,
+  .bt-tc-hero-fix,
+  .bt-passport-card,
+  .bt-passport-preview,
+  .bt-qr-card-frame,
+  .bt-detail-kv,
+  .bt-step5-diff-grid,
+  .bt-dial-timeline,
+  .bt-golden-showcase,
+  .bt-phase-progress,
+  .bt-next-cue-banner,
+  .bt-bean-chem-strip {
+    background: #FFFFFF !important;
+    background-image: none !important;
+    color: #111111 !important;
+    border: 1px solid #333333 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .bt-card *,
+  .bt-card-v6 *,
+  .bt-tc-card *,
+  .bt-qr-card-frame *,
+  .bt-passport-preview * {
+    color: #111111 !important;
+  }
+
+  .bt-input-v62,
+  #sheet input[readonly] {
+    background: #FAF8F5 !important;
+    color: #111111 !important;
+    border: 1px solid #333333 !important;
+  }
+
+  /* Scannable QR SVG crispness */
+  .bt-qr-svg-box,
+  .bt-qr-real-box {
+    background: #FFFFFF !important;
+    border: 1.5px solid #111111 !important;
+    padding: 12px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .bt-qr-svg-box svg,
+  .bt-qr-real-box svg {
+    shape-rendering: crispEdges !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .bt-kettle-bar,
+  .bt-kettle-seg,
+  .bt-kettle-seg-brew,
+  .bt-kettle-seg-rinse,
+  .bt-kettle-seg-warmup,
+  .bt-kettle-seg-steam,
+  .bt-kettle-seg-preheat {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }

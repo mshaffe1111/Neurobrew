@@ -918,7 +918,11 @@
     const sca = acadUi.sca;
     const dosePerBowlG = +((8.25 * sca.bowlMl) / 150).toFixed(2);
 
-    const card = domH('section', { class: 'bt-studio-card bt-sca-cockpit-card', id: 'bt-sca-5bowl-table' });
+    const card = domH('section', {
+      class: 'bt-studio-card bt-sca-cockpit-card',
+      id: 'bt-sca-5bowl-table',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box'
+    });
     const phaseBanner = domH('p', { class: 'bt-lab-hint', text: '' });
     const liveClockPill = domH('span', { class: 'bt-sca-mmss-pill num-tab', id: 'bt-sca-live-mmss', text: fmtMmSs(sca.elapsedSec || 0) + ' · ~93 °C' });
 
@@ -1353,8 +1357,8 @@
 
         syncBowlCardVisuals();
 
-        bowlsGrid.appendChild(domH('div', { class: 'bt-sca-bowl-card' },
-          domH('div', { class: 'bt-sca-bowl-top' },
+        bowlsGrid.appendChild(domH('div', { class: 'bt-sca-bowl-card', style: 'min-width:0;max-width:100%;box-sizing:border-box' },
+          domH('div', { class: 'bt-sca-bowl-top', style: 'flex-wrap:wrap;min-width:0;gap:6px' },
             domH('span', { class: 'bt-sca-bowl-badge', text: 'Bowl ' + bObj.code }),
             scoreBadge
           ),
@@ -1582,37 +1586,45 @@
       }
     }, acadUi.scaReturnToTaste ? '\u2190 Back to Tasting' : '\u2190 Back') : null;
 
-    card.appendChild(domH('div', { class: 'bt-lab-card-head' },
-      domH('div', { class: 'bt-lab-title-group' },
+    card.appendChild(domH('div', {
+      class: 'bt-lab-card-head bt-sca-header-row',
+      style: 'flex-wrap:wrap;align-items:flex-start;gap:10px;min-width:0;max-width:100%'
+    },
+      domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1 1 200px' },
         ic('cafe-cup', { size: 22 }),
-        domH('div', null,
-          domH('h3', { text: '1–5 Bowl Side-by-Side Coffee Cupping Table' }),
-          domH('p', { class: 'bt-lab-sub num-tab', text: 'Dose: ' + dosePerBowlG + ' g per ' + sca.bowlMl + ' mL bowl (93 °C) · Voice cues at 04:00 Break, 08:00 Skim & 12:00 Slurp' })
+        domH('div', { style: 'min-width:0;flex:1 1 160px' },
+          domH('h3', { style: 'margin:0;overflow-wrap:anywhere', text: '1–5 Bowl Side-by-Side Coffee Cupping Table' }),
+          domH('p', { class: 'bt-lab-sub num-tab', style: 'overflow-wrap:anywhere', text: 'Dose: ' + dosePerBowlG + ' g per ' + sca.bowlMl + ' mL bowl (93 °C) · Voice cues at 04:00 Break, 08:00 Skim & 12:00 Slurp' })
         )
       ),
-      domH('div', { class: 'bt-lab-chip-row' }, topEscapeBtn, epistemicPill('verified_science'))
+      domH('div', { class: 'bt-lab-chip-row', style: 'flex-wrap:wrap;min-width:0;max-width:100%;gap:6px' }, topEscapeBtn, epistemicPill('verified_science'))
     ));
     card.appendChild(scaHeroHost);
     card.appendChild(domH('div', { class: 'bt-cupping-4steps-grid', 'aria-label': 'How to cup coffee at home in 4 steps' }, stepCardNodes));
-    card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
+    card.appendChild(domH('div', {
+      class: 'bt-lab-chip-row bt-sca-controls-row',
+      style: 'flex-wrap:wrap;align-items:center;gap:6px;min-width:0;max-width:100%'
+    },
       bowlCountPills,
       loadCellarBtn,
       blindToggleBtn,
       voiceToggleBtn,
-      CK.vernierPill({
-        label: 'Bowl Vol',
-        value: sca.bowlMl,
-        min: 120,
-        max: 300,
-        step: 10,
-        unit: 'mL',
-        compact: true,
-        onChange: function (v) {
-          sca.bowlMl = v;
-          if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
-          else rerenderAcademyTab();
-        }
-      })
+      domH('div', { style: 'max-width:100%;min-width:0' },
+        CK.vernierPill({
+          label: 'Bowl Vol',
+          value: sca.bowlMl,
+          min: 120,
+          max: 300,
+          step: 10,
+          unit: 'mL',
+          compact: true,
+          onChange: function (v) {
+            sca.bowlMl = v;
+            if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
+            else rerenderAcademyTab();
+          }
+        })
+      )
     ));
     card.appendChild(domH('div', { class: 'bt-chrono-gym-deck' },
       domH('div', { class: 'bt-chrono-dial-col' }, scaChrono.el),

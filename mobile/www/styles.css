@@ -45,6 +45,8 @@
   --accent-ink: #FFFDF9;
   --accent-soft: #FCECE2;
   --accent-glow: rgba(154, 74, 30, 0.16);
+  --accent-border: rgba(154, 74, 30, 0.30);
+  --tab-active-glow: rgba(154, 74, 30, 0.14);
 
   --primary: #1C4A36;            /* Deep Botanical Pine >= 9.6:1 with #FFFDF9 */
   --primary-hover: #153929;
@@ -65,6 +67,7 @@
   --good: #18603E;
   --good-ink: #FFFDF9;
   --good-bg: #E2F4EB;
+  --good-border: rgba(24, 96, 62, 0.28);
   --warn: #854B04;
   --warn-bg: #FEF1D6;
   --bad: #9E211D;
@@ -219,6 +222,8 @@
     --accent-ink: #160E09;
     --accent-soft: #312015;
     --accent-glow: rgba(224, 138, 84, 0.22);
+    --accent-border: rgba(224, 138, 84, 0.36);
+    --tab-active-glow: rgba(224, 138, 84, 0.22);
 
     --primary: #2A6B4E;
     --primary-hover: #34805E;
@@ -238,6 +243,7 @@
     --good: #5CD49C;
     --good-ink: #13261B;
     --good-bg: #132E22;
+    --good-border: rgba(92, 212, 156, 0.30);
     --warn: #F4BC5C;
     --warn-bg: #33230B;
     --bad: #F68580;
@@ -333,6 +339,8 @@
   --accent-ink: #160E09;
   --accent-soft: #312015;
   --accent-glow: rgba(224, 138, 84, 0.22);
+  --accent-border: rgba(224, 138, 84, 0.36);
+  --tab-active-glow: rgba(224, 138, 84, 0.22);
 
   --primary: #2A6B4E;
   --primary-hover: #34805E;
@@ -352,6 +360,7 @@
   --good: #5CD49C;
   --good-ink: #13261B;
   --good-bg: #132E22;
+  --good-border: rgba(92, 212, 156, 0.30);
   --warn: #F4BC5C;
   --warn-bg: #33230B;
   --bad: #F68580;
@@ -440,6 +449,7 @@ body {
   font-size: var(--text-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   overflow-x: clip;
   -webkit-tap-highlight-color: transparent;
 }
@@ -1341,6 +1351,7 @@ html.bt-kb-open #bottom-dock {
 }
 .bt-dock-tab[aria-current="page"] {
   color: var(--ink);
+  background: linear-gradient(180deg, var(--accent-soft) 0%, transparent 90%);
 }
 .bt-dock-tab[aria-current="page"] .bt-ico {
   color: var(--accent);
@@ -1354,6 +1365,7 @@ html.bt-kb-open #bottom-dock {
   height: 3px;
   border-radius: 0 0 3px 3px;
   background: var(--accent);
+  box-shadow: 0 2px 8px var(--tab-active-glow, var(--accent-glow));
 }
 
 /* ==================== DESKTOP 3-COLUMN SPLIT-STUDIO (>= 1024px) ==================== */
@@ -1454,8 +1466,8 @@ html.bt-kb-open #bottom-dock {
     background: var(--surface);
     color: var(--ink);
     font-weight: 700;
-    border-color: var(--line-soft);
-    box-shadow: var(--shadow-xs);
+    border-color: var(--accent-border, var(--line-soft));
+    box-shadow: var(--shadow-xs), 0 0 0 1px var(--tab-active-glow, var(--accent-glow));
   }
   .bt-rail-tab[aria-current="page"] .bt-ico {
     color: var(--accent);
@@ -3666,6 +3678,214 @@ select.bt-input {
 }
 .bt-sheet-body {
   padding-bottom: calc(76px + var(--safe-bottom));
+}
+
+/* ==================== v7.1 ELEVATION, TRANSITIONS & PRINT / PDF PASSPORT ==================== */
+.bt-card,
+.bt-passport-card {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+@media (hover: hover) {
+  .bt-card:hover,
+  .bt-passport-card:hover {
+    border-color: var(--line);
+  }
+}
+
+@media print {
+  @page {
+    margin: 12mm 14mm;
+  }
+
+  html,
+  body {
+    background: #FFFFFF !important;
+    background-image: none !important;
+    color: #111111 !important;
+    font-size: 11pt;
+    line-height: 1.45;
+    min-height: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide app chrome, navigation rails, sidebars, overlays, and non-print controls */
+  #top-chrome,
+  #bottom-dock,
+  #side-nav,
+  #studio-aside,
+  .bt-studio-aside-col,
+  #cta-shelf,
+  #sheet-backdrop,
+  #sheet:not(.is-open),
+  .bt-sheet-host:not(.is-open),
+  #keypad-host,
+  #xray-loupe,
+  #toast-host,
+  .bt-skip-link,
+  .bt-trail-bar,
+  .bt-top-back-btn,
+  .bt-sheet-grab-zone,
+  .bt-sheet-close,
+  .bt-sheet-back-bar,
+  .bt-ce-sheet-topbar,
+  .bt-tc-back-pill,
+  .bt-explainer-btn,
+  .bt-step-context-link,
+  .bt-kettle-skip-btn,
+  .bt-drum-nudge,
+  .bt-drum-lock,
+  .bt-drum-track,
+  .bt-drum-presets,
+  .bt-batch-chips,
+  .bt-batch-chips-row,
+  .bt-studio-pill-nav,
+  .bt-tc-seg-bar,
+  .bt-tc-mode-bar-row,
+  .bt-cta-btn,
+  .bt-hero-cta,
+  .bt-saved-palate-dismiss,
+  .bt-pill-wrap:has(button),
+  .bt-tc-pill-wrap:has(button),
+  .bt-tc-actions-row,
+  .no-print {
+    display: none !important;
+  }
+
+  /* When a sheet (e.g., Share QR Passport or Tasting Detail) is open, print ONLY the sheet cleanly */
+  body:has(#sheet.is-open) #app-shell,
+  body:has(.bt-sheet-host.is-open) #app-shell {
+    display: none !important;
+  }
+
+  #sheet.is-open,
+  .bt-sheet-host.is-open .bt-sheet-panel {
+    position: static !important;
+    inset: auto !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 680px !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 auto !important;
+    padding: 20px 24px !important;
+    background: #FFFFFF !important;
+    color: #111111 !important;
+    border: 1.5px solid #1F1712 !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  #sheet.is-open .bt-sheet-header {
+    padding: 0 0 12px 0 !important;
+    margin-bottom: 14px !important;
+    border-bottom: 1.5px solid #1F1712 !important;
+  }
+
+  #sheet.is-open .bt-sheet-title {
+    color: #111111 !important;
+    font-size: 16pt !important;
+  }
+
+  #sheet.is-open .bt-sheet-body {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Main workspace print normalization */
+  #app-shell,
+  .bt-center-stage,
+  .bt-workspace {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  #mount,
+  #detail-pane {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Clean black-on-white cards with page-break guards */
+  .bt-card,
+  .bt-card-v6,
+  .bt-studio-card,
+  .bt-tile-v6,
+  .bt-kettle-warm-card,
+  .bt-step-context-strip,
+  .bt-tc-card,
+  .bt-tc-hero-fix,
+  .bt-passport-card,
+  .bt-passport-preview,
+  .bt-qr-card-frame,
+  .bt-detail-kv,
+  .bt-step5-diff-grid,
+  .bt-dial-timeline,
+  .bt-golden-showcase,
+  .bt-phase-progress,
+  .bt-next-cue-banner,
+  .bt-bean-chem-strip {
+    background: #FFFFFF !important;
+    background-image: none !important;
+    color: #111111 !important;
+    border: 1px solid #333333 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .bt-card *,
+  .bt-card-v6 *,
+  .bt-tc-card *,
+  .bt-qr-card-frame *,
+  .bt-passport-preview * {
+    color: #111111 !important;
+  }
+
+  .bt-input-v62,
+  #sheet input[readonly] {
+    background: #FAF8F5 !important;
+    color: #111111 !important;
+    border: 1px solid #333333 !important;
+  }
+
+  /* Scannable QR SVG crispness */
+  .bt-qr-svg-box,
+  .bt-qr-real-box {
+    background: #FFFFFF !important;
+    border: 1.5px solid #111111 !important;
+    padding: 12px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .bt-qr-svg-box svg,
+  .bt-qr-real-box svg {
+    shape-rendering: crispEdges !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .bt-kettle-bar,
+  .bt-kettle-seg,
+  .bt-kettle-seg-brew,
+  .bt-kettle-seg-rinse,
+  .bt-kettle-seg-warmup,
+  .bt-kettle-seg-steam,
+  .bt-kettle-seg-preheat {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }
 /* ==========================================================================
    BeanTelligence v6.2 — 03-brew-cellar-tasting.css
@@ -7106,6 +7326,319 @@ select.bt-input {
   line-height: 1.34;
 }
 
+/* ==================== 11. v7.1 STEP 3/4 KETTLE BAR, BATCH CHIPS, PHASE PROGRESS & CUE BANNER ==================== */
+.bt-card-v6 {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* Step 3 Batch Size Quick Chips */
+.bt-batch-chips,
+.bt-batch-chips-row,
+.bt-step3-batch-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-batch-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  max-width: 100%;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.12s var(--spring-snappy);
+}
+
+.bt-batch-chip:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.bt-batch-chip:active:not(:disabled) {
+  transform: scale(0.965);
+}
+
+.bt-batch-chip.is-active,
+.bt-batch-chip[aria-pressed="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Step 3 Segmented Kettle Proportion Bar */
+.bt-kettle-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-top: 4px;
+  box-sizing: border-box;
+}
+
+.bt-kettle-bar {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 11px;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.bt-kettle-seg,
+.bt-kettle-seg-brew,
+.bt-kettle-seg-rinse,
+.bt-kettle-seg-warmup,
+.bt-kettle-seg-steam,
+.bt-kettle-seg-preheat {
+  height: 100%;
+  min-width: 4px;
+  border-radius: var(--r-pill, 9999px);
+  transition: width 0.24s var(--spring-snappy);
+}
+
+.bt-kettle-seg-brew {
+  background: var(--primary);
+}
+
+:root[data-theme="dark"] .bt-kettle-seg-brew {
+  background: var(--good);
+}
+
+.bt-kettle-seg-rinse {
+  background: var(--accent);
+}
+
+.bt-kettle-seg-warmup,
+.bt-kettle-seg-steam,
+.bt-kettle-seg-preheat {
+  background: var(--gold);
+}
+
+.bt-kettle-legend,
+.bt-kettle-bar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  min-width: 0;
+}
+
+.bt-kettle-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.bt-kettle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.bt-kettle-dot.is-brew { background: var(--primary); }
+:root[data-theme="dark"] .bt-kettle-dot.is-brew { background: var(--good); }
+.bt-kettle-dot.is-rinse { background: var(--accent); }
+.bt-kettle-dot.is-warmup { background: var(--gold); }
+
+/* Step 4 Phase Progress & Next Cue Countdown Banner */
+.bt-phase-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 9px 11px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft, var(--line));
+  box-shadow: var(--shadow-xs);
+  box-sizing: border-box;
+}
+
+.bt-phase-steps,
+.bt-phase-track {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(66px, 1fr));
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+}
+
+.bt-phase-step,
+.bt-phase-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  color: var(--ink-secondary);
+  font-size: 0.71rem;
+  font-weight: 700;
+  text-align: center;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.bt-phase-sep {
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+  font-weight: 700;
+  flex: none;
+}
+
+.bt-phase-step.is-done,
+.bt-phase-pill.is-done {
+  background: var(--good-bg);
+  border-color: var(--good-border, rgba(24, 96, 62, 0.28));
+  color: var(--good);
+}
+
+.bt-phase-step.is-active,
+.bt-phase-step.is-current,
+.bt-phase-pill.is-active,
+.bt-phase-pill.is-current {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 800;
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.bt-phase-bar {
+  width: 100%;
+  height: 5px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--well);
+  overflow: hidden;
+}
+
+.bt-phase-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--good) 100%);
+  transition: width 0.22s linear;
+}
+
+.bt-next-cue-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 9px 12px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--accent-soft) 0%, var(--surface) 100%);
+  border: 1.5px solid var(--accent-border, rgba(154, 74, 30, 0.34));
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+  box-sizing: border-box;
+}
+
+.bt-next-cue-banner.is-imminent {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+}
+
+.bt-next-cue-banner.is-complete {
+  background: var(--good-bg);
+  border-color: var(--good);
+}
+
+.bt-next-cue-countdown,
+.bt-next-cue-flow {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.bt-next-cue-banner.is-complete .bt-next-cue-countdown {
+  color: var(--good);
+}
+
+/* Door Adaptation Status Pill */
+.bt-door-adapt-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border, rgba(154, 74, 30, 0.30));
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 800;
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+
+.bt-door-adapt-pill.is-locked {
+  background: var(--good-bg);
+  border-color: var(--good-border, rgba(24, 96, 62, 0.28));
+  color: var(--good);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bt-card-v6,
+  .bt-batch-chip,
+  .bt-kettle-seg,
+  .bt-kettle-seg-brew,
+  .bt-kettle-seg-rinse,
+  .bt-kettle-seg-warmup,
+  .bt-kettle-seg-steam,
+  .bt-kettle-seg-preheat,
+  .bt-phase-step,
+  .bt-phase-pill,
+  .bt-phase-bar-fill {
+    transition: none !important;
+  }
+}
+
 
 
 /* ==========================================================================
@@ -10202,6 +10735,95 @@ select.bt-input {
   color: var(--ink-secondary);
 }
 
+/* ==================== 18. v7.1 LIVE BEAN CHEMISTRY READOUT STRIP ==================== */
+.bt-bean-chem-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 7px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--surface-card-grad, var(--surface));
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-xs);
+  box-sizing: border-box;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.bt-bean-chem-cell,
+.bt-bean-chem-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 9px;
+  border-radius: 11px;
+  background: var(--well);
+  border: 1px solid var(--line-hairline);
+  box-sizing: border-box;
+}
+
+.bt-bean-chem-lbl {
+  font-size: 0.67rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+  line-height: 1.2;
+}
+
+.bt-bean-chem-val {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.bt-bean-chem-sub {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.bt-bean-chem-sub.is-peak,
+.bt-bean-chem-val.is-peak {
+  color: var(--good);
+}
+
+.bt-bean-chem-sub.is-rest,
+.bt-bean-chem-val.is-rest {
+  color: var(--science);
+}
+
+.bt-bean-chem-sub.is-fresh,
+.bt-bean-chem-val.is-fresh {
+  color: var(--warn);
+}
+
+@media (max-width: 420px) {
+  .bt-bean-chem-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .bt-bean-chem-cell,
+  .bt-bean-chem-item {
+    padding: 6px 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bt-bean-chem-strip {
+    transition: none !important;
+  }
+}
+
 
 /* ==========================================================================
    BeanTelligence v6.3 — 03b-taste-cellar.css
@@ -12185,6 +12807,284 @@ select.bt-input {
     height: 44px;
     min-width: 44px;
     min-height: 44px;
+  }
+}
+
+/* ==================== 12. v7.1 STEP 5 DIFF GRID, CONVERGENCE TIMELINE & GOLDEN SHOWCASE ==================== */
+.bt-step5-diff-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  box-sizing: border-box;
+}
+
+.bt-step5-diff-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+}
+
+.bt-step5-diff-row {
+  display: grid;
+  grid-template-columns: minmax(68px, auto) minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 9px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line-hairline, var(--line-soft));
+  font-size: 0.8rem;
+  color: var(--ink);
+  box-sizing: border-box;
+}
+
+.bt-step5-diff-lbl,
+.bt-step5-diff-key {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  min-width: 0;
+}
+
+.bt-step5-diff-before {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-muted);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.bt-step5-diff-arrow {
+  font-weight: 800;
+  color: var(--accent);
+  flex: none;
+}
+
+.bt-step5-diff-after {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: 800;
+  color: var(--good);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.bt-step5-diff-row.is-unchanged .bt-step5-diff-before {
+  text-decoration: none;
+}
+
+.bt-step5-diff-row.is-unchanged .bt-step5-diff-after {
+  color: var(--ink-secondary);
+  font-weight: 600;
+}
+
+.bt-step5-gold-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--good-bg);
+  border: 1.5px solid var(--good);
+  color: var(--ink);
+  font-size: 0.82rem;
+  box-sizing: border-box;
+}
+
+/* Journal Bag Dial-In Convergence Timeline */
+.bt-dial-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 6px 2px 6px;
+  box-sizing: border-box;
+}
+
+.bt-dial-timeline-track {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 6px 8px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-dial-node {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  flex: 0 0 auto;
+  min-width: 128px;
+  max-width: 188px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-xs);
+  color: var(--ink);
+  font-size: 0.76rem;
+  line-height: 1.3;
+  box-sizing: border-box;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.bt-dial-node.is-active,
+.bt-dial-node.is-current {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.bt-dial-node.is-golden,
+.bt-dial-node.is-locked {
+  border-color: var(--good);
+  background: var(--good-bg);
+}
+
+.bt-dial-node-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.bt-dial-node-stars {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.bt-dial-node.is-golden .bt-dial-node-stars,
+.bt-dial-node.is-locked .bt-dial-node-stars {
+  color: var(--good);
+}
+
+.bt-dial-node-meta {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  overflow-wrap: anywhere;
+}
+
+.bt-dial-arrow {
+  align-self: center;
+  flex: none;
+  font-weight: 800;
+  color: var(--ink-muted);
+}
+
+/* Best / Golden Recipes Showcase Strip */
+.bt-golden-showcase {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 13px 14px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, var(--gold-soft) 0%, var(--surface) 100%);
+  border: 1.5px solid var(--gold);
+  box-shadow: var(--shadow-card);
+  color: var(--ink);
+  box-sizing: border-box;
+}
+
+.bt-golden-showcase-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bt-golden-showcase-grid,
+.bt-golden-showcase-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.bt-golden-card,
+.bt-golden-showcase-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 11px;
+  border-radius: 13px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft, var(--line));
+  box-shadow: var(--shadow-xs);
+  color: var(--ink);
+  box-sizing: border-box;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.bt-golden-card:hover,
+.bt-golden-showcase-item:hover {
+  border-color: var(--gold);
+}
+
+@media (max-width: 420px) {
+  .bt-step5-diff-grid {
+    padding: 8px 9px;
+  }
+
+  .bt-step5-diff-row {
+    grid-template-columns: minmax(56px, auto) minmax(0, 1fr) auto minmax(0, 1fr);
+    padding: 5px 7px;
+    gap: 4px 6px;
+    font-size: 0.76rem;
+  }
+
+  .bt-golden-showcase-grid,
+  .bt-golden-showcase-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bt-dial-node,
+  .bt-golden-card,
+  .bt-golden-showcase-item {
+    transition: none !important;
   }
 }
 
@@ -15595,6 +16495,128 @@ button.bt-trait-row:hover {
   align-items: center;
   gap: 6px;
   margin-bottom: 6px;
+}
+
+/* ==================== v7.1 LAB CALCULATOR POLISH, SWAP & CAFFEINE BUDGET ==================== */
+.bt-studio-card,
+.bt-lab-subcard {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+@media (hover: hover) {
+  .bt-studio-card:hover {
+    border-color: var(--line-strong, var(--line));
+  }
+}
+
+.bt-studio-nav-pill.is-active {
+  box-shadow: var(--shadow-xs), 0 0 0 2px var(--tab-active-glow, var(--accent-glow));
+}
+
+.bt-lab-intro-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 13px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--bg-subtle) 0%, var(--surface) 100%);
+  border: 1px solid var(--line-soft, var(--line));
+  color: var(--ink);
+  font-size: 0.84rem;
+  line-height: 1.4;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.bt-lab-swap-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.12s var(--spring-snappy);
+}
+
+.bt-lab-swap-btn:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.bt-lab-swap-btn:active {
+  transform: scale(0.96);
+}
+
+.bt-lab-ref-band {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: var(--science-bg);
+  border: 1px solid var(--science-border);
+  color: var(--science);
+  font-size: 0.76rem;
+  font-weight: 700;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.bt-caf-budget-pill,
+.bt-caf-schedule-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 9px 12px;
+  border-radius: 13px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+  box-sizing: border-box;
+}
+
+.bt-caf-budget-pill b,
+.bt-caf-schedule-strip b {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+@media (max-width: 480px) {
+  .bt-studio-card {
+    padding: 13px 12px;
+    gap: 10px;
+  }
+
+  .bt-lab-subcard {
+    padding: 11px 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bt-studio-card,
+  .bt-lab-subcard,
+  .bt-lab-swap-btn {
+    transition: none !important;
+  }
 }
 
 

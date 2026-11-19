@@ -3406,5 +3406,127 @@ button.bt-trait-row:hover {
   margin-bottom: 6px;
 }
 
+/* ==================== v7.1 LAB CALCULATOR POLISH, SWAP & CAFFEINE BUDGET ==================== */
+.bt-studio-card,
+.bt-lab-subcard {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+@media (hover: hover) {
+  .bt-studio-card:hover {
+    border-color: var(--line-strong, var(--line));
+  }
+}
+
+.bt-studio-nav-pill.is-active {
+  box-shadow: var(--shadow-xs), 0 0 0 2px var(--tab-active-glow, var(--accent-glow));
+}
+
+.bt-lab-intro-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 13px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--bg-subtle) 0%, var(--surface) 100%);
+  border: 1px solid var(--line-soft, var(--line));
+  color: var(--ink);
+  font-size: 0.84rem;
+  line-height: 1.4;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.bt-lab-swap-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.12s var(--spring-snappy);
+}
+
+.bt-lab-swap-btn:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.bt-lab-swap-btn:active {
+  transform: scale(0.96);
+}
+
+.bt-lab-ref-band {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: var(--science-bg);
+  border: 1px solid var(--science-border);
+  color: var(--science);
+  font-size: 0.76rem;
+  font-weight: 700;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.bt-caf-budget-pill,
+.bt-caf-schedule-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 9px 12px;
+  border-radius: 13px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+  box-sizing: border-box;
+}
+
+.bt-caf-budget-pill b,
+.bt-caf-schedule-strip b {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+@media (max-width: 480px) {
+  .bt-studio-card {
+    padding: 13px 12px;
+    gap: 10px;
+  }
+
+  .bt-lab-subcard {
+    padding: 11px 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bt-studio-card,
+  .bt-lab-subcard,
+  .bt-lab-swap-btn {
+    transition: none !important;
+  }
+}
+
 
 

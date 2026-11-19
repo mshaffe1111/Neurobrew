@@ -3437,5 +3437,318 @@
   line-height: 1.34;
 }
 
+/* ==================== 11. v7.1 STEP 3/4 KETTLE BAR, BATCH CHIPS, PHASE PROGRESS & CUE BANNER ==================== */
+.bt-card-v6 {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* Step 3 Batch Size Quick Chips */
+.bt-batch-chips,
+.bt-batch-chips-row,
+.bt-step3-batch-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-batch-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  max-width: 100%;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.12s var(--spring-snappy);
+}
+
+.bt-batch-chip:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.bt-batch-chip:active:not(:disabled) {
+  transform: scale(0.965);
+}
+
+.bt-batch-chip.is-active,
+.bt-batch-chip[aria-pressed="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Step 3 Segmented Kettle Proportion Bar */
+.bt-kettle-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-top: 4px;
+  box-sizing: border-box;
+}
+
+.bt-kettle-bar {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 11px;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.bt-kettle-seg,
+.bt-kettle-seg-brew,
+.bt-kettle-seg-rinse,
+.bt-kettle-seg-warmup,
+.bt-kettle-seg-steam,
+.bt-kettle-seg-preheat {
+  height: 100%;
+  min-width: 4px;
+  border-radius: var(--r-pill, 9999px);
+  transition: width 0.24s var(--spring-snappy);
+}
+
+.bt-kettle-seg-brew {
+  background: var(--primary);
+}
+
+:root[data-theme="dark"] .bt-kettle-seg-brew {
+  background: var(--good);
+}
+
+.bt-kettle-seg-rinse {
+  background: var(--accent);
+}
+
+.bt-kettle-seg-warmup,
+.bt-kettle-seg-steam,
+.bt-kettle-seg-preheat {
+  background: var(--gold);
+}
+
+.bt-kettle-legend,
+.bt-kettle-bar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  min-width: 0;
+}
+
+.bt-kettle-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.bt-kettle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.bt-kettle-dot.is-brew { background: var(--primary); }
+:root[data-theme="dark"] .bt-kettle-dot.is-brew { background: var(--good); }
+.bt-kettle-dot.is-rinse { background: var(--accent); }
+.bt-kettle-dot.is-warmup { background: var(--gold); }
+
+/* Step 4 Phase Progress & Next Cue Countdown Banner */
+.bt-phase-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 9px 11px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft, var(--line));
+  box-shadow: var(--shadow-xs);
+  box-sizing: border-box;
+}
+
+.bt-phase-steps,
+.bt-phase-track {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(66px, 1fr));
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+}
+
+.bt-phase-step,
+.bt-phase-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  color: var(--ink-secondary);
+  font-size: 0.71rem;
+  font-weight: 700;
+  text-align: center;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.bt-phase-sep {
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+  font-weight: 700;
+  flex: none;
+}
+
+.bt-phase-step.is-done,
+.bt-phase-pill.is-done {
+  background: var(--good-bg);
+  border-color: var(--good-border, rgba(24, 96, 62, 0.28));
+  color: var(--good);
+}
+
+.bt-phase-step.is-active,
+.bt-phase-step.is-current,
+.bt-phase-pill.is-active,
+.bt-phase-pill.is-current {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 800;
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.bt-phase-bar {
+  width: 100%;
+  height: 5px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--well);
+  overflow: hidden;
+}
+
+.bt-phase-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--good) 100%);
+  transition: width 0.22s linear;
+}
+
+.bt-next-cue-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 9px 12px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--accent-soft) 0%, var(--surface) 100%);
+  border: 1.5px solid var(--accent-border, rgba(154, 74, 30, 0.34));
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+  box-sizing: border-box;
+}
+
+.bt-next-cue-banner.is-imminent {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+}
+
+.bt-next-cue-banner.is-complete {
+  background: var(--good-bg);
+  border-color: var(--good);
+}
+
+.bt-next-cue-countdown,
+.bt-next-cue-flow {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.bt-next-cue-banner.is-complete .bt-next-cue-countdown {
+  color: var(--good);
+}
+
+/* Door Adaptation Status Pill */
+.bt-door-adapt-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border, rgba(154, 74, 30, 0.30));
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 800;
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+
+.bt-door-adapt-pill.is-locked {
+  background: var(--good-bg);
+  border-color: var(--good-border, rgba(24, 96, 62, 0.28));
+  color: var(--good);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bt-card-v6,
+  .bt-batch-chip,
+  .bt-kettle-seg,
+  .bt-kettle-seg-brew,
+  .bt-kettle-seg-rinse,
+  .bt-kettle-seg-warmup,
+  .bt-kettle-seg-steam,
+  .bt-kettle-seg-preheat,
+  .bt-phase-step,
+  .bt-phase-pill,
+  .bt-phase-bar-fill {
+    transition: none !important;
+  }
+}
+
 
 

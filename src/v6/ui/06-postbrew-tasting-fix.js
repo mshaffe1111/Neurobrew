@@ -1435,6 +1435,7 @@ if (typeof window !== 'undefined') {
     var curRatio = +brew.ratio || +(a.brew && a.brew.ratio) || Math.round((waterG / Math.max(1, doseG)) * 10) / 10;
     var curTempC = +brew.temp_c || +(a.brew && a.brew.tempC) || (+brew.tempF > 0 ? Math.round(((+brew.tempF - 32) * 5 / 9) * 2) / 2 : 93);
     var curUm = +brew.grind_um || +(a.brew && a.brew.grindUm) || +(a.brew && a.brew.grind_um) || (isEsp ? 235 : 550);
+    var curAgitation = String(brew.agitation || (a.brew && a.brew.agitation) || 'standard').toLowerCase();
     var outG = +tSt.bevOutG > 0 ? +tSt.bevOutG : (+brew.out_g || +brew.yieldOut || Math.max(18, isEsp ? waterG : Math.round(waterG - doseG * 2.05)));
 
     var actualS = +tSt.actualS > 0 ? +tSt.actualS : flowInfo.actualS;
@@ -1757,6 +1758,20 @@ if (typeof window !== 'undefined') {
       thermalSpilloverNote: thermalSpilloverNote,
       ultraFreshNote: ultraFreshNote,
       hypotheses: (coreDiag && Array.isArray(coreDiag.hypotheses)) ? coreDiag.hypotheses : [],
+      curRecipe: {
+        methodKey: methodKey,
+        doseG: doseG,
+        waterG: waterG,
+        ratio: curRatio,
+        grindUm: curUm,
+        grindSetting: gInfo.curDisplay || ((a.brew && a.brew.grind_setting) || (curUm + ' \u00B5m')),
+        grindClicks: gInfo.curClicks,
+        unit: gInfo.unit || 'clicks',
+        grinderLabel: gInfo.grinderLabel || '',
+        tempC: curTempC,
+        tempF: Math.round(curTempC * 9 / 5 + 32),
+        agitation: curAgitation
+      },
       nextRecipe: {
         methodKey: methodKey,
         doseG: nextDoseG,
@@ -1764,11 +1779,133 @@ if (typeof window !== 'undefined') {
         ratio: nextRatio,
         grindUm: nextUm,
         grindSetting: nextDisp.display,
+        grindClicks: nextDisp.clicks,
         tempC: nextTempC,
         tempF: Math.round(nextTempC * 9 / 5 + 32),
         agitation: nextAgitation
       }
     };
+  }
+
+  function buildStep5DiffGrid(rx, lens) {
+    if (!rx || rx.inGoldZone || !rx.nextRecipe || !rx.curRecipe) return null;
+    var cur = rx.curRecipe;
+    var nxt = rx.nextRecipe;
+    var rows = [];
+
+    function fmtCap(s) {
+      var str = String(s || 'standard').replace(/[_-]+/g, ' ').trim();
+      return str ? (str.charAt(0).toUpperCase() + str.slice(1)) : 'Standard';
+    }
+
+    var grindChanged = Math.abs((+nxt.grindUm || 0) - (+cur.grindUm || 0)) >= 1 ||
+      (cur.grindSetting && nxt.grindSetting && cur.grindSetting !== nxt.grindSetting) ||
+      (cur.grindClicks != null && nxt.grindClicks != null && cur.grindClicks !== nxt.grindClicks);
+    if (grindChanged) {
+      var gDeltaTxt = '';
+      if (cur.grindClicks != null && nxt.grindClicks != null && cur.grindClicks !== nxt.grindClicks) {
+        var dCl = Math.round((nxt.grindClicks - cur.grindClicks) * 10) / 10;
+        gDeltaTxt = (dCl > 0 ? '+' : '') + dCl + ' ' + (cur.unit || 'clicks') + (nxt.grindUm < cur.grindUm ? ' · Finer' : ' · Coarser');
+      } else {
+        gDeltaTxt = nxt.grindUm < cur.grindUm ? 'Finer' : 'Coarser';
+      }
+      if (lens === 'scientist' && Math.abs(nxt.grindUm - cur.grindUm) >= 1) {
+        gDeltaTxt += ' (' + Math.round(cur.grindUm) + '\u2192' + Math.round(nxt.grindUm) + '\u00B5m)';
+      }
+      rows.push({
+        label: 'Grind',
+        before: cur.grindSetting || (Math.round(cur.grindUm) + ' \u00B5m'),
+        after: nxt.grindSetting || (Math.round(nxt.grindUm) + ' \u00B5m'),
+        delta: gDeltaTxt
+      });
+    }
+
+    if (Math.abs((+nxt.tempC || 0) - (+cur.tempC || 0)) >= 0.4) {
+      var dTemp = Math.round((nxt.tempC - cur.tempC) * 10) / 10;
+      rows.push({
+        label: 'Water',
+        before: cur.tempC + '\u00B0C',
+        after: nxt.tempC + '\u00B0C',
+        delta: (dTemp > 0 ? '+' : '') + dTemp + '\u00B0C'
+      });
+    }
+
+    var ratioChanged = Math.abs((+nxt.ratio || 0) - (+cur.ratio || 0)) >= 0.05;
+    if (ratioChanged) {
+      var waterNote = Math.abs((+nxt.waterG || 0) - (+cur.waterG || 0)) >= 1
+        ? (' \u00B7 ' + Math.round(cur.waterG) + '\u2192' + Math.round(nxt.waterG) + 'g')
+        : '';
+      rows.push({
+        label: 'Ratio',
+        before: '1:' + cur.ratio,
+        after: '1:' + nxt.ratio,
+        delta: (nxt.ratio > cur.ratio ? 'Wider' : 'Richer') + waterNote
+      });
+    } else if (Math.abs((+nxt.waterG || 0) - (+cur.waterG || 0)) >= 1) {
+      rows.push({
+        label: 'Water Mass',
+        before: Math.round(cur.waterG) + 'g',
+        after: Math.round(nxt.waterG) + 'g',
+        delta: (nxt.waterG > cur.waterG ? '+' : '') + Math.round(nxt.waterG - cur.waterG) + 'g'
+      });
+    }
+
+    if (Math.abs((+nxt.doseG || 0) - (+cur.doseG || 0)) >= 0.1) {
+      rows.push({
+        label: 'Dose',
+        before: cur.doseG + 'g',
+        after: nxt.doseG + 'g',
+        delta: (nxt.doseG > cur.doseG ? '+' : '') + (Math.round((nxt.doseG - cur.doseG) * 10) / 10) + 'g'
+      });
+    }
+
+    var curAg = String(cur.agitation || 'standard').toLowerCase();
+    var nxtAg = String(nxt.agitation || 'standard').toLowerCase();
+    if (curAg !== nxtAg) {
+      rows.push({
+        label: 'Agitation',
+        before: fmtCap(curAg),
+        after: fmtCap(nxtAg),
+        delta: nxtAg === 'gentle' ? 'Calmer Pour' : 'Updated'
+      });
+    }
+
+    if (!rows.length) {
+      rows.push({
+        label: 'Target',
+        before: cur.grindSetting || (Math.round(cur.grindUm) + ' \u00B5m'),
+        after: nxt.grindSetting || (Math.round(nxt.grindUm) + ' \u00B5m'),
+        delta: 'Hold & Refine'
+      });
+    }
+
+    return S.h('div', {
+      style: 'width:100%;max-width:100%;box-sizing:border-box;min-width:0;padding:10px 11px;border-radius:14px;background:var(--well,var(--bg-subtle));border:1px solid var(--line);display:flex;flex-direction:column;gap:8px'
+    },
+      S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap' },
+        S.h('span', { style: 'font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-secondary)', text: 'Try #' + rx.tryNum + ' \u2192 Try #' + rx.nextTryNum + ' Lever Changes' }),
+        S.h('span', { class: 'bt-tc-badge is-gold', style: 'font-size:10.5px;padding:2px 8px', text: rows.length + (rows.length === 1 ? ' tweak saved' : ' tweaks saved') })
+      ),
+      S.h('div', {
+        class: 'bt-step5-diff-grid',
+        id: 'bt-step5-diff-grid',
+        style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:7px;width:100%;max-width:100%;min-width:0'
+      }, rows.map(function (r) {
+        return S.h('div', {
+          style: 'min-width:0;padding:7px 9px;border-radius:10px;background:var(--surface);border:1px solid var(--line-soft,var(--line));display:flex;flex-direction:column;gap:3px;box-sizing:border-box'
+        },
+          S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:4px;flex-wrap:wrap' },
+            S.h('span', { style: 'font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-muted)', text: r.label }),
+            r.delta ? S.h('span', { class: 'mono', style: 'font-size:10px;font-weight:700;color:var(--accent)', text: r.delta }) : null
+          ),
+          S.h('div', { class: 'mono', style: 'display:flex;align-items:baseline;flex-wrap:wrap;gap:5px;font-size:12px;line-height:1.25;overflow-wrap:anywhere' },
+            S.h('span', { style: 'color:var(--ink-muted);text-decoration:line-through', text: r.before }),
+            S.h('span', { style: 'color:var(--ink-muted)', text: '\u2192' }),
+            S.h('b', { style: 'color:var(--ink);font-weight:800', text: r.after })
+          )
+        );
+      }))
+    );
   }
 
   /* Exact Pro Cupping (SCA-104-2024) Score Formula: 0.65625 * sum8 + 52.75 - 2*u - 4*d */
@@ -3302,6 +3439,11 @@ if (typeof window !== 'undefined') {
         heroBox.appendChild(S.h('div', { class: 'mono', style: 'font-size:0.76rem;color:var(--science);font-weight:700', text: rx.xrayLine }));
       }
 
+      if (!rx.inGoldZone && rx.nextRecipe) {
+        var diffEl = buildStep5DiffGrid(rx, lens);
+        if (diffEl) heroBox.appendChild(diffEl);
+      }
+
       var ck = (typeof window !== 'undefined' && window.BTChartKit) ? window.BTChartKit : null;
       if (ck && typeof ck.dialInSparklineSvg === 'function' && rx.chronRows.length >= 1) {
         try {
@@ -3323,6 +3465,14 @@ if (typeof window !== 'undefined') {
 
       /* In-Place Gold Recipe Toggle (NEVER yanks/teleports user without explicit Save!) */
       if (rx.inGoldZone && !tSt.excludeLearning && !tSt.notMyStyle) {
+        var goldCur = rx.curRecipe || {};
+        var goldSummaryTxt = [
+          goldCur.grindSetting || (goldCur.grindUm ? (Math.round(goldCur.grindUm) + ' \u00B5m') : ''),
+          goldCur.tempC ? (goldCur.tempC + '\u00B0C') : '',
+          goldCur.ratio ? ('1:' + goldCur.ratio) : '',
+          (goldCur.doseG && goldCur.waterG) ? (goldCur.doseG + 'g:' + Math.round(goldCur.waterG) + 'g') : ''
+        ].filter(Boolean).join(' \u00B7 ');
+
         heroBox.appendChild(S.h('div', { style: 'display:flex;flex-direction:column;gap:7px' },
           S.h('button', {
             type: 'button',
@@ -3341,7 +3491,21 @@ if (typeof window !== 'undefined') {
             S.buildGoldSealSvg(20),
             S.h('span', { text: tSt.goldLocked ? 'Locked as My Gold Recipe (Tap to Unlock)' : 'Lock as My Gold Recipe' })
           ),
-          tSt.goldLocked ? S.h('div', { class: 'bt-tc-badge is-gold', style: 'align-self:flex-start;white-space:normal', text: 'Gold Seal Ready \u2014 Finish any notes you want, then tap Save Gold Recipe \u2192 Preferences below!' }) : null
+          shouldSaveGold ? S.h('div', {
+            id: 'bt-step5-gold-summary',
+            class: 'bt-step5-gold-summary',
+            style: 'width:100%;max-width:100%;box-sizing:border-box;padding:9px 11px;border-radius:12px;background:var(--good-bg);border:1px solid rgba(24,96,62,0.32);display:flex;flex-direction:column;gap:4px'
+          },
+            S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
+              S.h('span', { style: 'display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--good);letter-spacing:0.03em;text-transform:uppercase' },
+                S.buildGoldSealSvg(16),
+                S.h('span', { text: 'Golden Recipe Locked \u00B7 Try #' + rx.tryNum })
+              ),
+              S.h('span', { class: 'bt-tc-badge is-good', style: 'font-size:10.5px;padding:2px 7px', text: tSt.stars.toFixed(2) + '/5 Beans' })
+            ),
+            S.h('div', { class: 'mono', style: 'font-size:12.5px;font-weight:800;color:var(--ink);line-height:1.35;overflow-wrap:anywhere', text: goldSummaryTxt }),
+            S.h('span', { style: 'font-size:11px;color:var(--ink-secondary);line-height:1.3', text: 'Gold Seal Ready \u2014 Tap Save Gold \u2192 Preferences below to lock for future brews.' })
+          ) : null
         ));
       }
 

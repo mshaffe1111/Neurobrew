@@ -344,6 +344,195 @@
     );
   }
 
+  function getCoffeeHistoryChronological(coffeeName, roaster, coffeeId, hObjs) {
+    var list = Array.isArray(hObjs) ? hObjs : S.getHistoryObjs();
+    var cleanCid = isSyntheticCoffeeId(coffeeId) ? '' : String(coffeeId).trim();
+    var nName = normCoffeeKeyPart(unneutCellar(coffeeName || ''));
+    var nRoast = normCoffeeKeyPart(unneutCellar(roaster || ''));
+    if (!cleanCid && !nName) return [];
+
+    var matches = [];
+    list.forEach(function (r, idx) {
+      if (!r || typeof r !== 'object') return;
+      var rCid = isSyntheticCoffeeId(r.coffee_id) ? '' : String(r.coffee_id).trim();
+      var rName = normCoffeeKeyPart(unneutCellar(r.coffee_name || ''));
+      var rRoast = normCoffeeKeyPart(unneutCellar(r.roaster || ''));
+      var hit = false;
+      if (cleanCid && rCid && cleanCid === rCid) hit = true;
+      else if (nName && rName === nName && (!nRoast || !rRoast || rRoast === nRoast)) hit = true;
+      if (hit) matches.push({ r: r, idx: idx });
+    });
+
+    matches.sort(function (a, b) {
+      var ta = String(a.r.saved_at || a.r.cupping_date || '');
+      var tb = String(b.r.saved_at || b.r.cupping_date || '');
+      if (ta !== tb) return ta.localeCompare(tb);
+      var aa = +(a.r.brew_attempt) || 0;
+      var ab = +(b.r.brew_attempt) || 0;
+      if (aa !== ab) return aa - ab;
+      return a.idx - b.idx;
+    });
+    return matches.map(function (m) { return m.r; });
+  }
+
+  function buildDialInConvergenceTimeline(chronRows, currentRow, opts) {
+    opts = opts || {};
+    if (!Array.isArray(chronRows) || chronRows.length < 2) return null;
+    var hasAnyGold = chronRows.some(function (tr) { return tr && (tr.dial_locked === 'yes' || tr.dial_locked === '1'); });
+    var nodes = [];
+    chronRows.forEach(function (tr, idx) {
+      if (!tr) return;
+      var tryNum = (+tr.brew_attempt > 0) ? Math.round(+tr.brew_attempt) : (idx + 1);
+      var clicksTxt = unneutCellar(tr.brew_grind_setting || '') || (+tr.brew_grind_target_um > 0 ? (+tr.brew_grind_target_um + ' \u00B5m') : '');
+      var tempC = +tr.brew_temp_c > 0 ? Math.round(+tr.brew_temp_c) : (+tr.brew_temp_f > 0 ? Math.round((+tr.brew_temp_f - 32) * 5 / 9) : 0);
+      var tempTxt = tempC > 0 ? (tempC + '\u00B0C') : '';
+      var tdsEyTxt = tr.brew_tds_pct ? (tr.brew_tds_pct + '% TDS' + (tr.brew_ey_pct ? (' / ' + tr.brew_ey_pct + '% EY') : '')) : '';
+      var starsVal = parseFloat(tr.my_rating_stars) || 0;
+      var scaVal = parseFloat(tr.total_score) || 0;
+      var isGold = tr.dial_locked === 'yes' || tr.dial_locked === '1';
+      var isCur = !!(currentRow && (tr === currentRow || (currentRow.id && tr.id === currentRow.id)));
+      var specParts = [clicksTxt, tempTxt, tdsEyTxt].filter(Boolean);
+      if (!specParts.length) specParts.push(S.humanMethodName(tr.brew_method));
+
+      var nodeBtn = S.h('button', {
+        type: 'button',
+        class: 'bt-dial-node' + (isGold ? ' is-locked' : '') + (isCur ? ' is-current' : ''),
+        style: 'min-width:0;max-width:100%;text-align:left',
+        'aria-label': 'Inspect Try #' + tryNum + (isGold ? ' Golden Locked' : ''),
+        onclick: function (e) {
+          if (e && e.stopPropagation) e.stopPropagation();
+          openTastingDetailSheet(tr);
+        }
+      },
+        S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:5px;flex-wrap:wrap' },
+          S.h('span', { class: 'mono', style: 'font-weight:800;font-size:0.78rem', text: '#' + tryNum }),
+          isGold ? S.h('span', { style: 'display:inline-flex;align-items:center;gap:3px' }, buildGoldSealSvg(14)) : null,
+          starsVal > 0 ? S.h('span', { class: 'mono', style: 'display:inline-flex;align-items:center;gap:2px;font-size:0.76rem;font-weight:700' },
+            S.iconEl('spark-star', { size: 12 }),
+            S.h('span', { text: starsVal.toFixed(2) })
+          ) : (scaVal > 0 ? S.h('span', { class: 'mono', style: 'font-size:0.74rem;font-weight:700', text: scaVal.toFixed(1) + ' SCA' }) : null)
+        ),
+        S.h('div', { class: 'mono', style: 'font-size:0.72rem;color:var(--ink-secondary);line-height:1.3;overflow-wrap:anywhere', text: specParts.join(' \u00B7 ') })
+      );
+      nodes.push(nodeBtn);
+      if (idx < chronRows.length - 1) {
+        nodes.push(S.h('span', { class: 'bt-dial-arrow', 'aria-hidden': 'true', style: 'align-self:center;font-weight:800;color:var(--ink-muted)', text: '\u2192' }));
+      }
+    });
+
+    return S.h('section', {
+      class: 'bt-dial-timeline',
+      'aria-label': 'Dial-In Convergence Timeline',
+      style: 'display:flex;flex-direction:column;gap:7px;min-width:0;max-width:100%'
+    },
+      S.h('div', { class: 'bt-tc-row-between' },
+        S.h('span', { class: 'bt-tc-kicker', text: 'Dial-In Convergence (' + chronRows.length + ' Tries)' }),
+        hasAnyGold ? S.h('span', { class: 'bt-tc-badge is-gold', text: 'Golden Locked' }) : S.h('span', { class: 'bt-tc-badge is-sci', text: 'Try #1 \u2192 #' + chronRows.length })
+      ),
+      S.h('div', {
+        class: 'bt-dial-timeline-track',
+        style: 'display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;min-width:0;max-width:100%'
+      }, nodes)
+    );
+  }
+
+  function pickTopGoldenRecipes(hObjs, limit) {
+    var list = Array.isArray(hObjs) ? hObjs : [];
+    var maxN = limit || 3;
+    var candidates = [];
+    list.forEach(function (r, idx) {
+      if (!r || !r.coffee_name) return;
+      var isGold = r.dial_locked === 'yes' || r.dial_locked === '1';
+      var stars = parseFloat(r.my_rating_stars) || 0;
+      if (!isGold && stars < 4.5) return;
+      candidates.push({ r: r, idx: idx, isGold: isGold, stars: stars, sca: parseFloat(r.total_score) || 0 });
+    });
+    candidates.sort(function (a, b) {
+      if (a.isGold !== b.isGold) return a.isGold ? -1 : 1;
+      if (Math.abs(b.stars - a.stars) > 0.01) return b.stars - a.stars;
+      if (Math.abs(b.sca - a.sca) > 0.1) return b.sca - a.sca;
+      return b.idx - a.idx;
+    });
+    var seen = Object.create(null);
+    var out = [];
+    for (var i = 0; i < candidates.length && out.length < maxN; i++) {
+      var r = candidates[i].r;
+      var k = normCoffeeKeyPart(unneutCellar(r.coffee_name)) + '|' + normCoffeeKeyPart(unneutCellar(r.roaster || '')) + '|' + String(r.brew_method || '').toLowerCase();
+      if (seen[k]) continue;
+      seen[k] = true;
+      out.push(r);
+    }
+    return out;
+  }
+
+  function buildGoldenShowcaseSection(hObjs) {
+    var top = pickTopGoldenRecipes(hObjs, 3);
+    if (!top.length) return null;
+    return S.h('section', {
+      class: 'bt-tc-card bt-golden-showcase',
+      'aria-label': 'Best and Golden Recipes'
+    },
+      S.h('div', { class: 'bt-tc-row-between' },
+        S.h('div', { style: 'min-width:0;flex:1 1 180px' },
+          S.h('div', { class: 'bt-tc-kicker', text: 'Hall of Fame \u00B7 4.5+ & Golden Locked' }),
+          S.h('b', { style: 'font-size:1rem', text: 'Best & Golden Recipes' })
+        ),
+        S.h('span', { class: 'bt-tc-badge is-gold', text: top.length + ' Top Brew' + (top.length === 1 ? '' : 's') })
+      ),
+      S.h('div', {
+        class: 'bt-golden-showcase-grid',
+        style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px;min-width:0'
+      },
+        top.map(function (r) {
+          var isGold = r.dial_locked === 'yes' || r.dial_locked === '1';
+          var stars = parseFloat(r.my_rating_stars) || 0;
+          var cName = unneutCellar(r.coffee_name || '') || 'Golden Brew';
+          var rName = unneutCellar(r.roaster || '');
+          var tempC = +r.brew_temp_c > 0 ? Math.round(+r.brew_temp_c) : (+r.brew_temp_f > 0 ? Math.round((+r.brew_temp_f - 32) * 5 / 9) : 0);
+          var specs = [
+            S.humanMethodName(r.brew_method),
+            (r.brew_dose_g && r.brew_water_g) ? (r.brew_dose_g + 'g:' + r.brew_water_g + 'g') : '',
+            unneutCellar(r.brew_grind_setting || '') || (r.brew_grind_target_um ? (r.brew_grind_target_um + ' \u00B5m') : ''),
+            tempC > 0 ? (tempC + '\u00B0C') : ''
+          ].filter(Boolean).join(' \u00B7 ');
+          return S.h('article', {
+            class: 'bt-tc-well bt-golden-showcase-item',
+            style: 'min-width:0;justify-content:space-between'
+          },
+            S.h('div', { class: 'bt-tc-row-between', style: 'align-items:flex-start' },
+              S.h('div', { style: 'display:flex;align-items:center;gap:7px;min-width:0;flex:1' },
+                isGold ? buildGoldSealSvg(20) : S.iconEl('spark-star', { size: 17 }),
+                S.h('div', { style: 'min-width:0' },
+                  rName ? S.h('div', { class: 'bt-tc-kicker', text: rName }) : null,
+                  S.h('b', { style: 'font-size:0.9rem;display:block;overflow-wrap:anywhere', text: cName })
+                )
+              ),
+              stars > 0 ? S.h('span', { class: 'bt-tc-badge mono ' + (isGold ? 'is-gold' : 'is-good'), text: stars.toFixed(2) + ' / 5' }) : null
+            ),
+            S.h('div', { class: 'mono', style: 'font-size:0.75rem;color:var(--ink-secondary);line-height:1.35', text: specs }),
+            S.h('div', { class: 'bt-tc-pill-wrap' },
+              S.h('button', {
+                type: 'button',
+                class: 'bt-tc-pill is-compact is-active',
+                text: 'Brew \u2192',
+                onclick: function () {
+                  hydrateBrewFromRowOrBag(r, null, null);
+                  navigateToHomeRecipe();
+                }
+              }),
+              S.h('button', {
+                type: 'button',
+                class: 'bt-tc-pill is-compact is-soft',
+                text: 'Inspect',
+                onclick: function () { openTastingDetailSheet(r); }
+              })
+            )
+          );
+        })
+      )
+    );
+  }
+
   function getCoffeesVaultSafe() {
     var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
     try {
@@ -933,7 +1122,25 @@
       btTextCode = 'BT-code: V1 ' + btUri;
     }
 
-    var realQrSvg = S.encodeRealQrSvg(btUri, { size: 176, margin: 3, fg: '#1A1412', bg: '#FAF6F0' });
+    var qrOpts = { size: 184, margin: 3, fg: '#1A1412', bg: '#FAF6F0', label: 'BeanTelligence Scannable Brew Passport QR Code' };
+    var realQrSvg = '';
+    var encodeDirect = function (payloadStr) {
+      if (typeof window !== 'undefined' && typeof window.encodeQrSvg === 'function') {
+        try { return window.encodeQrSvg(payloadStr, qrOpts); } catch (_) {}
+      }
+      if (typeof encodeQrSvg === 'function') {
+        try { return encodeQrSvg(payloadStr, qrOpts); } catch (_) {}
+      }
+      return '';
+    };
+    realQrSvg = encodeDirect(btUri);
+    if (!realQrSvg || realQrSvg.indexOf('<path') < 0) {
+      var compactUri = 'bt1:' + cName.slice(0, 24) + '|' + method + '|' + doseG + ':' + waterG + '@' + um;
+      realQrSvg = encodeDirect(compactUri);
+      if (!realQrSvg || realQrSvg.indexOf('<path') < 0) {
+        realQrSvg = S.encodeRealQrSvg(compactUri, qrOpts);
+      }
+    }
 
     var safeEsc = function (s) {
       return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -963,7 +1170,17 @@
       textCode: btTextCode,
       qrSvg: realQrSvg,
       tradingCardSvg: tradingCardSvg,
-      title: cName
+      title: cName,
+      meta: {
+        roaster: cRoaster,
+        originLine: [cOrigin, cProc, cRoast].filter(Boolean).join(' \u00B7 '),
+        methodLabel: S.humanMethodName(method),
+        recipeLine: doseG + ' g \u2192 ' + waterG + ' g (1:' + ratio + ')',
+        grindTempLine: gSet + ' (~' + um + ' \u00B5m) \u00B7 ' + tempC + ' \u00B0C',
+        stars: stars,
+        isLocked: !!(rowOrBag && (rowOrBag.dial_locked === 'yes' || rowOrBag.dial_locked === '1')),
+        notes: notes
+      }
     };
   }
 
@@ -1121,6 +1338,10 @@
       : [];
 
     var wrap = S.h('div', { style: 'display:flex;flex-direction:column;gap:14px' });
+
+    /* 0. Best & Golden Recipes Hall-of-Fame Strip (only when >=1 qualifying brew exists) */
+    var goldenShowcase = buildGoldenShowcaseSection(hObjs);
+    if (goldenShowcase) wrap.appendChild(goldenShowcase);
 
     /* A. Active Dial-In Trail Sparklines */
     var trailGroups = Object.create(null);
@@ -1581,6 +1802,8 @@
       var bagGuardKey = 'shelf_' + bagKey;
       var bagGuardArmed = ui.confirmOverwriteKey === bagGuardKey && ui.confirmOverwriteUntil > Date.now();
       var bagSym = bag.sym || (bag.currency === 'EUR' ? '\u20AC' : bag.currency === 'GBP' ? '\u00A3' : '$');
+      var bagChron = getCoffeeHistoryChronological(bag.coffee, bag.roaster, bag.coffee_id || (uRec && uRec.coffee_id), hObjs);
+      var bagTimeline = buildDialInConvergenceTimeline(bagChron, null, { compact: true });
 
       wrap.appendChild(S.h('article', {
         class: 'bt-cellar-bag-card',
@@ -1611,6 +1834,7 @@
           isLocked ? S.h('span', { class: 'bt-tc-badge is-gold', text: 'Gold Recipe Locked' }) : null
         ),
         S.h('div', { class: 'bt-cellar-meter' }, S.h('i', { style: 'width:' + ev.pctLeft + '%' })),
+        bagTimeline,
         ev.oddTail ? S.h('div', { class: 'bt-tc-tabu-banner' },
           S.h('span', { text: 'Last-Dose Bag Rescue (' + ev.oddTail.remG + ' g left): Brew ' + ev.oddTail.remG + ' g coffee : ' + ev.oddTail.waterG + ' g water slightly finer so a shallow bed stays sweet!' })
         ) : null,
@@ -3279,10 +3503,18 @@
     var art = (payload && payload.art) || buildPassportArtifacts(payload && payload.item);
     var fromDetailIdx = payload && payload.fromDetailIdx != null ? +payload.fromDetailIdx : null;
     var qrBox = S.h('div', { class: 'bt-qr-real-box' });
-    qrBox.innerHTML = art.qrSvg;
+    var qrMarkup = art && art.qrSvg ? String(art.qrSvg) : '';
+    if ((!qrMarkup || qrMarkup.indexOf('<path') < 0) && typeof window !== 'undefined' && typeof window.encodeQrSvg === 'function') {
+      try {
+        qrMarkup = window.encodeQrSvg((art && (art.uri || art.textCode)) || 'bt1:passport', { size: 184, margin: 3, fg: '#1A1412', bg: '#FAF6F0' });
+      } catch (_) {}
+    }
+    qrBox.innerHTML = qrMarkup;
 
-    return S.h('div', { class: 'bt-tc-sheet', style: 'display:flex;flex-direction:column;gap:12px' },
-      S.h('div', { class: 'bt-sheet-back-bar' },
+    var m = (art && art.meta) || {};
+
+    return S.h('div', { class: 'bt-tc-sheet', id: 'bt-passport-qr-sheet', style: 'display:flex;flex-direction:column;gap:12px' },
+      S.h('div', { class: 'bt-sheet-back-bar no-print' },
         S.h('button', {
           type: 'button',
           class: 'bt-tc-back-pill',
@@ -3294,11 +3526,20 @@
       ),
       S.h('div', { class: 'bt-passport-preview' },
         S.h('div', { class: 'bt-tc-kicker', text: 'Offline Scannable Brew Passport' }),
-        S.h('b', { style: 'font-family:var(--font-display);font-size:1.15rem', text: art.title }),
+        S.h('div', { style: 'display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap' },
+          m.isLocked ? buildGoldSealSvg(22) : null,
+          S.h('b', { style: 'font-family:var(--font-display);font-size:1.18rem', text: art.title })
+        ),
+        (m.roaster || m.originLine) ? S.h('div', { style: 'font-size:0.82rem;color:var(--ink-secondary);font-weight:600', text: [m.roaster, m.originLine].filter(Boolean).join(' \u00B7 ') }) : null,
+        (m.methodLabel || m.recipeLine) ? S.h('div', { class: 'bt-tc-well', style: 'width:100%;max-width:420px;align-items:center;text-align:center;gap:3px' },
+          S.h('div', { class: 'mono', style: 'font-size:0.82rem;font-weight:800;color:var(--ink)', text: [m.methodLabel, m.recipeLine].filter(Boolean).join(' \u00B7 ') }),
+          m.grindTempLine ? S.h('div', { class: 'mono', style: 'font-size:0.76rem;color:var(--ink-secondary)', text: m.grindTempLine }) : null,
+          m.stars > 0 ? S.h('div', { class: 'mono', style: 'font-size:0.76rem;font-weight:700;color:var(--accent)', text: 'Rated ' + m.stars.toFixed(2) + ' / 5.00' + (m.isLocked ? ' \u00B7 Golden Recipe' : '') }) : null
+        ) : null,
         qrBox,
         S.h('div', { class: 'mono', style: 'font-size:0.74rem;word-break:break-all;color:var(--ink-secondary)', text: art.textCode })
       ),
-      S.h('div', { class: 'bt-tc-pill-wrap', style: 'justify-content:center' },
+      S.h('div', { class: 'bt-tc-pill-wrap no-print', style: 'justify-content:center' },
         S.h('button', {
           type: 'button',
           class: 'bt-tc-pill is-active',
@@ -3324,7 +3565,15 @@
               setTimeout(function () { link.remove(); URL.revokeObjectURL(url); }, 1000);
             } catch (_) {}
           }
-        })
+        }),
+        S.h('button', {
+          type: 'button',
+          id: 'bt-qr-passport-print-btn',
+          class: 'bt-tc-pill is-soft',
+          onclick: function () {
+            try { if (typeof window !== 'undefined' && typeof window.print === 'function') window.print(); } catch (_) {}
+          }
+        }, S.iconEl('share-card', { size: 15 }), S.h('span', { text: 'Print / Save PDF' }))
       )
     );
   });
@@ -3338,6 +3587,8 @@
     var un = function (v) { return typeof unneutralize === 'function' ? unneutralize(v || '') : String(v || ''); };
     var isLocked = r.dial_locked === 'yes' || r.dial_locked === '1';
     var timeSecs = +(r.brew_actual_time_s || r.brew_time_s) || 0;
+    var detailChron = getCoffeeHistoryChronological(r.coffee_name, r.roaster, r.coffee_id, hObjs);
+    var detailTimeline = buildDialInConvergenceTimeline(detailChron, r, { compact: false });
 
     var kvPairs = [
       ['Date', r.cupping_date],
@@ -3361,7 +3612,7 @@
     ].filter(function (p) { return !!p[1]; });
 
     return S.h('div', { class: 'bt-tc-sheet', id: 'bt-screen-detail', style: 'display:flex;flex-direction:column;gap:12px' },
-      S.h('div', { class: 'bt-sheet-back-bar' },
+      S.h('div', { class: 'bt-sheet-back-bar no-print' },
         S.h('button', {
           type: 'button',
           class: 'bt-tc-back-pill',
@@ -3393,8 +3644,9 @@
         S.h('span', { class: 'bt-tc-kicker', text: 'Tasting Notes' }),
         S.h('div', { style: 'font-size:0.86rem', text: un(r.general_notes) })
       ) : null,
+      detailTimeline,
       (!isLocked && extractRowRecommendation(r).hasRec) ? buildSavedNextBrewCallout(r, false) : null,
-      S.h('div', { class: 'bt-tc-pill-wrap' },
+      S.h('div', { class: 'bt-tc-pill-wrap no-print' },
         S.h('button', {
           type: 'button',
           class: 'bt-tc-pill is-active',
@@ -3439,7 +3691,15 @@
           class: 'bt-tc-pill is-soft',
           text: 'QR Trading Card',
           onclick: function () { openQrPassportSheet(r, { fromDetailIdx: rIdx }); }
-        })
+        }),
+        S.h('button', {
+          type: 'button',
+          id: 'bt-detail-print-btn',
+          class: 'bt-tc-pill is-soft',
+          onclick: function () {
+            try { if (typeof window !== 'undefined' && typeof window.print === 'function') window.print(); } catch (_) {}
+          }
+        }, S.iconEl('share-card', { size: 15 }), S.h('span', { text: 'Print / Save PDF' }))
       )
     );
   });
@@ -3809,6 +4069,11 @@
       openDetail: openTastingDetailSheet,
       openEdit: openTastingEditSheet,
       openQrPassport: openQrPassportSheet,
+      hydrateAndBrewRow: function (r) {
+        if (!r) return;
+        hydrateBrewFromRowOrBag(r, null, null);
+        navigateToHomeRecipe();
+      },
       cloneCafeDrinkToHome: solveCloneCafeDrinkSafe
     };
   }
