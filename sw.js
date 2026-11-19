@@ -1,20 +1,23 @@
 /* ============================================================================
- * BeanTelligence v6.0 — Offline-First Non-Intrusive Service Worker (sw.js)
- * Cache Version: bt-pwa-v6.0.0
+ * BeanTelligence v6.7 — Offline-First Non-Intrusive Service Worker (sw.js)
+ * Cache Version: bt-pwa-v6.7.0
  * Brew-Safe Guarantee: Never forces mid-session takeover or reload during brews
  * ============================================================================ */
 'use strict';
 
-const CACHE_NAME = 'bt-pwa-v6.0.0';
+const CACHE_NAME = 'bt-pwa-v6.7.0';
 const PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.webmanifest',
+  './icons/icon-64.png',
+  './icons/favicon-beanjamin.png',
   './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
-  './icons/icon-1024.png'
+  './icons/icon-1024.png',
+  './icons/og-beanjamin.png'
 ];
 
 let clientBrewTimerActive = false;

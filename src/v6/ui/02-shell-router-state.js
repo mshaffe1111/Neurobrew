@@ -1382,8 +1382,8 @@ function toast(message, opts) {
 /* ==================== 3-DETENT SPRING BOTTOM SHEET (BTSheet) ==================== */
 const _sheetRegistry = new Map();
 const _sheetTitles = {
-  'workflow-tools':  'My Workflow & Tools',
-  'bench-gear':      'My Workflow & Tools',
+  'workflow-tools':  'My Gear & Setup',
+  'bench-gear':      'My Gear & Setup',
   'my-coffees':      'My Coffees Vault',
   'bag-capture':     'Add or Scan Coffee Bag',
   'capture-bag':     'Add or Scan Coffee Bag',
@@ -1582,7 +1582,7 @@ const BTSheet = (function() {
   return { register, open, close, isOpen, currentKey, setDetent, setTitle, bindGestures };
 })();
 
-/* ==================== MY WORKFLOW & TOOLS SHEET ('workflow-tools' & 'bench-gear') ==================== */
+/* ==================== MY GEAR & SETUP SHEET ('workflow-tools' & 'bench-gear') ==================== */
 const _SENSOR_TOOL_ROWS = [
   { key: 'scale',         label: 'Smart Scale',                sub: 'Bluetooth live weight, g/s pour speed & auto-start',               icon: 'scale-deck' },
   { key: 'refractometer', label: 'Refractometer (DiFluid R2)', sub: 'Measures strength (%TDS) & extraction (%EY) alongside your taste', icon: 'refract-prism' },
@@ -1611,12 +1611,62 @@ const _POPULAR_OWNED_BREWERS = [
   ['cold', 'Cold Brew']
 ];
 
+const _QUICK_WATER_KEYS = [
+  ['sca-ideal',    'SCA Balanced'],
+  ['lotus-bright', 'Lotus Bright'],
+  ['tww-classic',  'TWW Classic'],
+  ['soft-tap',     'Soft Tap'],
+  ['medium-tap',   'Medium Tap'],
+  ['ro-distilled', 'RO / Distilled']
+];
+
+function _resolveActiveGrinderShort() {
+  const gKey = (app && app.prefs && app.prefs.gear && app.prefs.gear.grinderKey) || (app && app.brew && app.brew.grinderKey) || '';
+  const gName = (app && app.prefs && app.prefs.gear && app.prefs.gear.grinderName) || (app && app.brew && app.brew.grinderName) || '';
+  const grinders = (typeof window !== 'undefined' && window.BTCoreV6 && Array.isArray(window.BTCoreV6.GRINDERS_48))
+    ? window.BTCoreV6.GRINDERS_48
+    : (typeof GRINDERS !== 'undefined' && Array.isArray(GRINDERS) ? GRINDERS : []);
+  if (gKey && grinders.length) {
+    const found = grinders.find(function(x) { return x.key === gKey; });
+    if (found) return found.short || found.name || gName || gKey;
+  }
+  return gName || '';
+}
+
 function _renderWorkflowToolsSheet(bodyEl, payload, api) {
   bodyEl.textContent = '';
 
   function rebuild() {
     _renderWorkflowToolsSheet(bodyEl, payload, api);
   }
+
+  function openBleBench() {
+    if (_sheetRegistry.has('ble-devices')) {
+      BTSheet.open('ble-devices', null, { detent: 'full', title: 'Bluetooth Scales, R2, Omni & Smart Gear' });
+    } else {
+      api.close();
+      go('devices');
+    }
+  }
+
+  /* 0. Quick-Jump Studio & Hardware Actions */
+  const quickActionsCard = h('div', { class: 'bt-card', style: 'margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px' },
+    h('button', {
+      type: 'button',
+      class: 'bt-btn is-primary',
+      style: 'flex:1 1 200px',
+      onclick: function() {
+        api.close();
+        go('method');
+      }
+    }, BTIcons.el('brew', { size: 16 }), h('span', { text: 'Jump to Step 2 Brewer Studio' })),
+    h('button', {
+      type: 'button',
+      class: 'bt-btn',
+      style: 'flex:1 1 200px',
+      onclick: openBleBench
+    }, BTIcons.el('ble-wave', { size: 16 }), h('span', { text: 'Open Bluetooth Hardware Bench' }))
+  );
 
   /* 1. Experience Lens Quick Selector */
   const curLens = BTScienceLens.level();
@@ -1641,12 +1691,78 @@ function _renderWorkflowToolsSheet(bodyEl, payload, api) {
     )
   );
 
-  /* 2. Brewers Filter (All 23 vs Only Owned) + Owned Counter Brewers */
+  /* 2. Grinder & Burrs + Units */
+  const grinders = (typeof window !== 'undefined' && window.BTCoreV6 && Array.isArray(window.BTCoreV6.GRINDERS_48))
+    ? window.BTCoreV6.GRINDERS_48
+    : (typeof GRINDERS !== 'undefined' && Array.isArray(GRINDERS) ? GRINDERS : []);
+  const curGrinderKey = (app.prefs.gear && app.prefs.gear.grinderKey) || app.brew.grinderKey || '';
+
+  const grinderCard = h('div', { class: 'bt-card', style: 'margin-bottom:12px;display:flex;flex-direction:column;gap:10px' },
+    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px' },
+      h('span', { style: 'display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)' },
+        BTIcons.el('grinder-burr', { size: 14 }),
+        h('span', { text: 'Grinder & Burrs' })
+      ),
+      _resolveActiveGrinderShort() ? h('span', { class: 'bt-badge', text: _resolveActiveGrinderShort() }) : null
+    ),
+    grinders.length ? h('select', {
+      class: 'bt-input',
+      'aria-label': 'Primary coffee grinder and burrs',
+      onchange: function(e) {
+        const gk = e.target.value;
+        const found = grinders.find(function(x) { return x.key === gk; });
+        app.brew.grinderKey = gk;
+        app.brew.grinderName = found ? (found.name || found.short || gk) : '';
+        if (app.prefs.gear) {
+          app.prefs.gear.grinderKey = gk;
+          app.prefs.gear.grinderName = app.brew.grinderName;
+        }
+        changed();
+        render();
+        paintChrome();
+        paintStudioAside();
+        rebuild();
+      }
+    },
+      h('option', { value: '', selected: !curGrinderKey, text: 'Select primary grinder (calibrated models)...' }),
+      grinders.map(function(g) {
+        return h('option', { value: g.key, selected: g.key === curGrinderKey, text: g.name || g.short || g.key });
+      })
+    ) : null,
+    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap' },
+      h('div', { class: 'bt-seg-bar', style: 'min-width:160px' },
+        ['F', 'C'].map(function(u) {
+          return h('button', {
+            type: 'button',
+            'aria-pressed': String(app.prefs.tempUnit === u),
+            text: 'Temp °' + u,
+            onclick: function() {
+              app.prefs.tempUnit = u;
+              changed();
+              render();
+              rebuild();
+            }
+          });
+        })
+      ),
+      h('button', {
+        type: 'button',
+        class: 'bt-chip',
+        style: 'min-height:36px;font-size:12px',
+        onclick: function() {
+          api.close();
+          go('method');
+        }
+      }, BTIcons.el('brew', { size: 14 }), h('span', { text: 'Step 2 Brewer Studio →' }))
+    )
+  );
+
+  /* 3. My Brewers & Kettle */
   const bf = btToolMode('brewersFilter');
   const ownedSet = new Set(Array.isArray(app.prefs.ownedBrewers) ? app.prefs.ownedBrewers : []);
   const brewersCard = h('div', { class: 'bt-card', style: 'margin-bottom:12px;display:flex;flex-direction:column;gap:10px' },
     h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px' },
-      h('span', { style: 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)' }, 'Brewer Counter Filter'),
+      h('span', { style: 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)' }, 'My Brewers & Kettle'),
       h('span', { class: 'bt-badge', text: ownedSet.size + ' Owned' })
     ),
     h('div', { class: 'bt-seg-bar', role: 'group', 'aria-label': 'Brewer list filter' },
@@ -1682,17 +1798,98 @@ function _renderWorkflowToolsSheet(bodyEl, payload, api) {
             if (app.prefs.gear) app.prefs.gear.ownedBrewers = arr.slice();
             changed();
             render();
+            paintChrome();
             rebuild();
           }
         }, BTIcons.forBrewer(br[0], { size: 15 }), h('span', { text: br[1] }));
       })
+    ),
+    h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--line-hairline)' },
+      BTIcons.el('kettle-gooseneck', { size: 16 }),
+      h('input', {
+        type: 'text',
+        class: 'bt-input',
+        style: 'flex:1 1 180px',
+        placeholder: 'Kettle (e.g. Fellow Stagg EKG+, Brewista)...',
+        'aria-label': 'Primary brewing kettle',
+        value: (app.prefs.gear && app.prefs.gear.kettle) || app.prefs.kettle || '',
+        onchange: function(e) {
+          const val = String(e.target.value || '').trim().slice(0, 80);
+          app.prefs.kettle = val;
+          if (app.prefs.gear) app.prefs.gear.kettle = val;
+          changed();
+        }
+      })
     )
   );
 
-  /* 3. Per-Sensor Modes: Always Use | Optional | Off */
-  const sensorsCard = h('div', { class: 'bt-card', style: 'margin-bottom:12px;display:flex;flex-direction:column;gap:10px' },
+  /* 4. Brew Water Profile */
+  const waterPresets = (typeof window !== 'undefined' && window.BTCoreV6 && Array.isArray(window.BTCoreV6.WATER_PRESETS_UNIFIED))
+    ? window.BTCoreV6.WATER_PRESETS_UNIFIED
+    : [];
+  const curWaterKey = (app.prefs.gear && app.prefs.gear.waterProfileKey) || app.prefs.waterProfileKey || '';
+  const setWaterProfile = function(wk) {
+    app.prefs.waterProfileKey = wk;
+    if (app.prefs.gear) app.prefs.gear.waterProfileKey = wk;
+    const wp = waterPresets.find(function(w) { return w.key === wk || w.id === wk; });
+    if (wp) {
+      app.prefs.waterType = wp.waterType || app.prefs.waterType;
+      if (app.prefs.gear) {
+        app.prefs.gear.waterType = wp.waterType || app.prefs.gear.waterType;
+        app.prefs.gear.waterGH = String(wp.gh);
+        app.prefs.gear.waterAlk = String(wp.kh);
+      }
+    }
+    changed();
+    render();
+    paintStudioAside();
+    rebuild();
+  };
+
+  const waterCard = h('div', { class: 'bt-card', style: 'margin-bottom:12px;display:flex;flex-direction:column;gap:10px' },
+    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px' },
+      h('span', { style: 'display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)' },
+        BTIcons.el('droplet', { size: 14 }),
+        h('span', { text: 'Brew Water Profile' })
+      ),
+      h('button', {
+        type: 'button',
+        class: 'bt-chip',
+        style: 'min-height:30px;padding:2px 9px;font-size:11.5px',
+        onclick: function() {
+          api.close();
+          go('water');
+        }
+      }, h('span', { text: 'Water Lab →' }))
+    ),
+    h('div', { class: 'bt-pill-row', role: 'group', 'aria-label': 'Quick brew water presets' },
+      _QUICK_WATER_KEYS.map(function(wq) {
+        return h('button', {
+          type: 'button',
+          class: 'bt-chip',
+          style: 'min-height:34px;padding:4px 10px;font-size:12px',
+          'aria-pressed': String(curWaterKey === wq[0]),
+          text: wq[1],
+          onclick: function() { setWaterProfile(wq[0]); }
+        });
+      })
+    ),
+    waterPresets.length ? h('select', {
+      class: 'bt-input',
+      'aria-label': 'All brew water profiles',
+      onchange: function(e) { setWaterProfile(e.target.value); }
+    },
+      h('option', { value: '', selected: !curWaterKey, text: 'Select water profile (' + waterPresets.length + ' presets)...' }),
+      waterPresets.map(function(wp) {
+        return h('option', { value: wp.key, selected: wp.key === curWaterKey || wp.id === curWaterKey, text: wp.label + ' (' + wp.gh + ' GH / ' + wp.kh + ' KH)' });
+      })
+    ) : null
+  );
+
+  /* 5. Smart Bluetooth Sensors & Hardware Bench */
+  const sensorsCard = h('div', { class: 'bt-card', style: 'display:flex;flex-direction:column;gap:10px' },
     h('div', null,
-      h('div', { style: 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)' }, 'Per-Sensor Workflow Modes'),
+      h('div', { style: 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)' }, 'Smart Bluetooth Sensors'),
       h('p', { style: 'font-size:12px;color:var(--ink-secondary);margin-top:2px', text: 'Set Off to hide hardware clutter completely, Optional for 1-tap pills, or Always Use for inline telemetry.' })
     ),
     _SENSOR_TOOL_ROWS.map(function(row) {
@@ -1724,88 +1921,34 @@ function _renderWorkflowToolsSheet(bodyEl, payload, api) {
           })
         )
       );
-    })
-  );
-
-  /* 4. Grinder, Units & BLE Hardware Bench Link */
-  const grinders = (typeof window !== 'undefined' && window.BTCoreV6 && Array.isArray(window.BTCoreV6.GRINDERS_48))
-    ? window.BTCoreV6.GRINDERS_48
-    : (typeof GRINDERS !== 'undefined' && Array.isArray(GRINDERS) ? GRINDERS : []);
-  const curGrinderKey = (app.prefs.gear && app.prefs.gear.grinderKey) || app.brew.grinderKey || '';
-
-  const gearCard = h('div', { class: 'bt-card', style: 'display:flex;flex-direction:column;gap:10px' },
-    h('div', { style: 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)' }, 'Countertop Grinder & Units'),
-    grinders.length ? h('select', {
-      class: 'bt-input',
-      'aria-label': 'Primary coffee grinder',
-      onchange: function(e) {
-        const gk = e.target.value;
-        const found = grinders.find(function(x) { return x.key === gk; });
-        app.brew.grinderKey = gk;
-        app.brew.grinderName = found ? (found.name || found.short || gk) : '';
-        if (app.prefs.gear) {
-          app.prefs.gear.grinderKey = gk;
-          app.prefs.gear.grinderName = app.brew.grinderName;
+    }),
+    h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--line-hairline)' },
+      h('button', {
+        type: 'button',
+        class: 'bt-btn is-primary',
+        style: 'flex:1 1 200px',
+        onclick: openBleBench
+      }, BTIcons.el('ble-wave', { size: 16 }), h('span', { text: 'Open Bluetooth Hardware Bench' })),
+      (typeof window !== 'undefined' && window.BTBle && typeof window.BTBle.toggleDemoAutoPilot === 'function') ? h('button', {
+        type: 'button',
+        class: 'bt-btn',
+        'aria-pressed': String(!!(window.BTBle.isDemoAutoPilotActive && window.BTBle.isDemoAutoPilotActive())),
+        onclick: function() {
+          const res = window.BTBle.toggleDemoAutoPilot();
+          toast(res && res.active ? 'Bluetooth Scale Demo started (Ready \u2192 Pouring \u2192 Draining \u2192 Cup Done \u2192 Sample Ready).' : 'Bluetooth Scale Demo stopped.');
+          paintChrome();
+          paintStudioAside();
+          rebuild();
         }
-        changed();
-        render();
-      }
-    },
-      h('option', { value: '', selected: !curGrinderKey, text: 'Select primary grinder (52 calibrated models)...' }),
-      grinders.map(function(g) {
-        return h('option', { value: g.key, selected: g.key === curGrinderKey, text: g.name || g.short || g.key });
-      })
-    ) : null,
-    h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap' },
-      h('div', { class: 'bt-seg-bar', style: 'min-width:160px' },
-        ['F', 'C'].map(function(u) {
-          return h('button', {
-            type: 'button',
-            'aria-pressed': String(app.prefs.tempUnit === u),
-            text: 'Temp °' + u,
-            onclick: function() {
-              app.prefs.tempUnit = u;
-              changed();
-              render();
-              rebuild();
-            }
-          });
-        })
-      ),
-      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
-        (typeof window !== 'undefined' && window.BTBle && typeof window.BTBle.toggleDemoAutoPilot === 'function') ? h('button', {
-          type: 'button',
-          class: 'bt-btn',
-          'aria-pressed': String(!!(window.BTBle.isDemoAutoPilotActive && window.BTBle.isDemoAutoPilotActive())),
-          onclick: function() {
-            const res = window.BTBle.toggleDemoAutoPilot();
-            toast(res && res.active ? 'Bluetooth Scale Demo started (Ready \u2192 Pouring \u2192 Draining \u2192 Cup Done \u2192 Sample Ready).' : 'Bluetooth Scale Demo stopped.');
-            paintChrome();
-            paintStudioAside();
-            rebuild();
-          }
-        }, BTIcons.el('play', { size: 15 }), h('span', { text: (window.BTBle.isDemoAutoPilotActive && window.BTBle.isDemoAutoPilotActive()) ? 'Stop BLE Demo' : 'Demo Auto-Pilot' })) : null,
-        h('button', {
-          type: 'button',
-          class: 'bt-btn',
-          onclick: function() {
-            if (_sheetRegistry.has('ble-devices')) {
-              BTSheet.open('ble-devices', null, { detent: 'full' });
-            } else {
-              api.close();
-              go('devices');
-            }
-          }
-        }, BTIcons.el('ble-wave', { size: 16 }), h('span', { text: 'Pair Bluetooth Gear →' }))
-      )
+      }, BTIcons.el('play', { size: 15 }), h('span', { text: (window.BTBle.isDemoAutoPilotActive && window.BTBle.isDemoAutoPilotActive()) ? 'Stop BLE Demo' : 'Demo Auto-Pilot' })) : null
     )
   );
 
-  bodyEl.append(lensCard, brewersCard, sensorsCard, gearCard);
+  bodyEl.append(quickActionsCard, lensCard, grinderCard, brewersCard, waterCard, sensorsCard);
 }
 
-BTSheet.register('workflow-tools', _renderWorkflowToolsSheet, { title: 'My Workflow & Tools', detent: 'full' });
-BTSheet.register('bench-gear', _renderWorkflowToolsSheet, { title: 'My Workflow & Tools', detent: 'full' });
+BTSheet.register('workflow-tools', _renderWorkflowToolsSheet, { title: 'My Gear & Setup', detent: 'full' });
+BTSheet.register('bench-gear', _renderWorkflowToolsSheet, { title: 'My Gear & Setup', detent: 'full' });
 
 /* ==================== 5-TAB REGISTRY, GUIDED 5-STEP TRAIL & 55+ LEGACY ROUTES ==================== */
 const TAB_ORDER = ['brew', 'cellar', 'lab', 'palate', 'academy'];
@@ -2405,7 +2548,10 @@ function render() {
   paintStudioAside();
 }
 
+let _navNoteSeq = 0;
+
 function navNote(push) {
+  _navNoteSeq++;
   try {
     if (typeof window === 'undefined' || !window.history) return;
     const snap = _captureNavSnapshot();
@@ -2573,6 +2719,7 @@ function go(routeOrTabKey, payload) {
 
     if (customHandler && _dispatchingRoute !== key) {
       const beforeSeq = _renderSeq;
+      const beforeNoteSeq = _navNoteSeq;
       _dispatchingRoute = key;
       try {
         customHandler(effPayload, {
@@ -2588,20 +2735,30 @@ function go(routeOrTabKey, payload) {
       } finally {
         _dispatchingRoute = '';
       }
+      if (ROUTE_MAP[key] && app.activeTab === targetTab && !info.sheet) {
+        app.screen = key;
+        if (typeof document !== 'undefined' && document.body) {
+          document.body.setAttribute('data-screen', key);
+        }
+      }
       if (_renderSeq === beforeSeq) {
         render();
       }
+      if (info.sheet) {
+        BTSheet.open(info.sheet, effPayload, { detent: info.detent || 'half', title: _sheetTitles[info.sheet] });
+      }
+      navNote(_navNoteSeq === beforeNoteSeq ? !fromBack : false);
     } else {
       render();
       if (info.sheet) {
-        BTSheet.open(info.sheet, effPayload, { detent: info.detent || 'half' });
+        BTSheet.open(info.sheet, effPayload, { detent: info.detent || 'half', title: _sheetTitles[info.sheet] });
       }
+      navNote(!fromBack);
     }
 
     if (app.justSavedTasting && app.activeTab === 'brew' && app.brewStep === 'door' && !app.justSavedTasting._shownOnPalate) {
       app.justSavedTasting._shownOnDoor = true;
     }
-    navNote(!fromBack);
     if (typeof window !== 'undefined' && window.scrollTo && !BTSheet.isOpen()) {
       try { window.scrollTo({ top: 0 }); } catch (e) {}
     }
@@ -2791,7 +2948,7 @@ function buildStaticChrome() {
     }
     topBrand.textContent = '';
     topBrand.append(
-      h('span', { class: 'bt-top-brand-mark', html: BTBrand.logoSvg({ optical: 'micro' }) }),
+      h('span', { class: 'bt-top-brand-mark', html: BTBrand.logoSvg({ size: 28, optical: 'micro' }) }),
       h('span', { class: 'bt-top-brand-name', html: 'Bean<span>Telligence</span>' })
     );
     topBrand.onclick = function() { go('door'); };
@@ -2824,6 +2981,14 @@ function buildStaticChrome() {
       );
       railWm.parentNode.insertBefore(railBackBtn, railWm.nextSibling);
     }
+  }
+
+  /* Top My Gear Pill (ALWAYS opens 'workflow-tools' -> 'My Gear & Setup') */
+  const gearPill = $('top-gear-pill');
+  if (gearPill) {
+    gearPill.onclick = function() {
+      BTSheet.open('workflow-tools', {}, { detent: 'full', title: 'My Gear & Setup' });
+    };
   }
 
   /* Top BLE / Smart Gear Button (ALWAYS opens 'ble-devices' whether active or unpaired) */
@@ -2888,6 +3053,29 @@ function buildStaticChrome() {
 
   BTSheet.bindGestures();
   _navBuilt = true;
+}
+
+function paintGearPill() {
+  const pill = $('top-gear-pill');
+  if (!pill) return;
+  const grinderShort = _resolveActiveGrinderShort();
+  const ownedN = Array.isArray(app && app.prefs && app.prefs.ownedBrewers) ? app.prefs.ownedBrewers.length : 0;
+  const configured = !!(grinderShort || ownedN > 0);
+  const tip = grinderShort
+    ? ('My Gear & Setup · ' + grinderShort + (ownedN ? ' · ' + ownedN + ' brewers' : ''))
+    : (ownedN ? ('My Gear & Setup · ' + ownedN + ' brewers') : 'My Gear and Brewers Setup');
+
+  pill.textContent = '';
+  pill.setAttribute('data-configured', configured ? 'true' : 'false');
+  pill.setAttribute('aria-label', tip);
+  pill.title = tip;
+  _appendKids(pill, [
+    BTIcons.el('grinder-burr', { size: 15 }),
+    h('span', { class: 'bt-gear-label bt-gear-label-full', text: 'My Gear' }),
+    h('span', { class: 'bt-gear-label bt-gear-label-short', text: 'Gear' }),
+    grinderShort ? h('span', { class: 'bt-gear-dot', 'aria-hidden': 'true' }) : null,
+    grinderShort ? h('span', { class: 'bt-gear-grinder-badge', text: grinderShort }) : null
+  ]);
 }
 
 function paintBlePill() {
@@ -3046,7 +3234,8 @@ function paintChrome() {
     if (rLbl) rLbl.textContent = rTip;
   }
 
-  /* 1. BLE Dot Pill */
+  /* 1. Gear & BLE Pills */
+  paintGearPill();
   paintBlePill();
 
   /* 2. Experience Lens Pill (Mobile Start | Comfy | Sci + Desktop Left Rail) */
@@ -3108,21 +3297,35 @@ function paintChrome() {
     _appendKids(railTabs, _buildNavItems(false));
   }
 
-  /* 5. Desktop Left Rail Workflow & Tools + BLE + Theme Box */
+  /* 5. Desktop Left Rail My Gear, Cupping Table, BLE & Theme Box */
   const railFooter = $('rail-footer');
   if (railFooter) {
     railFooter.textContent = '';
     const ble = _readBleSummary();
+    const grinderShort = _resolveActiveGrinderShort();
     _appendKids(railFooter, [
-      h('div', { class: 'bt-rail-box-label', text: 'Workflow & Bench' }),
+      h('div', { class: 'bt-rail-box-label', text: 'My Gear & Cupping' }),
       h('button', {
         type: 'button',
         class: 'bt-rail-tool-btn',
-        onclick: function() { BTSheet.open('workflow-tools', null, { detent: 'full' }); }
+        'data-rail-gear': '1',
+        onclick: function() { BTSheet.open('workflow-tools', {}, { detent: 'full', title: 'My Gear & Setup' }); }
+      },
+        h('span', { style: 'display:inline-flex;align-items:center;gap:7px;min-width:0' },
+          BTIcons.el('grinder-burr', { size: 15 }),
+          h('span', { style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap', text: grinderShort ? ('My Gear · ' + grinderShort) : 'My Gear' })
+        ),
+        BTIcons.el('chevron-right', { size: 14 })
+      ),
+      h('button', {
+        type: 'button',
+        class: 'bt-rail-tool-btn',
+        'data-rail-cupping': '1',
+        onclick: function() { go('sca'); }
       },
         h('span', { style: 'display:inline-flex;align-items:center;gap:7px' },
-          BTIcons.el('sliders', { size: 15 }),
-          h('span', { text: 'My Workflow & Tools' })
+          BTIcons.el('salami-cups', { size: 15 }),
+          h('span', { text: 'Cupping Table' })
         ),
         BTIcons.el('chevron-right', { size: 14 })
       ),
@@ -3134,7 +3337,7 @@ function paintChrome() {
           if (_sheetRegistry.has('ble-devices')) {
             BTSheet.open('ble-devices', null, { detent: 'full', title: 'Bluetooth Scales, R2, Omni & Smart Gear' });
           } else {
-            BTSheet.open('workflow-tools', null, { detent: 'full' });
+            BTSheet.open('workflow-tools', {}, { detent: 'full', title: 'My Gear & Setup' });
           }
         }
       },
@@ -3371,6 +3574,7 @@ const BTShell = {
   setPrimaryCta: setPrimaryCta,
   switchTab: switchTab,
   go: go,
+  navGo: go,
   goBack: goBack,
   render: render,
   refreshAll: refreshAll,
@@ -3444,6 +3648,7 @@ if (typeof window !== 'undefined') {
   window.btToolMode = btToolMode;
   window.btSetToolMode = btSetToolMode;
   window.PARENT = PARENT;
+  window.navGo = go;
   window.goBack = goBack;
   window.loadShopDraft = _shellLoadShopDraft;
   window.saveShopDraft = saveShopDraft;

@@ -255,22 +255,35 @@
 
   window.exactTriangleBinomialPValue = exactTriangleBinomialPValue;
 
-  /* Exact CVA 104-2024 Affective Formula: S = 50 + 0.625 * sum_{i=1..8}(h_i - 1) - 2*u - 4*d */
+  /* Exact CVA 104-2024 Affective Formula: S = 0.65625 * sum8 + 52.75 - 2*u - 4*d */
   function computeCvaBowlScore(bowl) {
-    if (typeof cvaTotal === 'function' && bowl && Array.isArray(bowl.hVals) && bowl.hVals.length === 8) {
-      try {
-        const res = cvaTotal(bowl.hVals, bowl.nonUniformCups || 0, bowl.defectiveCups || 0);
-        if (Number.isFinite(res)) return +clamp(res, 0, 100, 85).toFixed(2);
-      } catch (_) {}
-    }
-    const hArr = Array.isArray(bowl.hVals) && bowl.hVals.length === 8 ? bowl.hVals : [7, 7, 7, 7, 7, 7, 7, 7];
-    let sumShift = 0;
+    const hArr = Array.isArray(bowl && bowl.hVals) && bowl.hVals.length === 8 ? bowl.hVals : [6.143, 6.143, 6.143, 6.143, 6.143, 6.143, 6.143, 6.143];
+    let sum8 = 0;
     for (let i = 0; i < 8; i++) {
-      sumShift += clamp(hArr[i], 1, 9, 7) - 1;
+      sum8 += clamp(hArr[i], 1, 9, 6.143);
     }
-    const u = clamp(bowl.nonUniformCups || 0, 0, 5, 0);
-    const d = clamp(bowl.defectiveCups || 0, 0, 5, 0);
-    return +clamp(50 + 0.625 * sumShift - 2 * u - 4 * d, 0, 100, 85).toFixed(2);
+    const u = clamp((bowl && bowl.nonUniformCups) || 0, 0, 5, 0);
+    const d = clamp((bowl && bowl.defectiveCups) || 0, 0, 5, 0);
+    const raw = 0.65625 * sum8 + 52.75 - 2 * u - 4 * d;
+    return +(Math.round(clamp(raw, 0, 100, 85) * 4) / 4).toFixed(2);
+  }
+
+  function computeBowlStars(sc) {
+    return +clamp(Math.round((1.0 + ((sc - 58.0) / 34.0) * 4.0) * 4) / 4, 1.0, 5.0, 4.25).toFixed(2);
+  }
+
+  function bowlQualityTier(sc) {
+    if (sc >= 87.5) return { text: 'Specialty Outstanding', tone: 'is-good' };
+    if (sc >= 83.0) return { text: 'Very Good \u00B7 Balanced', tone: 'is-good' };
+    if (sc >= 79.0) return { text: 'Good Specialty', tone: 'is-gold' };
+    return { text: 'Needs Adjustment', tone: 'is-warn' };
+  }
+
+  function setBowlTargetScaBase(bowl, targetBaseSca) {
+    const h = clamp((targetBaseSca - 52.75) / 5.25, 1, 9, 6.143);
+    bowl.hVals = [h, h, h, h, h, h, h, h];
+    bowl.score = computeCvaBowlScore(bowl);
+    return bowl.score;
   }
 
   /* ==========================================================================
@@ -408,9 +421,10 @@
   /* ==========================================================================
    * LOCAL UI STATE FOR TAB 5 & SHEETS
    * ========================================================================== */
-  function makeDefaultScaBowl(idx, name, hDefault) {
+  function makeDefaultScaBowl(idx, name, scaDefault) {
     const code = String.fromCharCode(65 + idx);
-    const h = hDefault || 7;
+    const targetSca = scaDefault || 85.0;
+    const h = clamp((targetSca - 52.75) / 5.25, 1, 9, 6.143);
     const bowl = {
       code: code,
       name: name || ('Sample #' + (idx + 1)),
@@ -421,14 +435,14 @@
       nonUniformCups: 0,
       defectiveCups: 0,
       notes: '',
-      score: 80.0
+      score: targetSca
     };
     bowl.score = computeCvaBowlScore(bowl);
     return bowl;
   }
 
   const acadUi = {
-    subView: 'curriculum', /* 'curriculum' | 'gym' | 'glossary' | 'folk' | 'vault' */
+    subView: 'gym', /* 'gym' | 'curriculum' | 'glossary' | 'folk' | 'vault' */
     voiceEnabled: true,
     quizChoices: {},
 
@@ -445,11 +459,11 @@
       spoken8m: false,
       spoken12m: false,
       bowls: [
-        makeDefaultScaBowl(0, 'Ethiopia Washed', 7.5),
-        makeDefaultScaBowl(1, 'Colombia Pink Bourbon', 7.5),
-        makeDefaultScaBowl(2, 'Kenya SL28', 8.0),
-        makeDefaultScaBowl(3, 'Costa Rica Honey', 7.0),
-        makeDefaultScaBowl(4, 'Brazil Natural', 7.0)
+        makeDefaultScaBowl(0, 'Ethiopia Washed', 85.0),
+        makeDefaultScaBowl(1, 'Colombia Pink Bourbon', 86.5),
+        makeDefaultScaBowl(2, 'Kenya SL28', 88.5),
+        makeDefaultScaBowl(3, 'Costa Rica Honey', 84.0),
+        makeDefaultScaBowl(4, 'Brazil Natural', 82.5)
       ]
     },
 
@@ -1004,14 +1018,15 @@
 
     const blindToggleBtn = domH('button', {
       type: 'button',
+      id: 'bt-sca-blind-toggle-btn',
       class: 'bt-lab-chip' + (!sca.revealed ? ' is-active' : ''),
       onclick: function () {
         sca.revealed = !sca.revealed;
-        CK.haptic('tick');
+        CK.haptic(sca.revealed ? 'celebrate' : 'tick');
         if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
         else rerenderAcademyTab();
       }
-    }, sca.revealed ? 'Hide Names (Blind Mode)' : 'Reveal Sample Names');
+    }, sca.revealed ? 'Blind Mode: Hide Coffees' : 'Show Blinds / Reveal Coffees');
 
     const voiceToggleBtn = domH('button', {
       type: 'button',
@@ -1027,20 +1042,77 @@
       }
     }, acadUi.voiceEnabled ? 'Voice Cues ON' : 'Voice Cues Muted');
 
-    function enjoymentAnchorText(v) {
-      if (v <= 3.5) return 'Disliked (' + v + '/9)';
-      if (v <= 5.5) return 'Okay / Neutral (' + v + '/9)';
-      if (v <= 7.0) return 'Good (' + v + '/9)';
-      if (v <= 8.0) return 'Great (' + v + '/9)';
-      return 'Extraordinary (' + v + '/9)';
+    const scaHeroHost = domH('div', { id: 'bt-sca-score-hero', style: 'display:flex;flex-direction:column;gap:8px' });
+
+    function paintScaHeroOnly() {
+      scaHeroHost.textContent = '';
+      let topScore = -1;
+      let topBowl = null;
+      const activeBowls = [];
+      for (let i = 0; i < sca.bowlCount; i++) {
+        const b = sca.bowls[i];
+        b.score = computeCvaBowlScore(b);
+        activeBowls.push(b);
+        if (b.score > topScore) { topScore = b.score; topBowl = b; }
+      }
+
+      if (sca.revealed && topBowl) {
+        scaHeroHost.appendChild(domH('div', { class: 'bt-sca-reveal-banner', id: 'bt-sca-reveal-banner' },
+          domH('div', { style: 'display:flex;align-items:center;gap:8px;min-width:0' },
+            ic('check-seal', { size: 20 }),
+            domH('div', null,
+              domH('strong', { style: 'font-size:0.9rem;display:block', text: 'Coffees Revealed \u00B7 Top Cup: Bowl ' + topBowl.code + ' (' + (topBowl.name || 'Sample') + ')' }),
+              domH('span', { class: 'bt-lab-hint', text: topBowl.score.toFixed(1) + ' / 100 SCA \u00B7 ' + computeBowlStars(topBowl.score).toFixed(2) + ' / 5 Stars \u00B7 ' + bowlQualityTier(topBowl.score).text })
+            )
+          ),
+          domH('span', { class: 'bt-tc-badge is-good num-tab', text: topBowl.score.toFixed(1) + ' SCA Leader' })
+        ));
+      } else {
+        scaHeroHost.appendChild(domH('div', { class: 'bt-tc-well', style: 'padding:9px 12px;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px' },
+          domH('span', { style: 'font-size:0.84rem;font-weight:700', text: 'Blind Mode Active \u2014 Score all bowls without bias, then reveal coffees!' }),
+          domH('button', {
+            type: 'button',
+            class: 'bt-tc-pill is-compact is-copper',
+            text: 'Reveal Coffees \u2192',
+            onclick: function () {
+              sca.revealed = true;
+              CK.haptic('celebrate');
+              if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
+              else rerenderAcademyTab();
+            }
+          })
+        ));
+      }
+
+      scaHeroHost.appendChild(domH('div', { class: 'bt-sca-hero-grid' },
+        activeBowls.map(function (b) {
+          const isLeader = topBowl && b === topBowl;
+          const stars = computeBowlStars(b.score);
+          const tier = bowlQualityTier(b.score);
+          const dispName = sca.revealed ? (b.name || ('Sample ' + b.code)) : ('Blind Bowl ' + b.code);
+          return domH('div', { class: 'bt-sca-bowl-mini' + (isLeader ? ' is-leader' : '') },
+            domH('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px' },
+              domH('strong', { style: 'font-size:0.8rem', text: 'Bowl ' + b.code }),
+              domH('span', { class: 'bt-tc-badge ' + tier.tone, style: 'font-size:0.68rem;padding:2px 7px', text: tier.text })
+            ),
+            domH('span', { style: 'font-size:0.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis', text: dispName }),
+            domH('div', { class: 'num-tab', style: 'display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-top:2px' },
+              domH('strong', { style: 'font-size:1.05rem', text: b.score.toFixed(1) + ' SCA' }),
+              domH('span', { style: 'font-size:0.78rem;font-weight:700;color:var(--accent)', text: stars.toFixed(2) + ' / 5' })
+            )
+          );
+        })
+      ));
     }
 
     const bowlsGrid = domH('div', { class: 'bt-sca-bowls-grid' });
+    const SCA_PRESETS = [7.5, 8.0, 8.25, 8.5, 8.75, 9.0];
+
     for (let i = 0; i < sca.bowlCount; i++) {
       (function (bObj) {
         bObj.score = computeCvaBowlScore(bObj);
-        const scoreBadge = domH('strong', { class: 'bt-sca-score-live num-tab', text: 'Cupping Score: ' + bObj.score.toFixed(2) + ' / 100' });
-        const quickValLbl = domH('strong', { class: 'num-tab', text: enjoymentAnchorText(bObj.hVals[7] || 7.5) });
+        const scoreBadge = domH('strong', { class: 'bt-sca-score-live num-tab', text: bObj.score.toFixed(2) + ' / 100 SCA \u00B7 ' + computeBowlStars(bObj.score).toFixed(2) + ' / 5' });
+        const tierBadge = domH('span', { class: 'bt-tc-badge ' + bowlQualityTier(bObj.score).tone, text: bowlQualityTier(bObj.score).text });
 
         const nameInput = domH('input', {
           type: sca.revealed ? 'text' : 'password',
@@ -1048,7 +1120,7 @@
           value: bObj.name,
           placeholder: 'Sample ' + bObj.code + ' coffee name...',
           'aria-label': 'Bowl ' + bObj.code + ' coffee name',
-          oninput: function () { bObj.name = nameInput.value; }
+          oninput: function () { bObj.name = nameInput.value; paintScaHeroOnly(); }
         });
 
         const notesInput = domH('input', {
@@ -1060,91 +1132,171 @@
           oninput: function () { bObj.notes = notesInput.value; }
         });
 
-        const traitSliderRefs = [];
-        /* Full 1..9 Overall Enjoyment Slider + Expandable 8-Trait Sliders */
-        const quickSlider = domH('input', {
-          type: 'range',
-          class: 'bt-lab-range',
-          min: '1',
-          max: '9',
-          step: '0.5',
-          value: String(bObj.hVals[7] || 7.5),
-          'aria-label': 'Bowl ' + bObj.code + ' Overall Enjoyment 1 to 9',
-          oninput: function () {
-            const hv = clamp(parseFloat(quickSlider.value), 1, 9, 7.5);
-            for (let k = 0; k < 8; k++) bObj.hVals[k] = hv;
-            traitSliderRefs.forEach(function (ref) {
-              ref.rng.value = String(hv);
-              ref.valSpan.textContent = hv + ' / 9';
+        const presetBtns = [];
+        const traitPillRefs = [];
+
+        function syncBowlCardVisuals() {
+          bObj.score = computeCvaBowlScore(bObj);
+          const stars = computeBowlStars(bObj.score);
+          const tier = bowlQualityTier(bObj.score);
+          scoreBadge.textContent = bObj.score.toFixed(2) + ' / 100 SCA \u00B7 ' + stars.toFixed(2) + ' / 5';
+          tierBadge.className = 'bt-tc-badge ' + tier.tone;
+          tierBadge.textContent = tier.text;
+          const baseBeforeDef = bObj.score + 2 * (bObj.nonUniformCups || 0) + 4 * (bObj.defectiveCups || 0);
+          presetBtns.forEach(function (pb) {
+            const on = Math.abs(baseBeforeDef - pb.val * 10) < 0.13;
+            pb.btn.className = 'bt-tc-pill is-compact num-tab' + (on ? ' is-active' : ' is-soft');
+            pb.btn.setAttribute('aria-pressed', String(on));
+          });
+          traitPillRefs.forEach(function (tr) {
+            const curH = Math.round(bObj.hVals[tr.aIdx] || 7);
+            tr.valSpan.textContent = (+bObj.hVals[tr.aIdx]).toFixed(1).replace(/\.0$/, '') + ' / 9';
+            tr.btns.forEach(function (tb, bIdx) {
+              const on = (bIdx + 1) === curH;
+              tb.className = 'bt-tc-pill is-compact num-tab' + (on ? ' is-active' : ' is-soft');
+              tb.setAttribute('aria-pressed', String(on));
             });
-            quickValLbl.textContent = enjoymentAnchorText(hv);
-            bObj.score = computeCvaBowlScore(bObj);
-            scoreBadge.textContent = 'Cupping Score: ' + bObj.score.toFixed(2) + ' / 100';
+          });
+          paintScaHeroOnly();
+        }
+
+        const presetRow = domH('div', { class: 'bt-sca-preset-row', role: 'group', 'aria-label': 'Bowl ' + bObj.code + ' SCA presets' },
+          SCA_PRESETS.map(function (pv) {
+            const bBtn = domH('button', {
+              type: 'button',
+              class: 'bt-tc-pill is-compact is-soft num-tab',
+              text: String(pv),
+              onclick: function () {
+                setBowlTargetScaBase(bObj, pv * 10);
+                CK.haptic('tick');
+                syncBowlCardVisuals();
+              }
+            });
+            presetBtns.push({ val: pv, btn: bBtn });
+            return bBtn;
+          })
+        );
+
+        const stepperRow = domH('div', { class: 'bt-sca-stepper-row' },
+          domH('div', { style: 'display:flex;align-items:center;gap:6px' },
+            domH('button', {
+              type: 'button',
+              class: 'bt-tc-finetune-btn',
+              'aria-label': 'Bowl ' + bObj.code + ' minus 0.25',
+              text: '-0.25',
+              onclick: function () {
+                const curBase = bObj.score + 2 * (bObj.nonUniformCups || 0) + 4 * (bObj.defectiveCups || 0);
+                setBowlTargetScaBase(bObj, clamp(curBase - 0.25, 58, 100, 84.75));
+                CK.haptic('tick');
+                syncBowlCardVisuals();
+              }
+            }),
+            domH('button', {
+              type: 'button',
+              class: 'bt-tc-finetune-btn',
+              'aria-label': 'Bowl ' + bObj.code + ' plus 0.25',
+              text: '+0.25',
+              onclick: function () {
+                const curBase = bObj.score + 2 * (bObj.nonUniformCups || 0) + 4 * (bObj.defectiveCups || 0);
+                setBowlTargetScaBase(bObj, clamp(curBase + 0.25, 58, 100, 85.25));
+                CK.haptic('tick');
+                syncBowlCardVisuals();
+              }
+            })
+          ),
+          tierBadge
+        );
+
+        const taintBtn = domH('button', {
+          type: 'button',
+          class: 'bt-tc-pill is-compact' + (bObj.nonUniformCups > 0 ? ' is-copper' : ' is-soft'),
+          'aria-pressed': String(bObj.nonUniformCups > 0),
+          text: 'Taint (-2): ' + bObj.nonUniformCups + '/5',
+          onclick: function () {
+            bObj.nonUniformCups = (bObj.nonUniformCups + 1) % 6;
+            this.className = 'bt-tc-pill is-compact' + (bObj.nonUniformCups > 0 ? ' is-copper' : ' is-soft');
+            this.setAttribute('aria-pressed', String(bObj.nonUniformCups > 0));
+            this.textContent = 'Taint (-2): ' + bObj.nonUniformCups + '/5';
+            CK.haptic('tick');
+            syncBowlCardVisuals();
+          }
+        });
+
+        const faultBtn = domH('button', {
+          type: 'button',
+          class: 'bt-tc-pill is-compact' + (bObj.defectiveCups > 0 ? ' is-copper' : ' is-soft'),
+          'aria-pressed': String(bObj.defectiveCups > 0),
+          text: 'Fault (-4): ' + bObj.defectiveCups + '/5',
+          onclick: function () {
+            bObj.defectiveCups = (bObj.defectiveCups + 1) % 6;
+            this.className = 'bt-tc-pill is-compact' + (bObj.defectiveCups > 0 ? ' is-copper' : ' is-soft');
+            this.setAttribute('aria-pressed', String(bObj.defectiveCups > 0));
+            this.textContent = 'Fault (-4): ' + bObj.defectiveCups + '/5';
+            CK.haptic('tick');
+            syncBowlCardVisuals();
+          }
+        });
+
+        const defectResetBtn = domH('button', {
+          type: 'button',
+          class: 'bt-tc-pill is-compact is-soft',
+          text: 'Clean (0)',
+          onclick: function () {
+            bObj.nonUniformCups = 0;
+            bObj.defectiveCups = 0;
+            taintBtn.className = 'bt-tc-pill is-compact is-soft';
+            taintBtn.setAttribute('aria-pressed', 'false');
+            taintBtn.textContent = 'Taint (-2): 0/5';
+            faultBtn.className = 'bt-tc-pill is-compact is-soft';
+            faultBtn.setAttribute('aria-pressed', 'false');
+            faultBtn.textContent = 'Fault (-4): 0/5';
+            CK.haptic('tick');
+            syncBowlCardVisuals();
           }
         });
 
         const attrDetails = domH('details', { class: 'bt-lab-details' },
-          domH('summary', { text: 'Score All 8 Traits & Cup Consistency' }),
+          domH('summary', { text: 'Score All 8 Traits (1\u20139 Enjoyment)' }),
           domH('p', {
             class: 'bt-lab-hint',
-            text: 'Rate how much you liked each trait from 1 to 9 (1–3 Disliked · 5 Okay · 7 Good · 8 Great · 9 Extraordinary). Delicate floral coffees are prized just as highly as rich syrupy ones!'
+            text: 'Tap 1 to 9 for each trait (5 Okay \u00B7 7 Good \u00B7 8 Great \u00B7 9 Extraordinary). Updates your 100-pt SCA score instantaneously.'
           }),
           domH('div', { class: 'bt-cva-attr-grid' },
             CUPPING_TRAIT_GUIDES.map(function (tg, aIdx) {
-              const valSpan = domH('span', { class: 'num-tab bt-cva-val-pill', text: bObj.hVals[aIdx] + ' / 9' });
-              const rng = domH('input', {
-                type: 'range',
-                class: 'bt-lab-range',
-                min: '1',
-                max: '9',
-                step: '0.5',
-                value: String(bObj.hVals[aIdx]),
-                'aria-label': 'Bowl ' + bObj.code + ' ' + tg.name + ' enjoyment 1 to 9',
-                oninput: function () {
-                  bObj.hVals[aIdx] = clamp(parseFloat(rng.value), 1, 9, 7);
-                  valSpan.textContent = bObj.hVals[aIdx] + ' / 9';
-                  if (aIdx === 7) {
-                    quickSlider.value = String(bObj.hVals[7]);
-                    quickValLbl.textContent = enjoymentAnchorText(bObj.hVals[7]);
-                  }
-                  bObj.score = computeCvaBowlScore(bObj);
-                  scoreBadge.textContent = 'Cupping Score: ' + bObj.score.toFixed(2) + ' / 100';
-                }
-              });
-              traitSliderRefs.push({ rng: rng, valSpan: valSpan });
+              const valSpan = domH('span', { class: 'num-tab bt-cva-val-pill', text: (+bObj.hVals[aIdx]).toFixed(1).replace(/\.0$/, '') + ' / 9' });
+              const tBtns = [];
+              const pillGroup = domH('div', { class: 'bt-sca-trait-pills', role: 'radiogroup', 'aria-label': 'Bowl ' + bObj.code + ' ' + tg.name },
+                [1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (v9) {
+                  const tb = domH('button', {
+                    type: 'button',
+                    class: 'bt-tc-pill is-compact num-tab' + (Math.round(bObj.hVals[aIdx]) === v9 ? ' is-active' : ' is-soft'),
+                    style: 'min-width:34px;min-height:36px;padding:3px 7px',
+                    'aria-pressed': String(Math.round(bObj.hVals[aIdx]) === v9),
+                    text: String(v9),
+                    onclick: function () {
+                      bObj.hVals[aIdx] = v9;
+                      CK.haptic('tick');
+                      syncBowlCardVisuals();
+                    }
+                  });
+                  tBtns.push(tb);
+                  return tb;
+                })
+              );
+              traitPillRefs.push({ aIdx: aIdx, valSpan: valSpan, btns: tBtns });
               return domH('div', { class: 'bt-cva-attr-block' },
-                domH('label', { class: 'bt-cva-attr-row' },
+                domH('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px' },
                   domH('strong', { text: tg.name }),
-                  rng,
                   valSpan
                 ),
+                pillGroup,
                 domH('span', { class: 'bt-cva-attr-desc', text: tg.hint })
               );
             })
-          ),
-          domH('div', { class: 'bt-lab-chip-row' },
-            domH('button', {
-              type: 'button',
-              class: 'bt-lab-chip' + (bObj.nonUniformCups > 0 ? ' is-active' : ''),
-              onclick: function () {
-                bObj.nonUniformCups = (bObj.nonUniformCups + 1) % 6;
-                bObj.score = computeCvaBowlScore(bObj);
-                if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
-                else rerenderAcademyTab();
-              }
-            }, 'Inconsistent Cups (-2 pts/cup): ' + bObj.nonUniformCups + '/5'),
-            domH('button', {
-              type: 'button',
-              class: 'bt-lab-chip' + (bObj.defectiveCups > 0 ? ' is-active' : ''),
-              onclick: function () {
-                bObj.defectiveCups = (bObj.defectiveCups + 1) % 6;
-                bObj.score = computeCvaBowlScore(bObj);
-                if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
-                else rerenderAcademyTab();
-              }
-            }, 'Off-Flavor / Defect Cups (-4 pts/cup): ' + bObj.defectiveCups + '/5')
           )
         );
+
+        syncBowlCardVisuals();
 
         bowlsGrid.appendChild(domH('div', { class: 'bt-sca-bowl-card' },
           domH('div', { class: 'bt-sca-bowl-top' },
@@ -1153,18 +1305,17 @@
           ),
           nameInput,
           notesInput,
-          domH('div', { class: 'bt-sca-quick-wrap' },
-            domH('div', { class: 'bt-sca-quick-head' },
-              domH('span', { class: 'bt-lab-inline-lbl', text: 'Overall Enjoyment (1–9):' }),
-              quickValLbl
-            ),
-            quickSlider,
-            domH('span', { class: 'bt-sca-scale-hint', text: '1–3 Disliked  ·  5 Okay  ·  7 Good  ·  8 Great  ·  9 Extraordinary' })
+          domH('div', { class: 'bt-sca-quick-wrap', style: 'display:flex;flex-direction:column;gap:8px' },
+            domH('span', { class: 'bt-lab-inline-lbl', text: 'SCA 6.00\u201310.00 Quick Presets & \u00B10.25 Stepper:' }),
+            presetRow,
+            stepperRow,
+            domH('div', { class: 'bt-sca-defect-row' }, taintBtn, faultBtn, defectResetBtn)
           ),
           attrDetails
         ));
       })(sca.bowls[i]);
     }
+    paintScaHeroOnly();
 
     const startBtnLbl = domH('span', { text: sca.running ? 'Pause Cupping Timer' : 'Start Voice Cupping Timer' });
     const startBtn = domH('button', {
@@ -1205,7 +1356,7 @@
         for (let i = 0; i < sca.bowlCount; i++) {
           const b = sca.bowls[i];
           const sc = computeCvaBowlScore(b);
-          const stars = +clamp(2.5 + ((sc - 70) / 22) * 2.5, 1.0, 5.0, 4.2).toFixed(2);
+          const stars = computeBowlStars(sc);
           const rowObj = (typeof emptyRowObj === 'function') ? emptyRowObj() : {};
           if (typeof COLUMNS !== 'undefined' && Array.isArray(COLUMNS)) {
             COLUMNS.forEach(function (ck) { if (rowObj[ck] === undefined) rowObj[ck] = ''; });
@@ -1290,6 +1441,7 @@
       ),
       domH('div', { class: 'bt-lab-chip-row' }, topEscapeBtn, epistemicPill('verified_science'))
     ));
+    card.appendChild(scaHeroHost);
     card.appendChild(domH('div', { class: 'bt-cupping-4steps-grid', 'aria-label': 'How to cup coffee at home in 4 steps' }, stepCardNodes));
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
       bowlCountPills,
@@ -3125,8 +3277,8 @@
 
     const nav = domH('nav', { class: 'bt-studio-pill-nav', 'aria-label': 'Learn and Vault Sections' },
       [
+        { id: 'gym', lbl: '5-Bowl Cupping Table', icon: 'cafe-cup' },
         { id: 'curriculum', lbl: '19 Mini-Courses', icon: 'academy' },
-        { id: 'gym', lbl: '5-Bowl Cupping & Calibrate', icon: 'cafe-cup' },
         { id: 'glossary', lbl: 'A–Z Glossary (' + glCount + ')', icon: 'search-filter' },
         { id: 'folk', lbl: '32 Myth-Busters', icon: 'xray-loupe' },
         { id: 'vault', lbl: 'Backup & Data Vault', icon: 'vault-shield' }

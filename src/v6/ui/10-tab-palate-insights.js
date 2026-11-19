@@ -934,11 +934,116 @@
     };
   }
 
+  function buildPrefsMyGearCard() {
+    const a = getApp();
+    const rawGrinderKey = String((a.brew && a.brew.grinderKey) || (a.prefs && a.prefs.gear && (a.prefs.gear.grinderKey || a.prefs.gear.grinder)) || 'comandante-c40').trim().toLowerCase();
+    const grinderCatalog = (Array.isArray(window.GRINDERS_ALL_V6) && window.GRINDERS_ALL_V6.length)
+      ? window.GRINDERS_ALL_V6
+      : (Array.isArray(window.GRINDERS) ? window.GRINDERS : []);
+    const gHit = grinderCatalog.find(function (g) { return g && g.key === rawGrinderKey; });
+    const grinderLabel = (gHit && (gHit.short || gHit.name)) || rawGrinderKey.replace(/[-_]+/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+
+    const ownedArr = (a.prefs && Array.isArray(a.prefs.ownedBrewers) && a.prefs.ownedBrewers.length)
+      ? a.prefs.ownedBrewers
+      : (a.prefs && a.prefs.gear && Array.isArray(a.prefs.gear.ownedBrewers) && a.prefs.gear.ownedBrewers.length)
+      ? a.prefs.gear.ownedBrewers
+      : ['v60', 'origami', 'aeropress', 'switch', 'press', 'espresso', 'philips5500', 'aiden'];
+    const activeMethodKey = String((a.brew && a.brew.method) || 'v60').trim().toLowerCase();
+    const methodCatalog = Array.isArray(window.METHOD_PHYSICS_V6) ? window.METHOD_PHYSICS_V6 : [];
+    const mHit = methodCatalog.find(function (m) { return m && m.key === activeMethodKey; });
+    const activeMethodLabel = (mHit && (mHit.short || mHit.label)) || activeMethodKey.replace(/[-_]+/g, ' ').toUpperCase();
+
+    const rawWater = (a.brew && a.brew.waterLabel)
+      || (a.prefs && a.prefs.waterProfileKey)
+      || (a.prefs && a.prefs.gear && (a.prefs.gear.waterProfileKey || a.prefs.gear.waterType))
+      || 'Regular Tap';
+    const waterLabel = String(rawWater).replace(/[_-]+/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+
+    const bleLabels = [];
+    try {
+      if (window.BTBle && typeof window.BTBle.getState === 'function') {
+        const bst = window.BTBle.getState() || {};
+        const sl = bst.slots || {};
+        if ((sl.scale && sl.scale.connected) || bst.scaleConnected) bleLabels.push('Scale');
+        if ((sl.kettle && sl.kettle.connected) || bst.kettleConnected) bleLabels.push('Kettle');
+        if ((sl.refract && sl.refract.connected) || bst.refractConnected) bleLabels.push('R2');
+        if ((sl.pressure && sl.pressure.connected) || bst.pressureConnected) bleLabels.push('Pressure');
+        if ((sl.omni && sl.omni.connected) || bst.omniConnected) bleLabels.push('Omni');
+      }
+    } catch (_) {}
+
+    function openGearSheet(sheetKey, titleTxt) {
+      CK.haptic('tick');
+      const shell = sh();
+      if (shell.BTSheet && typeof shell.BTSheet.open === 'function') {
+        shell.BTSheet.open(sheetKey, {}, { detent: 'full', title: titleTxt });
+      } else if (typeof shell.openSheet === 'function') {
+        shell.openSheet(sheetKey, {}, { detent: 'full', title: titleTxt });
+      }
+    }
+
+    return domH('section', { class: 'bt-studio-card bt-prefs-gear-card', id: 'bt-prefs-my-gear-card' },
+      domH('div', { class: 'bt-lab-card-head' },
+        domH('div', { class: 'bt-lab-title-group' },
+          ic('sliders', { size: 22 }),
+          domH('div', null,
+            domH('h3', { text: 'My Gear & Active Hardware' }),
+            domH('p', {
+              class: 'bt-lab-sub',
+              text: 'Your active grinder, saved counter brewers, brew water & Bluetooth hardware in one tap.'
+            })
+          )
+        ),
+        domH('span', {
+          class: 'bt-badge-v62 ' + (bleLabels.length ? 'is-good' : 'is-muted'),
+          text: bleLabels.length ? ('BLE Live: ' + bleLabels.join(', ')) : 'BLE Ready'
+        })
+      ),
+      domH('div', { class: 'bt-prefs-gear-grid' },
+        domH('div', { class: 'bt-prefs-gear-tile' },
+          domH('span', { class: 'bt-pref-tile-lbl', text: 'Active Grinder' }),
+          domH('strong', { class: 'bt-pref-tile-val', text: grinderLabel }),
+          domH('span', { class: 'bt-pref-tile-sub', text: 'Used for Step 2 & Step 3 clicks' })
+        ),
+        domH('div', { class: 'bt-prefs-gear-tile' },
+          domH('span', { class: 'bt-pref-tile-lbl', text: 'Counter Brewers' }),
+          domH('strong', { class: 'bt-pref-tile-val', text: ownedArr.length + ' Saved · ' + activeMethodLabel }),
+          domH('span', { class: 'bt-pref-tile-sub', text: 'Shown first in Brew Step 2' })
+        ),
+        domH('div', { class: 'bt-prefs-gear-tile' },
+          domH('span', { class: 'bt-pref-tile-lbl', text: 'Kettle & Brew Water' }),
+          domH('strong', { class: 'bt-pref-tile-val', text: waterLabel }),
+          domH('span', { class: 'bt-pref-tile-sub', text: bleLabels.indexOf('Kettle') >= 0 ? 'Stagg EKG BLE active' : 'Tap Edit to tune GH/KH' })
+        ),
+        domH('div', { class: 'bt-prefs-gear-tile' },
+          domH('span', { class: 'bt-pref-tile-lbl', text: 'Bluetooth Hardware' }),
+          domH('strong', { class: 'bt-pref-tile-val', text: bleLabels.length ? bleLabels.join(' · ') : 'Ready to Pair' }),
+          domH('span', { class: 'bt-pref-tile-sub', text: 'Scales, R2, Stagg EKG, Omni, xBloom' })
+        )
+      ),
+      domH('div', { class: 'bt-prefs-gear-actions' },
+        domH('button', {
+          type: 'button',
+          id: 'bt-prefs-edit-gear-btn',
+          class: 'bt-lab-btn is-primary is-sm',
+          onclick: function () { openGearSheet('workflow-tools', 'My Gear & Setup'); }
+        }, ic('sliders', { size: 15 }), domH('span', { text: 'Edit Grinder, Brewers, Kettle & Water' })),
+        domH('button', {
+          type: 'button',
+          id: 'bt-prefs-pair-ble-btn',
+          class: 'bt-lab-btn is-sm',
+          onclick: function () { openGearSheet('ble-devices', 'Bluetooth Scales, R2, Omni & Smart Gear'); }
+        }, ic('ble-wave', { size: 15 }), domH('span', { text: 'Pair Bluetooth Gear' }))
+      )
+    );
+  }
+
   /* ==========================================================================
    * SEGMENT 1: Coffee Belt World Map (52 Origins) + Radar + 4-Level EB Drill-In
    * ========================================================================== */
   function renderPalateDnaSegment() {
     const wrap = domH('div', { class: 'bt-palate-seg' });
+    wrap.appendChild(buildPrefsMyGearCard());
     const atlas = getFullOriginAtlas();
     const allRows = getHistoryRows(100);
     const slicedRows = getHistoryRows(palateState.timelapsePct);

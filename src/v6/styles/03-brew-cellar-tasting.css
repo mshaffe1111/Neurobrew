@@ -160,7 +160,9 @@
 
 .bt-card-v6 {
   width: 100%;
+  max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
   background: var(--surface-card-grad, var(--surface));
   border: 1px solid var(--line-soft, var(--line));
   border-radius: var(--r-md, 18px);
@@ -378,6 +380,9 @@
 .bt-input-v62,
 .bt-textarea-v62 {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   min-height: 46px;
   padding: 8px 13px;
   border-radius: 13px;
@@ -1614,6 +1619,7 @@
 
 .bt-timer-giant-clock {
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   text-align: center;
   display: flex;
@@ -1621,7 +1627,7 @@
   justify-content: center;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums lining-nums;
-  font-size: clamp(4.75rem, 21vw, 7.0rem);
+  font-size: clamp(3.2rem, 15.5vw, 6.2rem);
   font-weight: 900;
   line-height: 0.96;
   letter-spacing: -0.04em;
@@ -1713,7 +1719,9 @@
 /* GIANT LIVE 'APPROX GRAMS RIGHT NOW' PACER BANNER (#bt-timer-approx-grams-hero) */
 .bt-timer-approx-grams-hero {
   width: 100%;
+  max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
   padding: 7px 10px 8px;
   border-radius: 14px;
   background: linear-gradient(160deg, var(--accent-soft) 0%, var(--surface) 100%);
@@ -1724,7 +1732,7 @@
   gap: 4px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums lining-nums;
-  font-size: clamp(2.1rem, 8.8vw, 3.0rem);
+  font-size: clamp(1.6rem, 7.5vw, 2.75rem);
   font-weight: 900;
   line-height: 1.03;
 }
@@ -1892,6 +1900,10 @@
 }
 
 .bt-timer-dial-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 7px 10px;
   border-radius: 18px;
   background: var(--surface);
@@ -1899,7 +1911,7 @@
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 6px;
 }
 
@@ -1939,16 +1951,20 @@
     grid-row: 2;
     padding: 7px 12px 9px;
   }
+  .bt-timer-agitation-cue {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
   .bt-timer-dial-wrap {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 4;
   }
   .bt-timer-giant-weight {
     font-size: 0.88rem;
   }
   .bt-timer-dial-rhs {
     grid-column: 2;
-    grid-row: 3;
+    grid-row: 4;
     gap: 6px;
   }
   .bt-timer-dial-card.is-dial-collapsed .bt-timer-dial-rhs {
@@ -2860,4 +2876,518 @@
 .bt-horology-clock-card.is-golden {
   border-color: var(--gold, #D98B26);
 }
+
+/* ==================== 10. v6.7 MY GEAR, CUPPING LAUNCHERS, KETTLE WARM & FLOW POLISH ==================== */
+.bt-my-gear-card {
+  gap: 10px;
+  padding: 13px 14px;
+  border-color: var(--line);
+  background: linear-gradient(160deg, var(--surface) 0%, var(--bg-subtle) 100%);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-my-gear-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.bt-my-gear-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 180px;
+  color: var(--accent);
+}
+.bt-my-gear-title-wrap > div {
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 0;
+}
+
+.bt-my-gear-sub {
+  font-size: 0.76rem;
+  color: var(--ink-secondary);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.bt-my-gear-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.bt-my-gear-pills {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+@media (max-width: 520px) {
+  .bt-my-gear-pills {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bt-my-gear-pills > :last-child {
+    grid-column: span 2;
+  }
+}
+
+.bt-my-gear-stat {
+  min-height: 48px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line-soft, var(--line));
+  background: var(--surface);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  transition: border-color 0.14s ease, transform 0.12s var(--spring-snappy);
+}
+.bt-my-gear-stat:hover {
+  border-color: var(--accent);
+}
+.bt-my-gear-stat:active {
+  transform: scale(0.985);
+}
+
+.bt-my-gear-stat-lbl {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+.bt-my-gear-stat-val {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Door Quick Studio Launchers (Cupping Table + Coffee Shop + Shared Brew) */
+.bt-door-grid-launchers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+@media (max-width: 640px) {
+  .bt-door-grid-launchers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bt-door-grid-launchers > .bt-door-cupping-card {
+    grid-column: span 2;
+    min-height: 92px;
+  }
+}
+
+@media (max-width: 350px) {
+  .bt-door-grid-launchers {
+    grid-template-columns: 1fr;
+  }
+  .bt-door-grid-launchers > .bt-door-cupping-card {
+    grid-column: auto;
+  }
+}
+
+.bt-door-cupping-card {
+  border-color: rgba(24, 96, 62, 0.34);
+  background: linear-gradient(155deg, var(--surface) 0%, var(--good-bg) 100%);
+}
+.bt-door-cupping-card:hover {
+  border-color: var(--primary);
+}
+
+/* Step 2 My Gear Card + Saved Brewers + Cupping Picks + Catalog Disclosure */
+.bt-step2-gear-card {
+  gap: 11px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-step2-brewer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.bt-step2-saved-brewer-chip {
+  min-height: 42px;
+  max-width: 100%;
+  padding: 6px 12px;
+  font-size: 0.81rem;
+  border-radius: 13px;
+  white-space: normal;
+  text-align: left;
+}
+.bt-step2-saved-brewer-chip.is-active {
+  border-color: var(--primary);
+  background: var(--primary-soft, var(--good-bg));
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.bt-step2-cupping-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 11px;
+  border-radius: 14px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--line-soft, var(--line));
+}
+
+.bt-step2-cupping-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  max-width: 100%;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--good-bg);
+  color: var(--good);
+  border: 1px solid rgba(24, 96, 62, 0.28);
+  font-size: 0.73rem;
+  font-weight: 800;
+  white-space: normal;
+  text-align: left;
+  transition: transform 0.12s ease, border-color 0.14s ease;
+}
+.bt-step2-cupping-link:hover {
+  border-color: var(--primary);
+}
+.bt-step2-cupping-link:active {
+  transform: scale(0.97);
+}
+
+.bt-step2-catalog-bar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.bt-step2-catalog-toggle {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  justify-content: center;
+  font-weight: 700;
+  border-style: dashed;
+  white-space: normal;
+  text-align: center;
+}
+
+/* Step 3 Context Strip & Kettle Warm Target Banner (Step 3 & Step 4) */
+.bt-step-context-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 7px 12px;
+  border-radius: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--line-soft, var(--line));
+}
+
+.bt-step-context-copy {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  flex: 1 1 180px;
+  min-width: 0;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.bt-step-context-link {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bt-kettle-warm-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, var(--accent-soft) 0%, var(--bg-subtle) 100%);
+  border: 1.5px solid rgba(154, 66, 18, 0.34);
+}
+
+.bt-kettle-warm-card.is-smart-tank,
+.bt-kettle-warm-card.is-espresso-tank {
+  background: linear-gradient(135deg, var(--science-bg) 0%, var(--bg-subtle) 100%);
+  border-color: var(--science-border);
+}
+
+.bt-kettle-warm-card.is-cold {
+  background: linear-gradient(135deg, var(--good-bg) 0%, var(--bg-subtle) 100%);
+  border-color: rgba(24, 96, 62, 0.28);
+}
+
+.bt-kettle-warm-card.is-step4-compact {
+  padding: 8px 11px;
+  border-radius: 14px;
+}
+
+.bt-kettle-warm-lhs {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.bt-kettle-warm-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft, var(--line));
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.bt-kettle-warm-card.is-smart-tank .bt-kettle-warm-ico,
+.bt-kettle-warm-card.is-espresso-tank .bt-kettle-warm-ico {
+  color: var(--science);
+}
+.bt-kettle-warm-card.is-cold .bt-kettle-warm-ico {
+  color: var(--good);
+}
+
+.bt-kettle-warm-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.bt-kettle-warm-target {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.bt-kettle-warm-sub {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  line-height: 1.3;
+}
+
+.bt-kettle-warm-rhs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bt-kettle-skip-btn {
+  min-height: 34px;
+  padding: 0 11px;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+/* Prefs Tab: My Gear & Active Hardware Summary Card */
+.bt-prefs-gear-card {
+  gap: 11px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-prefs-gear-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 350px) {
+  .bt-prefs-gear-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bt-prefs-gear-tile {
+  padding: 9px 11px;
+  border-radius: 13px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--line-soft, var(--line));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.bt-prefs-gear-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.bt-prefs-gear-actions > button {
+  min-height: 42px;
+  flex: 1 1 170px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Pour Height, Agitation & Anti-Channeling Cues (Step 3 + Step 4) */
+.bt-agitation-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  margin-top: 2px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-agitation-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.69rem;
+  font-weight: 800;
+  line-height: 1.25;
+  border: 1px solid var(--line);
+  background: var(--bg-subtle);
+  color: var(--ink);
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+
+.bt-agitation-pill.is-gentle {
+  background: var(--good-bg);
+  color: var(--good);
+  border-color: rgba(24, 96, 62, 0.3);
+}
+
+.bt-agitation-pill.is-swirl {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(154, 66, 18, 0.3);
+}
+
+.bt-agitation-pill.is-spiral {
+  background: var(--science-bg);
+  color: var(--science);
+  border-color: var(--science-border);
+}
+
+.bt-agitation-guide {
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  line-height: 1.34;
+}
+
+.bt-timer-agitation-cue {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 11px;
+  border-radius: 13px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--line);
+  min-width: 0;
+}
+
+.bt-timer-agitation-cue.is-gentle {
+  border-color: rgba(24, 96, 62, 0.32);
+  background: linear-gradient(135deg, var(--good-bg) 0%, var(--bg-subtle) 100%);
+}
+
+.bt-timer-agitation-cue.is-swirl {
+  border-color: rgba(154, 66, 18, 0.3);
+  background: linear-gradient(135deg, var(--accent-soft) 0%, var(--bg-subtle) 100%);
+}
+
+.bt-timer-agitation-cue.is-spiral {
+  border-color: var(--science-border);
+  background: linear-gradient(135deg, var(--science-bg) 0%, var(--bg-subtle) 100%);
+}
+
+.bt-timer-agitation-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bt-timer-agitation-guide {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  line-height: 1.34;
+}
+
+
 

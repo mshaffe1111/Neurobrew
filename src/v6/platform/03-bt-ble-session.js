@@ -90,12 +90,31 @@
     return new Promise(function(resolve){ setTimeout(resolve, Math.max(0, +ms || 0)); });
   }
 
+  function withTimeout(promiseOrVal, timeoutMs, label){
+    const ms = timeoutMs == null ? 4500 : Math.max(100, +timeoutMs);
+    let timerId = null;
+    return Promise.race([
+      Promise.resolve(promiseOrVal),
+      new Promise(function(_, reject){
+        timerId = setTimeout(function(){
+          reject(new Error((label || 'GATT operation') + ' timed out after ' + ms + 'ms'));
+        }, ms);
+      })
+    ]).then(function(res){
+      if (timerId) clearTimeout(timerId);
+      return res;
+    }, function(err){
+      if (timerId) clearTimeout(timerId);
+      throw err;
+    });
+  }
+
   /* ============================================================================
-   * 1. SERIALIZED GATT WRITE / IO MUTEX (`BTWriteQueue`, 40ms spacing)
+   * 1. SERIALIZED GATT WRITE / IO MUTEX (`BTWriteQueue`, 40ms spacing, 4500ms timeout)
    * ============================================================================ */
   function createWriteQueue(spacingMs, timeoutMs){
     const gap = spacingMs == null ? 40 : Math.max(0, +spacingMs);
-    const tmo = timeoutMs == null ? 2500 : Math.max(100, +timeoutMs);
+    const tmo = timeoutMs == null ? 4500 : Math.max(100, +timeoutMs);
     const queue = [];
     let active = false;
     let maxConcurrent = 0;
@@ -107,6 +126,7 @@
       active = true;
       while (queue.length > 0){
         const item = queue.shift();
+        const itemTmo = item.timeoutMs == null ? tmo : Math.max(100, +item.timeoutMs);
         const elapsedSinceLast = perfNow() - lastCompletedAt;
         if (lastCompletedAt > 0 && elapsedSinceLast < gap){
           await waitMs(Math.ceil(gap - elapsedSinceLast));
@@ -119,8 +139,8 @@
             Promise.resolve().then(item.fn),
             new Promise(function(_, reject){
               timerId = setTimeout(function(){
-                reject(new Error('BTWriteQueue GATT operation timed out after ' + tmo + 'ms'));
-              }, tmo);
+                reject(new Error('BTWriteQueue GATT operation timed out after ' + itemTmo + 'ms'));
+              }, itemTmo);
             })
           ]);
           if (timerId) clearTimeout(timerId);
@@ -149,9 +169,9 @@
           dropped.reject(new Error('BTWriteQueue cleared'));
         }
       },
-      enqueue: function(fn){
+      enqueue: function(fn, opTimeoutMs){
         return new Promise(function(resolve, reject){
-          queue.push({ fn:fn, resolve:resolve, reject:reject });
+          queue.push({ fn:fn, timeoutMs:opTimeoutMs, resolve:resolve, reject:reject });
           drain();
         });
       }
@@ -213,20 +233,81 @@
       };
     }
 
+    const FALLBACK_CHARS_BY_SVC = (function(){
+      const m = Object.create(null);
+      m[UUID.ACAIA_LEGACY_SVC] = [UUID.ACAIA_LEGACY_CHAR, UUID.STAGG_EKG_ALT_CHAR];
+      m[UUID.ACAIA_PYXIS_SVC] = [UUID.ACAIA_PYXIS_NOTIFY, UUID.ACAIA_PYXIS_WRITE];
+      m[UUID.DIFLUID_SCALE_SVC] = [UUID.DIFLUID_CHAR, UUID.DIFLUID_WRITE_ALT];
+      m[UUID.DIFLUID_SCALE_ALT_SVC] = [UUID.DIFLUID_CHAR, UUID.DIFLUID_WRITE_ALT];
+      m[UUID.DIFLUID_SVC] = [UUID.DIFLUID_CHAR, UUID.DIFLUID_WRITE_ALT];
+      m[UUID.DIFLUID_OMNI_SVC] = [UUID.DIFLUID_CHAR, UUID.DIFLUID_WRITE_ALT];
+      m[UUID.DIFLUID_V3_SVC] = [UUID.DIFLUID_V3_NOTIFY, UUID.DIFLUID_V3_WRITE];
+      m[UUID.BOOKOO_SVC] = [UUID.BOOKOO_NOTIFY, UUID.BOOKOO_WRITE];
+      m[UUID.BOOKOO_EM_SVC] = [UUID.BOOKOO_EM_NOTIFY, UUID.BOOKOO_EM_WRITE];
+      m[UUID.ESS_SVC] = [UUID.PRESSENSOR_SIG_CHAR, UUID.ESS_TEMP_CHAR];
+      m[UUID.PRESSENSOR_SIG_SVC] = [UUID.PRESSENSOR_SIG_CHAR, UUID.ESS_TEMP_CHAR];
+      m[UUID.PRESSENSOR_SVC] = [UUID.PRESSENSOR_NOTIFY, UUID.PRESSENSOR_WRITE];
+      m[UUID.SHARED_FFF0_SVC] = [UUID.DECENT_NOTIFY, UUID.DECENT_WRITE, UUID.FFF1_NOTIFY, UUID.FFF2_WRITE];
+      m[UUID.FELICITA_SVC] = [UUID.FELICITA_CHAR, UUID.XBLOOM_SHORT_WRITE, UUID.XBLOOM_SHORT_NOTIFY];
+      m[UUID.SKALE_SVC] = [UUID.SKALE_NOTIFY, UUID.SKALE_WRITE, UUID.SKALE_BTN_NOTIFY];
+      m[UUID.EUREKA_ALT_SVC] = [UUID.EUREKA_ALT_CHAR];
+      m[UUID.HIROIA_SVC] = [UUID.HIROIA_NOTIFY, UUID.HIROIA_WRITE];
+      m[UUID.WEIGHT_SIG_SVC] = [UUID.WEIGHT_SIG_NOTIFY, UUID.TIMEMORE_SIG_WRITE, UUID.WEIGHT_SIG_CTRL];
+      m[UUID.TIMEMORE_CUSTOM_SVC] = [UUID.TIMEMORE_CUSTOM_WRITE];
+      m[UUID.XBLOOM_SVC] = [UUID.XBLOOM_WRITE, UUID.XBLOOM_NOTIFY, UUID.XBLOOM_AUX];
+      m[UUID.NUS_SVC] = [UUID.NUS_NOTIFY, UUID.NUS_WRITE];
+      m[UUID.BATTERY_SVC] = [UUID.BATTERY_LEVEL];
+      return m;
+    })();
+
     async function requestDevice(query){
       const cap = getCapabilities();
       if (!cap.supported){
-        throw new Error(cap.platformLabel);
+        throw new Error(cap.platformLabel + ' — ' + cap.guidance);
       }
       const q = query || {};
       const opts = {};
       if (!q.acceptAll && !q.acceptAllDevices && Array.isArray(q.filters) && q.filters.length){
-        opts.filters = q.filters;
+        opts.filters = dedupeDeviceFilters(q.filters);
       } else {
         opts.acceptAllDevices = true;
       }
       opts.optionalServices = mergeOptionalServices(q.optionalServices);
-      const rawDev = await navigator.bluetooth.requestDevice(opts);
+
+      let rawDev = null;
+      try {
+        rawDev = await navigator.bluetooth.requestDevice(opts);
+      } catch(err){
+        const errName = (err && err.name) || '';
+        const errMsg = (err && err.message) || String(err || '');
+        const isFilterReject = errName === 'TypeError' || errName === 'NotSupportedError' || errName === 'InvalidAccessError' ||
+          /filter|optionalServices|must not be empty|acceptAllDevices/i.test(errMsg);
+        if (isFilterReject && opts.filters && q.allowFallbackToAcceptAll !== false){
+          try {
+            rawDev = await navigator.bluetooth.requestDevice({
+              acceptAllDevices: true,
+              optionalServices: opts.optionalServices
+            });
+          } catch(err2){
+            const err2Msg = (err2 && err2.message) || String(err2 || '');
+            if (/optionalServices|uuid/i.test(err2Msg)){
+              rawDev = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true,
+                optionalServices: Array.isArray(q.optionalServices) ? q.optionalServices : ALL_COFFEE_OPTIONAL_SERVICES.slice(0, 12)
+              });
+            } else {
+              throw err2;
+            }
+          }
+        } else if (errName === 'NotFoundError' || errName === 'AbortError'){
+          throw new Error('No Bluetooth device selected. Make sure the device is awake, OS Bluetooth is on, and its native app is closed (or use Scan All Devices).');
+        } else if (errName === 'SecurityError'){
+          throw new Error('Bluetooth permission blocked. Open over HTTPS or localhost:8145 and allow Bluetooth access in your browser.');
+        } else {
+          throw err;
+        }
+      }
+
       return {
         deviceId: String(rawDev.id || rawDev.name || ('webble-' + Date.now())),
         name: String(rawDev.name || ''),
@@ -234,18 +315,29 @@
       };
     }
 
-    async function reconnectKnownDevice(saved){
-      if (!saved || typeof navigator === 'undefined' || !navigator.bluetooth || typeof navigator.bluetooth.getDevices !== 'function'){
-        return null;
+    async function getKnownDevices(){
+      if (typeof navigator === 'undefined' || !navigator.bluetooth || typeof navigator.bluetooth.getDevices !== 'function'){
+        return [];
       }
       try {
         const known = await navigator.bluetooth.getDevices();
-        if (!Array.isArray(known) || !known.length) return null;
+        return Array.isArray(known) ? known : [];
+      } catch(e){
+        return [];
+      }
+    }
+
+    async function reconnectKnownDevice(saved){
+      if (!saved) return null;
+      try {
+        const known = await getKnownDevices();
+        if (!known.length) return null;
         let match = null;
+        const savedNameLow = saved.name ? String(saved.name).trim().toLowerCase() : '';
         for (let i = 0; i < known.length; i++){
           const d = known[i];
           if (saved.deviceId && d.id === saved.deviceId){ match = d; break; }
-          if (!match && saved.name && d.name && d.name === saved.name){ match = d; }
+          if (!match && savedNameLow && d.name && String(d.name).trim().toLowerCase() === savedNameLow){ match = d; }
         }
         if (!match) return null;
 
@@ -283,7 +375,7 @@
       if (!raw || !raw.gatt || typeof raw.gatt.connect !== 'function'){
         throw new Error('Invalid Web Bluetooth device handle');
       }
-      const writeQueue = createWriteQueue(40, 2500);
+      const writeQueue = createWriteQueue(40, 4500);
       const svcCache = {};
       const charCache = {};
       const activeNotifyCleanups = [];
@@ -298,24 +390,61 @@
         raw.addEventListener('gattserverdisconnected', discListener);
       }
 
-      const server = await raw.gatt.connect();
+      let server = null;
+      try {
+        server = await withTimeout(raw.gatt.connect(), 6000, 'GATT connect');
+      } catch(connErr){
+        await waitMs(180);
+        server = await withTimeout(raw.gatt.connect(), 6000, 'GATT connect retry');
+      }
+
+      async function ensureConnected(){
+        if (raw.gatt && raw.gatt.connected === false){
+          server = await withTimeout(raw.gatt.connect(), 6000, 'GATT reconnect');
+        }
+        return server;
+      }
 
       async function listServicesCompat(candidateUuids){
-        let svcs = [];
+        await ensureConnected();
+        const svcs = [];
+        const seenSvcs = Object.create(null);
+        const addSvc = function(s){
+          if (!s || !s.uuid) return;
+          const su = normUuid(s.uuid);
+          if (!seenSvcs[su]){
+            seenSvcs[su] = s;
+            svcs.push(s);
+          }
+        };
+
         if (typeof server.getPrimaryServices === 'function'){
           try {
-            const all = await server.getPrimaryServices();
-            if (Array.isArray(all) && all.length) svcs = all;
+            const all = await withTimeout(server.getPrimaryServices(), 4500, 'getPrimaryServices');
+            if (Array.isArray(all)){
+              for (let ai = 0; ai < all.length; ai++) addSvc(all[ai]);
+            }
           } catch(e){}
         }
-        if (!svcs.length && typeof server.getPrimaryService === 'function' && Array.isArray(candidateUuids)){
-          for (let i = 0; i < candidateUuids.length; i++){
+
+        const mergedCandidates = mergeOptionalServices(candidateUuids);
+        const hasCoffeeSvc = svcs.some(function(s){
+          const su = normUuid(s.uuid);
+          return !/^0000180[01af]-/.test(su);
+        });
+
+        /* Probe candidate coffee UUIDs individually if getPrimaryServices() threw OR returned incomplete results (e.g. only 0x1800/0x180F on Bluefy) */
+        if ((!svcs.length || !hasCoffeeSvc) && typeof server.getPrimaryService === 'function'){
+          for (let i = 0; i < mergedCandidates.length; i++){
+            const cu = mergedCandidates[i];
+            if (seenSvcs[cu] || /^0000180[01]-/.test(cu)) continue;
             try {
-              const s = await server.getPrimaryService(candidateUuids[i]);
-              if (s) svcs.push(s);
+              const s = await withTimeout(server.getPrimaryService(cu), 4500, 'getPrimaryService(' + cu + ')');
+              if (s) addSvc(s);
             } catch(e){}
           }
         }
+
         const normalized = [];
         for (let si = 0; si < svcs.length; si++){
           const svc = svcs[si];
@@ -324,9 +453,18 @@
           let chars = [];
           if (typeof svc.getCharacteristics === 'function'){
             try {
-              const cl = await svc.getCharacteristics();
+              const cl = await withTimeout(svc.getCharacteristics(), 4500, 'getCharacteristics(' + su + ')');
               if (Array.isArray(cl)) chars = cl;
             } catch(e){}
+          }
+          if (!chars.length && typeof svc.getCharacteristic === 'function' && Array.isArray(FALLBACK_CHARS_BY_SVC[su])){
+            const fbChars = FALLBACK_CHARS_BY_SVC[su];
+            for (let fci = 0; fci < fbChars.length; fci++){
+              try {
+                const fc = await withTimeout(svc.getCharacteristic(fbChars[fci]), 4500, 'getCharacteristic(' + fbChars[fci] + ')');
+                if (fc) chars.push(fc);
+              } catch(e){}
+            }
           }
           const normChars = [];
           for (let ci = 0; ci < chars.length; ci++){
@@ -357,17 +495,18 @@
       }
 
       async function resolveChar(serviceUuid, charUuid){
+        await ensureConnected();
         const su = normUuid(serviceUuid);
         const cu = normUuid(charUuid);
         const key = su + '|' + cu;
         if (charCache[key]) return charCache[key];
         let svc = svcCache[su];
         if (!svc && typeof server.getPrimaryService === 'function'){
-          svc = await server.getPrimaryService(su);
+          svc = await withTimeout(server.getPrimaryService(su), 4500, 'getPrimaryService(' + su + ')');
           if (svc) svcCache[su] = svc;
         }
         if (!svc) throw new Error('GATT service not found: ' + su);
-        const ch = await svc.getCharacteristic(cu);
+        const ch = await withTimeout(svc.getCharacteristic(cu), 4500, 'getCharacteristic(' + cu + ')');
         if (ch) charCache[key] = ch;
         return ch;
       }
@@ -376,14 +515,22 @@
         deviceId: transportDevice.deviceId,
         name: String(raw.name || transportDevice.name || ''),
         writeQueue: writeQueue,
+        isConnected: function(){
+          return !!(raw && raw.gatt && raw.gatt.connected !== false);
+        },
         discoverServices: function(candidateUuids){
+          const candCount = mergeOptionalServices(candidateUuids).length;
           return writeQueue.enqueue(function(){
             return listServicesCompat(candidateUuids || []);
-          });
+          }, Math.max(4500, candCount * 1000));
         },
         startNotifications: function(serviceUuid, charUuid, onBytes){
           return writeQueue.enqueue(async function(){
             const ch = await resolveChar(serviceUuid, charUuid);
+            const props = ch.properties || {};
+            if (typeof props.notify === 'boolean' && typeof props.indicate === 'boolean' && !props.notify && !props.indicate){
+              throw new Error('GATT characteristic does not support notify or indicate: ' + normUuid(charUuid));
+            }
             const handler = function(ev){
               const val = (ev && ev.target && ev.target.value) || (ev && ev.value) || ch.value;
               if (typeof onBytes === 'function') onBytes(toU8(val));
@@ -402,6 +549,8 @@
                 }
                 throw startErr;
               }
+            } else if (props.indicate && typeof ch.startIndications === 'function'){
+              await ch.startIndications();
             }
             const stopFn = async function(){
               try {
@@ -428,10 +577,29 @@
             const ch = await resolveChar(serviceUuid, charUuid);
             if (!ch) return false;
             const props = ch.properties || {};
-            const tryNoRespFirst = preferNoResp || (!!props.writeWithoutResponse && props.write === false);
-            const methodOrder = tryNoRespFirst
-              ? ['writeValueWithoutResponse', 'writeValueWithResponse', 'writeValue']
-              : ['writeValueWithResponse', 'writeValueWithoutResponse', 'writeValue'];
+            const hasExplicit = (typeof props.write === 'boolean' || typeof props.writeWithoutResponse === 'boolean');
+            const hasWrite = !!props.write;
+            const hasNoResp = !!props.writeWithoutResponse;
+            let methodOrder;
+            if (hasExplicit){
+              if (preferNoResp && hasNoResp){
+                methodOrder = hasWrite
+                  ? ['writeValueWithoutResponse', 'writeValueWithResponse', 'writeValue']
+                  : ['writeValueWithoutResponse', 'writeValue'];
+              } else if (hasNoResp && !hasWrite){
+                methodOrder = ['writeValueWithoutResponse', 'writeValue'];
+              } else if (hasWrite && !hasNoResp){
+                methodOrder = ['writeValueWithResponse', 'writeValue'];
+              } else {
+                methodOrder = preferNoResp
+                  ? ['writeValueWithoutResponse', 'writeValueWithResponse', 'writeValue']
+                  : ['writeValueWithResponse', 'writeValueWithoutResponse', 'writeValue'];
+              }
+            } else {
+              methodOrder = preferNoResp
+                ? ['writeValueWithoutResponse', 'writeValueWithResponse', 'writeValue']
+                : ['writeValueWithResponse', 'writeValueWithoutResponse', 'writeValue'];
+            }
             let lastErr = null;
             let attempted = 0;
             for (let mi = 0; mi < methodOrder.length; mi++){
@@ -471,6 +639,7 @@
     return {
       kind: 'web-bluetooth',
       getCapabilities: getCapabilities,
+      getKnownDevices: getKnownDevices,
       requestDevice: requestDevice,
       reconnectKnownDevice: reconnectKnownDevice,
       connectGatt: connectGatt
@@ -596,7 +765,7 @@
       connectGatt: async function(transportDevice, onDisconnect){
         const ble = await ensureInit();
         const deviceId = transportDevice.deviceId;
-        const writeQueue = createWriteQueue(40, 2500);
+        const writeQueue = createWriteQueue(40, 4500);
 
         await ble.connect({ deviceId:deviceId }, function(){
           writeQueue.clear();
@@ -609,6 +778,7 @@
           deviceId: deviceId,
           name: transportDevice.name || '',
           writeQueue: writeQueue,
+          isConnected: function(){ return true; },
           discoverServices: function(){
             return writeQueue.enqueue(async function(){
               const res = await ble.getServices({ deviceId:deviceId });
@@ -719,11 +889,12 @@
         return saved ? { deviceId:saved.deviceId || 'sim', name:saved.name || 'Simulator', rawDevice:{ simulated:true } } : null;
       },
       connectGatt: async function(dev){
-        const wq = createWriteQueue(40, 2500);
+        const wq = createWriteQueue(40, 4500);
         return {
           deviceId: dev.deviceId,
           name: dev.name,
           writeQueue: wq,
+          isConnected: function(){ return true; },
           discoverServices: async function(){ return []; },
           startNotifications: async function(){ return async function(){}; },
           read: async function(){ return new Uint8Array([100]); },
@@ -1701,59 +1872,59 @@
       const byBrand = {
         acaia: [
           { services:[UUID.ACAIA_PYXIS_SVC] }, { services:[UUID.ACAIA_LEGACY_SVC] },
-          { namePrefix:'ACAIA' }, { namePrefix:'Acaia' }, { namePrefix:'PROCHBT' },
-          { namePrefix:'LUNAR' }, { namePrefix:'Lunar' },
-          { namePrefix:'PEARL' }, { namePrefix:'Pearl' },
-          { namePrefix:'PYXIS' }, { namePrefix:'Pyxis' },
-          { namePrefix:'CINCO' }, { namePrefix:'Cinco' }
+          { namePrefix:'ACAIA' }, { namePrefix:'Acaia' }, { namePrefix:'acaia' }, { namePrefix:'PROCHBT' },
+          { namePrefix:'LUNAR' }, { namePrefix:'Lunar' }, { namePrefix:'lunar' },
+          { namePrefix:'PEARL' }, { namePrefix:'Pearl' }, { namePrefix:'pearl' },
+          { namePrefix:'PYXIS' }, { namePrefix:'Pyxis' }, { namePrefix:'pyxis' },
+          { namePrefix:'CINCO' }, { namePrefix:'Cinco' }, { namePrefix:'cinco' }
         ],
         difluid: [
           { services:[UUID.DIFLUID_SCALE_SVC] }, { services:[UUID.DIFLUID_SCALE_ALT_SVC] },
           { services:[UUID.DIFLUID_SVC] }, { services:[UUID.DIFLUID_V3_SVC] },
-          { namePrefix:'Microbalance' }, { namePrefix:'MicroBalance' }, { namePrefix:'MICROBALANCE' },
-          { namePrefix:'DiFluid' }, { namePrefix:'DIFLUID' },
-          { namePrefix:'DFT-S' }, { namePrefix:'DF-S' }, { namePrefix:'DF' }
+          { namePrefix:'Microbalance' }, { namePrefix:'MicroBalance' }, { namePrefix:'MICROBALANCE' }, { namePrefix:'microbalance' },
+          { namePrefix:'DiFluid' }, { namePrefix:'DIFLUID' }, { namePrefix:'difluid' },
+          { namePrefix:'DFT-S' }, { namePrefix:'DF-S' }, { namePrefix:'DF' }, { namePrefix:'df' }
         ],
         bookoo: [
           { services:[UUID.BOOKOO_SVC] },
           { namePrefix:'BOOKOO' }, { namePrefix:'Bookoo' }, { namePrefix:'bookoo' },
-          { namePrefix:'Themis' }, { namePrefix:'THEMIS' }
+          { namePrefix:'Themis' }, { namePrefix:'THEMIS' }, { namePrefix:'themis' }
         ],
         timemore: [
           { services:[UUID.WEIGHT_SIG_SVC] }, { services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.TIMEMORE_CUSTOM_SVC] },
-          { namePrefix:'Timemore' }, { namePrefix:'TIMEMORE' },
-          { namePrefix:'Black Mirror' }, { namePrefix:'BLACK MIRROR' }, { namePrefix:'TM' }
+          { namePrefix:'Timemore' }, { namePrefix:'TIMEMORE' }, { namePrefix:'timemore' },
+          { namePrefix:'Black Mirror' }, { namePrefix:'BLACK MIRROR' }, { namePrefix:'black mirror' }, { namePrefix:'TM' }
         ],
         felicita: [
           { services:[UUID.FELICITA_SVC] },
-          { namePrefix:'FELICITA' }, { namePrefix:'Felicita' }
+          { namePrefix:'FELICITA' }, { namePrefix:'Felicita' }, { namePrefix:'felicita' }
         ],
         decent: [
           { services:[UUID.DECENT_SVC] },
-          { namePrefix:'Decent' }, { namePrefix:'DECENT' }, { namePrefix:'Half Decent' }, { namePrefix:'HDS' }
+          { namePrefix:'Decent' }, { namePrefix:'DECENT' }, { namePrefix:'decent' }, { namePrefix:'Half Decent' }, { namePrefix:'half decent' }, { namePrefix:'HDS' }
         ],
         varia: [
           { services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.FELICITA_SVC] }, { services:[UUID.NUS_SVC] },
-          { namePrefix:'Varia' }, { namePrefix:'VARIA' }, { namePrefix:'AKU' }, { namePrefix:'aku' },
+          { namePrefix:'Varia' }, { namePrefix:'VARIA' }, { namePrefix:'varia' }, { namePrefix:'AKU' }, { namePrefix:'aku' },
           { namePrefix:'Cube' }, { namePrefix:'CUBE' }, { namePrefix:'MHW' },
           { namePrefix:'Exagram' }, { namePrefix:'EXAGRAM' }, { namePrefix:'Wacaco' }, { namePrefix:'WACACO' }
         ],
         skale: [
           { services:[UUID.SKALE_SVC] },
-          { namePrefix:'Skale' }, { namePrefix:'SKALE' }
+          { namePrefix:'Skale' }, { namePrefix:'SKALE' }, { namePrefix:'skale' }
         ],
         eureka: [
           { services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.EUREKA_ALT_SVC] }, { services:[UUID.FELICITA_SVC] },
-          { namePrefix:'Precisa' }, { namePrefix:'PRECISA' }, { namePrefix:'CFS-9002' },
-          { namePrefix:'Eureka' }, { namePrefix:'EUREKA' }, { namePrefix:'LSJ' },
-          { namePrefix:'Smart Scale' }, { namePrefix:'Brewista' }, { namePrefix:'BREWISTA' },
+          { namePrefix:'Precisa' }, { namePrefix:'PRECISA' }, { namePrefix:'precisa' }, { namePrefix:'CFS-9002' },
+          { namePrefix:'Eureka' }, { namePrefix:'EUREKA' }, { namePrefix:'eureka' }, { namePrefix:'LSJ' },
+          { namePrefix:'Smart Scale' }, { namePrefix:'Brewista' }, { namePrefix:'BREWISTA' }, { namePrefix:'brewista' },
           { namePrefix:'Exagram' }, { namePrefix:'EXAGRAM' }, { namePrefix:'Wacaco' }, { namePrefix:'WACACO' },
           { namePrefix:'Cube' }, { namePrefix:'CUBE' }, { namePrefix:'MHW' },
           { namePrefix:'Formula' }, { namePrefix:'SoloBarista' }, { namePrefix:'KC200' }, { namePrefix:'WeighMyBru' }
         ],
         hiroia: [
           { services:[UUID.HIROIA_SVC] },
-          { namePrefix:'HIROIA' }, { namePrefix:'Hiroia' }, { namePrefix:'JIMMY' }, { namePrefix:'Jimmy' }
+          { namePrefix:'HIROIA' }, { namePrefix:'Hiroia' }, { namePrefix:'hiroia' }, { namePrefix:'JIMMY' }, { namePrefix:'Jimmy' }, { namePrefix:'jimmy' }
         ],
         sig: [
           { services:[UUID.WEIGHT_SIG_SVC] }
@@ -3231,31 +3402,157 @@
       return false;
     }
 
-    /* ---------- Zero-Prompt Silent Auto-Reconnect Across Remembered Gear ---------- */
+    /* ---------- Zero-Prompt Silent Auto-Reconnect & Health Ping Across Remembered Gear ---------- */
+    function inferSlotFromDeviceName(name){
+      const s = String(name || '').toLowerCase();
+      if (!s) return '';
+      if (/pressensor|smart espresso|bookoo_em|bookoo em/.test(s)) return 'pressure';
+      if (/\br2\b|extract|dft-r/.test(s)) return 'refractometer';
+      if (/omni|dft-sd/.test(s)) return 'omni';
+      if (/stagg|ekg|fellow|xbloom|tbdx/.test(s)) return 'machine';
+      if (/acaia|lunar|pearl|pyxis|cinco|prochbt|microbalance|difluid|dft-s|df-s|bookoo|themis|timemore|black mirror|felicita|decent|hds|varia|aku|skale|eureka|precisa|brewista|hiroia|jimmy|exagram|wacaco/.test(s)) return 'scale';
+      return '';
+    }
+
+    async function getKnownDevices(){
+      const transport = getTransport();
+      if (typeof transport.getKnownDevices === 'function'){
+        const list = await transport.getKnownDevices();
+        return (list || []).map(function(d){
+          return {
+            deviceId: String((d && (d.id || d.deviceId)) || ''),
+            name: String((d && d.name) || ''),
+            gattConnected: !!(d && d.gatt && d.gatt.connected),
+            inferredSlot: inferSlotFromDeviceName(d && d.name)
+          };
+        });
+      }
+      return [];
+    }
+
     async function autoReconnectRemembered(slotFilter){
       const transport = getTransport();
       const savedList = getRememberedDevices().filter(function(d){
         return d.autoConnect !== false && (!slotFilter || d.slot === slotFilter);
       });
       const reconnected = [];
+      const triedIds = Object.create(null);
+
+      async function reconnectSlotCandidate(slot, dev, brand){
+        if (slot === 'scale') await establishScaleSession(dev, brand || 'auto', true);
+        else if (slot === 'pressure') await establishPressureSession(dev);
+        else if (slot === 'refractometer') await establishRefractometerSession(dev);
+        else if (slot === 'omni') await establishOmniSession(dev);
+        else if (slot === 'machine'){
+          if (brand === 'stagg_ekg_plus' || /stagg|ekg|fellow/i.test(dev.name || '')) await connectKettleWithDevice(dev);
+          else await establishXBloomSession(dev);
+        }
+        reconnected.push(slot);
+      }
+
       for (let i = 0; i < savedList.length; i++){
         const saved = savedList[i];
+        if (saved.deviceId) triedIds[saved.deviceId] = true;
         if (state.slots[saved.slot] && state.slots[saved.slot].connected) continue;
         const dev = await transport.reconnectKnownDevice(saved);
         if (!dev) continue;
         try {
-          if (saved.slot === 'scale') await establishScaleSession(dev, saved.brand || 'auto', true);
-          else if (saved.slot === 'pressure') await establishPressureSession(dev);
-          else if (saved.slot === 'refractometer') await establishRefractometerSession(dev);
-          else if (saved.slot === 'omni') await establishOmniSession(dev);
-          else if (saved.slot === 'machine'){
-            if (saved.brand === 'stagg_ekg_plus') await connectKettleWithDevice(dev);
-            else await establishXBloomSession(dev);
-          }
-          reconnected.push(saved.slot);
+          await reconnectSlotCandidate(saved.slot, dev, saved.brand || 'auto');
         } catch(e){}
       }
+
+      /* Also check browser's persisted navigator.bluetooth.getDevices() permission cache when no saved slot matched */
+      if (typeof transport.getKnownDevices === 'function'){
+        try {
+          const rawKnown = await transport.getKnownDevices();
+          for (let ki = 0; ki < rawKnown.length; ki++){
+            const kd = rawKnown[ki];
+            if (!kd || !kd.id || triedIds[kd.id]) continue;
+            const slot = inferSlotFromDeviceName(kd.name);
+            if (!slot || (slotFilter && slot !== slotFilter)) continue;
+            if (state.slots[slot] && state.slots[slot].connected) continue;
+            const wrapped = await transport.reconnectKnownDevice({ deviceId: kd.id, name: kd.name || '' });
+            if (!wrapped) continue;
+            try {
+              const brandHint = slot === 'scale' ? normalizeScaleBrand(kd.name || '') : (/stagg|ekg|fellow/i.test(kd.name || '') ? 'stagg_ekg_plus' : 'auto');
+              await reconnectSlotCandidate(slot, wrapped, brandHint);
+            } catch(e){}
+          }
+        } catch(e){}
+      }
+
       return { ok:reconnected.length > 0, reconnectedSlots:reconnected };
+    }
+
+    async function pingConnectedDevices(opts){
+      const o = opts || {};
+      const now = Date.now();
+      const slotNames = ['scale', 'pressure', 'refractometer', 'omni', 'machine'];
+      const slotReport = {};
+      const aliveSlots = [];
+      const droppedSlots = [];
+
+      if (state.simulatorActive){
+        for (let si = 0; si < slotNames.length; si++){
+          const sn = slotNames[si];
+          const sl = state.slots[sn] || {};
+          slotReport[sn] = { connected: !!sl.connected, alive: !!sl.connected, simulator: true, batteryPct: sl.batteryPct, name: sl.name || '' };
+          if (sl.connected) aliveSlots.push(sn);
+        }
+        return { ok:true, simulator:true, checkedAtMs:now, connectedCount:aliveSlots.length, aliveSlots:aliveSlots, droppedSlots:droppedSlots, slots:slotReport };
+      }
+
+      for (let i = 0; i < slotNames.length; i++){
+        const slot = slotNames[i];
+        const sess = sessions[slot];
+        const slState = state.slots[slot] || {};
+        if (!sess || !sess.gatt){
+          slotReport[slot] = { connected:false, alive:false, batteryPct:slState.batteryPct != null ? slState.batteryPct : null, name:slState.name || '' };
+          continue;
+        }
+        const gatt = sess.gatt;
+        let alive = typeof gatt.isConnected === 'function' ? !!gatt.isConnected() : true;
+        let bat = slState.batteryPct != null ? slState.batteryPct : null;
+        if (alive && o.readBattery !== false && typeof gatt.read === 'function'){
+          try {
+            const bVal = await gatt.read(UUID.BATTERY_SVC, UUID.BATTERY_LEVEL);
+            if (bVal && bVal.length >= 1 && bVal[0] <= 100){
+              bat = bVal[0];
+              if (state.slots[slot]) state.slots[slot].batteryPct = bat;
+              if (slot === 'scale') state.batteryPct = bat;
+              else if (slot === 'pressure') state.pressureBatteryPct = bat;
+              else if (slot === 'refractometer') state.refractometerBatteryPct = bat;
+              else if (slot === 'omni') state.omniBatteryPct = bat;
+            }
+          } catch(e){
+            if (typeof gatt.isConnected === 'function' && !gatt.isConnected()){
+              alive = false;
+            }
+          }
+        }
+        if (alive){
+          aliveSlots.push(slot);
+        } else {
+          droppedSlots.push(slot);
+        }
+        slotReport[slot] = {
+          connected: !!slState.connected,
+          alive: alive,
+          batteryPct: bat,
+          name: slState.name || gatt.name || '',
+          lastPacketAgeMs: state.lastPacketAtMs ? Math.max(0, now - state.lastPacketAtMs) : null
+        };
+      }
+      if (aliveSlots.length || droppedSlots.length) emit();
+      return {
+        ok: droppedSlots.length === 0,
+        simulator: false,
+        checkedAtMs: now,
+        connectedCount: aliveSlots.length,
+        aliveSlots: aliveSlots,
+        droppedSlots: droppedSlots,
+        slots: slotReport
+      };
     }
 
     /* ---------- 10Hz 5-Slot Physics Simulator (`SimulatorBleTransport`) ---------- */
@@ -3926,6 +4223,9 @@
       setKettlePower: setKettlePower,
 
       autoReconnectRemembered: autoReconnectRemembered,
+      silentReconnectKnownDevices: autoReconnectRemembered,
+      getKnownDevices: getKnownDevices,
+      pingConnectedDevices: pingConnectedDevices,
       rememberDevice: rememberDevice,
       forgetDevice: forgetDevice,
       getRememberedDevices: getRememberedDevices,

@@ -16,6 +16,12 @@
   ],
   "icons": [
     {
+      "src": "./icons/icon-64.png",
+      "sizes": "64x64",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "./icons/icon-180.png",
       "sizes": "180x180",
       "type": "image/png",
@@ -44,6 +50,31 @@
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./icons/og-beanjamin.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "BeanTelligence Specialty Coffee Science & Sensory Studio featuring Beanjamin"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Guided Brew",
+      "short_name": "Brew",
+      "description": "Start a guided brew with audible timer and Bluetooth scale",
+      "url": "./?tab=brew",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "5-Bowl Cupping Table",
+      "short_name": "Cupping",
+      "description": "Open the 5-bowl blind SCA/CVA cupping table",
+      "url": "./?route=sca",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

@@ -2735,6 +2735,11 @@ if (typeof window !== 'undefined') {
     guidedIdx: 0,  /* 0..4 across 5 Beanjamin cards */
     aiQuery: '',
     showPromptDisclosure: false,
+    showPresets: false,
+    moreDetailsOverride: null, /* null = auto-open iff populated | true | false */
+    moreDetailsCoffeeId: '',
+    flavorCat: 'popular',
+    flavorSearch: '',
     freshRolloverKey: '',
     freshRolloverIso: '',
     freshRolloverFreeze: false,
@@ -3318,14 +3323,60 @@ if (typeof window !== 'undefined') {
     return true;
   }
 
+  var FLAVOR_NOTE_TABS = [
+    {
+      key: 'popular',
+      label: 'Popular',
+      notes: ['Jasmine', 'Bergamot', 'White Peach', 'Blueberry', 'Strawberry', 'Sweet Orange', 'Honey', 'Caramel', 'Milk Chocolate', 'Dark Cocoa', 'Roasted Almond']
+    },
+    {
+      key: 'floral',
+      label: 'Floral & Tea',
+      notes: ['Jasmine', 'Bergamot', 'Honeysuckle', 'Orange Blossom', 'Rose', 'Lavender', 'Earl Grey', 'Lemon Tea', 'Hibiscus']
+    },
+    {
+      key: 'fruit',
+      label: 'Fruit',
+      notes: ['White Peach', 'Blueberry', 'Strawberry', 'Blackcurrant', 'Raspberry', 'Mango', 'Passionfruit', 'Sweet Orange', 'Grapefruit', 'Red Apple', 'Cherry', 'Tropical Fruit']
+    },
+    {
+      key: 'sweet',
+      label: 'Sweet & Cocoa',
+      notes: ['Honey', 'Caramel', 'Brown Sugar', 'Cane Sugar', 'Maple Syrup', 'Vanilla', 'Milk Chocolate', 'Dark Cocoa', 'Molasses']
+    },
+    {
+      key: 'nutty',
+      label: 'Nut & Spice',
+      notes: ['Roasted Almond', 'Hazelnut', 'Pecan', 'Sweet Spice', 'Cinnamon', 'Cardamom', 'Clove', 'Toasted Oat']
+    }
+  ];
+
+  function getAllFlavorNotesCatalog() {
+    var seen = Object.create(null);
+    var out = [];
+    WCR_FLAVOR_CHIPS.forEach(function (n) {
+      var low = n.toLowerCase();
+      if (!seen[low]) { seen[low] = true; out.push(n); }
+    });
+    FLAVOR_NOTE_TABS.forEach(function (tab) {
+      tab.notes.forEach(function (n) {
+        var low = n.toLowerCase();
+        if (!seen[low]) { seen[low] = true; out.push(n); }
+      });
+    });
+    return out;
+  }
+
   function buildBagFlavorNotesWidget(c, opts) {
     opts = opts || {};
     var onSync = typeof opts.onSync === 'function' ? opts.onSync : function () { S.saveDraftSafe(); };
-    var maxQuickChips = opts.maxQuickChips || WCR_FLAVOR_CHIPS.length;
+    var maxQuickChips = opts.maxQuickChips || 12;
 
-    var wrap = S.h('div', { class: 'bt-ce-notes-widget', style: 'display:flex;flex-direction:column;gap:8px;width:100%;min-width:0' });
+    var wrap = S.h('div', { class: 'bt-ce-notes-widget' });
     var trayHost = S.h('div');
-    var quickChipsHost = S.h('div', { class: 'bt-ce-chips', role: 'group', 'aria-label': 'Quick Bag Flavor Suggestions' });
+    var tabsHost = S.h('div', { class: 'bt-ce-flavor-tabs', role: 'tablist', 'aria-label': 'Flavor Note Categories' });
+    var quickChipsHost = S.h('div', { class: 'bt-ce-chips', role: 'group', 'aria-label': 'Bag Tasting Note Suggestions' });
+    var allCatalog = getAllFlavorNotesCatalog();
 
     function makeCheckSvgSpan() {
       var sp = S.h('span', { class: 'bt-ce-locked-check', 'aria-hidden': 'true' });
@@ -3348,32 +3399,31 @@ if (typeof window !== 'undefined') {
       var nowTs = Date.now();
       trayHost.textContent = '';
 
-      var trayEl = S.h('div', {
-        class: 'bt-ce-locked-tray' + (curList.length ? '' : ' is-empty'),
-        'data-bt-locked-flavors-tray': '1'
-      },
-        S.h('div', { class: 'bt-ce-locked-hd' },
-          S.h('span', { class: 'bt-ce-locked-title' },
-            S.iconEl('check-seal', { size: 14 }),
-            S.h('span', { text: 'Locked Bag Flavors (' + curList.length + ')' })
-          ),
-          curList.length >= 2 ? S.h('button', {
-            type: 'button',
-            class: 'bt-ce-link-btn',
-            text: 'Clear All',
-            onclick: function () {
-              c.bag_notes = '';
-              ceUi.justLockedNotes = Object.create(null);
-              S.haptic('tick');
-              paintTrayAndChips();
-              onSync();
-            }
-          }) : null
-        )
-      );
-
       if (curList.length) {
-        var listEl = S.h('div', { class: 'bt-ce-locked-list', role: 'list', 'aria-label': 'Locked bag flavor notes' });
+        var trayEl = S.h('div', {
+          class: 'bt-ce-locked-tray',
+          'data-bt-locked-flavors-tray': '1'
+        },
+          S.h('div', { class: 'bt-ce-locked-hd' },
+            S.h('span', { class: 'bt-ce-locked-title' },
+              S.iconEl('check-seal', { size: 13 }),
+              S.h('span', { text: curList.length + ' Selected' })
+            ),
+            curList.length >= 2 ? S.h('button', {
+              type: 'button',
+              class: 'bt-ce-link-btn',
+              text: 'Clear all',
+              onclick: function () {
+                c.bag_notes = '';
+                ceUi.justLockedNotes = Object.create(null);
+                S.haptic('tick');
+                paintTrayAndChips();
+                onSync();
+              }
+            }) : null
+          )
+        );
+        var listEl = S.h('div', { class: 'bt-ce-locked-list', role: 'list', 'aria-label': 'Selected bag tasting notes' });
         curList.forEach(function (noteTxt) {
           var low = noteTxt.toLowerCase();
           var isRecent = !!(ceUi.justLockedNotes[low] && (nowTs - ceUi.justLockedNotes[low]) < 1500);
@@ -3392,7 +3442,7 @@ if (typeof window !== 'undefined') {
             class: 'bt-ce-locked-pill' + (isRecent ? ' is-just-locked' : ''),
             'data-locked-note': noteTxt,
             role: 'listitem',
-            title: 'Locked on bag: ' + noteTxt + ' (tap \u00D7 to remove)',
+            title: 'Remove ' + noteTxt,
             onclick: function () { removeLockedNote(noteTxt); }
           },
             makeCheckSvgSpan(),
@@ -3401,18 +3451,42 @@ if (typeof window !== 'undefined') {
           ));
         });
         trayEl.appendChild(listEl);
-      } else {
-        trayEl.appendChild(S.h('div', {
-          class: 'bt-ce-locked-empty',
-          text: c.notesUnsure === 'yes'
-            ? 'Marked as Don\'t Know / None Listed — neutral palate match (type or tap a note below anytime to replace)'
-            : 'No bag notes locked yet — type below, tap quick notes, or tap "Don\'t Know / None Listed"'
-        }));
+        trayHost.appendChild(trayEl);
       }
-      trayHost.appendChild(trayEl);
+
+      var searchQ = String(ceUi.customNoteDraft || '').trim().toLowerCase();
+      tabsHost.textContent = '';
+      tabsHost.hidden = !!searchQ;
+      if (!searchQ) {
+        FLAVOR_NOTE_TABS.forEach(function (tab) {
+          var activeTab = (ceUi.flavorCat || 'popular') === tab.key;
+          tabsHost.appendChild(S.h('button', {
+            type: 'button',
+            role: 'tab',
+            class: 'bt-ce-flavor-tab' + (activeTab ? ' is-active' : ''),
+            'aria-selected': String(activeTab),
+            text: tab.label,
+            onclick: function () {
+              ceUi.flavorCat = tab.key;
+              S.haptic('tick');
+              paintTrayAndChips();
+            }
+          }));
+        });
+      }
 
       quickChipsHost.textContent = '';
-      WCR_FLAVOR_CHIPS.slice(0, maxQuickChips).forEach(function (fn) {
+      var chipPool = [];
+      if (searchQ) {
+        chipPool = allCatalog.filter(function (fn) {
+          return fn.toLowerCase().indexOf(searchQ) >= 0;
+        }).slice(0, 12);
+      } else {
+        var catObj = FLAVOR_NOTE_TABS.find(function (t) { return t.key === (ceUi.flavorCat || 'popular'); }) || FLAVOR_NOTE_TABS[0];
+        chipPool = catObj.notes.slice(0, maxQuickChips);
+      }
+
+      chipPool.forEach(function (fn) {
         var isPicked = curList.some(function (x) { return x.toLowerCase() === fn.toLowerCase(); });
         quickChipsHost.appendChild(S.h('button', {
           type: 'button',
@@ -3424,6 +3498,8 @@ if (typeof window !== 'undefined') {
               removeLockedNote(fn);
             } else {
               lockNotesIntoCoffee(c, fn);
+              ceUi.customNoteDraft = '';
+              if (customNoteInp) customNoteInp.value = '';
               S.haptic('tick');
               paintTrayAndChips();
               onSync();
@@ -3431,25 +3507,37 @@ if (typeof window !== 'undefined') {
           }
         }));
       });
+
+      if (searchQ && !chipPool.some(function (fn) { return fn.toLowerCase() === searchQ; })) {
+        var formattedPreview = formatFlavorNoteToken(ceUi.customNoteDraft);
+        if (formattedPreview) {
+          quickChipsHost.appendChild(S.h('button', {
+            type: 'button',
+            class: 'bt-ce-chip is-compact is-active',
+            text: '+ Add "' + formattedPreview + '"',
+            onclick: function () {
+              commitDraftFromInput(true);
+            }
+          }));
+        }
+      }
     }
 
     var customNoteInp = S.h('input', {
       type: 'text',
       'data-bt-bag-note-input': '1',
       value: ceUi.customNoteDraft || '',
-      placeholder: 'e.g. Papaya, Jasmine (Enter to lock)',
-      'aria-label': 'Type printed bag flavor notes',
+      placeholder: 'Search or add tasting note...',
+      'aria-label': 'Search or add bag tasting notes',
       oninput: function (e) {
         ceUi.customNoteDraft = e.target.value;
+        paintTrayAndChips();
       },
       onkeydown: function (e) {
         if (e.key === 'Enter') {
           e.preventDefault();
           commitDraftFromInput(true);
         }
-      },
-      onblur: function () {
-        commitDraftFromInput(false);
       }
     });
 
@@ -3477,14 +3565,18 @@ if (typeof window !== 'undefined') {
           try { customNoteInp.focus({ preventScroll: true }); } catch (_) {}
         }
       }
-    }, S.h('span', { text: '+ Lock Note' }));
+    }, S.h('span', { text: '+ Add' }));
 
     paintTrayAndChips();
     wrap.appendChild(trayHost);
     wrap.appendChild(S.h('div', { class: 'bt-ce-note-entry' },
-      S.h('div', { class: 'bt-ce-spotlight', style: 'flex:1;min-width:0' }, customNoteInp),
+      S.h('div', { class: 'bt-ce-spotlight', style: 'flex:1;min-width:0' },
+        S.iconEl('search-filter', { size: 15 }),
+        customNoteInp
+      ),
       lockBtn
     ));
+    wrap.appendChild(tabsHost);
     wrap.appendChild(quickChipsHost);
     return wrap;
   }
@@ -3596,6 +3688,72 @@ if (typeof window !== 'undefined') {
       barSlot.textContent = '';
       var hasRoastDate = !c.dateUnsure && !!parseIsoParts(c.roast_date);
       var dAgo = hasRoastDate ? S.daysSinceIso(c.roast_date) : null;
+
+      if (cfg.showQuickChips) {
+        var QUICK_ROAST_DAYS = [
+          { d: 0,  lbl: 'Today' },
+          { d: 3,  lbl: '3d ago' },
+          { d: 7,  lbl: '1 wk' },
+          { d: 14, lbl: '2 wks' },
+          { d: 30, lbl: '1 mo' }
+        ];
+        var matchedQuick = hasRoastDate && c.is_frozen !== 'yes' && QUICK_ROAST_DAYS.some(function (q) { return q.d === dAgo; });
+        var chipsRow = S.h('div', { class: 'bt-ce-date-quick-row', role: 'group', 'aria-label': 'Roast Date Quick Chips' });
+        QUICK_ROAST_DAYS.forEach(function (q) {
+          var qIso = S.isoDaysAgo(q.d);
+          var isOn = !c.dateUnsure && c.is_frozen !== 'yes' && c.roast_date === qIso;
+          chipsRow.appendChild(S.h('button', {
+            type: 'button',
+            class: 'bt-ce-chip bt-ce-date-chip' + (isOn ? ' is-active' : ''),
+            'aria-pressed': String(isOn),
+            text: q.lbl,
+            onclick: function () {
+              c.is_frozen = '';
+              c.frozen_date = '';
+              selectDateIso(qIso, 'roast');
+            }
+          }));
+        });
+
+        var calBtnLabel = c.is_frozen === 'yes'
+          ? ('Frozen ' + (formatHumanIsoDate(c.roast_date) || ''))
+          : (hasRoastDate && !matchedQuick ? formatHumanIsoDate(c.roast_date) : (c.dateUnsure ? 'Not on bag' : 'Pick Date'));
+        var calTriggerBtn = S.h('button', {
+          type: 'button',
+          class: 'bt-ce-chip bt-ce-date-chip bt-ce-date-pick-btn' + (ui.showDatePicker || (hasRoastDate && !matchedQuick) || c.is_frozen === 'yes' || c.dateUnsure ? ' is-active' : ''),
+          'data-roast-date-trigger': '1',
+          'data-bt-roast-picker-trigger': '1',
+          'aria-expanded': String(!!ui.showDatePicker),
+          'aria-label': 'Pick custom roast date',
+          onclick: function () {
+            if (ui.showDatePicker && (ui.datePickerTarget || 'roast') === 'roast') {
+              ui.showDatePicker = false;
+            } else {
+              ui.showDatePicker = true;
+              ui.datePickerTarget = 'roast';
+              var p = parseIsoParts(c.roast_date || todayIso) || todayParts;
+              ui.calViewYear = p.y;
+              ui.calViewMonth = p.m;
+            }
+            S.haptic('tick');
+            paintAllInPlace();
+          }
+        }, S.iconEl('calendar-date', { size: 15 }), S.h('span', { text: calBtnLabel }));
+        chipsRow.appendChild(calTriggerBtn);
+        barSlot.appendChild(chipsRow);
+
+        detailSlot.textContent = '';
+        if (showDetailLine && (hasRoastDate || c.is_frozen === 'yes' || c.dateUnsure)) {
+          var metaTxt = c.dateUnsure
+            ? 'Unstamped bag · Uses safe 35s bloom'
+            : (c.is_frozen === 'yes'
+              ? ('Frozen -18 °C' + (c.roast_date ? ' · Roasted ' + formatHumanIsoDate(c.roast_date) : ''))
+              : (formatHumanIsoDate(c.roast_date) + ' · ' + freshObj.shortState));
+          detailSlot.appendChild(S.h('span', { class: 'bt-ce-date-hint', text: metaTxt }));
+        }
+        return;
+      }
+
       var mainTxt = c.dateUnsure
         ? 'Not Printed on Bag'
         : (hasRoastDate ? formatHumanIsoDate(c.roast_date) : 'Pick Printed Roast Date');
@@ -3605,7 +3763,6 @@ if (typeof window !== 'undefined') {
           ? ((dAgo === 0 ? 'Roasted Today' : (dAgo === 1 ? '1d ago' : dAgo + 'd ago')) + ' · ' + (freshObj.shortState || 'Peak Window'))
           : 'Tap to open month calendar');
 
-      var isRoastOpen = !!ui.showDatePicker && (ui.datePickerTarget || 'roast') === 'roast';
       var triggerBtn = S.h('button', {
         type: 'button',
         class: 'bt-ce-date-trigger',
@@ -3899,7 +4056,28 @@ if (typeof window !== 'undefined') {
             'data-cal-shortcut': 'unsure',
             text: 'Not Printed on Bag',
             onclick: function () { markDateUnsure(false); }
-          }) : null
+          }) : null,
+          cfg.showQuickChips ? S.h('button', {
+            type: 'button',
+            class: 'bt-ce-chip is-compact' + (c.is_frozen === 'yes' ? ' is-active' : ''),
+            'aria-pressed': String(c.is_frozen === 'yes'),
+            onclick: function () {
+              c._v64Touched = 'yes';
+              c.is_frozen = c.is_frozen === 'yes' ? '' : 'yes';
+              if (c.is_frozen === 'yes') {
+                c.dateUnsure = '';
+                c.date_unknown = '';
+                if (!c.roast_date) c.roast_date = S.isoDaysAgo(7);
+                if (!c.frozen_date) c.frozen_date = todayIso;
+              } else {
+                c.frozen_date = '';
+                if (ui.datePickerTarget === 'frozen') ui.datePickerTarget = 'roast';
+              }
+              S.haptic('tick');
+              paintAllInPlace();
+              onSync(c.roast_date || '');
+            }
+          }, S.iconEl('cryo-snowflake', { size: 13 }), S.h('span', { text: 'Frozen -18 °C' })) : null
         ),
         S.h('label', { class: 'bt-ce-cal-native-wrap' },
           S.h('span', { text: 'Type year:' }),
@@ -3952,7 +4130,6 @@ if (typeof window !== 'undefined') {
 
   function formatActiveCoffeeSublabel(c) {
     c = c || {};
-    var missing = getMissingRequiredFields(c);
     var parts = [];
     if (c.nameUnsure === 'yes') parts.push('Unlabeled Bag');
     else {
@@ -3962,13 +4139,12 @@ if (typeof window !== 'undefined') {
     if (!parts.length && c.origin && String(c.origin).trim()) parts.push(String(c.origin).trim());
     var rObj = S.ROAST_STOPS.find(function (x) { return x.key === c.roast; });
     if (rObj) parts.push(rObj.label);
-    else if (c.roastUnsure === 'yes' || c.roast === 'unknown') parts.push('Roast: Don\'t Know');
     if (c.process && c.process !== 'unknown') parts.push(formatProcessDisplay(c.process));
-    else if (c.processUnsure === 'yes' || c.process === 'unknown') parts.push('Process: Don\'t Know');
-    if (missing.length > 0) {
-      return (7 - missing.length) + ' of 7 brew fields set · ' + missing.length + ' needed (or tap Don\'t Know)';
+    if (c.roast_date && !c.dateUnsure) {
+      var dA = S.daysSinceIso(c.roast_date);
+      if (dA != null) parts.push(dA === 0 ? 'Today' : (dA + 'd ago'));
     }
-    if (!parts.length) return 'All 7 brew & preference fields ready';
+    if (!parts.length) return 'Ready — skipped fields use balanced defaults';
     return parts.join(' · ');
   }
 
@@ -4275,21 +4451,25 @@ if (typeof window !== 'undefined') {
   }
   ensureStep1OmniListeners();
 
-  function buildStep1OmniControls(repaintFn) {
+  function buildStep1OmniControls(repaintFn, coffeeObj) {
     ensureStep1OmniListeners();
     var bst = getOmniBleStateSafe();
     var omniConnected = !!(bst.omniConnected || (bst.slots && bst.slots.omni && bst.slots.omni.connected));
     var omniActive = !!(omniConnected || bst.simulatorActive);
-    return S.h('span', { style: 'display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap' },
-      omniActive ? S.h('span', {
+    var curC = coffeeObj || (S.getApp() && S.getApp().coffee) || {};
+    var omniAg = curC.ground_agtron || curC.bean_agtron || curC.agtron || '';
+    var omniScanned = !!(omniAg && curC.agtron_scale === 'omni');
+    var showOmniBadge = omniActive || omniScanned;
+    return S.h('span', { class: 'bt-ce-omni-row' },
+      showOmniBadge ? S.h('span', {
         class: 'bt-ce-badge is-good',
         id: 'bt-step1-omni-badge',
-        text: 'Omni Connected'
+        text: omniActive ? 'Omni Connected' : ('Omni Agtron ' + omniAg)
       }) : null,
       S.h('button', {
         type: 'button',
         id: 'bt-step1-omni-btn',
-        class: 'bt-ce-chip is-compact' + (omniActive ? ' is-active' : ''),
+        class: 'bt-ce-omni-btn' + (omniActive ? ' is-active' : ''),
         onclick: function () {
           var ble = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
           var cur = (ble && typeof ble.getState === 'function') ? (ble.getState() || {}) : {};
@@ -4314,7 +4494,7 @@ if (typeof window !== 'undefined') {
             S.openSheetSafe('ble-devices', null, { detent: 'full', title: 'Bluetooth Scales, R2, Omni & Smart Gear' });
           }
         }
-      }, S.iconEl('ble-wave', { size: 14 }), S.h('span', { text: omniActive ? 'Scan Omni Roast Now' : 'Pair DiFluid Omni' }))
+      }, S.iconEl('ble-wave', { size: 14 }), S.h('span', { text: omniActive ? 'Scan Omni' : 'Pair Omni' }))
     );
   }
 
@@ -4325,6 +4505,11 @@ if (typeof window !== 'undefined') {
     var a = S.getApp();
     a.coffee = a.coffee || {};
     var c = a.coffee;
+
+    if (ceUi.moreDetailsCoffeeId !== String(c.id || '')) {
+      ceUi.moreDetailsCoffeeId = String(c.id || '');
+      ceUi.moreDetailsOverride = null;
+    }
 
     /* Guard: On a fresh untouched coffee (!c.answered && !c.scanned && !c._v64Touched),
        ensure zero silent fake defaults ('washed' / 'medium-light' / dateUnsure) pretend to be answered */
@@ -4352,6 +4537,10 @@ if (typeof window !== 'undefined') {
       ceUi.selectedArchetype = '';
       ceUi.validationPromptOpen = false;
       ceUi.pulseFieldKey = '';
+      ceUi.moreDetailsOverride = null;
+      ceUi.showPresets = false;
+      ceUi.showDatePicker = false;
+      ceUi.flavorCat = 'popular';
       var freshC = {
         id: 'cf_' + Date.now(),
         name: '',
@@ -4359,6 +4548,10 @@ if (typeof window !== 'undefined') {
         nameUnsure: '',
         roasterUnsure: '',
         origin: '',
+        region: '',
+        producer: '',
+        farm_or_station: '',
+        harvest_year: '',
         originUnsure: '',
         origin_unknown: '',
         process: '',
@@ -4383,12 +4576,19 @@ if (typeof window !== 'undefined') {
         bag_notes: '',
         notesUnsure: '',
         notes_unknown: '',
+        bag_weight_g: '',
+        price: '',
+        agtron: '',
+        bean_agtron: '',
+        ground_agtron: '',
+        agtron_scale: 'gourmet',
         is_frozen: '',
         frozen_date: '',
         answered: ''
       };
       a.coffee = freshC;
       c = a.coffee;
+      ceUi.moreDetailsCoffeeId = String(c.id || '');
       initialCoffeeSig = '::';
       a.attempt = 0;
       a.recipeLocked = false;
@@ -4412,7 +4612,7 @@ if (typeof window !== 'undefined') {
       S.saveDraftSafe();
       S.notifyChromeSafe();
       repaintAll();
-      S.toastSafe('Cleared coffee fields — select values or tap Don\'t Know for each!');
+      S.toastSafe('Cleared coffee fields — ready for a new bag.');
     }
 
     var root = S.h('div', { class: 'bt-ce-root', id: inSheet ? 'bt-step1-sheet-studio' : 'bt-step1-coffee-studio' });
@@ -4421,97 +4621,10 @@ if (typeof window !== 'undefined') {
       containerEl.appendChild(root);
     }
 
-    var topGuideSlot = S.h('div');
-    var bottomReqBannerSlot = S.h('div');
     var ctaSubEl = S.h('span', { class: 'bt-ce-cta-sub', text: formatActiveCoffeeSublabel(c) });
     var liveCardSyncFns = [];
 
-    function jumpToCoffeeField(fieldKey) {
-      var reqDef = REQUIRED_FIELDS_7.find(function (f) { return f.key === fieldKey; }) ||
-        { key: 'varietal', anchorId: 'bt-field-varietal', cardId: 'bt-step1-card-2', guidedIdx: 3 };
-      ceUi.pulseFieldKey = fieldKey;
-      if (ceUi.mode === 'guided') {
-        flushPendingStep1Drafts(c);
-        ceUi.guidedIdx = reqDef.guidedIdx != null ? reqDef.guidedIdx : 0;
-        repaintAll();
-        setTimeout(function () {
-          var gCard = root.querySelector('.bt-ce-card-hero');
-          if (gCard && typeof gCard.scrollIntoView === 'function') {
-            gCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }, 30);
-        return;
-      }
-      var targetEl = root.querySelector('#' + reqDef.anchorId) || root.querySelector('#' + reqDef.cardId);
-      if (targetEl) {
-        targetEl.classList.add('is-needs-answer');
-        if (typeof targetEl.scrollIntoView === 'function') {
-          targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        var inp = targetEl.querySelector('input[type="text"]');
-        if (inp && !isFieldAnswered(c, fieldKey) && typeof inp.focus === 'function') {
-          setTimeout(function () {
-            try { inp.focus({ preventScroll: true }); } catch (_) {}
-          }, 220);
-        }
-        setTimeout(function () {
-          if (targetEl && targetEl.classList) targetEl.classList.remove('is-needs-answer');
-        }, 2000);
-      }
-    }
-
-    function handleFillRemainingOnly() {
-      flushPendingStep1Drafts(c);
-      var cnt = fillRemainingAsDontKnow(c);
-      S.saveDraftSafe();
-      S.notifyChromeSafe();
-      repaintAll();
-      if (cnt > 0) {
-        S.toastSafe('Set ' + cnt + ' unchecked field' + (cnt === 1 ? '' : 's') + ' to "Don\'t Know" — ready to choose your brewer!');
-      }
-    }
-
-    function handleFillRemainingAndContinue() {
-      flushPendingStep1Drafts(c);
-      fillRemainingAsDontKnow(c);
-      advanceToBrewer();
-    }
-
-    function paintValidationBannersOnly() {
-      bottomReqBannerSlot.textContent = '';
-      var missing = getMissingRequiredFields(c);
-      if (missing.length === 0) {
-        ceUi.validationPromptOpen = false;
-        ceUi.pulseFieldKey = '';
-        return;
-      }
-      if (!ceUi.validationPromptOpen) return;
-      var missingNames = missing.map(function (m) { return m.shortLabel; }).join(', ');
-      bottomReqBannerSlot.appendChild(S.h('div', { class: 'bt-ce-req-banner', role: 'alert' },
-        S.h('div', { class: 'bt-ce-req-banner-title' },
-          S.iconEl('alert-triangle', { size: 17 }),
-          S.h('span', { text: 'Please pick a value or tap "Don\'t Know" for ' + missingNames + ' — or tap "Fill Remaining as Don\'t Know & Continue →"' })
-        ),
-        S.h('button', {
-          type: 'button',
-          class: 'bt-ce-req-escape-btn',
-          onclick: handleFillRemainingAndContinue
-        }, S.h('span', { text: 'Fill Remaining as Don\'t Know & Continue →' }))
-      ));
-    }
-
-    function paintTopGuideOnly() {
-      topGuideSlot.textContent = '';
-      topGuideSlot.appendChild(buildTopCoffeeGuideCard(c, {
-        onJump: jumpToCoffeeField,
-        onFillRemaining: handleFillRemainingOnly,
-        onFillAndContinue: handleFillRemainingAndContinue
-      }));
-    }
-
     function syncLiveSummariesOnly() {
-      paintTopGuideOnly();
-      paintValidationBannersOnly();
       liveCardSyncFns.forEach(function (fn) {
         try { fn(); } catch (_) {}
       });
@@ -4522,19 +4635,7 @@ if (typeof window !== 'undefined') {
 
     function advanceToBrewer() {
       flushPendingStep1Drafts(c);
-      var missing = getMissingRequiredFields(c);
-      if (missing.length > 0) {
-        ceUi.validationPromptOpen = true;
-        ceUi.pulseFieldKey = missing[0].key;
-        S.haptic('tick');
-        S.saveDraftSafe();
-        repaintAll();
-        setTimeout(function () {
-          jumpToCoffeeField(missing[0].key);
-        }, 35);
-        S.toastSafe('Please answer or tap "Don\'t Know" for ' + missing.map(function (m) { return m.shortLabel; }).join(', ') + '.');
-        return;
-      }
+      fillRemainingAsDontKnow(c);
 
       ceUi.validationPromptOpen = false;
       ceUi.pulseFieldKey = '';
@@ -4600,14 +4701,81 @@ if (typeof window !== 'undefined') {
       S.rerenderSafe();
     }
 
+    function applyArchetypePreset(ar) {
+      ceUi.selectedArchetype = ar.id;
+      ceUi.customNoteDraft = '';
+      ceUi.validationPromptOpen = false;
+      ceUi.pulseFieldKey = '';
+      ceUi.moreDetailsOverride = null;
+      c.id = 'cf_' + Date.now();
+      ceUi.moreDetailsCoffeeId = c.id;
+      c.roaster = ar.data.roaster || '';
+      c.roasterGuide = null;
+      c.nameUnsure = '';
+      c.roasterUnsure = '';
+      c.roastUnsure = '';
+      c.roast_unknown = '';
+      c.processUnsure = '';
+      c.process_unknown = '';
+      c.originUnsure = '';
+      c.origin_unknown = '';
+      c.elevUnsure = '';
+      c.elev_unknown = '';
+      c.notesUnsure = '';
+      c.notes_unknown = '';
+      c.dateUnsure = '';
+      c.date_unknown = '';
+      c.varietalUnsure = '';
+      Object.keys(ar.data).forEach(function (k) { c[k] = ar.data[k]; });
+      if (ar.data.dateUnsure === 'yes') {
+        c.dateUnsure = 'yes';
+        c.date_unknown = 'yes';
+        c.roast_date = '';
+      } else if (!c.roast_date) {
+        c.roast_date = S.isoDaysAgo(6);
+      }
+      c._v64Touched = 'yes';
+      c.answered = 'yes';
+      a.attempt = 0;
+      a.recipeLocked = false;
+      a.dialNote = null;
+      a.cupBrew = null;
+      a.freshCoffeeMode = false;
+      if (a.brew) {
+        a.brew.actualSecs = null;
+        a.brew.actualFromTimer = false;
+      }
+      try {
+        if (typeof window !== 'undefined' && window.BTBrewStudio && typeof window.BTBrewStudio.resetTimerSession === 'function') {
+          window.BTBrewStudio.resetTimerSession();
+        }
+        if (typeof window !== 'undefined' && window.BTTasteStep && typeof window.BTTasteStep.resetSession === 'function') {
+          window.BTTasteStep.resetSession();
+        }
+      } catch (_) {}
+      S.haptic('snap');
+      S.saveDraftSafe();
+      S.notifyChromeSafe();
+      repaintAll();
+    }
+
     function repaintAll() {
       root.textContent = '';
       liveCardSyncFns = [];
       var unifiedRecs = S.buildUnifiedCoffeesSafe();
       var openAndRecent = unifiedRecs.filter(function (r) { return !!r.openBag; })
         .concat(unifiedRecs.filter(function (r) { return !r.openBag; }))
-        .slice(0, 12);
-      var hasFilledCoffee = (7 - getMissingRequiredFields(c).length) > 0 || !!String(c.varietal || '').trim();
+        .slice(0, 8);
+      var hasFilledCoffee = !!(
+        String(c.name || '').trim() ||
+        String(c.roaster || '').trim() ||
+        (c.roast && c.roast !== 'unknown') ||
+        (c.process && c.process !== 'unknown') ||
+        c.roast_date ||
+        String(c.bag_notes || '').trim() ||
+        String(c.origin || '').trim() ||
+        String(c.varietal || '').trim()
+      );
 
       /* Optional Brew Trail Bar ONLY if standalone and not already rendered by 05-tab-brew-studio.js */
       if (!inSheet && typeof document !== 'undefined' && !document.querySelector('.bt-trail-bar')) {
@@ -4620,363 +4788,99 @@ if (typeof window !== 'undefined') {
         }
       }
 
-      /* ==================== ABOVE-THE-FOLD BLOCK 1: COMPACT HEADER ==================== */
+      /* ==================== CALM HEADER ==================== */
       root.appendChild(S.h('div', { class: 'bt-ce-head' },
         S.h('div', { style: 'min-width:0;flex:1' },
-          S.h('div', { class: 'bt-ce-kicker', text: 'Step 1 of 5 · Coffee Studio' }),
-          S.h('h1', { class: 'bt-ce-title', text: 'What are we brewing?' }),
-          S.h('p', { class: 'bt-ce-sub', text: 'Answer the 7 brew fields below — or tap "Don\'t Know" when unlisted.' })
+          S.h('h1', { class: 'bt-ce-title', text: 'What are we brewing?' })
         ),
-        S.h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end' },
+        S.h('div', { class: 'bt-ce-head-actions' },
           hasFilledCoffee ? S.h('button', {
             type: 'button',
             id: 'bt-step1-new-blank-btn',
             class: 'bt-ce-vault-pill',
-            title: 'Clear current fields and enter a brand-new coffee from scratch',
+            title: 'Clear fields and start a new coffee',
             onclick: function () { resetToFreshBlankCoffee(); }
           },
-            S.iconEl('fresh-bag', { size: 15 }),
-            S.h('span', { text: '+ New Coffee' })
+            S.iconEl('fresh-bag', { size: 14 }),
+            S.h('span', { text: 'New' })
           ) : null,
-          S.h('button', {
-            type: 'button',
-            class: 'bt-ce-vault-pill',
-            onclick: function () { flushPendingStep1Drafts(c); openMyCoffeesSheet(); }
-          },
-            S.iconEl('cellar', { size: 15 }),
-            S.h('span', { text: 'My Coffees' + (unifiedRecs.length ? ' (' + unifiedRecs.length + ')' : '') })
+          S.h('div', { class: 'bt-ce-mode-pill', role: 'tablist', 'aria-label': 'Coffee Entry Mode' },
+            S.h('button', {
+              type: 'button',
+              role: 'tab',
+              'aria-selected': String(ceUi.mode === 'quick'),
+              'aria-pressed': String(ceUi.mode === 'quick'),
+              text: 'Studio',
+              onclick: function () { flushPendingStep1Drafts(c); ceUi.mode = 'quick'; S.haptic('tick'); repaintAll(); }
+            }),
+            S.h('button', {
+              type: 'button',
+              role: 'tab',
+              'aria-selected': String(ceUi.mode === 'guided'),
+              'aria-pressed': String(ceUi.mode === 'guided'),
+              text: 'Guided',
+              onclick: function () { flushPendingStep1Drafts(c); ceUi.mode = 'guided'; S.haptic('tick'); repaintAll(); }
+            })
           )
         )
       ));
 
-      /* ==================== STANDOUT TOP COFFEE GUIDE (`#bt-step1-top-guide`) ==================== */
-      paintTopGuideOnly();
-      root.appendChild(topGuideSlot);
-
-      /* ==================== ABOVE-THE-FOLD BLOCK 2: YOUR OPEN BAGS (~144px CARDS) ==================== */
-      var bagsCard = S.h('section', { class: 'bt-ce-card bt-ce-card-compact', 'aria-label': 'Your Open Bags and Recent Coffees' },
-        S.h('div', { class: 'bt-ce-card-hd' },
-          S.h('span', { class: 'bt-ce-eyebrow', text: 'Your Open Bags & Recent Coffees' }),
+      /* ==================== ZONE 1: BAG SOURCE STRIP ==================== */
+      var sourceStrip = S.h('section', { class: 'bt-ce-source-strip', 'aria-label': 'Bag Source Actions' },
+        S.h('div', { class: 'bt-ce-source-actions' },
           S.h('button', {
             type: 'button',
-            class: 'bt-ce-link-btn',
-            text: unifiedRecs.length ? ('All Vault (' + unifiedRecs.length + ') →') : 'Open Vault →',
+            id: 'bt-step1-pick-bag-btn',
+            class: 'bt-ce-source-btn',
             onclick: function () { flushPendingStep1Drafts(c); openMyCoffeesSheet(); }
-          })
+          },
+            S.iconEl('cellar', { size: 16 }),
+            S.h('span', { text: unifiedRecs.length ? ('Pick Saved Bag (' + unifiedRecs.length + ')') : 'Pick Saved Bag' })
+          ),
+          S.h('button', {
+            type: 'button',
+            id: 'bt-step1-scan-bag-btn',
+            class: 'bt-ce-source-btn is-primary',
+            onclick: function () { flushPendingStep1Drafts(c); S.haptic('tick'); openPasteModal(''); }
+          },
+            S.iconEl('spark-star', { size: 16 }),
+            S.h('span', { text: 'Scan Bag (Photo / Text)' })
+          )
         )
       );
 
       if (openAndRecent.length) {
-        var track = S.h('div', { class: 'bt-ce-bags-track' });
-        var activeFreshRec = null;
-
-        openAndRecent.forEach(function (rec, idx) {
-          var rKey = rec.key || rec.coffee_id || ('bag_' + idx);
+        var quickRow = S.h('div', { class: 'bt-ce-quick-bags-row', role: 'group', 'aria-label': 'Quick Saved Bags' });
+        openAndRecent.forEach(function (rec) {
           var isSelected = !!(c.name && rec.name && c.name === rec.name && (c.roaster || '') === (rec.roaster || ''));
+          var rCol = S.roastColorFor(rec.roast || rec.ground_agtron);
           var bag = rec.openBag;
           var ageDays = S.daysSinceIso(rec.roast_date || (bag && (bag.roast || bag.rdate)));
-          var isFrozen = rec.is_frozen === 'yes' || rec.is_frozen === true;
-          var badgeTxt = isFrozen ? 'Frozen -18 °C'
-            : (ageDays != null ? ('Day ' + ageDays + (ageDays >= 4 && ageDays <= 24 ? ' · Peak' : '')) : (rec.lockedBrew ? 'Gold Locked' : 'Saved'));
-          var badgeCls = isFrozen ? 'is-sci' : (ageDays != null && ageDays >= 4 && ageDays <= 24 ? 'is-good' : 'is-gold');
-          var remTxt = (bag && bag.rem_g != null) ? (Math.round(+bag.rem_g) + 'g') : (rec.bestStars > 0 ? ((Math.round(rec.bestStars * 10) / 10) + '/5') : '');
-          var rCol = S.roastColorFor(rec.roast || rec.ground_agtron);
-
-          if (ceUi.freshRolloverKey === rKey) activeFreshRec = rec;
-
-          track.appendChild(S.h('div', {
-            class: 'bt-ce-bag-card' + (isSelected ? ' is-selected' : ''),
-            style: '--bag-roast-col:' + rCol
-          },
-            S.h('div', { class: 'bt-ce-bag-top' },
-              S.h('span', { class: 'bt-ce-badge ' + badgeCls, text: badgeTxt }),
-              remTxt ? S.h('span', { class: 'bt-ce-bag-rem', text: remTxt }) : null
-            ),
-            S.h('div', { style: 'min-width:0' },
-              S.h('div', { class: 'bt-ce-bag-roaster', text: rec.roaster || 'Specialty Roaster' }),
-              S.h('div', { class: 'bt-ce-bag-name', text: rec.name || 'Unnamed Coffee' })
-            ),
-            S.h('div', { class: 'bt-ce-bag-meta' },
-              S.h('span', { class: 'bt-ce-roast-dot', style: 'background:' + rCol }),
-              S.h('span', { text: [rec.origin ? String(rec.origin).split(',')[0] : '', rec.process ? rec.process.replace(/-/g, ' ') : ''].filter(Boolean).join(' · ') || 'Ready to brew' })
-            ),
-            S.h('div', { class: 'bt-ce-bag-actions' },
-              S.h('button', {
-                type: 'button',
-                class: 'bt-ce-bag-brew',
-                text: 'Brew →',
-                onclick: function () { flushPendingStep1Drafts(c); applySavedCoffeeSelection(rec, { targetRoute: 'method' }); }
-              }),
-              S.h('button', {
-                type: 'button',
-                class: 'bt-ce-bag-fresh',
-                'aria-expanded': String(ceUi.freshRolloverKey === rKey),
-                title: 'Opened a new bag of this same coffee? Pick new printed roast date while keeping your locked recipe!',
-                text: 'Fresh Bag',
-                onclick: function () {
-                  if (ceUi.freshRolloverKey === rKey) {
-                    ceUi.freshRolloverKey = '';
-                  } else {
-                    ceUi.freshRolloverKey = rKey;
-                    ceUi.freshRolloverIso = S.isoDaysAgo(5);
-                    ceUi.freshRolloverFreeze = false;
-                  }
-                  S.haptic('tick');
-                  repaintAll();
-                }
-              })
-            )
-          ));
-        });
-        bagsCard.appendChild(track);
-
-        if (activeFreshRec) {
-          var freshDraftObj = {
-            roast: activeFreshRec.roast || 'light',
-            roast_date: ceUi.freshRolloverIso || S.isoDaysAgo(5),
-            dateUnsure: '',
-            is_frozen: ceUi.freshRolloverFreeze ? 'yes' : '',
-            frozen_date: ceUi.freshRolloverFreeze ? S.isoDaysAgo(0) : ''
-          };
-          var freshCalState = {
-            showDatePicker: true,
-            datePickerTarget: 'roast',
-            calViewYear: 0,
-            calViewMonth: -1
-          };
-          var freshApplyBtn = S.h('button', {
+          var suffix = ageDays != null ? (' · ' + ageDays + 'd') : '';
+          quickRow.appendChild(S.h('button', {
             type: 'button',
-            class: 'bt-ce-bag-brew',
-            style: 'min-height:42px;padding:0 14px;width:100%',
-            text: 'Use ' + (formatHumanIsoDate(freshDraftObj.roast_date) || 'Selected Date') + ' & Brew →',
-            onclick: function () {
-              var rollRec = activeFreshRec;
-              var chosen = freshDraftObj.dateUnsure ? 'unsure' : (freshDraftObj.roast_date || S.isoDaysAgo(0));
-              var isFz = freshDraftObj.is_frozen === 'yes';
-              var fzDt = freshDraftObj.frozen_date || S.isoDaysAgo(0);
-              ceUi.freshRolloverKey = '';
-              applyFreshBagRollover(rollRec, chosen, 250, isFz, false, fzDt);
-            }
-          });
-          bagsCard.appendChild(S.h('div', { class: 'bt-ce-fresh-inline' },
-            S.h('div', { class: 'bt-ce-card-hd' },
-              S.h('b', { style: 'font-size:12.5px', text: 'Fresh Bag Rollover · ' + activeFreshRec.name + ' (Keeps Locked Recipe!)' }),
-              S.h('button', { type: 'button', class: 'bt-ce-link-btn', text: 'Cancel', onclick: function () { ceUi.freshRolloverKey = ''; repaintAll(); } })
-            ),
-            buildRoastCalendarControl({
-              coffee: freshDraftObj,
-              uiState: freshCalState,
-              defaultOpen: true,
-              hideDoneBtn: true,
-              showHeaderBadge: false,
-              kickerText: 'New Bag Printed Roast Date',
-              onSync: function () {
-                ceUi.freshRolloverIso = freshDraftObj.roast_date || '';
-                ceUi.freshRolloverFreeze = freshDraftObj.is_frozen === 'yes';
-                freshApplyBtn.textContent = freshDraftObj.dateUnsure
-                  ? 'Use Unstamped Bag & Brew →'
-                  : ('Use ' + (formatHumanIsoDate(freshDraftObj.roast_date) || 'Selected Date') + (freshDraftObj.is_frozen === 'yes' ? ' (-18 °C)' : '') + ' & Brew →');
-              }
-            }),
-            freshApplyBtn
-          ));
-        }
-      } else {
-        /* Honest empty-shelf compact bar (0 fake pre-filled coffees, fits cleanly in ~76px!) */
-        bagsCard.appendChild(S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:2px 0' },
-          S.h('span', { style: 'font-size:12px;color:var(--ink-secondary);flex:1;min-width:180px', text: 'Your open bags appear here for 1-tap Brew → & Fresh Bag rollover.' }),
-          S.h('button', {
-            type: 'button',
-            class: 'bt-ce-chip is-compact',
-            onclick: function () { flushPendingStep1Drafts(c); openPasteModal(''); }
-          }, S.iconEl('paste-card', { size: 14 }), S.h('span', { text: 'Import / Paste Code' }))
-        ));
-      }
-      root.appendChild(bagsCard);
-
-      /* ==================== ABOVE-THE-FOLD BLOCK 3: HERO MAGIC AI BAG LOOKUP & PASTE ==================== */
-      var promptDisclosureSlot = S.h('div');
-      function refreshPromptDisclosure() {
-        promptDisclosureSlot.textContent = '';
-        if (!ceUi.showPromptDisclosure) return;
-        var activeQuery = (ceUi.aiQuery || '').trim() || [c.roaster, c.name].filter(Boolean).join(' — ');
-        var fullPrompt = buildScanPromptV6Safe(activeQuery);
-        var promptTa = S.h('textarea', {
-          class: 'bt-ce-prompt-ta',
-          readOnly: true,
-          value: fullPrompt,
-          'aria-label': 'AI bag lookup prompt text',
-          onclick: function () { this.select(); }
-        });
-        promptDisclosureSlot.appendChild(S.h('div', { class: 'bt-ce-prompt-box' },
-          S.h('div', { class: 'bt-ce-card-hd' },
-            S.h('span', { class: 'bt-ce-eyebrow', text: 'AI Bag Lookup Prompt (Tap to Select All & Copy)' }),
-            S.h('button', {
-              type: 'button',
-              class: 'bt-ce-link-btn',
-              text: 'Hide',
-              onclick: function () { ceUi.showPromptDisclosure = false; refreshPromptDisclosure(); }
-            })
-          ),
-          promptTa
-        ));
-      }
-
-      var clearAiBtn = S.h('button', {
-        type: 'button',
-        class: 'bt-ce-clear-x',
-        hidden: !ceUi.aiQuery,
-        'aria-label': 'Clear AI lookup query',
-        onclick: function () {
-          ceUi.aiQuery = '';
-          aiSpotlightInput.value = '';
-          clearAiBtn.hidden = true;
-          if (ceUi.showPromptDisclosure) refreshPromptDisclosure();
-          aiSpotlightInput.focus();
-        }
-      }, S.iconEl('close-x', { size: 14 }));
-
-      var aiSpotlightInput = S.h('input', {
-        type: 'text',
-        value: ceUi.aiQuery,
-        placeholder: 'Optional: Roaster & coffee name (e.g. Onyx Tropical Weather)',
-        'aria-label': 'Optional roaster and coffee name for AI lookup prompt',
-        oninput: function (e) {
-          ceUi.aiQuery = e.target.value;
-          clearAiBtn.hidden = !ceUi.aiQuery;
-          if (ceUi.showPromptDisclosure) refreshPromptDisclosure();
-        }
-      });
-
-      var heroAiCard = S.h('section', { class: 'bt-ce-card bt-ce-card-hero', 'aria-label': 'Magic AI Bag Lookup and Paste' },
-        S.h('div', { class: 'bt-ce-card-hd' },
-          S.h('h2', { class: 'bt-ce-card-title' },
-            S.iconEl('spark-star', { size: 17 }),
-            S.h('span', { text: 'Magic AI Bag Lookup & Paste' })
-          ),
-          S.h('span', { class: 'bt-ce-badge is-gold', text: 'Works on 100% of Bags' })
-        ),
-        S.h('p', { class: 'bt-ce-ai-helper', text: 'Snap bag or type name → Copy Prompt → Paste AI Reply.' }),
-        S.h('div', { class: 'bt-ce-spotlight' },
-          S.iconEl('search-filter', { size: 16 }),
-          aiSpotlightInput,
-          clearAiBtn
-        ),
-        S.h('div', { class: 'bt-ce-ai-btns' },
-          S.h('button', {
-            type: 'button',
-            class: 'bt-ce-ai-btn is-copy',
-            onclick: function () {
-              var q = (aiSpotlightInput.value || '').trim() || [c.roaster, c.name].filter(Boolean).join(' — ');
-              var promptTxt = buildScanPromptV6Safe(q);
-              S.haptic('snap');
-              copyTextRobust(promptTxt, function (copiedOk) {
-                if (copiedOk) {
-                  S.toastSafe('AI Lookup Prompt copied! Paste into ChatGPT, Claude, or Gemini with a bag photo or name, then tap 2. Paste AI Reply.');
-                } else {
-                  ceUi.showPromptDisclosure = true;
-                  refreshPromptDisclosure();
-                  S.toastSafe('Clipboard blocked by browser — copy the prompt from the box below!');
-                }
-              });
-            }
-          }, S.iconEl('copy', { size: 15 }), S.h('span', { text: '1. Copy AI Lookup Prompt' })),
-          S.h('button', {
-            type: 'button',
-            class: 'bt-ce-ai-btn is-paste',
+            class: 'bt-ce-quick-bag-pill' + (isSelected ? ' is-active' : ''),
+            'aria-pressed': String(isSelected),
             onclick: function () {
               flushPendingStep1Drafts(c);
-              S.haptic('tick');
-              openPasteModal((aiSpotlightInput.value || '').trim());
+              applySavedCoffeeSelection(rec, { stayOnCoffee: true });
             }
-          }, S.iconEl('paste-card', { size: 15 }), S.h('span', { text: '2. Paste AI Reply' }))
-        ),
-        S.h('div', { class: 'bt-ce-ai-foot' },
-          S.h('button', {
-            type: 'button',
-            class: 'bt-ce-link-btn',
-            'aria-expanded': String(ceUi.showPromptDisclosure),
-            text: ceUi.showPromptDisclosure ? 'Hide Prompt Text' : 'View / Copy Prompt Text',
-            onclick: function () {
-              ceUi.showPromptDisclosure = !ceUi.showPromptDisclosure;
-              refreshPromptDisclosure();
-            }
-          }),
-          S.h('span', { style: 'font-size:11px;color:var(--ink-muted)', text: 'Reviews every field with checkboxes first' })
-        ),
-        promptDisclosureSlot
-      );
-      refreshPromptDisclosure();
-      root.appendChild(heroAiCard);
+          },
+            S.h('span', { class: 'bt-ce-roast-dot', style: 'background:' + rCol }),
+            S.h('span', { class: 'bt-ce-quick-bag-lbl', text: (rec.name || 'Saved Bag') + suffix })
+          ));
+        });
+        sourceStrip.appendChild(quickRow);
+      }
 
-      /* ==================== 1-ROW HORIZONTAL 12 QUICK ARCHETYPES STRIP ==================== */
-      var archSection = S.h('section', { class: 'bt-ce-card bt-ce-card-compact', 'aria-label': '12 Quick Specialty Archetypes' },
-        S.h('div', { class: 'bt-ce-card-hd' },
-          S.h('span', { class: 'bt-ce-eyebrow', text: '12 Quick Archetypes · 1-Tap Zero-Typing Start' }),
-          S.h('span', { style: 'font-size:11px;color:var(--ink-muted)', text: 'Swipe →' })
-        ),
-        S.h('div', { class: 'bt-ce-arch-strip', role: 'group', 'aria-label': 'Quick coffee archetypes' },
+      if (ceUi.showPresets) {
+        sourceStrip.appendChild(S.h('div', { class: 'bt-ce-arch-strip', role: 'group', 'aria-label': 'Sample Coffee Presets' },
           QUICK_ARCHETYPES_12.map(function (ar) {
-            var isPressed = ceUi.selectedArchetype === ar.id;
             return S.h('button', {
               type: 'button',
               class: 'bt-ce-arch-pill',
-              'aria-pressed': String(isPressed),
-              onclick: function () {
-                ceUi.selectedArchetype = ar.id;
-                ceUi.customNoteDraft = '';
-                ceUi.validationPromptOpen = false;
-                ceUi.pulseFieldKey = '';
-                c.id = 'cf_' + Date.now();
-                c.roaster = ar.data.roaster || '';
-                c.roasterGuide = null;
-                c.nameUnsure = '';
-                c.roasterUnsure = '';
-                c.roastUnsure = '';
-                c.roast_unknown = '';
-                c.processUnsure = '';
-                c.process_unknown = '';
-                c.originUnsure = '';
-                c.origin_unknown = '';
-                c.elevUnsure = '';
-                c.elev_unknown = '';
-                c.notesUnsure = '';
-                c.notes_unknown = '';
-                c.dateUnsure = '';
-                c.date_unknown = '';
-                c.varietalUnsure = '';
-                Object.keys(ar.data).forEach(function (k) { c[k] = ar.data[k]; });
-                if (ar.data.dateUnsure === 'yes') {
-                  c.dateUnsure = 'yes';
-                  c.date_unknown = 'yes';
-                  c.roast_date = '';
-                } else if (!c.roast_date) {
-                  c.roast_date = S.isoDaysAgo(6);
-                }
-                c._v64Touched = 'yes';
-                c.answered = 'yes';
-                a.attempt = 0;
-                a.recipeLocked = false;
-                a.dialNote = null;
-                a.cupBrew = null;
-                a.freshCoffeeMode = false;
-                if (a.brew) {
-                  a.brew.actualSecs = null;
-                  a.brew.actualFromTimer = false;
-                }
-                try {
-                  if (typeof window !== 'undefined' && window.BTBrewStudio && typeof window.BTBrewStudio.resetTimerSession === 'function') {
-                    window.BTBrewStudio.resetTimerSession();
-                  }
-                  if (typeof window !== 'undefined' && window.BTTasteStep && typeof window.BTTasteStep.resetSession === 'function') {
-                    window.BTTasteStep.resetSession();
-                  }
-                } catch (_) {}
-                S.haptic('snap');
-                S.saveDraftSafe();
-                S.notifyChromeSafe();
-                repaintAll();
-              }
+              'aria-pressed': String(ceUi.selectedArchetype === ar.id),
+              onclick: function () { applyArchetypePreset(ar); }
             },
               S.h('b', null,
                 S.h('span', { class: 'bt-ce-roast-dot', style: 'background:' + ar.roastColor }),
@@ -4985,27 +4889,20 @@ if (typeof window !== 'undefined') {
               S.h('small', { text: ar.sub })
             );
           })
-        )
-      );
-      root.appendChild(archSection);
+        ));
+      }
 
-      /* ==================== DUAL ENTRY MODE SWITCHER ==================== */
-      root.appendChild(S.h('div', { class: 'bt-ce-mode-seg', role: 'tablist', 'aria-label': 'Coffee Entry Mode' },
+      sourceStrip.appendChild(S.h('div', { class: 'bt-ce-source-foot' },
         S.h('button', {
           type: 'button',
-          role: 'tab',
-          'aria-selected': String(ceUi.mode === 'quick'),
-          'aria-pressed': String(ceUi.mode === 'quick'),
-          onclick: function () { flushPendingStep1Drafts(c); ceUi.mode = 'quick'; S.haptic('tick'); repaintAll(); }
-        }, S.iconEl('fresh-bag', { size: 15 }), S.h('span', { text: 'All-in-1 Studio Cards' })),
-        S.h('button', {
-          type: 'button',
-          role: 'tab',
-          'aria-selected': String(ceUi.mode === 'guided'),
-          'aria-pressed': String(ceUi.mode === 'guided'),
-          onclick: function () { flushPendingStep1Drafts(c); ceUi.mode = 'guided'; S.haptic('tick'); repaintAll(); }
-        }, S.iconEl('spark-star', { size: 15 }), S.h('span', { text: '1-Card Guided Mode' }))
+          class: 'bt-ce-link-btn',
+          'aria-expanded': String(!!ceUi.showPresets),
+          text: ceUi.showPresets ? 'Hide sample presets' : 'Try a sample coffee preset',
+          onclick: function () { ceUi.showPresets = !ceUi.showPresets; S.haptic('tick'); repaintAll(); }
+        })
       ));
+
+      root.appendChild(sourceStrip);
 
       /* ==================== ACTIVE ENTRY MODE BODY ==================== */
       if (ceUi.mode === 'guided') {
@@ -5014,11 +4911,7 @@ if (typeof window !== 'undefined') {
         mountQuickCardsView(root, c, unifiedRecs, repaintAll, syncLiveSummariesOnly, liveCardSyncFns);
       }
 
-      /* ==================== INLINE VALIDATION ALERT ABOVE STICKY CTA ==================== */
-      paintValidationBannersOnly();
-      root.appendChild(bottomReqBannerSlot);
-
-      /* ==================== STICKY THUMB-ZONE PRIMARY CTA ==================== */
+      /* ==================== BOTTOM-FLOW PRIMARY CTA (`position: relative; bottom: auto;`) ==================== */
       ctaSubEl.textContent = formatActiveCoffeeSublabel(c);
       root.appendChild(S.h('div', { class: 'bt-ce-sticky-cta', id: 'bt-ce-sticky-cta' },
         S.h('button', {
@@ -5027,7 +4920,7 @@ if (typeof window !== 'undefined') {
           onclick: advanceToBrewer
         },
           S.h('span', { style: 'min-width:0;text-align:left' },
-            S.h('span', { text: inSheet ? 'Save & Choose Brewer →' : 'Choose Brewer →' }),
+            S.h('span', { text: inSheet ? 'Save & Pick Brewer & Gear →' : 'Next: Pick Brewer & Gear →' }),
             ctaSubEl
           ),
           S.iconEl('chevron-right', { size: 20 })
@@ -5048,81 +4941,12 @@ if (typeof window !== 'undefined') {
     return root;
   }
 
-  /* -------------------- 8. Standout Step 1.1 – 1.4 Studio Cards -------------------- */
+  /* -------------------- 8. Clean Step 1 Core Essentials + More Bean Details -------------------- */
   function mountQuickCardsView(root, c, unifiedRecs, repaintAll, syncLiveSummariesOnly, liveCardSyncFns) {
-    var lens = getActiveLensLevel();
     var agMode = getAgtronToolMode();
     liveCardSyncFns = Array.isArray(liveCardSyncFns) ? liveCardSyncFns : [];
 
-    function registerFieldStateBadge(badgeNode, fieldKey) {
-      function paintBadge() {
-        var st = getFieldStatus(c, fieldKey);
-        badgeNode.className = 'bt-ce-field-state is-' + st.state;
-        badgeNode.textContent = '';
-        if (st.state === 'answered') {
-          badgeNode.appendChild(makeInlineCheckSvg(10));
-          badgeNode.appendChild(S.h('span', { text: 'Answered' }));
-        } else if (st.state === 'unsure') {
-          badgeNode.appendChild(makeInlineCheckSvg(10));
-          badgeNode.appendChild(S.h('span', { text: 'Don\'t Know' }));
-        } else if (st.state === 'optional') {
-          badgeNode.textContent = 'Optional';
-        } else {
-          badgeNode.textContent = 'Required';
-        }
-      }
-      paintBadge();
-      liveCardSyncFns.push(paintBadge);
-      return badgeNode;
-    }
-
-    function registerStepCardStatus(cardNode, statusBadgeNode, reqKeys) {
-      function paintCard() {
-        var ans = reqKeys.filter(function (k) { return isFieldAnswered(c, k); }).length;
-        var allDone = ans === reqKeys.length;
-        var isPulse = reqKeys.indexOf(ceUi.pulseFieldKey) >= 0;
-        cardNode.className = 'bt-ce-step-card ' + (allDone ? 'is-card-answered' : 'is-card-needed') + (!allDone && isPulse ? ' is-needs-answer' : '');
-        statusBadgeNode.className = 'bt-ce-step-status ' + (allDone ? 'is-answered' : 'is-needed');
-        statusBadgeNode.textContent = '';
-        if (allDone) {
-          statusBadgeNode.appendChild(makeInlineCheckSvg(12));
-          statusBadgeNode.appendChild(S.h('span', { text: reqKeys.length > 1 ? (ans + '/' + reqKeys.length + ' Answered') : 'Answered' }));
-        } else {
-          statusBadgeNode.textContent = reqKeys.length > 1 ? ((reqKeys.length - ans) + ' Needed') : 'Needed';
-        }
-      }
-      paintCard();
-      liveCardSyncFns.push(paintCard);
-    }
-
-    function makeDontKnowPill(fieldKey, labelText) {
-      var isUnsure = getFieldStatus(c, fieldKey).state === 'unsure';
-      var btn = S.h('button', {
-        type: 'button',
-        class: 'bt-ce-dontknow-pill' + (isUnsure ? ' is-active' : ''),
-        'data-dont-know': fieldKey,
-        'aria-pressed': String(isUnsure),
-        onclick: function () {
-          var curUnsure = getFieldStatus(c, fieldKey).state === 'unsure';
-          setFieldDontKnow(c, fieldKey, !curUnsure);
-          S.haptic('tick');
-          S.saveDraftSafe();
-          S.notifyChromeSafe();
-          repaintAll();
-        }
-      }, isUnsure ? makeInlineCheckSvg(12) : null, S.h('span', { text: labelText || 'Don\'t Know' }));
-      liveCardSyncFns.push(function () {
-        var nowUnsure = getFieldStatus(c, fieldKey).state === 'unsure';
-        btn.setAttribute('aria-pressed', String(nowUnsure));
-        btn.className = 'bt-ce-dontknow-pill' + (nowUnsure ? ' is-active' : '');
-        btn.textContent = '';
-        if (nowUnsure) btn.appendChild(makeInlineCheckSvg(12));
-        btn.appendChild(S.h('span', { text: labelText || 'Don\'t Know' }));
-      });
-      return btn;
-    }
-
-    /* ==================== STEP 1.1 · COFFEE & ROAST ==================== */
+    /* ==================== ESSENTIAL 1: COFFEE & ROASTER ==================== */
     var roasterSugHost = S.h('div', { class: 'bt-ce-sug-row' });
     var nameSugHost = S.h('div', { class: 'bt-ce-sug-row' });
     var dymHost = S.h('div');
@@ -5171,7 +4995,7 @@ if (typeof window !== 'undefined') {
           nameSugHost.appendChild(S.h('button', {
             type: 'button',
             class: 'bt-ce-chip is-compact',
-            text: 'Load saved: ' + u.name + (u.roaster ? ' (' + u.roaster + ')' : ''),
+            text: u.name + (u.roaster ? ' · ' + u.roaster : ''),
             onclick: function () { applySavedCoffeeSelection(u, { stayOnCoffee: true }); }
           }));
         });
@@ -5181,12 +5005,11 @@ if (typeof window !== 'undefined') {
         var dym = checkIdentityDidYouMean(c, unifiedRecs);
         if (dym && (dym.roaster || dym.coffee)) {
           var fixText = dym.fixCoffee && dym.coffee ? ('Did you mean "' + dym.coffee + '"' + (dym.roaster ? ' by ' + dym.roaster : '') + '?')
-            : ('Did you mean roaster "' + dym.roaster + '"?');
+            : ('Did you mean "' + dym.roaster + '"?');
           dymHost.appendChild(S.h('button', {
             type: 'button',
             class: 'bt-ce-chip is-compact is-active',
-            style: 'margin-top:2px',
-            text: fixText + ' Tap to apply',
+            text: fixText,
             onclick: function () {
               c._v64Touched = 'yes';
               c.nameUnsure = '';
@@ -5204,7 +5027,7 @@ if (typeof window !== 'undefined') {
     var roasterInp = S.h('input', {
       type: 'text',
       value: c.roaster || '',
-      placeholder: 'e.g. Onyx, Sey, La Cabra, Counter Culture',
+      placeholder: 'Roaster (e.g. Onyx, Sey, La Cabra)',
       'aria-label': 'Roaster name',
       oninput: function (e) {
         c._v64Touched = 'yes';
@@ -5224,7 +5047,7 @@ if (typeof window !== 'undefined') {
     var nameInp = S.h('input', {
       type: 'text',
       value: c.nameUnsure === 'yes' ? '' : (c.name || ''),
-      placeholder: c.nameUnsure === 'yes' ? 'Marked Unlabeled Coffee (type to set name)' : 'e.g. Worka Chelbesa, Tropical Weather',
+      placeholder: 'Coffee name (e.g. Worka Chelbesa)',
       'aria-label': 'Coffee name',
       oninput: function (e) {
         c._v64Touched = 'yes';
@@ -5238,227 +5061,289 @@ if (typeof window !== 'undefined') {
     });
     updateIdentitySuggestions();
 
-    var card1StatusBadge = S.h('span', { class: 'bt-ce-step-status is-needed' });
-    var nameStateBadge = registerFieldStateBadge(S.h('span'), 'name');
-    var roastStateBadge = registerFieldStateBadge(S.h('span'), 'roast');
+    var identityCard = S.h('section', { class: 'bt-ce-card bt-ce-zone-card', id: 'bt-field-name', 'aria-label': 'Coffee and Roaster' },
+      S.h('div', { class: 'bt-ce-zone-hd' },
+        S.h('h2', { class: 'bt-ce-zone-title', text: 'Coffee & Roaster' })
+      ),
+      S.h('div', { class: 'bt-ce-id-grid' },
+        S.h('div', { class: 'bt-ce-input-col' },
+          S.h('div', { class: 'bt-ce-spotlight' }, S.iconEl('spark-star', { size: 16 }), roasterInp),
+          roasterSugHost
+        ),
+        S.h('div', { class: 'bt-ce-input-col' },
+          S.h('div', { class: 'bt-ce-spotlight' }, S.iconEl('fresh-bag', { size: 16 }), nameInp),
+          nameSugHost
+        )
+      ),
+      dymHost
+    );
+    root.appendChild(identityCard);
 
+    /* ==================== ESSENTIAL 2: ROAST LEVEL ==================== */
     var omniStNow = getOmniBleStateSafe();
     var omniConnectedNow = !!(omniStNow.omniConnected || (omniStNow.slots && omniStNow.slots.omni && omniStNow.slots.omni.connected) || omniStNow.simulatorActive);
-    var roastMeterPanel = null;
-    if (agMode !== 'off' && (agMode === 'always' || lens === 'scientist' || ceUi.showRoastMeter || omniConnectedNow)) {
-      var curScale = c.agtron_scale || 'gourmet';
-      var deltaVal = (isFinite(+c.ground_agtron) && isFinite(+c.bean_agtron) && +c.ground_agtron > 0 && +c.bean_agtron > 0)
-        ? Math.round((+c.ground_agtron - +c.bean_agtron) * 10) / 10
-        : null;
-      roastMeterPanel = S.h('div', { class: 'bt-ce-sensor-panel' },
-        S.h('div', { class: 'bt-ce-card-hd' },
-          S.h('span', { class: 'bt-ce-eyebrow', style: 'color:var(--science)', text: 'Roast Color Meter (Agtron · Lightells · DiFluid Omni)' }),
-          deltaVal != null ? S.h('span', { class: 'bt-ce-badge is-sci', text: 'Delta ' + (deltaVal >= 0 ? '+' : '') + deltaVal + (Math.abs(deltaVal) <= 9 ? ' · Even Core' : ' · High Contrast') }) : null
-        ),
-        S.h('div', { class: 'bt-ce-chips' },
-          [
-            ['gourmet', 'Agtron Gourmet'],
-            ['lightells', 'Lightells NIR'],
-            ['omni', 'DiFluid Omni'],
-            ['tonino', 'Tonino'],
-            ['commercial', 'Commercial']
-          ].map(function (sc) {
-            return S.h('button', {
-              type: 'button',
-              class: 'bt-ce-chip is-compact',
-              'aria-pressed': String(curScale === sc[0]),
-              text: sc[1],
-              onclick: function () { c.agtron_scale = sc[0]; repaintAll(); }
-            });
-          })
-        ),
-        S.h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' },
-          S.h('label', { style: 'display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700' },
-            S.h('span', { text: 'Whole:' }),
-            S.h('input', {
-              type: 'text',
-              inputmode: 'decimal',
-              class: 'bt-ce-num-input',
-              placeholder: '72',
-              value: c.bean_agtron || '',
-              oninput: function (e) {
-                c._v64Touched = 'yes';
-                c.bean_agtron = e.target.value;
-                var bNum = parseFloat(e.target.value);
-                if (isFinite(bNum) && bNum > 0) c.agtron = Math.round(bNum);
-                syncLiveSummariesOnly();
-              }
-            })
-          ),
-          S.h('label', { style: 'display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700' },
-            S.h('span', { text: 'Ground:' }),
-            S.h('input', {
-              type: 'text',
-              inputmode: 'decimal',
-              class: 'bt-ce-num-input',
-              placeholder: '80',
-              value: c.ground_agtron || '',
-              oninput: function (e) {
-                c._v64Touched = 'yes';
-                c.ground_agtron = e.target.value;
-                var gNum = parseFloat(e.target.value);
-                if (isFinite(gNum) && gNum > 0) c.agtron = Math.round(gNum);
-                var gEq = roastMeterToGourmet(e.target.value, c.agtron_scale);
-                var mappedR = normRoastKey('', gEq);
-                if (mappedR) { c.roast = mappedR; c.roastUnsure = ''; c.roast_unknown = ''; }
-                syncLiveSummariesOnly();
-              }
-            })
-          ),
-          buildStep1OmniControls(repaintAll)
-        )
-      );
-    }
-
+    var omniAgVal = c.ground_agtron || c.bean_agtron || c.agtron || '';
+    var omniScannedNow = !!(omniAgVal && c.agtron_scale === 'omni');
+    var PRIMARY_ROAST_STOPS_5 = S.ROAST_STOPS.slice(1); /* Light, Med-Light, Medium, Med-Dark, Dark */
     var activeRoastStop = S.ROAST_STOPS.find(function (r) { return r.key === c.roast; });
-    var roastCueTxt = (c.roastUnsure === 'yes' || c.roast === 'unknown')
-      ? 'Marked Don\'t Know — uses neutral balanced temp today & protects your Roast Preferences.'
-      : (activeRoastStop ? activeRoastStop.cue : 'Pick a roast swatch above — or tap "Don\'t Know" if your bag omits roast level.');
 
-    var cardStep11 = S.h('section', { class: 'bt-ce-step-card is-card-needed', id: 'bt-step1-card-1' },
-      S.h('div', { class: 'bt-ce-step-card-hd' },
-        S.h('span', { class: 'bt-ce-step-num-badge', text: 'Step 1.1 · Coffee & Roast' }),
-        card1StatusBadge
+    var roastCard = S.h('section', { class: 'bt-ce-card bt-ce-zone-card', id: 'bt-field-roast', 'aria-label': 'Roast Level' },
+      S.h('div', { class: 'bt-ce-zone-hd' },
+        S.h('h2', { class: 'bt-ce-zone-title', text: 'Roast Level' }),
+        agMode !== 'off' ? buildStep1OmniControls(repaintAll, c) : null
       ),
-      /* Field 1: Coffee & Roaster Name */
-      S.h('div', { class: 'bt-ce-field-block' + (ceUi.pulseFieldKey === 'name' ? ' is-needs-answer' : ''), id: 'bt-field-name' },
-        S.h('div', { class: 'bt-ce-field-hd' },
-          S.h('div', { class: 'bt-ce-field-title-grp' },
-            S.h('span', { class: 'bt-ce-field-lbl', text: '1. Coffee & Roaster Name' }),
-            nameStateBadge,
-            makeFieldHelpBtn('name')
-          ),
-          makeDontKnowPill('name', 'Don\'t Know / Unlabeled')
-        ),
-        S.h('div', { class: 'bt-ce-id-grid' },
-          S.h('div', { style: 'display:flex;flex-direction:column;gap:4px;min-width:0' },
-            S.h('span', { class: 'bt-ce-input-sublbl', text: 'Roaster' }),
-            S.h('div', { class: 'bt-ce-spotlight' }, S.iconEl('spark-star', { size: 15 }), roasterInp),
-            roasterSugHost
-          ),
-          S.h('div', { style: 'display:flex;flex-direction:column;gap:4px;min-width:0' },
-            S.h('span', { class: 'bt-ce-input-sublbl', text: 'Coffee / Bag Name' }),
-            S.h('div', { class: 'bt-ce-spotlight' }, S.iconEl('fresh-bag', { size: 15 }), nameInp),
-            nameSugHost
-          )
-        ),
-        dymHost
+      S.h('div', { class: 'bt-ce-roast-grid', role: 'radiogroup', 'aria-label': 'Roast Level' },
+        PRIMARY_ROAST_STOPS_5.map(function (st) {
+          var isUltraOnLight = (st.key === 'light' && c.roast === 'ultra-light');
+          var isOn = !c.roastUnsure && (c.roast === st.key || isUltraOnLight);
+          return S.h('button', {
+            type: 'button',
+            class: 'bt-ce-roast-swatch',
+            role: 'radio',
+            'aria-checked': String(isOn),
+            'aria-pressed': String(isOn),
+            onclick: function () {
+              c._v64Touched = 'yes';
+              c.roast = st.key;
+              c.roastUnsure = '';
+              c.roast_unknown = '';
+              S.haptic('tick');
+              S.saveDraftSafe();
+              S.notifyChromeSafe();
+              repaintAll();
+            }
+          },
+            S.h('span', { class: 'bt-ce-roast-disc', style: 'background:' + st.hex }),
+            S.h('span', { text: st.label })
+          );
+        })
       ),
-      /* Field 2: Roast Level */
-      S.h('div', { class: 'bt-ce-field-block' + (ceUi.pulseFieldKey === 'roast' ? ' is-needs-answer' : ''), id: 'bt-field-roast' },
-        S.h('div', { class: 'bt-ce-field-hd' },
-          S.h('div', { class: 'bt-ce-field-title-grp' },
-            S.h('span', { class: 'bt-ce-field-lbl', text: '2. Roast Level' }),
-            roastStateBadge,
-            makeFieldHelpBtn('roast')
-          ),
-          makeDontKnowPill('roast', 'Don\'t Know')
-        ),
-        S.h('div', { class: 'bt-ce-roast-grid', role: 'radiogroup', 'aria-label': 'Roast Spectrum' },
-          S.ROAST_STOPS.map(function (st) {
-            var isOn = !c.roastUnsure && c.roast === st.key;
-            return S.h('button', {
-              type: 'button',
-              class: 'bt-ce-roast-swatch',
-              role: 'radio',
-              'aria-checked': String(isOn),
-              'aria-pressed': String(isOn),
-              onclick: function () {
-                c._v64Touched = 'yes';
-                c.roast = st.key;
-                c.roastUnsure = '';
-                c.roast_unknown = '';
-                if (!c.ground_agtron) {
-                  c.ground_agtron = st.agtron;
-                  c.bean_agtron = st.agtron - 6;
-                }
-                S.haptic('tick');
-                S.saveDraftSafe();
-                S.notifyChromeSafe();
-                repaintAll();
-              }
-            },
-              S.h('span', { class: 'bt-ce-roast-disc', style: 'background:' + st.hex }),
-              S.h('span', { text: st.label })
-            );
-          })
-        ),
-        ceUi.showRoastAliases ? S.h('div', { class: 'bt-ce-subwell' },
-          S.h('span', { class: 'bt-ce-eyebrow', text: 'Tap Your Bag\'s Roast Word' }),
-          S.h('div', { class: 'bt-ce-chips' },
-            ROASTER_WORD_ALIASES.map(function (al) {
-              return S.h('button', {
-                type: 'button',
-                class: 'bt-ce-chip is-compact',
-                'aria-pressed': String(!c.roastUnsure && c.roast === al.roast),
-                text: al.lbl,
-                onclick: function () {
-                  c._v64Touched = 'yes';
-                  c.roast = al.roast;
-                  c.roastUnsure = '';
-                  c.roast_unknown = '';
-                  ceUi.showRoastAliases = false;
-                  S.haptic('tick');
-                  S.saveDraftSafe();
-                  repaintAll();
-                }
-              });
-            })
-          )
-        ) : null,
-        S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap' },
-          S.h('span', { style: 'font-size:11.5px;color:var(--ink-secondary);flex:1;min-width:170px', text: roastCueTxt }),
-          S.h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' },
-            S.h('button', {
-              type: 'button',
-              class: 'bt-ce-link-btn',
-              'aria-expanded': String(ceUi.showRoastAliases),
-              text: ceUi.showRoastAliases ? 'Hide Bag Terms' : 'Bag says Nordic / City+ / Omni?',
-              onclick: function () { ceUi.showRoastAliases = !ceUi.showRoastAliases; repaintAll(); }
-            }),
-            agMode !== 'off' ? S.h('button', {
-              type: 'button',
-              class: 'bt-ce-chip is-compact',
-              'aria-pressed': String(agMode === 'always' || lens === 'scientist' || ceUi.showRoastMeter || omniConnectedNow),
-              onclick: function () { ceUi.showRoastMeter = !ceUi.showRoastMeter; repaintAll(); }
-            }, S.iconEl('omni-nir', { size: 14 }), S.h('span', { text: 'Roast Meter' })) : null,
-            (!roastMeterPanel && agMode !== 'off') ? buildStep1OmniControls(repaintAll) : null
-          )
-        ),
-        roastMeterPanel
-      )
+      activeRoastStop ? S.h('div', { class: 'bt-ce-zone-cue', text: (c.roast === 'ultra-light' ? 'Very Light · ' : '') + activeRoastStop.cue }) : null,
+      (omniConnectedNow || omniScannedNow) ? S.h('div', { class: 'bt-ce-omni-readout' },
+        S.iconEl('omni-nir', { size: 14 }),
+        S.h('span', {
+          text: omniAgVal
+            ? ('DiFluid Omni Agtron ' + omniAgVal + (c.bean_agtron && c.ground_agtron ? (' (Whole ' + c.bean_agtron + ' · Ground ' + c.ground_agtron + ')') : ''))
+            : 'DiFluid Omni paired — tap Scan Omni to auto-fill roast Agtron.'
+        })
+      ) : null
     );
-    registerStepCardStatus(cardStep11, card1StatusBadge, ['name', 'roast']);
-    root.appendChild(cardStep11);
+    root.appendChild(roastCard);
 
-    /* ==================== STEP 1.2 · ORIGIN, PROCESS & ELEVATION ==================== */
-    var all52 = getAllOriginNames52();
-    var all72 = getAllVarietalNames72();
-    var originFeedbackHost = S.h('div', { style: 'display:flex;flex-direction:column;gap:5px' });
-    var varietalFeedbackHost = S.h('div', { style: 'display:flex;flex-direction:column;gap:5px' });
+    /* ==================== ESSENTIAL 3: PROCESS & BAG TASTING NOTES ==================== */
+    var curProc = c.process || '';
+    var isProcUnsure = c.processUnsure === 'yes' || c.process_unknown === 'yes' || curProc === 'unknown';
+    var isHoneyGroup = !isProcUnsure && (curProc === 'honey' || curProc.indexOf('-honey') > 0);
+    var isWildGroup = !isProcUnsure && (['anaerobic', 'carbonic', 'thermal-shock', 'yeast-koji', 'co-ferment'].indexOf(curProc) >= 0);
 
-    function refreshOriginFeedback() {
-      originFeedbackHost.textContent = '';
-      var q = String(ceUi.originSearch || c.origin || '').trim();
-      if (ceUi.originSearch && ceUi.originSearch.trim().length >= 1) {
-        var lowQ = ceUi.originSearch.trim().toLowerCase();
-        var matches = all52.filter(function (n) { return n.toLowerCase().indexOf(lowQ) >= 0; }).slice(0, 8);
-        if (matches.length) {
+    var procExtraBadge = [];
+    if (!isProcUnsure && curProc === 'wet-hulled') procExtraBadge.push('Wet-Hulled');
+    if (c.decaf === 'yes') procExtraBadge.push('Decaf');
+    else if (c.decaf === 'half-caf') procExtraBadge.push('Half-Caf');
+
+    var processFlavorsCard = S.h('section', { class: 'bt-ce-card bt-ce-zone-card', id: 'bt-field-process', 'aria-label': 'Process and Bag Tasting Notes' },
+      S.h('div', { class: 'bt-ce-zone-hd' },
+        S.h('h2', { class: 'bt-ce-zone-title', text: 'Process' }),
+        procExtraBadge.length ? S.h('span', { class: 'bt-ce-badge is-good', text: procExtraBadge.join(' · ') }) : null
+      ),
+      S.h('div', { class: 'bt-ce-proc-grid', role: 'group', 'aria-label': 'Processing Method' },
+        [
+          { k: 'washed',     ico: 'cherry-washed',  lbl: 'Washed',                   on: !isProcUnsure && curProc === 'washed' },
+          { k: 'natural',    ico: 'cherry-natural', lbl: 'Natural',                  on: !isProcUnsure && curProc === 'natural' },
+          { k: 'honey',      ico: 'cherry-honey',   lbl: 'Honey',                    on: isHoneyGroup },
+          { k: 'anaerobic',  ico: 'anaerobic-tank', lbl: 'Anaerobic / Experimental', on: isWildGroup }
+        ].map(function (p) {
+          return S.h('button', {
+            type: 'button',
+            class: 'bt-ce-chip bt-ce-proc-chip',
+            'aria-pressed': String(p.on),
+            onclick: function () {
+              c._v64Touched = 'yes';
+              c.process = p.k;
+              c.processUnsure = '';
+              c.process_unknown = '';
+              if (p.k === 'honey' && !c.process_sub) c.process_sub = 'red-honey';
+              S.haptic('tick');
+              S.saveDraftSafe();
+              S.notifyChromeSafe();
+              repaintAll();
+            }
+          }, p.ico ? S.iconEl(p.ico, { size: 15 }) : null, S.h('span', { text: p.lbl }));
+        })
+      ),
+      isHoneyGroup ? S.h('div', { class: 'bt-ce-sub-chips' },
+        [
+          ['white-honey', 'White Honey'],
+          ['yellow-honey', 'Yellow Honey'],
+          ['red-honey', 'Red Honey'],
+          ['black-honey', 'Black Honey']
+        ].map(function (ht) {
+          return S.h('button', {
+            type: 'button',
+            class: 'bt-ce-chip is-compact',
+            'aria-pressed': String(curProc === ht[0] || c.process_sub === ht[0]),
+            text: ht[1],
+            onclick: function () {
+              c._v64Touched = 'yes';
+              c.process = ht[0];
+              c.process_sub = ht[0];
+              c.processUnsure = '';
+              c.process_unknown = '';
+              S.haptic('tick');
+              S.saveDraftSafe();
+              repaintAll();
+            }
+          });
+        })
+      ) : null,
+      isWildGroup ? S.h('div', { class: 'bt-ce-sub-chips' },
+        [
+          ['anaerobic', 'Anaerobic'],
+          ['carbonic', 'Carbonic Maceration'],
+          ['thermal-shock', 'Thermal Shock'],
+          ['yeast-koji', 'Yeast / Koji'],
+          ['co-ferment', 'Fruit Co-Ferment']
+        ].map(function (wt) {
+          return S.h('button', {
+            type: 'button',
+            class: 'bt-ce-chip is-compact',
+            'aria-pressed': String(curProc === wt[0]),
+            text: wt[1],
+            onclick: function () {
+              c._v64Touched = 'yes';
+              c.process = wt[0];
+              c.processUnsure = '';
+              c.process_unknown = '';
+              S.haptic('tick');
+              S.saveDraftSafe();
+              repaintAll();
+            }
+          });
+        })
+      ) : null,
+      S.h('div', { class: 'bt-ce-zone-divider' }),
+      S.h('div', { class: 'bt-ce-zone-hd', id: 'bt-field-notes' },
+        S.h('h2', { class: 'bt-ce-zone-title', text: 'Bag Tasting Notes' })
+      ),
+      buildBagFlavorNotesWidget(c, {
+        onSync: function () { syncLiveSummariesOnly(); }
+      })
+    );
+    root.appendChild(processFlavorsCard);
+
+    /* ==================== ESSENTIAL 4: ROAST DATE QUICK CHIPS ==================== */
+    var freshInfo = computeSmrkeFreshnessStatus(c);
+    var hasDateOrFreeze = (!c.dateUnsure && !!parseIsoParts(c.roast_date)) || c.is_frozen === 'yes';
+
+    var roastDateCard = S.h('section', { class: 'bt-ce-card bt-ce-zone-card', id: 'bt-field-date', 'aria-label': 'Roast Date' },
+      S.h('div', { class: 'bt-ce-zone-hd' },
+        S.h('h2', { class: 'bt-ce-zone-title', text: 'Roast Date' }),
+        hasDateOrFreeze ? S.h('span', { class: 'bt-ce-badge ' + freshInfo.tone, text: freshInfo.label }) : null
+      ),
+      buildRoastCalendarControl({
+        coffee: c,
+        uiState: ceUi,
+        showHeaderBadge: false,
+        showQuickChips: true,
+        onSync: function () { syncLiveSummariesOnly(); }
+      })
+    );
+    root.appendChild(roastDateCard);
+
+    /* ==================== ZONE 3: COLLAPSIBLE "MORE BEAN DETAILS" ==================== */
+    var hasMorePopulated = !!(
+      String(c.origin || '').trim() ||
+      String(c.region || '').trim() ||
+      String(c.producer || '').trim() ||
+      String(c.farm_or_station || '').trim() ||
+      String(c.varietal || '').trim() ||
+      (isFinite(+c.elevation_m) && +c.elevation_m > 0) ||
+      (['low', 'mid', 'high', 'very-high'].indexOf(c.density) >= 0) ||
+      String(c.harvest_year || '').trim() ||
+      (isFinite(+c.bag_weight_g) && +c.bag_weight_g > 0) ||
+      (isFinite(+c.price) && +c.price > 0) ||
+      c.decaf === 'yes' || c.decaf === 'half-caf' ||
+      c.process === 'wet-hulled' ||
+      (!omniConnectedNow && c.agtron_scale !== 'omni' && ((isFinite(+c.bean_agtron) && +c.bean_agtron > 0) || (isFinite(+c.ground_agtron) && +c.ground_agtron > 0)))
+    );
+    var isMoreOpen = ceUi.moreDetailsOverride !== null ? ceUi.moreDetailsOverride : hasMorePopulated;
+
+    var moreSummaryParts = [];
+    if (String(c.origin || '').trim()) moreSummaryParts.push(String(c.origin).trim());
+    if (String(c.varietal || '').trim()) moreSummaryParts.push(String(c.varietal).trim());
+    if (isFinite(+c.elevation_m) && +c.elevation_m > 0) moreSummaryParts.push(Math.round(+c.elevation_m) + 'm');
+    if (String(c.harvest_year || '').trim()) moreSummaryParts.push(String(c.harvest_year).trim());
+    if (isFinite(+c.bag_weight_g) && +c.bag_weight_g > 0) moreSummaryParts.push(Math.round(+c.bag_weight_g) + 'g');
+    if (isFinite(+c.price) && +c.price > 0) moreSummaryParts.push(currencySymbol(c.currency) + (+c.price).toFixed(0));
+    var moreSubTxt = moreSummaryParts.length
+      ? moreSummaryParts.slice(0, 4).join(' · ')
+      : 'Origin, varietal, elevation, harvest, weight & price';
+
+    var moreWrap = S.h('section', { class: 'bt-ce-disclosure', id: 'bt-step1-more-details', 'aria-label': 'More Bean Details' });
+    var moreToggleBtn = S.h('button', {
+      type: 'button',
+      class: 'bt-ce-disclosure-btn',
+      'aria-expanded': String(!!isMoreOpen),
+      onclick: function () {
+        ceUi.moreDetailsOverride = !isMoreOpen;
+        S.haptic('tick');
+        repaintAll();
+      }
+    },
+      S.h('span', { class: 'bt-ce-disclosure-copy' },
+        S.h('span', { class: 'bt-ce-disclosure-title', text: 'More Bean Details' }),
+        S.h('span', { class: 'bt-ce-disclosure-sub', text: moreSubTxt })
+      ),
+      S.h('span', { class: 'bt-ce-disclosure-chev' }, S.iconEl('chevron-down', { size: 17 }))
+    );
+    moreWrap.appendChild(moreToggleBtn);
+
+    if (isMoreOpen) {
+      var all52 = getAllOriginNames52();
+      var all72 = getAllVarietalNames72();
+      var originFeedbackHost = S.h('div', { style: 'display:flex;flex-direction:column;gap:5px' });
+      var varietalFeedbackHost = S.h('div', { style: 'display:flex;flex-direction:column;gap:5px' });
+
+      function refreshOriginFeedback() {
+        originFeedbackHost.textContent = '';
+        var q = String(ceUi.originSearch || c.origin || '').trim();
+        if (ceUi.originSearch && ceUi.originSearch.trim().length >= 1) {
+          var lowQ = ceUi.originSearch.trim().toLowerCase();
+          var matches = all52.filter(function (n) { return n.toLowerCase().indexOf(lowQ) >= 0; }).slice(0, 8);
+          if (matches.length) {
+            originFeedbackHost.appendChild(S.h('div', { class: 'bt-ce-chips' },
+              matches.map(function (mn) {
+                return S.h('button', {
+                  type: 'button',
+                  class: 'bt-ce-chip is-compact',
+                  'aria-pressed': String(String(c.origin || '').toLowerCase().indexOf(mn.toLowerCase()) >= 0),
+                  text: mn,
+                  onclick: function () {
+                    c._v64Touched = 'yes';
+                    c.origin = mn;
+                    c.originUnsure = '';
+                    c.origin_unknown = '';
+                    ceUi.originSearch = '';
+                    S.haptic('tick');
+                    S.saveDraftSafe();
+                    repaintAll();
+                  }
+                });
+              })
+            ));
+          }
+        }
+        var corr = suggestOriginCorrection(q, c.name);
+        if (corr.suggestions && corr.suggestions.length) {
           originFeedbackHost.appendChild(S.h('div', { class: 'bt-ce-chips' },
-            matches.map(function (mn) {
+            corr.suggestions.map(function (sug) {
               return S.h('button', {
                 type: 'button',
-                class: 'bt-ce-chip is-compact',
-                'aria-pressed': String(String(c.origin || '').toLowerCase().indexOf(mn.toLowerCase()) >= 0),
-                text: mn,
+                class: 'bt-ce-chip is-compact is-active',
+                text: 'Did you mean ' + sug + '?',
                 onclick: function () {
                   c._v64Touched = 'yes';
-                  c.origin = mn;
+                  c.origin = sug;
                   c.originUnsure = '';
                   c.origin_unknown = '';
                   ceUi.originSearch = '';
@@ -5471,74 +5356,62 @@ if (typeof window !== 'undefined') {
           ));
         }
       }
-      var corr = suggestOriginCorrection(q, c.name);
-      if (corr.suggestions && corr.suggestions.length) {
-        originFeedbackHost.appendChild(S.h('div', { class: 'bt-ce-chips' },
-          corr.suggestions.map(function (sug) {
-            return S.h('button', {
-              type: 'button',
-              class: 'bt-ce-chip is-compact is-active',
-              text: 'Did you mean ' + sug + '?',
-              onclick: function () {
-                c._v64Touched = 'yes';
-                c.origin = sug;
-                c.originUnsure = '';
-                c.origin_unknown = '';
-                ceUi.originSearch = '';
-                S.haptic('tick');
-                S.saveDraftSafe();
-                repaintAll();
-              }
-            });
-          })
-        ));
-      }
-      if (corr.mismatch) {
-        originFeedbackHost.appendChild(S.h('span', {
-          class: 'bt-ce-badge is-warn',
-          text: 'Check bag: coffee name mentions ' + corr.mismatch.country + ' while origin is ' + c.origin
-        }));
-      }
-    }
 
-    function applyPickedVarietalSuggestion(vn) {
-      var curArr = String(c.varietal || '').split(/[,;]/).map(function (s) { return s.trim(); }).filter(Boolean);
-      if (curArr.length) {
-        var lastPart = curArr[curArr.length - 1];
-        var isExactCanon = all72.some(function (canon) { return canon.toLowerCase() === lastPart.toLowerCase(); });
-        if (!isExactCanon && vn.toLowerCase().indexOf(lastPart.toLowerCase()) >= 0) {
-          curArr.pop();
+      function applyPickedVarietalSuggestion(vn) {
+        var curArr = String(c.varietal || '').split(/[,;]/).map(function (s) { return s.trim(); }).filter(Boolean);
+        if (curArr.length) {
+          var lastPart = curArr[curArr.length - 1];
+          var isExactCanon = all72.some(function (canon) { return canon.toLowerCase() === lastPart.toLowerCase(); });
+          if (!isExactCanon && vn.toLowerCase().indexOf(lastPart.toLowerCase()) >= 0) {
+            curArr.pop();
+          }
         }
+        if (!curArr.some(function (x) { return x.toLowerCase() === vn.toLowerCase(); })) {
+          curArr.push(vn);
+        }
+        c._v64Touched = 'yes';
+        c.varietal = curArr.join(', ');
+        c.varietalUnsure = '';
+        ceUi.varietalSearch = '';
+        S.haptic('tick');
+        S.saveDraftSafe();
+        S.notifyChromeSafe();
       }
-      if (!curArr.some(function (x) { return x.toLowerCase() === vn.toLowerCase(); })) {
-        curArr.push(vn);
-      }
-      c._v64Touched = 'yes';
-      c.varietal = curArr.join(', ');
-      c.varietalUnsure = '';
-      ceUi.varietalSearch = '';
-      S.haptic('tick');
-      S.saveDraftSafe();
-      S.notifyChromeSafe();
-    }
 
-    function refreshVarietalFeedback() {
-      varietalFeedbackHost.textContent = '';
-      var qv = String(ceUi.varietalSearch || '').trim();
-      var qvParts = qv.split(/[,;]/).map(function (s) { return s.trim(); }).filter(Boolean);
-      var lastTok = qvParts.length ? qvParts[qvParts.length - 1] : '';
-      if (lastTok.length >= 1) {
-        var lowV = lastTok.toLowerCase();
-        var vMatches = all72.filter(function (vn) { return vn.toLowerCase().indexOf(lowV) >= 0 && vn.toLowerCase() !== lowV; }).slice(0, 8);
-        if (vMatches.length) {
+      function refreshVarietalFeedback() {
+        varietalFeedbackHost.textContent = '';
+        var qv = String(ceUi.varietalSearch || '').trim();
+        var qvParts = qv.split(/[,;]/).map(function (s) { return s.trim(); }).filter(Boolean);
+        var lastTok = qvParts.length ? qvParts[qvParts.length - 1] : '';
+        if (lastTok.length >= 1) {
+          var lowV = lastTok.toLowerCase();
+          var vMatches = all72.filter(function (vn) { return vn.toLowerCase().indexOf(lowV) >= 0 && vn.toLowerCase() !== lowV; }).slice(0, 8);
+          if (vMatches.length) {
+            varietalFeedbackHost.appendChild(S.h('div', { class: 'bt-ce-chips' },
+              vMatches.map(function (vn) {
+                return S.h('button', {
+                  type: 'button',
+                  class: 'bt-ce-chip is-compact',
+                  text: '+ ' + vn,
+                  onclick: function () {
+                    applyPickedVarietalSuggestion(vn);
+                    repaintAll();
+                  }
+                });
+              })
+            ));
+          }
+        }
+        var vSug = suggestVarietalCorrection(qv || c.varietal);
+        if (vSug.length) {
           varietalFeedbackHost.appendChild(S.h('div', { class: 'bt-ce-chips' },
-            vMatches.map(function (vn) {
+            vSug.map(function (vs) {
               return S.h('button', {
                 type: 'button',
-                class: 'bt-ce-chip is-compact',
-                text: '+ ' + vn,
+                class: 'bt-ce-chip is-compact is-active',
+                text: 'Did you mean ' + vs + '?',
                 onclick: function () {
-                  applyPickedVarietalSuggestion(vn);
+                  applyPickedVarietalSuggestion(vs);
                   repaintAll();
                 }
               });
@@ -5546,370 +5419,403 @@ if (typeof window !== 'undefined') {
           ));
         }
       }
-      var vSug = suggestVarietalCorrection(qv || c.varietal);
-      if (vSug.length) {
-        varietalFeedbackHost.appendChild(S.h('div', { class: 'bt-ce-chips' },
-          vSug.map(function (vs) {
-            return S.h('button', {
-              type: 'button',
-              class: 'bt-ce-chip is-compact is-active',
-              text: 'Did you mean ' + vs + '?',
-              onclick: function () {
-                applyPickedVarietalSuggestion(vs);
-                repaintAll();
-              }
-            });
-          })
-        ));
-      }
-    }
 
-    function toggleVarietalTag(vName) {
-      var curArr = String(c.varietal || '').split(/[,;]/).map(function (s) { return s.trim(); }).filter(Boolean);
-      var idx = -1;
-      for (var i = 0; i < curArr.length; i++) {
-        if (curArr[i].toLowerCase() === vName.toLowerCase()) { idx = i; break; }
-      }
-      if (idx >= 0) curArr.splice(idx, 1);
-      else curArr.push(vName);
-      c._v64Touched = 'yes';
-      c.varietal = curArr.join(', ');
-      c.varietalUnsure = '';
-      S.haptic('tick');
-      S.saveDraftSafe();
-      S.notifyChromeSafe();
-    }
-
-    var matchedCountryForSubs = Object.keys(SUBREGIONS_BY_COUNTRY).find(function (cn) {
-      return String(c.origin || '').toLowerCase().indexOf(cn.toLowerCase()) >= 0;
-    });
-    var subRegions = matchedCountryForSubs ? SUBREGIONS_BY_COUNTRY[matchedCountryForSubs] : [];
-
-    var originInp = S.h('input', {
-      type: 'text',
-      value: ceUi.originSearch || c.origin || '',
-      placeholder: c.originUnsure === 'yes' ? 'Marked Don\'t Know / Blend (type country to set)' : 'Search 52 countries or region (e.g. Huila, Ethiopia)...',
-      'aria-label': 'Origin country and region',
-      oninput: function (e) {
-        c._v64Touched = 'yes';
-        ceUi.originSearch = e.target.value;
-        c.origin = e.target.value;
-        if (String(c.origin || '').trim()) {
-          c.originUnsure = '';
-          c.origin_unknown = '';
+      function toggleVarietalTag(vName) {
+        var curArr = String(c.varietal || '').split(/[,;]/).map(function (s) { return s.trim(); }).filter(Boolean);
+        var idx = -1;
+        for (var i = 0; i < curArr.length; i++) {
+          if (curArr[i].toLowerCase() === vName.toLowerCase()) { idx = i; break; }
         }
-        refreshOriginFeedback();
-        syncLiveSummariesOnly();
-      }
-    });
-
-    var varietalInp = S.h('input', {
-      type: 'text',
-      value: ceUi.varietalSearch || c.varietal || '',
-      placeholder: 'Optional: Gesha, Pink Bourbon, SL28, Bourbon...',
-      'aria-label': 'Coffee varietals',
-      oninput: function (e) {
+        if (idx >= 0) curArr.splice(idx, 1);
+        else curArr.push(vName);
         c._v64Touched = 'yes';
-        ceUi.varietalSearch = e.target.value;
-        c.varietal = e.target.value;
-        if (String(c.varietal || '').trim()) c.varietalUnsure = '';
-        refreshVarietalFeedback();
-        syncLiveSummariesOnly();
+        c.varietal = curArr.join(', ');
+        c.varietalUnsure = '';
+        S.haptic('tick');
+        S.saveDraftSafe();
+        S.notifyChromeSafe();
       }
-    });
 
-    refreshOriginFeedback();
-    refreshVarietalFeedback();
+      var matchedCountryForSubs = Object.keys(SUBREGIONS_BY_COUNTRY).find(function (cn) {
+        return String(c.origin || '').toLowerCase().indexOf(cn.toLowerCase()) >= 0;
+      });
+      var subRegions = matchedCountryForSubs ? SUBREGIONS_BY_COUNTRY[matchedCountryForSubs] : [];
 
-    var curProc = c.process || '';
-    var isProcUnsure = c.processUnsure === 'yes' || c.process_unknown === 'yes' || curProc === 'unknown';
-    var isHoneyGroup = !isProcUnsure && (curProc === 'honey' || curProc.indexOf('-honey') > 0);
-    var isWildGroup = !isProcUnsure && (['anaerobic', 'carbonic', 'thermal-shock', 'yeast-koji', 'co-ferment'].indexOf(curProc) >= 0);
-
-    var elevReadoutSpan = S.h('span', {
-      style: 'font-size:12px;color:var(--ink-secondary)',
-      text: (isFinite(+c.elevation_m) && +c.elevation_m > 0) ? ('≈ ' + Math.round(+c.elevation_m * 3.28084) + ' ft · Local boil ' + S.boilingPointAtM(+c.elevation_m) + ' °C') : ''
-    });
-
-    var exactElevMetersInp = S.h('input', {
-      type: 'text',
-      inputmode: 'numeric',
-      class: 'bt-ce-num-input',
-      placeholder: '1850',
-      'aria-label': 'Growing elevation in meters',
-      value: c.elevation_m || '',
-      oninput: function (e) {
-        c._v64Touched = 'yes';
-        var rawE = String(e.target.value || '').replace(/[^\d]/g, '');
-        var mVal = parseInt(rawE, 10);
-        if (isFinite(mVal) && mVal > 0) {
-          c.elevation_m = mVal;
-          c.elevText = mVal + ' masl';
-          c.density = mVal >= 1950 ? 'very-high' : mVal >= 1600 ? 'high' : mVal >= 1200 ? 'mid' : 'low';
-          c.elevUnsure = '';
-          c.elev_unknown = '';
-          if (exactElevFeetInp) exactElevFeetInp.value = String(Math.round(mVal * 3.28084));
-          elevReadoutSpan.textContent = '≈ ' + Math.round(mVal * 3.28084) + ' ft · Local boil ' + S.boilingPointAtM(mVal) + ' °C';
-        } else if (!rawE) {
-          c.elevation_m = '';
-          c.elevText = '';
-          if (!c.elevUnsure) c.density = '';
-          if (exactElevFeetInp) exactElevFeetInp.value = '';
-          elevReadoutSpan.textContent = '';
+      var originInp = S.h('input', {
+        type: 'text',
+        value: ceUi.originSearch || c.origin || '',
+        placeholder: 'Country or region (e.g. Huila, Ethiopia)',
+        'aria-label': 'Origin country and region',
+        oninput: function (e) {
+          c._v64Touched = 'yes';
+          ceUi.originSearch = e.target.value;
+          c.origin = e.target.value;
+          if (String(c.origin || '').trim()) {
+            c.originUnsure = '';
+            c.origin_unknown = '';
+          }
+          refreshOriginFeedback();
+          syncLiveSummariesOnly();
         }
-        syncLiveSummariesOnly();
-      }
-    });
+      });
 
-    var exactElevFeetInp = S.h('input', {
-      type: 'text',
-      inputmode: 'numeric',
-      class: 'bt-ce-num-input',
-      placeholder: '6070',
-      'aria-label': 'Growing elevation in feet',
-      value: (isFinite(+c.elevation_m) && +c.elevation_m > 0) ? String(Math.round(+c.elevation_m * 3.28084)) : '',
-      oninput: function (e) {
-        c._v64Touched = 'yes';
-        var rawFt = String(e.target.value || '').replace(/[^\d]/g, '');
-        var ftVal = parseInt(rawFt, 10);
-        if (isFinite(ftVal) && ftVal > 0) {
-          var mCalc = Math.round(ftVal / 3.28084);
-          c.elevation_m = mCalc;
-          c.elevText = mCalc + ' masl';
-          c.density = mCalc >= 1950 ? 'very-high' : mCalc >= 1600 ? 'high' : mCalc >= 1200 ? 'mid' : 'low';
-          c.elevUnsure = '';
-          c.elev_unknown = '';
-          exactElevMetersInp.value = String(mCalc);
-          elevReadoutSpan.textContent = mCalc + ' m · Local boil ' + S.boilingPointAtM(mCalc) + ' °C';
-        } else if (!rawFt) {
-          c.elevation_m = '';
-          c.elevText = '';
-          if (!c.elevUnsure) c.density = '';
-          exactElevMetersInp.value = '';
-          elevReadoutSpan.textContent = '';
+      var producerInp = S.h('input', {
+        type: 'text',
+        value: c.producer || c.farm_or_station || '',
+        placeholder: 'Producer, farm, or station (optional)',
+        'aria-label': 'Producer or farm',
+        oninput: function (e) {
+          c._v64Touched = 'yes';
+          c.producer = e.target.value;
+          c.farm_or_station = e.target.value;
+          syncLiveSummariesOnly();
         }
-        syncLiveSummariesOnly();
-      }
-    });
+      });
 
-    var card2StatusBadge = S.h('span', { class: 'bt-ce-step-status is-needed' });
-    var originStateBadge = registerFieldStateBadge(S.h('span'), 'origin');
-    var processStateBadge = registerFieldStateBadge(S.h('span'), 'process');
-    var elevStateBadge = registerFieldStateBadge(S.h('span'), 'elevation');
-    var varStateBadge = registerFieldStateBadge(S.h('span'), 'varietal');
+      var varietalInp = S.h('input', {
+        type: 'text',
+        value: ceUi.varietalSearch || c.varietal || '',
+        placeholder: 'Varietal (e.g. Gesha, Pink Bourbon, SL28)',
+        'aria-label': 'Coffee varietals',
+        oninput: function (e) {
+          c._v64Touched = 'yes';
+          ceUi.varietalSearch = e.target.value;
+          c.varietal = e.target.value;
+          if (String(c.varietal || '').trim()) c.varietalUnsure = '';
+          refreshVarietalFeedback();
+          syncLiveSummariesOnly();
+        }
+      });
 
-    var ELEV_PRESETS_4 = [
-      { k: 'low',       m: 1050, minM: 0,    maxM: 1199, lbl: 'Low <1,200m' },
-      { k: 'mid',       m: 1450, minM: 1200, maxM: 1599, lbl: 'Medium 1,200–1,600m' },
-      { k: 'high',      m: 1800, minM: 1600, maxM: 1999, lbl: 'High 1,600–1,950m' },
-      { k: 'very-high', m: 2050, minM: 2000, maxM: 9999, lbl: 'Ultra-High 2,000m+' }
-    ];
+      refreshOriginFeedback();
+      refreshVarietalFeedback();
 
-    var cardStep12 = S.h('section', { class: 'bt-ce-step-card is-card-needed', id: 'bt-step1-card-2' },
-      S.h('div', { class: 'bt-ce-step-card-hd' },
-        S.h('span', { class: 'bt-ce-step-num-badge', text: 'Step 1.2 · Origin, Process & Elevation' }),
-        card2StatusBadge
-      ),
+      var ELEV_PRESETS_4 = [
+        { k: 'low',       m: 1050, minM: 0,    maxM: 1199, lbl: '<1,200m' },
+        { k: 'mid',       m: 1450, minM: 1200, maxM: 1599, lbl: '1,200–1,600m' },
+        { k: 'high',      m: 1800, minM: 1600, maxM: 1999, lbl: '1,600–1,950m' },
+        { k: 'very-high', m: 2050, minM: 2000, maxM: 9999, lbl: '2,000m+' }
+      ];
 
-      /* Field 3: Origin */
-      S.h('div', { class: 'bt-ce-field-block' + (ceUi.pulseFieldKey === 'origin' ? ' is-needs-answer' : ''), id: 'bt-field-origin' },
-        S.h('div', { class: 'bt-ce-field-hd' },
-          S.h('div', { class: 'bt-ce-field-title-grp' },
-            S.h('span', { class: 'bt-ce-field-lbl', text: '3. Origin (Country / Region)' }),
-            originStateBadge,
-            makeFieldHelpBtn('origin')
+      var elevMetersInp = S.h('input', {
+        type: 'text',
+        inputmode: 'numeric',
+        class: 'bt-ce-num-input',
+        placeholder: '1850',
+        'aria-label': 'Elevation in meters above sea level',
+        value: c.elevation_m || '',
+        oninput: function (e) {
+          c._v64Touched = 'yes';
+          var rawE = String(e.target.value || '').replace(/[^\d]/g, '');
+          var mVal = parseInt(rawE, 10);
+          if (isFinite(mVal) && mVal > 0) {
+            c.elevation_m = mVal;
+            c.elevText = mVal + ' masl';
+            c.density = mVal >= 1950 ? 'very-high' : mVal >= 1600 ? 'high' : mVal >= 1200 ? 'mid' : 'low';
+            c.elevUnsure = '';
+            c.elev_unknown = '';
+          } else if (!rawE) {
+            c.elevation_m = '';
+            c.elevText = '';
+            if (!c.elevUnsure) c.density = '';
+          }
+          syncLiveSummariesOnly();
+        }
+      });
+
+      var harvestYearInp = S.h('input', {
+        type: 'text',
+        inputmode: 'numeric',
+        class: 'bt-ce-num-input',
+        placeholder: '2026',
+        'aria-label': 'Harvest year',
+        value: c.harvest_year || '',
+        oninput: function (e) {
+          c._v64Touched = 'yes';
+          c.harvest_year = e.target.value;
+          syncLiveSummariesOnly();
+        }
+      });
+
+      var bagWeightInp = S.h('input', {
+        type: 'text',
+        inputmode: 'numeric',
+        class: 'bt-ce-num-input',
+        placeholder: '250',
+        'aria-label': 'Bag weight in grams',
+        value: c.bag_weight_g || '',
+        oninput: function (e) {
+          c._v64Touched = 'yes';
+          var rawW = String(e.target.value || '').replace(/[^\d]/g, '');
+          c.bag_weight_g = rawW ? parseInt(rawW, 10) : '';
+          syncLiveSummariesOnly();
+        }
+      });
+
+      var bagPriceInp = S.h('input', {
+        type: 'text',
+        inputmode: 'decimal',
+        class: 'bt-ce-num-input',
+        placeholder: '22.00',
+        'aria-label': 'Bag price',
+        value: c.price || '',
+        oninput: function (e) {
+          c._v64Touched = 'yes';
+          var rawP = String(e.target.value || '').replace(/[^\d.]/g, '');
+          c.price = rawP;
+          syncLiveSummariesOnly();
+        }
+      });
+
+      var manualAgtronSection = null;
+      if (!omniConnectedNow && agMode !== 'off') {
+        var curScale = c.agtron_scale || 'gourmet';
+        manualAgtronSection = S.h('div', { class: 'bt-ce-detail-grp' },
+          S.h('div', { class: 'bt-ce-detail-lbl', text: 'Manual Agtron / Roast Color' }),
+          S.h('div', { class: 'bt-ce-chips' },
+            [
+              ['gourmet', 'Agtron Gourmet'],
+              ['lightells', 'Lightells NIR'],
+              ['omni', 'DiFluid Omni'],
+              ['tonino', 'Tonino']
+            ].map(function (sc) {
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-ce-chip is-compact',
+                'aria-pressed': String(curScale === sc[0]),
+                text: sc[1],
+                onclick: function () { c.agtron_scale = sc[0]; repaintAll(); }
+              });
+            })
           ),
-          makeDontKnowPill('origin', 'Don\'t Know / Blend')
+          S.h('div', { class: 'bt-ce-inline-nums' },
+            S.h('label', { class: 'bt-ce-num-lbl' },
+              S.h('span', { text: 'Whole' }),
+              S.h('input', {
+                type: 'text',
+                inputmode: 'decimal',
+                class: 'bt-ce-num-input',
+                placeholder: '72',
+                value: c.bean_agtron || '',
+                oninput: function (e) {
+                  c._v64Touched = 'yes';
+                  c.bean_agtron = e.target.value;
+                  var bNum = parseFloat(e.target.value);
+                  if (isFinite(bNum) && bNum > 0) c.agtron = Math.round(bNum);
+                  syncLiveSummariesOnly();
+                }
+              })
+            ),
+            S.h('label', { class: 'bt-ce-num-lbl' },
+              S.h('span', { text: 'Ground' }),
+              S.h('input', {
+                type: 'text',
+                inputmode: 'decimal',
+                class: 'bt-ce-num-input',
+                placeholder: '80',
+                value: c.ground_agtron || '',
+                oninput: function (e) {
+                  c._v64Touched = 'yes';
+                  c.ground_agtron = e.target.value;
+                  var gNum = parseFloat(e.target.value);
+                  if (isFinite(gNum) && gNum > 0) c.agtron = Math.round(gNum);
+                  var gEq = roastMeterToGourmet(e.target.value, c.agtron_scale);
+                  var mappedR = normRoastKey('', gEq);
+                  if (mappedR) { c.roast = mappedR; c.roastUnsure = ''; c.roast_unknown = ''; }
+                  syncLiveSummariesOnly();
+                }
+              })
+            )
+          )
+        );
+      }
+
+      var historyRows = S.getHistoryObjs();
+      var palateGuide = null;
+      if (historyRows.length >= 3 && typeof computeSmartBagGuide === 'function') {
+        try {
+          palateGuide = computeSmartBagGuide(historyRows, c);
+        } catch (_) { palateGuide = null; }
+      }
+
+      var moreBody = S.h('div', { class: 'bt-ce-disclosure-body' },
+        /* Origin Region & Producer */
+        S.h('div', { class: 'bt-ce-detail-grp', id: 'bt-field-origin' },
+          S.h('div', { class: 'bt-ce-zone-hd' },
+            S.h('span', { class: 'bt-ce-detail-lbl', text: 'Origin Region & Producer' }),
+            S.h('div', { style: 'display:inline-flex;gap:5px' },
+              S.h('button', {
+                type: 'button',
+                class: 'bt-ce-chip is-compact',
+                'aria-pressed': String(c.blend !== 'blend'),
+                text: 'Single Origin',
+                onclick: function () { c._v64Touched = 'yes'; c.blend = 'single'; S.saveDraftSafe(); repaintAll(); }
+              }),
+              S.h('button', {
+                type: 'button',
+                class: 'bt-ce-chip is-compact',
+                'aria-pressed': String(c.blend === 'blend'),
+                text: 'Blend',
+                onclick: function () { c._v64Touched = 'yes'; c.blend = 'blend'; S.saveDraftSafe(); repaintAll(); }
+              })
+            )
+          ),
+          S.h('div', { class: 'bt-ce-id-grid' },
+            S.h('div', { class: 'bt-ce-spotlight' }, S.iconEl('origin-globe', { size: 15 }), originInp),
+            S.h('div', { class: 'bt-ce-spotlight' }, S.iconEl('spark-star', { size: 15 }), producerInp)
+          ),
+          originFeedbackHost,
+          S.h('div', { class: 'bt-ce-chips-scroll', role: 'group', 'aria-label': 'Popular Origins' },
+            POPULAR_ORIGINS_12.slice(0, 8).map(function (cn) {
+              var on = !c.originUnsure && String(c.origin || '').toLowerCase().indexOf(cn.toLowerCase()) >= 0;
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-ce-chip is-compact',
+                'aria-pressed': String(on),
+                text: cn,
+                onclick: function () {
+                  c._v64Touched = 'yes';
+                  ceUi.originSearch = '';
+                  c.originUnsure = '';
+                  c.origin_unknown = '';
+                  c.origin = (c.blend === 'blend' && c.origin && !on) ? (c.origin + ', ' + cn) : cn;
+                  S.haptic('tick');
+                  S.saveDraftSafe();
+                  S.notifyChromeSafe();
+                  repaintAll();
+                }
+              });
+            })
+          ),
+          subRegions.length ? S.h('div', { class: 'bt-ce-chips-scroll', role: 'group', 'aria-label': 'Sub-regions' },
+            subRegions.map(function (sr) {
+              var hasSub = String(c.origin || '').toLowerCase().indexOf(sr.toLowerCase()) >= 0;
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-ce-chip is-compact',
+                'aria-pressed': String(hasSub),
+                text: sr,
+                onclick: function () {
+                  c._v64Touched = 'yes';
+                  c.region = sr;
+                  c.originUnsure = '';
+                  c.origin_unknown = '';
+                  c.origin = sr + ', ' + matchedCountryForSubs;
+                  S.haptic('tick');
+                  S.saveDraftSafe();
+                  repaintAll();
+                }
+              });
+            })
+          ) : null
         ),
-        S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
-          S.h('span', { class: 'bt-ce-input-sublbl', style: 'margin:0', text: 'Country or Growing Region' }),
-          S.h('div', { style: 'display:inline-flex;gap:5px' },
-            S.h('button', {
-              type: 'button',
-              class: 'bt-ce-chip is-compact',
-              'aria-pressed': String(c.blend !== 'blend'),
-              text: 'Single Origin',
-              onclick: function () { c._v64Touched = 'yes'; c.blend = 'single'; S.saveDraftSafe(); repaintAll(); }
+
+        /* Varietal */
+        S.h('div', { class: 'bt-ce-detail-grp', id: 'bt-field-varietal' },
+          S.h('div', { class: 'bt-ce-detail-lbl', text: 'Varietal' }),
+          S.h('div', { class: 'bt-ce-spotlight' }, S.iconEl('spark-star', { size: 15 }), varietalInp),
+          varietalFeedbackHost,
+          S.h('div', { class: 'bt-ce-chips-scroll', role: 'group', 'aria-label': 'Popular Varietals' },
+            POPULAR_VARIETALS_12.slice(0, 8).map(function (vn) {
+              var onV = String(c.varietal || '').toLowerCase().indexOf(vn.toLowerCase()) >= 0;
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-ce-chip is-compact',
+                'aria-pressed': String(onV),
+                text: vn,
+                onclick: function () {
+                  ceUi.varietalSearch = '';
+                  toggleVarietalTag(vn);
+                  repaintAll();
+                }
+              });
+            })
+          )
+        ),
+
+        /* Elevation (masl) */
+        S.h('div', { class: 'bt-ce-detail-grp', id: 'bt-field-elevation' },
+          S.h('div', { class: 'bt-ce-detail-lbl', text: 'Elevation (masl)' }),
+          S.h('div', { class: 'bt-ce-chips', role: 'group', 'aria-label': 'Growing Elevation Presets' },
+            ELEV_PRESETS_4.map(function (elOpt) {
+              var curM = isFinite(+c.elevation_m) && +c.elevation_m > 0 ? +c.elevation_m : -1;
+              var isElOn = !c.elevUnsure && (c.density === elOpt.k || (curM >= elOpt.minM && curM <= elOpt.maxM));
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-ce-chip is-compact',
+                'aria-pressed': String(isElOn),
+                text: elOpt.lbl,
+                onclick: function () {
+                  c._v64Touched = 'yes';
+                  c.density = elOpt.k;
+                  c.elevation_m = elOpt.m;
+                  c.elevText = elOpt.m + ' masl';
+                  c.elevUnsure = '';
+                  c.elev_unknown = '';
+                  S.haptic('tick');
+                  S.saveDraftSafe();
+                  S.notifyChromeSafe();
+                  repaintAll();
+                }
+              });
+            }),
+            S.h('label', { class: 'bt-ce-num-lbl' },
+              elevMetersInp,
+              S.h('span', { text: 'masl' })
+            )
+          )
+        ),
+
+        /* Harvest Year & Caffeine / Wet-Hulled */
+        S.h('div', { class: 'bt-ce-detail-grp' },
+          S.h('div', { class: 'bt-ce-detail-lbl', text: 'Harvest Year, Caffeine & Traditional Wet-Hulled' }),
+          S.h('div', { class: 'bt-ce-inline-nums' },
+            S.h('label', { class: 'bt-ce-num-lbl' },
+              S.h('span', { text: 'Harvest' }),
+              harvestYearInp
+            ),
+            [
+              { k: '',         lbl: 'Regular',  on: !c.decaf },
+              { k: 'half-caf', lbl: 'Half-Caf', on: c.decaf === 'half-caf' || c.decaf_process === 'half-caf' },
+              { k: 'yes',      lbl: 'Decaf',    on: c.decaf === 'yes' && c.decaf_process !== 'half-caf' }
+            ].map(function (dc) {
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-ce-chip is-compact',
+                'aria-pressed': String(dc.on),
+                onclick: function () {
+                  c._v64Touched = 'yes';
+                  if (!dc.k) { c.decaf = ''; c.decaf_process = ''; }
+                  else if (dc.k === 'half-caf') { c.decaf = 'half-caf'; c.decaf_process = 'half-caf'; }
+                  else { c.decaf = 'yes'; if (!c.decaf_process || c.decaf_process === 'half-caf') c.decaf_process = 'ea'; }
+                  S.haptic('tick');
+                  S.saveDraftSafe();
+                  repaintAll();
+                }
+              }, dc.k ? S.iconEl('decaf-leaf', { size: 13 }) : null, S.h('span', { text: dc.lbl }));
             }),
             S.h('button', {
               type: 'button',
               class: 'bt-ce-chip is-compact',
-              'aria-pressed': String(c.blend === 'blend'),
-              text: 'Blend',
-              onclick: function () { c._v64Touched = 'yes'; c.blend = 'blend'; S.saveDraftSafe(); repaintAll(); }
-            })
-          )
-        ),
-        S.h('div', { class: 'bt-ce-spotlight' }, S.iconEl('origin-globe', { size: 15 }), originInp),
-        originFeedbackHost,
-        S.h('div', { class: 'bt-ce-chips-scroll', role: 'group', 'aria-label': 'Popular Origins' },
-          POPULAR_ORIGINS_12.map(function (cn) {
-            var on = !c.originUnsure && String(c.origin || '').toLowerCase().indexOf(cn.toLowerCase()) >= 0;
-            return S.h('button', {
-              type: 'button',
-              class: 'bt-ce-chip is-compact',
-              'aria-pressed': String(on),
-              text: cn,
+              'aria-pressed': String(!isProcUnsure && curProc === 'wet-hulled'),
+              text: 'Wet-Hulled',
               onclick: function () {
                 c._v64Touched = 'yes';
-                ceUi.originSearch = '';
-                c.originUnsure = '';
-                c.origin_unknown = '';
-                c.origin = (c.blend === 'blend' && c.origin && !on) ? (c.origin + ', ' + cn) : cn;
-                S.haptic('tick');
-                S.saveDraftSafe();
-                S.notifyChromeSafe();
-                repaintAll();
-              }
-            });
-          })
-        ),
-        subRegions.length ? S.h('div', { class: 'bt-ce-chips-scroll', role: 'group', 'aria-label': 'Sub-regions' },
-          subRegions.map(function (sr) {
-            var hasSub = String(c.origin || '').toLowerCase().indexOf(sr.toLowerCase()) >= 0;
-            return S.h('button', {
-              type: 'button',
-              class: 'bt-ce-chip is-compact',
-              'aria-pressed': String(hasSub),
-              text: sr,
-              onclick: function () {
-                c._v64Touched = 'yes';
-                c.region = sr;
-                c.originUnsure = '';
-                c.origin_unknown = '';
-                c.origin = sr + ', ' + matchedCountryForSubs;
-                S.haptic('tick');
-                S.saveDraftSafe();
-                repaintAll();
-              }
-            });
-          })
-        ) : null
-      ),
-
-      /* Field 4: Process & Caffeine */
-      S.h('div', { class: 'bt-ce-field-block' + (ceUi.pulseFieldKey === 'process' ? ' is-needs-answer' : ''), id: 'bt-field-process' },
-        S.h('div', { class: 'bt-ce-field-hd' },
-          S.h('div', { class: 'bt-ce-field-title-grp' },
-            S.h('span', { class: 'bt-ce-field-lbl', text: '4. Process & Caffeine' }),
-            processStateBadge,
-            makeFieldHelpBtn('process')
-          ),
-          makeDontKnowPill('process', 'Don\'t Know')
-        ),
-        S.h('div', { class: 'bt-ce-chips', role: 'group', 'aria-label': 'Processing Method' },
-          [
-            { k: 'washed',     ico: 'cherry-washed',  lbl: 'Washed',                 on: !isProcUnsure && curProc === 'washed' },
-            { k: 'natural',    ico: 'cherry-natural', lbl: 'Natural',                on: !isProcUnsure && curProc === 'natural' },
-            { k: 'honey',      ico: 'cherry-honey',   lbl: 'Honey',                  on: isHoneyGroup },
-            { k: 'wet-hulled', ico: 'origin-globe',   lbl: 'Wet-Hulled',             on: !isProcUnsure && curProc === 'wet-hulled' },
-            { k: 'anaerobic',  ico: 'anaerobic-tank', lbl: 'Anaerobic / Co-Ferment', on: isWildGroup }
-          ].map(function (p) {
-            return S.h('button', {
-              type: 'button',
-              class: 'bt-ce-chip',
-              'aria-pressed': String(p.on),
-              onclick: function () {
-                c._v64Touched = 'yes';
-                c.process = p.k;
+                c.process = (curProc === 'wet-hulled') ? '' : 'wet-hulled';
                 c.processUnsure = '';
                 c.process_unknown = '';
-                if (p.k === 'honey' && !c.process_sub) c.process_sub = 'red-honey';
-                S.haptic('tick');
-                S.saveDraftSafe();
-                S.notifyChromeSafe();
-                repaintAll();
-              }
-            }, p.ico ? S.iconEl(p.ico, { size: 15 }) : null, S.h('span', { text: p.lbl }));
-          })
-        ),
-        isHoneyGroup ? S.h('div', { class: 'bt-ce-subwell' },
-          S.h('span', { class: 'bt-ce-eyebrow', text: 'Honey Mucilage Tier' }),
-          S.h('div', { class: 'bt-ce-chips' },
-            [
-              ['white-honey', 'White Honey'],
-              ['yellow-honey', 'Yellow Honey'],
-              ['red-honey', 'Red Honey'],
-              ['black-honey', 'Black Honey']
-            ].map(function (ht) {
-              return S.h('button', {
-                type: 'button',
-                class: 'bt-ce-chip is-compact',
-                'aria-pressed': String(curProc === ht[0] || c.process_sub === ht[0]),
-                text: ht[1],
-                onclick: function () {
-                  c._v64Touched = 'yes';
-                  c.process = ht[0];
-                  c.process_sub = ht[0];
-                  c.processUnsure = '';
-                  c.process_unknown = '';
-                  S.haptic('tick');
-                  S.saveDraftSafe();
-                  repaintAll();
-                }
-              });
-            })
-          )
-        ) : null,
-        isWildGroup ? S.h('div', { class: 'bt-ce-subwell' },
-          S.h('span', { class: 'bt-ce-eyebrow', text: 'Experimental Fermentation Style (Brewed 2–2.5 °C Cooler)' }),
-          S.h('div', { class: 'bt-ce-chips' },
-            [
-              ['anaerobic', 'Anaerobic'],
-              ['carbonic', 'Carbonic Maceration'],
-              ['thermal-shock', 'Thermal Shock'],
-              ['yeast-koji', 'Yeast / Koji'],
-              ['co-ferment', 'Fruit Co-Ferment']
-            ].map(function (wt) {
-              return S.h('button', {
-                type: 'button',
-                class: 'bt-ce-chip is-compact',
-                'aria-pressed': String(curProc === wt[0]),
-                text: wt[1],
-                onclick: function () {
-                  c._v64Touched = 'yes';
-                  c.process = wt[0];
-                  c.processUnsure = '';
-                  c.process_unknown = '';
-                  S.haptic('tick');
-                  S.saveDraftSafe();
-                  repaintAll();
-                }
-              });
-            })
-          )
-        ) : null,
-        S.h('div', { class: 'bt-ce-chips', role: 'group', 'aria-label': 'Caffeine Level' },
-          [
-            { k: '',         lbl: 'Regular Caffeine', on: !c.decaf },
-            { k: 'half-caf', lbl: 'Half-Caf',         on: c.decaf === 'half-caf' || c.decaf_process === 'half-caf' },
-            { k: 'yes',      lbl: 'Decaf',            on: c.decaf === 'yes' && c.decaf_process !== 'half-caf' }
-          ].map(function (dc) {
-            return S.h('button', {
-              type: 'button',
-              class: 'bt-ce-chip is-compact',
-              'aria-pressed': String(dc.on),
-              onclick: function () {
-                c._v64Touched = 'yes';
-                if (!dc.k) { c.decaf = ''; c.decaf_process = ''; }
-                else if (dc.k === 'half-caf') { c.decaf = 'half-caf'; c.decaf_process = 'half-caf'; }
-                else { c.decaf = 'yes'; if (!c.decaf_process || c.decaf_process === 'half-caf') c.decaf_process = 'ea'; }
                 S.haptic('tick');
                 S.saveDraftSafe();
                 repaintAll();
               }
-            }, dc.k ? S.iconEl('decaf-leaf', { size: 14 }) : null, S.h('span', { text: dc.lbl }));
-          })
-        ),
-        (c.decaf === 'yes' && c.decaf_process !== 'half-caf') ? S.h('div', { class: 'bt-ce-subwell' },
-          S.h('span', { class: 'bt-ce-eyebrow', text: 'Decaf Method (Filter +8% Coarser · Espresso -5.5% Finer)' }),
-          S.h('div', { class: 'bt-ce-chips' },
+            })
+          ),
+          (c.decaf === 'yes' && c.decaf_process !== 'half-caf') ? S.h('div', { class: 'bt-ce-sub-chips' },
             [
               ['ea', 'EA Sugarcane'],
               ['swiss', 'Swiss Water'],
               ['mountain', 'Mountain Water'],
-              ['co2', 'Supercritical CO2'],
-              ['unknown', 'Don\'t Know']
+              ['co2', 'CO2']
             ].map(function (dm) {
               return S.h('button', {
                 type: 'button',
@@ -5919,199 +5825,94 @@ if (typeof window !== 'undefined') {
                 onclick: function () { c.decaf_process = dm[0]; S.haptic('tick'); S.saveDraftSafe(); repaintAll(); }
               });
             })
+          ) : null
+        ),
+
+        /* Bag Weight & Price */
+        S.h('div', { class: 'bt-ce-detail-grp' },
+          S.h('div', { class: 'bt-ce-detail-lbl', text: 'Bag Weight & Price' }),
+          S.h('div', { class: 'bt-ce-inline-nums' },
+            S.h('label', { class: 'bt-ce-num-lbl' },
+              bagWeightInp,
+              S.h('span', { text: 'g' })
+            ),
+            [200, 250, 340, 1000].map(function (wg) {
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-ce-chip is-compact',
+                'aria-pressed': String(+c.bag_weight_g === wg),
+                text: wg === 1000 ? '1kg' : (wg + 'g'),
+                onclick: function () {
+                  c._v64Touched = 'yes';
+                  c.bag_weight_g = wg;
+                  bagWeightInp.value = String(wg);
+                  S.haptic('tick');
+                  S.saveDraftSafe();
+                  repaintAll();
+                }
+              });
+            }),
+            S.h('label', { class: 'bt-ce-num-lbl' },
+              S.h('span', { text: currencySymbol(c.currency) }),
+              bagPriceInp
+            ),
+            ['USD', 'EUR', 'GBP', 'CAD'].map(function (curCode) {
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-ce-chip is-compact',
+                'aria-pressed': String((c.currency || 'USD').toUpperCase() === curCode),
+                text: curCode,
+                onclick: function () {
+                  c.currency = curCode;
+                  S.haptic('tick');
+                  S.saveDraftSafe();
+                  repaintAll();
+                }
+              });
+            })
           )
-        ) : null
-      ),
+        ),
 
-      /* Field 5: Elevation / Altitude */
-      S.h('div', { class: 'bt-ce-field-block' + (ceUi.pulseFieldKey === 'elevation' ? ' is-needs-answer' : ''), id: 'bt-field-elevation' },
-        S.h('div', { class: 'bt-ce-field-hd' },
-          S.h('div', { class: 'bt-ce-field-title-grp' },
-            S.h('span', { class: 'bt-ce-field-lbl', text: '5. Elevation / Altitude' }),
-            elevStateBadge,
-            makeFieldHelpBtn('elevation')
-          ),
-          makeDontKnowPill('elevation', 'Don\'t Know')
-        ),
-        S.h('div', { class: 'bt-ce-chips', role: 'group', 'aria-label': 'Growing Elevation Presets' },
-          ELEV_PRESETS_4.map(function (elOpt) {
-            var curM = isFinite(+c.elevation_m) && +c.elevation_m > 0 ? +c.elevation_m : -1;
-            var isElOn = !c.elevUnsure && (c.density === elOpt.k || (curM >= elOpt.minM && curM <= elOpt.maxM));
-            return S.h('button', {
-              type: 'button',
-              class: 'bt-ce-chip is-compact',
-              'aria-pressed': String(isElOn),
-              text: elOpt.lbl,
-              onclick: function () {
-                c._v64Touched = 'yes';
-                c.density = elOpt.k;
-                c.elevation_m = elOpt.m;
-                c.elevText = elOpt.m + ' masl';
-                c.elevUnsure = '';
-                c.elev_unknown = '';
-                S.haptic('tick');
-                S.saveDraftSafe();
-                S.notifyChromeSafe();
-                repaintAll();
-              }
-            });
-          }),
-          S.h('button', {
-            type: 'button',
-            class: 'bt-ce-chip is-compact',
-            'aria-pressed': String(ceUi.showExactElev),
-            text: (isFinite(+c.elevation_m) && +c.elevation_m > 0) ? ('Exact: ' + c.elevation_m + ' m') : 'Exact m / ft',
-            onclick: function () { ceUi.showExactElev = !ceUi.showExactElev; repaintAll(); }
-          })
-        ),
-        ceUi.showExactElev ? S.h('div', { class: 'bt-ce-subwell', style: 'flex-direction:row;align-items:center;flex-wrap:wrap;gap:10px' },
-          S.h('label', { style: 'display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700' },
-            S.h('span', { text: 'Meters (masl):' }),
-            exactElevMetersInp
-          ),
-          S.h('label', { style: 'display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700' },
-            S.h('span', { text: 'or Feet (ft):' }),
-            exactElevFeetInp
-          ),
-          elevReadoutSpan
-        ) : null
-      ),
+        manualAgtronSection,
 
-      /* Optional Field: Varietal */
-      S.h('div', { class: 'bt-ce-field-block', id: 'bt-field-varietal' },
-        S.h('div', { class: 'bt-ce-field-hd' },
-          S.h('div', { class: 'bt-ce-field-title-grp' },
-            S.h('span', { class: 'bt-ce-field-lbl', text: 'Plant Varietal (Optional · 70+)' }),
-            varStateBadge,
-            makeFieldHelpBtn('varietal')
+        palateGuide ? S.h('div', { class: 'bt-ce-palate-card' },
+          S.h('div', { style: 'min-width:0;flex:1' },
+            S.h('div', { style: 'display:flex;align-items:center;gap:6px;flex-wrap:wrap' },
+              S.iconEl('palate', { size: 15 }),
+              S.h('b', { style: 'font-size:13px', text: S.stripEmojis(palateGuide.badge || 'Palate Fit') }),
+              S.h('span', { class: 'bt-ce-badge is-good', text: Math.round(palateGuide.matchPct || 50) + '% Match' })
+            ),
+            S.h('div', { style: 'font-size:12px;color:var(--ink-secondary);margin-top:2px', text: S.stripEmojis(palateGuide.summary || 'Matched against your tasting history.') })
+          )
+        ) : null,
+
+        S.h('button', {
+          type: 'button',
+          class: 'bt-ce-facts-btn',
+          onclick: function () { flushPendingStep1Drafts(c); openCoffeeFactsSheet(); }
+        },
+          S.h('div', { style: 'display:flex;align-items:center;gap:10px;min-width:0' },
+            S.iconEl('xray-loupe', { size: 18 }),
+            S.h('b', { style: 'font-size:13px;color:var(--ink)', text: 'Facts in Four Parts · Bag X-Ray →' })
           ),
-          makeDontKnowPill('varietal', 'Don\'t Know / Not on Bag')
-        ),
-        S.h('div', { class: 'bt-ce-spotlight' }, S.iconEl('spark-star', { size: 15 }), varietalInp),
-        varietalFeedbackHost,
-        S.h('div', { class: 'bt-ce-chips-scroll', role: 'group', 'aria-label': 'Popular Varietals' },
-          POPULAR_VARIETALS_12.map(function (vn) {
-            var onV = String(c.varietal || '').toLowerCase().indexOf(vn.toLowerCase()) >= 0;
-            return S.h('button', {
-              type: 'button',
-              class: 'bt-ce-chip is-compact',
-              'aria-pressed': String(onV),
-              text: vn,
-              onclick: function () {
-                ceUi.varietalSearch = '';
-                toggleVarietalTag(vn);
-                repaintAll();
-              }
-            });
-          })
+          S.iconEl('chevron-right', { size: 17 })
         )
-      )
-    );
-    registerStepCardStatus(cardStep12, card2StatusBadge, ['origin', 'process', 'elevation']);
-    root.appendChild(cardStep12);
+      );
 
-    /* ==================== STEP 1.3 · ROAST DATE ==================== */
-    var card3StatusBadge = S.h('span', { class: 'bt-ce-step-status is-needed' });
-    var dateStateBadge = registerFieldStateBadge(S.h('span'), 'date');
-    var freshInfo = computeSmrkeFreshnessStatus(c);
-
-    var cardStep13 = S.h('section', { class: 'bt-ce-step-card is-card-needed', id: 'bt-step1-card-3' },
-      S.h('div', { class: 'bt-ce-step-card-hd' },
-        S.h('span', { class: 'bt-ce-step-num-badge', text: 'Step 1.3 · Roast Date' }),
-        card3StatusBadge
-      ),
-      S.h('div', { class: 'bt-ce-field-block' + (ceUi.pulseFieldKey === 'date' ? ' is-needs-answer' : ''), id: 'bt-field-date' },
-        S.h('div', { class: 'bt-ce-field-hd' },
-          S.h('div', { class: 'bt-ce-field-title-grp' },
-            S.h('span', { class: 'bt-ce-field-lbl', text: '6. Printed Roast Date & Cryo-Freeze' }),
-            dateStateBadge,
-            makeFieldHelpBtn('date')
-          ),
-          S.h('span', { class: 'bt-ce-badge ' + freshInfo.tone, text: freshInfo.label })
-        ),
-        buildRoastCalendarControl({
-          coffee: c,
-          uiState: ceUi,
-          showHeaderBadge: false,
-          onSync: function () { syncLiveSummariesOnly(); }
-        })
-      )
-    );
-    registerStepCardStatus(cardStep13, card3StatusBadge, ['date']);
-    root.appendChild(cardStep13);
-
-    /* ==================== STEP 1.4 · BAG FLAVOR NOTES ==================== */
-    var historyRows = S.getHistoryObjs();
-    var palateGuide = null;
-    if (historyRows.length >= 3 && typeof computeSmartBagGuide === 'function') {
-      try {
-        palateGuide = computeSmartBagGuide(historyRows, c);
-      } catch (_) { palateGuide = null; }
+      moreWrap.appendChild(moreBody);
     }
 
-    var card4StatusBadge = S.h('span', { class: 'bt-ce-step-status is-needed' });
-    var notesStateBadge = registerFieldStateBadge(S.h('span'), 'notes');
-
-    var cardStep14 = S.h('section', { class: 'bt-ce-step-card is-card-needed', id: 'bt-step1-card-4' },
-      S.h('div', { class: 'bt-ce-step-card-hd' },
-        S.h('span', { class: 'bt-ce-step-num-badge', text: 'Step 1.4 · Bag Flavor Notes' }),
-        card4StatusBadge
-      ),
-      S.h('div', { class: 'bt-ce-field-block' + (ceUi.pulseFieldKey === 'notes' ? ' is-needs-answer' : ''), id: 'bt-field-notes' },
-        S.h('div', { class: 'bt-ce-field-hd' },
-          S.h('div', { class: 'bt-ce-field-title-grp' },
-            S.h('span', { class: 'bt-ce-field-lbl', text: '7. Printed Bag Flavor Notes' }),
-            notesStateBadge,
-            makeFieldHelpBtn('notes')
-          ),
-          makeDontKnowPill('notes', 'Don\'t Know / None Listed')
-        ),
-        S.h('span', { style: 'font-size:11.5px;color:var(--ink-muted)', text: 'Kept blind under foil during Step 5 Tasting, then matched in Preferences!' }),
-        buildBagFlavorNotesWidget(c, {
-          onSync: function () { syncLiveSummariesOnly(); }
-        })
-      ),
-
-      /* `Will I Love This Bag?` Personal Palate Match Badge (>= 3 logged tastings) */
-      palateGuide ? S.h('div', { class: 'bt-ce-palate-card' },
-        S.h('div', { style: 'min-width:0;flex:1' },
-          S.h('div', { style: 'display:flex;align-items:center;gap:6px;flex-wrap:wrap' },
-            S.iconEl('palate', { size: 16 }),
-            S.h('b', { style: 'font-size:13px', text: 'Will I Love This Bag? · ' + S.stripEmojis(palateGuide.badge || 'Palate Fit') }),
-            S.h('span', { class: 'bt-ce-badge is-good', text: Math.round(palateGuide.matchPct || 50) + '% Match' })
-          ),
-          S.h('div', { style: 'font-size:12px;color:var(--ink-secondary);margin-top:2px', text: S.stripEmojis(palateGuide.summary || 'Matched against your personal tasting history.') })
-        )
-      ) : (historyRows.length > 0 ? S.h('div', { style: 'font-size:11.5px;color:var(--ink-muted)', text: 'Log ' + Math.max(1, 3 - historyRows.length) + ' more cup(s) to unlock your personal "Will I Love This Bag?" Palate Match predictor.' }) : null),
-
-      /* `Facts in Four Parts` Deep-Dive Launcher (`screenCoffee`) */
-      S.h('button', {
-        type: 'button',
-        class: 'bt-ce-facts-btn',
-        onclick: function () { flushPendingStep1Drafts(c); openCoffeeFactsSheet(); }
-      },
-        S.h('div', { style: 'display:flex;align-items:center;gap:10px;min-width:0' },
-          S.iconEl('xray-loupe', { size: 20 }),
-          S.h('div', { style: 'min-width:0' },
-            S.h('b', { style: 'display:block;font-size:13.5px;color:var(--ink)', text: 'Facts in Four Parts · Bag X-Ray →' }),
-            S.h('span', { style: 'display:block;font-size:11.5px;color:var(--ink-secondary)', text: '1. Origin Terroir · 2. Botany & Genetics · 3. Post-Harvest · 4. Brew Strategy' })
-          )
-        ),
-        S.iconEl('chevron-right', { size: 18 })
-      )
-    );
-    registerStepCardStatus(cardStep14, card4StatusBadge, ['notes']);
-    root.appendChild(cardStep14);
+    root.appendChild(moreWrap);
   }
 
   /* -------------------- 9. `1-Card Guided Mode` (Beanjamin 5-Card Conversational Flow) -------------------- */
   function mountGuidedCardsView(root, c, unifiedRecs, repaintAll, syncLiveSummariesOnly, advanceToBrewer) {
     var GUIDED_CARDS_5 = [
-      { idx: 0, pill: '1. Name',    helpKey: 'name',    title: 'Card 1 of 5 · Name & Roaster',             tip: 'Look for the biggest title on the front label. Unlabeled bag? Tap "Don\'t Know — Skip →"!' },
-      { idx: 1, pill: '2. Roast',   helpKey: 'roast',   title: 'Card 2 of 5 · Roast Color',                tip: 'Check for Light, Filter, Omni, Medium, or Dark. Lighter roasts love hotter water; darker roasts love cooler water.' },
-      { idx: 2, pill: '3. Process', helpKey: 'process', title: 'Card 3 of 5 · Process & Decaf',            tip: 'Washed = crisp & tea-clean; Natural = jammy fruit; Honey = golden sweetness; Decaf = gentler cell walls.' },
-      { idx: 3, pill: '4. Origin',  helpKey: 'origin',  title: 'Card 4 of 5 · Origin, Elevation & Plant',  tip: 'Pick the country, altitude band, and optional varietal if printed on the bag.' },
-      { idx: 4, pill: '5. Date',    helpKey: 'date',    title: 'Card 5 of 5 · Roast Date & Flavor Notes',  tip: 'Tap your bag\'s printed roast date on the calendar and lock in any tasting notes!' }
+      { idx: 0, pill: '1. Name',    helpKey: 'name',    title: 'Name & Roaster',             tip: 'Look for the biggest title on the front label.' },
+      { idx: 1, pill: '2. Roast',   helpKey: 'roast',   title: 'Roast Level',                tip: 'Lighter roasts love hotter water; darker roasts love cooler water.' },
+      { idx: 2, pill: '3. Process', helpKey: 'process', title: 'Process & Caffeine',         tip: 'Washed = crisp clarity; Natural = fruity; Honey = sweet.' },
+      { idx: 3, pill: '4. Origin',  helpKey: 'origin',  title: 'Origin, Elevation & Plant',  tip: 'Optional terroir details from the bag label.' },
+      { idx: 4, pill: '5. Date',    helpKey: 'date',    title: 'Roast Date & Tasting Notes', tip: 'Tap your bag\'s roast date and any tasting notes.' }
     ];
 
     var curIdx = Math.max(0, Math.min(4, ceUi.guidedIdx || 0));
@@ -6127,7 +5928,7 @@ if (typeof window !== 'undefined') {
     root.appendChild(S.h('div', { class: 'bt-ce-bj-guide' },
       bjAvatar,
       S.h('div', { style: 'font-size:12.5px;line-height:1.38;color:var(--ink)' },
-        S.h('b', { style: 'display:block;color:var(--accent);font-size:11.5px', text: 'Beanjamin 1-Card Guide' }),
+        S.h('b', { style: 'display:block;color:var(--accent);font-size:11.5px', text: 'Beanjamin Guide' }),
         S.h('span', { text: cardMeta.tip })
       )
     ));
@@ -6160,47 +5961,41 @@ if (typeof window !== 'undefined') {
 
     if (curIdx === 0) {
       bodySlot.append(
-        S.h('div', { style: 'display:flex;flex-direction:column;gap:4px' },
-          S.h('span', { class: 'bt-ce-input-sublbl', text: 'Roaster' }),
-          S.h('div', { class: 'bt-ce-spotlight' },
-            S.iconEl('spark-star', { size: 15 }),
-            S.h('input', {
-              type: 'text',
-              value: c.roaster || '',
-              placeholder: 'Roaster (e.g. Onyx Coffee Lab)',
-              'aria-label': 'Roaster name',
-              oninput: function (e) { c._v64Touched = 'yes'; c.roaster = e.target.value; if (c.roaster) { c.roasterUnsure = ''; c.nameUnsure = ''; } syncLiveSummariesOnly(); }
-            })
-          )
+        S.h('div', { class: 'bt-ce-spotlight' },
+          S.iconEl('spark-star', { size: 15 }),
+          S.h('input', {
+            type: 'text',
+            value: c.roaster || '',
+            placeholder: 'Roaster (e.g. Onyx, Sey)',
+            'aria-label': 'Roaster name',
+            oninput: function (e) { c._v64Touched = 'yes'; c.roaster = e.target.value; if (c.roaster) { c.roasterUnsure = ''; c.nameUnsure = ''; } syncLiveSummariesOnly(); }
+          })
         ),
-        S.h('div', { style: 'display:flex;flex-direction:column;gap:4px' },
-          S.h('span', { class: 'bt-ce-input-sublbl', text: 'Coffee Name' }),
-          S.h('div', { class: 'bt-ce-spotlight' },
-            S.iconEl('fresh-bag', { size: 15 }),
-            S.h('input', {
-              type: 'text',
-              value: c.nameUnsure === 'yes' ? '' : (c.name || ''),
-              placeholder: 'Coffee Name (e.g. Worka Chelbesa)',
-              'aria-label': 'Coffee name',
-              oninput: function (e) { c._v64Touched = 'yes'; c.name = e.target.value; if (c.name) c.nameUnsure = ''; syncLiveSummariesOnly(); }
-            })
-          )
+        S.h('div', { class: 'bt-ce-spotlight' },
+          S.iconEl('fresh-bag', { size: 15 }),
+          S.h('input', {
+            type: 'text',
+            value: c.nameUnsure === 'yes' ? '' : (c.name || ''),
+            placeholder: 'Coffee name (e.g. Worka Chelbesa)',
+            'aria-label': 'Coffee name',
+            oninput: function (e) { c._v64Touched = 'yes'; c.name = e.target.value; if (c.name) c.nameUnsure = ''; syncLiveSummariesOnly(); }
+          })
         ),
         S.h('button', {
           type: 'button',
           class: 'bt-ce-chip is-active',
-          text: 'Next: Roast Color →',
+          text: 'Next: Roast Level →',
           onclick: nextCardOrFinish
         })
       );
     } else if (curIdx === 1) {
       bodySlot.append(
         S.h('div', { class: 'bt-ce-roast-grid' },
-          S.ROAST_STOPS.map(function (st) {
+          S.ROAST_STOPS.slice(1).map(function (st) {
             return S.h('button', {
               type: 'button',
               class: 'bt-ce-roast-swatch',
-              'aria-pressed': String(!c.roastUnsure && c.roast === st.key),
+              'aria-pressed': String(!c.roastUnsure && (c.roast === st.key || (st.key === 'light' && c.roast === 'ultra-light'))),
               onclick: function () {
                 c._v64Touched = 'yes';
                 c.roast = st.key;
@@ -6215,24 +6010,22 @@ if (typeof window !== 'undefined') {
             );
           })
         ),
-        S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap' },
-          S.h('span', { style: 'font-size:11.5px;color:var(--ink-secondary)', text: c.agtron ? ('Omni Synced: Agtron ' + c.agtron) : 'Or scan beans/grounds with DiFluid Omni:' }),
-          buildStep1OmniControls(repaintAll)
+        S.h('div', { style: 'display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap' },
+          buildStep1OmniControls(repaintAll, c)
         )
       );
     } else if (curIdx === 2) {
       bodySlot.append(
-        S.h('div', { class: 'bt-ce-chips' },
+        S.h('div', { class: 'bt-ce-proc-grid' },
           [
-            ['washed', 'Washed (Crisp & Clean)'],
-            ['natural', 'Natural (Jammy Fruit)'],
-            ['red-honey', 'Honey (Sweet Stone Fruit)'],
-            ['wet-hulled', 'Wet-Hulled (Rich & Earthy)'],
-            ['anaerobic', 'Anaerobic / Thermal Shock']
+            ['washed', 'Washed'],
+            ['natural', 'Natural'],
+            ['honey', 'Honey'],
+            ['anaerobic', 'Anaerobic / Experimental']
           ].map(function (p) {
             return S.h('button', {
               type: 'button',
-              class: 'bt-ce-chip',
+              class: 'bt-ce-chip bt-ce-proc-chip',
               'aria-pressed': String(!c.processUnsure && c.process === p[0]),
               text: p[1],
               onclick: function () { c._v64Touched = 'yes'; c.process = p[0]; c.processUnsure = ''; c.process_unknown = ''; S.saveDraftSafe(); nextCardOrFinish(); }
@@ -6241,9 +6034,9 @@ if (typeof window !== 'undefined') {
         ),
         S.h('div', { class: 'bt-ce-chips' },
           [
-            ['', 'Regular Caffeine'],
+            ['', 'Regular'],
             ['half-caf', 'Half-Caf'],
-            ['yes', 'Decaf (EA / Swiss Water)']
+            ['yes', 'Decaf']
           ].map(function (dc) {
             var on = dc[0] === '' ? !c.decaf : c.decaf === dc[0];
             return S.h('button', {
@@ -6263,44 +6056,23 @@ if (typeof window !== 'undefined') {
       );
     } else if (curIdx === 3) {
       bodySlot.append(
-        S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
-          S.h('span', { class: 'bt-ce-input-sublbl', text: 'Origin Country' }),
-          S.h('button', {
-            type: 'button',
-            class: 'bt-ce-dontknow-pill' + (c.originUnsure === 'yes' ? ' is-active' : ''),
-            'aria-pressed': String(c.originUnsure === 'yes'),
-            onclick: function () { setFieldDontKnow(c, 'origin', c.originUnsure !== 'yes'); S.saveDraftSafe(); repaintAll(); }
-          }, S.h('span', { text: 'Don\'t Know / Blend' }))
-        ),
         S.h('div', { class: 'bt-ce-chips' },
           POPULAR_ORIGINS_12.slice(0, 8).map(function (cn) {
             return S.h('button', {
               type: 'button',
-              class: 'bt-ce-chip',
+              class: 'bt-ce-chip is-compact',
               'aria-pressed': String(!c.originUnsure && String(c.origin || '').indexOf(cn) >= 0),
               text: cn,
               onclick: function () { c._v64Touched = 'yes'; c.origin = cn; c.originUnsure = ''; c.origin_unknown = ''; S.saveDraftSafe(); repaintAll(); }
             });
           })
         ),
-        S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--line-soft)' },
-          S.h('div', { style: 'display:inline-flex;align-items:center;gap:6px' },
-            S.h('span', { class: 'bt-ce-input-sublbl', text: 'Elevation' }),
-            makeFieldHelpBtn('elevation')
-          ),
-          S.h('button', {
-            type: 'button',
-            class: 'bt-ce-dontknow-pill' + (c.elevUnsure === 'yes' ? ' is-active' : ''),
-            'aria-pressed': String(c.elevUnsure === 'yes'),
-            onclick: function () { setFieldDontKnow(c, 'elevation', c.elevUnsure !== 'yes'); S.saveDraftSafe(); repaintAll(); }
-          }, S.h('span', { text: 'Don\'t Know' }))
-        ),
         S.h('div', { class: 'bt-ce-chips' },
           [
-            { k: 'low',       m: 1050, lbl: 'Low <1,200m' },
-            { k: 'mid',       m: 1450, lbl: 'Medium 1,200–1,600m' },
-            { k: 'high',      m: 1800, lbl: 'High 1,600–1,950m' },
-            { k: 'very-high', m: 2050, lbl: 'Ultra-High 2,000m+' }
+            { k: 'low',       m: 1050, lbl: '<1,200m' },
+            { k: 'mid',       m: 1450, lbl: '1,200–1,600m' },
+            { k: 'high',      m: 1800, lbl: '1,600–1,950m' },
+            { k: 'very-high', m: 2050, lbl: '2,000m+' }
           ].map(function (elB) {
             return S.h('button', {
               type: 'button',
@@ -6311,21 +6083,10 @@ if (typeof window !== 'undefined') {
             });
           })
         ),
-        S.h('div', { class: 'bt-ce-chips' },
-          POPULAR_VARIETALS_12.slice(0, 6).map(function (vn) {
-            return S.h('button', {
-              type: 'button',
-              class: 'bt-ce-chip is-compact',
-              'aria-pressed': String(String(c.varietal || '').indexOf(vn) >= 0),
-              text: vn,
-              onclick: function () { c._v64Touched = 'yes'; c.varietal = vn; c.varietalUnsure = ''; S.saveDraftSafe(); nextCardOrFinish(); }
-            });
-          })
-        ),
         S.h('button', {
           type: 'button',
           class: 'bt-ce-chip is-active',
-          text: 'Next: Date & Flavors →',
+          text: 'Next: Date & Tasting Notes →',
           onclick: nextCardOrFinish
         })
       );
@@ -6334,35 +6095,21 @@ if (typeof window !== 'undefined') {
         buildRoastCalendarControl({
           coffee: c,
           uiState: ceUi,
+          showHeaderBadge: false,
+          showQuickChips: true,
           onSync: function () { syncLiveSummariesOnly(); }
         }),
-        S.h('div', { style: 'padding-top:6px;border-top:1px solid var(--line-soft);display:flex;flex-direction:column;gap:6px' },
-          S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
-            S.h('div', { style: 'display:inline-flex;align-items:center;gap:6px' },
-              S.h('span', { class: 'bt-ce-input-sublbl', text: 'Printed Bag Flavor Notes' }),
-              makeFieldHelpBtn('notes')
-            ),
-            S.h('button', {
-              type: 'button',
-              class: 'bt-ce-dontknow-pill' + (c.notesUnsure === 'yes' ? ' is-active' : ''),
-              'aria-pressed': String(c.notesUnsure === 'yes'),
-              onclick: function () { setFieldDontKnow(c, 'notes', c.notesUnsure !== 'yes'); S.saveDraftSafe(); repaintAll(); }
-            }, S.h('span', { text: 'Don\'t Know / None Listed' }))
-          ),
-          buildBagFlavorNotesWidget(c, {
-            maxQuickChips: 12,
-            onSync: function () { syncLiveSummariesOnly(); }
-          })
-        )
+        S.h('div', { class: 'bt-ce-zone-divider' }),
+        buildBagFlavorNotesWidget(c, {
+          maxQuickChips: 11,
+          onSync: function () { syncLiveSummariesOnly(); }
+        })
       );
     }
 
-    var guidedCard = S.h('section', { class: 'bt-ce-card bt-ce-card-hero' },
-      S.h('div', { class: 'bt-ce-card-hd' },
-        S.h('div', { style: 'display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap' },
-          S.h('h2', { class: 'bt-ce-card-title', text: cardMeta.title }),
-          makeFieldHelpBtn(cardMeta.helpKey)
-        ),
+    var guidedCard = S.h('section', { class: 'bt-ce-card bt-ce-zone-card' },
+      S.h('div', { class: 'bt-ce-zone-hd' },
+        S.h('h2', { class: 'bt-ce-zone-title', text: cardMeta.title }),
         S.h('span', { class: 'bt-ce-bag-rem', text: (curIdx + 1) + ' / 5' })
       ),
       bodySlot,
@@ -6376,8 +6123,8 @@ if (typeof window !== 'undefined') {
         }),
         S.h('button', {
           type: 'button',
-          class: 'bt-ce-skip-btn',
-          text: 'Don\'t Know — Skip →',
+          class: 'bt-ce-link-btn',
+          text: 'Skip →',
           onclick: function () {
             flushPendingStep1Drafts(c);
             if (curIdx === 0 && !isFieldAnswered(c, 'name')) setFieldDontKnow(c, 'name', true);

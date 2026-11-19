@@ -2584,6 +2584,26 @@
         };
       }
     }
+    if (slot === 'scale'){
+      const svKeys = Object.keys(svcMap);
+      for (let ki = 0; ki < svKeys.length; ki++){
+        const sk = svKeys[ki];
+        if (/^0000180[01af]-/.test(sk)) continue;
+        const pickedGen = pickNotifyAndWrite(svcMap[sk], [], []);
+        if (pickedGen.notify && canNotify(pickedGen.notify)){
+          return {
+            family: 'sig',
+            slot: 'scale',
+            serviceUuid: sk,
+            notifyUuid: pickedGen.notify.uuid,
+            extraNotifyUuids: pickedGen.extraNotifyUuids,
+            writeUuid: pickedGen.write ? pickedGen.write.uuid : null,
+            altWriteUuid: pickedGen.altWrite ? pickedGen.altWrite.uuid : null,
+            autoPromoteOnFirstFrame: true
+          };
+        }
+      }
+    }
     return null;
   }
 

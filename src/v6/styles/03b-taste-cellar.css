@@ -1298,3 +1298,662 @@
   color: var(--ink);
   word-break: break-word;
 }
+
+/* ==================== 10. v6.7 SCORE HERO, GIANT STAR BAR, VISUAL PICKERS & CUPPING POLISH ==================== */
+.bt-tc-mode-bar-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bt-tc-mode-bar-row > .bt-tc-seg-bar {
+  flex: 1 1 260px;
+}
+
+.bt-tc-cupping-launch-btn {
+  min-height: 46px;
+  padding: 8px 14px;
+  border-radius: var(--r-md, 16px);
+  border: 1.5px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.83rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  transition: transform 0.14s var(--spring-snappy), background-color 0.14s ease, color 0.14s ease;
+}
+
+.bt-tc-cupping-launch-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.bt-tc-cupping-launch-btn:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+/* Live Score Hero Summary Card */
+.bt-tc-score-hero {
+  background: linear-gradient(158deg, var(--surface) 0%, var(--well) 100%);
+  border: 1.5px solid var(--line-strong, var(--line));
+  border-radius: 18px;
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--shadow-xs);
+}
+
+.bt-tc-score-hero.is-outstanding {
+  border-color: var(--good);
+  background: linear-gradient(158deg, var(--good-bg) 0%, var(--surface) 100%);
+}
+
+.bt-tc-score-hero.is-very-good {
+  border-color: var(--accent);
+  background: linear-gradient(158deg, var(--accent-soft) 0%, var(--surface) 100%);
+}
+
+.bt-tc-score-hero.is-warn {
+  border-color: var(--warn);
+}
+
+.bt-tc-score-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bt-tc-score-dual {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bt-tc-score-sca-num {
+  font-family: var(--font-mono);
+  font-size: clamp(1.55rem, 4.5vw, 2.05rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.bt-tc-score-sca-unit {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--ink-muted);
+  margin-left: 4px;
+}
+
+.bt-tc-score-star-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.bt-tc-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+@media (max-width: 480px) {
+  .bt-tc-breakdown-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.bt-tc-bk-pill {
+  padding: 6px 9px;
+  border-radius: 11px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft, var(--line));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 0.76rem;
+}
+
+.bt-tc-bk-pill span {
+  color: var(--ink-secondary);
+  font-weight: 600;
+}
+
+.bt-tc-bk-pill b {
+  font-family: var(--font-mono);
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.bt-tc-bk-pill.is-defect b {
+  color: var(--bad);
+}
+
+/* Giant Intuitive 1-Tap 48x48 Star & Fine-Tune Bar */
+.bt-tc-star-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  background: var(--well);
+  border-radius: 16px;
+  padding: 12px 13px;
+}
+
+.bt-tc-star-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bt-tc-stars-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bt-tc-star-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.14s var(--spring-snappy), border-color 0.14s ease, background-color 0.14s ease, color 0.14s ease;
+}
+
+.bt-tc-star-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.bt-tc-star-btn:active {
+  transform: scale(0.94);
+}
+
+.bt-tc-star-btn.is-filled {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.bt-tc-star-btn.is-half {
+  background: linear-gradient(90deg, var(--accent-soft) 50%, var(--surface) 50%);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.bt-tc-finetune-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bt-tc-finetune-btn {
+  min-height: 44px;
+  min-width: 58px;
+  padding: 6px 11px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.12s var(--spring-snappy), border-color 0.12s ease;
+}
+
+.bt-tc-finetune-btn:hover {
+  border-color: var(--accent);
+}
+
+.bt-tc-finetune-btn:active {
+  transform: scale(0.95);
+}
+
+.bt-tc-star-desc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft, var(--line));
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.bt-tc-star-desc-pill.is-rated {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 2-Column Tactile Quick Diagnosis Cards */
+.bt-tc-diag-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 380px) {
+  .bt-tc-diag-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.bt-tc-diag-card {
+  min-height: 56px;
+  padding: 9px 11px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: transform 0.14s var(--spring-snappy), border-color 0.14s ease, background-color 0.14s ease;
+}
+
+.bt-tc-diag-card:hover {
+  border-color: var(--accent);
+}
+
+.bt-tc-diag-card:active {
+  transform: scale(0.98);
+}
+
+.bt-tc-diag-card b {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: inherit;
+}
+
+.bt-tc-diag-card span {
+  font-size: 0.74rem;
+  line-height: 1.3;
+  color: var(--ink-secondary);
+}
+
+.bt-tc-diag-card.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.bt-tc-diag-card.is-active.is-sweet {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+}
+
+.bt-tc-diag-card.is-active span {
+  color: inherit;
+  opacity: 0.92;
+}
+
+/* Structured 5-Step Labeled Sensory Bars */
+.bt-tc-scale-bar {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.bt-tc-scale-step {
+  min-height: 50px;
+  padding: 5px 3px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: transform 0.12s var(--spring-snappy), background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.bt-tc-scale-step b {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.bt-tc-scale-step span {
+  font-size: 0.67rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--ink-secondary);
+}
+
+.bt-tc-scale-step[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.bt-tc-scale-step[aria-pressed="true"] span {
+  color: var(--accent-ink);
+}
+
+/* Tabbed Flavor Note Selector & Selected Tray */
+.bt-tc-flavor-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+  scrollbar-width: none;
+}
+
+.bt-tc-flavor-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.bt-tc-flavor-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bt-tc-selected-tray {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px dashed var(--line-strong, var(--line));
+}
+
+.bt-tc-selected-chip {
+  min-height: 36px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+/* 5-Bowl Cupping Table Polish */
+.bt-sca-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 8px;
+}
+
+.bt-sca-bowl-mini {
+  padding: 9px 11px;
+  border-radius: 14px;
+  background: var(--well);
+  border: 1.5px solid var(--line-soft, var(--line));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.bt-sca-bowl-mini .bt-tc-badge {
+  white-space: normal;
+  text-align: left;
+  line-height: 1.2;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.bt-sca-bowl-mini.is-leader {
+  border-color: var(--good);
+  background: var(--good-bg);
+}
+
+.bt-sca-reveal-banner {
+  padding: 10px 13px;
+  border-radius: 14px;
+  background: linear-gradient(155deg, var(--good-bg) 0%, var(--surface) 100%);
+  border: 1.5px solid var(--good);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bt-sca-preset-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.bt-sca-stepper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bt-sca-defect-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bt-sca-trait-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Cellar Journal Polished Score & Flavor Tags */
+.bt-journal-score-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bt-journal-flavor-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+/* ==================== 11. MOBILE 390px WIDTH SAFETY (STEP 5, CELLAR & CUPPING) ==================== */
+.bt-tc-stage,
+.bt-tc-card,
+.bt-tc-well,
+.bt-tc-score-hero,
+.bt-tc-star-bar-wrap,
+.bt-cellar-bag-card,
+.bt-academy-page,
+.bt-academy-page .bt-studio-card,
+.bt-academy-page .bt-sca-cockpit-card,
+.bt-academy-page .bt-sca-bowl-card,
+.bt-academy-page .bt-gym-coach-banner {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.bt-academy-page .bt-lab-text-in {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-tc-cupping-launch-btn,
+.bt-tc-gold-lock-btn {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .bt-academy-page .bt-studio-pill-nav {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    max-width: 100%;
+    min-width: 0;
+    gap: 6px;
+  }
+
+  .bt-academy-page .bt-studio-nav-pill {
+    padding: 7px 11px;
+    font-size: 0.79rem;
+    min-height: 40px;
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .bt-academy-page .bt-gym-scorecard-strip {
+    grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+    gap: 6px;
+  }
+
+  .bt-academy-page .bt-gym-mini-kpi {
+    padding: 6px 8px;
+    font-size: 0.72rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .bt-academy-page .bt-sca-bowls-grid,
+  .bt-academy-page .bt-cupping-4steps-grid,
+  .bt-academy-page .bt-chrono-gym-deck,
+  .bt-academy-page .bt-cva-attr-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bt-academy-page .bt-sca-hero-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bt-academy-page .bt-sca-bowl-mini > div {
+    flex-wrap: wrap;
+  }
+
+  .bt-tc-stage {
+    gap: 10px;
+  }
+
+  .bt-tc-card {
+    padding: 12px 13px;
+    gap: 9px;
+  }
+
+  .bt-tc-top-strip {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .bt-tc-brew-summary {
+    flex: 1 1 0%;
+    min-width: 0;
+  }
+
+  .bt-academy-page .bt-lab-card-head,
+  .bt-academy-page .bt-lab-chip-row,
+  .bt-academy-page .bt-lab-btn-row,
+  .bt-academy-page .bt-sca-bowl-top,
+  .bt-academy-page .bt-sca-timer-readout-row,
+  .bt-academy-page .bt-gym-coach-kicker-row {
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .bt-academy-page .bt-lab-btn,
+  .bt-academy-page .bt-lab-chip,
+  .bt-academy-page .bt-chart-cta-btn {
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .bt-tc-stars-group {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bt-tc-mode-seg,
+  .bt-tc-mode-bar-row > .bt-tc-seg-bar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    overflow: visible;
+    box-sizing: border-box;
+  }
+
+  .bt-tc-mode-seg .bt-tc-seg-btn,
+  .bt-tc-mode-bar-row > .bt-tc-seg-bar .bt-tc-seg-btn {
+    font-size: 12px;
+    padding: 7px 4px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.2;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 350px) {
+  .bt-tc-star-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+

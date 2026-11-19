@@ -21,18 +21,18 @@
 .bt-ce-root {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 14px;
   width: 100%;
-  max-width: 740px;
+  max-width: 720px;
   min-width: 0;
   margin: 0 auto;
-  padding: 0 0 12px;
+  padding: 2px 0 18px;
 }
 
 @media (min-width: 768px) {
   .bt-ce-root {
-    gap: 13px;
-    padding-top: 4px;
+    gap: 16px;
+    padding-top: 6px;
   }
 }
 
@@ -119,6 +119,7 @@
 .bt-ce-card {
   width: 100%;
   min-width: 0;
+  max-width: 100%;
   background: var(--surface-card-grad);
   border: 1px solid var(--line-soft);
   border-radius: 16px;
@@ -424,13 +425,16 @@
 .bt-ce-spotlight {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 46px;
-  padding: 0 12px;
-  border-radius: 12px;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 48px;
+  padding: 0 13px;
+  border-radius: 13px;
   background: var(--surface);
   box-shadow: var(--shadow-xs);
-  border: 2px solid var(--edge);
+  border: 1.5px solid var(--line);
   transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
 
@@ -857,37 +861,51 @@
   display: none;
 }
 
-/* 6-Color Roast Spectrum Swatches */
+/* 5-Color Roast Spectrum Swatches */
 .bt-ce-roast-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-}
-
-@media (min-width: 580px) {
-  .bt-ce-roast-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .bt-ce-roast-swatch {
-  min-height: 56px;
-  padding: 6px 5px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 54px;
+  padding: 8px 3px 7px;
   border-radius: 12px;
   background: var(--surface);
-  border: 2px solid var(--line);
+  border: 1.5px solid var(--line);
   box-shadow: var(--shadow-xs);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  font-size: 11.5px;
-  font-weight: 700;
+  justify-content: flex-start;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
   color: var(--ink);
   text-align: center;
+  white-space: normal;
+  overflow-wrap: break-word;
   cursor: pointer;
   transition: border-color 0.14s ease, background 0.14s ease, transform 0.12s var(--spring-snappy), box-shadow 0.14s ease;
+}
+
+@media (min-width: 480px) {
+  .bt-ce-roast-grid {
+    gap: 8px;
+  }
+  .bt-ce-roast-swatch {
+    padding: 9px 6px 8px;
+    font-size: 11.5px;
+    letter-spacing: -0.01em;
+  }
 }
 
 .bt-ce-roast-swatch:hover {
@@ -918,6 +936,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .bt-ce-chips-scroll {
@@ -927,9 +947,13 @@
   overflow-x: auto;
   padding-bottom: 2px;
   scrollbar-width: thin;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .bt-ce-chip {
+  min-width: 0;
+  max-width: 100%;
   min-height: 40px;
   padding: 6px 12px;
   border-radius: var(--r-pill);
@@ -942,9 +966,16 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
   cursor: pointer;
   transition: border-color 0.14s ease, background 0.14s ease, color 0.14s ease;
+}
+
+.bt-ce-chips-scroll .bt-ce-chip {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .bt-ce-chip:hover {
@@ -1116,6 +1147,9 @@
   position: relative;
   bottom: auto;
   z-index: 2;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   margin-top: 12px;
   padding: 10px 12px;
   border-radius: 20px;
@@ -1126,8 +1160,10 @@
 
 .bt-ce-cta-primary {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 56px;
-  padding: 9px 18px;
+  padding: 9px 16px;
   border-radius: 16px;
   background: var(--primary);
   color: var(--primary-ink);
@@ -1160,7 +1196,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: min(74vw, 520px);
+  max-width: 100%;
 }
 
 /* ==================== 12. FACTS IN FOUR PARTS SHEET & VAULT ROWS ==================== */
@@ -2587,4 +2623,464 @@
 .bt-ce-help-bullets b {
   color: var(--ink);
 }
+
+/* ==================== 17. v6.7 CALM STEP 1 DECLUTTER ZONES & MORE BEAN DETAILS ==================== */
+.bt-ce-head {
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-ce-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.bt-ce-mode-pill {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--r-pill);
+  background: var(--well);
+  border: 1px solid var(--line-soft);
+  gap: 2px;
+}
+
+.bt-ce-mode-pill button {
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: var(--r-pill);
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.bt-ce-mode-pill button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Zone 1: Unified Bag Source Strip */
+.bt-ce-source-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-ce-source-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 340px) {
+  .bt-ce-source-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.bt-ce-source-btn {
+  min-height: 48px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  box-shadow: var(--shadow-xs);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease, transform 0.12s var(--spring-snappy);
+}
+
+.bt-ce-source-btn:hover {
+  border-color: var(--accent);
+}
+
+.bt-ce-source-btn:active {
+  transform: scale(0.98);
+}
+
+.bt-ce-source-btn.is-primary {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.bt-ce-quick-bags-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 1px 1px 4px;
+  scrollbar-width: thin;
+  max-width: 100%;
+}
+
+.bt-ce-quick-bag-pill {
+  flex-shrink: 0;
+  min-height: 38px;
+  max-width: 220px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+
+.bt-ce-quick-bag-pill.is-active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  font-weight: 700;
+}
+
+.bt-ce-quick-bag-lbl {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bt-ce-source-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -4px;
+}
+
+/* Zone 2: Calm Core 4 Essentials Cards */
+.bt-ce-zone-card {
+  padding: 16px;
+  gap: 12px;
+  border-radius: 18px;
+}
+
+.bt-ce-zone-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bt-ce-zone-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0;
+}
+
+.bt-ce-zone-cue {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ink-secondary);
+}
+
+.bt-ce-zone-divider {
+  height: 1px;
+  background: var(--line-soft);
+  margin: 2px 0;
+}
+
+.bt-ce-input-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* DiFluid Omni Quiet Header Action */
+.bt-ce-omni-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bt-ce-omni-btn {
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease;
+}
+
+.bt-ce-omni-btn:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.bt-ce-omni-btn.is-active {
+  background: var(--science-bg);
+  border-color: var(--science-border);
+  color: var(--science);
+  font-weight: 700;
+}
+
+.bt-ce-omni-readout {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border-radius: 11px;
+  background: var(--science-bg);
+  border: 1px solid var(--science-border);
+  color: var(--science);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+/* Primary 4 Process Chips */
+.bt-ce-proc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (min-width: 560px) {
+  .bt-ce-proc-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.bt-ce-proc-chip {
+  min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  padding: 6px 8px;
+  justify-content: center;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.bt-ce-sub-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: var(--well);
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Searchable & Tabbed Bag Tasting Notes */
+.bt-ce-notes-widget {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-ce-flavor-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-ce-flavor-tabs[hidden] {
+  display: none;
+}
+
+.bt-ce-flavor-tab {
+  min-height: 34px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: var(--well);
+  border: 1px solid transparent;
+  color: var(--ink-secondary);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.bt-ce-flavor-tab.is-active {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--ink);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Roast Date Quick Chips */
+.bt-ce-date-quick-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (min-width: 520px) {
+  .bt-ce-date-quick-row {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.bt-ce-date-chip {
+  min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  padding: 6px 6px;
+  justify-content: center;
+  font-size: 12.5px;
+}
+
+.bt-ce-date-hint {
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+/* Zone 3: Clean Collapsible "More Bean Details" Disclosure */
+.bt-ce-disclosure {
+  width: 100%;
+  min-width: 0;
+  border-radius: 18px;
+  background: var(--surface-card-grad);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.bt-ce-disclosure-btn {
+  width: 100%;
+  min-height: 54px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.bt-ce-disclosure-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.bt-ce-disclosure-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.bt-ce-disclosure-sub {
+  font-size: 12px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bt-ce-disclosure-chev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.bt-ce-disclosure-btn[aria-expanded="true"] .bt-ce-disclosure-chev {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.bt-ce-disclosure-body {
+  padding: 4px 16px 16px;
+  border-top: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bt-ce-detail-grp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 8px;
+}
+
+.bt-ce-detail-lbl {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.bt-ce-inline-nums {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.bt-ce-num-lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
 

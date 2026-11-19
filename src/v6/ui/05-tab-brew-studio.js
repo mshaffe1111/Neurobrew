@@ -215,6 +215,300 @@
     saveDraft();
   }
 
+  function navGoRoute(routeKey) {
+    var sh = getShell();
+    if (sh && typeof sh.go === 'function') {
+      sh.go(routeKey);
+      return;
+    }
+    if (sh && typeof sh.switchTab === 'function') {
+      sh.switchTab(routeKey);
+      return;
+    }
+    rerender();
+  }
+
+  function readBleHardwareSummary() {
+    var out = { scale: false, kettle: false, refract: false, pressure: false, omni: false, count: 0, labels: [] };
+    try {
+      var ble = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
+      if (!ble || typeof ble.getState !== 'function') return out;
+      var st = ble.getState() || {};
+      var sl = st.slots || {};
+      out.scale = !!((sl.scale && sl.scale.connected) || st.scaleConnected);
+      out.kettle = !!((sl.kettle && sl.kettle.connected) || st.kettleConnected);
+      out.refract = !!((sl.refract && sl.refract.connected) || st.refractConnected);
+      out.pressure = !!((sl.pressure && sl.pressure.connected) || st.pressureConnected);
+      out.omni = !!((sl.omni && sl.omni.connected) || st.omniConnected);
+      if (out.scale) out.labels.push('Scale');
+      if (out.kettle) out.labels.push('Kettle');
+      if (out.refract) out.labels.push('R2');
+      if (out.pressure) out.labels.push('Pressure');
+      if (out.omni) out.labels.push('Omni');
+      out.count = out.labels.length;
+    } catch (_) {}
+    return out;
+  }
+
+  var _step2CatalogOpen = false;
+
+  function computeKettleWarmPlan(a, rec) {
+    var mKey = (rec && rec.method && rec.method.key) || 'v60';
+    var brewWaterG = Math.max(15, Math.round((rec && (rec.hotPourG != null ? rec.hotPourG : rec.waterG)) || 250));
+    var skipRinse = !!(a && a.brew && a.brew.skipKettleRinse);
+
+    if (mKey === 'philips5500') {
+      return {
+        kind: 'espresso-tank',
+        brewWaterG: brewWaterG,
+        rinseAndWarmG: 0,
+        evapAndHeelG: 0,
+        totalKettleG: brewWaterG,
+        skipRinse: false,
+        showSkipRinse: false,
+        headline: 'Philips 5500 Water Tank Ready',
+        breakdown: 'Check rear water reservoir & bean hopper · machine auto-rinses on wake'
+      };
+    }
+    if (mKey === 'espresso' || mKey === 'lever_espresso') {
+      return {
+        kind: 'espresso-tank',
+        brewWaterG: brewWaterG,
+        rinseAndWarmG: 0,
+        evapAndHeelG: 0,
+        totalKettleG: brewWaterG,
+        skipRinse: false,
+        showSkipRinse: false,
+        headline: 'Check Espresso Tank >= 350 mL',
+        breakdown: 'Includes portafilter pre-warm flush & group thermal stability'
+      };
+    }
+    if (mKey === 'aiden' || mKey === 'xbloom') {
+      var tankG = brewWaterG + 40;
+      return {
+        kind: 'smart-tank',
+        brewWaterG: brewWaterG,
+        rinseAndWarmG: 0,
+        evapAndHeelG: 40,
+        totalKettleG: tankG,
+        skipRinse: false,
+        showSkipRinse: false,
+        headline: 'Fill Reservoir: ' + tankG + ' g',
+        breakdown: brewWaterG + ' g brew water + 40 g tank heel reserve'
+      };
+    }
+    if (mKey === 'cold' || mKey === 'cold_drip') {
+      return {
+        kind: 'cold',
+        brewWaterG: brewWaterG,
+        rinseAndWarmG: 0,
+        evapAndHeelG: 0,
+        totalKettleG: brewWaterG,
+        skipRinse: false,
+        showSkipRinse: false,
+        headline: 'Use ' + brewWaterG + ' g Filtered Cold Water',
+        breakdown: 'No kettle heating needed · cold steep extraction'
+      };
+    }
+
+    var filterStr = String((a && a.brew && a.brew.filter) || '');
+    var isChemex = mKey === 'chemex' || /chemex|thick/i.test(filterStr);
+    var usesPaper = !!(rec && rec.usesPaper);
+    var rinseAndWarmG = isChemex
+      ? (skipRinse ? 60 : 145)
+      : usesPaper
+      ? (skipRinse ? 40 : 100)
+      : (skipRinse ? 0 : 75);
+    var evapAndHeelG = Math.round(brewWaterG * 0.055 + 22);
+    var totalKettleG = brewWaterG + rinseAndWarmG + evapAndHeelG;
+    var rinseLabel = isChemex
+      ? (skipRinse ? 'carafe pre-warm' : 'thick paper rinse/warm')
+      : usesPaper
+      ? (skipRinse ? 'vessel warm' : 'rinse/warm')
+      : (skipRinse ? 'no preheat' : 'vessel warm');
+
+    return {
+      kind: 'kettle',
+      brewWaterG: brewWaterG,
+      rinseAndWarmG: rinseAndWarmG,
+      evapAndHeelG: evapAndHeelG,
+      totalKettleG: totalKettleG,
+      skipRinse: skipRinse,
+      showSkipRinse: true,
+      headline: 'Heat ' + totalKettleG + ' g in Kettle',
+      breakdown: brewWaterG + ' g brew + ' + rinseAndWarmG + ' g ' + rinseLabel + ' + ' + evapAndHeelG + ' g steam & reserve'
+    };
+  }
+
+  function buildKettleWarmBanner(a, rec, pillId, extraRightNode, onToggled) {
+    var plan = computeKettleWarmPlan(a, rec);
+    var targetEl = dom('strong', {
+      id: pillId,
+      class: 'bt-kettle-warm-target bt-num',
+      text: plan.headline
+    });
+    var subEl = dom('span', {
+      class: 'bt-kettle-warm-sub bt-num',
+      text: plan.breakdown
+    });
+
+    var skipBtn = null;
+    function paintBanner() {
+      var curPlan = computeKettleWarmPlan(a, rec);
+      targetEl.textContent = curPlan.headline;
+      subEl.textContent = curPlan.breakdown;
+      if (skipBtn) {
+        skipBtn.className = 'bt-chip-v6 bt-kettle-skip-btn' + (curPlan.skipRinse ? ' is-active' : '');
+        skipBtn.setAttribute('aria-pressed', String(!!curPlan.skipRinse));
+        skipBtn.textContent = curPlan.skipRinse ? 'Rinse Skipped' : 'Skip Rinse';
+      }
+    }
+
+    if (plan.showSkipRinse) {
+      skipBtn = dom('button', {
+        type: 'button',
+        class: 'bt-chip-v6 bt-kettle-skip-btn' + (plan.skipRinse ? ' is-active' : ''),
+        'aria-pressed': String(!!plan.skipRinse),
+        title: 'Toggle paper/vessel rinse water in Kettle Warm Target',
+        text: plan.skipRinse ? 'Rinse Skipped' : 'Skip Rinse',
+        onclick: function (ev) {
+          if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+          a.brew = a.brew || {};
+          a.brew.skipKettleRinse = !a.brew.skipKettleRinse;
+          haptic('tick');
+          saveDraft();
+          paintBanner();
+          if (typeof onToggled === 'function') onToggled();
+        }
+      });
+    }
+
+    return dom('div', { class: 'bt-kettle-warm-card is-' + plan.kind },
+      dom('div', { class: 'bt-kettle-warm-lhs' },
+        dom('span', { class: 'bt-kettle-warm-ico' }, ico(plan.kind === 'cold' ? 'droplet' : 'kettle-gooseneck', 18)),
+        dom('div', { class: 'bt-kettle-warm-copy' },
+          targetEl,
+          subEl
+        )
+      ),
+      (skipBtn || extraRightNode) ? dom('div', { class: 'bt-kettle-warm-rhs' },
+        skipBtn,
+        extraRightNode || null
+      ) : null
+    );
+  }
+
+  function computePourAgitationCue(stage, stageIdx, totalStages, ctx) {
+    ctx = ctx || {};
+    var a = ctx.a || {};
+    var coffee = ctx.coffee || a.coffee || {};
+    var rec = ctx.rec || {};
+    var steps = ctx.steps || rec.steps || [];
+    var mObj = rec.method || {};
+    var methodKey = String(ctx.methodKey || mObj.key || 'v60').toLowerCase();
+    var styleId = String(ctx.styleId || (a.brew && a.brew.style) || '').toLowerCase();
+    var titleStr = String((stage && stage.title) || '').toLowerCase();
+    var proc = String(coffee.process || '').toLowerCase();
+    var roast = String(coffee.roast || '').toLowerCase();
+    var cName = String(coffee.name || '').toLowerCase();
+    var isDecaf = !!(coffee.decaf || coffee.isDecaf || /decaf/i.test(proc + ' ' + cName));
+
+    if (mObj.outRatio || methodKey === 'espresso' || methodKey === 'lever_espresso') {
+      if (stageIdx === 0) {
+        return {
+          tone: 'gentle',
+          shortChip: 'Low-Pressure Soak · Anti-Channel',
+          badge: 'Gentle Pre-Infusion · Even Puck Wetting',
+          guide: 'Ramp gently to saturate the full puck evenly before full pressure so water cannot channel.',
+          spoken: 'Gentle pre-infusion wetting to prevent puck channeling.'
+        };
+      }
+      return {
+        tone: 'spiral',
+        shortChip: 'Steady Flow · Watch Blonding',
+        badge: 'Steady Pressure · Hold Flow Even',
+        guide: 'Maintain steady pressure and stop cleanly before pale blonding or channeling streaks appear.',
+        spoken: 'Steady extraction flow. Watch for even blonding.'
+      };
+    }
+
+    var finesRisk = isDecaf
+      || /natural|anaerobic|honey|carbonic|co-?ferment|experimental/i.test(proc)
+      || /dark|med-dark|medium-dark/i.test(roast)
+      || /osmotic|single-pour|low-agit|gentle/i.test(styleId);
+
+    var startG = stage && stage.startG != null ? +stage.startG : 0;
+    var targetG = stage && stage.targetG != null ? +stage.targetG : 0;
+    var deltaG = targetG - startG;
+
+    /* Stage 1 / Bloom */
+    if (stageIdx === 0 || /bloom|wet/i.test(titleStr)) {
+      if (finesRisk) {
+        return {
+          tone: 'gentle',
+          shortChip: 'Close & Gentle · Leave Still',
+          badge: 'Close · Leave Still (~3 cm)',
+          guide: 'Wet evenly at ~3 cm without swirling; avoid hard jetting dry pockets to prevent fines migration & channels.',
+          spoken: 'Pour close at 3 centimeters and leave bed still.'
+        };
+      }
+      return {
+        tone: 'swirl',
+        shortChip: 'Gentle Swirl (~3 cm)',
+        badge: 'Close Saturation + Gentle Swirl (~3 cm)',
+        guide: 'Wet evenly at ~3 cm with 1 gentle swirl; avoid hard jetting dry pockets to prevent channels.',
+        spoken: 'Pour close at 3 centimeters with one gentle swirl.'
+      };
+    }
+
+    /* Pure Drawdown / Rest Stage (no active pour mass added) */
+    if (deltaG <= 1 && /drain|drawdown|flat|steep|rest/i.test(titleStr)) {
+      return {
+        tone: 'gentle',
+        shortChip: 'Close & Gentle · No Agitation',
+        badge: 'Leave Still · Zero Agitation',
+        guide: 'Keep spout off and do not stir so fines stay suspended and the bed drains flat without channels.',
+        spoken: 'Do not agitate. Let the bed drain flat.'
+      };
+    }
+
+    /* Final Pour (either last stage, or penultimate stage followed by pure drawdown) */
+    var lastSt = steps[totalStages - 1];
+    var lastIsDrain = totalStages >= 3 && lastSt && ((+lastSt.targetG || 0) - (+lastSt.startG || 0) <= 1) && /drain|drawdown|flat/i.test(String(lastSt.title || ''));
+    var isFinalPour = (stageIdx === totalStages - 1)
+      || (lastIsDrain && stageIdx === totalStages - 2)
+      || /final|finish|last/i.test(titleStr);
+
+    if (isFinalPour) {
+      return {
+        tone: 'gentle',
+        shortChip: 'Close & Gentle · No Agitation',
+        badge: 'Close Center Pour · Zero Agitation (~2 cm)',
+        guide: 'Finish gentle down the center so fines stay suspended and bed drains flat without channels.',
+        spoken: 'Pour close down the center at 2 centimeters with zero agitation.'
+      };
+    }
+
+    /* Main / Mid Pours */
+    if (finesRisk) {
+      return {
+        tone: 'gentle',
+        shortChip: 'Close & Gentle · No Agitation',
+        badge: 'Pour Close & Calm · DO NOT Agitate (~2\u20133 cm)',
+        guide: 'Keep spout low over center; stirring or high pour drives fines migration & channeling.',
+        spoken: 'Pour close and calm at 2 to 3 centimeters. Do not agitate.'
+      };
+    }
+
+    return {
+      tone: 'spiral',
+      shortChip: 'Controlled Spiral (~5\u20136 cm)',
+      badge: 'Steady Spiral · Controlled Agitation (~5\u20136 cm)',
+      guide: 'Medium-flow concentric spiral lifts even sweetness without blasting filter walls.',
+      spoken: 'Steady concentric spiral at 5 to 6 centimeters for even agitation.'
+    };
+  }
+
   /* ==================== 1. AUDIO & VOICE KITCHEN COACH BRIDGE ==================== */
   var _fbAudioCtx = null;
   var AudioCoach = (function () {
@@ -1859,16 +2153,103 @@
       ));
     }
 
-    /* 4. 2-Up Action Cards: At a Coffee Shop + Import Shared Brew */
-    stageEl.appendChild(dom('div', { class: 'bt-door-grid-2up' },
+    /* 3B. High-Visibility My Gear Bar/Card (1-Tap Gear, Grinder, Brewers, Kettle & BLE) */
+    var ownedDoorList = getOwnedBrewersList(a);
+    var waterDoorObj = resolveActiveWaterObj(a);
+    var bleDoor = readBleHardwareSummary();
+    stageEl.appendChild(dom('section', { class: 'bt-card-v6 bt-my-gear-card', id: 'bt-door-my-gear-card' },
+      dom('div', { class: 'bt-my-gear-head' },
+        dom('div', { class: 'bt-my-gear-title-wrap' },
+          ico('sliders', 17),
+          dom('div', null,
+            dom('span', { class: 'bt-kicker', text: 'My Gear & Active Counter' }),
+            dom('div', { class: 'bt-my-gear-sub', text: 'Your grinder, saved brewers, water & Bluetooth hardware' })
+          )
+        ),
+        dom('div', { class: 'bt-my-gear-actions' },
+          dom('button', {
+            type: 'button',
+            id: 'bt-door-my-gear-btn',
+            class: 'bt-chip-v6 bt-chip-accent is-active',
+            style: 'min-height:38px;padding:4px 12px;font-size:0.78rem',
+            onclick: function () {
+              haptic('tick');
+              openSheet('workflow-tools', {}, { detent: 'full', title: 'My Gear & Setup' });
+            }
+          }, ico('sliders', 14), dom('span', { text: 'My Gear' })),
+          dom('button', {
+            type: 'button',
+            id: 'bt-door-pair-ble-btn',
+            class: 'bt-chip-v6 ' + (bleDoor.count > 0 ? 'is-active' : 'bt-chip-soft'),
+            style: 'min-height:38px;padding:4px 11px;font-size:0.76rem',
+            onclick: function () {
+              haptic('tick');
+              openSheet('ble-devices', null, { detent: 'full', title: 'Bluetooth Scales, R2, Omni & Smart Gear' });
+            }
+          }, ico('ble-wave', 14), dom('span', { text: bleDoor.count > 0 ? ('BLE: ' + bleDoor.labels.join(', ')) : 'Pair BLE' }))
+        )
+      ),
+      dom('div', { class: 'bt-my-gear-pills' },
+        dom('button', {
+          type: 'button',
+          class: 'bt-my-gear-stat',
+          onclick: function () { haptic('tick'); goBrewStep('method'); }
+        },
+          dom('span', { class: 'bt-my-gear-stat-lbl', text: 'Grinder' }),
+          dom('strong', { class: 'bt-my-gear-stat-val', text: rec.grinder.short || rec.grinder.name })
+        ),
+        dom('button', {
+          type: 'button',
+          class: 'bt-my-gear-stat',
+          onclick: function () { haptic('tick'); goBrewStep('method'); }
+        },
+          dom('span', { class: 'bt-my-gear-stat-lbl', text: 'Brewers (' + ownedDoorList.length + ' Saved)' }),
+          dom('strong', { class: 'bt-my-gear-stat-val', text: rec.method.short + ' Active' })
+        ),
+        dom('button', {
+          type: 'button',
+          class: 'bt-my-gear-stat',
+          onclick: function () {
+            haptic('tick');
+            openSheet('workflow-tools', {}, { detent: 'full', title: 'My Gear & Setup' });
+          }
+        },
+          dom('span', { class: 'bt-my-gear-stat-lbl', text: 'Kettle & Water' }),
+          dom('strong', { class: 'bt-my-gear-stat-val', text: (waterDoorObj.short || waterDoorObj.label) + (bleDoor.kettle ? ' · Kettle BLE' : '') })
+        )
+      )
+    ));
+
+    /* 4. Quick Studio Launchers: Open Cupping Table + At a Coffee Shop + Import Shared Brew */
+    stageEl.appendChild(dom('div', { class: 'bt-door-grid-launchers' },
+      dom('button', {
+        type: 'button',
+        class: 'bt-door-action-card bt-door-cupping-card',
+        id: 'bt-door-cupping-btn',
+        onclick: function () {
+          haptic('snap');
+          navGoRoute('sca');
+        }
+      },
+        dom('div', { class: 'bt-card-hd', style: 'width:100%' },
+          ico('cupping', 20),
+          dom('span', { class: 'bt-badge-v62 is-good', text: '5-Bowl Blind Table' })
+        ),
+        dom('div', null,
+          dom('b', { style: 'font-size:0.95rem;display:block;color:var(--ink)', text: 'Open Cupping Table' }),
+          dom('span', {
+            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.35;display:block;margin-top:3px',
+            text: 'Side-by-side 5-bowl blind tasting, reveal cards & CVA 100-pt scoring \u2192'
+          })
+        )
+      ),
       dom('button', {
         type: 'button',
         class: 'bt-door-action-card',
         id: 'bt-door-cafe-btn',
         onclick: function () {
           haptic('snap');
-          var sh = getShell();
-          if (sh && typeof sh.go === 'function') sh.go('shop');
+          navGoRoute('shop');
         }
       },
         dom('div', { class: 'bt-card-hd', style: 'width:100%' },
@@ -1911,7 +2292,7 @@
       )
     ));
 
-    /* 5. Compact Quick-Access Utility Strip (Machines, Gear & Cellar) */
+    /* 5. Compact Quick-Access Utility Strip (Machines, Cupping, Gear & Cellar) */
     stageEl.appendChild(dom('div', { class: 'bt-card-v6', style: 'padding:12px 14px;gap:8px' },
       dom('div', { class: 'bt-card-hd' },
         dom('span', { class: 'bt-kicker', text: 'Quick Counter Shortcuts' }),
@@ -1919,10 +2300,15 @@
           type: 'button',
           style: 'font-size:0.76rem;font-weight:700;color:var(--accent)',
           text: 'Open Cellar (' + vaultCoffees.length + ') \u2192',
-          onclick: function () { var sh = getShell(); if (sh && sh.go) sh.go('cellar'); }
+          onclick: function () { navGoRoute('cellar'); }
         }) : null
       ),
       dom('div', { class: 'bt-pill-row' },
+        dom('button', {
+          type: 'button',
+          class: 'bt-chip-v6 bt-chip-soft',
+          onclick: function () { haptic('snap'); navGoRoute('sca'); }
+        }, ico('cupping', 16), dom('span', { text: '5-Bowl Cupping' })),
         dom('button', {
           type: 'button',
           class: 'bt-chip-v6 bt-chip-soft',
@@ -1941,8 +2327,8 @@
         dom('button', {
           type: 'button',
           class: 'bt-chip-v6 bt-chip-soft',
-          onclick: function () { openSheet('workflow-tools', {}, { title: 'My Workflow & Tools', detent: 'half' }); }
-        }, ico('grinder-burr', 16), dom('span', { text: 'My Workflow & Tools' })),
+          onclick: function () { openSheet('workflow-tools', {}, { detent: 'full', title: 'My Gear & Setup' }); }
+        }, ico('sliders', 16), dom('span', { text: 'Edit My Gear' })),
         dom('button', {
           type: 'button',
           id: 'bt-door-backup-saves-btn',
@@ -1953,8 +2339,7 @@
             if (typeof window !== 'undefined' && window.BTBackupCenter && typeof window.BTBackupCenter.open === 'function') {
               window.BTBackupCenter.open();
             } else {
-              var sh = getShell();
-              if (sh && sh.go) sh.go('vault');
+              navGoRoute('vault');
             }
           }
         }, ico('vault', 16), dom('span', { text: 'Backup / Load Saves & Web Link' }))
@@ -1992,45 +2377,225 @@
     var curMethodObj = getMethodObj(a.brew.method);
     var topMatchSet = getTopBeanMatchSet(a.coffee);
     var curGrinder = getActiveGrinderObj(a);
+    var allGrinders = getAllGrindersList();
+    var bleStep2 = readBleHardwareSummary();
     var cName = (a.coffee && a.coffee.name) ? (a.coffee.roaster ? a.coffee.roaster + ' ' + a.coffee.name : a.coffee.name) : 'your active coffee';
+
+    var VIRTUAL_FAMILY_TILES = {
+      cupping: {
+        key: 'cupping', canonicalKey: 'press', defaultStyle: 'press-cup',
+        label: 'SCA Cupping Bowl', short: 'Cupping Bowl', d50AnchorUm: 660, ratio: 18.2,
+        blurb: '1:18.18 crust-break sensory evaluation bowl'
+      },
+      french_cold: {
+        key: 'french_cold', canonicalKey: 'cold', defaultStyle: 'cold-room-20c',
+        label: 'French Press Cold', short: 'French Cold', d50AnchorUm: 950, ratio: 11.0,
+        blurb: 'Overnight plunger carafe cold immersion'
+      }
+    };
+
+    function selectBrewerMethod(m) {
+      var canonKey = m.canonicalKey || m.key;
+      a.brew.method = canonKey;
+      a.brew.methodVariant = m.canonicalKey ? m.key : '';
+      a.brew.style = m.defaultStyle || '';
+      var compatF = getCompatibleFilters(canonKey);
+      if (compatF.length) {
+        a.brew.filter = compatF[0].name;
+        a.brew.filterId = compatF[0].id;
+      }
+      /* Fix 05:1786 — synthesize fresh science recipe unless locked */
+      synthesizeScienceIntoApp(a, canonKey, { force: !isRecipeLockedFor(a, canonKey) });
+      haptic('snap');
+      saveDraft();
+      rerender();
+    }
 
     /* 1. Header */
     stageEl.appendChild(dom('div', { class: 'bt-screen-head' },
       dom('div', null,
-        dom('div', { class: 'bt-screen-kicker', text: 'Step 2 of 5 · Brewer, Filter & Grinder' }),
-        dom('h1', { class: 'bt-screen-title', text: 'Choose your brewer' }),
+        dom('div', { class: 'bt-screen-kicker', text: 'Step 2 of 5 · Gear, Brewer & Filter' }),
+        dom('h1', { class: 'bt-screen-title', text: 'Pick from your gear' }),
         dom('p', {
           class: 'bt-screen-sub',
-          text: 'Selecting a brewer synthesizes a fresh science recipe tailored to ' + cName + '.'
+          text: 'Your grinder and saved brewers come first — every tap tailors a science recipe for ' + cName + '.'
         })
       )
     ));
 
-    /* 2. All 23 Brewers | My Owned Brewers Segmented Toggle */
-    var filterSeg = dom('div', { style: 'display:flex;align-items:center;gap:8px' },
-      dom('div', { class: 'bt-seg-bar', role: 'group', 'aria-label': 'Brewers Filter' },
-        dom('button', {
-          type: 'button',
-          'aria-pressed': String(filterMode !== 'owned'),
-          text: 'All ' + allMethods.length + ' Brewers',
-          onclick: function () { setToolMode('brewersFilter', 'all'); haptic('tick'); rerender(); }
-        }),
-        dom('button', {
-          type: 'button',
-          'aria-pressed': String(filterMode === 'owned'),
-          text: 'My Owned Brewers (' + ownedList.length + ')',
-          onclick: function () { setToolMode('brewersFilter', 'owned'); haptic('tick'); rerender(); }
-        })
+    /* 2. Top "My Gear" Switcher Card (Grinder + Saved Brewers + Cupping + BLE + Catalog Disclosure) */
+    var grinderSelect = dom('select', {
+      class: 'bt-select-v62',
+      id: 'bt-step2-grinder-select',
+      'aria-label': 'Active Coffee Grinder or Pre-Ground Mode',
+      onchange: function (ev) {
+        var gk = normalizeGrinderKey(ev.target.value);
+        a.brew.grinderKey = gk;
+        a.prefs.gear = a.prefs.gear || {};
+        a.prefs.gear.grinderKey = gk;
+        synthesizeScienceIntoApp(a, curMethodObj.key, { keepFilter: true });
+        haptic('tick');
+        saveDraft();
+        rerender();
+      }
+    }, allGrinders.map(function (g) {
+      return dom('option', {
+        value: g.key,
+        selected: g.key === curGrinder.key,
+        text: (g.short || g.name) + (g.group ? ' · ' + g.group : '')
+      });
+    }));
+
+    var savedBrewerObjs = [];
+    var savedSeen = {};
+    ownedList.forEach(function (ok) {
+      var found = allMethods.find(function (m) { return m.key === ok; }) || VIRTUAL_FAMILY_TILES[ok];
+      if (found && !savedSeen[found.key]) {
+        savedSeen[found.key] = 1;
+        savedBrewerObjs.push(found);
+      }
+    });
+    if (!savedSeen[curMethodObj.key] && a.brew.methodVariant !== 'cupping') {
+      savedSeen[curMethodObj.key] = 1;
+      savedBrewerObjs.unshift(curMethodObj);
+    }
+
+    var recPreview = runCurrentSynthesis(a);
+    var cuppingTileObj = VIRTUAL_FAMILY_TILES.cupping;
+    var isCuppingSelected = a.brew.methodVariant === 'cupping' || (curMethodObj.key === 'press' && a.brew.style === 'press-cup');
+
+    stageEl.appendChild(dom('section', { class: 'bt-card-v6 bt-card-hero bt-step2-gear-card', id: 'bt-step2-my-gear-card' },
+      dom('div', { class: 'bt-my-gear-head' },
+        dom('div', { class: 'bt-my-gear-title-wrap' },
+          ico('grinder-burr', 18),
+          dom('div', null,
+            dom('span', { class: 'bt-kicker', text: 'My Gear · Active Setup' }),
+            dom('div', { class: 'bt-my-gear-sub', text: (curGrinder.short || curGrinder.name) + ' · ' + curMethodObj.short })
+          )
+        ),
+        dom('div', { class: 'bt-my-gear-actions' },
+          dom('button', {
+            type: 'button',
+            id: 'bt-step2-edit-gear-btn',
+            class: 'bt-chip-v6 bt-chip-soft',
+            style: 'min-height:36px;padding:4px 10px;font-size:0.76rem',
+            onclick: function () { openSheet('workflow-tools', {}, { detent: 'full', title: 'My Gear & Setup' }); }
+          }, ico('sliders', 14), dom('span', { text: 'Edit My Gear' })),
+          dom('button', {
+            type: 'button',
+            id: 'bt-step2-pair-ble-btn',
+            class: 'bt-chip-v6 ' + (bleStep2.count > 0 ? 'is-active' : 'bt-chip-soft'),
+            style: 'min-height:36px;padding:4px 10px;font-size:0.76rem',
+            onclick: function () { openSheet('ble-devices', null, { detent: 'full', title: 'Bluetooth Scales, R2, Omni & Smart Gear' }); }
+          }, ico('ble-wave', 14), dom('span', { text: bleStep2.count > 0 ? ('BLE (' + bleStep2.count + ')') : 'Pair Bluetooth' }))
+        )
       ),
-      filterMode === 'owned' ? dom('button', {
-        type: 'button',
-        class: 'bt-chip-v6 bt-chip-soft',
-        style: 'min-height:42px;padding:0 11px;font-size:0.76rem',
-        text: 'Edit Owned',
-        onclick: function () { openSheet('edit-owned-brewers', {}, { title: 'My Kitchen Counter Brewers', detent: 'half' }); }
-      }) : null
-    );
-    stageEl.appendChild(filterSeg);
+
+      dom('div', { style: 'display:flex;flex-direction:column;gap:5px;min-width:0;max-width:100%;width:100%' },
+        dom('label', {
+          for: 'bt-step2-grinder-select',
+          style: 'font-size:0.74rem;font-weight:700;color:var(--ink-secondary)',
+          text: 'Active Grinder (' + allGrinders.length + ' models + Pre-Ground Rescue)'
+        }),
+        grinderSelect
+      ),
+
+      recPreview.pregroundInfo ? dom('div', {
+        style: 'padding:9px 11px;border-radius:12px;background:var(--accent-soft);color:var(--ink);font-size:0.78rem;line-height:1.38'
+      },
+        dom('b', { style: 'color:var(--accent)', text: 'Pre-Ground Rescue Active: ' }),
+        dom('span', { text: recPreview.pregroundInfo.note })
+      ) : null,
+
+      dom('div', { style: 'display:flex;flex-direction:column;gap:7px;min-width:0;max-width:100%;width:100%' },
+        dom('div', { class: 'bt-card-hd', style: 'min-width:0;max-width:100%;flex-wrap:wrap' },
+          dom('span', { class: 'bt-kicker', text: 'My Saved Brewers (' + savedBrewerObjs.length + ')' }),
+          dom('button', {
+            type: 'button',
+            style: 'font-size:0.75rem;font-weight:700;color:var(--accent)',
+            text: 'Edit Saved Brewers \u2192',
+            onclick: function () { openSheet('edit-owned-brewers', {}, { title: 'My Kitchen Counter Brewers', detent: 'half' }); }
+          })
+        ),
+        dom('div', { class: 'bt-step2-brewer-chips', role: 'radiogroup', 'aria-label': 'My Saved Brewers' },
+          savedBrewerObjs.map(function (m) {
+            var canonKey = m.canonicalKey || m.key;
+            var isSelected = a.brew.methodVariant
+              ? a.brew.methodVariant === m.key
+              : (!m.canonicalKey && m.key === curMethodObj.key);
+            var matchRank = topMatchSet[m.key] || 0;
+            return dom('button', {
+              type: 'button',
+              class: 'bt-chip-v6 bt-step2-saved-brewer-chip' + (isSelected ? ' is-active' : ''),
+              'data-brewer-key': m.key,
+              'aria-pressed': String(isSelected),
+              onclick: function () { selectBrewerMethod(m); }
+            },
+              brewerIco(canonKey, 17),
+              dom('span', { text: m.short || m.label }),
+              matchRank ? dom('span', { class: 'bt-top-match-badge', style: 'margin-top:0', text: 'Match' }) : null
+            );
+          })
+        )
+      ),
+
+      /* Quick Immersion & Cupping Strip + 5-Bowl Blind Cupping Table Shortcut */
+      dom('div', { class: 'bt-step2-cupping-strip' },
+        dom('div', { class: 'bt-card-hd' },
+          dom('span', { class: 'bt-kicker', text: 'Quick Immersion & Cupping' }),
+          dom('button', {
+            type: 'button',
+            id: 'bt-step2-open-cupping-btn',
+            class: 'bt-step2-cupping-link',
+            onclick: function () { haptic('snap'); navGoRoute('sca'); }
+          }, ico('cupping', 14), dom('span', { text: 'Open 5-Bowl Blind Cupping Table \u2192' }))
+        ),
+        dom('div', { class: 'bt-step2-brewer-chips' },
+          dom('button', {
+            type: 'button',
+            class: 'bt-chip-v6 bt-step2-saved-brewer-chip' + (isCuppingSelected ? ' is-active' : ''),
+            'data-brewer-key': 'cupping',
+            'aria-pressed': String(isCuppingSelected),
+            onclick: function () { selectBrewerMethod(cuppingTileObj); }
+          },
+            brewerIco('press', 17),
+            dom('span', { text: 'SCA Cupping Bowl (1:18.2)' })
+          ),
+          ['aeropress', 'switch', 'clever', 'press'].map(function (qk) {
+            if (savedSeen[qk]) return null;
+            var qm = allMethods.find(function (m) { return m.key === qk; });
+            if (!qm) return null;
+            var qOn = !a.brew.methodVariant && qm.key === curMethodObj.key;
+            return dom('button', {
+              type: 'button',
+              class: 'bt-chip-v6 bt-chip-soft bt-step2-saved-brewer-chip' + (qOn ? ' is-active' : ''),
+              'data-brewer-key': qm.key,
+              'aria-pressed': String(qOn),
+              onclick: function () { selectBrewerMethod(qm); }
+            }, brewerIco(qm.key, 17), dom('span', { text: qm.short || qm.label }));
+          })
+        )
+      ),
+
+      /* Clean Disclosure Toggle for All 23 Brewers */
+      dom('div', { class: 'bt-step2-catalog-bar' },
+        dom('button', {
+          type: 'button',
+          id: 'bt-step2-catalog-toggle-btn',
+          class: 'bt-chip-v6 bt-chip-soft bt-step2-catalog-toggle',
+          'aria-expanded': String(_step2CatalogOpen),
+          onclick: function () {
+            _step2CatalogOpen = !_step2CatalogOpen;
+            if (_step2CatalogOpen && filterMode === 'owned') setToolMode('brewersFilter', 'all');
+            haptic('tick');
+            rerender();
+          }
+        },
+          ico('brew', 16),
+          dom('span', { text: _step2CatalogOpen ? ('Hide Full Catalog (' + allMethods.length + ' Brewers) \u25B4') : ('Show All ' + allMethods.length + ' Brewers \u25BE') })
+        )
+      )
+    ));
 
     /* 3. Inline Sub-Mode / Technique Pill Row for Selected Brewer (Single Horizontal Scroll Row!) */
     var subModes = getSubModesFor(curMethodObj.key);
@@ -2038,7 +2603,7 @@
       var curStyle = a.brew.style || subModes[0].id;
       stageEl.appendChild(dom('div', { class: 'bt-card-v6', style: 'padding:12px 14px;gap:8px' },
         dom('div', { class: 'bt-card-hd' },
-          dom('span', { class: 'bt-kicker', text: curMethodObj.label + ' Technique / Protocol' }),
+          dom('span', { class: 'bt-kicker', text: (isCuppingSelected ? 'SCA Cupping Bowl' : curMethodObj.label) + ' Technique / Protocol' }),
           dom('span', { style: 'font-size:0.72rem;color:var(--ink-muted)', text: 'Swipe row \u2192' })
         ),
         dom('div', { class: 'bt-submode-strip', role: 'radiogroup', 'aria-label': 'Brewing technique sub-mode' },
@@ -2063,99 +2628,98 @@
       ));
     }
 
-    /* 4. 4 Clear Physics Families Grid */
-    var VIRTUAL_FAMILY_TILES = {
-      cupping: {
-        key: 'cupping', canonicalKey: 'press', defaultStyle: 'press-cup',
-        label: 'SCA Cupping Bowl', short: 'Cupping Bowl', d50AnchorUm: 660, ratio: 18.2,
-        blurb: '1:18.18 crust-break sensory evaluation bowl'
-      },
-      french_cold: {
-        key: 'french_cold', canonicalKey: 'cold', defaultStyle: 'cold-room-20c',
-        label: 'French Press Cold', short: 'French Cold', d50AnchorUm: 950, ratio: 11.0,
-        blurb: 'Overnight plunger carafe cold immersion'
-      }
-    };
-    var placed = {};
-    FAMILY_DEFS_4.forEach(function (fam) {
-      var items = [];
-      fam.keys.forEach(function (k) {
-        var found = allMethods.find(function (m) { return m.key === k; }) || VIRTUAL_FAMILY_TILES[k];
-        if (found && !placed[found.key]) {
-          placed[found.key] = 1;
-          items.push(found);
-        }
-      });
-      /* Catch any remaining custom methods matching family */
-      if (fam.id === 'pourover') {
-        allMethods.forEach(function (m) {
-          if (!placed[m.key] && m.type === 'flow' && m.key !== 'phin' && m.key !== 'cold_drip') {
-            placed[m.key] = 1; items.push(m);
-          }
-        });
-      }
-
-      var visible = filterMode === 'owned'
-        ? items.filter(function (m) {
-            var ck = m.canonicalKey || m.key;
-            return ownedList.indexOf(m.key) >= 0 || ownedList.indexOf(ck) >= 0 || ck === curMethodObj.key;
-          })
-        : items;
-      if (!visible.length) return;
-
-      stageEl.appendChild(dom('section', { class: 'bt-card-v6' },
-        dom('div', null,
-          dom('div', { class: 'bt-kicker', text: fam.title }),
-          lens !== 'scientist' ? dom('p', { class: 'bt-subcopy', style: 'font-size:0.78rem;margin-top:2px', text: fam.sub }) : null
-        ),
-        dom('div', { class: 'bt-brewer-grid-v62', role: 'radiogroup', 'aria-label': fam.title },
-          visible.map(function (m) {
-            var canonKey = m.canonicalKey || m.key;
-            var isSelected = a.brew.methodVariant
-              ? a.brew.methodVariant === m.key
-              : (!m.canonicalKey && m.key === curMethodObj.key);
-            var matchRank = topMatchSet[m.key] || 0;
-            var subText = lens === 'scientist'
-              ? ('D50 ~' + (m.d50AnchorUm || 550) + ' µm · 1:' + (m.ratio || 16))
-              : (m.blurb ? m.blurb.replace(/\s*\([^)]*\)?/g, '').split(/[.;]/)[0].trim() : ('1:' + (m.ratio || 16) + ' target'));
-
-            return dom('button', {
-              type: 'button',
-              class: 'bt-brewer-tile-v62' + (isSelected ? ' is-active' : ''),
-              'data-brewer-key': m.key,
-              'aria-pressed': String(isSelected),
-              onclick: function () {
-                a.brew.method = canonKey;
-                a.brew.methodVariant = m.canonicalKey ? m.key : '';
-                a.brew.style = m.defaultStyle || '';
-                var compatF = getCompatibleFilters(canonKey);
-                if (compatF.length) {
-                  a.brew.filter = compatF[0].name;
-                  a.brew.filterId = compatF[0].id;
-                }
-                /* Fix 05:1786 — synthesize fresh science recipe unless locked */
-                synthesizeScienceIntoApp(a, canonKey, { force: !isRecipeLockedFor(a, canonKey) });
-                haptic('snap');
-                saveDraft();
-                rerender();
-              }
-            },
-              brewerIco(canonKey, 22),
-              dom('div', { style: 'min-width:0;flex:1' },
-                dom('span', { class: 'bt-brewer-tile-title', text: m.short || m.label }),
-                dom('span', { class: 'bt-brewer-tile-sub', text: subText }),
-                matchRank ? dom('span', { class: 'bt-top-match-badge', text: 'Top Bean Match' }) : null
-              )
-            );
+    /* 4. Full 23-Brewer 4-Family Catalog (Only expanded on user disclosure!) */
+    if (_step2CatalogOpen) {
+      var catalogFilterRow = dom('div', { style: 'display:flex;align-items:center;gap:8px' },
+        dom('div', { class: 'bt-seg-bar', role: 'group', 'aria-label': 'Brewers Filter' },
+          dom('button', {
+            type: 'button',
+            'aria-pressed': String(filterMode !== 'owned'),
+            text: 'All ' + allMethods.length + ' Brewers',
+            onclick: function () { setToolMode('brewersFilter', 'all'); haptic('tick'); rerender(); }
+          }),
+          dom('button', {
+            type: 'button',
+            'aria-pressed': String(filterMode === 'owned'),
+            text: 'Only Saved (' + ownedList.length + ')',
+            onclick: function () { setToolMode('brewersFilter', 'owned'); haptic('tick'); rerender(); }
           })
         )
-      ));
-    });
+      );
+      stageEl.appendChild(catalogFilterRow);
 
-    /* 5. Clean Inline Filter (68 retail filters), Grinder (52+ grinders + Pre-Ground) & Water Profile */
+      var placed = {};
+      FAMILY_DEFS_4.forEach(function (fam) {
+        var items = [];
+        fam.keys.forEach(function (k) {
+          var found = allMethods.find(function (m) { return m.key === k; }) || VIRTUAL_FAMILY_TILES[k];
+          if (found && !placed[found.key]) {
+            placed[found.key] = 1;
+            items.push(found);
+          }
+        });
+        if (fam.id === 'pourover') {
+          allMethods.forEach(function (m) {
+            if (!placed[m.key] && m.type === 'flow' && m.key !== 'phin' && m.key !== 'cold_drip') {
+              placed[m.key] = 1; items.push(m);
+            }
+          });
+        }
+
+        var visible = filterMode === 'owned'
+          ? items.filter(function (m) {
+              var ck = m.canonicalKey || m.key;
+              return ownedList.indexOf(m.key) >= 0 || ownedList.indexOf(ck) >= 0 || ck === curMethodObj.key || m.key === 'cupping';
+            })
+          : items;
+        if (!visible.length) return;
+
+        stageEl.appendChild(dom('section', { class: 'bt-card-v6' },
+          dom('div', { class: 'bt-card-hd' },
+            dom('div', null,
+              dom('div', { class: 'bt-kicker', text: fam.title }),
+              lens !== 'scientist' ? dom('p', { class: 'bt-subcopy', style: 'font-size:0.78rem;margin-top:2px', text: fam.sub }) : null
+            ),
+            fam.id === 'immersion' ? dom('button', {
+              type: 'button',
+              class: 'bt-step2-cupping-link',
+              onclick: function () { haptic('snap'); navGoRoute('sca'); }
+            }, dom('span', { text: '5-Bowl Cupping Table \u2192' })) : null
+          ),
+          dom('div', { class: 'bt-brewer-grid-v62', role: 'radiogroup', 'aria-label': fam.title },
+            visible.map(function (m) {
+              var canonKey = m.canonicalKey || m.key;
+              var isSelected = a.brew.methodVariant
+                ? a.brew.methodVariant === m.key
+                : (!m.canonicalKey && m.key === curMethodObj.key);
+              var matchRank = topMatchSet[m.key] || 0;
+              var subText = lens === 'scientist'
+                ? ('D50 ~' + (m.d50AnchorUm || 550) + ' µm · 1:' + (m.ratio || 16))
+                : (m.blurb ? m.blurb.replace(/\s*\([^)]*\)?/g, '').split(/[.;]/)[0].trim() : ('1:' + (m.ratio || 16) + ' target'));
+
+              return dom('button', {
+                type: 'button',
+                class: 'bt-brewer-tile-v62' + (isSelected ? ' is-active' : ''),
+                'data-brewer-key': m.key,
+                'aria-pressed': String(isSelected),
+                onclick: function () { selectBrewerMethod(m); }
+              },
+                brewerIco(canonKey, 22),
+                dom('div', { style: 'min-width:0;flex:1' },
+                  dom('span', { class: 'bt-brewer-tile-title', text: m.short || m.label }),
+                  dom('span', { class: 'bt-brewer-tile-sub', text: subText }),
+                  matchRank ? dom('span', { class: 'bt-top-match-badge', text: 'Top Bean Match' }) : null
+                )
+              );
+            })
+          )
+        ));
+      });
+    }
+
+    /* 5. Clean Inline Filter (68 retail filters) & Water Profile */
     var compatFilters = getCompatibleFilters(curMethodObj.key);
     var curFilterName = a.brew.filter || (compatFilters[0] && compatFilters[0].name) || 'Standard Filter';
-    var allGrinders = getAllGrindersList();
 
     var filterSelect = dom('select', {
       class: 'bt-select-v62',
@@ -2178,55 +2742,17 @@
       });
     }));
 
-    var grinderSelect = dom('select', {
-      class: 'bt-select-v62',
-      'aria-label': 'Active Coffee Grinder or Pre-Ground Mode',
-      onchange: function (ev) {
-        var gk = normalizeGrinderKey(ev.target.value);
-        a.brew.grinderKey = gk;
-        a.prefs.gear = a.prefs.gear || {};
-        a.prefs.gear.grinderKey = gk;
-        synthesizeScienceIntoApp(a, curMethodObj.key, { keepFilter: true });
-        haptic('tick');
-        saveDraft();
-        rerender();
-      }
-    }, allGrinders.map(function (g) {
-      return dom('option', {
-        value: g.key,
-        selected: g.key === curGrinder.key,
-        text: (g.short || g.name) + (g.group ? ' · ' + g.group : '')
-      });
-    }));
-
     var recNow = runCurrentSynthesis(a);
 
     stageEl.appendChild(dom('section', { class: 'bt-card-v6' },
       dom('div', { class: 'bt-card-hd' },
-        dom('span', { class: 'bt-kicker', text: 'Filter, Grinder & Brew Water' }),
-        dom('button', {
-          type: 'button',
-          class: 'bt-chip-v6 bt-chip-soft',
-          style: 'min-height:36px;padding:4px 10px;font-size:0.76rem',
-          onclick: function () { openSheet('workflow-tools', {}, { title: 'My Workflow & Tools', detent: 'half' }); }
-        }, ico('grinder-burr', 14), dom('span', { text: 'My Workflow & Tools' }))
+        dom('span', { class: 'bt-kicker', text: 'Filter Medium & Brew Water' }),
+        dom('span', { class: 'bt-badge-v62 is-muted', text: compatFilters.length + ' compatible filters' })
       ),
-      dom('div', { class: 'bt-gear-inline-grid' },
-        dom('div', { style: 'display:flex;flex-direction:column;gap:5px' },
-          dom('label', { style: 'font-size:0.74rem;font-weight:700;color:var(--ink-secondary)', text: 'Filter Medium (' + compatFilters.length + ' compatible)' }),
-          filterSelect
-        ),
-        dom('div', { style: 'display:flex;flex-direction:column;gap:5px' },
-          dom('label', { style: 'font-size:0.74rem;font-weight:700;color:var(--ink-secondary)', text: 'Grinder (' + allGrinders.length + ' models + Pre-Ground Rescue)' }),
-          grinderSelect
-        )
+      dom('div', { style: 'display:flex;flex-direction:column;gap:5px;min-width:0;max-width:100%;width:100%' },
+        dom('label', { style: 'font-size:0.74rem;font-weight:700;color:var(--ink-secondary)', text: 'Filter Medium' }),
+        filterSelect
       ),
-      recNow.pregroundInfo ? dom('div', {
-        style: 'padding:9px 11px;border-radius:12px;background:var(--accent-soft);color:var(--ink);font-size:0.78rem;line-height:1.38'
-      },
-        dom('b', { style: 'color:var(--accent)', text: 'Pre-Ground Rescue Active: ' }),
-        dom('span', { text: recNow.pregroundInfo.note })
-      ) : null,
       buildEverydayWaterPicker(a)
     ));
 
@@ -2234,7 +2760,7 @@
     stageEl.appendChild(buildStickyCtaBar({
       id: 'bt-method-build-recipe-cta',
       label: 'Build Science Recipe \u2192',
-      sub: curMethodObj.label + ' · ' + (curGrinder.short || curGrinder.name) + ' · ' + recNow.doseG + ' g : ' + recNow.waterG + ' g',
+      sub: (isCuppingSelected ? 'SCA Cupping Bowl' : curMethodObj.label) + ' · ' + (curGrinder.short || curGrinder.name) + ' · ' + recNow.doseG + ' g : ' + recNow.waterG + ' g',
       onClick: function () {
         haptic('snap');
         goBrewStep('brew');
@@ -3235,7 +3761,8 @@
       ? ((a.coffee.roaster ? a.coffee.roaster + ' · ' : '') + a.coffee.name)
       : 'Science-Synthesized Baseline';
 
-    /* 1. Screen Header + 1-Tap °F / °C Toggle */
+    /* 1. Screen Header + 1-Tap °F / °C Toggle + Step 2 Gear Context Strip */
+    var step3Water = resolveActiveWaterObj(a);
     stageEl.appendChild(dom('div', { class: 'bt-screen-head' },
       dom('div', null,
         dom('div', { class: 'bt-screen-kicker', text: 'Step 3 of 5 · Scannable Recipe' }),
@@ -3254,6 +3781,18 @@
           rerender();
         }
       }, dom('span', { text: tempUnit === 'F' ? '°F / °C' : '°C / °F' }))
+    ));
+
+    stageEl.appendChild(dom('div', { class: 'bt-step-context-strip' },
+      dom('span', {
+        class: 'bt-step-context-copy',
+        text: (rec.grinder.short || rec.grinder.name) + ' · ' + (a.brew.filter || 'Standard Filter') + ' · ' + (step3Water.short || step3Water.label)
+      }),
+      dom('button', {
+        type: 'button',
+        class: 'bt-step-context-link',
+        onclick: function () { haptic('tick'); goBrewStep('method'); }
+      }, dom('span', { text: 'Change Gear \u2192' }))
     ));
 
     /* Customized / Locked Banner */
@@ -3475,20 +4014,20 @@
       }, ico('qr-passport', 15), dom('span', { text: 'Share QR Passport' }))
     );
 
-    /* 4. Kettle Fill Banner + 1-Tap BLE Kettle Target Sync Pill (#bt-step3-kettle-ble-btn) */
+    /* 4. Top-of-Card Kettle Warm Target (#bt-step3-kettle-fill-pill) + 1-Tap BLE Kettle Target Sync Pill (#bt-step3-kettle-ble-btn) */
     if (stageEl._kettleBleCleanup) {
       try { stageEl._kettleBleCleanup(); } catch (e) {}
       stageEl._kettleBleCleanup = null;
     }
-    var kettleBanner = null;
+    var kettleBleBtn = null;
     if (!isPhilips && rec.method.key !== 'cold' && rec.method.key !== 'cold_drip') {
       var tempDisplay = tempUnit === 'F' ? (rec.tempF + ' \u00B0F') : (rec.tempC + ' \u00B0C');
       var kettleBleTxtEl = dom('span', { text: 'Pair BLE Kettle' });
-      var kettleBleBtn = dom('button', {
+      kettleBleBtn = dom('button', {
         type: 'button',
         id: 'bt-step3-kettle-ble-btn',
         class: 'bt-chip-v6 bt-chip-soft',
-        style: 'min-height:32px;padding:0 10px;font-size:0.74rem;font-weight:800',
+        style: 'min-height:34px;padding:0 10px;font-size:0.74rem;font-weight:800',
         onclick: function () {
           var ble = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
           if (!ble) {
@@ -3572,25 +4111,15 @@
           try { window.removeEventListener('bt-ble-kettle', onKettleEvt); } catch (e) {}
         }
       };
-
-      kettleBanner = dom('div', { class: 'bt-kettle-banner' },
-        dom('span', null,
-          ico('kettle-gooseneck', 16), ' Heat in kettle: ',
-          dom('b', { class: 'bt-num', text: rec.kettleG + ' g' }),
-          ' (includes ' + (rec.usesPaper ? 'paper rinse + ' : '') + 'thermal stability margin)'
-        ),
-        dom('span', { style: 'display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap' },
-          kettleBleBtn,
-          lens === 'scientist' ? dom('span', { class: 'bt-badge-v62 is-sci', text: 'Smrke CO2 · Darcy' }) : null
-        )
-      );
     }
 
+    var kettleWarmHero = buildKettleWarmBanner(a, rec, 'bt-step3-kettle-fill-pill', kettleBleBtn, null);
+
     stageEl.appendChild(dom('section', { class: 'bt-card-v6 bt-card-hero' },
+      kettleWarmHero,
       tiles6,
       heroScienceBtn,
-      actionStrip,
-      kettleBanner
+      actionStrip
     ));
 
     /* 5. Smart Machine Native Consoles when selected */
@@ -3642,20 +4171,35 @@
       stageEl.appendChild(buildXBloomConsoleCard(a, rec, function () { saveDraft(); rerender(); }));
     }
 
-    /* 6. Plain-English Pour Schedule List */
-    stageEl.appendChild(dom('section', { class: 'bt-card-v6' },
+    /* 6. Plain-English Pour Schedule List (with Spout Height & Anti-Channeling Technique) */
+    stageEl.appendChild(dom('section', { class: 'bt-card-v6', id: 'bt-step3-pour-schedule' },
       dom('div', { class: 'bt-card-hd' },
-        dom('span', { class: 'bt-kicker', text: 'Plain-English Pour Schedule' }),
+        dom('span', { class: 'bt-kicker', text: 'Plain-English Pour Schedule & Anti-Channeling' }),
         dom('span', { style: 'font-size:0.74rem;color:var(--ink-muted)', text: rec.steps.length + ' guided steps' })
       ),
       dom('div', { class: 'bt-pour-schedule' },
-        rec.steps.map(function (s) {
+        rec.steps.map(function (s, sIdx) {
+          var cue = computePourAgitationCue(s, sIdx, rec.steps.length, {
+            a: a,
+            rec: rec,
+            coffee: a.coffee,
+            methodKey: rec.method.key,
+            styleId: a.brew.style,
+            steps: rec.steps
+          });
           return dom('div', { class: 'bt-pour-row' },
             dom('span', { class: 'bt-pour-time', text: fmtClock(s.t, false) }),
-            dom('div', { style: 'min-width:0' },
+            dom('div', { style: 'min-width:0;display:flex;flex-direction:column;gap:4px' },
               dom('b', { style: 'font-size:0.86rem;display:block;color:var(--ink)', text: s.title }),
               dom('span', { style: 'font-size:0.78rem;color:var(--ink-secondary);line-height:1.36;display:block', text: s.human }),
-              lens === 'scientist' && s.scientist ? dom('span', { style: 'font-size:0.71rem;color:var(--science);display:block;margin-top:2px', text: s.scientist }) : null
+              dom('div', { class: 'bt-agitation-row' },
+                dom('span', {
+                  class: 'bt-agitation-pill is-' + cue.tone,
+                  text: 'Anti-Channeling: ' + cue.shortChip
+                }),
+                dom('span', { class: 'bt-agitation-guide', text: cue.badge + ' \u2014 ' + cue.guide })
+              ),
+              lens === 'scientist' && s.scientist ? dom('span', { style: 'font-size:0.71rem;color:var(--science);display:block;margin-top:1px', text: s.scientist }) : null
             ),
             dom('span', { class: 'bt-pour-gram', text: s.targetG + ' g' })
           );
@@ -4345,6 +4889,12 @@
       ),
       audioBodyEl
     );
+
+    /* 0. Top Prepare & Kettle Warm Card (#bt-step4-kettle-fill-pill) */
+    var step4KettleCard = buildKettleWarmBanner(a, rec, 'bt-step4-kettle-fill-pill', null, null);
+    step4KettleCard.classList.add('is-step4-compact');
+    container.appendChild(step4KettleCard);
+
     container.appendChild(audioBar);
 
     /* 2. FULL-WIDTH STADIUM KITCHEN STOPWATCH (#bt-timer-giant-clock) + LIVE APPROX GRAMS PACER (#bt-timer-approx-grams-hero) + Collapsible BTChronoDial */
@@ -4488,6 +5038,31 @@
       approxGramsMainEl,
       approxGramsSubEl,
       approxGramsTrackEl
+    );
+
+    /* 2A-2. Live Pour Height, Agitation & Anti-Channeling Cue Banner (#bt-timer-agitation-cue) */
+    var initCue0 = computePourAgitationCue(steps[0] || { title: 'Pour' }, 0, Math.max(1, steps.length), {
+      a: a, rec: rec, coffee: a.coffee, methodKey: rec.method.key, styleId: a.brew.style, steps: steps
+    });
+    var agitCueChipEl = dom('span', {
+      class: 'bt-agitation-pill is-' + initCue0.tone,
+      id: 'bt-timer-agitation-chip',
+      text: initCue0.badge
+    });
+    var agitCueGuideEl = dom('div', {
+      class: 'bt-timer-agitation-guide',
+      id: 'bt-timer-agitation-guide',
+      text: initCue0.guide
+    });
+    var agitCueBannerEl = dom('div', {
+      class: 'bt-timer-agitation-cue is-' + initCue0.tone,
+      id: 'bt-timer-agitation-cue'
+    },
+      dom('div', { class: 'bt-timer-agitation-top' },
+        dom('span', { class: 'bt-kicker', text: 'Pour Height & Anti-Channeling' }),
+        agitCueChipEl
+      ),
+      agitCueGuideEl
     );
 
     var dialPhases = steps.map(function (s) {
@@ -4762,6 +5337,7 @@
     },
       giantHeroEl,
       approxGramsHeroEl,
+      agitCueBannerEl,
       dialWrapEl,
       dom('div', { class: 'bt-timer-dial-rhs' },
         lockedBannerEl,
@@ -4784,6 +5360,9 @@
       hidden: isAllStepsCollapsed
     },
       steps.map(function (st, idx) {
+        var stepCue = computePourAgitationCue(st, idx, steps.length, {
+          a: a, rec: rec, coffee: a.coffee, methodKey: rec.method.key, styleId: a.brew.style, steps: steps
+        });
         return dom('button', {
           type: 'button',
           class: 'bt-pour-row',
@@ -4800,7 +5379,10 @@
           }
         },
           dom('span', { class: 'bt-pour-time', text: fmtClock(st.t, false) }),
-          dom('span', { style: 'font-size:0.82rem;font-weight:700;color:var(--ink)', text: st.title }),
+          dom('div', { style: 'min-width:0;display:flex;flex-direction:column;gap:3px' },
+            dom('span', { style: 'font-size:0.82rem;font-weight:700;color:var(--ink)', text: st.title }),
+            dom('span', { class: 'bt-agitation-pill is-' + stepCue.tone, text: stepCue.shortChip })
+          ),
           dom('span', { class: 'bt-pour-gram', text: st.targetG + ' g' })
         );
       })
@@ -4912,13 +5494,16 @@
       var prevCueG = stCue.startG != null ? +stCue.startG : (idx > 0 && steps[idx - 1] ? (+steps[idx - 1].targetG || 0) : 0);
       var tgtCueG = Math.round(stCue.targetG != null ? +stCue.targetG : rec.hotPourG);
       var deltaCueG = tgtCueG - prevCueG;
+      var agitCue = computePourAgitationCue(stCue, idx, steps.length, {
+        a: a, rec: rec, coffee: a.coffee, methodKey: rec.method.key, styleId: a.brew.style, steps: steps
+      });
       if (gramCalloutSec > 0 && AudioCoach.mode() !== 'silent') {
         var stepSpeech = deltaCueG > 1
-          ? ('Step ' + (idx + 1) + ', ' + stCue.title + '. Pour steadily to about ' + tgtCueG + ' grams.')
-          : ('Step ' + (idx + 1) + ', ' + stCue.title + '. Hold at about ' + tgtCueG + ' grams and let drain.');
+          ? ('Step ' + (idx + 1) + ', ' + stCue.title + '. Pour to about ' + tgtCueG + ' grams. ' + agitCue.spoken)
+          : ('Step ' + (idx + 1) + ', ' + stCue.title + '. Hold at about ' + tgtCueG + ' grams. ' + agitCue.spoken);
         speakGramCoach(stepSpeech);
       } else {
-        AudioCoach.speak(stCue.say || ('Pour steadily to ' + tgtCueG + ' grams.'));
+        AudioCoach.speak((stCue.say || ('Pour steadily to ' + tgtCueG + ' grams.')) + ' ' + agitCue.spoken);
       }
       haptic('snap');
     }
@@ -5178,6 +5763,18 @@
       stepSayEl.textContent = isOvertime && !_timerSession.stopped
         ? 'Past target time — tap Stop Brew (Done) the moment your bed finishes draining.'
         : (curSt.human || curSt.say || '');
+
+      var liveAgitCue = _timerSession.stopped
+        ? { tone: 'gentle', badge: 'Brew Complete · Do Not Disturb Bed', guide: 'Tap Finish & Rate This Cup when ready.' }
+        : (isOvertime
+          ? { tone: 'gentle', badge: 'Drawdown · Zero Agitation', guide: 'Leave bed still to avoid pushing bitter fines through; stop timer when bed drains flat.' }
+          : computePourAgitationCue(curSt, curIdx, Math.max(1, steps.length), {
+              a: a, rec: rec, coffee: a.coffee, methodKey: rec.method.key, styleId: a.brew.style, steps: steps
+            }));
+      agitCueBannerEl.className = 'bt-timer-agitation-cue is-' + liveAgitCue.tone;
+      agitCueChipEl.className = 'bt-agitation-pill is-' + liveAgitCue.tone;
+      agitCueChipEl.textContent = liveAgitCue.badge;
+      agitCueGuideEl.textContent = liveAgitCue.guide;
       stepNextNameEl.textContent = nextSt ? ('Up next: ' + nextSt.title + ' (' + nextSt.targetG + ' g)') : 'When bed is flat: tap Stop Brew (Done)';
       stepCountdownEl.textContent = _timerSession.stopped
         ? ('Locked at ' + fmtClock(elS, false))

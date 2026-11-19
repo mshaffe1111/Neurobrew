@@ -1048,7 +1048,9 @@
 
     wrap.appendChild(S.h('div', { class: 'bt-tc-pill-scroll', role: 'group', 'aria-label': 'Journal filter chips' },
       [
-        ['all',     'All Brews'],
+        ['all',     'All Logs'],
+        ['dialed',  'Dialed'],
+        ['cupping', 'Cupping Table'],
         ['gems',    '4.5+ Gems'],
         ['locked',  'Locked Gold'],
         ['dialing', 'Needs Dial-In'],
@@ -1073,6 +1075,12 @@
           ui.journalSort = ui.journalSort === 'newest' ? 'best' : (ui.journalSort === 'best' ? 'coffee' : 'newest');
           repaint();
         }
+      }),
+      S.h('button', {
+        type: 'button',
+        class: 'bt-tc-pill is-compact is-copper',
+        text: '5-Bowl Cupping \u2192',
+        onclick: function () { S.navGo('sca'); }
       })
     ));
 
@@ -1185,6 +1193,9 @@
       if (!r) return false;
       var st = parseFloat(r.my_rating_stars) || 0;
       var mk = String(r.brew_method || '').toLowerCase();
+      var sk = String(r.score_kind || '').toLowerCase();
+      if (ui.journalFilter === 'dialed' && !(r.dial_locked === 'yes' || r.dial_locked === '1' || st >= 4.25)) return false;
+      if (ui.journalFilter === 'cupping' && mk !== 'cupping' && sk !== 'cva_affective') return false;
       if (ui.journalFilter === 'gems' && st < 4.5) return false;
       if (ui.journalFilter === 'locked' && r.dial_locked !== 'yes' && r.dial_locked !== '1') return false;
       if (ui.journalFilter === 'dialing' && (st >= 4.25 || r.dial_locked === 'yes')) return false;
@@ -1220,6 +1231,16 @@
       var rClean = (typeof unneutralize === 'function' ? unneutralize(r.roaster || '') : r.roaster) || '';
       var inCmp = ui.compareIdxs.indexOf(rIdx) >= 0;
       var isLocked = r.dial_locked === 'yes' || r.dial_locked === '1';
+      var starsNum = parseFloat(r.my_rating_stars) || 0;
+      var rawSca = parseFloat(r.total_score);
+      var scaNum = (isFinite(rawSca) && rawSca > 0)
+        ? rawSca
+        : (starsNum > 0 ? Math.round((58.0 + ((starsNum - 1.0) / 4.0) * 34.0) * 4) / 4 : 0);
+      var isCupping = String(r.brew_method || '').toLowerCase() === 'cupping' || String(r.score_kind || '').toLowerCase() === 'cva_affective';
+      var flavorTags = String((typeof unneutralize === 'function' ? unneutralize(r.flavors_liked || '') : r.flavors_liked) || '')
+        .split(/[;,|]/).map(function (s) {
+          return s.trim().replace(/\b[a-z]/g, function (ch) { return ch.toUpperCase(); });
+        }).filter(Boolean).slice(0, 4);
 
       wrap.appendChild(S.h('article', {
         class: 'bt-cellar-bag-card',
@@ -1234,11 +1255,23 @@
               S.h('div', { class: 'mono', style: 'font-size:0.78rem;color:var(--ink-secondary)', text: (r.brew_dose_g || '15') + 'g : ' + (r.brew_water_g || '250') + 'g \u00B7 ' + (r.brew_grind_setting || (r.brew_grind_target_um ? r.brew_grind_target_um + ' \u00B5m' : '')) + (r.brew_tds_pct ? (' \u00B7 ' + r.brew_tds_pct + '% TDS') : '') })
             )
           ),
-          S.h('span', {
-            class: 'bt-tc-badge ' + ((parseFloat(r.my_rating_stars) >= 4.5) ? 'is-gold' : 'is-good'),
-            text: r.my_rating_stars ? (r.my_rating_stars + ' / 5') : (r.total_score ? (r.total_score + ' / 100') : 'Logged')
-          })
+          S.h('div', { class: 'bt-journal-score-row' },
+            scaNum > 0 ? S.h('span', {
+              class: 'bt-tc-badge mono ' + (scaNum >= 86 ? 'is-good' : 'is-sci'),
+              text: scaNum.toFixed(1) + ' SCA'
+            }) : null,
+            starsNum > 0 ? S.h('span', {
+              class: 'bt-tc-badge mono ' + (starsNum >= 4.5 ? 'is-gold' : 'is-good')
+            }, S.iconEl('spark-star', { size: 12 }), S.h('span', { text: starsNum.toFixed(1) + ' / 5' })) : null,
+            (scaNum <= 0 && starsNum <= 0) ? S.h('span', { class: 'bt-tc-badge is-soft', text: 'Logged' }) : null
+          )
         ),
+        (isCupping || flavorTags.length > 0) ? S.h('div', { class: 'bt-journal-flavor-row' },
+          isCupping ? S.h('span', { class: 'bt-tc-badge is-sci', text: 'Cupping Table' }) : null,
+          flavorTags.map(function (ft) {
+            return S.h('span', { class: 'bt-tc-badge is-soft', style: 'font-weight:700', text: ft });
+          })
+        ) : null,
         S.h('div', { class: 'bt-tc-pill-scroll' },
           S.h('button', {
             type: 'button',
@@ -2745,20 +2778,32 @@
             S.h('h1', { class: 'bt-tc-title', text: 'Shelf, Trails, Journal & Cafes' }),
             S.h('p', { class: 'bt-tc-sub', text: 'Peak freshness, freezer doses, personal brew journal & 4-step coffee shop logger.' })
           ),
-          S.h('button', {
-            type: 'button',
-            id: 'bt-cellar-backup-saves-btn',
-            class: 'bt-tc-pill is-copper',
-            style: 'align-self:flex-start;min-height:44px;font-weight:800;flex-shrink:0',
-            onclick: function () {
-              S.haptic('snap');
-              if (typeof window !== 'undefined' && window.BTBackupCenter && typeof window.BTBackupCenter.open === 'function') {
-                window.BTBackupCenter.open({ source: 'cellar' });
-              } else {
-                S.openSheetSafe('save-backup-center', { source: 'cellar' }, { title: 'Backup & Load Saves', detent: 'full' });
+          S.h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' },
+            S.h('button', {
+              type: 'button',
+              id: 'bt-cellar-open-sca-btn',
+              class: 'bt-tc-pill is-soft',
+              style: 'min-height:44px;font-weight:800;flex-shrink:0',
+              onclick: function () {
+                S.haptic('snap');
+                S.navGo('sca');
               }
-            }
-          }, S.iconEl('vault-shield', { size: 16 }), S.h('span', { text: 'Backup / Load Saves' }))
+            }, S.iconEl('cafe-cup', { size: 16 }), S.h('span', { text: '5-Bowl Cupping \u2192' })),
+            S.h('button', {
+              type: 'button',
+              id: 'bt-cellar-backup-saves-btn',
+              class: 'bt-tc-pill is-copper',
+              style: 'align-self:flex-start;min-height:44px;font-weight:800;flex-shrink:0',
+              onclick: function () {
+                S.haptic('snap');
+                if (typeof window !== 'undefined' && window.BTBackupCenter && typeof window.BTBackupCenter.open === 'function') {
+                  window.BTBackupCenter.open({ source: 'cellar' });
+                } else {
+                  S.openSheetSafe('save-backup-center', { source: 'cellar' }, { title: 'Backup & Load Saves', detent: 'full' });
+                }
+              }
+            }, S.iconEl('vault-shield', { size: 16 }), S.h('span', { text: 'Backup / Load Saves' }))
+          )
         )
       ));
 

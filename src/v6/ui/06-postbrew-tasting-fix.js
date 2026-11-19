@@ -751,7 +751,8 @@ if (typeof window !== 'undefined') {
       qKey: 'acidity',
       label: 'Acidity (Fruit Brightness)',
       desc: 'Lively fruit snap like peach, berry, or citrus \u2014 not sour stomach acid!',
-      anchors: ['1 Soft / Apple', '3 Juicy Peach / Orange', '5 Zesty Lemon']
+      anchors: ['1 Soft / Apple', '3 Juicy Peach / Orange', '5 Zesty Lemon'],
+      stepLabels: ['Muted', 'Soft', 'Balanced', 'Bright', 'Vivid']
     },
     {
       key: 'sweetness',
@@ -759,7 +760,8 @@ if (typeof window !== 'undefined') {
       qKey: 'sweetness',
       label: 'Sweetness',
       desc: 'Natural honey, caramel, or ripe-fruit smoothness on your tongue.',
-      anchors: ['1 Subtle / Dry', '3 Toasted Almond', '5 Rich Caramel / Honey']
+      anchors: ['1 Subtle / Dry', '3 Toasted Almond', '5 Rich Caramel / Honey'],
+      stepLabels: ['Dry', 'Subtle', 'Round', 'Sweet', 'Caramel']
     },
     {
       key: 'bitterness',
@@ -767,15 +769,17 @@ if (typeof window !== 'undefined') {
       qKey: 'taste',
       label: 'Bitterness',
       desc: 'Dark chocolate, cocoa nib, or roasted edge toward the back of the tongue.',
-      anchors: ['1 None / Clean', '3 Smooth Dark Chocolate', '5 Harsh 85% Cacao / Pith']
+      anchors: ['1 None / Clean', '3 Smooth Dark Chocolate', '5 Harsh 85% Cacao / Pith'],
+      stepLabels: ['None', 'Light', 'Cocoa', 'Dark', 'Harsh']
     },
     {
       key: 'body',
       colInt: 'body_intensity',
       qKey: 'body',
-      label: 'Body / Mouthfeel',
+      label: 'Strength / Body',
       desc: 'Weight and texture on your tongue: light tea vs skim milk vs rich cream.',
-      anchors: ['1 Light Tea / Skim', '3 Smooth Whole Milk', '5 Velvety Syrup']
+      anchors: ['1 Light Tea / Skim', '3 Smooth Whole Milk', '5 Velvety Syrup'],
+      stepLabels: ['Watery', 'Silky', 'Balanced', 'Creamy', 'Syrupy']
     },
     {
       key: 'finish',
@@ -783,7 +787,8 @@ if (typeof window !== 'undefined') {
       qKey: 'aftertaste',
       label: 'Finish (Aftertaste)',
       desc: 'How clean and sweet vs dry or mouth-puckering the flavor lingers after swallowing.',
-      anchors: ['1 Crisp & Clean', '3 Lingering Sweet', '5 Dry / Puckering']
+      anchors: ['1 Crisp & Clean', '3 Lingering Sweet', '5 Dry / Puckering'],
+      stepLabels: ['Short', 'Crisp', 'Clean', 'Lingering', 'Dry / Harsh']
     }
   ];
 
@@ -845,13 +850,31 @@ if (typeof window !== 'undefined') {
   ];
 
   var QUICK_TASTE_SHORTCUTS = [
-    { key: 'sweet',   label: 'Nailed It (Sweet!)', x: 0.00,  y: 0.00,  defStars: 4.50 },
-    { key: 'sour',    label: 'Slightly Sour',      x: -0.35, y: 0.00,  defStars: 3.75 },
-    { key: 'bitter',  label: 'Slightly Bitter',    x: 0.35,  y: 0.00,  defStars: 3.75 },
-    { key: 'weak',    label: 'Too Weak / Watery',  x: 0.00,  y: -0.52, defStars: 3.25 },
-    { key: 'strong',  label: 'Too Strong',         x: 0.00,  y: 0.52,  defStars: 3.50 },
-    { key: 'way_off', label: 'Way Off!',           x: -0.86, y: -0.24, defStars: 2.50 }
+    { key: 'sweet',   label: 'Nailed It (Sweet!)',   hint: 'Sweet, balanced & clean finish',                x: 0.00,  y: 0.00,  defStars: 4.50 },
+    { key: 'sour',    label: 'Too Sour / Sharp',     hint: 'Lemony, tangy, fast finish -> grind finer',     x: -0.42, y: 0.00,  defStars: 3.75 },
+    { key: 'bitter',  label: 'Too Bitter / Dry',     hint: 'Ashy cocoa, dry tongue -> grind coarser',       x: 0.42,  y: 0.00,  defStars: 3.75 },
+    { key: 'weak',    label: 'Weak / Watery',        hint: 'Tea-light, hollow -> less water / higher dose', x: 0.00,  y: -0.52, defStars: 3.25 },
+    { key: 'strong',  label: 'Heavy / Muddy',        hint: 'Overwhelming, thick -> splash more water',      x: 0.00,  y: 0.52,  defStars: 3.50 },
+    { key: 'way_off', label: 'Channeling / Uneven',  hint: 'Both sour & bitter/dry -> even pour & grind',   x: -0.72, y: 0.34,  defStars: 2.75 }
   ];
+
+  var FLAVOR_TAB_SHORT_LABELS = [
+    'Fruity',
+    'Floral & Tea',
+    'Caramel & Sweet',
+    'Chocolate & Nut',
+    'Spice / Roast'
+  ];
+
+  function buildStarSvg(fillMode, sizePx) {
+    var sz = sizePx || 22;
+    var fillAttr = fillMode === 'full' ? 'currentColor' : 'none';
+    var wrap = S.h('span', { class: 'bt-ico', 'aria-hidden': 'true', style: 'display:inline-flex;align-items:center;justify-content:center' });
+    wrap.innerHTML = '<svg viewBox="0 0 24 24" width="' + sz + '" height="' + sz + '" focusable="false">' +
+      '<path d="M12 2.4l2.9 5.9 6.5.95-4.7 4.58 1.11 6.47L12 17.25l-5.81 3.05 1.11-6.47L2.6 9.25l6.5-.95L12 2.4z" ' +
+      'fill="' + fillAttr + '" stroke="currentColor" stroke-width="1.85" stroke-linejoin="round"/></svg>';
+    return wrap;
+  }
 
   function likingWord9(v) {
     var n = Math.round(+v || 7);
@@ -866,11 +889,12 @@ if (typeof window !== 'undefined') {
 
   function starTierWord(stars) {
     var s = +stars || 0;
-    if (s >= 4.5) return 'Sweet Spot Gem!';
-    if (s >= 4.25) return 'Loved It!';
-    if (s >= 3.75) return 'Good Cup';
+    if (s >= 4.75) return 'Sweet Bullseye';
+    if (s >= 4.5) return 'Exceptional';
+    if (s >= 4.0) return 'Very Good';
+    if (s >= 3.5) return 'Good';
     if (s >= 3.0) return 'Needs a Tweak';
-    return 'Needs Rescue';
+    return 'Needs Adjustment';
   }
 
   function ringInfoForXY(dx, dy) {
@@ -1695,7 +1719,127 @@ if (typeof window !== 'undefined') {
     var uPenalty = Math.max(0, Math.min(5, Math.round(+tSt.cvaNonUniform || 0))) * 2;
     var dPenalty = (tSt.defectType ? Math.max(1, Math.min(5, Math.round(+tSt.cvaDefectiveCups || 1))) : 0) * 4;
     var raw = 0.65625 * sum8 + 52.75 - uPenalty - dPenalty;
-    return Math.round(clamp(raw, 0, 100) * 100) / 100;
+    return Math.round(clamp(raw, 0, 100) * 4) / 4;
+  }
+
+  function qualityTierForScore(score100, stars, hasRated, ringIdx) {
+    if (!hasRated) {
+      return { text: 'Ready to Score \u00B7 Tap Stars or Diagnosis Below', tone: 'is-soft', heroCls: '' };
+    }
+    if (score100 >= 87.5 || (stars >= 4.5 && ringIdx === 0)) {
+      return { text: 'Dialed Bullseye \u00B7 Specialty Outstanding', tone: 'is-good', heroCls: 'is-outstanding' };
+    }
+    if (score100 >= 83.0 || stars >= 4.0) {
+      return { text: 'Very Good \u00B7 Sweet & Balanced', tone: 'is-good', heroCls: 'is-very-good' };
+    }
+    if (score100 >= 79.0 || stars >= 3.5) {
+      return { text: 'Good Cup \u00B7 Worth a Small Tweak', tone: 'is-gold', heroCls: 'is-very-good' };
+    }
+    return { text: 'Needs Adjustment', tone: 'is-warn', heroCls: 'is-warn' };
+  }
+
+  /* Unified Calibrated Scoring across Quick (30s), Guided (90s), and Pro SCA Cupping */
+  function computeUnifiedSensoryScore(tSt) {
+    var ringIdx = ringInfoForXY(tSt.padX, tSt.padY).ring;
+    if (tSt.mode === 'cva') {
+      var cvaSc = computeScaCvaScore(tSt);
+      var cvaStars = (tSt.hasUserRated && +tSt.stars > 0)
+        ? clamp(+tSt.stars, 0.25, 5.0)
+        : clamp(Math.round((1.0 + ((cvaSc - 58.0) / 34.0) * 4.0) * 4) / 4, 1.0, 5.0);
+      var uPen = Math.max(0, Math.min(5, Math.round(+tSt.cvaNonUniform || 0))) * 2;
+      var dPen = (tSt.defectType ? Math.max(1, Math.min(5, Math.round(+tSt.cvaDefectiveCups || 1))) : 0) * 4;
+      var toSub = function (h) { return (5.5 + clamp(+h || 7, 1, 9) * 0.5).toFixed(1); };
+      var cvaTier = qualityTierForScore(cvaSc, cvaStars, true, ringIdx);
+      return {
+        rated: true,
+        score100: cvaSc,
+        stars: cvaStars,
+        tierText: cvaTier.text,
+        tierTone: cvaTier.tone,
+        heroCls: cvaTier.heroCls,
+        breakdown: [
+          { label: 'Acidity', val: toSub(tSt.cvaHedonic.acidity) },
+          { label: 'Sweetness', val: toSub(tSt.cvaHedonic.sweetness) },
+          { label: 'Body', val: toSub(tSt.cvaHedonic.mouthfeel) },
+          { label: 'Finish', val: toSub(tSt.cvaHedonic.aftertaste) },
+          { label: 'Clean / Uniformity', val: Math.max(0, 10 - uPen) + '/10' },
+          { label: '-Defects', val: dPen > 0 ? ('-' + dPen) : '0', isDefect: dPen > 0 }
+        ]
+      };
+    }
+
+    if (!tSt.hasUserRated || !(+tSt.stars > 0)) {
+      return {
+        rated: false,
+        score100: 0,
+        stars: 0,
+        tierText: 'Ready to Score \u00B7 Tap Stars or Diagnosis Below',
+        tierTone: 'is-soft',
+        heroCls: '',
+        breakdown: [
+          { label: 'Acidity', val: '--' },
+          { label: 'Sweetness', val: '--' },
+          { label: 'Body', val: '--' },
+          { label: 'Finish', val: '--' },
+          { label: 'Clean / Uniformity', val: '10/10' },
+          { label: '-Defects', val: '0', isDefect: false }
+        ]
+      };
+    }
+
+    var effStars = clamp(+tSt.stars, 0.25, 5.0);
+    var starBase = 58.0 + ((effStars - 1.0) / 4.0) * 34.0;
+    var rDist = Math.hypot(+tSt.padX || 0, +tSt.padY || 0);
+    var padAdj = rDist <= 0.20 ? 0.75 : -Math.min(3.5, (rDist - 0.20) * 3.0);
+
+    var gi = tSt.guidedInt || {};
+    var gl = tSt.guidedLike || {};
+    var traitSub = function (key, idealMid) {
+      var intV = clamp(+gi[key] || idealMid, 1, 5);
+      var lk = gl[key] || 'just_right';
+      var baseT = 7.2 + ((effStars - 3.0) * 0.75);
+      if (lk === 'just_right') baseT += 0.35 + (key === 'sweetness' ? (intV - 3) * 0.15 : 0);
+      else if (lk === 'too_little') baseT -= 0.75;
+      else if (lk === 'too_much') baseT -= 0.90;
+      if (key === 'finish' && intV >= 5 && lk === 'too_much') baseT -= 0.4;
+      return clamp(baseT, 6.0, 9.8);
+    };
+
+    var acSub = traitSub('acidity', 3);
+    var swSub = traitSub('sweetness', 4);
+    var bdSub = traitSub('body', 3);
+    var fnSub = traitSub('finish', 2);
+
+    var guidedDelta = 0;
+    if (tSt.mode === 'guided') {
+      var rightCnt = ['acidity', 'sweetness', 'bitterness', 'body', 'finish'].filter(function (k) {
+        return (gl[k] || 'just_right') === 'just_right';
+      }).length;
+      guidedDelta = (rightCnt - 3.5) * 0.55 + ((+gi.sweetness || 4) - 3) * 0.35 - Math.max(0, (+gi.bitterness || 2) - 3.5) * 0.6;
+    }
+
+    var defPen = (tSt.defectType ? 4 : 0);
+    var rawSc = starBase + padAdj + guidedDelta - defPen;
+    var finalSc = Math.round(clamp(rawSc, 58.0, 99.0) * 4) / 4;
+    var cleanPts = clamp(Math.round(10 - Math.max(0, rDist - 0.35) * 4), 4, 10);
+    var tier = qualityTierForScore(finalSc, effStars, true, ringIdx);
+
+    return {
+      rated: true,
+      score100: finalSc,
+      stars: effStars,
+      tierText: tier.text,
+      tierTone: tier.tone,
+      heroCls: tier.heroCls,
+      breakdown: [
+        { label: 'Acidity', val: acSub.toFixed(1) },
+        { label: 'Sweetness', val: swSub.toFixed(1) },
+        { label: 'Body', val: bdSub.toFixed(1) },
+        { label: 'Finish', val: fnSub.toFixed(1) },
+        { label: 'Clean / Uniformity', val: cleanPts + '/10' },
+        { label: '-Defects', val: defPen > 0 ? ('-' + defPen) : '0', isDefect: defPen > 0 }
+      ]
+    };
   }
 
   function syncGuidedToPad(tSt) {
@@ -1885,7 +2029,7 @@ if (typeof window !== 'undefined') {
         flavors_liked: tSt.userNotes.join('; '),
         flavors_not_liked: tSt.dislikedNotes.join('; '),
         general_notes: tSt.notes || '',
-        total_score: tSt.mode === 'cva' ? computeScaCvaScore(tSt).toFixed(2) : '',
+        total_score: tSt.mode === 'cva' ? computeScaCvaScore(tSt).toFixed(2) : (computeUnifiedSensoryScore(tSt).rated ? computeUnifiedSensoryScore(tSt).score100.toFixed(1) : ''),
         score_kind: tSt.mode === 'cva' ? 'cva_affective' : 'quick'
       });
     } else {
@@ -1920,6 +2064,12 @@ if (typeof window !== 'undefined') {
       if (tSt.mode === 'cva') {
         built.total_score = computeScaCvaScore(tSt).toFixed(2);
         built.score_kind = 'cva_affective';
+      } else {
+        var uniSave = computeUnifiedSensoryScore(tSt);
+        if (uniSave.rated) {
+          built.total_score = uniSave.score100.toFixed(1);
+          if (!built.score_kind) built.score_kind = 'quick';
+        }
       }
     }
 
@@ -2044,33 +2194,101 @@ if (typeof window !== 'undefined') {
     return built;
   }
 
-  /* Blind-First Rose-Copper Scratch Foil 2.0 Card */
+  /* Blind-First Rose-Copper Scratch Foil 2.0 Card + Tabbed Flavor Note Selector */
   function buildScratchFoilCard(tSt, onUpdate, allowBeanjaminHere) {
     var a = S.getApp();
     var bagNotesStr = (a.coffee && a.coffee.bag_notes) || '';
     var match = computeWcrFlavorMatch(tSt.userNotes, bagNotesStr);
 
-    var chipScroll = S.h('div', { class: 'bt-tc-pill-scroll', role: 'group', 'aria-label': 'Blind tasting flavor notes' });
-    var notePool = QUICK_FLAVOR_CHIPS.slice();
-    tSt.userNotes.forEach(function (un) {
-      if (notePool.indexOf(un) < 0) notePool.unshift(un);
-    });
-    notePool.forEach(function (nt) {
-      var active = tSt.userNotes.indexOf(nt) >= 0;
-      chipScroll.appendChild(S.h('button', {
-        type: 'button',
-        class: 'bt-tc-pill is-compact' + (active ? ' is-active' : ''),
-        'aria-pressed': String(active),
-        text: nt,
-        onclick: function () {
-          var ix = tSt.userNotes.indexOf(nt);
-          if (ix >= 0) tSt.userNotes.splice(ix, 1);
-          else tSt.userNotes.push(nt);
-          S.haptic('tick');
-          onUpdate();
-        }
-      }));
-    });
+    var flavorPickerHost = S.h('div', { id: 'bt-step5-flavor-picker', style: 'display:flex;flex-direction:column;gap:9px' });
+    var foilStatusBadge = !tSt.foilRevealed ? S.h('button', {
+      type: 'button',
+      class: 'bt-tc-pill is-compact is-copper',
+      text: 'Peel Foil',
+      onclick: function () {
+        tSt.foilRevealed = true;
+        S.haptic('celebrate');
+        onUpdate();
+      }
+    }) : S.h('span', { class: 'bt-tc-badge is-good', text: match.hasBagNotes ? (match.matchPct + '% Match!') : (tSt.userNotes.length + ' Notes') });
+
+    function toggleNoteInPlace(nt) {
+      var ix = tSt.userNotes.indexOf(nt);
+      if (ix >= 0) tSt.userNotes.splice(ix, 1);
+      else tSt.userNotes.push(nt);
+      S.haptic('tick');
+      if (tSt.foilRevealed) {
+        onUpdate();
+      } else {
+        paintFlavorPicker();
+      }
+    }
+
+    function paintFlavorPicker() {
+      flavorPickerHost.textContent = '';
+
+      /* Selected Notes Tray */
+      if (tSt.userNotes.length > 0) {
+        flavorPickerHost.appendChild(S.h('div', { class: 'bt-tc-selected-tray', id: 'bt-step5-selected-flavors', 'aria-label': 'Selected flavor notes' },
+          S.h('span', { style: 'font-size:0.75rem;font-weight:800;color:var(--ink-secondary);margin-right:2px', text: 'Selected (' + tSt.userNotes.length + '):' }),
+          tSt.userNotes.map(function (nt) {
+            return S.h('button', {
+              type: 'button',
+              class: 'bt-tc-selected-chip',
+              'aria-label': 'Remove ' + nt,
+              onclick: function () { toggleNoteInPlace(nt); }
+            }, S.h('span', { text: nt }), S.h('span', { style: 'font-weight:900;opacity:0.85', text: '\u00D7' }));
+          })
+        ));
+      } else {
+        flavorPickerHost.appendChild(S.h('div', { class: 'bt-tc-selected-tray', id: 'bt-step5-selected-flavors' },
+          S.h('span', { style: 'font-size:0.78rem;color:var(--ink-muted)', text: 'Pick a category tab below and tap flavors you tasted (0 selected yet).' })
+        ));
+      }
+
+      /* 5 Category Tabs */
+      var activeIdx = clamp(tSt.wcrActiveFam || 0, 0, S.WCR_LEXICON_FAMILIES.length - 1);
+      flavorPickerHost.appendChild(S.h('div', { class: 'bt-tc-flavor-tabs', role: 'tablist', 'aria-label': 'Flavor categories' },
+        S.WCR_LEXICON_FAMILIES.map(function (fam, fIdx) {
+          var tabLbl = FLAVOR_TAB_SHORT_LABELS[fIdx] || fam.family;
+          var on = activeIdx === fIdx;
+          return S.h('button', {
+            type: 'button',
+            role: 'tab',
+            class: 'bt-tc-pill is-compact' + (on ? ' is-copper' : ' is-soft'),
+            'aria-selected': String(on),
+            'aria-pressed': String(on),
+            text: tabLbl,
+            onclick: function () {
+              tSt.wcrActiveFam = fIdx;
+              S.haptic('tick');
+              paintFlavorPicker();
+            }
+          });
+        })
+      ));
+
+      /* Crisp Large Pills for Active Category */
+      var activeFam = S.WCR_LEXICON_FAMILIES[activeIdx] || S.WCR_LEXICON_FAMILIES[0];
+      activeFam.groups.forEach(function (grp) {
+        flavorPickerHost.appendChild(S.h('div', { style: 'display:flex;flex-direction:column;gap:4px' },
+          S.h('span', { style: 'font-size:0.74rem;font-weight:700;color:var(--ink-muted)', text: grp.sub }),
+          S.h('div', { class: 'bt-tc-flavor-grid', role: 'group', 'aria-label': grp.sub + ' flavors' },
+            grp.notes.map(function (nt) {
+              var active = tSt.userNotes.indexOf(nt) >= 0;
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-tc-pill is-compact' + (active ? ' is-active' : ' is-soft'),
+                'aria-pressed': String(active),
+                text: nt,
+                onclick: function () { toggleNoteInPlace(nt); }
+              });
+            })
+          )
+        ));
+      });
+    }
+    paintFlavorPicker();
 
     var customIn = S.h('input', {
       type: 'text',
@@ -2084,7 +2302,8 @@ if (typeof window !== 'undefined') {
           });
           customIn.value = '';
           S.haptic('snap');
-          onUpdate();
+          if (tSt.foilRevealed) onUpdate();
+          else paintFlavorPicker();
         }
       }
     });
@@ -2103,7 +2322,8 @@ if (typeof window !== 'undefined') {
           });
           customIn.value = '';
           S.haptic('snap');
-          onUpdate();
+          if (tSt.foilRevealed) onUpdate();
+          else paintFlavorPicker();
         }
       })
     );
@@ -2294,20 +2514,11 @@ if (typeof window !== 'undefined') {
         S.h('div', null,
           S.h('div', { class: 'bt-tc-kicker', text: 'Blind Taste Game \u00B7 Rose-Copper Scratch Foil' }),
           S.h('b', { style: 'font-size:0.96rem', text: 'What flavors did you taste before peeking?' }),
-          S.h('p', { class: 'bt-tc-trait-desc', style: 'margin-top:2px', text: 'Tap flavors you notice first, then scratch the copper foil (or tap Peel Foil) to compare with the bag!' })
+          S.h('p', { class: 'bt-tc-trait-desc', style: 'margin-top:2px', text: 'Browse flavor tabs & pick notes first, then scratch the copper foil (or tap Peel Foil) to compare with the bag!' })
         ),
-        !tSt.foilRevealed ? S.h('button', {
-          type: 'button',
-          class: 'bt-tc-pill is-compact is-copper',
-          text: 'Peel Foil',
-          onclick: function () {
-            tSt.foilRevealed = true;
-            S.haptic('celebrate');
-            onUpdate();
-          }
-        }) : S.h('span', { class: 'bt-tc-badge is-good', text: match.hasBagNotes ? (match.matchPct + '% Match!') : (tSt.userNotes.length + ' Notes') })
+        foilStatusBadge
       ),
-      chipScroll,
+      flavorPickerHost,
       addNoteRow,
       stage
     );
@@ -2515,7 +2726,8 @@ if (typeof window !== 'undefined') {
         sessionSig: sessionSig,
         hasUserRated: preRated,
         goldLocked: false,
-        guideCollapsed: false,
+        guideCollapsed: true,
+        coolingCardCollapsed: true,
         mode: (opts && opts.initialMode) || 'quick', /* 'quick' | 'guided' | 'cva' */
         stars: preRated ? (+st.stars > 0 ? +st.stars : 4.25) : 0,
         makeAgain: '',
@@ -2898,18 +3110,19 @@ if (typeof window !== 'undefined') {
         S.h('button', {
           type: 'button',
           class: 'bt-tc-back-pill',
+          style: 'min-height:38px;padding:5px 11px;font-size:0.78rem',
           onclick: function () {
             S.closeSheetSafe();
             S.navGo('timer');
           }
-        }, S.h('span', { text: '\u2190 Back to Timer' })),
-        S.h('div', { class: 'bt-tc-brew-summary' },
-          S.h('span', { class: 'mono', style: 'font-weight:700', text: flowInfo.summaryBadge }),
+        }, S.h('span', { text: '\u2190 Timer' })),
+        S.h('div', { class: 'bt-tc-brew-summary', style: 'min-height:38px;padding:5px 10px;font-size:0.75rem' },
+          S.h('span', { class: 'mono', style: 'font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap', text: flowInfo.summaryBadge }),
           S.h('button', {
             type: 'button',
             class: 'bt-tc-pill is-compact is-soft',
-            style: 'min-height:30px;padding:3px 9px;font-size:0.74rem',
-            text: tSt.guideCollapsed ? 'How to Taste ?' : 'Hide Tips',
+            style: 'min-height:28px;padding:2px 8px;font-size:0.72rem',
+            text: tSt.guideCollapsed ? 'Tips ?' : 'Hide Tips',
             onclick: function () { tSt.guideCollapsed = !tSt.guideCollapsed; paintAll(); }
           })
         )
@@ -2952,7 +3165,11 @@ if (typeof window !== 'undefined') {
          CARD 1: Optional Cup Cooling Timer — Best Flavor at 60 C (140 F)
          + Collapsible In-Mug Emergency Rescue ("Too Strong or Bitter Right Now?")
          ===================================================================== */
-      var gsCard = S.h('section', { class: 'bt-tc-card', id: 'bt-step5-cooling-card' });
+      var gsCard = S.h('section', {
+        class: 'bt-tc-card' + (tSt.coolingCardCollapsed ? ' is-slim' : ''),
+        id: 'bt-step5-cooling-card',
+        style: tSt.coolingCardCollapsed ? 'padding:9px 13px;gap:6px' : ''
+      });
       var elInitS = st.brewFinishedAtMs ? Math.max(0, (Date.now() - st.brewFinishedAtMs) / 1000) : 0;
       var gsInit = S.computeGoldenSipState({
         vesselKey: tSt.vessel,
@@ -2970,36 +3187,6 @@ if (typeof window !== 'undefined') {
         }
         return 'Warm Clarity Window (00:00) \u00B7 Est. ~' + gs.tempC.toFixed(0) + ' \u00B0C (' + gs.tempF + ' \u00B0F) \u2014 Bright Notes Open';
       }
-
-      gsCard.appendChild(S.h('div', { class: 'bt-tc-row-between' },
-        S.h('div', null,
-          S.h('div', { class: 'bt-tc-kicker', text: 'Optional Cup Cooling Countdown' }),
-          S.h('b', { style: 'font-size:0.98rem', text: 'Cup Cooling Timer \u2014 Best Flavor at 60 \u00B0C (140 \u00B0F)' })
-        ),
-        S.h('div', { class: 'bt-tc-pill-wrap' },
-          S.h('button', {
-            type: 'button',
-            class: 'bt-tc-pill is-compact' + (tSt.bell60On ? ' is-copper' : ' is-soft'),
-            'aria-pressed': String(tSt.bell60On),
-            onclick: function () {
-              tSt.bell60On = !tSt.bell60On;
-              if (tSt.bell60On) S.ringGoldenSipBell();
-              paintAll();
-            }
-          }, S.iconEl('bell', { size: 15 }), S.h('span', { text: tSt.bell60On ? '60 \u00B0C Chime: ON' : '60 \u00B0C Chime: OFF' })),
-          S.h('button', {
-            type: 'button',
-            class: 'bt-tc-pill is-compact is-soft',
-            text: tSt.gsCollapsed ? 'Expand Dial' : 'Hide Dial',
-            onclick: function () { tSt.gsCollapsed = !tSt.gsCollapsed; paintAll(); }
-          })
-        )
-      ));
-
-      gsCard.appendChild(S.h('p', {
-        class: 'bt-tc-trait-desc',
-        text: 'Hot coffee (>70 \u00B0C / 158 \u00B0F) numbs sweetness and tastes extra bitter. Sip again around 60 \u00B0C (140 \u00B0F) when natural fruit & caramel open up.'
-      }));
 
       var liveCountdownTxt = S.h('div', { class: 'bt-tc-cool-clock-txt', text: formatCoolingLine(gsInit) });
       var liveProgressFill = S.h('i', { style: 'width:' + gsInit.progressPct + '%' });
@@ -3022,23 +3209,92 @@ if (typeof window !== 'undefined') {
         S.h('div', { class: 'bt-tc-cool-progress' }, liveProgressFill),
         liveLidTipEl
       );
-      gsCard.appendChild(liveCoolBar);
 
-      /* Vessel Selector Pills (always visible in 1 clean scroll strip) */
-      var vesselScroll = S.h('div', { class: 'bt-tc-pill-scroll', role: 'radiogroup', 'aria-label': 'Cup vessel' });
-      S.VESSELS_5.forEach(function (v) {
-        vesselScroll.appendChild(S.h('button', {
-          type: 'button',
-          class: 'bt-tc-pill is-compact' + (tSt.vessel === v.key ? ' is-active' : ' is-soft'),
-          'aria-pressed': String(tSt.vessel === v.key),
-          text: v.label,
-          onclick: function () { tSt.vessel = v.key; S.haptic('tick'); paintAll(); }
-        }));
+      var slimCoolingLabel = S.h('span', {
+        class: 'mono',
+        style: 'font-size:0.78rem;font-weight:700;color:var(--ink-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap',
+        text: 'Cup Cooling: ~' + gsInit.tempC.toFixed(0) + ' \u00B0C \u00B7 ' + (gsInit.secsToGolden > 0 ? (gsInit.countdownMmSs + ' to 60 \u00B0C') : '60 \u00B0C Sweet Sip Ready')
       });
-      gsCard.appendChild(vesselScroll);
+
+      if (tSt.coolingCardCollapsed) {
+        gsCard.appendChild(S.h('div', { class: 'bt-tc-row-between', style: 'flex-wrap:nowrap' },
+          slimCoolingLabel,
+          S.h('div', { style: 'display:flex;align-items:center;gap:6px;flex-shrink:0' },
+            S.h('button', {
+              type: 'button',
+              class: 'bt-tc-pill is-compact' + (tSt.bell60On ? ' is-copper' : ' is-soft'),
+              style: 'min-height:34px;padding:4px 9px;font-size:0.74rem',
+              'aria-pressed': String(tSt.bell60On),
+              onclick: function () {
+                tSt.bell60On = !tSt.bell60On;
+                if (tSt.bell60On) S.ringGoldenSipBell();
+                paintAll();
+              }
+            }, S.iconEl('bell', { size: 13 }), S.h('span', { text: tSt.bell60On ? '60 \u00B0C' : 'Muted' })),
+            S.h('button', {
+              type: 'button',
+              id: 'bt-step5-cooling-expand-btn',
+              class: 'bt-tc-pill is-compact is-soft',
+              style: 'min-height:34px;padding:4px 10px;font-size:0.74rem',
+              text: 'Timer / Rescue +',
+              onclick: function () { tSt.coolingCardCollapsed = false; paintAll(); }
+            })
+          )
+        ));
+      } else {
+        gsCard.appendChild(S.h('div', { class: 'bt-tc-row-between' },
+          S.h('div', null,
+            S.h('div', { class: 'bt-tc-kicker', text: 'Optional Cup Cooling Countdown' }),
+            S.h('b', { style: 'font-size:0.98rem', text: 'Cup Cooling Timer \u2014 Best Flavor at 60 \u00B0C (140 \u00B0F)' })
+          ),
+          S.h('div', { class: 'bt-tc-pill-wrap' },
+            S.h('button', {
+              type: 'button',
+              class: 'bt-tc-pill is-compact' + (tSt.bell60On ? ' is-copper' : ' is-soft'),
+              'aria-pressed': String(tSt.bell60On),
+              onclick: function () {
+                tSt.bell60On = !tSt.bell60On;
+                if (tSt.bell60On) S.ringGoldenSipBell();
+                paintAll();
+              }
+            }, S.iconEl('bell', { size: 15 }), S.h('span', { text: tSt.bell60On ? '60 \u00B0C Chime: ON' : '60 \u00B0C Chime: OFF' })),
+            S.h('button', {
+              type: 'button',
+              class: 'bt-tc-pill is-compact is-soft',
+              text: tSt.gsCollapsed ? 'Expand Dial' : 'Hide Dial',
+              onclick: function () { tSt.gsCollapsed = !tSt.gsCollapsed; paintAll(); }
+            }),
+            S.h('button', {
+              type: 'button',
+              class: 'bt-tc-pill is-compact is-soft',
+              text: 'Minimize',
+              onclick: function () { tSt.coolingCardCollapsed = true; paintAll(); }
+            })
+          )
+        ));
+
+        gsCard.appendChild(S.h('p', {
+          class: 'bt-tc-trait-desc',
+          text: 'Hot coffee (>70 \u00B0C / 158 \u00B0F) numbs sweetness and tastes extra bitter. Sip again around 60 \u00B0C (140 \u00B0F) when natural fruit & caramel open up.'
+        }));
+        gsCard.appendChild(liveCoolBar);
+
+        /* Vessel Selector Pills (always visible in 1 clean scroll strip) */
+        var vesselScroll = S.h('div', { class: 'bt-tc-pill-scroll', role: 'radiogroup', 'aria-label': 'Cup vessel' });
+        S.VESSELS_5.forEach(function (v) {
+          vesselScroll.appendChild(S.h('button', {
+            type: 'button',
+            class: 'bt-tc-pill is-compact' + (tSt.vessel === v.key ? ' is-active' : ' is-soft'),
+            'aria-pressed': String(tSt.vessel === v.key),
+            text: v.label,
+            onclick: function () { tSt.vessel = v.key; S.haptic('tick'); paintAll(); }
+          }));
+        });
+        gsCard.appendChild(vesselScroll);
+      }
 
       var nativeClock = null;
-      if (!tSt.gsCollapsed) {
+      if (!tSt.coolingCardCollapsed && !tSt.gsCollapsed) {
         nativeClock = (tac && typeof tac.BTGoldenSipClock === 'function')
           ? tac.BTGoldenSipClock({
               tempC: gsInit.tempC,
@@ -3054,6 +3310,7 @@ if (typeof window !== 'undefined') {
         if (!gsCard.isConnected) { clearInterval(gsTimerId); gsTimerId = 0; return; }
         var elNow = st.brewFinishedAtMs ? Math.max(0, (Date.now() - st.brewFinishedAtMs) / 1000) : 0;
         var curGs = S.computeGoldenSipState({ vesselKey: tSt.vessel, bevMassG: tSt.bevOutG, elapsedS: elNow, lidOff: tSt.lidOff });
+        slimCoolingLabel.textContent = 'Cup Cooling: ~' + curGs.tempC.toFixed(0) + ' \u00B0C \u00B7 ' + (curGs.secsToGolden > 0 ? (curGs.countdownMmSs + ' to 60 \u00B0C') : '60 \u00B0C Sweet Sip Ready');
         liveCountdownTxt.textContent = formatCoolingLine(curGs);
         liveProgressFill.style.width = curGs.progressPct + '%';
         liveCoolBar.classList.toggle('is-ready', !!curGs.inGoldenSipWindow);
@@ -3178,13 +3435,15 @@ if (typeof window !== 'undefined') {
           ));
         }
       }
-      paintInMugRescueOnly();
-      gsCard.appendChild(rescueHost);
-      root.appendChild(gsCard);
+      if (!tSt.coolingCardCollapsed) {
+        paintInMugRescueOnly();
+        gsCard.appendChild(rescueHost);
+        root.appendChild(gsCard);
+      }
 
       /* =====================================================================
          CARD 2: 1. Rate & Describe Your Cup
-         Modes: Quick (30s) | Guided (90s) | Pro Cupping
+         Modes: Quick 30s | Guided Tasting | Pro SCA Cupping + 5-Bowl Cupping
          ===================================================================== */
       var rateCard = S.h('section', { class: 'bt-tc-card', id: 'bt-step5-rate-card' });
       rateCardRef = rateCard;
@@ -3197,126 +3456,222 @@ if (typeof window !== 'undefined') {
         S.h('span', {
           class: 'bt-tc-badge ' + (tSt.hasUserRated ? 'is-good' : 'is-gold'),
           id: 'bt-step5-rated-status-badge',
-          text: tSt.hasUserRated ? ('Rated: ' + tSt.stars.toFixed(2) + '/5') : 'Tap Below to Rate'
+          text: tSt.hasUserRated ? ('Rated: ' + tSt.stars.toFixed(2) + '/5') : 'Tap Stars to Rate'
         })
       ));
 
-      /* 3 Progressive Sensory Modes Switcher (Plain-English "Pro Cupping"!) */
-      rateCard.appendChild(S.h('div', { class: 'bt-tc-seg-bar', role: 'tablist', 'aria-label': 'Sensory Tasting Mode' },
-        [
-          ['quick',  'Quick (30s)'],
-          ['guided', 'Guided (90s)'],
-          ['cva',    'Pro Cupping']
-        ].map(function (m) {
-          var on = tSt.mode === m[0];
-          return S.h('button', {
-            type: 'button',
-            role: 'tab',
-            class: 'bt-tc-seg-btn' + (on ? ' is-active' : ''),
-            'aria-selected': String(on),
-            text: m[1],
-            onclick: function () {
-              tSt.mode = m[0];
-              S.haptic('tick');
-              paintAll();
-            }
-          });
-        })
-      ));
-
-      var ratedStatusBadge = rateCard.querySelector('#bt-step5-rated-status-badge');
-      var ratingReadout = S.h('span', {
-        class: tSt.hasUserRated ? 'mono' : 'bt-tc-unrated-prompt',
-        style: tSt.hasUserRated ? 'font-size:1.02rem;font-weight:800;color:var(--accent)' : '',
-        text: tSt.hasUserRated
-          ? (tSt.stars.toFixed(2) + ' / 5.00 (' + starTierWord(tSt.stars) + ')')
-          : 'Tap beans to rate your cup'
-      });
-
-      function syncRatingVisuals() {
-        if (ratedStatusBadge) {
-          ratedStatusBadge.className = 'bt-tc-badge ' + (tSt.hasUserRated ? 'is-good' : 'is-gold');
-          ratedStatusBadge.textContent = tSt.hasUserRated ? ('Rated: ' + tSt.stars.toFixed(2) + '/5') : 'Tap Below to Rate';
-        }
-        ratingReadout.className = tSt.hasUserRated ? 'mono' : 'bt-tc-unrated-prompt';
-        ratingReadout.style.cssText = tSt.hasUserRated ? 'font-size:1.02rem;font-weight:800;color:var(--accent)' : '';
-        ratingReadout.textContent = tSt.hasUserRated
-          ? (tSt.stars.toFixed(2) + ' / 5.00 (' + starTierWord(tSt.stars) + ')')
-          : 'Tap beans to rate your cup';
-      }
-
-      var sweepEl = null;
-      if (tac && typeof tac.BTBeanSweep === 'function') {
-        try {
-          sweepEl = tac.BTBeanSweep({
-            value: tSt.hasUserRated ? tSt.stars : 0,
-            step: 0.25,
-            onChange: function (v) {
-              if (+v <= 0) return;
-              tSt.stars = clamp(+v, 0.25, 5.0);
-              tSt.hasUserRated = true;
-              if (!tSt.makeAgain) tSt.makeAgain = tSt.stars >= 4.0 ? 'yes' : (tSt.stars >= 3.0 ? 'maybe' : 'no');
-              syncRatingVisuals();
-              paintShortcutHighlights();
-              paintFixAndCtaOnly();
-              paintOutlierBadgeOnly();
-            }
-          });
-        } catch (_) {}
-      }
-      if (!sweepEl) {
-        sweepEl = S.h('div', { class: 'bt-tc-pill-scroll', role: 'radiogroup', 'aria-label': '0.25-bean rating' },
-          [2.5, 3.0, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75, 5.0].map(function (sv) {
-            var active = tSt.hasUserRated && tSt.stars === sv;
+      /* 3 Progressive Sensory Modes Switcher + Prominent 5-Bowl Blind Cupping Launch */
+      rateCard.appendChild(S.h('div', { class: 'bt-tc-mode-bar-row' },
+        S.h('div', { class: 'bt-tc-seg-bar bt-tc-mode-seg', role: 'tablist', 'aria-label': 'Sensory Tasting Mode' },
+          [
+            ['quick',  'Quick 30s'],
+            ['guided', 'Guided Tasting'],
+            ['cva',    'Pro SCA Cupping']
+          ].map(function (m) {
+            var on = tSt.mode === m[0];
             return S.h('button', {
               type: 'button',
-              class: 'bt-tc-pill is-compact mono' + (active ? ' is-active' : ''),
-              'aria-pressed': String(active),
-              text: sv.toFixed(2),
+              role: 'tab',
+              class: 'bt-tc-seg-btn' + (on ? ' is-active' : ''),
+              'aria-selected': String(on),
+              text: m[1],
               onclick: function () {
-                tSt.stars = sv;
-                tSt.hasUserRated = true;
+                tSt.mode = m[0];
+                S.haptic('tick');
                 paintAll();
               }
             });
           })
-        );
-      }
-      sweepWidgetRef = sweepEl;
-
-      rateCard.appendChild(S.h('div', { class: 'bt-tc-well', style: 'padding:12px 13px;gap:9px' },
-        S.h('div', { class: 'bt-tc-row-between' },
-          S.h('b', { style: 'font-size:0.92rem', text: 'Overall Rating (0.25\u20135.00 Beans)' }),
-          ratingReadout
         ),
-        sweepEl,
-        S.h('div', { class: 'bt-tc-row-between' },
-          S.h('span', { style: 'font-size:0.8rem;font-weight:700;color:var(--ink-secondary)', text: 'Make this recipe again?' }),
-          S.h('div', { class: 'bt-tc-pill-wrap' },
-            [
-              ['yes',   'Yes, Love It',  4.50],
-              ['maybe', 'With Next Fix', 3.75],
-              ['no',    'Not For Me',    2.50]
-            ].map(function (mk) {
-              var on = tSt.makeAgain === mk[0];
-              return S.h('button', {
-                type: 'button',
-                class: 'bt-tc-pill is-compact' + (on ? ' is-active' : ' is-soft'),
-                'aria-pressed': String(on),
-                text: mk[1],
-                onclick: function () {
-                  tSt.makeAgain = mk[0];
-                  tSt.notMyStyle = mk[0] === 'no';
-                  markRatedWithFallbackStars(tSt, mk[2]);
-                  paintAll();
-                }
-              });
-            })
-          )
-        )
+        S.h('button', {
+          type: 'button',
+          id: 'bt-step5-open-sca-btn',
+          class: 'bt-tc-cupping-launch-btn',
+          onclick: function () {
+            S.haptic('snap');
+            S.navGo('sca');
+          }
+        }, S.iconEl('cafe-cup', { size: 17 }), S.h('span', { text: '5-Bowl Blind Cupping \u2192' }))
       ));
 
-      /* 4-Ring Concentric Archery Balance Pad + 6 Quick Taste Shortcuts + 4-Way Cheat-Sheet + R2 Dual-Pin */
+      /* Live-Updating Score Hero Summary Card (In-Place Update, Zero Scroll Jump!) */
+      var scoreHeroHost = S.h('section', {
+        class: 'bt-tc-score-hero',
+        id: 'bt-step5-score-hero',
+        'aria-label': 'Live Cup Score Summary'
+      });
+
+      function paintScoreHeroOnly() {
+        var uni = computeUnifiedSensoryScore(tSt);
+        scoreHeroHost.className = 'bt-tc-score-hero' + (uni.heroCls ? (' ' + uni.heroCls) : '');
+        scoreHeroHost.textContent = '';
+        scoreHeroHost.appendChild(S.h('div', { class: 'bt-tc-score-hero-top' },
+          S.h('div', { class: 'bt-tc-score-dual' },
+            S.h('div', null,
+              S.h('span', { class: 'bt-tc-score-sca-num', id: 'bt-step5-hero-sca', text: uni.rated ? uni.score100.toFixed(1) : '--' }),
+              S.h('span', { class: 'bt-tc-score-sca-unit', text: '/ 100 SCA' })
+            ),
+            S.h('span', { class: 'bt-tc-score-star-pill', id: 'bt-step5-hero-stars' },
+              buildStarSvg(uni.rated ? 'full' : 'empty', 16),
+              S.h('span', { text: uni.rated ? (uni.stars.toFixed(2) + ' / 5 Stars') : '-- / 5 Stars' })
+            )
+          ),
+          S.h('span', {
+            class: 'bt-tc-badge ' + uni.tierTone,
+            id: 'bt-step5-hero-tier',
+            text: uni.tierText
+          })
+        ));
+        scoreHeroHost.appendChild(S.h('div', { class: 'bt-tc-breakdown-grid' },
+          uni.breakdown.map(function (bk) {
+            return S.h('div', { class: 'bt-tc-bk-pill' + (bk.isDefect ? ' is-defect' : '') },
+              S.h('span', { text: bk.label }),
+              S.h('b', { text: bk.val })
+            );
+          })
+        ));
+      }
+      paintScoreHeroOnly();
+      rateCard.appendChild(scoreHeroHost);
+
+      var ratedStatusBadge = rateCard.querySelector('#bt-step5-rated-status-badge');
+      var starDescPill = S.h('span', {
+        class: 'bt-tc-star-desc-pill' + (tSt.hasUserRated ? ' is-rated' : ''),
+        id: 'bt-step5-star-desc',
+        text: tSt.hasUserRated
+          ? (tSt.stars.toFixed(2) + ' \u00B7 ' + starTierWord(tSt.stars))
+          : 'Tap a star (1\u20135) to rate'
+      });
+
+      var starButtons = [];
+      function syncStarBarDom() {
+        var curS = tSt.hasUserRated ? (+tSt.stars || 0) : 0;
+        starButtons.forEach(function (sb, idx) {
+          var starNum = idx + 1;
+          var isFull = curS >= starNum - 0.12;
+          var isHalf = !isFull && curS >= starNum - 0.65;
+          sb.className = 'bt-tc-star-btn' + (isFull ? ' is-filled' : (isHalf ? ' is-half' : ''));
+          sb.setAttribute('aria-pressed', String(curS >= starNum - 0.65));
+          sb.textContent = '';
+          sb.appendChild(buildStarSvg(isFull || isHalf ? 'full' : 'empty', 24));
+        });
+      }
+
+      function applyStarRatingInPlace(nextStars, skipFoil) {
+        tSt.stars = clamp(Math.round(+nextStars * 4) / 4, 0.25, 5.0);
+        tSt.hasUserRated = true;
+        if (!tSt.makeAgain) tSt.makeAgain = tSt.stars >= 4.0 ? 'yes' : (tSt.stars >= 3.0 ? 'maybe' : 'no');
+        syncRatingVisuals();
+        paintShortcutHighlights();
+        paintFixAndCtaOnly();
+        paintOutlierBadgeOnly();
+      }
+
+      function syncRatingVisuals() {
+        if (ratedStatusBadge) {
+          ratedStatusBadge.className = 'bt-tc-badge ' + (tSt.hasUserRated ? 'is-good' : 'is-gold');
+          ratedStatusBadge.textContent = tSt.hasUserRated ? ('Rated: ' + tSt.stars.toFixed(2) + '/5') : 'Tap Stars to Rate';
+        }
+        starDescPill.className = 'bt-tc-star-desc-pill' + (tSt.hasUserRated ? ' is-rated' : '');
+        starDescPill.textContent = tSt.hasUserRated
+          ? (tSt.stars.toFixed(2) + ' \u00B7 ' + starTierWord(tSt.stars))
+          : 'Tap a star (1\u20135) to rate';
+        syncStarBarDom();
+        paintScoreHeroOnly();
+      }
+
+      var starsGroup = S.h('div', { class: 'bt-tc-stars-group', role: 'radiogroup', 'aria-label': 'Star Rating 1 to 5' });
+      [1, 2, 3, 4, 5].forEach(function (starNum) {
+        var btn = S.h('button', {
+          type: 'button',
+          class: 'bt-tc-star-btn',
+          'data-star-val': String(starNum),
+          'aria-label': 'Rate ' + starNum + ' stars (tap again for half star)',
+          onclick: function () {
+            var cur = tSt.hasUserRated ? (+tSt.stars || 0) : 0;
+            var next = Math.abs(cur - starNum) < 0.05 ? Math.max(0.5, starNum - 0.5) : starNum;
+            S.haptic(next >= 4.5 ? 'celebrate' : 'snap');
+            applyStarRatingInPlace(next);
+          }
+        });
+        starButtons.push(btn);
+        starsGroup.appendChild(btn);
+      });
+      syncStarBarDom();
+
+      sweepWidgetRef = {
+        setValue: function () { syncStarBarDom(); paintScoreHeroOnly(); }
+      };
+
+      var fineTuneGroup = S.h('div', { class: 'bt-tc-finetune-group' },
+        S.h('button', {
+          type: 'button',
+          class: 'bt-tc-finetune-btn',
+          id: 'bt-step5-star-minus-btn',
+          'aria-label': 'Decrease rating by 0.25 stars',
+          text: '-0.25',
+          onclick: function () {
+            var base = tSt.hasUserRated && +tSt.stars > 0 ? +tSt.stars : 4.0;
+            S.haptic('tick');
+            applyStarRatingInPlace(Math.max(0.5, base - 0.25));
+          }
+        }),
+        S.h('button', {
+          type: 'button',
+          class: 'bt-tc-finetune-btn',
+          id: 'bt-step5-star-plus-btn',
+          'aria-label': 'Increase rating by 0.25 stars',
+          text: '+0.25',
+          onclick: function () {
+            var base = tSt.hasUserRated && +tSt.stars > 0 ? +tSt.stars : 4.0;
+            S.haptic('tick');
+            applyStarRatingInPlace(Math.min(5.0, base + 0.25));
+          }
+        }),
+        starDescPill
+      );
+
+      var makeAgainRow = S.h('div', { class: 'bt-tc-row-between', style: 'padding-top:2px' },
+        S.h('span', { style: 'font-size:0.8rem;font-weight:700;color:var(--ink-secondary)', text: 'Make this recipe again?' }),
+        S.h('div', { class: 'bt-tc-pill-wrap' },
+          [
+            ['yes',   'Yes, Love It',  4.50],
+            ['maybe', 'With Next Fix', 3.75],
+            ['no',    'Not For Me',    2.50]
+          ].map(function (mk) {
+            var on = tSt.makeAgain === mk[0];
+            return S.h('button', {
+              type: 'button',
+              class: 'bt-tc-pill is-compact' + (on ? ' is-active' : ' is-soft'),
+              'aria-pressed': String(on),
+              text: mk[1],
+              onclick: function () {
+                tSt.makeAgain = mk[0];
+                tSt.notMyStyle = mk[0] === 'no';
+                var buttons = this.parentNode ? this.parentNode.querySelectorAll('button') : [];
+                Array.prototype.forEach.call(buttons, function (b, bIdx) {
+                  var active = bIdx === (mk[0] === 'yes' ? 0 : (mk[0] === 'maybe' ? 1 : 2));
+                  b.className = 'bt-tc-pill is-compact' + (active ? ' is-active' : ' is-soft');
+                  b.setAttribute('aria-pressed', String(active));
+                });
+                S.haptic('tick');
+                applyStarRatingInPlace(+tSt.stars > 0 && tSt.hasUserRated ? tSt.stars : mk[2]);
+              }
+            });
+          })
+        )
+      );
+
+      rateCard.appendChild(S.h('div', { class: 'bt-tc-star-bar-wrap', id: 'bt-step5-star-bar' },
+        S.h('div', { class: 'bt-tc-row-between' },
+          S.h('b', { style: 'font-size:0.92rem', text: '1-Tap Star Rating & Fine-Tune (1.0\u20135.0)' }),
+          S.h('span', { style: 'font-size:0.75rem;color:var(--ink-muted)', text: 'Tap star again for half-star' })
+        ),
+        S.h('div', { class: 'bt-tc-star-row' }, starsGroup, fineTuneGroup),
+        makeAgainRow
+      ));
+
+      /* 2-Column Tactile "How Did It Taste?" Diagnosis Cards + 4-Ring Bullseye + R2 Dual-Pin */
       var curMethod = flowInfo.methodKey;
       var isEspNow = curMethod.indexOf('espresso') >= 0;
       var doseNow = flowInfo.doseG;
@@ -3343,25 +3698,21 @@ if (typeof window !== 'undefined') {
         var ak = activeShortcutKey();
         shortcutButtons.forEach(function (item) {
           var isOn = item.key === ak;
-          item.btn.className = 'bt-tc-pill is-compact' + (isOn ? (item.key === 'sweet' ? ' is-active' : ' is-copper is-active') : ' is-soft');
+          item.btn.className = 'bt-tc-diag-card' + (isOn ? (' is-active' + (item.key === 'sweet' ? ' is-sweet' : '')) : '');
           item.btn.setAttribute('aria-pressed', String(isOn));
         });
       }
 
-      var shortcutRow = S.h('div', { class: 'bt-tc-pill-wrap', style: 'gap:6px', role: 'group', 'aria-label': 'Quick 1-Tap Taste Shortcuts' });
+      var shortcutRow = S.h('div', { class: 'bt-tc-diag-grid', id: 'bt-step5-diag-grid', role: 'group', 'aria-label': 'How Did It Taste quick diagnosis cards' });
       QUICK_TASTE_SHORTCUTS.forEach(function (sc) {
         var btn = S.h('button', {
           type: 'button',
-          class: 'bt-tc-pill is-compact is-soft',
-          text: sc.label,
+          class: 'bt-tc-diag-card',
           onclick: function () {
             tSt.padX = sc.x;
             tSt.padY = sc.y;
             if (!tSt.hasUserRated || !(+tSt.stars > 0)) {
               tSt.stars = sc.defStars;
-              if (sweepWidgetRef && typeof sweepWidgetRef.setValue === 'function') {
-                sweepWidgetRef.setValue(tSt.stars);
-              }
             }
             tSt.hasUserRated = true;
             if (padWidgetRef && typeof padWidgetRef.setXY === 'function') {
@@ -3374,7 +3725,10 @@ if (typeof window !== 'undefined') {
             paintR2ReconcilerOnly();
             paintOutlierBadgeOnly();
           }
-        });
+        },
+          S.h('b', { text: sc.label }),
+          S.h('span', { text: sc.hint })
+        );
         shortcutButtons.push({ key: sc.key, btn: btn });
         shortcutRow.appendChild(btn);
       });
@@ -3715,124 +4069,126 @@ if (typeof window !== 'undefined') {
         r2Host
       ));
 
-      /* MODE 2 EXTRA: Guided (90s) — Plain-English How Strong (1-5) vs How Was It? */
+      /* MODE 2 EXTRA: Guided Tasting — Structured 5-Step Labeled Sensory Bars (In-Place Updates!) */
       if (tSt.mode === 'guided') {
         var guidedRows = S.h('div', { class: 'bt-tc-guided-list' });
         GUIDED_DIMS.forEach(function (dim) {
           var curInt = clamp(+tSt.guidedInt[dim.key] || 3, 1, 5);
           var curLike = tSt.guidedLike[dim.key] || 'just_right';
+          var stepNames = dim.stepLabels || ['Low', 'Mild', 'Balanced', 'High', 'Max'];
+          var strongValBadge = S.h('span', {
+            class: 'mono',
+            style: 'font-size:0.79rem;color:var(--accent);font-weight:700',
+            text: curInt + ' / 5 (' + stepNames[curInt - 1] + ')'
+          });
+
+          var scaleBarBtns = [];
+          var scaleBar = S.h('div', { class: 'bt-tc-scale-bar', role: 'radiogroup', 'aria-label': dim.label + ' 5-step scale' },
+            [1, 2, 3, 4, 5].map(function (iv) {
+              var sBtn = S.h('button', {
+                type: 'button',
+                class: 'bt-tc-scale-step',
+                'aria-pressed': String(curInt === iv),
+                onclick: function () {
+                  tSt.guidedInt[dim.key] = iv;
+                  scaleBarBtns.forEach(function (b, bIdx) {
+                    b.setAttribute('aria-pressed', String(bIdx + 1 === iv));
+                  });
+                  strongValBadge.textContent = iv + ' / 5 (' + stepNames[iv - 1] + ')';
+                  syncGuidedToPad(tSt);
+                  markRatedWithFallbackStars(tSt, 4.0);
+                  if (padWidgetRef && typeof padWidgetRef.setXY === 'function') padWidgetRef.setXY(tSt.padX, tSt.padY);
+                  S.haptic('tick');
+                  syncRatingVisuals();
+                  paintShortcutHighlights();
+                  paintFixAndCtaOnly();
+                  paintOutlierBadgeOnly();
+                }
+              },
+                S.h('b', { text: String(iv) }),
+                S.h('span', { text: stepNames[iv - 1] })
+              );
+              scaleBarBtns.push(sBtn);
+              return sBtn;
+            })
+          );
+
+          var likeBarBtns = [];
+          var likeOpts = [
+            ['too_little', 'Too Little'],
+            ['just_right', 'Just Right'],
+            ['too_much',   'Too Much']
+          ];
+          var likeBar = S.h('div', { class: 'bt-tc-liking-row', role: 'radiogroup', 'aria-label': dim.label + ' how was it for your taste' },
+            likeOpts.map(function (lk) {
+              var lBtn = S.h('button', {
+                type: 'button',
+                class: 'bt-tc-like-btn',
+                'aria-pressed': String(curLike === lk[0]),
+                text: lk[1],
+                onclick: function () {
+                  tSt.guidedLike[dim.key] = lk[0];
+                  likeBarBtns.forEach(function (b, bIdx) {
+                    b.setAttribute('aria-pressed', String(likeOpts[bIdx][0] === lk[0]));
+                  });
+                  syncGuidedToPad(tSt);
+                  var anyOff = Object.keys(tSt.guidedLike).some(function (gk) { return tSt.guidedLike[gk] !== 'just_right'; });
+                  markRatedWithFallbackStars(tSt, anyOff ? 3.75 : 4.50);
+                  if (padWidgetRef && typeof padWidgetRef.setXY === 'function') padWidgetRef.setXY(tSt.padX, tSt.padY);
+                  S.haptic('tick');
+                  syncRatingVisuals();
+                  paintShortcutHighlights();
+                  paintFixAndCtaOnly();
+                  paintOutlierBadgeOnly();
+                }
+              });
+              likeBarBtns.push(lBtn);
+              return lBtn;
+            })
+          );
+
           guidedRows.appendChild(S.h('div', { class: 'bt-tc-guided-row' },
             S.h('div', { class: 'bt-tc-row-between' },
               S.h('b', { style: 'font-size:0.9rem', text: dim.label }),
-              S.h('span', { class: 'mono', style: 'font-size:0.79rem;color:var(--accent);font-weight:700', text: 'How Strong: ' + curInt + ' / 5' })
+              strongValBadge
             ),
             S.h('p', { class: 'bt-tc-trait-desc', text: dim.desc }),
-            S.h('div', { class: 'bt-tc-anchor-scale' },
-              S.h('span', { text: dim.anchors[0] }),
-              S.h('span', { text: dim.anchors[1] }),
-              S.h('span', { text: dim.anchors[2] })
-            ),
-            S.h('div', { class: 'bt-tc-intensity-bar', role: 'radiogroup', 'aria-label': dim.label + ' strength 1 to 5' },
-              [1, 2, 3, 4, 5].map(function (iv) {
-                return S.h('button', {
-                  type: 'button',
-                  class: 'bt-tc-int-btn',
-                  'aria-pressed': String(curInt === iv),
-                  text: String(iv),
-                  onclick: function () {
-                    tSt.guidedInt[dim.key] = iv;
-                    syncGuidedToPad(tSt);
-                    markRatedWithFallbackStars(tSt, 4.0);
-                    S.haptic('tick');
-                    paintAll();
-                  }
-                });
-              })
-            ),
-            S.h('div', { class: 'bt-tc-liking-row', role: 'radiogroup', 'aria-label': dim.label + ' how was it for your taste' },
-              [
-                ['too_little', 'Too Little'],
-                ['just_right', 'Just Right'],
-                ['too_much',   'Too Much']
-              ].map(function (lk) {
-                return S.h('button', {
-                  type: 'button',
-                  class: 'bt-tc-like-btn',
-                  'aria-pressed': String(curLike === lk[0]),
-                  text: lk[1],
-                  onclick: function () {
-                    tSt.guidedLike[dim.key] = lk[0];
-                    syncGuidedToPad(tSt);
-                    var anyOff = Object.keys(tSt.guidedLike).some(function (gk) { return tSt.guidedLike[gk] !== 'just_right'; });
-                    markRatedWithFallbackStars(tSt, anyOff ? 3.75 : 4.50);
-                    S.haptic('tick');
-                    paintAll();
-                  }
-                });
-              })
-            )
+            scaleBar,
+            likeBar
           ));
         });
-
-        var activeFamObj = S.WCR_LEXICON_FAMILIES[tSt.wcrActiveFam] || S.WCR_LEXICON_FAMILIES[0];
-        var wcrCard = S.h('div', { class: 'bt-tc-well' },
-          S.h('div', { class: 'bt-tc-kicker', text: 'Coffee Flavor Note Explorer' }),
-          S.h('div', { class: 'bt-tc-pill-scroll' },
-            S.WCR_LEXICON_FAMILIES.map(function (fam, fIdx) {
-              return S.h('button', {
-                type: 'button',
-                class: 'bt-tc-pill is-compact' + (tSt.wcrActiveFam === fIdx ? ' is-copper' : ''),
-                'aria-pressed': String(tSt.wcrActiveFam === fIdx),
-                text: fam.family,
-                onclick: function () { tSt.wcrActiveFam = fIdx; paintAll(); }
-              });
-            })
-          ),
-          activeFamObj.groups.map(function (grp) {
-            return S.h('div', { style: 'display:flex;flex-direction:column;gap:4px' },
-              S.h('span', { style: 'font-size:0.75rem;font-weight:700;color:var(--ink-muted)', text: grp.sub }),
-              S.h('div', { class: 'bt-tc-pill-scroll' },
-                grp.notes.map(function (nt) {
-                  var on = tSt.userNotes.indexOf(nt) >= 0;
-                  return S.h('button', {
-                    type: 'button',
-                    class: 'bt-tc-pill is-compact' + (on ? ' is-active' : ' is-soft'),
-                    'aria-pressed': String(on),
-                    text: nt,
-                    onclick: function () {
-                      var ix = tSt.userNotes.indexOf(nt);
-                      if (ix >= 0) tSt.userNotes.splice(ix, 1);
-                      else tSt.userNotes.push(nt);
-                      paintAll();
-                    }
-                  });
-                })
-              )
-            );
-          })
-        );
 
         rateCard.appendChild(S.h('div', { class: 'bt-tc-well', style: 'padding:12px 13px;gap:10px' },
           S.h('div', { class: 'bt-tc-row-between' },
             S.h('div', null,
-              S.h('div', { class: 'bt-tc-kicker', text: 'Guided Tasting (90s) \u00B7 5 Everyday Traits' }),
-              S.h('b', { style: 'font-size:0.96rem', text: 'How Strong (1\u20135) vs. How You Liked It' })
+              S.h('div', { class: 'bt-tc-kicker', text: 'Guided Tasting \u00B7 5 Structured Sensory Scales' }),
+              S.h('b', { style: 'font-size:0.96rem', text: 'Tap Level (Low \u2192 Vivid) & Balance Preference' })
             ),
             S.h('span', { class: 'bt-tc-badge is-sci', text: 'Plain Kitchen Guide' })
           ),
           S.h('p', {
             class: 'bt-tc-trait-desc',
-            text: 'First pick how strong each trait is (1 = barely there, 5 = bold), then tap whether that felt Too Little, Just Right, or Too Much for your taste.'
+            text: 'Pick where each trait sat on the 5-step bar, then tap Too Little, Just Right, or Too Much \u2014 your Score Hero & #1 Fix update live.'
           }),
-          guidedRows,
-          wcrCard
+          guidedRows
         ));
       }
 
-      /* MODE 3 EXTRA: Pro Cupping — Plain-English 8-Trait Cupping Sheet (#245) */
+      /* MODE 3 EXTRA: Pro SCA Cupping — Plain-English 8-Trait Cupping Sheet (#245) */
       if (tSt.mode === 'cva') {
         var cvaScoreVal = computeScaCvaScore(tSt);
-        var cvaScoreEl = S.h('span', { class: 'bt-tc-badge is-good mono', text: 'Cupping Score: ' + cvaScoreVal.toFixed(2) + ' / 100' });
+        var cvaScoreEl = S.h('span', { class: 'bt-tc-badge is-good mono', id: 'bt-step5-cva-score-badge', text: 'Cupping Score: ' + cvaScoreVal.toFixed(2) + ' / 100' });
+
+        function syncCvaScoreInPlace() {
+          var scNow = computeScaCvaScore(tSt);
+          var mappedStars = clamp(Math.round((1.0 + ((scNow - 58.0) / 34.0) * 4.0) * 4) / 4, 1.0, 5.0);
+          tSt.stars = mappedStars;
+          tSt.hasUserRated = true;
+          cvaScoreEl.textContent = 'Cupping Score: ' + scNow.toFixed(2) + ' / 100';
+          syncRatingVisuals();
+          paintFixAndCtaOnly();
+          paintOutlierBadgeOnly();
+        }
 
         var cvaList = S.h('div', { class: 'bt-tc-guided-list' });
         CVA_ATTRS.forEach(function (attr) {
@@ -3840,6 +4196,8 @@ if (typeof window !== 'undefined') {
           var dVal = tSt.cvaDesc[attr.key] != null ? tSt.cvaDesc[attr.key] : 9;
           var hVal = tSt.cvaHedonic[attr.key] != null ? tSt.cvaHedonic[attr.key] : 7;
           var strongLabelEl = S.h('span', { class: 'mono', style: 'font-weight:700;color:var(--ink)', text: 'How Strong: ' + dVal + ' / 15' });
+          var likeWordLabelEl = S.h('span', { style: 'font-weight:700;color:var(--ink)', text: 'How Much You Liked It: ' + hVal + ' / 9 (' + likingWord9(hVal) + ')' });
+          var hBtns = [];
 
           cvaList.appendChild(S.h('div', { class: 'bt-tc-cva-row' },
             S.h('div', { class: 'bt-tc-row-between' },
@@ -3870,39 +4228,60 @@ if (typeof window !== 'undefined') {
                   tSt.cvaDesc[attr.key] = +e.target.value;
                   strongLabelEl.textContent = 'How Strong: ' + tSt.cvaDesc[attr.key] + ' / 15';
                   if (!tSt.hasUserRated) {
-                    markRatedWithFallbackStars(tSt, clamp((computeScaCvaScore(tSt) - 55) / 9, 1, 5));
-                    syncRatingVisuals();
-                    paintFixAndCtaOnly();
+                    syncCvaScoreInPlace();
                   }
                 }
               })
             ) : null,
             !isSkip ? S.h('div', { style: 'display:flex;flex-direction:column;gap:5px' },
               S.h('div', { class: 'bt-tc-scale-hint' },
-                S.h('span', { style: 'font-weight:700;color:var(--ink)', text: 'How Much You Liked It: ' + hVal + ' / 9 (' + likingWord9(hVal) + ')' }),
+                likeWordLabelEl,
                 S.h('span', { text: '1\u20133 Disliked \u00B7 5 Okay \u00B7 7 Good \u00B7 8 Great \u00B7 9 Extraordinary' })
               ),
               S.h('div', { class: 'bt-tc-pill-scroll', role: 'radiogroup', 'aria-label': attr.label + ' how much you liked it 1 to 9' },
                 [1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (v9) {
-                  return S.h('button', {
+                  var hb = S.h('button', {
                     type: 'button',
                     class: 'bt-tc-pill is-compact mono' + (hVal === v9 ? ' is-active' : ''),
                     'aria-pressed': String(hVal === v9),
                     text: String(v9),
                     onclick: function () {
                       tSt.cvaHedonic[attr.key] = v9;
-                      var scNow = computeScaCvaScore(tSt);
-                      var mappedStars = Math.round(clamp((scNow - 55) / 9, 1, 5) * 4) / 4;
-                      if (!tSt.hasUserRated || !(+tSt.stars > 0)) tSt.stars = mappedStars;
-                      tSt.hasUserRated = true;
-                      cvaScoreEl.textContent = 'Cupping Score: ' + scNow.toFixed(2) + ' / 100';
-                      paintAll();
+                      hBtns.forEach(function (b, bIdx) {
+                        var on = (bIdx + 1) === v9;
+                        b.className = 'bt-tc-pill is-compact mono' + (on ? ' is-active' : '');
+                        b.setAttribute('aria-pressed', String(on));
+                      });
+                      likeWordLabelEl.textContent = 'How Much You Liked It: ' + v9 + ' / 9 (' + likingWord9(v9) + ')';
+                      S.haptic('tick');
+                      syncCvaScoreInPlace();
                     }
                   });
+                  hBtns.push(hb);
+                  return hb;
                 })
               )
             ) : null
           ));
+        });
+
+        var defectBtns = [];
+        var defectOpts = [
+          ['', 'Clean Cup (No Off-Flavors)'],
+          ['potato', 'Raw Potato Off-Note (-4)'],
+          ['moldy', 'Musty / Moldy (-4)'],
+          ['phenolic', 'Medicinal / Smoky Off-Note (-4)'],
+          ['ferment', 'Harsh Sour Ferment (-4)']
+        ];
+        var retasteBtn = S.h('button', {
+          type: 'button',
+          class: 'bt-tc-pill is-compact' + (tSt.cvaRetasted ? ' is-active' : ' is-soft'),
+          text: tSt.cvaRetasted ? 'Retasted As Cooled' : 'Mark Retasted Warm/Cool',
+          onclick: function () {
+            tSt.cvaRetasted = !tSt.cvaRetasted;
+            this.className = 'bt-tc-pill is-compact' + (tSt.cvaRetasted ? ' is-active' : ' is-soft');
+            this.textContent = tSt.cvaRetasted ? 'Retasted As Cooled' : 'Mark Retasted Warm/Cool';
+          }
         });
 
         rateCard.appendChild(S.h('div', { class: 'bt-tc-well', style: 'padding:12px 13px;gap:10px' },
@@ -3935,32 +4314,26 @@ if (typeof window !== 'undefined') {
           S.h('div', { class: 'bt-tc-cva-row' },
             S.h('div', { class: 'bt-tc-row-between' },
               S.h('span', { style: 'font-size:0.8rem;font-weight:700', text: 'Off-Flavors / Defects (-4 pts/cup) & Cool Retaste' }),
-              S.h('button', {
-                type: 'button',
-                class: 'bt-tc-pill is-compact' + (tSt.cvaRetasted ? ' is-active' : ' is-soft'),
-                text: tSt.cvaRetasted ? 'Retasted As Cooled' : 'Mark Retasted Warm/Cool',
-                onclick: function () { tSt.cvaRetasted = !tSt.cvaRetasted; paintAll(); }
-              })
+              retasteBtn
             ),
             S.h('div', { class: 'bt-tc-pill-scroll' },
-              [
-                ['', 'Clean Cup (No Off-Flavors)'],
-                ['potato', 'Raw Potato Off-Note (-4)'],
-                ['moldy', 'Musty / Moldy (-4)'],
-                ['phenolic', 'Medicinal / Smoky Off-Note (-4)'],
-                ['ferment', 'Harsh Sour Ferment (-4)']
-              ].map(function (df) {
-                return S.h('button', {
+              defectOpts.map(function (df, dIdx) {
+                var db = S.h('button', {
                   type: 'button',
                   class: 'bt-tc-pill is-compact' + (tSt.defectType === df[0] ? ' is-copper' : ' is-soft'),
                   text: df[1],
                   onclick: function () {
                     tSt.defectType = df[0];
                     tSt.cvaDefectiveCups = df[0] ? 1 : 0;
-                    tSt.hasUserRated = true;
-                    paintAll();
+                    defectBtns.forEach(function (b, bIdx) {
+                      b.className = 'bt-tc-pill is-compact' + (bIdx === dIdx ? ' is-copper' : ' is-soft');
+                    });
+                    S.haptic('tick');
+                    syncCvaScoreInPlace();
                   }
                 });
+                defectBtns.push(db);
+                return db;
               })
             )
           )
@@ -3972,6 +4345,9 @@ if (typeof window !== 'undefined') {
       var allowBjInFoil = !(tSt.hasUserRated && rxCheckNow.inGoldZone);
       rateCard.appendChild(buildScratchFoilCard(tSt, paintAll, allowBjInFoil));
       root.appendChild(rateCard);
+      if (tSt.coolingCardCollapsed) {
+        root.appendChild(gsCard);
+      }
 
       /* =====================================================================
          CARD 3: 2. Your Dial-In Verdict & Next-Brew Recipe (#bt-nextbrew-fix)
@@ -4098,6 +4474,7 @@ if (typeof window !== 'undefined') {
     solveInMugRescue: solveInMugRescueSafe,
     computeFlavorMatch: computeWcrFlavorMatch,
     computeScaCvaScore: computeScaCvaScore,
+    computeUnifiedScore: computeUnifiedSensoryScore,
     evaluateR2Readiness: evaluateR2ReadinessSafe,
     evaluateR2VsPalateDiscrepancy: evaluateR2VsPalateDiscrepancy,
     evaluateOutlierSurprise: evaluateOutlierSurprise

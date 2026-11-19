@@ -797,7 +797,9 @@ button:disabled,
   min-height: 100vh;
   min-height: 100dvh;
   width: 100%;
-  max-width: 100vw;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   overflow-x: clip;
 }
 
@@ -807,6 +809,9 @@ button:disabled,
   flex-direction: column;
   width: 100%;
   min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: clip;
 }
 
 #side-nav,
@@ -823,6 +828,10 @@ button:disabled,
   align-items: center;
   justify-content: space-between;
   gap: 6px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: var(--safe-top) calc(10px + var(--safe-right)) 0 calc(10px + var(--safe-left));
   height: calc(52px + var(--safe-top));
   min-height: calc(52px + var(--safe-top));
@@ -841,13 +850,13 @@ button:disabled,
 }
 
 .bt-top-left {
-  flex: 1 1 auto;
-  overflow: visible;
+  flex: 0 1 auto;
+  overflow: hidden;
   gap: 6px;
 }
 
 .bt-top-right {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
 }
 
 /* Universal Top-Chrome Back Button (#top-back-btn) */
@@ -922,46 +931,81 @@ button:disabled,
 .bt-top-brand-name span {
   color: var(--accent);
 }
-@media (max-width: 470px) {
-  .bt-top-left.has-back .bt-top-brand-name {
-    display: none;
-  }
-  .bt-top-left.has-back .bt-top-brand {
-    padding: 4px 2px;
-  }
-}
-@media (max-width: 410px) {
+@media (max-width: 640px) {
   #top-chrome {
     padding-left: calc(8px + var(--safe-left));
     padding-right: calc(8px + var(--safe-right));
     gap: 4px;
   }
-  .bt-top-back-btn {
-    padding: 0 8px 0 6px;
-    font-size: 11.5px;
-    min-height: 32px;
+  .bt-top-left {
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+  .bt-top-brand {
+    flex: 0 0 auto;
+    padding: 4px 2px;
+  }
+  .bt-top-brand-mark {
+    width: 28px;
+    height: 28px;
   }
   .bt-top-brand-name {
-    font-size: 0.89rem;
+    display: none;
+  }
+  .bt-top-back-btn {
+    padding: 0 7px;
+    font-size: 11px;
+    min-height: 32px;
+    gap: 3px;
+  }
+  .bt-top-right {
+    gap: 4px;
+    flex: 0 1 auto;
+    min-width: 0;
   }
   .bt-lens-seg button {
-    min-width: 34px;
-    padding: 0 6px;
+    min-width: 0;
+    min-height: 28px;
+    padding: 4px 6px;
+    font-size: 10.5px;
   }
-  .bt-chrome-pill,
-  .bt-icon-btn {
-    min-width: 34px;
+  .bt-gear-btn {
+    height: 34px;
+    min-height: 34px;
+    min-width: 0;
     padding: 0 6px;
+    font-size: 11px;
+    gap: 4px;
+    flex: 0 0 auto;
   }
-  .bt-icon-btn {
+  .bt-gear-btn .bt-gear-label-full,
+  .bt-gear-btn .bt-gear-grinder-badge {
+    display: none;
+  }
+  .bt-gear-btn .bt-gear-label-short {
+    display: inline;
+  }
+  #top-ble-pill {
+    height: 34px;
+    min-height: 34px;
+    min-width: 34px;
+    padding: 0 8px;
+  }
+  #top-theme-btn {
     width: 34px;
     height: 34px;
+    min-width: 34px;
+    min-height: 34px;
     padding: 0;
   }
 }
 @media (max-width: 358px) {
-  .bt-top-brand-name {
-    font-size: 0.84rem;
+  .bt-lens-seg button {
+    padding: 4px 5px;
+  }
+  .bt-gear-btn,
+  #top-ble-pill {
+    padding: 0 6px;
   }
 }
 
@@ -1061,6 +1105,35 @@ button:disabled,
   color: var(--warn);
 }
 
+.bt-gear-btn .bt-ico {
+  color: var(--accent);
+  flex: none;
+}
+.bt-gear-label-short {
+  display: none;
+}
+.bt-gear-btn[data-configured="true"] {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+.bt-gear-dot {
+  width: 6.5px;
+  height: 6.5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+}
+.bt-gear-grinder-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .bt-status-dot {
   width: 7.5px;
   height: 7.5px;
@@ -1086,15 +1159,19 @@ button:disabled,
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
+  overflow-x: clip;
 }
 
 #mount {
   flex: 1 1 auto;
   width: 100%;
-  max-width: 780px;
+  max-width: min(780px, 100%);
   margin: 0 auto;
   padding: 12px calc(16px + var(--safe-right)) calc(96px + var(--safe-bottom)) calc(16px + var(--safe-left));
   min-width: 0;
+  box-sizing: border-box;
+  overflow-x: clip;
 }
 
 .bt-workspace:has(#detail-pane:not(:empty)) #mount {
@@ -1137,6 +1214,10 @@ html.bt-kb-open #detail-pane {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 2px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 2px calc(6px + var(--safe-right)) var(--safe-bottom) calc(6px + var(--safe-left));
   height: calc(64px + var(--safe-bottom));
   min-height: calc(64px + var(--safe-bottom));
@@ -1158,7 +1239,7 @@ html.bt-kb-open #bottom-dock {
   justify-content: center;
   gap: 3px;
   min-height: 52px;
-  min-width: 44px;
+  min-width: 0;
   padding: 4px 2px 2px;
   border: 0;
   border-radius: var(--r-sm);
@@ -3666,7 +3747,9 @@ select.bt-input {
 
 .bt-card-v6 {
   width: 100%;
+  max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
   background: var(--surface-card-grad, var(--surface));
   border: 1px solid var(--line-soft, var(--line));
   border-radius: var(--r-md, 18px);
@@ -3884,6 +3967,9 @@ select.bt-input {
 .bt-input-v62,
 .bt-textarea-v62 {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   min-height: 46px;
   padding: 8px 13px;
   border-radius: 13px;
@@ -5120,6 +5206,7 @@ select.bt-input {
 
 .bt-timer-giant-clock {
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   text-align: center;
   display: flex;
@@ -5127,7 +5214,7 @@ select.bt-input {
   justify-content: center;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums lining-nums;
-  font-size: clamp(4.75rem, 21vw, 7.0rem);
+  font-size: clamp(3.2rem, 15.5vw, 6.2rem);
   font-weight: 900;
   line-height: 0.96;
   letter-spacing: -0.04em;
@@ -5219,7 +5306,9 @@ select.bt-input {
 /* GIANT LIVE 'APPROX GRAMS RIGHT NOW' PACER BANNER (#bt-timer-approx-grams-hero) */
 .bt-timer-approx-grams-hero {
   width: 100%;
+  max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
   padding: 7px 10px 8px;
   border-radius: 14px;
   background: linear-gradient(160deg, var(--accent-soft) 0%, var(--surface) 100%);
@@ -5230,7 +5319,7 @@ select.bt-input {
   gap: 4px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums lining-nums;
-  font-size: clamp(2.1rem, 8.8vw, 3.0rem);
+  font-size: clamp(1.6rem, 7.5vw, 2.75rem);
   font-weight: 900;
   line-height: 1.03;
 }
@@ -5398,6 +5487,10 @@ select.bt-input {
 }
 
 .bt-timer-dial-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 7px 10px;
   border-radius: 18px;
   background: var(--surface);
@@ -5405,7 +5498,7 @@ select.bt-input {
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 6px;
 }
 
@@ -5445,16 +5538,20 @@ select.bt-input {
     grid-row: 2;
     padding: 7px 12px 9px;
   }
+  .bt-timer-agitation-cue {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
   .bt-timer-dial-wrap {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 4;
   }
   .bt-timer-giant-weight {
     font-size: 0.88rem;
   }
   .bt-timer-dial-rhs {
     grid-column: 2;
-    grid-row: 3;
+    grid-row: 4;
     gap: 6px;
   }
   .bt-timer-dial-card.is-dial-collapsed .bt-timer-dial-rhs {
@@ -6367,6 +6464,520 @@ select.bt-input {
   border-color: var(--gold, #D98B26);
 }
 
+/* ==================== 10. v6.7 MY GEAR, CUPPING LAUNCHERS, KETTLE WARM & FLOW POLISH ==================== */
+.bt-my-gear-card {
+  gap: 10px;
+  padding: 13px 14px;
+  border-color: var(--line);
+  background: linear-gradient(160deg, var(--surface) 0%, var(--bg-subtle) 100%);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-my-gear-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.bt-my-gear-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 180px;
+  color: var(--accent);
+}
+.bt-my-gear-title-wrap > div {
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 0;
+}
+
+.bt-my-gear-sub {
+  font-size: 0.76rem;
+  color: var(--ink-secondary);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.bt-my-gear-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.bt-my-gear-pills {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+@media (max-width: 520px) {
+  .bt-my-gear-pills {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bt-my-gear-pills > :last-child {
+    grid-column: span 2;
+  }
+}
+
+.bt-my-gear-stat {
+  min-height: 48px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line-soft, var(--line));
+  background: var(--surface);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  transition: border-color 0.14s ease, transform 0.12s var(--spring-snappy);
+}
+.bt-my-gear-stat:hover {
+  border-color: var(--accent);
+}
+.bt-my-gear-stat:active {
+  transform: scale(0.985);
+}
+
+.bt-my-gear-stat-lbl {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+.bt-my-gear-stat-val {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Door Quick Studio Launchers (Cupping Table + Coffee Shop + Shared Brew) */
+.bt-door-grid-launchers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+@media (max-width: 640px) {
+  .bt-door-grid-launchers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bt-door-grid-launchers > .bt-door-cupping-card {
+    grid-column: span 2;
+    min-height: 92px;
+  }
+}
+
+@media (max-width: 350px) {
+  .bt-door-grid-launchers {
+    grid-template-columns: 1fr;
+  }
+  .bt-door-grid-launchers > .bt-door-cupping-card {
+    grid-column: auto;
+  }
+}
+
+.bt-door-cupping-card {
+  border-color: rgba(24, 96, 62, 0.34);
+  background: linear-gradient(155deg, var(--surface) 0%, var(--good-bg) 100%);
+}
+.bt-door-cupping-card:hover {
+  border-color: var(--primary);
+}
+
+/* Step 2 My Gear Card + Saved Brewers + Cupping Picks + Catalog Disclosure */
+.bt-step2-gear-card {
+  gap: 11px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-step2-brewer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.bt-step2-saved-brewer-chip {
+  min-height: 42px;
+  max-width: 100%;
+  padding: 6px 12px;
+  font-size: 0.81rem;
+  border-radius: 13px;
+  white-space: normal;
+  text-align: left;
+}
+.bt-step2-saved-brewer-chip.is-active {
+  border-color: var(--primary);
+  background: var(--primary-soft, var(--good-bg));
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.bt-step2-cupping-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 11px;
+  border-radius: 14px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--line-soft, var(--line));
+}
+
+.bt-step2-cupping-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  max-width: 100%;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--good-bg);
+  color: var(--good);
+  border: 1px solid rgba(24, 96, 62, 0.28);
+  font-size: 0.73rem;
+  font-weight: 800;
+  white-space: normal;
+  text-align: left;
+  transition: transform 0.12s ease, border-color 0.14s ease;
+}
+.bt-step2-cupping-link:hover {
+  border-color: var(--primary);
+}
+.bt-step2-cupping-link:active {
+  transform: scale(0.97);
+}
+
+.bt-step2-catalog-bar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.bt-step2-catalog-toggle {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  justify-content: center;
+  font-weight: 700;
+  border-style: dashed;
+  white-space: normal;
+  text-align: center;
+}
+
+/* Step 3 Context Strip & Kettle Warm Target Banner (Step 3 & Step 4) */
+.bt-step-context-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 7px 12px;
+  border-radius: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--line-soft, var(--line));
+}
+
+.bt-step-context-copy {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  flex: 1 1 180px;
+  min-width: 0;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.bt-step-context-link {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bt-kettle-warm-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, var(--accent-soft) 0%, var(--bg-subtle) 100%);
+  border: 1.5px solid rgba(154, 66, 18, 0.34);
+}
+
+.bt-kettle-warm-card.is-smart-tank,
+.bt-kettle-warm-card.is-espresso-tank {
+  background: linear-gradient(135deg, var(--science-bg) 0%, var(--bg-subtle) 100%);
+  border-color: var(--science-border);
+}
+
+.bt-kettle-warm-card.is-cold {
+  background: linear-gradient(135deg, var(--good-bg) 0%, var(--bg-subtle) 100%);
+  border-color: rgba(24, 96, 62, 0.28);
+}
+
+.bt-kettle-warm-card.is-step4-compact {
+  padding: 8px 11px;
+  border-radius: 14px;
+}
+
+.bt-kettle-warm-lhs {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.bt-kettle-warm-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft, var(--line));
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.bt-kettle-warm-card.is-smart-tank .bt-kettle-warm-ico,
+.bt-kettle-warm-card.is-espresso-tank .bt-kettle-warm-ico {
+  color: var(--science);
+}
+.bt-kettle-warm-card.is-cold .bt-kettle-warm-ico {
+  color: var(--good);
+}
+
+.bt-kettle-warm-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.bt-kettle-warm-target {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.bt-kettle-warm-sub {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  line-height: 1.3;
+}
+
+.bt-kettle-warm-rhs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bt-kettle-skip-btn {
+  min-height: 34px;
+  padding: 0 11px;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+/* Prefs Tab: My Gear & Active Hardware Summary Card */
+.bt-prefs-gear-card {
+  gap: 11px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-prefs-gear-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 350px) {
+  .bt-prefs-gear-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bt-prefs-gear-tile {
+  padding: 9px 11px;
+  border-radius: 13px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--line-soft, var(--line));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.bt-prefs-gear-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.bt-prefs-gear-actions > button {
+  min-height: 42px;
+  flex: 1 1 170px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Pour Height, Agitation & Anti-Channeling Cues (Step 3 + Step 4) */
+.bt-agitation-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  margin-top: 2px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-agitation-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.69rem;
+  font-weight: 800;
+  line-height: 1.25;
+  border: 1px solid var(--line);
+  background: var(--bg-subtle);
+  color: var(--ink);
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+
+.bt-agitation-pill.is-gentle {
+  background: var(--good-bg);
+  color: var(--good);
+  border-color: rgba(24, 96, 62, 0.3);
+}
+
+.bt-agitation-pill.is-swirl {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(154, 66, 18, 0.3);
+}
+
+.bt-agitation-pill.is-spiral {
+  background: var(--science-bg);
+  color: var(--science);
+  border-color: var(--science-border);
+}
+
+.bt-agitation-guide {
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  line-height: 1.34;
+}
+
+.bt-timer-agitation-cue {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 11px;
+  border-radius: 13px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--line);
+  min-width: 0;
+}
+
+.bt-timer-agitation-cue.is-gentle {
+  border-color: rgba(24, 96, 62, 0.32);
+  background: linear-gradient(135deg, var(--good-bg) 0%, var(--bg-subtle) 100%);
+}
+
+.bt-timer-agitation-cue.is-swirl {
+  border-color: rgba(154, 66, 18, 0.3);
+  background: linear-gradient(135deg, var(--accent-soft) 0%, var(--bg-subtle) 100%);
+}
+
+.bt-timer-agitation-cue.is-spiral {
+  border-color: var(--science-border);
+  background: linear-gradient(135deg, var(--science-bg) 0%, var(--bg-subtle) 100%);
+}
+
+.bt-timer-agitation-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bt-timer-agitation-guide {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  line-height: 1.34;
+}
+
+
+
 /* ==========================================================================
    BeanTelligence v6.2 — 03a-coffee-entry.css
    Step 1 Inline Coffee Capture Studio, Above-the-Fold 390x844 Discipline,
@@ -6390,18 +7001,18 @@ select.bt-input {
 .bt-ce-root {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 14px;
   width: 100%;
-  max-width: 740px;
+  max-width: 720px;
   min-width: 0;
   margin: 0 auto;
-  padding: 0 0 12px;
+  padding: 2px 0 18px;
 }
 
 @media (min-width: 768px) {
   .bt-ce-root {
-    gap: 13px;
-    padding-top: 4px;
+    gap: 16px;
+    padding-top: 6px;
   }
 }
 
@@ -6488,6 +7099,7 @@ select.bt-input {
 .bt-ce-card {
   width: 100%;
   min-width: 0;
+  max-width: 100%;
   background: var(--surface-card-grad);
   border: 1px solid var(--line-soft);
   border-radius: 16px;
@@ -6793,13 +7405,16 @@ select.bt-input {
 .bt-ce-spotlight {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 46px;
-  padding: 0 12px;
-  border-radius: 12px;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 48px;
+  padding: 0 13px;
+  border-radius: 13px;
   background: var(--surface);
   box-shadow: var(--shadow-xs);
-  border: 2px solid var(--edge);
+  border: 1.5px solid var(--line);
   transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
 
@@ -7226,37 +7841,51 @@ select.bt-input {
   display: none;
 }
 
-/* 6-Color Roast Spectrum Swatches */
+/* 5-Color Roast Spectrum Swatches */
 .bt-ce-roast-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-}
-
-@media (min-width: 580px) {
-  .bt-ce-roast-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .bt-ce-roast-swatch {
-  min-height: 56px;
-  padding: 6px 5px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 54px;
+  padding: 8px 3px 7px;
   border-radius: 12px;
   background: var(--surface);
-  border: 2px solid var(--line);
+  border: 1.5px solid var(--line);
   box-shadow: var(--shadow-xs);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  font-size: 11.5px;
-  font-weight: 700;
+  justify-content: flex-start;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
   color: var(--ink);
   text-align: center;
+  white-space: normal;
+  overflow-wrap: break-word;
   cursor: pointer;
   transition: border-color 0.14s ease, background 0.14s ease, transform 0.12s var(--spring-snappy), box-shadow 0.14s ease;
+}
+
+@media (min-width: 480px) {
+  .bt-ce-roast-grid {
+    gap: 8px;
+  }
+  .bt-ce-roast-swatch {
+    padding: 9px 6px 8px;
+    font-size: 11.5px;
+    letter-spacing: -0.01em;
+  }
 }
 
 .bt-ce-roast-swatch:hover {
@@ -7287,6 +7916,8 @@ select.bt-input {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .bt-ce-chips-scroll {
@@ -7296,9 +7927,13 @@ select.bt-input {
   overflow-x: auto;
   padding-bottom: 2px;
   scrollbar-width: thin;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .bt-ce-chip {
+  min-width: 0;
+  max-width: 100%;
   min-height: 40px;
   padding: 6px 12px;
   border-radius: var(--r-pill);
@@ -7311,9 +7946,16 @@ select.bt-input {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
   cursor: pointer;
   transition: border-color 0.14s ease, background 0.14s ease, color 0.14s ease;
+}
+
+.bt-ce-chips-scroll .bt-ce-chip {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .bt-ce-chip:hover {
@@ -7485,6 +8127,9 @@ select.bt-input {
   position: relative;
   bottom: auto;
   z-index: 2;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   margin-top: 12px;
   padding: 10px 12px;
   border-radius: 20px;
@@ -7495,8 +8140,10 @@ select.bt-input {
 
 .bt-ce-cta-primary {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 56px;
-  padding: 9px 18px;
+  padding: 9px 16px;
   border-radius: 16px;
   background: var(--primary);
   color: var(--primary-ink);
@@ -7529,7 +8176,7 @@ select.bt-input {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: min(74vw, 520px);
+  max-width: 100%;
 }
 
 /* ==================== 12. FACTS IN FOUR PARTS SHEET & VAULT ROWS ==================== */
@@ -8957,6 +9604,466 @@ select.bt-input {
   color: var(--ink);
 }
 
+/* ==================== 17. v6.7 CALM STEP 1 DECLUTTER ZONES & MORE BEAN DETAILS ==================== */
+.bt-ce-head {
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-ce-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.bt-ce-mode-pill {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--r-pill);
+  background: var(--well);
+  border: 1px solid var(--line-soft);
+  gap: 2px;
+}
+
+.bt-ce-mode-pill button {
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: var(--r-pill);
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.bt-ce-mode-pill button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Zone 1: Unified Bag Source Strip */
+.bt-ce-source-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-ce-source-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 340px) {
+  .bt-ce-source-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.bt-ce-source-btn {
+  min-height: 48px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  box-shadow: var(--shadow-xs);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease, transform 0.12s var(--spring-snappy);
+}
+
+.bt-ce-source-btn:hover {
+  border-color: var(--accent);
+}
+
+.bt-ce-source-btn:active {
+  transform: scale(0.98);
+}
+
+.bt-ce-source-btn.is-primary {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.bt-ce-quick-bags-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 1px 1px 4px;
+  scrollbar-width: thin;
+  max-width: 100%;
+}
+
+.bt-ce-quick-bag-pill {
+  flex-shrink: 0;
+  min-height: 38px;
+  max-width: 220px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+
+.bt-ce-quick-bag-pill.is-active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  font-weight: 700;
+}
+
+.bt-ce-quick-bag-lbl {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bt-ce-source-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -4px;
+}
+
+/* Zone 2: Calm Core 4 Essentials Cards */
+.bt-ce-zone-card {
+  padding: 16px;
+  gap: 12px;
+  border-radius: 18px;
+}
+
+.bt-ce-zone-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bt-ce-zone-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0;
+}
+
+.bt-ce-zone-cue {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ink-secondary);
+}
+
+.bt-ce-zone-divider {
+  height: 1px;
+  background: var(--line-soft);
+  margin: 2px 0;
+}
+
+.bt-ce-input-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* DiFluid Omni Quiet Header Action */
+.bt-ce-omni-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bt-ce-omni-btn {
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease;
+}
+
+.bt-ce-omni-btn:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.bt-ce-omni-btn.is-active {
+  background: var(--science-bg);
+  border-color: var(--science-border);
+  color: var(--science);
+  font-weight: 700;
+}
+
+.bt-ce-omni-readout {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border-radius: 11px;
+  background: var(--science-bg);
+  border: 1px solid var(--science-border);
+  color: var(--science);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+/* Primary 4 Process Chips */
+.bt-ce-proc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (min-width: 560px) {
+  .bt-ce-proc-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.bt-ce-proc-chip {
+  min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  padding: 6px 8px;
+  justify-content: center;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.bt-ce-sub-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: var(--well);
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Searchable & Tabbed Bag Tasting Notes */
+.bt-ce-notes-widget {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-ce-flavor-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-ce-flavor-tabs[hidden] {
+  display: none;
+}
+
+.bt-ce-flavor-tab {
+  min-height: 34px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: var(--well);
+  border: 1px solid transparent;
+  color: var(--ink-secondary);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.bt-ce-flavor-tab.is-active {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--ink);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Roast Date Quick Chips */
+.bt-ce-date-quick-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (min-width: 520px) {
+  .bt-ce-date-quick-row {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.bt-ce-date-chip {
+  min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  padding: 6px 6px;
+  justify-content: center;
+  font-size: 12.5px;
+}
+
+.bt-ce-date-hint {
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+/* Zone 3: Clean Collapsible "More Bean Details" Disclosure */
+.bt-ce-disclosure {
+  width: 100%;
+  min-width: 0;
+  border-radius: 18px;
+  background: var(--surface-card-grad);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.bt-ce-disclosure-btn {
+  width: 100%;
+  min-height: 54px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.bt-ce-disclosure-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.bt-ce-disclosure-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.bt-ce-disclosure-sub {
+  font-size: 12px;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bt-ce-disclosure-chev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.bt-ce-disclosure-btn[aria-expanded="true"] .bt-ce-disclosure-chev {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.bt-ce-disclosure-body {
+  padding: 4px 16px 16px;
+  border-top: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bt-ce-detail-grp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 8px;
+}
+
+.bt-ce-detail-lbl {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.bt-ce-inline-nums {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.bt-ce-num-lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+
 /* ==========================================================================
    BeanTelligence v6.3 — 03b-taste-cellar.css
    Step 5 (Taste & Perfect: Context Strip & Flow Clue, Cup Cooling Timer 60 C,
@@ -10257,6 +11364,665 @@ select.bt-input {
   color: var(--ink);
   word-break: break-word;
 }
+
+/* ==================== 10. v6.7 SCORE HERO, GIANT STAR BAR, VISUAL PICKERS & CUPPING POLISH ==================== */
+.bt-tc-mode-bar-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bt-tc-mode-bar-row > .bt-tc-seg-bar {
+  flex: 1 1 260px;
+}
+
+.bt-tc-cupping-launch-btn {
+  min-height: 46px;
+  padding: 8px 14px;
+  border-radius: var(--r-md, 16px);
+  border: 1.5px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.83rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  transition: transform 0.14s var(--spring-snappy), background-color 0.14s ease, color 0.14s ease;
+}
+
+.bt-tc-cupping-launch-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.bt-tc-cupping-launch-btn:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+/* Live Score Hero Summary Card */
+.bt-tc-score-hero {
+  background: linear-gradient(158deg, var(--surface) 0%, var(--well) 100%);
+  border: 1.5px solid var(--line-strong, var(--line));
+  border-radius: 18px;
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--shadow-xs);
+}
+
+.bt-tc-score-hero.is-outstanding {
+  border-color: var(--good);
+  background: linear-gradient(158deg, var(--good-bg) 0%, var(--surface) 100%);
+}
+
+.bt-tc-score-hero.is-very-good {
+  border-color: var(--accent);
+  background: linear-gradient(158deg, var(--accent-soft) 0%, var(--surface) 100%);
+}
+
+.bt-tc-score-hero.is-warn {
+  border-color: var(--warn);
+}
+
+.bt-tc-score-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bt-tc-score-dual {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bt-tc-score-sca-num {
+  font-family: var(--font-mono);
+  font-size: clamp(1.55rem, 4.5vw, 2.05rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.bt-tc-score-sca-unit {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--ink-muted);
+  margin-left: 4px;
+}
+
+.bt-tc-score-star-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.bt-tc-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+@media (max-width: 480px) {
+  .bt-tc-breakdown-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.bt-tc-bk-pill {
+  padding: 6px 9px;
+  border-radius: 11px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft, var(--line));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 0.76rem;
+}
+
+.bt-tc-bk-pill span {
+  color: var(--ink-secondary);
+  font-weight: 600;
+}
+
+.bt-tc-bk-pill b {
+  font-family: var(--font-mono);
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.bt-tc-bk-pill.is-defect b {
+  color: var(--bad);
+}
+
+/* Giant Intuitive 1-Tap 48x48 Star & Fine-Tune Bar */
+.bt-tc-star-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  background: var(--well);
+  border-radius: 16px;
+  padding: 12px 13px;
+}
+
+.bt-tc-star-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bt-tc-stars-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bt-tc-star-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.14s var(--spring-snappy), border-color 0.14s ease, background-color 0.14s ease, color 0.14s ease;
+}
+
+.bt-tc-star-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.bt-tc-star-btn:active {
+  transform: scale(0.94);
+}
+
+.bt-tc-star-btn.is-filled {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.bt-tc-star-btn.is-half {
+  background: linear-gradient(90deg, var(--accent-soft) 50%, var(--surface) 50%);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.bt-tc-finetune-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bt-tc-finetune-btn {
+  min-height: 44px;
+  min-width: 58px;
+  padding: 6px 11px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.12s var(--spring-snappy), border-color 0.12s ease;
+}
+
+.bt-tc-finetune-btn:hover {
+  border-color: var(--accent);
+}
+
+.bt-tc-finetune-btn:active {
+  transform: scale(0.95);
+}
+
+.bt-tc-star-desc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft, var(--line));
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.bt-tc-star-desc-pill.is-rated {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 2-Column Tactile Quick Diagnosis Cards */
+.bt-tc-diag-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 380px) {
+  .bt-tc-diag-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.bt-tc-diag-card {
+  min-height: 56px;
+  padding: 9px 11px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: transform 0.14s var(--spring-snappy), border-color 0.14s ease, background-color 0.14s ease;
+}
+
+.bt-tc-diag-card:hover {
+  border-color: var(--accent);
+}
+
+.bt-tc-diag-card:active {
+  transform: scale(0.98);
+}
+
+.bt-tc-diag-card b {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: inherit;
+}
+
+.bt-tc-diag-card span {
+  font-size: 0.74rem;
+  line-height: 1.3;
+  color: var(--ink-secondary);
+}
+
+.bt-tc-diag-card.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.bt-tc-diag-card.is-active.is-sweet {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+}
+
+.bt-tc-diag-card.is-active span {
+  color: inherit;
+  opacity: 0.92;
+}
+
+/* Structured 5-Step Labeled Sensory Bars */
+.bt-tc-scale-bar {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.bt-tc-scale-step {
+  min-height: 50px;
+  padding: 5px 3px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: transform 0.12s var(--spring-snappy), background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.bt-tc-scale-step b {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.bt-tc-scale-step span {
+  font-size: 0.67rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--ink-secondary);
+}
+
+.bt-tc-scale-step[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.bt-tc-scale-step[aria-pressed="true"] span {
+  color: var(--accent-ink);
+}
+
+/* Tabbed Flavor Note Selector & Selected Tray */
+.bt-tc-flavor-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+  scrollbar-width: none;
+}
+
+.bt-tc-flavor-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.bt-tc-flavor-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bt-tc-selected-tray {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px dashed var(--line-strong, var(--line));
+}
+
+.bt-tc-selected-chip {
+  min-height: 36px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+/* 5-Bowl Cupping Table Polish */
+.bt-sca-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 8px;
+}
+
+.bt-sca-bowl-mini {
+  padding: 9px 11px;
+  border-radius: 14px;
+  background: var(--well);
+  border: 1.5px solid var(--line-soft, var(--line));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.bt-sca-bowl-mini .bt-tc-badge {
+  white-space: normal;
+  text-align: left;
+  line-height: 1.2;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.bt-sca-bowl-mini.is-leader {
+  border-color: var(--good);
+  background: var(--good-bg);
+}
+
+.bt-sca-reveal-banner {
+  padding: 10px 13px;
+  border-radius: 14px;
+  background: linear-gradient(155deg, var(--good-bg) 0%, var(--surface) 100%);
+  border: 1.5px solid var(--good);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bt-sca-preset-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.bt-sca-stepper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bt-sca-defect-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bt-sca-trait-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Cellar Journal Polished Score & Flavor Tags */
+.bt-journal-score-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bt-journal-flavor-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+/* ==================== 11. MOBILE 390px WIDTH SAFETY (STEP 5, CELLAR & CUPPING) ==================== */
+.bt-tc-stage,
+.bt-tc-card,
+.bt-tc-well,
+.bt-tc-score-hero,
+.bt-tc-star-bar-wrap,
+.bt-cellar-bag-card,
+.bt-academy-page,
+.bt-academy-page .bt-studio-card,
+.bt-academy-page .bt-sca-cockpit-card,
+.bt-academy-page .bt-sca-bowl-card,
+.bt-academy-page .bt-gym-coach-banner {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.bt-academy-page .bt-lab-text-in {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-tc-cupping-launch-btn,
+.bt-tc-gold-lock-btn {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .bt-academy-page .bt-studio-pill-nav {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    max-width: 100%;
+    min-width: 0;
+    gap: 6px;
+  }
+
+  .bt-academy-page .bt-studio-nav-pill {
+    padding: 7px 11px;
+    font-size: 0.79rem;
+    min-height: 40px;
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .bt-academy-page .bt-gym-scorecard-strip {
+    grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+    gap: 6px;
+  }
+
+  .bt-academy-page .bt-gym-mini-kpi {
+    padding: 6px 8px;
+    font-size: 0.72rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .bt-academy-page .bt-sca-bowls-grid,
+  .bt-academy-page .bt-cupping-4steps-grid,
+  .bt-academy-page .bt-chrono-gym-deck,
+  .bt-academy-page .bt-cva-attr-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bt-academy-page .bt-sca-hero-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bt-academy-page .bt-sca-bowl-mini > div {
+    flex-wrap: wrap;
+  }
+
+  .bt-tc-stage {
+    gap: 10px;
+  }
+
+  .bt-tc-card {
+    padding: 12px 13px;
+    gap: 9px;
+  }
+
+  .bt-tc-top-strip {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .bt-tc-brew-summary {
+    flex: 1 1 0%;
+    min-width: 0;
+  }
+
+  .bt-academy-page .bt-lab-card-head,
+  .bt-academy-page .bt-lab-chip-row,
+  .bt-academy-page .bt-lab-btn-row,
+  .bt-academy-page .bt-sca-bowl-top,
+  .bt-academy-page .bt-sca-timer-readout-row,
+  .bt-academy-page .bt-gym-coach-kicker-row {
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .bt-academy-page .bt-lab-btn,
+  .bt-academy-page .bt-lab-chip,
+  .bt-academy-page .bt-chart-cta-btn {
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .bt-tc-stars-group {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bt-tc-mode-seg,
+  .bt-tc-mode-bar-row > .bt-tc-seg-bar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    overflow: visible;
+    box-sizing: border-box;
+  }
+
+  .bt-tc-mode-seg .bt-tc-seg-btn,
+  .bt-tc-mode-bar-row > .bt-tc-seg-bar .bt-tc-seg-btn {
+    font-size: 12px;
+    padding: 7px 4px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.2;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 350px) {
+  .bt-tc-star-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+
 /* ============================================================================
  * BeanTelligence v6.0 — Stylesheet 04: BTChartKit, Lab & Devices, Palate DNA,
  * Sunburst Wheel, SensoryPalateGym, Folklore Deck, Glossary & Data Vault
