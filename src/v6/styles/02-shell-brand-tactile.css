@@ -326,7 +326,8 @@
   .bt-top-back-btn {
     padding: 0 7px;
     font-size: 11px;
-    min-height: 32px;
+    height: 36px;
+    min-height: 36px;
     gap: 3px;
   }
   .bt-top-right {
@@ -336,13 +337,13 @@
   }
   .bt-lens-seg button {
     min-width: 0;
-    min-height: 28px;
+    min-height: 32px;
     padding: 4px 6px;
     font-size: 10.5px;
   }
   .bt-gear-btn {
-    height: 34px;
-    min-height: 34px;
+    height: 36px;
+    min-height: 36px;
     min-width: 0;
     padding: 0 6px;
     font-size: 11px;
@@ -357,16 +358,16 @@
     display: inline;
   }
   #top-ble-pill {
-    height: 34px;
-    min-height: 34px;
-    min-width: 34px;
+    height: 36px;
+    min-height: 36px;
+    min-width: 36px;
     padding: 0 8px;
   }
   #top-theme-btn {
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
-    min-height: 34px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
     padding: 0;
   }
 }
@@ -403,6 +404,35 @@
   #top-ble-pill {
     padding: 0 5px;
     gap: 3px;
+  }
+}
+@media (max-width: 390px) {
+  .bt-gear-btn .bt-gear-label-short {
+    display: none;
+  }
+  .bt-lens-seg button {
+    padding: 3px 4px;
+    font-size: 10px;
+  }
+  .bt-top-back-btn,
+  #top-back-btn {
+    padding: 0 5px;
+    height: 36px;
+    min-height: 36px;
+  }
+  #top-gear-pill,
+  .bt-gear-btn,
+  #top-ble-pill {
+    height: 36px;
+    min-height: 36px;
+    min-width: 36px;
+    padding: 0 6px;
+  }
+  #top-theme-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
   }
 }
 
@@ -1566,12 +1596,12 @@ select.bt-input {
   left: 50%;
   bottom: calc(134px + var(--safe-bottom));
   transform: translateX(-50%);
-  z-index: 90;
+  z-index: 9600;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  width: min(440px, calc(100vw - 24px));
+  width: min(440px, calc(100% - 24px));
   pointer-events: none;
 }
 @media (min-width: 1024px) {
@@ -2482,7 +2512,7 @@ select.bt-input {
   left: 50%;
   bottom: 0;
   transform: translateX(-50%);
-  width: min(440px, 100vw);
+  width: min(440px, 100%);
   padding: 14px 16px calc(18px + var(--safe-bottom)) 16px;
   border-radius: var(--r-xl) var(--r-xl) 0 0;
   background: var(--surface-elevated);

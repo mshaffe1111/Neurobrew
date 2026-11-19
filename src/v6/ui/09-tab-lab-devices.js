@@ -80,10 +80,34 @@
     window.__btFallbackApp = window.__btFallbackApp || {
       coffee: { name: 'Ethiopia Worka Sakaro', roaster: 'Sey', roast: 'light', process: 'washed', origin: 'ethiopia', agtron: 82 },
       brew: { method: 'v60', dose: 18, water: 288, ratio: 16, tempC: 94, tempF: 201 },
-      prefs: { scienceLens: 'hybrid', immersionBasis: 'liang', toolModes: {}, water: { gh: 70, kh: 35, mgShare: 0.65 }, gear: {} },
+      prefs: { tempUnit: 'F', scienceLens: 'hybrid', immersionBasis: 'liang', toolModes: {}, water: { gh: 70, kh: 35, mgShare: 0.65 }, gear: {} },
       gear: { grinder: 'comandante-c40', ble: { rememberedDevices: [] } }
     };
     return window.__btFallbackApp;
+  }
+
+  function getPrefTempUnit() {
+    const a = getApp();
+    return (a && a.prefs && a.prefs.tempUnit === 'C') ? 'C' : 'F';
+  }
+
+  function cToF(c) {
+    return Number(c) * 9 / 5 + 32;
+  }
+
+  function fmtTempPref(c, dec) {
+    const d = dec != null ? dec : 1;
+    return getPrefTempUnit() === 'F' ? (cToF(c).toFixed(d) + ' °F') : (Number(c).toFixed(d) + ' °C');
+  }
+
+  function fmtGrinderUnit(unit, val) {
+    const u = String(unit || 'steps').trim();
+    const isOne = Math.abs(Number(val) - 1) < 1e-6;
+    if (u === 'click' || u === 'clicks') return isOne ? 'click' : 'clicks';
+    if (u === 'step' || u === 'steps') return isOne ? 'step' : 'steps';
+    if (u === 'mark' || u === 'marks') return isOne ? 'mark' : 'marks';
+    if (u === 'setting' || u === 'settings') return isOne ? 'setting' : 'settings';
+    return u;
   }
 
   function notify(msg) {
@@ -167,7 +191,10 @@
     const gKey = String(rawGKey).trim().toLowerCase().replace(/_/g, '-');
     a.brew.grinderKey = gKey;
     const methodKey = String(o.methodKey || a.brew.method || 'v60').trim().toLowerCase();
-    const calib = (a.prefs && (a.prefs.pocketMicronCalib || a.prefs.calib)) || null;
+    const pmc = a.prefs && a.prefs.pocketMicronCalib;
+    const pmcValid = pmc && (Number.isFinite(+pmc.d0OffsetUm) || Number.isFinite(+pmc.slopeM)) &&
+      (!pmc.grinderKey || String(pmc.grinderKey).trim().toLowerCase().replace(/_/g, '-') === gKey);
+    const calib = pmcValid ? pmc : ((a.prefs && a.prefs.calib) || null);
     let settingTxt = o.overrideSetting ? String(o.overrideSetting).trim() : '';
     if (!settingTxt && window.BTCoreV6 && window.BTCoreV6.psd && typeof window.BTCoreV6.psd.mapMicronsToGrinder === 'function') {
       try {
@@ -573,7 +600,9 @@
     const ghTap = clamp(cfg.ghTap, 0, 400, 180);
 
     const fTap = tapBlendOn && khTap > 0 ? clamp(kh / khTap, 0, 1, 0) : 0;
-    const khCarb = tapBlendOn ? fTap * khTap : (isCitrate ? 0 : kh);
+    const blendedKh = fTap * khTap;
+    const blendedGh = fTap * ghTap;
+    const khCarb = tapBlendOn ? blendedKh : (isCitrate ? 0 : kh);
     const khCit = (!tapBlendOn && isCitrate) ? kh : 0;
     /* Exact pH 5.0 effective proton neutralization: 0.96*KH_HCO3 + 0.45*KH_cit */
     const khEffPh5 = 0.96 * khCarb + 0.45 * khCit;
@@ -583,22 +612,36 @@
     const tempScaleFactor = Math.exp(-0.022 * (brewTempC - 90));
     const scaleWarnProd = 2500 * tempScaleFactor;
     const scaleSevProd = 4500 * tempScaleFactor;
-    const caCarbProduct = ghCa * khCarb;
+    const effGhCa = tapBlendOn ? (blendedGh * (1 - clamp(cfg.tapMgShare, 0, 1, 0.35))) : ghCa;
+    const caCarbProduct = effGhCa * khCarb;
 
-    const mgSaltG = (ghMg * mgSalt.mgPerLPpm * batchL) / 1000;
-    const caSaltG = (ghCa * caSalt.mgPerLPpm * batchL) / 1000;
-    const khSaltG = (kh * khSalt.mgPerLPpm * batchL) / 1000;
-    const clMgL = (mgSalt.clPerPpm ? ghMg * mgSalt.clPerPpm : 0) + (caSalt.clPerPpm ? ghCa * caSalt.clPerPpm : 0);
+    const remGh = tapBlendOn ? Math.max(0, gh - blendedGh) : gh;
+    const remKh = tapBlendOn ? Math.max(0, kh - blendedKh) : kh;
+    const addGhMg = tapBlendOn ? remGh : ghMg;
+    const addGhCa = tapBlendOn ? 0 : ghCa;
+
+    const mgSaltG = (addGhMg * mgSalt.mgPerLPpm * batchL) / 1000;
+    const caSaltG = (addGhCa * caSalt.mgPerLPpm * batchL) / 1000;
+    const khSaltG = (remKh * khSalt.mgPerLPpm * batchL) / 1000;
+    const isDiySalts = cfg.isDiyRecipe !== false;
+    const clMgL = tapBlendOn
+      ? (mgSalt.clPerPpm ? addGhMg * mgSalt.clPerPpm : 0)
+      : (isDiySalts ? ((mgSalt.clPerPpm ? ghMg * mgSalt.clPerPpm : 0) + (caSalt.clPerPpm ? ghCa * caSalt.clPerPpm : 0)) : 0);
 
     const batchMl = Math.round(batchL * 1000);
     const tapMl = Math.round(fTap * batchMl);
     const roMl = Math.max(0, batchMl - tapMl);
+    const tapExceedsTarget = tapBlendOn && (blendedGh > gh + 1 || khTap < kh - 1);
 
     return {
       gh: gh,
       kh: kh,
       ghMg: +ghMg.toFixed(1),
       ghCa: +ghCa.toFixed(1),
+      addGhMg: +addGhMg.toFixed(1),
+      addGhCa: +addGhCa.toFixed(1),
+      remGh: +remGh.toFixed(1),
+      remKh: +remKh.toFixed(1),
       khCarb: +khCarb.toFixed(1),
       khCit: +khCit.toFixed(1),
       khEffPh5: +khEffPh5.toFixed(1),
@@ -612,14 +655,16 @@
       mgSaltG: +mgSaltG.toFixed(3),
       caSaltG: +caSaltG.toFixed(3),
       khSaltG: +khSaltG.toFixed(3),
-      drops10kMg: Math.round((ghMg * batchL) / 0.5),
-      drops10kCa: Math.round((ghCa * batchL) / 0.5),
-      drops10kKh: Math.round((kh * batchL) / 0.5),
+      drops10kMg: Math.round((addGhMg * batchL) / 0.5),
+      drops10kCa: Math.round((addGhCa * batchL) / 0.5),
+      drops10kKh: Math.round((remKh * batchL) / 0.5),
       fTap: fTap,
       tapMl: tapMl,
       roMl: roMl,
-      blendedGh: +(fTap * ghTap).toFixed(1),
-      epsomBoostPpm: Math.max(0, +(gh - fTap * ghTap).toFixed(1))
+      blendedGh: +blendedGh.toFixed(1),
+      blendedKh: +blendedKh.toFixed(1),
+      tapExceedsTarget: tapExceedsTarget,
+      epsomBoostPpm: Math.max(0, +(gh - blendedGh).toFixed(1))
     };
   }
 
@@ -633,8 +678,12 @@
     const eyPct = clamp(cfg.eyPct, 10, 30, 20.4);
     const rw = clamp(cfg.rw, 1.0, 3.0, 2.1);
 
-    const iceG = cfg.flashOn ? totalWaterG * iceShare : 0;
-    const hotPourG = Math.max(rw * doseG + 2, totalWaterG - iceG);
+    let iceG = cfg.flashOn ? totalWaterG * iceShare : 0;
+    const minHotG = Math.min(totalWaterG, rw * doseG + 2);
+    if (cfg.flashOn && totalWaterG - iceG < minHotG) {
+      iceG = Math.max(0, totalWaterG - minHotG);
+    }
+    const hotPourG = Math.max(0, totalWaterG - iceG);
     const dissolvedG = doseG * (eyPct / 100);
     const dryExtractWater = Math.max(0.5, hotPourG - rw * doseG);
     const mDrip = dryExtractWater + dissolvedG;
@@ -755,17 +804,30 @@
     const curdleDanger = isPlant && estCupPh < 5.12 && steamTempC > 58;
     const scaldDanger = !isPlant && steamTempC > 67;
     const inBetaLgWindow = !isPlant && steamTempC >= 55 && steamTempC <= 65;
+    const curdleFixTempC = Math.min(56, Math.max(48, steamTempC - 10));
 
-    let guidance = 'Silky microfoam & peak natural lactose sweetness (55-65 C beta-Lg window).';
+    let guidance = '';
     if (curdleDanger) {
-      guidance = 'Isoelectric Curdle Alert (pH ~' + estCupPh.toFixed(2) + ' < 5.1): Steam 10 C cooler (' +
-        Math.max(48, steamTempC - 10) + ' C max, <=56 C) + temper 15g milk into shot first!';
+      guidance = 'Isoelectric Curdle Alert (pH ~' + estCupPh.toFixed(2) + ' < 5.1): Steam cooler to ' +
+        curdleFixTempC + ' °C (<=56 °C) + temper 15g milk into shot first!';
     } else if (scaldDanger) {
-      guidance = 'Above 68 C irreversible beta-lactoglobulin disulfide denaturation releases cooked H2S notes and collapses gloss.';
+      guidance = 'Above 68 °C irreversible beta-lactoglobulin disulfide denaturation releases cooked H2S notes and collapses gloss.';
     } else if (milkType === 'lactose_free') {
       guidance = 'Lactase-cleaved D-glucose + D-galactose delivers 3.1x natural perceived sweetness with zero added syrup.';
     } else if (milkType === 'eisbock') {
       guidance = 'WBC fractional freeze-thaw (' + Math.round(thawFrac * 100) + '% draw) concentrates milk solids ' + sweetnessMult + 'x.';
+    } else if (isPlant) {
+      guidance = steamTempC > 64
+        ? 'Above 64 °C plant proteins risk separation and papery off-notes — keep <=56–60 °C.'
+        : (milkType === 'oat'
+          ? 'Barista Oat sweet spot (<=56–60 °C): silky microfoam with natural maltose sweetness and zero acid curdling.'
+          : 'Plant milk sweet spot (<=56–60 °C): gentle steaming preserves clean emulsion & smooth texture.');
+    } else if (inBetaLgWindow) {
+      guidance = 'Silky microfoam & peak natural lactose sweetness (55–65 °C beta-Lg window).';
+    } else if (steamTempC < 55) {
+      guidance = 'Below 55 °C: mild warmth — steam into 55–65 °C for peak natural lactose sweetness (beta-Lg window) & silky microfoam.';
+    } else {
+      guidance = 'Approaching 68 °C scald limit — finish steaming inside 55–65 °C for optimal gloss & sweetness.';
     }
 
     return {
@@ -785,21 +847,24 @@
 
   /* --------------------------------------------------------------------------
    * DiFluid R2 Refractometer Thermal Readiness & Metal-Spoon Chill Coach
-   *   - Ideal Sample Temp: 20-28 C (68-82 F), within +-2 C of room/prism temp
+   *   - Ideal Sample Temp: 20-25 C (68-77 F), within +-2 C of room/prism temp
    *   - Live BLE tempC Guard:
-   *       18-29 C -> Green "Prism Temp Ideal (23.4 C)"
-   *       >29 C   -> Amber "Sample Too Warm (37.8 C) - Metal-Spoon Cool to 20-28 C to Avoid Evaporation Drift"
+   *       18-29 C -> Green "Prism Temp Ideal (23.4 C / 74.1 F)"
+   *       >29 C   -> Amber "Sample Too Warm (...) - Metal-Spoon Cool to 20-25 C"
    * -------------------------------------------------------------------------- */
   function evaluateR2SampleTemp(tempC) {
     const t = clamp(Number.isFinite(+tempC) ? +tempC : 23.4, 2, 95, 23.4);
     const tf = +(t * 9 / 5 + 32).toFixed(1);
+    const isF = getPrefTempUnit() === 'F';
+    const dispT = isF ? (tf.toFixed(1) + ' °F') : (t.toFixed(1) + ' °C');
+    const idealRng = isF ? '68–77 °F (20–25 °C)' : '20–25 °C';
     if (t >= 18.0 && t <= 29.0) {
       return {
         state: 'ideal',
         tempC: +t.toFixed(1),
         tempF: tf,
-        badgeText: 'Prism Temp Ideal (' + t.toFixed(1) + ' °C)',
-        detail: 'Ideal 20–28 °C (68–82 °F) window locked — zero dn/dT prism gradient or micro-drop evaporation drift.'
+        badgeText: 'Prism Temp Ideal (' + dispT + ')',
+        detail: 'Ideal 20–25 °C (68–77 °F) window locked — zero dn/dT prism gradient or micro-drop evaporation drift.'
       };
     }
     if (t > 29.0) {
@@ -807,7 +872,7 @@
         state: 'warm',
         tempC: +t.toFixed(1),
         tempF: tf,
-        badgeText: 'Sample Too Warm (' + t.toFixed(1) + ' °C) — Metal-Spoon Cool to 20–28 °C to Avoid Evaporation Drift',
+        badgeText: 'Sample Too Warm (' + dispT + ') — Metal-Spoon Cool to ' + idealRng + ' to Avoid Evaporation Drift',
         detail: 'Piping-hot drops (>32–60 °C) create sapphire-prism dn/dT thermal-gradient drift AND rapid 0.3 mL micro-drop evaporation that falsely inflates %TDS!'
       };
     }
@@ -815,7 +880,7 @@
       state: 'cool',
       tempC: +t.toFixed(1),
       tempF: tf,
-      badgeText: 'Sample Chilled (' + t.toFixed(1) + ' °C) — Equilibrate Toward 20–28 °C Prism Temp',
+      badgeText: 'Sample Chilled (' + dispT + ') — Equilibrate Toward ' + idealRng + ' Prism Temp',
       detail: 'Let chilled sample sit 15s on room-temp prism (±2 °C equilibrium) before locking optical shadowline.'
     };
   }
@@ -834,47 +899,68 @@
   /* ---- G. In-Mug Emergency Rescue Solver (Dilution Mass Balance + TAS2R NaCl Blockade) ---- */
   function solveInMugRescue(opts) {
     const o = opts || {};
-    const mugG = clamp(o.mugG, 25, 900, 220);
+    const mugG = clamp(o.mugG, 5, 900, 220);
     const symptom = o.symptom || 'bitter';
     const tds0 = clamp(o.tdsPct, 0.5, 16.0, symptom === 'weak' ? 1.05 : 1.52);
-    const tdsTarget = clamp(o.targetTdsPct, 0.7, 14.0, tds0 > 4 ? 9.0 : 1.28);
+    const isEspTds = tds0 > 4.0;
+    const defaultTarget = isEspTds ? 9.0 : 1.28;
+    const rawTarget = (isEspTds && (!o.targetTdsPct || o.targetTdsPct < 4.0)) ? 9.0 : o.targetTdsPct;
+    const tdsTarget = clamp(rawTarget, 0.7, 14.0, defaultTarget);
     const milkOk = !!o.milkAllowed;
 
-    const naclMg = Math.max(8, Math.round(mugG * 0.20)); /* 0.020% w/v = 44 mg per 220 g mug */
+    const naclMg = Math.max(2, Math.round(mugG * 0.20)); /* 0.020% w/v = 44 mg per 220 g mug */
     const saline20Drops = Math.max(1, Math.round(naclMg / 12)); /* 1 drop (~0.05 mL) of 20% w/v NaCl ~= 10-12 mg NaCl */
     const rawBypassG = tds0 > tdsTarget ? mugG * (tds0 / Math.max(0.4, tdsTarget) - 1) : 0;
-    const bypass80CG = symptom === 'weak' ? 0 : Math.round(clamp(rawBypassG || mugG * 0.11, 0, mugG * 0.65, 24));
-    const warmMilk60CG = Math.round(clamp(mugG * 0.16, 15, 90, 35));
+    const bypass80CG = symptom === 'weak' ? 0 : Math.round(clamp(rawBypassG || mugG * 0.11, 0, mugG * 0.65, Math.max(2, Math.round(mugG * 0.11))));
+    const warmMilk60CG = Math.round(clamp(mugG * 0.16, mugG < 40 ? 2 : 15, 90, 35));
     const bicarb5PctDrops = (symptom === 'sour' || symptom === 'sour_bitter') ? Math.max(1, Math.min(3, Math.round(mugG / 110))) : 0;
+    const minBypass = mugG < 40 ? Math.max(2, Math.round(mugG * 0.12)) : 15;
 
+    let actualBypassG = 0;
+    let actualDrops = 0;
+    let actualNaclMg = 0;
     let headline = '';
     let why = '';
     let nextBrewFix = '';
     if (symptom === 'bitter') {
-      headline = 'Add ' + Math.max(15, bypass80CG || 22) + ' g hot water (80 °C) + ' + saline20Drops + ' drops 20% saline (~' + naclMg + ' mg salt)';
+      actualBypassG = Math.max(minBypass, bypass80CG || Math.max(minBypass, 22));
+      actualDrops = saline20Drops;
+      actualNaclMg = naclMg;
+      headline = 'Add ' + actualBypassG + ' g hot water (80 °C) + ' + actualDrops + ' drops 20% saline (~' + actualNaclMg + ' mg salt)';
       why = isScienceXray()
-        ? ('80 °C bypass lowers polyphenol concentration immediately without scalding aromatics, while ~' + naclMg + ' mg Na+ selectively blocks TAS2R bitter receptors (Breslin & Beauchamp, Nature 1997) so natural sweetness pops.')
-        : ('A warm splash of 80 °C water opens up heavy bitterness without cooking delicate aromas, while a tiny pinch of salt (~' + naclMg + ' mg) naturally mutes bitter taste buds so caramel sweetness comes forward.');
+        ? ('80 °C bypass lowers polyphenol concentration immediately without scalding aromatics, while ~' + actualNaclMg + ' mg Na+ selectively blocks TAS2R bitter receptors (Breslin & Beauchamp, Nature 1997) so natural sweetness pops.')
+        : ('A warm splash of 80 °C water opens up heavy bitterness without cooking delicate aromas, while a tiny pinch of salt (~' + actualNaclMg + ' mg) naturally mutes bitter taste buds so caramel sweetness comes forward.');
       nextBrewFix = 'Next cup: grind 1–2 clicks coarser, drop kettle -2 °C, or pull dripper 15s earlier.';
     } else if (symptom === 'sour') {
-      headline = 'Cool cup to 55–58 °C + add ' + Math.max(1, saline20Drops - 1) + ' drops 20% saline (~' + Math.round(naclMg * 0.7) + ' mg salt)' + (milkOk ? (' or ' + warmMilk60CG + ' g 60 °C milk') : '');
+      actualBypassG = 0;
+      actualDrops = Math.max(1, saline20Drops - 1);
+      actualNaclMg = Math.max(2, Math.round(naclMg * 0.7));
+      headline = 'Cool cup to 55–58 °C + add ' + actualDrops + ' drops 20% saline (~' + actualNaclMg + ' mg salt)' + (milkOk ? (' or ' + warmMilk60CG + ' g 60 °C milk') : '');
       why = 'Letting the cup cool to 55–58 °C unlocks your tongue\'s natural sweetness, and a tiny touch of salt softens sharp lemony edges.' + (isScienceXray() && bicarb5PctDrops ? (' Scientist option: ' + bicarb5PctDrops + ' micro-drop(s) 5% baking soda solution neutralizes ~0.15 pH units (never exceed 3 drops or soapy sodium forms).') : '');
       nextBrewFix = 'Next cup: grind 1–2 clicks finer, raise kettle +2 °C, or extend bloom to 45s.';
     } else if (symptom === 'strong') {
-      const dilG = Math.max(18, bypass80CG || Math.round(mugG * 0.14));
-      const newTds = +(tds0 * mugG / (mugG + dilG)).toFixed(2);
-      headline = 'Stir in ' + dilG + ' g hot water at 80 °C (' + tds0.toFixed(2) + '% \u2192 ' + newTds + '% TDS)';
+      actualBypassG = Math.max(minBypass, bypass80CG || Math.round(mugG * 0.14));
+      actualDrops = 0;
+      actualNaclMg = 0;
+      const newTds = +(tds0 * mugG / (mugG + actualBypassG)).toFixed(2);
+      headline = 'Stir in ' + actualBypassG + ' g hot water at 80 °C (' + tds0.toFixed(2) + '% \u2192 ' + newTds + '% TDS)';
       why = isScienceXray()
         ? 'Pure barista bypass (M_add = M_mug * (TDS_0 / TDS_target - 1)): opens crowded flavor clarity into the sweet spot with zero extra bitterness.'
         : 'Adding clean hot water directly into your mug (barista bypass) opens up crowded flavors into the sweet spot with zero extra bitterness.';
       nextBrewFix = 'Next cup: widen brew ratio (e.g. 1:15 \u2192 1:16.5) while keeping extraction even.';
     } else if (symptom === 'sour_bitter') {
-      headline = 'Add ' + Math.max(15, Math.round(mugG * 0.09)) + ' g 80 °C water + ' + saline20Drops + ' drops 20% saline (~' + naclMg + ' mg salt)';
+      actualBypassG = Math.max(minBypass, Math.round(mugG * 0.09));
+      actualDrops = saline20Drops;
+      actualNaclMg = naclMg;
+      headline = 'Add ' + actualBypassG + ' g 80 °C water + ' + actualDrops + ' drops 20% saline (~' + actualNaclMg + ' mg salt)';
       why = isScienceXray()
         ? 'Sour + Bitter together means uneven channeling (fast sour channels + bitter over-extracted fines). Warm bypass + TAS2R Na+ blockade softens both edges right in the mug.'
         : 'Tasting sour and bitter together means water ran unevenly through the bed. A splash of warm water plus a tiny drop of saline softens both harsh edges right away.';
       nextBrewFix = 'Next cup: WDT/level dry bed, pour gently in center circles (<=4 g/s), and avoid high-wall agitation.';
     } else {
+      actualBypassG = 0;
+      actualDrops = 0;
+      actualNaclMg = 0;
       headline = milkOk
         ? ('Texture rescue: add ' + warmMilk60CG + ' g steamed/warmed milk (60 °C) or 20 g espresso/AeroPress topper')
         : 'Cannot un-dilute water in mug — top with a 20 g AeroPress/espresso concentrate shot if handy';
@@ -887,9 +973,9 @@
       symptom: symptom,
       tds0: tds0,
       tdsTarget: tdsTarget,
-      bypass80CG: symptom === 'strong' ? Math.max(18, bypass80CG || Math.round(mugG * 0.14)) : (symptom === 'weak' ? 0 : Math.max(15, bypass80CG || 20)),
-      naclMg: naclMg,
-      saline20Drops: saline20Drops,
+      bypass80CG: actualBypassG,
+      naclMg: actualNaclMg,
+      saline20Drops: actualDrops,
       warmMilk60CG: warmMilk60CG,
       bicarb5PctDrops: bicarb5PctDrops,
       headline: headline,
@@ -1132,6 +1218,8 @@
       tapBlendOn: false,
       ghTap: 175,
       khTap: 130,
+      tapMgShare: 0.40,
+      isDiyRecipe: false,
       quickStart: 'ro',
       quickVibe: 'sweet',
       lotusTip: 'round',
@@ -1250,7 +1338,8 @@
       calPt2Um: 760,
       calPt1Locked: false,
       calPt2Locked: false,
-      calGrinderKey: ''
+      calGrinderKey: '',
+      useOmniOverride: false
     },
 
     /* PocketMicronLens state */
@@ -1390,9 +1479,11 @@
 
     if (tds >= 4.5 && labState.bc.mode !== 'espresso') {
       labState.bc.mode = 'espresso';
+      if (labState.bc.targetTds < 6.0 || labState.bc.targetTds > 14.0) {
+        labState.bc.targetTds = 9.6;
+      }
     }
     labState.bc.measTds = tds;
-    labState.bc.targetTds = clamp(tds, labState.bc.mode === 'espresso' ? 5.0 : 0.75, labState.bc.mode === 'espresso' ? 16.0 : 2.25, tds);
     if (tempVal != null) labState.bc.measTempC = tempVal;
     labState.bc.measNd = ndVal;
 
@@ -1671,9 +1762,9 @@
     }, ic('info-circle', { size: 14 }), guideBtnSpan);
 
     const guideCard = domH('div', { class: 'bt-r2-guide-card', hidden: true },
-      domH('strong', { text: 'DiFluid R2 Optical Precision & Spoon-Chill Protocol (20\u201328 \u00B0C / 68\u201382 \u00B0F)' }),
+      domH('strong', { text: 'DiFluid R2 Optical Precision & Spoon-Chill Protocol (20\u201325 \u00B0C / 68\u201377 \u00B0F)' }),
       domH('ul', { class: 'bt-r2-guide-list' },
-        domH('li', { text: 'Ideal Sample Temp (20\u201328 \u00B0C / 68\u201382 \u00B0F, within \u00B12 \u00B0C of room/prism): Piping-hot drops (>32\u201360 \u00B0C) cause sapphire-prism dn/dT thermal-gradient drift AND rapid 0.3 mL micro-drop flash evaporation that falsely inflates %TDS!' }),
+        domH('li', { text: 'Ideal Sample Temp (20\u201325 \u00B0C / 68\u201377 \u00B0F, within \u00B12 \u00B0C of room/prism): Piping-hot drops (>32\u201360 \u00B0C) cause sapphire-prism dn/dT thermal-gradient drift AND rapid 0.3 mL micro-drop flash evaporation that falsely inflates %TDS!' }),
         domH('li', { text: '15\u201320s Metal-Spoon Chill: Stir 3\u20135 mL in a room-temp metal spoon for 15\u201320s (cools 75 \u00B0C \u2192 ~24 \u00B0C with zero evaporation), zero prism with 20\u201325 \u00B0C distilled water, apply 3\u20134 drops, and wait 5\u201310s for prism lock.' }),
         domH('li', { text: 'Espresso & Immersion Syringe Filter: Pass espresso or French press/AeroPress samples through a 0.22\u20130.45 um syringe filter so suspended fines and lipids do not scatter the CCD shadowline.' })
       ),
@@ -1684,25 +1775,13 @@
           onclick: function () {
             o.onCoolSim(23.4);
           }
-        }, 'Simulate 15s Metal-Spoon Chill (23.4 \u00B0C)')
+        }, 'Simulate 15s Metal-Spoon Chill (' + fmtTempPref(23.4, 1) + ')')
       ) : null
     );
 
     function syncTemp(customTempC) {
       const tVal = Number.isFinite(+customTempC) ? +customTempC : getActiveR2TempC();
-      let ev = null;
-      if (window.BTCoreV6 && window.BTCoreV6.mass && typeof window.BTCoreV6.mass.evaluateR2SampleReadiness === 'function') {
-        try {
-          const coreEv = window.BTCoreV6.mass.evaluateR2SampleReadiness(tVal, 23.0);
-          if (coreEv && coreEv.badgeText) {
-            ev = {
-              state: coreEv.status === 'warm' || tVal > 29 ? 'warm' : (tVal < 18 ? 'cool' : 'ideal'),
-              badgeText: coreEv.badgeText
-            };
-          }
-        } catch (_) { ev = null; }
-      }
-      if (!ev) ev = evaluateR2SampleTemp(tVal);
+      const ev = evaluateR2SampleTemp(tVal);
       setClassIfChanged(badge, 'bt-r2-temp-badge is-' + ev.state);
       setTextIfChanged(badgeTxt, ev.badgeText);
     }
@@ -1729,8 +1808,9 @@
       if (!ctx) return;
       const W = 360;
       const H = 164;
+      const isDark = typeof document !== 'undefined' && document.documentElement && document.documentElement.getAttribute('data-theme') === 'dark';
       ctx.clearRect(0, 0, W, H);
-      ctx.fillStyle = '#F7F2EA';
+      ctx.fillStyle = isDark ? '#1F1712' : '#F7F2EA';
       ctx.fillRect(0, 0, W, H);
 
       /* Draw orthographic reference card corner & scale bar */
@@ -1831,26 +1911,33 @@
         class: 'bt-lab-hint',
         text: r.subFloorNote || 'Sub-pixel <85 um espresso fines are never faked optically; use 2 filter-range snaps to lock burr offset & slope.'
       }));
+      const hasRealPhoto = !!(r.particleCount && r.particleCount > 0);
       readoutBox.appendChild(domH('button', {
         type: 'button',
         class: 'bt-lab-btn is-primary',
         onclick: function () {
+          if (!hasRealPhoto) {
+            notify('Upload or snap a real grounds photo (>=5 particles) before saving a burr anchor.');
+            return;
+          }
           const a = getApp();
           a.prefs = a.prefs || {};
-          a.prefs.pocketMicronCalib = {
-            grinderKey: (a.gear && a.gear.grinder) || 'comandante-c40',
-            clickSetting: labState.micron.clickVal,
-            d50Um: Math.round(r.d50MainUm),
-            calibratedAt: new Date().toISOString().slice(0, 10)
-          };
+          const gKey = String((a.gear && a.gear.grinder) || 'comandante-c40').toLowerCase().replace(/_/g, '-');
+          const d50Round = Math.round(r.d50MainUm);
+          const mKey = d50Round < 320 ? 'espresso' : (d50Round > 820 ? 'french_press' : 'v60');
           if (typeof calibAdd === 'function') {
-            try { calibAdd(a.prefs.pocketMicronCalib.grinderKey, labState.micron.clickVal, Math.round(r.d50MainUm)); } catch (_) {}
+            try {
+              const resCal = calibAdd(a.prefs.calib || {}, gKey, mKey, d50Round, String(labState.micron.clickVal));
+              if (resCal && resCal.calib) {
+                a.prefs.calib = resCal.calib;
+              }
+            } catch (_) {}
           }
           saveDraftSoon();
           CK.haptic('celebrate');
-          notify('Saved Pocket Micron calibration (' + Math.round(r.d50MainUm) + ' um at step ' + labState.micron.clickVal + ').');
+          notify('Saved Pocket Micron calibration (' + d50Round + ' um at step ' + labState.micron.clickVal + ').');
         }
-      }, ic('check-seal', { size: 16 }), domH('span', { text: 'Save Anchor to My Grinder' })));
+      }, ic('check-seal', { size: 16 }), domH('span', { text: hasRealPhoto ? 'Save Anchor to My Grinder' : 'Snap Grounds Photo to Unlock Anchor Save' })));
     }
 
     const fileIn = domH('input', {
@@ -2869,9 +2956,11 @@
           }
           dfMsg.textContent = 'Imported ' + (parsed.totalCount || 1) + ' DiFluid record(s) into Lab Studios!';
         } else {
-          const tdsMatch = txt.match(/([0-9]{1,2}\.[0-9]{1,3})\s*%?\s*(?:TDS)?/i);
-          if (tdsMatch) {
-            applyLabLiveR2Reading({ tds: clamp(parseFloat(tdsMatch[1]), 0.4, 22, 1.40), tempC: 23.4 }, { silent: true });
+          const tdsMatch = txt.match(/\bTDS\s*[:=]?\s*([0-9]{1,2}(?:\.[0-9]{1,3})?)\s*%?/i)
+            || txt.match(/([0-9]{1,2}\.[0-9]{1,3})\s*(?:%\s*(?:TDS)?|TDS\b)/i);
+          const parsedTds = tdsMatch ? parseFloat(tdsMatch[1]) : NaN;
+          if (Number.isFinite(parsedTds) && parsedTds >= 0.4 && parsedTds <= 22) {
+            applyLabLiveR2Reading({ tds: clamp(parsedTds, 0.4, 22, 1.40), tempC: 23.4 }, { silent: true });
             dfMsg.textContent = 'Extracted ' + labState.bc.measTds.toFixed(2) + '% TDS into Brew Control Canvas!';
           } else {
             dfMsg.textContent = 'Parsed DiFluid payload cleanly.';
@@ -3440,7 +3529,7 @@
         rx: '8',
         class: 'bt-bc-zone-sca'
       }));
-      const zl = CK.svgEl('text', { x: (mapX(18) + 6).toFixed(1), y: (mapY(scaHiTds) + 13).toFixed(1), class: 'bt-bc-zone-lbl' });
+      const zl = CK.svgEl('text', { x: (mapX(18) + 6).toFixed(1), y: (mapY(scaLoTds) - 6).toFixed(1), class: 'bt-bc-zone-lbl' });
       zl.textContent = d.isEsp ? 'Classic 9-Bar Sweet Zone' : 'SCA Classic (18-22%)';
       zonesG.appendChild(zl);
 
@@ -3697,7 +3786,7 @@
       if (s.measTds > 0) {
         const sol = solveTargetRecipe();
         const mTdsFrac = s.measTds / 100;
-        mEyCalc = clamp((mTdsFrac * sol.bevG * 100) / Math.max(0.5, s.doseG), 5, 34, 20);
+        mEyCalc = clamp((mTdsFrac * sol.bevG * 100) / Math.max(0.5, s.doseG), 1, 36, 20);
         const mx = mapX(mEyCalc);
         const my = mapY(s.measTds);
         if (s.sensoryTag === 'drying' || s.sensoryTag === 'sour_bitter') {
@@ -3755,6 +3844,12 @@
             );
           } catch (_) { disc = null; }
         }
+        if (s.sensoryTag === 'flat_chalky' && disc && disc.winningHypothesis && disc.winningHypothesis.id !== 'H2_water_temp_lipids') {
+          disc = null;
+        }
+        if (s.sensoryTag === 'sour_bitter' && disc && disc.winningHypothesis && disc.winningHypothesis.id === 'H1_channeling_bypass' && disc.prescription) {
+          disc.prescription.actionHuman = 'Sour + Bitter at ' + s.measTds.toFixed(2) + '% TDS / ' + mEyCalc.toFixed(1) + '% EY confirms fast bypass channels alongside over-extracted fines! Stir/level dry bed, pour gently in center spiral (<=4 g/s), and hold grind steady.';
+        }
         if (!disc || !disc.winningHypothesis) {
           /* Built-in 4-Hypothesis fallback when BTCoreV6 is absent in standalone harness */
           const fallbacks = {
@@ -3779,12 +3874,12 @@
             flat_chalky: {
               short: 'H2: Water Alkalinity / Sip Temp / Lipids',
               prob: 0.91,
-              human: 'Bulk extraction succeeded, so flat/chalky notes point to high water buffer (' + Math.round(khNow) + ' ppm KH) or >65 °C sip temp. Blend RO water toward ~40 ppm KH and sip at 55–62 °C.',
-              sci: 'nD20 is blind to bicarbonate acid neutralization (HA + HCO3- -> A- + H2CO3).'
+              human: 'Bulk extraction succeeded, so flat/chalky notes point to water buffer (' + Math.round(khNow) + ' ppm KH), >65 °C sip masking, or aged lipids. Blend RO water toward ~40 ppm KH and sip at 55–62 °C.',
+              sci: 'nD20 is blind to bicarbonate acid neutralization (HA + HCO3- -> A- + H2CO3) and TRPM5 thermal gating.'
             },
             not_my_style: {
               short: 'H4: Bean / Process Style Mismatch',
-              prob: 0.99,
+              prob: 0.98,
               human: 'Clean physical extraction — this bean\'s ferment/roast style simply isn\'t your preference. Protecting your extraction targets; try -3 °C + 15 g hot bypass to soften.',
               sci: 'Separates cultivar/process volatile preference vector from physical extraction target (TDS*, EY*).'
             }
@@ -3801,9 +3896,10 @@
           r2ReconcileBox.hidden = false;
           const rawShort = String(disc.winningHypothesis.short || 'Mismatch Explained');
           const cleanShort = isScienceXray() ? rawShort : rawShort.replace(/^H\d:\s*/, '');
+          const pctConf = Math.min(99, Math.max(1, Math.round((disc.winningHypothesis.prob || 0.9) * 100)));
           r2ReconcileBox.appendChild(domH('strong', {
             class: 'num-tab',
-            text: 'Taste vs. Refractometer Check — ' + cleanShort + ' (' + Math.round((disc.winningHypothesis.prob || 0.9) * 100) + '%)'
+            text: 'Taste vs. Refractometer Check — ' + cleanShort + ' (' + pctConf + '%)'
           }));
           r2ReconcileBox.appendChild(domH('span', { text: disc.prescription.actionHuman }));
           if (isScienceXray() && disc.prescription.actionScientist) {
@@ -3847,8 +3943,9 @@
 
       if (isScienceXray() || s.measTds > 0) {
         let diagExtra = '';
-        if (s.measTds > 0 && s.measTempC > 32) {
-          diagExtra = '  ·  Thermal Guard: Sample ' + s.measTempC.toFixed(1) + ' °C (>32 °C; cool to 20–25 °C for ±0.02% ATC)';
+        if (s.measTds > 0 && s.measTempC > 29) {
+          const idealWin = getPrefTempUnit() === 'F' ? '68–77 °F (20–25 °C)' : '20–25 °C';
+          diagExtra = '  ·  Thermal Guard: Sample ' + fmtTempPref(s.measTempC, 1) + ' (>29 °C; cool to ' + idealWin + ' for ±0.02% ATC)';
         } else if ((s.sensoryTag === 'drying' || s.sensoryTag === 'sour_bitter') && s.targetEy >= 17.5 && s.targetEy <= 22.5) {
           diagExtra = '  ·  Channeling Trap Detected: Fast channels (>26% EY) + dry clumps (<14% EY) average to mid EY \u2192 go 1 step coarser & calmer pour!';
         }
@@ -3867,7 +3964,7 @@
       }
       if (eyLiveReadoutEl) {
         eyLiveReadoutEl.textContent = s.measTds > 0
-          ? (s.measTds.toFixed(2) + '% TDS · ' + mEyCalc.toFixed(1) + '% Extraction (%EY)')
+          ? (s.measTds.toFixed(2) + '% TDS · ' + mEyCalc.toFixed(2) + '% Extraction (%EY)')
           : ('Target: ' + s.targetTds.toFixed(2) + '% TDS · ' + s.targetEy.toFixed(1) + '% Extraction (%EY)');
       }
       if (eyTdsInput && (typeof document === 'undefined' || document.activeElement !== eyTdsInput)) {
@@ -3980,8 +4077,24 @@
         onclick: function () {
           const prevEsp = s.mode === 'espresso';
           s.mode = m.k;
-          if (m.k === 'espresso' && !prevEsp) s.targetTds = 9.5;
-          else if (m.k !== 'espresso' && prevEsp) s.targetTds = 1.38;
+          s.stylePreset = 'custom';
+          styleBtns.forEach(function (b) { b.classList.remove('is-active'); b.setAttribute('aria-pressed', 'false'); });
+          if (m.k === 'espresso' && !prevEsp) {
+            s.targetTds = 9.5;
+            if (s.measTds > 0 && s.measTds < 4.5) {
+              s.measTds = 9.5;
+            }
+          } else if (m.k !== 'espresso' && prevEsp) {
+            s.targetTds = 1.38;
+            if (s.measTds >= 4.5) {
+              s.measTds = 1.38;
+            }
+          }
+          const pillTds = s.measTds > 0 ? s.measTds : s.targetTds;
+          s.measNd = +nd20FromBrix(brixFromTds(pillTds)).toFixed(5);
+          if (typeof tdsPill !== 'undefined' && tdsPill) tdsPill.setValue(pillTds, true);
+          if (typeof brixPill !== 'undefined' && brixPill) brixPill.setValue(brixFromTds(pillTds), true);
+          if (typeof ndPill !== 'undefined' && ndPill) ndPill.setValue(s.measNd, true);
           modeBtns.forEach(function (b, idx) {
             const on = ['percolation', 'immersion', 'espresso'][idx] === m.k;
             b.classList.toggle('is-active', on);
@@ -4039,13 +4152,12 @@
       value: s.measTds || s.targetTds,
       min: 0.50,
       max: 18.0,
-      step: 0.02,
+      step: 0.01,
       decimals: 2,
       unit: '%',
       compact: true,
       onChange: function (v) {
         s.measTds = v;
-        s.targetTds = clamp(v, getDomains().tdsMin, getDomains().tdsMax, v);
         s.measNd = +nd20FromBrix(brixFromTds(v)).toFixed(5);
         ndPill.setValue(s.measNd, true);
         brixPill.setValue(brixFromTds(v), true);
@@ -4058,14 +4170,13 @@
       value: brixFromTds(s.targetTds),
       min: 0.50,
       max: 22.0,
-      step: 0.02,
+      step: 0.01,
       decimals: 2,
       unit: 'Bx',
       compact: true,
       onChange: function (bx) {
         const tds = tdsFromBrix(bx);
         s.measTds = tds;
-        s.targetTds = clamp(tds, getDomains().tdsMin, getDomains().tdsMax, tds);
         s.measNd = +nd20FromBrix(bx).toFixed(5);
         tdsPill.setValue(tds, true);
         ndPill.setValue(s.measNd, true);
@@ -4087,7 +4198,6 @@
         const bx = brixFromNd(nd, s.measTempC, s.atcMode);
         const tds = tdsFromBrix(bx);
         s.measTds = tds;
-        s.targetTds = clamp(tds, getDomains().tdsMin, getDomains().tdsMax, tds);
         tdsPill.setValue(tds, true);
         brixPill.setValue(bx, true);
         updatePuckAndReadouts();
@@ -4127,9 +4237,10 @@
       value: s.measTempC,
       min: 10.0,
       max: 65.0,
-      step: 0.5,
+      step: 0.1,
       decimals: 1,
       unit: 'C',
+      formatValue: function (v) { return fmtTempPref(v, 1); },
       compact: true,
       onChange: function (tc) {
         s.measTempC = tc;
@@ -4141,7 +4252,7 @@
       title: 'Touch-to-Brew Sweet-Spot Control Chart',
       whatItDoes: 'Maps Cup Strength (%TDS) against Extraction Yield (%EY) with SCA Classic Zone + your Personal Sweet Island.',
       howToUse: 'Tap anywhere on the chart (or pick Tea-Like, Juicy, or Syrupy) and press Brew Aiming Here to load your recipe!',
-      proTip: 'Stir 3–5 mL in a room-temp metal spoon for 15–20s (20–28 °C) before reading DiFluid R2 to prevent evaporation drift!'
+      proTip: 'Stir 3–5 mL in a room-temp metal spoon for 15–20s (20–25 °C / 68–77 °F) before reading DiFluid R2 to prevent evaporation drift!'
     });
 
     const aimBtn = domH('button', {
@@ -4162,15 +4273,26 @@
             style: s.stylePreset || 'custom'
           };
           const prevMethod = String(a.brew.method || '').toLowerCase();
-          if (s.mode === 'espresso' && prevMethod !== 'espresso' && prevMethod !== 'lever_espresso' && prevMethod !== 'moka') {
-            a.brew.method = 'espresso';
-          }
+          const wasEspLike = prevMethod === 'espresso' || prevMethod === 'lever_espresso' || prevMethod === 'moka' || prevMethod === 'turkish';
           if (s.mode === 'espresso') {
+            if (prevMethod !== 'espresso' && prevMethod !== 'lever_espresso') {
+              a.brew.method = 'espresso';
+            }
             const curUm = +a.brew.grindUm;
             const switchedToEsp = prevMethod !== 'espresso' && prevMethod !== 'lever_espresso';
             if (switchedToEsp || !Number.isFinite(curUm) || curUm < 120 || curUm > 360) {
               const espUm = Math.round(clamp(245 + (s.targetEy - 20.0) * 3, 235, 260, 245));
               syncBrewGrindFields(a, espUm, { methodKey: a.brew.method });
+            }
+          } else {
+            if (wasEspLike) {
+              a.brew.method = s.mode === 'immersion' ? 'press' : 'v60';
+            }
+            const curUm = +a.brew.grindUm;
+            if (wasEspLike || !Number.isFinite(curUm) || curUm < 360) {
+              const baseUm = s.mode === 'immersion' ? 680 : 560;
+              const filterUm = Math.round(clamp(baseUm - (s.targetEy - 20.0) * 15, 420, 920, baseUm));
+              syncBrewGrindFields(a, filterUm, { methodKey: a.brew.method });
             }
           }
           a.brew.customizedNote = fc.styleHead + ' (' + a.brew.dose + 'g : ' + a.brew.water + 'g · 1:' + rec.ratio.toFixed(1) + ')';
@@ -4219,7 +4341,6 @@
         const v = parseFloat(eyTdsInput.value);
         if (Number.isFinite(v) && v > 0) {
           s.measTds = clamp(v, 0.05, 25, v);
-          s.targetTds = clamp(s.measTds, getDomains().tdsMin, getDomains().tdsMax, s.measTds);
           s.measNd = +nd20FromBrix(brixFromTds(s.measTds)).toFixed(5);
           tdsPill.setValue(s.measTds, true);
           brixPill.setValue(brixFromTds(s.measTds), true);
@@ -4703,7 +4824,7 @@
         ctx.stroke();
 
         /* Axis Captions */
-        ctx.fillStyle = isDark ? '#CEBDAI' : '#534034';
+        ctx.fillStyle = isDark ? '#CEBDA1' : '#534034';
         ctx.font = '600 9.5px ui-monospace, monospace';
         ctx.fillText(Math.round(sim.maxM) + 'g', 4, T1 + 9);
         ctx.fillText('0g', 16, B1);
@@ -4732,7 +4853,7 @@
       });
 
       const endDrainSec = w.knots[w.knots.length - 1].t;
-      const cutSec = clamp(Math.round(w.cutoffSec || (endDrainSec - 15)), 60, sim.samples.length - 1, Math.max(60, endDrainSec - 15));
+      const cutSec = clamp(Math.round(w.cutoffSec || (endDrainSec - 15)), 60, Math.round(endDrainSec), Math.max(60, Math.round(endDrainSec) - 15));
       const spEnd = sim.samples[clamp(Math.round(endDrainSec), 0, sim.samples.length - 1, sim.samples.length - 1)];
       const spCut = sim.samples[cutSec];
       const pullCarafeG = Math.round(spCut.carafeG || 210);
@@ -4760,7 +4881,7 @@
       const idx = clamp(Math.round(w.scrubT), 0, sim.samples.length - 1, cutSec);
       const sp = sim.samples[idx];
       if (cutoffRangeEl && document.activeElement !== cutoffRangeEl) {
-        cutoffRangeEl.max = String(Math.round(sim.maxT));
+        cutoffRangeEl.max = String(Math.round(endDrainSec));
         cutoffRangeEl.value = String(cutSec);
       }
       if (cutoffLblEl) {
@@ -4813,12 +4934,14 @@
           id: 'cutoff_gate',
           hitRadiusPx: 30,
           getPos: function () {
-            const cSec = clamp(Math.round(w.cutoffSec || 150), 60, cachedSim.maxT, 150);
+            const endSec = Math.round(w.knots[w.knots.length - 1].t);
+            const cSec = clamp(Math.round(w.cutoffSec || 150), 60, endSec, 150);
             const rawX = L + (cSec / cachedSim.maxT) * PW;
             return { x: clamp(rawX, L + 46, R - 48, rawX), y: T1 + 42 };
           },
           onMove: function (p) {
-            const nextSec = Math.round(clamp(((p.ux - L) / PW) * cachedSim.maxT, 65, cachedSim.maxT, w.cutoffSec) / 5) * 5;
+            const endSec = Math.round(w.knots[w.knots.length - 1].t);
+            const nextSec = Math.round(clamp(((p.ux - L) / PW) * cachedSim.maxT, 65, endSec, w.cutoffSec) / 5) * 5;
             w.cutoffSec = nextSec;
             w.scrubT = nextSec;
             renderWaveCanvasAndOverlay();
@@ -4952,6 +5075,7 @@
         step: 0.5,
         decimals: 1,
         unit: 'C',
+        formatValue: function (v) { return fmtTempPref(v, 1); },
         compact: true,
         onChange: function (v) { w.kettleC = v; renderWaveCanvasAndOverlay(); }
       }),
@@ -5014,10 +5138,18 @@
         class: 'bt-lab-btn is-primary bt-chart-cta-btn',
         id: 'bt-set-cutoff-timer-btn',
         onclick: function () {
-          const cutSec = Math.round(w.cutoffSec || 150);
+          const curA = getApp();
+          const curM = String((curA && curA.brew && curA.brew.method) || '').toLowerCase();
+          if (curM === 'espresso' || curM === 'lever_espresso') {
+            CK.haptic('tick');
+            notify('3-Wave Dripper Cutoff is for filter pour-overs; keeping your active Espresso recipe unchanged.');
+            return;
+          }
+          const endSec = Math.round(w.knots[w.knots.length - 1].t);
+          const cutSec = clamp(Math.round(w.cutoffSec || 150), 60, endSec, 150);
           const mm = Math.floor(cutSec / 60) + ':' + String(Math.round(cutSec % 60)).padStart(2, '0');
           const spC = cachedSim && cachedSim.samples[clamp(cutSec, 0, cachedSim.samples.length - 1, cutSec)];
-          const spE = cachedSim && cachedSim.samples[clamp(Math.round(w.knots[w.knots.length - 1].t), 0, cachedSim.samples.length - 1, cachedSim.samples.length - 1)];
+          const spE = cachedSim && cachedSim.samples[clamp(endSec, 0, cachedSim.samples.length - 1, cachedSim.samples.length - 1)];
           const carafeG = spC ? Math.round(spC.carafeG || 210) : 210;
           const blkPct = (spC && spE && spE.yB > 0.005) ? Math.max(0, Math.round((1 - spC.yB / spE.yB) * 100)) : 28;
           applyLabToBrewAndGo(function (a) {
@@ -5037,7 +5169,15 @@
         type: 'button',
         class: 'bt-lab-btn',
         onclick: function () {
-          const cutSec = Math.round(w.cutoffSec || 150);
+          const curA = getApp();
+          const curM = String((curA && curA.brew && curA.brew.method) || '').toLowerCase();
+          if (curM === 'espresso' || curM === 'lever_espresso') {
+            CK.haptic('tick');
+            notify('3-Wave Filter Waves do not apply to Espresso; keeping your active Espresso recipe unchanged.');
+            return;
+          }
+          const endSec = Math.round(w.knots[w.knots.length - 1].t);
+          const cutSec = clamp(Math.round(w.cutoffSec || 150), 60, endSec, 150);
           const mm = Math.floor(cutSec / 60) + ':' + String(Math.round(cutSec % 60)).padStart(2, '0');
           applyLabToBrewAndGo(function (a) {
             a.brew.pullCarafeAtSec = cutSec;
@@ -5078,6 +5218,7 @@
       { k: 'weak', lbl: 'Too Weak / Watery' }
     ];
 
+    let tdsRescuePill = null;
     const symBtns = symptoms.map(function (sy) {
       return domH('button', {
         type: 'button',
@@ -5085,9 +5226,12 @@
         'aria-pressed': String(mr.symptom === sy.k),
         onclick: function () {
           mr.symptom = sy.k;
-          if (sy.k === 'weak') mr.tdsPct = 1.05;
-          else if (sy.k === 'strong') mr.tdsPct = 1.62;
-          else mr.tdsPct = 1.48;
+          if (!(mr.tdsPct > 4.0)) {
+            if (sy.k === 'weak') mr.tdsPct = 1.05;
+            else if (sy.k === 'strong') mr.tdsPct = 1.62;
+            else mr.tdsPct = 1.48;
+          }
+          if (tdsRescuePill) tdsRescuePill.setValue(mr.tdsPct, true);
           symBtns.forEach(function (b, idx) {
             const on = symptoms[idx].k === sy.k;
             b.classList.toggle('is-active', on);
@@ -5103,15 +5247,16 @@
       type: 'number',
       inputmode: 'decimal',
       class: 'bt-lab-text-in bt-lab-num-in',
-      min: '30',
-      max: '800',
-      step: '10',
+      min: '5',
+      max: '900',
+      step: '5',
       value: String(mr.mugG),
       'aria-label': 'Beverage weight in mug in grams',
       oninput: function () {
         const v = parseFloat(mugWeightIn.value);
-        if (Number.isFinite(v) && v >= 25 && v <= 900) {
-          mr.mugG = v;
+        if (Number.isFinite(v) && v >= 5) {
+          mr.mugG = clamp(v, 5, 900, mr.mugG);
+          if (v > 900) mugWeightIn.value = String(mr.mugG);
           paintMugRescue();
         }
       }
@@ -5132,6 +5277,9 @@
 
     function paintMugRescue() {
       const res = solveInMugRescue(mr);
+      if (tdsRescuePill && Math.abs(tdsRescuePill.getValue() - mr.tdsPct) > 0.005) {
+        tdsRescuePill.setValue(mr.tdsPct, true);
+      }
       mugG.textContent = '';
       /* Ceramic Mug Silhouette + Handle */
       mugG.appendChild(CK.svgEl('path', {
@@ -5164,7 +5312,9 @@
       mugG.appendChild(c1);
 
       const c2 = CK.svgEl('text', { x: '158', y: '74', class: 'bt-ag-ruler-val num-tab' });
-      c2.textContent = '2. Saline Blocker: ' + res.saline20Drops + ' drops 20% NaCl (~' + res.naclMg + ' mg)';
+      c2.textContent = res.saline20Drops > 0
+        ? ('2. Saline Blocker: ' + res.saline20Drops + ' drops 20% NaCl (~' + res.naclMg + ' mg)')
+        : '2. Saline Blocker: 0 drops (none needed)';
       mugG.appendChild(c2);
 
       const c3 = CK.svgEl('text', { x: '158', y: '104', class: 'bt-ag-ruler-name' });
@@ -5184,6 +5334,7 @@
               applyLabToBrewAndGo(function (a) {
                 const mLow = String((a.brew && a.brew.method) || '').toLowerCase();
                 const isEspLike = mLow === 'espresso' || mLow === 'lever_espresso' || mLow === 'turkish';
+                const isConcLike = isEspLike || mLow === 'moka' || mLow === 'cold_brew' || mLow === 'coldbrew' || mLow === 'cold-brew';
                 const umLo = isEspLike ? 120 : 200;
                 const umHi = isEspLike ? 420 : 1150;
                 const umStep = isEspLike ? 12 : 26;
@@ -5200,13 +5351,13 @@
                   a.brew.tempC = Math.min(99, curT + 2);
                   a.brew.customizedNote = 'Sour Fix: Finer (' + a.brew.grind_setting + ') + ' + a.brew.tempC + ' °C';
                 } else if (mr.symptom === 'strong') {
-                  const rInc = isEspLike ? 0.3 : 1.0;
+                  const rInc = isEspLike ? 0.3 : (isConcLike ? 0.6 : 1.0);
                   a.brew.ratio = +(curR + rInc).toFixed(1);
                   a.brew.water = Math.round(curD * a.brew.ratio);
                   a.brew.customizedNote = 'Strength Fix: Wider 1:' + a.brew.ratio;
                 } else if (mr.symptom === 'weak') {
-                  const rMin = isEspLike ? 1.2 : 11.0;
-                  const rDec = isEspLike ? 0.3 : 1.2;
+                  const rMin = isEspLike ? 1.2 : (mLow === 'moka' ? 5.0 : (isConcLike ? 4.0 : 11.0));
+                  const rDec = isEspLike ? 0.3 : (isConcLike ? 0.6 : 1.2);
                   a.brew.ratio = Math.max(rMin, +(curR - rDec).toFixed(1));
                   a.brew.water = Math.round(curD * a.brew.ratio);
                   a.brew.customizedNote = 'Body Fix: Tighter 1:' + a.brew.ratio;
@@ -5241,22 +5392,23 @@
       epistemicBadge('verified_physics')
     ));
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' }, symBtns));
+    tdsRescuePill = CK.vernierPill({
+      label: 'Est. %TDS',
+      value: mr.tdsPct,
+      min: 0.70,
+      max: 12.0,
+      step: 0.04,
+      decimals: 2,
+      unit: '%',
+      compact: true,
+      onChange: function (v) { mr.tdsPct = v; paintMugRescue(); }
+    });
     card.appendChild(domH('div', { class: 'bt-lab-inline-inputs' },
       domH('label', { class: 'bt-lab-field-lbl' },
         domH('span', { text: 'Cup in Mug (g)' }),
         mugWeightIn
       ),
-      CK.vernierPill({
-        label: 'Est. %TDS',
-        value: mr.tdsPct,
-        min: 0.70,
-        max: 12.0,
-        step: 0.04,
-        decimals: 2,
-        unit: '%',
-        compact: true,
-        onChange: function (v) { mr.tdsPct = v; paintMugRescue(); }
-      }),
+      tdsRescuePill,
       milkToggle
     ));
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, mugSvg));
@@ -5350,13 +5502,21 @@
       return pk.bedHour <= pk.wakeHour ? pk.bedHour + 24 : pk.bedHour;
     }
 
+    function fmtSafeSip(hOpt) {
+      return hOpt == null ? 'No safe time today' : fmtClock(hOpt);
+    }
+
     /* 25-Step Bisection for Latest Safe Single-Cup Cutoff */
     function solveLatestSafeHourForCup(cupMg) {
       const bed = getBedAdj();
       const hl = getCyp().halfLifeH;
       const ke = Math.LN2 / hl;
       const ka = pk.fedMode ? 2.2 : 4.0;
-      let lo = pk.wakeHour - 1;
+      const remWake = pk.steadyState
+        ? batemanPeriodicImpulse(cupMg, bed, pk.wakeHour, ka, ke)
+        : batemanSingleImpulse(cupMg, bed - pk.wakeHour, ka, ke);
+      if (remWake > pk.swsGateMg) return null;
+      let lo = pk.wakeHour;
       let hi = bed;
       for (let i = 0; i < 25; i++) {
         const mid = 0.5 * (lo + hi);
@@ -5393,11 +5553,13 @@
       const hl = getCyp().halfLifeH;
       /* Shift schedule backward minimally until A(bed) <= swsGateMg */
       let shift = 0;
+      let bestBedMg = Infinity;
       for (let stepH = 0; stepH <= 16; stepH += 1 / 12) {
         const testCups = pk.cups.map(function (c) {
           return { mg: c.mg, hour: Math.max(pk.wakeHour, c.hour - stepH) };
         });
         const bedMg = activeCaffeineMgAt(testCups, bed, hl, pk.steadyState, pk.fedMode);
+        bestBedMg = bedMg;
         if (bedMg <= pk.swsGateMg) {
           shift = stepH;
           break;
@@ -5410,6 +5572,9 @@
       });
       CK.haptic('sweetSpotLock');
       springAnim.wake();
+      if (bestBedMg > pk.swsGateMg) {
+        notify('Shifted cups as early as wake, but ' + Math.round(bestBedMg) + ' mg still remains at bed (limit ' + pk.swsGateMg + ' mg) — consider Half-Caf or removing a cup.');
+      }
     }
 
     function redrawPk() {
@@ -5536,7 +5701,9 @@
       const gateY = mapMgY(pk.swsGateMg);
       const cutoffRefFlag = solveLatestSafeHourForCup(150);
       const cutoffEspFlag = solveLatestSafeHourForCup(75);
-      const flagX = clamp(mapHourX(cutoffRefFlag), P.L + 28, Math.max(P.L + 36, bedX - 18), P.L + 160);
+      const flagX = cutoffRefFlag == null
+        ? Math.max(P.L + 36, wakeX)
+        : clamp(mapHourX(cutoffRefFlag), P.L + 28, Math.max(P.L + 36, bedX - 18), P.L + 160);
 
       /* Horizontal Bedtime Threshold Line across full plot */
       gateG.appendChild(CK.svgEl('line', {
@@ -5555,6 +5722,7 @@
       gateG.appendChild(threshLbl);
 
       /* Last Safe Sip Flagpole */
+      const flagW = cutoffRefFlag == null ? 136 : 116;
       gateG.appendChild(CK.svgEl('line', {
         x1: flagX.toFixed(1),
         y1: (P.T + 16).toFixed(1),
@@ -5562,22 +5730,23 @@
         y2: P.B,
         class: 'bt-pk-flagpole'
       }));
+      const flagBannerX = clamp(flagX - flagW * 0.5, P.L + 2, P.R - flagW - 2, P.L + 2);
       const flagBanner = CK.svgEl('rect', {
-        x: Math.max(P.L + 2, flagX - 58).toFixed(1),
+        x: flagBannerX.toFixed(1),
         y: (P.T + 16).toFixed(1),
-        width: '116',
+        width: String(flagW),
         height: '16',
         rx: '8',
         class: 'bt-pk-flag-badge'
       });
       gateG.appendChild(flagBanner);
       const flagTxt = CK.svgEl('text', {
-        x: Math.max(P.L + 60, flagX).toFixed(1),
+        x: (flagBannerX + flagW * 0.5).toFixed(1),
         y: (P.T + 27).toFixed(1),
         'text-anchor': 'middle',
         class: 'bt-pk-flag-txt num-tab'
       });
-      flagTxt.textContent = 'Last Safe Sip ' + fmtClock(cutoffRefFlag);
+      flagTxt.textContent = cutoffRefFlag == null ? 'No safe time today' : ('Last Safe Sip ' + fmtClock(cutoffRefFlag));
       gateG.appendChild(flagTxt);
 
       gateG.appendChild(CK.svgEl('line', { x1: wakeX.toFixed(1), y1: P.T, x2: wakeX.toFixed(1), y2: P.B, class: 'bt-pk-wake-line' }));
@@ -5628,11 +5797,13 @@
         domH('span', { class: 'bt-forecast-kicker', text: 'LAST SAFE SIP BEFORE BED' }),
         domH('strong', {
           class: 'bt-pk-safesip-clock num-tab',
-          text: fmtClock(cutoffRefFlag) + ' for ' + fmtClock(bed) + ' sleep'
+          text: cutoffRefFlag == null
+            ? ('No safe time today (exceeds ' + pk.swsGateMg + ' mg at ' + fmtClock(bed) + ')')
+            : (fmtClock(cutoffRefFlag) + ' for ' + fmtClock(bed) + ' sleep')
         }),
         domH('span', {
           class: 'bt-pk-safesip-sub num-tab',
-          text: 'Full Cup (~150 mg): ' + fmtClock(cutoffRefFlag) + '  ·  Half-Caf / Single Shot (~75 mg): ' + fmtClock(cutoffEspFlag) +
+          text: 'Full Cup (~150 mg): ' + fmtSafeSip(cutoffRefFlag) + '  ·  Half-Caf / Single Shot (~75 mg): ' + fmtSafeSip(cutoffEspFlag) +
             '  ·  Peak Focus Zone: ' + fmtClock(pfStartH) + '–' + fmtClock(pfEndH)
         })
       ));
@@ -5673,6 +5844,7 @@
               pk.cups.push(pk.deletedCup);
               pk.deletedCup = null;
               pk.selectedCupIdx = pk.cups.length - 1;
+              persistCaffeinePrefs();
               redrawPk();
             }
           }, 'Undo Removed Cup'));
@@ -5690,6 +5862,7 @@
             sel.species = spKey;
             recomputeCupMg(sel);
             CK.haptic('tick');
+            persistCaffeinePrefs();
             redrawPk();
           }
         }, meta.label + ' (' + meta.mgPerG + ')');
@@ -5706,7 +5879,7 @@
           decimals: 1,
           unit: 'g',
           compact: true,
-          onChange: function (v) { sel.doseG = v; recomputeCupMg(sel); redrawPk(); }
+          onChange: function (v) { sel.doseG = v; recomputeCupMg(sel); persistCaffeinePrefs(); redrawPk(); }
         }),
         domH('button', {
           type: 'button',
@@ -5714,6 +5887,7 @@
           onclick: function () {
             pk.deletedCup = pk.cups.splice(pk.selectedCupIdx, 1)[0];
             pk.selectedCupIdx = Math.max(0, pk.cups.length - 1);
+            persistCaffeinePrefs();
             redrawPk();
           }
         }, ic('trash-bin', { size: 14 }), domH('span', { text: 'Remove Cup' }))
@@ -5740,11 +5914,13 @@
                 pk.deletedCup = pk.cups.splice(idx, 1)[0];
                 pk.selectedCupIdx = Math.max(0, pk.cups.length - 1);
                 CK.haptic('snap');
+                persistCaffeinePrefs();
                 redrawPk();
                 return { loupe: 'Removed cup (Tap Undo below)' };
               }
               const rawH = invHourX(p.ux);
-              cup.hour = Math.round(rawH * 12) / 12;
+              cup.hour = Math.round(clamp(rawH, pk.wakeHour, getBedAdj(), cup.hour) * 12) / 12;
+              persistCaffeinePrefs();
               redrawPk();
               return { detentValue: cup.hour, loupe: cup.label + ': ' + fmtClock(cup.hour) + ' (' + cup.mg + ' mg)' };
             }
@@ -5759,6 +5935,7 @@
           onMove: function (p) {
             const hRaw = invHourX(p.ux);
             pk.bedHour = Math.round(clamp(hRaw, pk.wakeHour + 8, pk.wakeHour + 21, 23) * 4) / 4;
+            persistCaffeinePrefs();
             redrawPk();
             return { detentValue: pk.bedHour, loupe: 'Bedtime: ' + fmtClock(pk.bedHour) };
           }
@@ -5772,16 +5949,21 @@
           onMove: function (p) {
             const hRaw = invHourX(p.ux);
             pk.wakeHour = Math.round(clamp(hRaw, 4, 12, 7) * 4) / 4;
+            persistCaffeinePrefs();
             redrawPk();
             return { detentValue: pk.wakeHour, loupe: 'Wake: ' + fmtClock(pk.wakeHour) };
           }
         });
         return list;
       },
+      onDragEnd: function () {
+        persistCaffeinePrefs();
+      },
       onKeyStep: function (k) {
         const sel = pk.cups[pk.selectedCupIdx];
         if (!sel) return {};
-        sel.hour = Math.round((sel.hour + k.dx * (1 / 12)) * 12) / 12;
+        sel.hour = Math.round(clamp(sel.hour + k.dx * (1 / 12), pk.wakeHour, getBedAdj(), sel.hour) * 12) / 12;
+        persistCaffeinePrefs();
         redrawPk();
         return { ariaNow: sel.hour, ariaText: fmtClock(sel.hour) };
       }
@@ -5928,7 +6110,7 @@
         ),
         domH('div', { class: 'bt-lab-kpi' },
           domH('span', { text: 'Last Safe Sip' }),
-          domH('strong', { class: 'num-tab', text: fmtClock(latestHr) })
+          domH('strong', { class: 'num-tab', text: fmtSafeSip(latestHr) })
         ),
         domH('div', { class: 'bt-lab-kpi' },
           domH('span', { text: 'If Sipped 2:00 PM \u2192 Sleep Gate' }),
@@ -6148,11 +6330,17 @@
 
       /* Readout & Visual Salt Cards */
       readoutBanner.textContent = '';
+      const blendWarnStr = spec.tapExceedsTarget
+        ? ('Warning: Tap (' + Math.round(wt.ghTap) + ' GH / ' + Math.round(wt.khTap) + ' KH) cannot dilute to ' +
+          Math.round(wt.gh) + ' GH / ' + Math.round(wt.kh) + ' KH — actual mix is ' +
+          Math.round(spec.blendedGh) + ' GH / ' + Math.round(spec.blendedKh) + ' KH!')
+        : '';
       readoutBanner.appendChild(domH('div', { class: 'bt-studio-human-line' },
         domH('strong', {
           text: wt.tapBlendOn
             ? ('Blend ' + spec.tapMl + ' mL Tap + ' + spec.roMl + ' mL RO/ZeroWater' +
-              (spec.epsomBoostPpm > 2 ? (' (+ ' + spec.epsomBoostPpm + ' ppm Epsom Mg boost)') : ''))
+              (spec.epsomBoostPpm > 2 && !spec.tapExceedsTarget ? (' (+ ' + spec.epsomBoostPpm + ' ppm Epsom Mg boost)') : '') +
+              (blendWarnStr ? ('  ·  ' + blendWarnStr) : ''))
             : ('Target: ' + Math.round(wt.gh) + ' ppm GH (' + Math.round(wt.mgShare * 100) + '% Mg2+)  ·  ' +
               Math.round(wt.kh) + ' ppm KH  ·  Scale: ' + spec.scaleRisk.toUpperCase())
         })
@@ -6172,9 +6360,9 @@
         domH('span', { class: 'bt-wt-bottle-kicker', text: 'Lotus / 10,000 ppm Drops (' + wt.batchL.toFixed(2) + ' L)' }),
         domH('strong', {
           class: 'num-tab',
-          text: Math.max(0, Math.round((spec.ghMg * wt.batchL) / lotusDiv)) + ' Mg  ·  ' +
-            Math.max(0, Math.round((spec.ghCa * wt.batchL) / lotusDiv)) + ' Ca  ·  ' +
-            Math.max(0, Math.round((wt.kh * wt.batchL) / (lotusDiv * 0.5))) + ' Buffer drops'
+          text: Math.max(0, Math.round((spec.addGhMg * wt.batchL) / lotusDiv)) + ' Mg  ·  ' +
+            Math.max(0, Math.round((spec.addGhCa * wt.batchL) / lotusDiv)) + ' Ca  ·  ' +
+            Math.max(0, Math.round((spec.remKh * wt.batchL) / (lotusDiv * 0.5))) + ' Buffer drops'
         })
       ));
       recipeDeck.appendChild(domH('div', { class: 'bt-wt-bottle-card' },
@@ -6188,6 +6376,21 @@
       ));
     }
 
+    let mgSharePill = null;
+    function syncWaterControlPills() {
+      if (mgSharePill) mgSharePill.setValue(Math.round(wt.mgShare * 100), true);
+      if (typeof khSaltPills !== 'undefined' && Array.isArray(khSaltPills)) {
+        khSaltPills.forEach(function (b, bi) {
+          const on = ['khco3', 'nahco3', 'k3cit', 'na3cit'][bi] === wt.khSaltKey;
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-pressed', String(on));
+        });
+      }
+      if (typeof tapToggle !== 'undefined' && tapToggle) {
+        tapToggle.classList.toggle('is-active', !!wt.tapBlendOn);
+      }
+    }
+
     CK.bindChartSurface(svg, {
       ariaLabel: '2D Water GH and KH Droplet Pad',
       detentStep: 1,
@@ -6199,6 +6402,7 @@
             onMove: function (p) {
               wt.kh = Math.round(invX(p.ux));
               wt.gh = Math.round(invY(p.uy));
+              if (!wt.tapBlendOn) wt.isDiyRecipe = true;
               syncWaterStateToAppLive({ markCustom: true, throttleSave: true });
               redrawWater();
               paint4WayAndImpact();
@@ -6206,9 +6410,9 @@
             }
           }];
           if (wt.tapBlendOn) {
-            list.unshift({
+            list.push({
               id: 'tap_pin',
-              hitRadiusPx: 28,
+              hitRadiusPx: 26,
               getPos: function () { return { x: mapX(wt.khTap), y: mapY(wt.ghTap) }; },
               onMove: function (p) {
                 wt.khTap = Math.max(5, Math.round(invX(p.ux)));
@@ -6226,6 +6430,7 @@
           if (p.handleId) return null;
           wt.kh = Math.round(invX(p.ux));
           wt.gh = Math.round(invY(p.uy));
+          if (!wt.tapBlendOn) wt.isDiyRecipe = true;
           syncWaterStateToAppLive({ markCustom: true });
           redrawWater();
           paint4WayAndImpact();
@@ -6234,6 +6439,7 @@
         onKeyStep: function (k) {
           wt.kh = clamp(wt.kh + k.dx * 2, 0, 320, wt.kh);
           wt.gh = clamp(wt.gh + k.dy * 2, 0, 340, wt.gh);
+          if (!wt.tapBlendOn) wt.isDiyRecipe = true;
           syncWaterStateToAppLive({ markCustom: true });
           redrawWater();
           paint4WayAndImpact();
@@ -6259,13 +6465,16 @@
               wt.khTap = 295;
               wt.gh = 72;
               wt.kh = 38;
+              wt.isDiyRecipe = false;
             } else {
               wt.tapBlendOn = false;
               wt.gh = vp.gh;
               wt.kh = vp.kh;
               wt.mgShare = vp.mg;
               wt.khSaltKey = vp.khSalt;
+              wt.isDiyRecipe = true;
             }
+            syncWaterControlPills();
             syncWaterStateToAppLive({ markCustom: true, customLabel: vp.lbl.split(' (')[0] + ' (' + Math.round(wt.gh) + ' GH / ' + Math.round(wt.kh) + ' KH)' });
             CK.haptic('snap');
             redrawWater();
@@ -6286,7 +6495,8 @@
           class: 'bt-lab-chip' + (wt.khSaltKey === sp.k ? ' is-active' : ''),
           onclick: function () {
             wt.khSaltKey = sp.k;
-            khSaltPills.forEach(function (b, bi) { b.classList.toggle('is-active', ['khco3', 'nahco3', 'k3cit', 'na3cit'][bi] === sp.k); });
+            wt.isDiyRecipe = true;
+            syncWaterControlPills();
             syncWaterStateToAppLive({ markCustom: true });
             redrawWater();
             paint4WayAndImpact();
@@ -6365,8 +6575,13 @@
     function syncWaterStateToAppLive(syncOpts) {
       const so = syncOpts || {};
       const a = getApp();
-      const ghVal = Math.max(0, Math.round(wt.gh));
-      const khVal = Math.max(0, Math.round(wt.kh));
+      const specLive = wt.tapBlendOn ? solveWaterSpeciation(wt) : null;
+      const ghVal = specLive
+        ? (wt.kh > wt.khTap ? Math.round(specLive.blendedGh) : Math.round(Math.max(specLive.blendedGh, wt.gh)))
+        : Math.max(0, Math.round(wt.gh));
+      const khVal = specLive
+        ? Math.max(0, Math.round(specLive.blendedKh))
+        : Math.max(0, Math.round(wt.kh));
       if (so.markCustom) {
         wt.activeProfileKey = 'custom';
         wt.activeWaterType = 'custom';
@@ -6464,7 +6679,8 @@
           wt.gh = pickedW.gh != null ? +pickedW.gh : 68;
           wt.kh = pickedW.kh != null ? +pickedW.kh : 36;
         }
-        tapToggle.classList.toggle('is-active', wt.tapBlendOn);
+        wt.isDiyRecipe = false;
+        syncWaterControlPills();
         syncWaterStateToAppLive();
         CK.haptic('tick');
         paintEverydayWater();
@@ -6494,10 +6710,11 @@
       wt.gh = opt.gh != null ? +opt.gh : 68;
       wt.kh = opt.kh != null ? +opt.kh : 40;
       wt.mgShare = opt.mg != null ? opt.mg : 0.48;
+      wt.isDiyRecipe = false;
       wt.activeProfileKey = opt.key;
       wt.activeWaterType = opt.wType;
       wt.activeWaterLabel = opt.label;
-      tapToggle.classList.toggle('is-active', wt.tapBlendOn);
+      syncWaterControlPills();
       syncWaterStateToAppLive();
       CK.haptic('snap');
       redrawWater();
@@ -6535,9 +6752,18 @@
             const pickedW = EVERYDAY_WATERS.find(function (x) { return x.key === wt.everydayKey; }) || EVERYDAY_WATERS[1];
             wt.gh = pickedW.gh != null ? +pickedW.gh : 52;
             wt.kh = pickedW.kh != null ? +pickedW.kh : 45;
+            wt.isDiyRecipe = false;
+            if (pickedW.kh > 80 || pickedW.gh > 150) {
+              wt.tapBlendOn = true;
+              wt.ghTap = pickedW.gh;
+              wt.khTap = pickedW.kh;
+            } else {
+              wt.tapBlendOn = false;
+            }
             wt.activeWaterLabel = pickedW.name;
             wt.activeProfileKey = NAMED_18_CANONICAL_MAP[pickedW.key] || 'crystal-geyser-shasta';
             wt.activeWaterType = pickedW.key === 'distilled' ? 'ro' : 'bottled';
+            syncWaterControlPills();
             syncWaterStateToAppLive();
             CK.haptic('snap');
             paintEverydayWater();
@@ -6711,17 +6937,18 @@
     card.appendChild(waterHow.panel);
     card.appendChild(selector4WayCard);
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' }, vibePresets, tapToggle));
+    mgSharePill = CK.vernierPill({
+      label: 'Mg2+ Share',
+      value: Math.round(wt.mgShare * 100),
+      min: 0,
+      max: 100,
+      step: 5,
+      unit: '%',
+      compact: true,
+      onChange: function (v) { wt.mgShare = v / 100; if (!wt.tapBlendOn) wt.isDiyRecipe = true; syncWaterStateToAppLive({ markCustom: true }); redrawWater(); paintEverydayWater(); paint4WayAndImpact(); }
+    });
     card.appendChild(domH('div', { class: 'bt-vernier-row' },
-      CK.vernierPill({
-        label: 'Mg2+ Share',
-        value: Math.round(wt.mgShare * 100),
-        min: 0,
-        max: 100,
-        step: 5,
-        unit: '%',
-        compact: true,
-        onChange: function (v) { wt.mgShare = v / 100; syncWaterStateToAppLive({ markCustom: true }); redrawWater(); paintEverydayWater(); paint4WayAndImpact(); }
-      }),
+      mgSharePill,
       CK.vernierPill({
         label: 'Batch Vol',
         value: wt.batchL,
@@ -6897,6 +7124,12 @@
             'Darcy Bed-Depth Factor = ' + darcyScale.toFixed(2) + 'x'
         }));
       }
+      if (typeof vesselDosePill !== 'undefined' && vesselDosePill && Math.abs(vesselDosePill.getValue() - vs.doseG) > 0.05) {
+        vesselDosePill.setValue(vs.doseG, true);
+      }
+      if (typeof vesselRatioPill !== 'undefined' && vesselRatioPill && Math.abs(vesselRatioPill.getValue() - vs.ratio) > 0.05) {
+        vesselRatioPill.setValue(vs.ratio, true);
+      }
     }
 
     function redrawMilkLab() {
@@ -6981,11 +7214,11 @@
             type: 'button',
             class: 'bt-lab-btn is-sm is-primary',
             onclick: function () {
-              vs.steamTempC = Math.min(55, Math.max(48, vs.steamTempC - 10));
+              vs.steamTempC = Math.min(56, Math.max(48, vs.steamTempC - 10));
               CK.haptic('snap');
               redrawMilkLab();
             }
-          }, 'Apply 10 °C Cooler Steam Fix (' + Math.min(55, Math.max(48, vs.steamTempC - 10)) + ' °C)') : null,
+          }, 'Apply Cooler Steam Fix (' + Math.min(56, Math.max(48, vs.steamTempC - 10)) + ' °C)') : null,
           domH('button', {
             type: 'button',
             class: 'bt-lab-btn is-sm',
@@ -7015,10 +7248,11 @@
       onPointer: function (p) {
         const frac = clamp((V_BOT - p.uy) / V_H, 0.08, 0.94, 0.42);
         const targetBev = frac * MAX_BEV;
+        const eyFrac = 0.204;
         if (vs.locked === 'ratio') {
-          vs.doseG = clamp(targetBev / Math.max(2, vs.ratio - vs.rw), 6, 80, vs.doseG);
+          vs.doseG = clamp(targetBev / Math.max(1.5, vs.ratio - vs.rw + eyFrac), 6, 90, vs.doseG);
         } else {
-          const reqPour = targetBev + vs.rw * vs.doseG;
+          const reqPour = targetBev + (vs.rw - eyFrac) * vs.doseG;
           vs.ratio = clamp(reqPour / Math.max(1, vs.doseG), 2.0, 22.0, vs.ratio);
         }
         waveAmp = clamp(p.vy * 0.015, -5, 5, 0);
@@ -7050,7 +7284,7 @@
       title: 'Vessel Meniscus, Flash-Ice & Milk Steaming Lab',
       whatItDoes: 'Calculates exact liquid in your mug, Japanese Flash-Iced ice-to-hot-water split, Paragon chilling, and milk steaming sweetness.',
       howToUse: 'Drag the liquid line up or down directly on the carafe; toggle Flash-Iced, Paragon Sphere, or Milk types.',
-      proTip: 'Steaming plant milk for bright light-roast espresso? Check the curdle warning and 10 °C cooler steam fix!'
+      proTip: 'Steaming plant milk for bright light-roast espresso? Check the curdle warning and <=56 °C cooler steam fix!'
     });
 
     card.appendChild(domH('div', { class: 'bt-lab-card-head' },
@@ -7064,37 +7298,39 @@
       domH('div', { class: 'bt-head-actions' }, vesselHow.trigger, epistemicBadge('verified_physics'))
     ));
     card.appendChild(vesselHow.panel);
+    const vesselDosePill = CK.vernierPill({
+      label: 'Dose',
+      value: vs.doseG,
+      min: 6,
+      max: 90,
+      step: 0.5,
+      decimals: 1,
+      unit: 'g',
+      compact: true,
+      onChange: function (v) { vs.doseG = v; redrawVessel(); }
+    });
+    const vesselRatioPill = CK.vernierPill({
+      label: 'Ratio 1:',
+      value: vs.ratio,
+      min: 2.0,
+      max: 22.0,
+      step: 0.2,
+      decimals: 1,
+      unit: '',
+      compact: true,
+      onChange: function (v) { vs.ratio = v; redrawVessel(); }
+    });
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
       flashBtn,
       paragonBtn,
-      CK.vernierPill({
-        label: 'Dose',
-        value: vs.doseG,
-        min: 6,
-        max: 90,
-        step: 0.5,
-        decimals: 1,
-        unit: 'g',
-        compact: true,
-        onChange: function (v) { vs.doseG = v; redrawVessel(); }
-      }),
-      CK.vernierPill({
-        label: 'Ratio 1:',
-        value: vs.ratio,
-        min: 2.0,
-        max: 22.0,
-        step: 0.2,
-        decimals: 1,
-        unit: '',
-        compact: true,
-        onChange: function (v) { vs.ratio = v; redrawVessel(); }
-      }),
+      vesselDosePill,
+      vesselRatioPill,
       CK.vernierPill({
         label: 'Ice Share',
         value: Math.round(vs.iceShare * 100),
         min: 15,
         max: 55,
-        step: 2,
+        step: 1,
         unit: '%',
         compact: true,
         onChange: function (v) { vs.iceShare = v / 100; vs.flashOn = true; flashBtn.classList.add('is-active'); redrawVessel(); }
@@ -7113,10 +7349,14 @@
           a.brew.paragonSphere = !!vs.paragonOn;
           if (vs.flashOn) {
             a.brew.iceShare = vs.iceShare;
-            a.brew.ice = Math.round(totalW * vs.iceShare);
+            a.brew.ice = vs.iceShare;
+            a.brew.technique = 'flash';
             a.brew.style = a.brew.method === 'aiden' ? 'aiden_flash_iced' : (a.brew.method === 'xbloom' ? 'xb_iced' : 'flash-iced');
-          } else if (/iced|flash/i.test(a.brew.style || '')) {
-            a.brew.style = 'standard';
+          } else {
+            if (a.brew.technique === 'flash') a.brew.technique = 'standard';
+            if (/iced|flash/i.test(a.brew.style || '')) {
+              a.brew.style = 'standard';
+            }
           }
           a.brew.customizedNote = vs.doseG.toFixed(1) + 'g · 1:' + vs.ratio.toFixed(1) + (vs.flashOn ? (' Flash-Iced (' + Math.round(vs.iceShare * 100) + '% ice)') : '');
         }, {
@@ -7146,26 +7386,39 @@
     function solveFromAnchor(changedKey, val) {
       const eyFrac = clamp(r4.eyPct, 2, 36, 20.4) / 100;
       if (changedKey === 'dose') {
-        r4.doseG = clamp(val, 4, 250, r4.doseG);
-        r4.waterG = +(r4.doseG * r4.ratio).toFixed(0);
+        r4.doseG = clamp(val, 4, 400, r4.doseG);
+        r4.waterG = clamp(Math.round(r4.doseG * r4.ratio), 20, 6000, r4.waterG);
+        r4.ratio = +clamp(r4.waterG / Math.max(0.5, r4.doseG), 1.2, 24.0, r4.ratio).toFixed(2);
       } else if (changedKey === 'water') {
-        r4.waterG = clamp(val, 20, 4000, r4.waterG);
-        if (r4.anchor === 'ratio') r4.doseG = +(r4.waterG / Math.max(1.5, r4.ratio)).toFixed(1);
-        else r4.ratio = +(r4.waterG / Math.max(0.5, r4.doseG)).toFixed(2);
+        r4.waterG = clamp(val, 20, 6000, r4.waterG);
+        if (r4.anchor === 'ratio') {
+          r4.doseG = clamp(+(r4.waterG / Math.max(1.2, r4.ratio)).toFixed(1), 4, 400, r4.doseG);
+        } else {
+          r4.ratio = +clamp(r4.waterG / Math.max(0.5, r4.doseG), 1.2, 24.0, r4.ratio).toFixed(2);
+          r4.waterG = clamp(Math.round(r4.doseG * r4.ratio), 20, 6000, r4.waterG);
+        }
       } else if (changedKey === 'mug') {
         const targetMug = clamp(val, 15, 3600, r4.mugG);
         r4.mugG = targetMug;
         if (r4.anchor === 'ratio') {
-          r4.doseG = +(targetMug / Math.max(0.8, r4.ratio - r4.rw + eyFrac)).toFixed(1);
-          r4.waterG = Math.round(r4.doseG * r4.ratio);
+          r4.doseG = clamp(+(targetMug / Math.max(0.8, r4.ratio - r4.rw + eyFrac)).toFixed(1), 4, 400, r4.doseG);
+          r4.waterG = clamp(Math.round(r4.doseG * r4.ratio), 20, 6000, r4.waterG);
         } else {
-          r4.waterG = Math.round(targetMug + (r4.rw - eyFrac) * r4.doseG);
-          r4.ratio = +(r4.waterG / Math.max(0.5, r4.doseG)).toFixed(2);
+          const rawW = Math.round(targetMug + (r4.rw - eyFrac) * r4.doseG);
+          r4.waterG = clamp(rawW, 20, 6000, r4.waterG);
+          r4.ratio = +clamp(r4.waterG / Math.max(0.5, r4.doseG), 1.2, 24.0, r4.ratio).toFixed(2);
+          if (Math.abs(r4.waterG - r4.doseG * r4.ratio) > 2) {
+            r4.doseG = clamp(+(targetMug / Math.max(0.8, r4.ratio - r4.rw + eyFrac)).toFixed(1), 4, 400, r4.doseG);
+            r4.waterG = clamp(Math.round(r4.doseG * r4.ratio), 20, 6000, r4.waterG);
+          }
         }
       } else if (changedKey === 'ratio') {
         r4.ratio = clamp(val, 1.2, 24.0, r4.ratio);
-        if (r4.anchor === 'water') r4.doseG = +(r4.waterG / r4.ratio).toFixed(1);
-        else r4.waterG = Math.round(r4.doseG * r4.ratio);
+        if (r4.anchor === 'water') {
+          r4.doseG = clamp(+(r4.waterG / r4.ratio).toFixed(1), 4, 400, r4.doseG);
+        } else {
+          r4.waterG = clamp(Math.round(r4.doseG * r4.ratio), 20, 6000, r4.waterG);
+        }
       }
       const dissG = r4.doseG * eyFrac;
       r4.mugG = Math.max(10, Math.round(r4.waterG - r4.rw * r4.doseG + dissG));
@@ -7173,24 +7426,28 @@
     }
 
     const doseIn = domH('input', {
-      type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: String(r4.doseG),
+      type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', min: '4', max: '400', step: '0.5', value: String(r4.doseG),
       'aria-label': 'Dry coffee dose in grams',
-      oninput: function () { const v = parseFloat(doseIn.value); if (v > 0) { solveFromAnchor('dose', v); syncInputs('dose'); } }
+      oninput: function () { const v = parseFloat(doseIn.value); if (v > 0) { solveFromAnchor('dose', v); if (v > 400) doseIn.value = String(r4.doseG); syncInputs('dose'); } },
+      onchange: function () { const v = parseFloat(doseIn.value); solveFromAnchor('dose', Number.isFinite(v) ? v : r4.doseG); doseIn.value = String(r4.doseG); syncInputs(''); }
     });
     const waterIn = domH('input', {
-      type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '5', value: String(r4.waterG),
+      type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', min: '20', max: '6000', step: '5', value: String(r4.waterG),
       'aria-label': 'Total brew water in grams',
-      oninput: function () { const v = parseFloat(waterIn.value); if (v > 0) { solveFromAnchor('water', v); syncInputs('water'); } }
+      oninput: function () { const v = parseFloat(waterIn.value); if (v > 0) { solveFromAnchor('water', v); if (v > 6000) waterIn.value = String(r4.waterG); syncInputs('water'); } },
+      onchange: function () { const v = parseFloat(waterIn.value); solveFromAnchor('water', Number.isFinite(v) ? v : r4.waterG); waterIn.value = String(r4.waterG); syncInputs(''); }
     });
     const mugIn = domH('input', {
-      type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '5', value: String(r4.mugG),
+      type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', min: '15', max: '3600', step: '5', value: String(r4.mugG),
       'aria-label': 'Beverage yield in mug in grams',
-      oninput: function () { const v = parseFloat(mugIn.value); if (v > 0) { solveFromAnchor('mug', v); syncInputs('mug'); } }
+      oninput: function () { const v = parseFloat(mugIn.value); if (v > 0) { solveFromAnchor('mug', v); if (v > 3600) mugIn.value = '3600'; syncInputs('mug'); } },
+      onchange: function () { const v = parseFloat(mugIn.value); solveFromAnchor('mug', Number.isFinite(v) ? v : r4.mugG); mugIn.value = String(r4.mugG); syncInputs(''); }
     });
     const ratioIn = domH('input', {
-      type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.2', value: String(r4.ratio),
+      type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', min: '1.2', max: '24', step: '0.2', value: String(r4.ratio),
       'aria-label': 'Brew ratio 1 to X',
-      oninput: function () { const v = parseFloat(ratioIn.value); if (v > 0) { solveFromAnchor('ratio', v); syncInputs('ratio'); } }
+      oninput: function () { const v = parseFloat(ratioIn.value); if (v > 0) { solveFromAnchor('ratio', v); if (v > 24) ratioIn.value = String(r4.ratio); syncInputs('ratio'); } },
+      onchange: function () { const v = parseFloat(ratioIn.value); solveFromAnchor('ratio', Number.isFinite(v) ? v : r4.ratio); ratioIn.value = String(r4.ratio); syncInputs(''); }
     });
 
     const batchBtns = [1, 2, 3, 4].map(function (nCups) {
@@ -7499,9 +7756,12 @@
         stageG.appendChild(vl);
       });
 
+      const deltaStr = (delta > 0 ? '+' : '') + delta;
       const scorchMsg = delta >= 12
-        ? 'High Radial Gradient (Delta +' + delta + ' >= 12): Outer bean shell roasted darker than dense core \u2192 drop late-pulse temp -1.5 °C to avoid phenylindane bitterness!'
-        : (delta <= 6 ? 'Uniform Convective Core (Delta +' + delta + ' <= 6): Even cellular solubility from rim to center.' : 'Balanced Drum Development (Delta +' + delta + ').');
+        ? ('High Radial Gradient (Delta ' + deltaStr + ' >= 12): Outer bean shell roasted darker than dense core \u2192 drop late-pulse temp -1.5 °C to avoid phenylindane bitterness!')
+        : (delta < 0
+          ? ('Inverted Core Gradient (Delta ' + deltaStr + '): Ground interior reads darker than bean surface.')
+          : (delta <= 6 ? ('Uniform Convective Core (Delta ' + deltaStr + ' <= 6): Even cellular solubility from rim to center.') : ('Balanced Drum Development (Delta ' + deltaStr + ').')));
 
       agReadout.textContent = '';
       agReadout.appendChild(domH('div', { class: 'bt-studio-human-line' },
@@ -7702,7 +7962,12 @@
           {
             id: 'today_pin',
             hitRadiusPx: 28,
-            getPos: function () { return { x: fx(rf.daysToday), y: fy(vitalityAt(rf.daysToday, rf.groundG)) }; },
+            getPos: function () {
+              const tEff = rf.freezeOn && rf.daysToday > rf.freezeDay
+                ? rf.freezeDay + (rf.daysToday - rf.freezeDay) / 12.3
+                : rf.daysToday;
+              return { x: fx(rf.daysToday), y: fy(vitalityAt(tEff, rf.groundG)) };
+            },
             onMove: function (p) {
               rf.daysToday = Math.round(clamp(((p.ux - FP.L) / FP.PW) * MAX_DAYS, 0, MAX_DAYS, rf.daysToday));
               redrawFreshness();
@@ -7814,7 +8079,22 @@
     card.appendChild(omniAgBar);
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, agSvg));
     card.appendChild(agReadout);
+    const freezeCurveBtn = domH('button', {
+      type: 'button',
+      class: 'bt-lab-chip' + (rf.freezeOn ? ' is-active' : ''),
+      'aria-pressed': String(!!rf.freezeOn),
+      onclick: function () {
+        rf.freezeOn = !rf.freezeOn;
+        freezeCurveBtn.classList.toggle('is-active', !!rf.freezeOn);
+        freezeCurveBtn.setAttribute('aria-pressed', String(!!rf.freezeOn));
+        freezeCurveBtn.lastChild.textContent = rf.freezeOn ? 'Freeze Curve ON (-18 °C)' : 'Freeze Curve OFF';
+        CK.haptic('tick');
+        redrawFreshness();
+      }
+    }, ic('cryo-snowflake', { size: 14 }), domH('span', { text: rf.freezeOn ? 'Freeze Curve ON (-18 °C)' : 'Freeze Curve OFF' }));
+
     card.appendChild(domH('div', { class: 'bt-lab-btn-row' },
+      freezeCurveBtn,
       domH('button', {
         type: 'button',
         class: 'bt-lab-btn is-primary',
@@ -8112,10 +8392,14 @@
       toSel.appendChild(o2);
     });
 
+    const gInitFrom = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
     const fromSetIn = domH('input', {
-      type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: gl.fromSetting == null ? '' : String(gl.fromSetting),
+      type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in',
+      min: String(gInitFrom.min), max: String(gInitFrom.max), step: '0.5',
+      value: gl.fromSetting == null ? '' : String(gl.fromSetting),
       'aria-label': 'Source grinder setting',
       oninput: function () {
+        const gCur = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
         const rawStr = String(fromSetIn.value || '').trim();
         if (!rawStr) {
           gl.fromSetting = null;
@@ -8123,7 +8407,21 @@
           return;
         }
         const v = parseFloat(rawStr);
-        if (Number.isFinite(v)) { gl.fromSetting = v; paintGrinder(); }
+        if (Number.isFinite(v)) {
+          const clamped = clamp(v, gCur.min, gCur.max, gCur.min);
+          gl.fromSetting = clamped;
+          if (v > gCur.max || v < 0) fromSetIn.value = String(clamped);
+          paintGrinder();
+        }
+      },
+      onchange: function () {
+        const gCur = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
+        const v = parseFloat(fromSetIn.value);
+        if (Number.isFinite(v)) {
+          gl.fromSetting = clamp(v, gCur.min, gCur.max, gCur.min);
+          fromSetIn.value = String(gl.fromSetting);
+          paintGrinder();
+        }
       }
     });
 
@@ -8140,6 +8438,13 @@
       return { grinderKey: normReq, slopeM: slopeM, d0OffsetUm: d0OffsetUm };
     }
 
+    function resolveGrinderCalib(aNow, normGKey) {
+      const pmc = aNow && aNow.prefs && aNow.prefs.pocketMicronCalib;
+      const pmcValid = pmc && (Number.isFinite(+pmc.d0OffsetUm) || Number.isFinite(+pmc.slopeM)) &&
+        (!pmc.grinderKey || String(pmc.grinderKey).trim().toLowerCase().replace(/_/g, '-') === normGKey);
+      return pmcValid ? pmc : ((aNow && aNow.prefs && aNow.prefs.calib) || null);
+    }
+
     function settingToUm(g, setting, opts) {
       const aNow = getApp() || {};
       const mKey = 'v60';
@@ -8147,7 +8452,8 @@
       if (customCal) {
         return clamp(customCal.d0OffsetUm + setting * customCal.slopeM, 120, 1400, 580);
       }
-      const calib = (aNow.prefs && (aNow.prefs.pocketMicronCalib || aNow.prefs.calib)) || null;
+      const normGKey = String(g.key || '').toLowerCase().replace(/_/g, '-');
+      const calib = resolveGrinderCalib(aNow, normGKey);
       const fnCore = window.BTCoreV6 && window.BTCoreV6.psd && typeof window.BTCoreV6.psd.micronsForGrinderSetting === 'function'
         ? window.BTCoreV6.psd.micronsForGrinderSetting
         : (typeof micronsForGrinderSetting === 'function' ? micronsForGrinderSetting : null);
@@ -8164,7 +8470,8 @@
       const aNow = getApp() || {};
       const mKey = um < 320 ? 'espresso' : (um > 820 ? 'french_press' : 'v60');
       const customCal = getCustomCalibFor(g.key);
-      const calib = customCal || (aNow.prefs && (aNow.prefs.pocketMicronCalib || aNow.prefs.calib)) || null;
+      const normGKey = String(g.key || '').toLowerCase().replace(/_/g, '-');
+      const calib = customCal || resolveGrinderCalib(aNow, normGKey);
       if (window.BTCoreV6 && window.BTCoreV6.psd && typeof window.BTCoreV6.psd.mapMicronsToGrinder === 'function' && g.raw) {
         try {
           const res = window.BTCoreV6.psd.mapMicronsToGrinder(um, g.key, calib, mKey);
@@ -8173,7 +8480,11 @@
               return { num: null, display: res.display || res.shortDisplay || 'Incompatible', incompatible: true };
             }
             const num = res.clicks != null ? res.clicks : res.setting;
-            const disp = res.display || res.shortDisplay || (num != null ? (num + ' ' + g.unit) : '');
+            const uLbl = fmtGrinderUnit(g.unit, num);
+            let disp = res.display || res.shortDisplay || (num != null ? (num + ' ' + uLbl) : '');
+            if (disp && num != null && Math.abs(num - 1) >= 1e-6) {
+              disp = disp.replace(/(\d+(?:\.\d+)?\s*)(click|step|mark|setting)\b(?!s)/i, function (_, pre, m) { return pre + m + 's'; });
+            }
             if (num != null || disp) {
               return { num: num, display: disp };
             }
@@ -8183,14 +8494,14 @@
       const raw = (um - g.umZero) / Math.max(0.5, g.umPerStep);
       const clamped = clamp(raw, g.min, g.max, (g.min + g.max) * 0.5);
       const num = g.max <= 16 ? +clamped.toFixed(1) : Math.round(clamped * 2) / 2;
-      return { num: num, display: num + ' ' + g.unit };
+      return { num: num, display: num + ' ' + fmtGrinderUnit(g.unit, num) };
     }
 
     function umToSetting(g, um) {
       return umToSettingInfo(g, um).num;
     }
 
-    let _omniOverrideUm = (labState.omniLive && labState.omniLive.d50Um > 0) ? Math.round(labState.omniLive.d50Um) : 0;
+    let _omniOverrideUm = (gl.useOmniOverride && labState.omniLive && labState.omniLive.d50Um > 0) ? Math.round(labState.omniLive.d50Um) : 0;
 
     /* Live DiFluid Omni D10 / D50 / D90 & PSD Histogram Calibration Subcard */
     const omniPsdBadge = domH('span', {
@@ -8345,14 +8656,18 @@
               return;
             }
             const gFromCur = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
-            const curUm = Math.round(labState.omniLive.d50Um || settingToUm(gFromCur, gl.fromSetting, { ignoreCustom: true }));
+            const omniUm = _omniOverrideUm > 0 ? _omniOverrideUm : (labState.omniLive && labState.omniLive.d50Um > 0 ? labState.omniLive.d50Um : 0);
+            const curUm = Math.round(omniUm > 0 ? omniUm : settingToUm(gFromCur, gl.fromSetting, { ignoreCustom: true }));
             gl.calPt1Click = +gl.fromSetting;
             gl.calPt1Um = curUm;
             gl.calPt1Locked = true;
+            if (gl.calGrinderKey && gl.calGrinderKey !== gFromCur.key) {
+              gl.calPt2Locked = false;
+            }
             gl.calGrinderKey = gFromCur.key;
             CK.haptic('snap');
             paintGrinder();
-            notify('Locked Burr Calibration Point 1: ' + gl.calPt1Click + ' \u2192 ' + gl.calPt1Um + ' \u00B5m.');
+            notify('Locked Burr Calibration Point 1 (' + gFromCur.name + '): ' + gl.calPt1Click + ' \u2192 ' + gl.calPt1Um + ' \u00B5m.');
           }
         }, 'Lock as Burr Point 1'),
         domH('button', {
@@ -8364,7 +8679,12 @@
               return;
             }
             const gFromCur = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
-            const curUm = Math.round(labState.omniLive.d50Um || settingToUm(gFromCur, gl.fromSetting, { ignoreCustom: true }));
+            if (gl.calPt1Locked && gl.calGrinderKey && gl.calGrinderKey !== gFromCur.key) {
+              notify('Point 1 was locked on ' + gl.calGrinderKey + ' — switch back to lock Point 2 on the same grinder, or re-lock Point 1 first.');
+              return;
+            }
+            const omniUm = _omniOverrideUm > 0 ? _omniOverrideUm : (labState.omniLive && labState.omniLive.d50Um > 0 ? labState.omniLive.d50Um : 0);
+            const curUm = Math.round(omniUm > 0 ? omniUm : settingToUm(gFromCur, gl.fromSetting, { ignoreCustom: true }));
             gl.calPt2Click = +gl.fromSetting;
             gl.calPt2Um = curUm;
             gl.calPt2Locked = true;
@@ -8374,15 +8694,28 @@
             if (Math.abs(gl.calPt2Click - gl.calPt1Click) < 0.5) {
               notify('Point 2 matches Point 1 — choose a different setting for a 2-point slope.');
             } else {
-              notify('Locked Burr Calibration Point 2: ' + gl.calPt2Click + ' \u2192 ' + gl.calPt2Um + ' \u00B5m.');
+              notify('Locked Burr Calibration Point 2 (' + gFromCur.name + '): ' + gl.calPt2Click + ' \u2192 ' + gl.calPt2Um + ' \u00B5m.');
             }
           }
         }, 'Lock as Burr Point 2')
       )
     );
 
-    fromSel.addEventListener('change', function () { _omniOverrideUm = 0; });
-    fromSetIn.addEventListener('input', function () { _omniOverrideUm = 0; });
+    fromSel.addEventListener('change', function () {
+      _omniOverrideUm = 0;
+      gl.useOmniOverride = false;
+      const gCur = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
+      fromSetIn.min = String(gCur.min);
+      fromSetIn.max = String(gCur.max);
+      if (gl.fromSetting != null && Number.isFinite(+gl.fromSetting)) {
+        gl.fromSetting = clamp(gl.fromSetting, gCur.min, gCur.max, gCur.min);
+        fromSetIn.value = String(gl.fromSetting);
+      }
+    });
+    fromSetIn.addEventListener('input', function () {
+      _omniOverrideUm = 0;
+      gl.useOmniOverride = false;
+    });
 
     function paintGrinder() {
       const gFrom = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
@@ -8390,12 +8723,13 @@
       const hasInput = gl.fromSetting != null && Number.isFinite(+gl.fromSetting);
       const dClick = gl.calPt2Click - gl.calPt1Click;
       const dUm = gl.calPt2Um - gl.calPt1Um;
-      const customCal = getCustomCalibFor(gFrom.key);
-      const calHintText = Math.abs(dClick) < 0.5 || dUm * dClick <= 0
-        ? '2-Point Burr Calibration: Need 2 distinct settings (Point 1 \u2260 Point 2).'
-        : ('2-Point Burr Calibration Slope: ' + (dUm / dClick).toFixed(1) + ' \u00B5m/step (' +
+      const customCal = getCustomCalibFor(gFrom.key) || getCustomCalibFor(gTo.key);
+      const anyLocked = gl.calPt1Locked && gl.calPt2Locked;
+      const calHintText = (!anyLocked || Math.abs(dClick) < 0.5 || dUm * dClick <= 0)
+        ? '2-Point Burr Calibration: Lock 2 distinct settings on the same grinder (Point 1 \u2260 Point 2).'
+        : ('2-Point Burr Calibration (' + (gl.calGrinderKey || gFrom.key) + '): ' + (dUm / dClick).toFixed(1) + ' \u00B5m/step (' +
             gl.calPt1Click + '\u2192' + gl.calPt1Um + ' \u00B5m, ' + gl.calPt2Click + '\u2192' + gl.calPt2Um + ' \u00B5m)' +
-            (customCal ? ' [Active]' : '') + ' across ' + gList.length + ' mapped grinders.');
+            (customCal ? ' [Active]' : ' [Other grinder]'));
 
       outBox.textContent = '';
       if (!hasInput && !(_omniOverrideUm > 0)) {
@@ -8411,12 +8745,12 @@
 
       const d50Um = _omniOverrideUm > 0 ? _omniOverrideUm : Math.round(settingToUm(gFrom, gl.fromSetting));
       const targetInfo = umToSettingInfo(gTo, d50Um);
-      const targetDisp = targetInfo.display || (targetInfo.num + ' ' + gTo.unit);
+      const targetDisp = targetInfo.display || (targetInfo.num + ' ' + fmtGrinderUnit(gTo.unit, targetInfo.num));
 
       outBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
         domH('div', { class: 'bt-studio-human-line num-tab', id: 'bt-grinder-live-readout' },
           domH('strong', {
-            text: gFrom.name + ' @ ' + (hasInput ? (gl.fromSetting + ' ' + gFrom.unit) : 'Omni D50') + ' (~' + d50Um + ' \u00B5m D50)  \u2192  ' +
+            text: gFrom.name + ' @ ' + (hasInput ? (gl.fromSetting + ' ' + fmtGrinderUnit(gFrom.unit, gl.fromSetting)) : 'Omni D50') + ' (~' + d50Um + ' \u00B5m D50)  \u2192  ' +
               gTo.name + ' @ ' + targetDisp
           })
         ),
@@ -8439,7 +8773,7 @@
                 a.prefs.gear.grinderName = gTo.name;
                 a.brew.grinderKey = gTo.key;
                 a.brew.grinderName = gTo.name;
-                const mappedSettingTxt = syncBrewGrindFields(a, d50Um, { grinderKey: gTo.key });
+                const mappedSettingTxt = syncBrewGrindFields(a, d50Um, { grinderKey: gTo.key, overrideSetting: targetDisp });
                 a.brew.customizedNote = gTo.name + ' @ ' + (mappedSettingTxt || targetDisp) + ' (~' + d50Um + ' \u00B5m)';
               }, {
                 targetStep: 'brew',
@@ -8477,6 +8811,7 @@
       if (opts && opts.d50Changed && labState.omniLive.d50Um > 0) {
         const measuredUm = Math.round(labState.omniLive.d50Um);
         _omniOverrideUm = measuredUm;
+        gl.useOmniOverride = true;
         const gFrom = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
         const solvedSet = umToSetting(gFrom, measuredUm);
         if (Number.isFinite(+solvedSet)) {

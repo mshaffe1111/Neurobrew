@@ -253,18 +253,15 @@
 .bt-tc-seg-bar {
   display: flex;
   align-items: stretch;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 4px;
   border-radius: var(--r-md, 16px);
   background: var(--well);
   box-shadow: var(--shadow-well-inset);
-  overflow-x: auto;
-  scrollbar-width: none;
+  max-width: 100%;
   min-width: 0;
-}
-
-.bt-tc-seg-bar::-webkit-scrollbar {
-  display: none;
+  box-sizing: border-box;
 }
 
 .bt-tc-seg-btn {
@@ -283,6 +280,22 @@
   gap: 6px;
   white-space: nowrap;
   transition: background-color 0.16s var(--spring-snappy), color 0.16s ease, box-shadow 0.16s ease;
+}
+
+@media (max-width: 420px) {
+  .bt-tc-seg-bar {
+    gap: 4px;
+    padding: 4px;
+  }
+  .bt-tc-seg-btn {
+    flex: 1 1 auto;
+    min-height: 40px;
+    padding: 6px 8px;
+    font-size: 0.76rem;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.2;
+  }
 }
 
 .bt-tc-seg-btn[aria-selected="true"],
@@ -359,13 +372,19 @@
 .bt-tc-badge {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   padding: 4px 10px;
   border-radius: var(--r-pill, 9999px);
   font-size: 0.74rem;
   font-weight: 800;
   letter-spacing: 0.03em;
-  white-space: nowrap;
+  line-height: 1.25;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
 }
 
 .bt-tc-badge.is-good {
@@ -847,7 +866,7 @@
 .bt-tc-gold-lock-btn.is-locked {
   background: var(--good);
   border-color: var(--good);
-  color: #FFFDF9;
+  color: var(--good-ink, var(--accent-ink));
 }
 
 /* ==================== 7. R2 DUAL-PIN SOVEREIGNTY & OFF-DAY SHIELD ==================== */

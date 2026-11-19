@@ -445,6 +445,7 @@
     subView: 'gym', /* 'gym' | 'curriculum' | 'glossary' | 'folk' | 'vault' */
     voiceEnabled: true,
     quizChoices: {},
+    openLessonsSet: new Set(),
 
     /* Editable 1-5 Bowl Multi-Coffee SCA/CVA Cupping */
     sca: {
@@ -627,8 +628,13 @@
             : [ls.lead || ls.summary || ls.body || 'Verified coffee science lesson.'];
           const quiz = getQuizForLesson(idx, ls);
           const pickedOpt = acadUi.quizChoices[lid];
+          const isWrongPicked = pickedOpt != null && pickedOpt !== quiz.ans;
+          const isRightPicked = pickedOpt != null && pickedOpt === quiz.ans;
 
-          return domH('details', { class: 'bt-lab-details bt-lesson-accordion' + (passed ? ' is-completed' : '') },
+          const detEl = domH('details', {
+            class: 'bt-lab-details bt-lesson-accordion' + (passed ? ' is-completed' : ''),
+            open: acadUi.openLessonsSet.has(lid)
+          },
             domH('summary', { class: 'bt-lesson-summary' },
               domH('span', { class: 'bt-lesson-title', text: (ls.title || ls.name || lid) }),
               domH('span', { class: 'bt-lesson-meta' },
@@ -655,6 +661,7 @@
                       class: 'bt-lab-chip bt-quiz-opt' + cls,
                       onclick: function () {
                         acadUi.quizChoices[lid] = oIdx;
+                        acadUi.openLessonsSet.add(lid);
                         if (isRight) {
                           const cur = readAcademyState();
                           if (cur.quizPassedIds.indexOf(lid) < 0) cur.quizPassedIds.push(lid);
@@ -664,15 +671,32 @@
                           notify('Correct! Lesson mastered.');
                         } else {
                           CK.haptic('snap');
+                          notify('Not quite — try another answer!');
                         }
                         rerenderAcademyTab();
                       }
                     }, optTxt);
                   })
-                )
+                ),
+                isWrongPicked ? domH('p', {
+                  class: 'bt-quiz-feedback is-wrong',
+                  role: 'status',
+                  style: 'margin:8px 0 0;font-size:0.82rem;font-weight:700;color:var(--bad, #A93226)',
+                  text: 'Not quite \u2014 that choice is incorrect. Review the lesson takeaway above and try another answer!'
+                }) : (isRightPicked ? domH('p', {
+                  class: 'bt-quiz-feedback is-correct',
+                  role: 'status',
+                  style: 'margin:8px 0 0;font-size:0.82rem;font-weight:700;color:var(--good, #1B6341)',
+                  text: 'Correct! Lesson mastered.'
+                }) : null)
               )
             )
           );
+          detEl.addEventListener('toggle', function () {
+            if (detEl.open) acadUi.openLessonsSet.add(lid);
+            else acadUi.openLessonsSet.delete(lid);
+          });
+          return detEl;
         })
       )
     );
@@ -1013,6 +1037,7 @@
         }
         const take = Math.min(5, list.length);
         sca.bowlCount = take;
+        sca._lastSavedSig = '';
         while (sca.bowls.length < take) {
           sca.bowls.push(makeDefaultScaBowl(sca.bowls.length));
         }
@@ -1033,6 +1058,11 @@
           sca.bowls[i].bag_notes = bNotes;
           sca.bowls[i].notes = bNotes;
           sca.bowls[i].flavors = Array.isArray(rawC.flavors) ? rawC.flavors.slice() : (bNotes ? bNotes.split(/[,;/]+/).map(function (s) { return s.trim(); }).filter(Boolean) : []);
+          sca.bowls[i].nonUniformCups = 0;
+          sca.bowls[i].defectiveCups = 0;
+          sca.bowls[i].defects = 0;
+          sca.bowls[i].defect_notes = '';
+          setBowlTargetScaBase(sca.bowls[i], 85.0);
         }
         CK.haptic('snap');
         notify('Loaded ' + take + ' coffee(s) from My Beans into Cupping Bowls!');
@@ -1372,113 +1402,160 @@
       type: 'button',
       class: 'bt-lab-btn is-primary bt-chart-cta-btn',
       onclick: function () {
-        const st = window.BTStorage || {};
-        const todayIso = new Date().toISOString().slice(0, 10);
-        const nowIso = new Date().toISOString();
-        const batchTs = Date.now().toString(36);
-        let savedN = 0;
-
-        for (let i = 0; i < sca.bowlCount; i++) {
-          const b = sca.bowls[i];
-          const sc = computeCvaBowlScore(b);
-          const stars = computeBowlStars(sc);
-          const cId = b.coffee_id || ('cf_sca_' + batchTs + '_' + i);
-          b.coffee_id = cId;
-          const cupNotes = String(b.notes || '').trim();
-          const bagNotes = String(b.bag_notes || cupNotes || '').trim();
-          const flavorsArr = (Array.isArray(b.flavors) && b.flavors.length)
-            ? b.flavors.slice()
-            : (cupNotes ? cupNotes.split(/[,;/]+/).map(function (x) { return x.trim(); }).filter(Boolean) : (bagNotes ? bagNotes.split(/[,;/]+/).map(function (x) { return x.trim(); }).filter(Boolean) : []));
-          const flavorsStr = cupNotes || flavorsArr.join(', ') || bagNotes;
-          const coffeeName = b.name || ('Cupping Bowl ' + b.code);
-          const ratioVal = Math.round((sca.bowlMl / Math.max(1, dosePerBowlG)) * 10) / 10;
-          const cupSummary = 'Multi-Bowl Cupping (' + sc.toFixed(2) + ' / 100)' + (cupNotes ? (' · ' + cupNotes) : '');
-          const rowObj = (typeof emptyRowObj === 'function') ? emptyRowObj() : {};
-          if (typeof COLUMNS !== 'undefined' && Array.isArray(COLUMNS)) {
-            COLUMNS.forEach(function (ck) { if (rowObj[ck] === undefined) rowObj[ck] = ''; });
-          }
-          Object.assign(rowObj, {
-            schema_version: '6.0',
-            id: 'cup_sca_' + batchTs + '_' + i + '_' + Math.random().toString(36).slice(2, 6),
-            coffee_id: cId,
-            saved_at: nowIso,
-            cupping_date: todayIso,
-            mode: 'single_cup',
-            coffee_name: coffeeName,
-            roaster: b.roaster || '',
-            origin: b.origin || '',
-            process: b.process || '',
-            roast: b.roast || '',
-            varietal: b.varietal || '',
-            farm: b.farm || '',
-            elevation_m: b.elevation_m || '',
-            agtron: b.agtron || '',
-            bag_notes: bagNotes,
-            brew_method: 'cupping',
-            brew_attempt: '1',
-            brew_dose_g: String(dosePerBowlG),
-            brew_water_g: String(sca.bowlMl),
-            brew_ratio: String(ratioVal),
-            brew_temp_c: '93',
-            brew_temp_f: '200',
-            total_score: sc.toFixed(2),
-            score_kind: 'cva_affective',
-            my_rating_stars: String(stars),
-            flavors_liked: flavorsStr,
-            general_notes: cupSummary
-          });
-          if (typeof st.keepInBrowser === 'function') {
-            st.keepInBrowser(rowObj);
-            savedN++;
-          } else if (typeof st.appendTastingRow === 'function') {
-            st.appendTastingRow(rowObj);
-            savedN++;
-          }
-          if (typeof st.upsertCoffeeVaultRecord === 'function') {
-            try {
-              st.upsertCoffeeVaultRecord({
-                id: cId,
-                coffee_id: cId,
-                name: coffeeName,
-                roaster: b.roaster || '',
-                origin: b.origin || '',
-                process: b.process || '',
-                roast: b.roast || '',
-                varietal: b.varietal || '',
-                farm: b.farm || '',
-                elevation_m: b.elevation_m || '',
-                agtron: b.agtron || '',
-                bag_notes: bagNotes,
-                notes: cupNotes || bagNotes,
-                flavors: flavorsArr,
-                personal_note: cupSummary
-              }, {
-                method: 'cupping',
-                dose: dosePerBowlG,
-                water: sca.bowlMl,
-                ratio: ratioVal,
-                tempC: 93,
-                tempF: 200,
-                stars: stars,
-                totalScore: +sc.toFixed(2),
-                flavors_liked: flavorsStr
-              });
-            } catch (_) {}
-          }
+        if (sca._isSaving) return;
+        const flightSigParts = [sca.bowlCount, sca.bowlMl];
+        for (let si = 0; si < sca.bowlCount; si++) {
+          const sb = sca.bowls[si] || {};
+          const shArr = Array.isArray(sb.hVals) ? sb.hVals.map(function (x) { return (+x || 0).toFixed(2); }).join(',') : '';
+          flightSigParts.push([sb.code, sb.name, sb.notes, shArr, sb.nonUniformCups || 0, sb.defectiveCups || 0].join('~'));
+        }
+        const flightSig = flightSigParts.join('|');
+        if (sca._lastSavedSig && sca._lastSavedSig === flightSig) {
+          notify('This cupping flight is already saved to your Taste History!');
+          return;
         }
 
-        const acCur = readAcademyState();
-        acCur.palateGymHistory.blindBowlsRuns++;
-        acCur.palateGymHistory.lastPlayedAt = new Date().toISOString();
-        writeAcademyState(acCur);
-        acadUi.gymCoach = {
-          mood: 'celebrating',
-          title: 'Cupping Flight Logged!',
-          speech: 'Saved all ' + savedN + ' cupping bowl(s) straight into your Tasting Journal!'
-        };
-        CK.haptic('celebrate');
-        notify('Saved all ' + savedN + ' cupping bowl(s) to your Taste History!');
-        if (!isSheet) rerenderAcademyTab();
+        sca._isSaving = true;
+        try {
+          const st = window.BTStorage || {};
+          const todayIso = new Date().toISOString().slice(0, 10);
+          const nowIso = new Date().toISOString();
+          const batchTs = Date.now().toString(36);
+          const fmtTrait = function (v) {
+            const n = clamp(v, 1, 9, 6.14);
+            return String(Math.abs(n - Math.round(n)) < 0.01 ? Math.round(n) : +n.toFixed(2));
+          };
+          let savedN = 0;
+
+          for (let i = 0; i < sca.bowlCount; i++) {
+            const b = sca.bowls[i];
+            const sc = computeCvaBowlScore(b);
+            const stars = computeBowlStars(sc);
+            const cId = b.coffee_id || ('cf_sca_' + batchTs + '_' + i);
+            b.coffee_id = cId;
+            const cupNotes = String(b.notes || '').trim();
+            const bagNotes = String(b.bag_notes || cupNotes || '').trim();
+            const flavorsArr = (Array.isArray(b.flavors) && b.flavors.length)
+              ? b.flavors.slice()
+              : (cupNotes ? cupNotes.split(/[,;/]+/).map(function (x) { return x.trim(); }).filter(Boolean) : (bagNotes ? bagNotes.split(/[,;/]+/).map(function (x) { return x.trim(); }).filter(Boolean) : []));
+            const flavorsStr = cupNotes || flavorsArr.join(', ') || bagNotes;
+            const coffeeName = b.name || ('Cupping Bowl ' + b.code);
+            const ratioVal = Math.round((sca.bowlMl / Math.max(1, dosePerBowlG)) * 10) / 10;
+            const cupSummary = 'Multi-Bowl Cupping (' + sc.toFixed(2) + ' / 100)' + (cupNotes ? (' · ' + cupNotes) : '');
+            const hArr = (Array.isArray(b.hVals) && b.hVals.length === 8) ? b.hVals : [6.14, 6.14, 6.14, 6.14, 6.14, 6.14, 6.14, 6.14];
+            const nonUnif = clamp(b.nonUniformCups || 0, 0, 5, 0);
+            const defec = clamp(b.defectiveCups || 0, 0, 5, 0);
+            const defDeduct = 2 * nonUnif + 4 * defec;
+            const rowObj = (typeof emptyRowObj === 'function') ? emptyRowObj() : {};
+            if (typeof COLUMNS !== 'undefined' && Array.isArray(COLUMNS)) {
+              COLUMNS.forEach(function (ck) { if (rowObj[ck] === undefined) rowObj[ck] = ''; });
+            }
+            Object.assign(rowObj, {
+              schema_version: '6.0',
+              id: 'cup_sca_' + batchTs + '_' + i + '_' + Math.random().toString(36).slice(2, 6),
+              coffee_id: cId,
+              saved_at: nowIso,
+              cupping_date: todayIso,
+              mode: 'single_cup',
+              coffee_name: coffeeName,
+              roaster: b.roaster || '',
+              origin: b.origin || '',
+              process: b.process || '',
+              roast_level: b.roast || '',
+              varietal: b.varietal || '',
+              farm: b.farm || '',
+              elevation_m: b.elevation_m || '',
+              agtron: b.agtron || '',
+              bag_notes: bagNotes,
+              brew_method: 'cupping',
+              brew_attempt: '1',
+              brew_dose_g: String(dosePerBowlG),
+              brew_water_g: String(sca.bowlMl),
+              brew_ratio: String(ratioVal),
+              brew_temp_c: '93',
+              brew_temp_f: '200',
+              fragrance: fmtTrait(hArr[0]),
+              aroma: fmtTrait(hArr[1]),
+              fragrance_aroma: fmtTrait((+hArr[0] + +hArr[1]) / 2),
+              flavor: fmtTrait(hArr[2]),
+              aftertaste: fmtTrait(hArr[3]),
+              acidity: fmtTrait(hArr[4]),
+              sweetness: fmtTrait(hArr[5]),
+              q_sweetness: fmtTrait(hArr[5]),
+              body: fmtTrait(hArr[6]),
+              overall: fmtTrait(hArr[7]),
+              taint_cups: String(nonUnif),
+              fault_cups: String(defec),
+              defect_deduction: String(defDeduct),
+              total_score: sc.toFixed(2),
+              score_kind: 'cva_affective',
+              my_rating_stars: String(stars),
+              flavors_liked: flavorsStr,
+              general_notes: cupSummary
+            });
+            let rowSaved = false;
+            if (typeof st.keepInBrowser === 'function') {
+              rowSaved = !!st.keepInBrowser(rowObj);
+            } else if (typeof st.appendTastingRow === 'function') {
+              rowSaved = !!st.appendTastingRow(rowObj);
+            }
+            if (rowSaved) {
+              savedN++;
+              if (typeof st.upsertCoffeeVaultRecord === 'function') {
+                try {
+                  st.upsertCoffeeVaultRecord({
+                    id: cId,
+                    coffee_id: cId,
+                    name: coffeeName,
+                    roaster: b.roaster || '',
+                    origin: b.origin || '',
+                    process: b.process || '',
+                    roast: b.roast || '',
+                    varietal: b.varietal || '',
+                    farm: b.farm || '',
+                    elevation_m: b.elevation_m || '',
+                    agtron: b.agtron || '',
+                    bag_notes: bagNotes,
+                    notes: cupNotes || bagNotes,
+                    flavors: flavorsArr,
+                    personal_note: cupSummary
+                  }, {
+                    method: 'cupping',
+                    dose: dosePerBowlG,
+                    water: sca.bowlMl,
+                    ratio: ratioVal,
+                    tempC: 93,
+                    tempF: 200,
+                    stars: stars,
+                    totalScore: +sc.toFixed(2),
+                    flavors_liked: flavorsStr
+                  });
+                } catch (_) {}
+              }
+            }
+          }
+
+          if (savedN > 0) {
+            sca._lastSavedSig = flightSig;
+            const acCur = readAcademyState();
+            acCur.palateGymHistory.blindBowlsRuns++;
+            acCur.palateGymHistory.lastPlayedAt = new Date().toISOString();
+            writeAcademyState(acCur);
+            acadUi.gymCoach = {
+              mood: 'celebrating',
+              title: 'Cupping Flight Logged!',
+              speech: 'Saved all ' + savedN + ' cupping bowl(s) straight into your Tasting Journal!'
+            };
+            CK.haptic('celebrate');
+            notify('Saved ' + savedN + ' cupping bowl(s) to your Taste History!');
+            if (!isSheet) rerenderAcademyTab();
+          } else {
+            CK.haptic('snap');
+            notify('Could not save cupping bowls — browser storage is unavailable.');
+          }
+        } finally {
+          sca._isSaving = false;
+        }
       }
     }, ic('check-seal', { size: 16 }), domH('span', { text: 'Save All ' + sca.bowlCount + ' Cupping Bowls to Journal \u2192' }));
 
@@ -2063,12 +2140,35 @@
       const filtered = allTerms.filter(function (item) {
         const term = String(item.term || item[0] || '');
         const def = String(item.def || item[1] || '');
+        const also = String(item.also || '');
         const cat = String(item.cat || item.group || '');
         if (gl.cat !== 'All' && cat !== gl.cat) return false;
         if (gl.letter !== 'ALL' && term.charAt(0).toUpperCase() !== gl.letter) return false;
         if (!q) return true;
-        return term.toLowerCase().indexOf(q) >= 0 || def.toLowerCase().indexOf(q) >= 0;
+        return term.toLowerCase().indexOf(q) >= 0 || also.toLowerCase().indexOf(q) >= 0 || def.toLowerCase().indexOf(q) >= 0;
       });
+
+      if (q && filtered.length > 1) {
+        const escQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const wordRe = new RegExp('(?:^|\\b|\\()' + escQ + '(?:$|\\b|\\))');
+        const rankItem = function (it) {
+          const tLow = String(it.term || it[0] || '').trim().toLowerCase();
+          if (tLow === q) return 0;
+          if (tLow.indexOf(q) === 0) return 1;
+          if (wordRe.test(tLow)) return 2;
+          if (tLow.indexOf(q) >= 0) return 3;
+          if (String(it.also || '').toLowerCase().indexOf(q) >= 0) return 4;
+          return 5;
+        };
+        filtered.sort(function (a, b) {
+          const ra = rankItem(a), rb = rankItem(b);
+          if (ra !== rb) return ra - rb;
+          const ta = String(a.term || a[0] || '');
+          const tb = String(b.term || b[0] || '');
+          if (ta.length !== tb.length) return ta.length - tb.length;
+          return ta.localeCompare(tb);
+        });
+      }
 
       if (!filtered.length) {
         let sugg = [];
@@ -2077,13 +2177,19 @@
         }
         resultsHost.appendChild(domH('p', {
           class: 'bt-lab-hint',
-          text: 'No matching terms for "' + gl.query + '"' + (sugg.length ? (' — did you mean: ' + sugg.slice(0, 4).join(', ') + '?') : '. Try "tds", "lactone", "agtron", or reset filters.')
+          text: 'No matching terms for "' + (gl.query || gl.letter) + '"' + (sugg.length ? (' — did you mean: ' + sugg.slice(0, 4).join(', ') + '?') : '. Try "tds", "lactone", "agtron", or reset filters.')
         }));
         return;
       }
 
       const maxShow = Math.max(40, gl.limit || 40);
       const shown = filtered.slice(0, maxShow);
+      if (!q) {
+        const ctxMsg = gl.letter !== 'ALL'
+          ? ('Letter "' + gl.letter + '" \u2014 ' + filtered.length + ' term' + (filtered.length === 1 ? '' : 's') + (gl.cat !== 'All' ? (' in ' + gl.cat) : ''))
+          : ('Showing ' + shown.length + ' of ' + filtered.length + ' terms' + (gl.cat !== 'All' ? (' in ' + gl.cat) : ' (All A\u2013Z)'));
+        resultsHost.appendChild(domH('p', { class: 'bt-lab-hint', style: 'margin-bottom:6px', text: ctxMsg }));
+      }
       shown.forEach(function (entry) {
         const tName = entry.term || entry[0] || '';
         const tDef = entry.def || entry[1] || '';
@@ -2274,10 +2380,18 @@
       function paintMythList() {
         listWrap.textContent = '';
         const q = fk.query.trim().toLowerCase();
-        claims.filter(function (cl) {
+        const matched = claims.filter(function (cl) {
           if (!q) return true;
           return String(cl.claim + ' ' + cl.verdict).toLowerCase().indexOf(q) >= 0;
-        }).forEach(function (cl) {
+        });
+        if (!matched.length) {
+          listWrap.appendChild(domH('p', {
+            class: 'bt-lab-hint',
+            text: 'No myths match "' + fk.query.trim() + '". Try searching "extraction", "caffeine", "roast", or clear your search.'
+          }));
+          return;
+        }
+        matched.forEach(function (cl) {
           listWrap.appendChild(domH('details', { class: 'bt-lab-details bt-lesson-accordion' },
             domH('summary', { class: 'bt-lesson-summary' },
               domH('span', { class: 'bt-lesson-title', text: cl.claim }),

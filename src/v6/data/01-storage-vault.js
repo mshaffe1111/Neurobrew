@@ -950,7 +950,8 @@ var BTStorage;
     const s = Object.assign({}, _getState(), overrides || {});
     const r = _baseRowImpl(overrides);
     const cv = s.cva, cupped = !!(cv && cv.cur >= 10);
-    r.my_rating_stars = s.stars ? String(validStars(s.stars)) : '';
+    const sv = s.stars ? validStars(s.stars) : 0;
+    r.my_rating_stars = sv ? String(sv) : '';
     if (cupped) Object.assign(r, cvaRowPart(cv));
     else r.score_kind = 'quick';
     r.mode = cupped ? 'single_cup' : 'quick';
@@ -2476,13 +2477,21 @@ var BTStorage;
       const lm = resolveMethod(c.lastMethod) || cleanLine(c.lastMethod);
       if (lm) cand.lastMethod = lm;
     }
-    if (c.dial_locked === 'yes' || c.dial_locked === true || c.dial_locked === '1') cand.dial_locked = 'yes';
+    if (c.dial_locked === 'yes' || c.dial_locked === true || c.dial_locked === '1' || (b && _isGoldenLockedRow(b))) cand.dial_locked = 'yes';
     if (c.pendingNextRecipe && typeof c.pendingNextRecipe === 'object') cand.pendingNextRecipe = _cloneObj(c.pendingNextRecipe);
     if (c.dialAdaptation && typeof c.dialAdaptation === 'object') cand.dialAdaptation = _cloneObj(c.dialAdaptation);
-    if (b && (b.next_recipe || b.dialAdaptation || b.dial_adaptation)){
-      if (b.next_recipe && typeof b.next_recipe === 'object') cand.pendingNextRecipe = _cloneObj(b.next_recipe);
-      const da = b.dialAdaptation || b.dial_adaptation;
-      if (da && typeof da === 'object') cand.dialAdaptation = _cloneObj(da);
+    if (b && typeof b === 'object'){
+      const bAd = (!b.next_recipe && b.recipe_adaptation_json) ? _readRowAdaptationMeta(b) : null;
+      const bNr = (b.next_recipe && typeof b.next_recipe === 'object') ? b.next_recipe : (bAd && bAd.next_recipe && typeof bAd.next_recipe === 'object' ? bAd.next_recipe : null);
+      if (bNr){
+        cand.pendingNextRecipe = _cloneObj(bNr);
+        if (b.id && !cand.pendingNextRecipe.fromRowId) cand.pendingNextRecipe.fromRowId = String(b.id);
+      }
+      const da = b.dialAdaptation || b.dial_adaptation || (bAd && bAd.dial_adaptation) || null;
+      if (da && typeof da === 'object'){
+        cand.dialAdaptation = _cloneObj(da);
+        if (b.id && !cand.dialAdaptation.fromRowId) cand.dialAdaptation.fromRowId = String(b.id);
+      }
     }
     cand._nrKey = nrKey;
     return cand;
@@ -2538,7 +2547,9 @@ var BTStorage;
         }
         if (_hasMeaningfulVal(newVal, allowZero)){
           if (incomingOlder && _hasMeaningfulVal(existing[k], allowZero)) return;
-          if (k === 'roasterGuide' || k === 'pendingNextRecipe' || k === 'dialAdaptation'){
+          if (k === 'pendingNextRecipe' || k === 'dialAdaptation'){
+            existing[k] = _cloneObj(newVal);
+          } else if (k === 'roasterGuide'){
             existing[k] = (existing[k] && typeof existing[k] === 'object' && !Array.isArray(existing[k]))
               ? Object.assign({}, existing[k], newVal)
               : _cloneObj(newVal);
@@ -3297,27 +3308,60 @@ var BTStorage;
         const core = _g.BTCoreV6;
         const activeM = methodKey || a.brew.method || 'v60';
         const hAll = (historyState && Array.isArray(historyState.objs)) ? historyState.objs : (anchorRow ? [anchorRow] : []);
+        const gearArg = Object.assign({}, (a.prefs && a.prefs.gear) || a.prefs || {}, {
+          grinderKey:(a.brew && a.brew.grinderKey) || (a.prefs && a.prefs.gear && a.prefs.gear.grinder) || (a.prefs && a.prefs.grinder) || undefined,
+          calib:(a.prefs && (a.prefs.pocketMicronCalib || a.prefs.calib)) || undefined,
+          filterId:(a.brew && a.brew.filterId) || undefined,
+          style:(a.brew && a.brew.style) || undefined
+        });
+        const adMetaNr = (baseFromAnchor.adMeta && baseFromAnchor.adMeta.next_recipe && typeof baseFromAnchor.adMeta.next_recipe === 'object') ? baseFromAnchor.adMeta.next_recipe : null;
+        const recPendingNr = (rec.pendingNextRecipe && typeof rec.pendingNextRecipe === 'object') ? rec.pendingNextRecipe : null;
+        const checkMatchesAnchor = (nr, da) => {
+          if (!nr || typeof nr !== 'object') return false;
+          const candFromId = nr.fromRowId || nr.fromId || (da && da.fromRowId) || '';
+          const candFromTry = +(nr.fromTry || (da && da.fromTry) || 0);
+          const anchorTry = +(anchorRow && anchorRow.brew_attempt || 0);
+          const idOk = !candFromId || !anchorRow || !anchorRow.id || String(candFromId) === String(anchorRow.id);
+          const tryOk = !candFromTry || !anchorTry || candFromTry >= anchorTry;
+          const nextM = nr.method ? (resolveMethod(nr.method) || nr.method) : (nr.methodKey ? (resolveMethod(nr.methodKey) || nr.methodKey) : activeM);
+          const methodOk = !activeM || !nextM || nextM === activeM;
+          const hasTarget = (+(nr.d50Um || nr.grindUm || nr.grind_um || 0) > 0) || !!nr.grindSetting || (+nr.tempC > 0) || (+nr.ratio > 0);
+          return idOk && tryOk && methodOk && hasTarget;
+        };
+        const persNr = checkMatchesAnchor(recPendingNr, rec.dialAdaptation) ? recPendingNr
+          : (checkMatchesAnchor(adMetaNr, baseFromAnchor.adMeta && baseFromAnchor.adMeta.dial_adaptation) ? adMetaNr : null);
+
+        let solverOut = null;
         if (core && typeof core.computeClosedLoopNextRecipe === 'function'){
           try {
-            const gearArg = (a.prefs && a.prefs.gear) || a.prefs || null;
-            const solverOut = core.computeClosedLoopNextRecipe(a.coffee, activeM, hAll, gearArg);
-            if (solverOut && solverOut.dialAdaptation && (solverOut.dialAdaptation.adapted === true || solverOut.dialAdaptation.locked === true)){
-              adapted = solverOut;
-            }
+            solverOut = core.computeClosedLoopNextRecipe(a.coffee, activeM, hAll, gearArg);
           } catch(e){}
         }
-        if (!adapted){
-          const candNext = rec.pendingNextRecipe || (baseFromAnchor.adMeta && baseFromAnchor.adMeta.next_recipe) || null;
-          if (candNext && typeof candNext === 'object'){
-            const nextM = candNext.method ? (resolveMethod(candNext.method) || candNext.method) : (candNext.methodKey ? (resolveMethod(candNext.methodKey) || candNext.methodKey) : activeM);
-            if (!activeM || nextM === activeM) adapted = candNext;
-          }
+
+        if (persNr){
+          adapted = persNr;
+        } else if (solverOut && solverOut.dialAdaptation && (solverOut.dialAdaptation.adapted === true || solverOut.dialAdaptation.locked === true)){
+          adapted = solverOut;
         }
+
         if (adapted && typeof adapted === 'object'){
           _applyBrewSnapshotToApp(adapted, a.brew);
-          const daSrc = adapted.dialAdaptation || rec.dialAdaptation || (baseFromAnchor.adMeta && baseFromAnchor.adMeta.dial_adaptation) || null;
+          const daFromSolver = (solverOut && solverOut.dialAdaptation && (solverOut.dialAdaptation.adapted !== false || solverOut.dialAdaptation.locked === true)) ? solverOut.dialAdaptation : null;
+          const daFromRec = (persNr === recPendingNr && rec.dialAdaptation && typeof rec.dialAdaptation === 'object') ? rec.dialAdaptation : null;
+          const daFromMeta = (baseFromAnchor.adMeta && baseFromAnchor.adMeta.dial_adaptation && typeof baseFromAnchor.adMeta.dial_adaptation === 'object') ? baseFromAnchor.adMeta.dial_adaptation : null;
+          const daSrc = adapted.dialAdaptation || daFromSolver || daFromRec || daFromMeta || null;
           if (daSrc && typeof daSrc === 'object'){
-            if (daSrc.adapted !== false || daSrc.locked === true) a.brew.dialAdaptation = _cloneObj(daSrc);
+            if (daSrc.adapted !== false || daSrc.locked === true){
+              const daClone = _cloneObj(daSrc);
+              if (persNr){
+                const pUm = +(persNr.d50Um || persNr.grindUm || persNr.grind_um || 0);
+                if (pUm > 0) daClone.nextUm = pUm;
+                if (persNr.grindSetting) daClone.nextClickDisplay = String(persNr.grindSetting);
+                if (+persNr.tempC > 0) daClone.nextTempC = +persNr.tempC;
+                if (+persNr.ratio > 0) daClone.nextRatio = +persNr.ratio;
+              }
+              a.brew.dialAdaptation = daClone;
+            }
           } else if (adapted.adapted !== false){
             a.brew.dialAdaptation = _cloneObj(adapted);
           }

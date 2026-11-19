@@ -343,21 +343,31 @@
 
         if (typeof match.watchAdvertisements === 'function' && typeof AbortController === 'function'){
           const ac = new AbortController();
+          let advTimer = null;
+          let settleAdv = null;
           const advPromise = new Promise(function(resolve){
-            const onAdv = function(){
+            settleAdv = function(found){
+              if (advTimer){ clearTimeout(advTimer); advTimer = null; }
               try { match.removeEventListener('advertisementreceived', onAdv); } catch(e){}
               try { ac.abort(); } catch(e){}
-              resolve(true);
+              resolve(found);
+            };
+            const onAdv = function(){
+              settleAdv(true);
             };
             try { match.addEventListener('advertisementreceived', onAdv, { once:true }); } catch(e){}
-            setTimeout(function(){
-              try { match.removeEventListener('advertisementreceived', onAdv); } catch(e){}
-              try { ac.abort(); } catch(e){}
-              resolve(false);
+            advTimer = setTimeout(function(){
+              settleAdv(false);
             }, 1800);
           });
-          try { await match.watchAdvertisements({ signal:ac.signal }); } catch(e){}
-          await advPromise;
+          let watchStarted = true;
+          try {
+            await match.watchAdvertisements({ signal:ac.signal });
+          } catch(e){
+            watchStarted = false;
+            if (settleAdv) settleAdv(false);
+          }
+          if (watchStarted) await advPromise;
         }
 
         return {
@@ -386,16 +396,25 @@
           try { onDisconnect(transportDevice.deviceId); } catch(e){}
         }
       };
+      let listenerAttached = false;
       if (typeof raw.addEventListener === 'function'){
         raw.addEventListener('gattserverdisconnected', discListener);
+        listenerAttached = true;
       }
 
       let server = null;
       try {
         server = await withTimeout(raw.gatt.connect(), 6000, 'GATT connect');
       } catch(connErr){
-        await waitMs(180);
-        server = await withTimeout(raw.gatt.connect(), 6000, 'GATT connect retry');
+        try {
+          await waitMs(180);
+          server = await withTimeout(raw.gatt.connect(), 6000, 'GATT connect retry');
+        } catch(retryErr){
+          if (listenerAttached && typeof raw.removeEventListener === 'function'){
+            try { raw.removeEventListener('gattserverdisconnected', discListener); } catch(e){}
+          }
+          throw retryErr;
+        }
       }
 
       async function ensureConnected(){
@@ -1724,12 +1743,17 @@
       if (Math.abs(newRawG - preRaw) <= 15){
         /* Load cell stayed powered continuously */
         softwareTareOffsetG = preTare;
+        tarePendingZeroCheck = false;
       } else if (Math.abs(newRawG) <= 2.5 && preNet >= 15){
         /* Scale power-cycled / auto-zeroed with wet brewer still on tray: restore preDropNetWeightG! */
         softwareTareOffsetG = +(newRawG - preNet).toFixed(2);
-      } else if (preNet >= 15 && newRawG > 2.5 && newRawG < preNet - 15){
+        tarePendingZeroCheck = false;
+      } else if (preNet >= 15 && newRawG > 2.5 && newRawG < preRaw - 15){
         /* Scale zeroed during drop and user poured +newRawG more water */
         softwareTareOffsetG = -preNet;
+        tarePendingZeroCheck = false;
+      } else if (preNet >= 15){
+        tarePendingZeroCheck = false;
       }
       resetFlowFilter();
     }
@@ -1844,7 +1868,7 @@
     function normalizeScaleBrand(raw){
       const s = String(raw || '').trim().toLowerCase();
       if (!s || s === 'auto') return 'auto';
-      if (/acaia|lunar|pearl|pyxis|cinco|prochbt/.test(s)) return 'acaia';
+      if (/acaia|lunar|pearl|pyxis|cinco|orion|prochbt/.test(s)) return 'acaia';
       if (/difluid|microbalance|dft-?s|df-?s/.test(s)) return 'difluid';
       if (/bookoo|themis/.test(s)) return 'bookoo';
       if (/timemore|black\s*mirror|^tm\b/.test(s)) return 'timemore';
@@ -1854,6 +1878,7 @@
       if (/skale|atomax/.test(s)) return 'skale';
       if (/eureka|precisa|cfs-?9002|brewista|lsj|smart\s*scale|formula|solobarista|kc200|weighmybru/.test(s)) return 'eureka';
       if (/hiroia|jimmy/.test(s)) return 'hiroia';
+      if (/ascii|uart|nus|serial/.test(s)) return 'ascii';
       if (/sig|181d/.test(s)) return 'sig';
       return 'auto';
     }
@@ -1876,7 +1901,8 @@
           { namePrefix:'LUNAR' }, { namePrefix:'Lunar' }, { namePrefix:'lunar' },
           { namePrefix:'PEARL' }, { namePrefix:'Pearl' }, { namePrefix:'pearl' },
           { namePrefix:'PYXIS' }, { namePrefix:'Pyxis' }, { namePrefix:'pyxis' },
-          { namePrefix:'CINCO' }, { namePrefix:'Cinco' }, { namePrefix:'cinco' }
+          { namePrefix:'CINCO' }, { namePrefix:'Cinco' }, { namePrefix:'cinco' },
+          { namePrefix:'ORION' }, { namePrefix:'Orion' }, { namePrefix:'orion' }
         ],
         difluid: [
           { services:[UUID.DIFLUID_SCALE_SVC] }, { services:[UUID.DIFLUID_SCALE_ALT_SVC] },
@@ -1904,9 +1930,9 @@
           { namePrefix:'Decent' }, { namePrefix:'DECENT' }, { namePrefix:'decent' }, { namePrefix:'Half Decent' }, { namePrefix:'half decent' }, { namePrefix:'HDS' }
         ],
         varia: [
-          { services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.FELICITA_SVC] }, { services:[UUID.NUS_SVC] },
+          { services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.EUREKA_ALT_SVC] }, { services:[UUID.FELICITA_SVC] }, { services:[UUID.NUS_SVC] },
           { namePrefix:'Varia' }, { namePrefix:'VARIA' }, { namePrefix:'varia' }, { namePrefix:'AKU' }, { namePrefix:'aku' },
-          { namePrefix:'Cube' }, { namePrefix:'CUBE' }, { namePrefix:'MHW' },
+          { namePrefix:'Cube' }, { namePrefix:'CUBE' }, { namePrefix:'cube' }, { namePrefix:'MHW' }, { namePrefix:'mhw' },
           { namePrefix:'Exagram' }, { namePrefix:'EXAGRAM' }, { namePrefix:'Wacaco' }, { namePrefix:'WACACO' }
         ],
         skale: [
@@ -1915,12 +1941,20 @@
         ],
         eureka: [
           { services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.EUREKA_ALT_SVC] }, { services:[UUID.FELICITA_SVC] },
-          { namePrefix:'Precisa' }, { namePrefix:'PRECISA' }, { namePrefix:'precisa' }, { namePrefix:'CFS-9002' },
-          { namePrefix:'Eureka' }, { namePrefix:'EUREKA' }, { namePrefix:'eureka' }, { namePrefix:'LSJ' },
-          { namePrefix:'Smart Scale' }, { namePrefix:'Brewista' }, { namePrefix:'BREWISTA' }, { namePrefix:'brewista' },
+          { services:[UUID.BOOKOO_SVC] }, { services:[UUID.NUS_SVC] },
+          { namePrefix:'Precisa' }, { namePrefix:'PRECISA' }, { namePrefix:'precisa' },
+          { namePrefix:'CFS-9002' }, { namePrefix:'cfs-9002' },
+          { namePrefix:'Eureka' }, { namePrefix:'EUREKA' }, { namePrefix:'eureka' },
+          { namePrefix:'LSJ' }, { namePrefix:'lsj' },
+          { namePrefix:'Smart Scale' }, { namePrefix:'smart scale' },
+          { namePrefix:'Brewista' }, { namePrefix:'BREWISTA' }, { namePrefix:'brewista' },
           { namePrefix:'Exagram' }, { namePrefix:'EXAGRAM' }, { namePrefix:'Wacaco' }, { namePrefix:'WACACO' },
-          { namePrefix:'Cube' }, { namePrefix:'CUBE' }, { namePrefix:'MHW' },
-          { namePrefix:'Formula' }, { namePrefix:'SoloBarista' }, { namePrefix:'KC200' }, { namePrefix:'WeighMyBru' }
+          { namePrefix:'Cube' }, { namePrefix:'CUBE' }, { namePrefix:'cube' },
+          { namePrefix:'MHW' }, { namePrefix:'mhw' },
+          { namePrefix:'Formula' }, { namePrefix:'FORMULA' }, { namePrefix:'formula' },
+          { namePrefix:'SoloBarista' }, { namePrefix:'SOLOBARISTA' }, { namePrefix:'solobarista' },
+          { namePrefix:'KC200' }, { namePrefix:'kc200' },
+          { namePrefix:'WeighMyBru' }, { namePrefix:'WEIGHMYBRU' }, { namePrefix:'weighmybru' }
         ],
         hiroia: [
           { services:[UUID.HIROIA_SVC] },
@@ -2063,10 +2097,10 @@
 
       clearScaleTimers();
       scaleReceivedWeightThisSession = false;
+      tarePendingZeroCheck = false;
       if (!isReconnect){
         resetFlowFilter();
         softwareTareOffsetG = 0;
-        tarePendingZeroCheck = false;
         dropRecovery.active = false;
       }
 
@@ -3410,7 +3444,7 @@
       if (/\br2\b|extract|dft-r/.test(s)) return 'refractometer';
       if (/omni|dft-sd/.test(s)) return 'omni';
       if (/stagg|ekg|fellow|xbloom|tbdx/.test(s)) return 'machine';
-      if (/acaia|lunar|pearl|pyxis|cinco|prochbt|microbalance|difluid|dft-s|df-s|bookoo|themis|timemore|black mirror|felicita|decent|hds|varia|aku|skale|eureka|precisa|brewista|hiroia|jimmy|exagram|wacaco/.test(s)) return 'scale';
+      if (/acaia|lunar|pearl|pyxis|cinco|orion|prochbt|microbalance|difluid|dft-s|df-s|bookoo|themis|timemore|black mirror|felicita|decent|hds|varia|aku|skale|eureka|precisa|brewista|hiroia|jimmy|exagram|wacaco|kc200|weighmybru|cfs-?9002|solobarista|formula|lsj|mhw|cube|smart\s*scale/.test(s)) return 'scale';
       return '';
     }
 
@@ -4424,9 +4458,49 @@
       const r2 = [], scale = [], omni = [];
       const num = function(v){
         if (v == null || v === '') return null;
-        const cleaned = String(v).replace(/[%°cbxµumg/s\s]+$/ig, '').replace(/,/g, '.').trim();
+        let cleaned = String(v).replace(/[%°\u2103\u2109cbxµ\u03BCumg/s\s]+$/ig, '').trim();
+        if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(cleaned)) cleaned = cleaned.replace(/,/g, '');
+        else cleaned = cleaned.replace(/,/g, '.');
         const n = Number(cleaned);
         return Number.isFinite(n) ? n : null;
+      };
+      const normHeaderKey = function(k){
+        return String(k || '')
+          .trim()
+          .toLowerCase()
+          .replace(/[\u00B5\u03BC]m/g, 'um')
+          .replace(/[\u00B5\u03BC]/g, 'u')
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_|_$/g, '');
+      };
+      const parseExportTsMs = function(tsVal){
+        if (tsVal == null || tsVal === '') return NaN;
+        if (typeof tsVal === 'number') return Number.isFinite(tsVal) ? (tsVal < 1e12 ? tsVal * 1000 : tsVal) : NaN;
+        const s = String(tsVal).trim();
+        if (!s) return NaN;
+        if (/^\d{10,13}$/.test(s)){
+          const n = Number(s);
+          return n < 1e12 ? n * 1000 : n;
+        }
+        let ms = Date.parse(s);
+        if (Number.isFinite(ms)) return ms;
+        ms = Date.parse(s.replace(/\//g, '-'));
+        return Number.isFinite(ms) ? ms : NaN;
+      };
+      const sortRowsDescByTs = function(list){
+        if (!Array.isArray(list) || list.length < 2) return list;
+        const hasAnyTs = list.some(function(it){ return Number.isFinite(parseExportTsMs(it && it.timestamp)); });
+        if (!hasAnyTs) return list;
+        return list.slice().sort(function(a, b){
+          const ta = parseExportTsMs(a && a.timestamp);
+          const tb = parseExportTsMs(b && b.timestamp);
+          const fa = Number.isFinite(ta);
+          const fb = Number.isFinite(tb);
+          if (fa && fb) return tb - ta;
+          if (fb && !fa) return 1;
+          if (fa && !fb) return -1;
+          return 0;
+        });
       };
       const pick = function(obj, keys){
         for (let i = 0; i < keys.length; i++){
@@ -4440,11 +4514,11 @@
         if (!raw || typeof raw !== 'object') return;
         const o = {};
         Object.keys(raw).forEach(function(k){
-          const nk = k.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+          const nk = normHeaderKey(k);
           o[nk] = raw[k];
           if (raw[k] && typeof raw[k] === 'object' && !Array.isArray(raw[k])){
             Object.keys(raw[k]).forEach(function(sk){
-              const snk = sk.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+              const snk = normHeaderKey(sk);
               if (o[snk] === undefined) o[snk] = raw[k][sk];
             });
           }
@@ -4550,7 +4624,12 @@
           } catch(e){}
         }
         const lines = str.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
-        const delim = lines[0].indexOf('\t') >= 0 ? '\t' : (lines[0].indexOf(',') >= 0 ? ',' : '');
+        const hLine = lines[0] || '';
+        const semiCnt = hLine.split(';').length - 1;
+        const commaCnt = hLine.split(',').length - 1;
+        const delim = hLine.indexOf('\t') >= 0
+          ? '\t'
+          : ((semiCnt > 0 && semiCnt >= commaCnt) ? ';' : (commaCnt > 0 ? ',' : ''));
         if (lines.length >= 2 && delim && /[a-zA-Z]/.test(lines[0]) && !/:\s*\d/.test(lines[0])){
           format = 'csv';
           const splitLine = function(ln){
@@ -4580,29 +4659,29 @@
         } else {
           format = 'text';
           const obj = {};
-          const mTds = str.match(/tds\s*[:=]?\s*(\d+(?:\.\d+)?)\s*%/i) || str.match(/(\d+\.\d+)\s*%\s*tds/i);
+          const mTds = str.match(/tds\s*[:=]?\s*(\d+(?:[.,]\d+)?)\s*%/i) || str.match(/(\d+(?:[.,]\d+)?)\s*%\s*tds/i);
           if (mTds) obj.tds = mTds[1];
-          const mRi = str.match(/(?:nd|nd20|ri|refractive\s*index)\s*[:=]?\s*(1\.\d{4,6})/i);
+          const mRi = str.match(/(?:nd|nd20|ri|refractive\s*index)\s*[:=]?\s*(1[.,]\d{4,6})/i);
           if (mRi) obj.refractive_index = mRi[1];
-          const mTemp = str.match(/(?:temp(?:erature)?)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*°?\s*c/i);
+          const mTemp = str.match(/(?:temp(?:erature)?)\s*[:=]?\s*(\d+(?:[.,]\d+)?)\s*(?:°\s*c|\u2103|c\b)/i);
           if (mTemp) obj.temp_c = mTemp[1];
-          const mBeanAg = str.match(/(?:whole\s*bean|bean)\s*agtron\s*[:=]?\s*(\d+(?:\.\d+)?)/i) || str.match(/(\d+(?:\.\d+)?)\s*\(\s*bean\s*\)/i);
+          const mBeanAg = str.match(/(?:whole\s*bean|bean)\s*agtron\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i) || str.match(/(\d+(?:[.,]\d+)?)\s*\(\s*bean\s*\)/i);
           if (mBeanAg) obj.bean_agtron = mBeanAg[1];
-          const mGroundAg = str.match(/(?:ground|grounds|powder)\s*agtron\s*[:=]?\s*(\d+(?:\.\d+)?)/i) || str.match(/(\d+(?:\.\d+)?)\s*\(\s*ground\s*\)/i);
+          const mGroundAg = str.match(/(?:ground|grounds|powder)\s*agtron\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i) || str.match(/(\d+(?:[.,]\d+)?)\s*\(\s*ground\s*\)/i);
           if (mGroundAg) obj.ground_agtron = mGroundAg[1];
-          const mAg = str.match(/agtron\s*[:=]?\s*(\d+(?:\.\d+)?)/i);
+          const mAg = str.match(/agtron\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
           if (mAg && !obj.bean_agtron && !obj.ground_agtron) obj.agtron = mAg[1];
-          const mD10 = str.match(/d10\s*[:=]?\s*(\d+(?:\.\d+)?)/i);
+          const mD10 = str.match(/d10\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
           if (mD10) obj.d10_um = mD10[1];
-          const mD50 = str.match(/d50\s*[:=]?\s*(\d+(?:\.\d+)?)/i);
+          const mD50 = str.match(/d50\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
           if (mD50) obj.d50_um = mD50[1];
-          const mD90 = str.match(/d90\s*[:=]?\s*(\d+(?:\.\d+)?)/i);
+          const mD90 = str.match(/d90\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
           if (mD90) obj.d90_um = mD90[1];
-          const mDose = str.match(/dose\s*[:=]?\s*(\d+(?:\.\d+)?)\s*g/i);
+          const mDose = str.match(/dose\s*[:=]?\s*(\d+(?:[.,]\d+)?)\s*g/i);
           if (mDose) obj.dose_g = mDose[1];
-          const mWater = str.match(/water\s*[:=]?\s*(\d+(?:\.\d+)?)\s*g/i);
+          const mWater = str.match(/water\s*[:=]?\s*(\d+(?:[.,]\d+)?)\s*g/i);
           if (mWater) obj.water_g = mWater[1];
-          const mYield = str.match(/(?:yield|liquid|out)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*g/i);
+          const mYield = str.match(/(?:yield|liquid|out)\s*[:=]?\s*(\d+(?:[.,]\d+)?)\s*g/i);
           if (mYield) obj.yield_g = mYield[1];
           const mTime = str.match(/(?:time|duration)\s*[:=]?\s*(\d+)\s*s\b/i);
           if (mTime) obj.time_s = mTime[1];
@@ -4610,21 +4689,24 @@
         }
       }
 
-      const totalCount = r2.length + scale.length + omni.length;
+      const sortedR2 = sortRowsDescByTs(r2);
+      const sortedScale = sortRowsDescByTs(scale);
+      const sortedOmni = sortRowsDescByTs(omni);
+      const totalCount = sortedR2.length + sortedScale.length + sortedOmni.length;
       const parts = [];
-      if (r2.length) parts.push(r2.length + ' R2 TDS');
-      if (omni.length) parts.push(omni.length + ' Omni Agtron/PSD');
-      if (scale.length) parts.push(scale.length + ' Microbalance Brew');
+      if (sortedR2.length) parts.push(sortedR2.length + ' R2 TDS');
+      if (sortedOmni.length) parts.push(sortedOmni.length + ' Omni Agtron/PSD');
+      if (sortedScale.length) parts.push(sortedScale.length + ' Microbalance Brew');
 
       const result = {
         ok: totalCount > 0,
         format: format,
-        r2: r2,
-        scale: scale,
-        omni: omni,
-        latestR2: r2.length ? r2[0] : null,
-        latestScale: scale.length ? scale[0] : null,
-        latestOmni: omni.length ? omni[0] : null,
+        r2: sortedR2,
+        scale: sortedScale,
+        omni: sortedOmni,
+        latestR2: sortedR2.length ? sortedR2[0] : null,
+        latestScale: sortedScale.length ? sortedScale[0] : null,
+        latestOmni: sortedOmni.length ? sortedOmni[0] : null,
         totalCount: totalCount,
         summary: totalCount > 0 ? ('Imported ' + parts.join(' + ') + '.') : 'No recognized DiFluid fields found.'
       };

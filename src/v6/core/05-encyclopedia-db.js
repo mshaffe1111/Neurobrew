@@ -60,7 +60,7 @@ const profileOf = G.profileOf || function(c, now){
 };
 function unneutralize(s){ return String(s == null ? '' : s).replace(/^'(?=[=+\-@])/, ''); }
 function splitList(s){ return String(s || '').split(/[;,|]/).map(x => x.trim()).filter(Boolean); }
-function validStars(v){ const n = parseFloat(v); return (isFinite(n) && n >= 0.5 && n <= 5) ? Math.round(n * 2) / 2 : 0; }
+function validStars(v){ const n = parseFloat(v); return (isFinite(n) && n >= 0.5 && n <= 5) ? Math.round(n * 4) / 4 : 0; }
 const CVA_KIND = G.CVA_KIND || 'cva_affective';
 const CVA_WORDS = G.CVA_WORDS || ['Dislike extremely', 'Dislike very much', 'Dislike moderately', 'Dislike slightly', 'Neither like nor dislike', 'Like slightly', 'Like moderately', 'Like very much', 'Like extremely'];
 const STEP_NAME = G.STEP_NAME || { coffee:'Coffee', facts:'Facts', method:'Method', brew:'Brew', taste:'Taste', perfect:'Perfect' };
@@ -1031,7 +1031,8 @@ function mapScan(d){
   items.forEach(it => { if (web.has(it.key) && it.key !== 'roast_date') it.web = true; });
   const sources = Array.isArray(d.sources) ? d.sources.filter(x => typeof x === 'string' && /^https:\/\/[^\s"<>]+$/.test(x.trim())).map(x => x.trim().slice(0, 300)).slice(0, 5) : [];
   const unclear = Array.isArray(d.unclear) ? d.unclear.filter(x => typeof x === 'string').map(x => x.trim().slice(0, 40)).filter(Boolean).slice(0, 12) : [];
-  return { items, unclear, sources, note:str(d.notes), any:items.some(i => i.value) };
+  const bwG = parseBagWeightGrams(d.bag_weight_g != null ? d.bag_weight_g : (d.bag_weight != null ? d.bag_weight : (d.weight != null ? d.weight : d.net_weight)));
+  return { items, unclear, sources, note:str(d.notes), bag_weight_g:bwG, any:items.some(i => i.value) || bwG != null };
 }
 
 const SCAN_PROMPT = 'You are filling in the specialty coffee profile of one bag of roasted coffee from the attached photo(s) or label.\n' +
@@ -1123,6 +1124,37 @@ function _stripJsonTrailingCommas(jsonText){
   return out;
 }
 
+function parseBagWeightGrams(raw){
+  if (typeof raw === 'number'){
+    return (isFinite(raw) && raw >= 15 && raw <= 25000) ? Math.round(raw) : null;
+  }
+  const s = String(raw == null ? '' : raw).trim();
+  if (!s) return null;
+  if (/^\d+(?:\.\d+)?$/.test(s)){
+    const n = parseFloat(s);
+    return (isFinite(n) && n >= 15 && n <= 25000) ? Math.round(n) : null;
+  }
+  const m = /(\d+(?:\.\d+)?)\s*(kg|kilograms?|kilos?|lbs?|pounds?|oz|ounces?|gr?|grams?)\b/i.exec(s);
+  if (!m) return null;
+  const val = parseFloat(m[1]), unit = m[2].toLowerCase();
+  if (!isFinite(val) || val <= 0) return null;
+  let grams = val;
+  if (unit.startsWith('kg') || unit.startsWith('kilo')) grams = val * 1000;
+  else if (unit.startsWith('lb') || unit.startsWith('pound')) grams = val * 453.59237;
+  else if (unit === 'oz' || unit.startsWith('ounce')) grams = val * 28.349523125;
+  const rounded = Math.round(grams);
+  return (rounded >= 15 && rounded <= 25000) ? rounded : null;
+}
+
+function _isPlausibleCoffeeName(raw){
+  const s = String(raw == null ? '' : raw).trim();
+  if (s.length < 3 || s.length > 90) return false;
+  if (/[!@$^*={}[\]<>\\|~`]/.test(s) || /%{2,}|#(?!\d)|[!@#$%^&*={}[\]<>\\|~`]{2,}/.test(s)) return false;
+  const letters = (s.match(/[A-Za-z\u00C0-\u024F]/g) || []).length;
+  if (letters < 3) return false;
+  return true;
+}
+
 function parseScanReplyV6(rawText){
   let t = String(rawText || '').trim();
   if (!t) return null;
@@ -1199,6 +1231,23 @@ function parseScanReplyV6(rawText){
     out.roast_date = null;
   }
 
+  /* Normalize enumerable elevation_masl (incl. "6,200 ft" -> 1890) & bag_weight_g ("12 oz" -> 340, "250g" -> 250) */
+  const rawElevNum = (out.elevation_masl != null && isFinite(+out.elevation_masl) && +out.elevation_masl >= 50) ? Math.round(+out.elevation_masl) : null;
+  const elevObjNorm = rawElevNum != null
+    ? mapElevationV2(rawElevNum + ' masl')
+    : mapElevationV2(String(out.elevation_masl != null ? out.elevation_masl : (out.elevation != null ? out.elevation : (out.altitude || ''))));
+  if (elevObjNorm && elevObjNorm.m != null){
+    out.elevation_masl = elevObjNorm.m;
+  }
+  const rawWeightVal = d.bag_weight_g != null ? d.bag_weight_g : (d.bag_weight != null ? d.bag_weight : (d.weight != null ? d.weight : (d.net_weight != null ? d.net_weight : null)));
+  const parsedBwG = parseBagWeightGrams(rawWeightVal);
+  if (parsedBwG != null){
+    out.bag_weight_g = parsedBwG;
+  }
+  if (out.coffee_name != null && !_isPlausibleCoffeeName(out.coffee_name)){
+    out.coffee_name = null;
+  }
+
   const mappedCoffee = mapScanToCoffeeV6(out);
   Object.defineProperty(out, 'ok', { value:true, enumerable:false, configurable:true });
   Object.defineProperty(out, 'fields', { value:mappedCoffee, enumerable:false, configurable:true });
@@ -1212,7 +1261,7 @@ function mapScanToCoffeeV6(parsedOrText){
   const s = v => (v == null ? '' : String(v).trim());
   const country = s(d.origin_country);
   const region = s(d.origin_region);
-  const originText = s(d.origin) || [region, country].filter(Boolean).join(', ');
+  const originText = s(d.origin) || (region && country && norm(region).includes(norm(country)) ? region : [region, country].filter(Boolean).join(', '));
   const varietalList = Array.isArray(d.varietals) ? d.varietals : (d.varietal ? String(d.varietal).split(/[,;]+/).map(x => x.trim()).filter(Boolean) : []);
   const notesList = Array.isArray(d.tasting_notes) ? d.tasting_notes : (d.tasting_notes ? String(d.tasting_notes).split(/[,;]+/).map(x => x.trim()).filter(Boolean) : []);
 
@@ -1305,7 +1354,7 @@ function mapScanToCoffeeV6(parsedOrText){
     cup_profile: (d.cup_profile && typeof d.cup_profile === 'object') ? d.cup_profile : null,
     roasterGuide,
     roaster_brew_guide: rbg,
-    bag_weight_g: (d.bag_weight_g != null && isFinite(+d.bag_weight_g) && +d.bag_weight_g > 0) ? Math.round(+d.bag_weight_g) : null,
+    bag_weight_g: parseBagWeightGrams(d.bag_weight_g != null ? d.bag_weight_g : (d.bag_weight != null ? d.bag_weight : (d.weight != null ? d.weight : d.net_weight))),
     price: (d.price != null && isFinite(+d.price) && +d.price > 0) ? Math.round(+d.price * 100) / 100 : null,
     currency: s(d.currency || 'USD').toUpperCase(),
     from_bag_photo: Array.isArray(d.from_bag_photo) ? d.from_bag_photo : [],
@@ -1448,6 +1497,7 @@ const SPEC_HEADERS_MAP = {
   'roast':'roast_level', 'roast level':'roast_level', 'roast degree':'roast_level', 'roast profile':'roast_level', 'agtron':'roast_level',
   'roast date':'roast_date', 'roasted on':'roast_date', 'roasted':'roast_date', 'pkg date':'roast_date',
   'tasting notes':'tasting_notes', 'flavor notes':'tasting_notes', 'flavour notes':'tasting_notes', 'we taste':'tasting_notes', 'notes':'tasting_notes', 'cup profile':'tasting_notes', 'in the cup':'tasting_notes', 'tastes like':'tasting_notes', 'flavors':'tasting_notes',
+  'weight':'bag_weight', 'bag weight':'bag_weight', 'net weight':'bag_weight', 'net wt':'bag_weight', 'bag size':'bag_weight', 'size':'bag_weight',
   'decaf':'decaf_process', 'decaf process':'decaf_process', 'decaffeination':'decaf_process'
 };
 
@@ -1556,19 +1606,8 @@ function parseCoffeeText(rawInput, opts){
     }
   }
 
-  /* Coffee Name */
-  if (kv.name) d.coffee_name = kv.name;
-  if (!d.coffee_name){
-    for (let i = 0; i < Math.min(lines.length, 8); i++){
-      const cand = lines[i];
-      if (cand.length < 3 || cand.length > 72) continue;
-      if (d.roaster && norm(cand) === norm(d.roaster)) continue;
-      if (/^(?:home|shop|cart|menu|skip|coffee|whole bean|ground|add to cart|\$\d|\d+\s*(?:oz|g|lb))/i.test(cand)) continue;
-      if (SPEC_HEADERS_MAP[norm(cand)]) continue;
-      d.coffee_name = cand;
-      break;
-    }
-  }
+  /* Coffee Name (explicit KV first; unlabeled fallback deferred until coffee signals are known) */
+  if (kv.name && _isPlausibleCoffeeName(kv.name)) d.coffee_name = kv.name;
 
   /* Process & Decaf */
   const procSource = kv.process || fullText;
@@ -1651,6 +1690,35 @@ function parseCoffeeText(rawInput, opts){
       }
     });
     if (hits.length) d.tasting_notes = hits.slice(0, 6).join(', ');
+  }
+
+  /* Bag Weight */
+  if (kv.bag_weight){
+    const bw = parseBagWeightGrams(kv.bag_weight);
+    if (bw != null) d.bag_weight_g = bw;
+  }
+  if (d.bag_weight_g == null){
+    const bwm = /\b(?:net\s*wt\.?|bag\s*(?:weight|size)|weight)\s*[:\-]?\s*(\d+(?:\.\d+)?\s*(?:kg|kilos?|lbs?|pounds?|oz|ounces?|gr?|grams?))\b/i.exec(fullText)
+      || /\b(\d+(?:\.\d+)?\s*(?:oz|ounces?|lbs?|pounds?|kg|kilos?))\b/i.exec(fullText);
+    if (bwm){
+      const bw = parseBagWeightGrams(bwm[1]);
+      if (bw != null && bw >= 50) d.bag_weight_g = bw;
+    }
+  }
+
+  /* Unlabeled Coffee Name fallback (only when plausible & at least one structured coffee field matched) */
+  if (!d.coffee_name && (d.roaster || d.origin || d.process || d.roast_level || d.elevation || d.varietal || d.species || d.roast_date || d.tasting_notes || d.bag_weight_g != null)){
+    for (let i = 0; i < Math.min(lines.length, 8); i++){
+      const cand = lines[i];
+      if (cand.length < 3 || cand.length > 72) continue;
+      if (d.roaster && norm(cand) === norm(d.roaster)) continue;
+      if (/^(?:home|shop|cart|menu|skip|coffee|whole bean|ground|add to cart|\$\d|\d+\s*(?:oz|g|lb))/i.test(cand)) continue;
+      if (SPEC_HEADERS_MAP[norm(cand)]) continue;
+      if (/^[A-Za-z][A-Za-z\s\/\-]{1,26}\s*[:｜|—–]/.test(cand)) continue;
+      if (!_isPlausibleCoffeeName(cand)) continue;
+      d.coffee_name = cand;
+      break;
+    }
   }
 
   const mapped = mapScan(d);
@@ -7939,7 +8007,7 @@ function parseOrigin(text){
     coreWords.sort((a, b) => b.length - a.length).forEach(w => {
       const pat = w.trim().split(/\s+/).map(part => {
         /* Allow optional accents and internal apostrophes on letters */
-        return escRe(norm(part)).replace(/a/g, '[aàáâãäåā]').replace(/e/g, '[eèéêëē]').replace(/i/g, "[iìíîïī'\\u2019\\u02BB]*i?").replace(/o/g, '[oòóôõöō]').replace(/u/g, '[uùúûüū]');
+        return escRe(norm(part)).replace(/[aeiou]/g, ch => ({ a:'[aàáâãäåā]', e:'[eèéêëē]', i:"[iìíîïī'\\u2019\\u02BB]*i?", o:'[oòóôõöō]', u:'[uùúûüū]' })[ch]);
       }).join('[\\s\\-]+');
       try { rest = stripLastRe(rest, new RegExp(pat, 'gi')); } catch(e){}
     });
@@ -7951,6 +8019,7 @@ function parseOrigin(text){
 
 function composeOrigin(countries, extra, blend){
   const e = String(extra || '').trim();
+  if (!blend && e && countries[0] && norm(e).includes(norm(countries[0]))) return e;
   return blend ? countries.concat(e ? [e] : []).join(', ') : (e ? e + ', ' : '') + (countries[0] || '');
 }
 function originMismatch(country, rest){
@@ -8891,6 +8960,8 @@ function parseCoffeeTextV3(rawInput, opts){
   else if (/\bsupercritical\s+co2|\bco2\s+decaf\b/i.test(text)){ f.decaf = 'yes'; f.decaf_process = 'co2'; }
   else if (/\bmethylene\s+chloride|\bdcm\s+decaf\b/i.test(text)){ f.decaf = 'yes'; f.decaf_process = 'mc'; }
 
+  const hasAnyField = Object.keys(f).some(k => f[k] != null && f[k] !== '');
+  if (!hasAnyField) return { ok:false, version:3, confidence:0, fields:{}, d:{} };
   return Object.assign({}, base, { ok:true, version:3, fields:f, d:f }, f);
 }
 

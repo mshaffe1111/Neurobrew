@@ -1933,7 +1933,7 @@ function synthesizeRecipe(input){
     : { roastObj:{ v:bean.roast || 'medium', agtronMid:60 }, agtron:60, isDecaf:bean.decaf === 'yes', isEthLandrace:false, isGesha:false, isFloralTea:false, isFermentFruit:false, age:{ effectiveDays:10, isFrozen:false } };
 
   const roastKey = bSum.roastObj.v || 'medium';
-  const agtron = bSum.agtron != null ? bSum.agtron : (bSum.roastObj.agtronMid || 60);
+  const agtron = bSum.agtron != null ? bSum.agtron : (bSum.roastObj.agMid || bSum.roastObj.agtronMid || 60);
   const uRoast = _clamp((agtron - 28.0) / 70.0, 0, 1, 0.5); /* 0 = dark, 1 = ultra-light */
   const procKey = String((bSum.procObj && bSum.procObj.v) || bean.process || 'washed').toLowerCase();
   const spKey = String((bSum.sp && bSum.sp.v) || bean.species || 'arabica').toLowerCase();
@@ -1979,7 +1979,8 @@ function synthesizeRecipe(input){
   const lockedParams = lockedRow ? _extractRowParams(lockedRow, mPhys) : null;
   const learnableHist = sameBagHist.filter(h => !isRowExcludedFromLearning(h));
   const latestUnlocked = (!lockedRow && learnableHist.length && !input.skipHistoryAdapt) ? learnableHist[learnableHist.length - 1] : null;
-  const hasExplicitRecipeInputs = (input.grindUm > 0 || input.d50Um > 0) && (input.ratio > 0 || input.waterG > 0 || input.water > 0);
+  const preserveInputs = input.preserveRecipeParams === true;
+  const hasExplicitRecipeInputs = preserveInputs || input.skipHistoryAdapt === true;
 
   let adaptedClosedLoop = null;
   let dialAdaptation = null;
@@ -2045,13 +2046,30 @@ function synthesizeRecipe(input){
     const persNr = adMeta && adMeta.next_recipe && typeof adMeta.next_recipe === 'object' ? adMeta.next_recipe : null;
     const persUm = persNr ? _pickFirstPosNum([persNr.d50Um, persNr.grindUm, persNr.grind_um]) : 0;
     const diagNext = (diag && diag.nextRecipe) ? diag.nextRecipe : {};
+    const persStars = persNr && (persNr.diagStars != null ? persNr.diagStars : persNr.stars);
+    const persTds = persNr && (persNr.diagTds != null ? persNr.diagTds : persNr.tdsPct);
+    const persSym = persNr && persNr.symptom ? String(persNr.symptom).toLowerCase().trim() : '';
     const persMatchesObs = !!(persNr && persUm > 0 &&
-      (persNr.diagStars == null || obs.stars == null || Math.abs(+persNr.diagStars - obs.stars) < 0.05) &&
-      (persNr.diagTds == null || obs.measuredTdsPct == null || Math.abs(+persNr.diagTds - obs.measuredTdsPct) < 0.02));
-    const persIsStaleNoop = !!(persNr && diag && Math.abs(diag.grindDeltaClicks || 0) >= 0.1 && persUm === prevUm && (!persNr.tempC || +persNr.tempC === prevTempC) && !persNr.tabuPivotApplied);
+      (persStars == null || obs.stars == null || Math.abs(+persStars - obs.stars) < 0.05) &&
+      (persTds == null || obs.measuredTdsPct == null || Math.abs(+persTds - obs.measuredTdsPct) < 0.02) &&
+      (!persSym || !obs.symptom || persSym === obs.symptom));
+    const persChangedGrind = Math.abs(persUm - prevUm) >= 1;
+    const persChangedTemp = !!(persNr && +persNr.tempC > 0 && Math.abs(+persNr.tempC - prevTempC) >= 0.1);
+    const persChangedRatio = !!(persNr && +persNr.ratio > 0 && Math.abs(+persNr.ratio - prevP.ratio) >= 0.05);
+    const persChangedDose = !!(persNr && +persNr.doseG > 0 && Math.abs(+persNr.doseG - prevP.doseG) >= 0.1);
+    const persChangedWater = !!(persNr && +persNr.waterG > 0 && Math.abs(+persNr.waterG - prevP.waterG) >= 0.5);
+    const persChangedAgit = !!(persNr && persNr.agitation && String(persNr.agitation) !== String(prevP.agitation || 'standard'));
+    const persChangedAny = persChangedGrind || persChangedTemp || persChangedRatio || persChangedDose || persChangedWater || persChangedAgit;
+    const diagChangedAny = !!(diag && (
+      Math.abs(diag.grindDeltaClicks || 0) >= 0.1 ||
+      Math.abs(diag.tempDeltaC || 0) >= 0.5 ||
+      Math.abs(diag.ratioDelta || 0) >= 0.1 ||
+      (diag.nextRecipe && diag.nextRecipe.agitation && diag.nextRecipe.agitation !== (prevP.agitation || 'standard'))
+    ));
+    const persIsStaleNoop = !!(persNr && diag && diagChangedAny && !persChangedAny && !persNr.tabuPivotApplied);
     const usePersisted = persMatchesObs && !persIsStaleNoop;
 
-    const chosenNextUm = usePersisted ? Math.round(persUm / 5) * 5 : (diagNext.d50Um || diagNext.grindUm || prevUm);
+    const chosenNextUm = usePersisted ? persUm : (diagNext.d50Um || diagNext.grindUm || prevUm);
     const chosenNextTempC = usePersisted && +persNr.tempC > 0 ? +persNr.tempC : (diagNext.tempC != null ? +diagNext.tempC : prevTempC);
     const chosenNextRatio = usePersisted && +persNr.ratio > 0 ? +persNr.ratio : (diagNext.ratio > 0 ? +diagNext.ratio : prevP.ratio);
     const chosenNextDoseG = usePersisted && +persNr.doseG > 0 ? +persNr.doseG : (diagNext.doseG > 0 ? +diagNext.doseG : prevP.doseG);
@@ -2059,7 +2077,32 @@ function synthesizeRecipe(input){
     const chosenAgitation = (usePersisted && persNr.agitation) ? persNr.agitation : (diagNext.agitation || prevP.agitation || 'standard');
 
     const gPrev = mapMicronsToGrinder(prevUm, grinderKey, input.calib || null, methodKey);
-    const gNext = mapMicronsToGrinder(chosenNextUm, grinderKey, input.calib || null, methodKey);
+    let gNext = mapMicronsToGrinder(chosenNextUm, grinderKey, input.calib || null, methodKey);
+    if (usePersisted && persNr.grindSetting){
+      const persGrinderMatch = !persNr.grinderKey || String(persNr.grinderKey).toLowerCase().replace(/_/g, '-') === grinderKey;
+      const rowGrinderName = _unneutStr(latestUnlocked.brew_grinder_name || '').toLowerCase().trim();
+      const gObjCur = typeof G.grinderFor === 'function' ? G.grinderFor(grinderKey) : null;
+      const rowMatchesCurGrinder = !rowGrinderName || !gObjCur || rowGrinderName === String(gObjCur.name || '').toLowerCase() || rowGrinderName === String(gObjCur.short || '').toLowerCase();
+      if (persGrinderMatch && rowMatchesCurGrinder && typeof G.parseGrinderInput === 'function' && typeof G.micronsForGrinderSetting === 'function'){
+        const exactClicks = G.parseGrinderInput(grinderKey, persNr.grindSetting);
+        if (exactClicks != null && isFinite(exactClicks)){
+          const exactSettingUm = G.micronsForGrinderSetting(grinderKey, exactClicks, methodKey, input.calib || null);
+          if (exactSettingUm > 0 && Math.abs(exactSettingUm - chosenNextUm) <= 45){
+            if (!gNext || gNext.clicks !== exactClicks){
+              const fmtExact = typeof G.formatGrinderSetting === 'function' ? G.formatGrinderSetting(grinderKey, exactClicks) : null;
+              const gExact = mapMicronsToGrinder(exactSettingUm, grinderKey, input.calib || null, methodKey);
+              gNext = Object.assign({}, gExact || gNext || {}, {
+                clicks:exactClicks,
+                setting:exactClicks,
+                display:(fmtExact && fmtExact.display) || String(persNr.grindSetting),
+                shortDisplay:(fmtExact && fmtExact.shortDisplay) || String(persNr.grindSetting),
+                label:((gObjCur && gObjCur.short) ? gObjCur.short + ': ' : '') + ((fmtExact && fmtExact.display) || String(persNr.grindSetting))
+              });
+            }
+          }
+        }
+      }
+    }
     const tryN = +latestUnlocked.brew_attempt > 0 ? +latestUnlocked.brew_attempt : learnableHist.length;
     const deltaClicks = (gPrev && gNext && gPrev.clicks != null && gNext.clicks != null) ? _rnd(gNext.clicks - gPrev.clicks, 2) : 0;
     const deltaTempC = _rnd(chosenNextTempC - prevTempC, 1);
@@ -2073,6 +2116,7 @@ function synthesizeRecipe(input){
       ratio:chosenNextRatio,
       tempC:chosenNextTempC,
       d50Um:chosenNextUm,
+      grinderSetting:gNext,
       agitation:chosenAgitation,
       style:prevP.style,
       filterId:prevP.filterId
@@ -2121,38 +2165,47 @@ function synthesizeRecipe(input){
   /* 1. Ratio & Mass Synthesis (Driven by Locked/Adapted History, Roast, SubMode, Species, Process, Varietal & Pre-Ground) */
   const hasLockedRatio = !!(lockedParams && lockedParams.ratio > 0);
   const hasAdaptedRatio = !!(adaptedClosedLoop && adaptedClosedLoop.ratio > 0);
-  let ratio = input.ratio > 0 ? +input.ratio
+  const subModeIdx = subModeObj ? subModes.indexOf(subModeObj) : -1;
+  const isDistinctSubModeRatio = !!(isExplicitSubMode && subModeObj && subModeObj.ratio > 0 && subModeIdx > 0);
+  const isDefaultSubModeRatioEcho = !preserveInputs && !!(subModeObj && subModeIdx === 0 && input.ratio > 0 && Math.abs(+input.ratio - subModeObj.ratio) < 1e-6 && !(input.doseG > 0 || input.dose > 0) && !(input.waterG > 0 || input.water > 0));
+  const hasExplicitInputRatio = !isDefaultSubModeRatioEcho && input.ratio > 0;
+  const shouldSolveRatioFromTds = !(preserveInputs && input.ratio > 0) && !hasExplicitInputRatio && !hasLockedRatio && !hasAdaptedRatio && !isDistinctSubModeRatio &&
+    methodKey !== 'cold' && methodKey !== 'cold_drip' && methodKey !== 'turkish' && methodKey !== 'moka' && methodKey !== 'philips5500' && methodKey !== 'phin' && subModeKey !== 'ap-concentrate';
+
+  let ratio = (preserveInputs && input.ratio > 0) ? +input.ratio
     : (hasLockedRatio ? lockedParams.ratio
     : (hasAdaptedRatio ? adaptedClosedLoop.ratio
-    : (isExplicitSubMode && subModeObj && subModeObj.ratio > 0 ? subModeObj.ratio : mPhys.ratio)));
-  if (!(input.ratio > 0) && !hasLockedRatio && !hasAdaptedRatio){
-    const hasSubRatio = !!(isExplicitSubMode && subModeObj && subModeObj.ratio > 0);
-    if (!hasSubRatio){
+    : (hasExplicitInputRatio ? +input.ratio
+    : (isDistinctSubModeRatio ? subModeObj.ratio : mPhys.ratio))));
+  if (shouldSolveRatioFromTds){
+    if (mPhys.outRatio){
+      ratio = _rnd(1.75 + 0.55 * uRoast + (spKey === 'robusta' ? -0.25 : 0), 2);
+    } else {
+      ratio = mPhys.ratio + (pgComp && pgComp.ratioDelta ? pgComp.ratioDelta : 0);
+    }
+    ratio = _clamp(_rnd(ratio, mPhys.outRatio ? 2 : 1), mPhys.ratioBounds[0], mPhys.ratioBounds[1], mPhys.ratio);
+  } else if (!(preserveInputs && input.ratio > 0) && !hasExplicitInputRatio && !hasLockedRatio && !hasAdaptedRatio){
+    if (!isDistinctSubModeRatio){
       if (!mPhys.outRatio && methodKey !== 'cold' && methodKey !== 'cold_drip' && methodKey !== 'turkish' && methodKey !== 'moka'){
         ratio += (uRoast - 0.5) * (methodKey === 'phin' ? 0.6 : 1.1);
-        if (bSum.isGesha && mPhys.chiRet < 0.5) ratio += 0.6;
-        else if (bSum.isFloralTea && mPhys.chiRet < 0.5 && (roastKey === 'ultra-light' || roastKey === 'light' || roastKey === 'medium-light')) ratio += 0.3;
-        if (spKey === 'eugenioides' && mPhys.chiRet < 0.5) ratio -= 0.7;
-        else if (spKey === 'robusta') ratio -= 1.0;
-        if (procKey === 'wet-hulled') ratio -= 0.5;
-        else if (procKey === 'infused' || procKey === 'thermal-shock') ratio += 0.4;
-      } else if (mPhys.outRatio && (!subModeObj || (subModeObj.id || subModeObj.key) === 'esp-9bar' || (subModeObj.id || subModeObj.key) === 'lever-londinium')){
-        ratio = _rnd(1.75 + 0.55 * uRoast + (spKey === 'robusta' ? -0.25 : 0), 2);
+        if (spKey === 'robusta') ratio -= 1.0;
       }
       if (pgComp && pgComp.ratioDelta) ratio += pgComp.ratioDelta;
     }
     ratio = _clamp(_rnd(ratio, mPhys.outRatio ? 2 : 1), mPhys.ratioBounds[0], mPhys.ratioBounds[1], mPhys.ratio);
   }
 
-  let doseG = input.doseG > 0 ? +input.doseG
+  let doseG = (preserveInputs && (input.doseG > 0 || input.dose > 0)) ? +(input.doseG > 0 ? input.doseG : input.dose)
+    : (input.doseG > 0 ? +input.doseG
     : (input.dose > 0 ? +input.dose
     : (lockedParams && lockedParams.doseG > 0 ? lockedParams.doseG
-    : (adaptedClosedLoop && adaptedClosedLoop.doseG > 0 ? adaptedClosedLoop.doseG : mPhys.dose)));
-  let waterG = input.waterG > 0 ? +input.waterG
+    : (adaptedClosedLoop && adaptedClosedLoop.doseG > 0 ? adaptedClosedLoop.doseG : mPhys.dose))));
+  let waterG = (preserveInputs && (input.waterG > 0 || input.water > 0)) ? +(input.waterG > 0 ? input.waterG : input.water)
+    : (input.waterG > 0 ? +input.waterG
     : (input.water > 0 ? +input.water
     : ((!(input.doseG > 0 || input.dose > 0) && lockedParams && lockedParams.waterG > 0) ? lockedParams.waterG
     : ((!(input.doseG > 0 || input.dose > 0) && adaptedClosedLoop && adaptedClosedLoop.waterG > 0) ? adaptedClosedLoop.waterG
-    : _rnd(doseG * ratio, 1))));
+    : _rnd(doseG * ratio, 1)))));
   if (input.waterG > 0 && !(input.doseG > 0 || input.dose > 0)){
     doseG = _rnd(waterG / ratio, 1);
   } else if ((input.doseG > 0 || input.dose > 0) && !(input.waterG > 0 || input.water > 0)){
@@ -2166,11 +2219,12 @@ function synthesizeRecipe(input){
   const isColdMethod = (methodKey === 'cold' || methodKey === 'cold_drip');
   const hasLockedTemp = !!(lockedParams && lockedParams.tempC > 0);
   const hasAdaptedTemp = !!(adaptedClosedLoop && adaptedClosedLoop.tempC > 0);
-  let baseTempC = input.tempC > 0 ? +input.tempC
+  let baseTempC = (preserveInputs && input.tempC > 0) ? +input.tempC
     : (hasLockedTemp ? lockedParams.tempC
     : (hasAdaptedTemp ? adaptedClosedLoop.tempC
-    : (isExplicitSubMode && subModeObj && subModeObj.tempC != null ? subModeObj.tempC : (mPhys.tempByRoastC[roastKey] != null ? mPhys.tempByRoastC[roastKey] : 93))));
-  if (!(input.tempC > 0) && !hasLockedTemp && !hasAdaptedTemp && !isColdMethod){
+    : (input.tempC > 0 ? +input.tempC
+    : (isExplicitSubMode && subModeObj && subModeObj.tempC != null ? subModeObj.tempC : (mPhys.tempByRoastC[roastKey] != null ? mPhys.tempByRoastC[roastKey] : 93)))));
+  if (!(preserveInputs && input.tempC > 0) && !(input.tempC > 0) && !hasLockedTemp && !hasAdaptedTemp && !isColdMethod){
     if (bSum.agtron != null && methodKey !== 'moka' && methodKey !== 'turkish'){
       const tDark = mPhys.tempByRoastC && mPhys.tempByRoastC.dark != null ? mPhys.tempByRoastC.dark : 85.5;
       const tUL   = mPhys.tempByRoastC && mPhys.tempByRoastC['ultra-light'] != null ? mPhys.tempByRoastC['ultra-light'] : 97.5;
@@ -2247,14 +2301,15 @@ function synthesizeRecipe(input){
   const effAgeDays = (bSum.age && bSum.age.effectiveDays != null) ? bSum.age.effectiveDays : 10;
   const hasLockedUm = !!(lockedParams && lockedParams.d50Um > 0);
   const hasAdaptedUm = !!(adaptedClosedLoop && adaptedClosedLoop.d50Um > 0);
-  let d50Um = input.grindUm > 0 ? +input.grindUm
-    : (input.d50Um > 0 ? +input.d50Um
+  let d50Um = (preserveInputs && (input.grindUm > 0 || input.d50Um > 0)) ? +(input.grindUm > 0 ? input.grindUm : input.d50Um)
     : (hasLockedUm ? lockedParams.d50Um
-    : (hasAdaptedUm ? adaptedClosedLoop.d50Um : mPhys.d50AnchorUm)));
-  if (pgProf && pgProf.fixedUm > 0 && !(input.grindUm > 0 || input.d50Um > 0)){
+    : (hasAdaptedUm ? adaptedClosedLoop.d50Um
+    : (input.grindUm > 0 ? +input.grindUm
+    : (input.d50Um > 0 ? +input.d50Um : mPhys.d50AnchorUm))));
+  if (pgProf && pgProf.fixedUm > 0 && !(preserveInputs && (input.grindUm > 0 || input.d50Um > 0))){
     d50Um = pgProf.fixedUm;
     explanations.push(makeScienceAtom('preground-lock', 'Pre-Ground Fixed PSD (' + d50Um + ' um)', 'Fixed ' + d50Um + ' um', pgComp ? pgComp.note : 'Grind is fixed, so we tuned temperature, ratio, and pour gentleness around it.', 'Fixed exogenous PSD locks d50; contact time, T, and liquid-to-solid ratio absorb extraction targeting.', 'verified_science', 'Moroney et al. 2015'));
-  } else if (!(input.grindUm > 0 || input.d50Um > 0) && !hasLockedUm && !hasAdaptedUm){
+  } else if (!(preserveInputs && (input.grindUm > 0 || input.d50Um > 0)) && !(input.grindUm > 0 || input.d50Um > 0) && !hasLockedUm && !hasAdaptedUm){
     let mult = 1.0;
     if (methodKey !== 'turkish'){
       mult *= (1.07 - 0.14 * uRoast);
@@ -2334,17 +2389,17 @@ function synthesizeRecipe(input){
   const bypassCleanG = subModeKey === 'ap-concentrate'
     ? Math.round(doseG * 9.0)
     : ((isExplicitSubMode && subModeObj && subModeObj.bypassToRatio > 0) ? Math.max(0, Math.round(doseG * subModeObj.bypassToRatio - waterG)) : (input.bypassG > 0 ? +input.bypassG : 0));
-  const effectiveBrewWaterG = subModeKey === 'ap-concentrate' ? Math.round(doseG * 5.0) : waterG;
-  const agitationMode = pgComp && pgComp.agitation ? pgComp.agitation
+  let effectiveBrewWaterG = subModeKey === 'ap-concentrate' ? Math.round(doseG * 5.0) : waterG;
+  const agitationMode = (preserveInputs && input.agitation) ? input.agitation
+    : (pgComp && pgComp.agitation ? pgComp.agitation
     : (lockedParams && lockedParams.agitation ? lockedParams.agitation
     : (adaptedClosedLoop && adaptedClosedLoop.agitation ? adaptedClosedLoop.agitation
-    : ((procKey === 'infused' || bSum.isDecaf || bSum.isEthLandrace || bSum.isFloralTea) ? 'gentle' : 'standard')));
+    : ((procKey === 'infused' || bSum.isDecaf || bSum.isEthLandrace || bSum.isFloralTea) ? 'gentle' : 'standard'))));
 
   const co2 = smrkeCo2Trajectory({ agtron, effectiveDays:bSum.isDecaf ? 35 : effAgeDays });
-  const sim = simulateBrew({
+  const activeFilterId = input.filterId || (isExplicitSubMode && subModeObj && subModeObj.filterId) || mPhys.defaultFilterId;
+  const simBaseArgs = {
     methodKey,
-    doseG,
-    waterG:effectiveBrewWaterG,
     bypassG:bypassCleanG,
     d50Um,
     kettleTempC,
@@ -2358,13 +2413,100 @@ function synthesizeRecipe(input){
     water:waterCfg,
     agitation:agitationMode,
     grinderKey,
-    filterId:input.filterId || (isExplicitSubMode && subModeObj && subModeObj.filterId) || mPhys.defaultFilterId,
+    filterId:activeFilterId,
     brewerMaterial:input.brewerMaterial || 'plastic',
     preheat:input.preheat || 'boiling_rinse',
     immersionBasis:input.immersionBasis
-  });
+  };
 
-  const gMapped = mapMicronsToGrinder(d50Um, grinderKey, input.calib || null, methodKey);
+  /* Predicted-TDS Feedback Ratio Solver: solve ratio from bean-property goalTdsPct & simulateBrew() */
+  let goalTdsPct = null;
+  let goalFactors = [];
+  let solRatioLo = mPhys.ratioBounds ? mPhys.ratioBounds[0] : (mPhys.outRatio ? 1.5 : 14.0);
+  let solRatioHi = mPhys.ratioBounds ? mPhys.ratioBounds[1] : (mPhys.outRatio ? 4.5 : 19.0);
+  if (shouldSolveRatioFromTds){
+    const notesLow = String((bean.bag_notes || bean.notes || '') + ' ' + (Array.isArray(bean.flavors) ? bean.flavors.join(' ') : (bean.flavors || ''))).toLowerCase();
+    const isChocNut = /chocolat|cocoa|cacao|hazelnut|almond|walnut|nutty|caramel|toffee|molasses|brown sugar|praline|fudge/.test(notesLow);
+    const refTds = (mPhys.targetRef && mPhys.targetRef.tdsPct > 0) ? mPhys.targetRef.tdsPct : (mPhys.outRatio ? 9.8 : 1.38);
+    if (mPhys.outRatio){
+      const espBoost = (0.5 - uRoast) * 1.1 + (spKey === 'robusta' ? 0.45 : 0) + (bSum.isDecaf ? 0.35 : 0);
+      goalTdsPct = _rnd(_clamp(refTds + espBoost, 9.0, 10.8, refTds), 2);
+      solRatioLo = Math.max(1.65, solRatioLo);
+      solRatioHi = Math.min(2.40, solRatioHi);
+      goalFactors.push(roastKey + ' roast');
+      if (spKey === 'robusta') goalFactors.push('robusta body');
+      if (bSum.isDecaf) goalFactors.push('decaf concentration');
+    } else if (methodKey === 'nel'){
+      const nelBoost = Math.max(0, (0.75 - uRoast) * 0.14) + (isChocNut ? 0.04 : 0) + (bSum.isDecaf ? 0.05 : 0);
+      goalTdsPct = _rnd(_clamp(refTds + nelBoost, 1.48, 1.72, refTds), 3);
+      goalFactors.push(roastKey + ' roast');
+    } else {
+      const roastTdsBoost = Math.max(0, (0.85 - uRoast) * 0.11);
+      const densBoost = densKey === 'low' ? 0.03 : (densKey === 'mid' ? 0.01 : 0);
+      const notesShift = isChocNut ? 0.025 : ((bSum.isGesha || bSum.isFloralTea) ? -0.01 : 0);
+      const procShift = procKey === 'wet-hulled' ? 0.035
+        : (procKey === 'natural' || procKey === 'black-honey' || procKey === 'red-honey' || procKey === 'honey-black' || procKey === 'honey-red') ? 0.015
+        : (procKey === 'infused' || procKey === 'thermal-shock' || procKey === 'anaerobic' || procKey === 'carbonic') ? 0.005 : 0;
+      const solShift = (bSum.isDecaf ? (isHalfCaf ? 0.02 : 0.04) : 0) + (effAgeDays >= 28 ? 0.025 : 0) + (spKey === 'eugenioides' ? 0.04 : (spKey === 'robusta' ? 0.05 : 0));
+      const minFloorTds = Math.max(1.36, refTds);
+      goalTdsPct = _rnd(_clamp(refTds + roastTdsBoost + densBoost + notesShift + procShift + solShift, minFloorTds, 1.49, 1.38), 3);
+      if (methodKey === 'aeropress') solRatioLo = Math.max(13.5, solRatioLo);
+      goalFactors.push(roastKey + ' roast');
+      if (densKey === 'low') goalFactors.push('low-density body');
+      if (isChocNut) goalFactors.push('chocolate/nut profile');
+      else if (bSum.isGesha || bSum.isFloralTea) goalFactors.push('floral/tea clarity');
+      if (bSum.isDecaf) goalFactors.push('decaf solubility');
+      if (effAgeDays >= 28) goalFactors.push('aged roast');
+    }
+
+    const fixedWaterMode = input.waterG > 0 && !(input.doseG > 0 || input.dose > 0);
+    const tdsTol = mPhys.outRatio ? 0.12 : 0.015;
+    let rCur = _clamp(ratio, solRatioLo, solRatioHi, mPhys.ratio);
+    let prevR = null, prevTds = null;
+    for (let iter = 0; iter < 4; iter++){
+      const pDose = fixedWaterMode ? _rnd(waterG / rCur, 1) : doseG;
+      const pWater = fixedWaterMode ? waterG : _rnd(pDose * rCur, 1);
+      const simProbe = simulateBrew(Object.assign({}, simBaseArgs, { doseG:pDose, waterG:pWater }));
+      if (!simProbe || !simProbe.ok || !(simProbe.tdsPct > 0)) break;
+      if (Math.abs(simProbe.tdsPct - goalTdsPct) <= tdsTol) break;
+      let rNext;
+      if (prevR != null && prevTds != null && Math.abs(simProbe.tdsPct - prevTds) > 1e-4 && Math.abs(rCur - prevR) > 1e-4){
+        const slope = (simProbe.tdsPct - prevTds) / (rCur - prevR);
+        rNext = rCur + (goalTdsPct - simProbe.tdsPct) / slope;
+      } else {
+        const rEff = mPhys.outRatio ? 0 : _clamp((pWater + bypassCleanG - simProbe.bevG) / Math.max(0.1, pDose), 0.5, 3.5, mPhys.rWater || 2.1);
+        rNext = rEff + Math.max(0.4, rCur - rEff) * Math.pow(simProbe.tdsPct / goalTdsPct, 0.90);
+      }
+      prevR = rCur;
+      prevTds = simProbe.tdsPct;
+      rCur = _clamp(rNext, solRatioLo, solRatioHi, rCur);
+      if (Math.abs(rCur - prevR) < 0.01) break;
+    }
+    ratio = _clamp(_rnd(rCur, mPhys.outRatio ? 2 : 1), solRatioLo, solRatioHi, mPhys.ratio);
+    if (fixedWaterMode){
+      doseG = _rnd(waterG / ratio, 1);
+    } else {
+      waterG = _rnd(doseG * ratio, 1);
+    }
+    effectiveBrewWaterG = waterG;
+  }
+
+  const sim = simulateBrew(Object.assign({}, simBaseArgs, { doseG, waterG:effectiveBrewWaterG }));
+  if (shouldSolveRatioFromTds && sim && sim.ok && goalTdsPct != null){
+    explanations.push(makeScienceAtom(
+      'ratio-tds-match',
+      'Bean-Matched Ratio (1:' + ratio + ' -> ' + sim.tdsPct + '% TDS)',
+      '1:' + ratio + ' (' + sim.tdsPct + '% TDS)',
+      'Tuned brew ratio to 1:' + ratio + ' (' + doseG + ' g : ' + waterG + ' g) for your bean (' + goalFactors.join(', ') + ') so cup strength lands at ' + sim.tdsPct + '% TDS (target ' + goalTdsPct + '% TDS).',
+      'Predicted-TDS feedback solved R_ratio in [' + solRatioLo + ', ' + solRatioHi + '] via simulateBrew() against bean-modulated goal TDS*=' + goalTdsPct + '% (predicted ' + sim.tdsPct + '% TDS, ' + sim.eyPct + '% EY).',
+      'verified_science',
+      'BeanTelligence Mass-Balance & Kinetics Solver'
+    ));
+  }
+
+  const gMapped = (hasAdaptedUm && adaptedClosedLoop && adaptedClosedLoop.grinderSetting && d50Um === adaptedClosedLoop.d50Um)
+    ? adaptedClosedLoop.grinderSetting
+    : mapMicronsToGrinder(d50Um, grinderKey, input.calib || null, methodKey);
 
   /* 5. Build Dual-Voice (Human + Scientist) Brew Steps & Step-Staircase Geometry (#166 & #169) */
   const steps = [];
@@ -2738,7 +2880,7 @@ function synthesizeRecipe(input){
     simulation:sim
   };
 
-  if (!lockedRow && !adaptedClosedLoop && !(dialAdaptation && dialAdaptation.adapted) && (input.palateTwin || (Array.isArray(input.history) && input.history.length >= 3)) && !(input.ratio > 0 && (input.grindUm > 0 || input.d50Um > 0))){
+  if (!lockedRow && !adaptedClosedLoop && !(dialAdaptation && dialAdaptation.adapted) && !preserveInputs && (input.palateTwin || (Array.isArray(input.history) && input.history.length >= 3)) && !(input.ratio > 0 && (input.grindUm > 0 || input.d50Um > 0))){
     const twin = input.palateTwin || computePalateTwin(bean, methodKey, input.history);
     if (twin && twin.confidence >= 0.25){
       const refined = solvePersonalTargetRecipe(baseOut, twin, mPhys, simulateBrew);
@@ -3338,10 +3480,13 @@ function _solveMakeItPerfectBase(prevRec, obs, hist){
   /* Allow full physical Ring-3 bounds without flipping intended taste direction when curUm starts outside method window */
   const rawIntendedUm = nextUm;
   const umFloor = Math.max(55, mPhys.um[0] - 80);
-  const umCeil = mPhys.um[1] + 120;
+  const baseUmCeil = mPhys.um[1] + 120;
+  const umCeil = (!isEsp && methodKey !== 'turkish' && curUm > baseUmCeil)
+    ? Math.min(1450, Math.max(baseUmCeil, curUm + 120))
+    : baseUmCeil;
   const clampedMethodUm = _clamp(rawIntendedUm, umFloor, umCeil, curUm);
   if (rawIntendedUm !== curUm && Math.sign(clampedMethodUm - curUm) !== Math.sign(rawIntendedUm - curUm)){
-    nextUm = _clamp(rawIntendedUm, 55, 1500, curUm);
+    nextUm = _clamp(rawIntendedUm, 55, (!isEsp && methodKey !== 'turkish' && curUm <= 1450) ? 1450 : 1500, curUm);
   } else {
     nextUm = clampedMethodUm;
   }

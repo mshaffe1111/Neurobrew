@@ -1441,9 +1441,11 @@ const _sheetTitles = {
   'brew-twin':       'Brew Twin Translator',
   'live-cockpit':    'Live Brew Cockpit',
   'ble-devices':     'Bluetooth Instruments',
-  'data-vault':      'Data Vault & Backup',
-  'onboarding-tour': 'Welcome to BeanTelligence',
-  'about-charter':   'Science & Epistemic Charter'
+  'data-vault':         'Data Vault & Backup',
+  'onboarding-tour':    'Welcome to BeanTelligence',
+  'about-charter':      'Science & Epistemic Charter',
+  'share-qr-passport':  'Share QR Recipe Passport',
+  'recipe-science-why': 'Why These Numbers?'
 };
 
 const BTSheet = (function() {
@@ -3490,14 +3492,14 @@ function paintStudioAside() {
     h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px' },
       h('div', { style: 'min-width:0' },
         h('div', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: croaster || 'Active Coffee Bag' }),
-        h('div', { class: 'bt-serif', style: 'font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap', text: cname || 'Add a Coffee Bag' })
+        h('div', { class: 'bt-serif', style: 'font-size:16px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere', text: cname || 'Add a Coffee Bag' })
       ),
       h('span', { class: 'bt-badge good', text: _formatFreshnessBadge(c) })
     ),
     h('div', { class: 'bt-passport-grid' },
       h('div', { class: 'bt-passport-cell' },
         h('span', { text: 'Origin' }),
-        h('b', { text: regionDisp })
+        h('b', { style: 'white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25;overflow-wrap:anywhere', text: regionDisp })
       ),
       h('div', { class: 'bt-passport-cell' },
         h('span', { text: 'Roast' }),

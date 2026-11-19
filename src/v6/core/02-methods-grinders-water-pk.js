@@ -514,7 +514,7 @@ function mkRoastTemps(ul, l, ml, m, md, d){
 const METHOD_PHYSICS_V6 = attachByKey([
   {
     key:'v60', label:'Hario V60', short:'V60', category:'cone', type:'flow', icon:'brewer-v60',
-    d50AnchorUm:550, um:[440, 720], ratio:16.5, ratioBounds:[14.5, 18.5], dose:18, water:300,
+    d50AnchorUm:550, um:[440, 720], ratio:16.5, ratioBounds:[14.5, 17.5], dose:18, water:300,
     tempByRoastC:mkRoastTemps(98, 96, 94, 92, 89, 85),
     rWater:2.10, etaTail:0.24, chiRet:0.06, fAbsDefault:1.00, nLayers:3, bedAreaCm2:28.3, deltaPExtKPa:0,
     defaultFilterId:'cone-bleached', oilPassFrac:0.02, typicalTimeS:[150, 195], targetRef:{ tdsPct:1.35, eyPct:20.0 },
@@ -541,7 +541,7 @@ const METHOD_PHYSICS_V6 = attachByKey([
   },
   {
     key:'kalita', label:'Kalita Wave', short:'Kalita Wave', category:'flat', type:'flow', icon:'brewer-kalita',
-    d50AnchorUm:640, um:[520, 780], ratio:16.5, ratioBounds:[15.0, 18.0], dose:18, water:300,
+    d50AnchorUm:640, um:[520, 780], ratio:16.5, ratioBounds:[13.5, 17.5], dose:18, water:300,
     tempByRoastC:mkRoastTemps(97, 95, 93, 91, 88, 85),
     rWater:2.15, etaTail:0.20, chiRet:0.08, fAbsDefault:1.00, nLayers:3, bedAreaCm2:23.8, deltaPExtKPa:0,
     defaultFilterId:'wave-bleached', oilPassFrac:0.02, typicalTimeS:[165, 210], targetRef:{ tdsPct:1.35, eyPct:20.0 },
@@ -554,7 +554,7 @@ const METHOD_PHYSICS_V6 = attachByKey([
   },
   {
     key:'orea', label:'Orea V3 / V4', short:'Orea', category:'flat', type:'flow', icon:'brewer-orea',
-    d50AnchorUm:580, um:[450, 740], ratio:16.5, ratioBounds:[15.0, 19.5], dose:15, water:250,
+    d50AnchorUm:580, um:[450, 740], ratio:16.5, ratioBounds:[14.5, 19.5], dose:15, water:250,
     tempByRoastC:mkRoastTemps(98, 96, 94, 91, 88, 84),
     rWater:2.05, etaTail:0.18, chiRet:0.05, fAbsDefault:1.00, nLayers:3, bedAreaCm2:21.2, deltaPExtKPa:0,
     defaultFilterId:'wave-bleached', oilPassFrac:0.03, typicalTimeS:[130, 170], targetRef:{ tdsPct:1.38, eyPct:21.2 },
@@ -567,7 +567,7 @@ const METHOD_PHYSICS_V6 = attachByKey([
   },
   {
     key:'pulsar', label:'NextLevel Pulsar / Tricolate', short:'Pulsar', category:'zero-bypass', type:'hybrid', icon:'brewer-pulsar',
-    d50AnchorUm:620, um:[480, 780], ratio:17.5, ratioBounds:[16.0, 22.0], dose:20, water:350,
+    d50AnchorUm:620, um:[480, 780], ratio:17.5, ratioBounds:[15.0, 22.0], dose:20, water:350,
     tempByRoastC:mkRoastTemps(99, 97, 95, 92, 89, 85),
     screenTempCompC:2.0,
     rWater:2.10, etaTail:0.45, chiRet:0.18, fAbsDefault:1.00, nLayers:3, bedAreaCm2:44.2, deltaPExtKPa:0,
@@ -581,7 +581,7 @@ const METHOD_PHYSICS_V6 = attachByKey([
   },
   {
     key:'chemex', label:'Chemex', short:'Chemex', category:'cone', type:'flow', icon:'brewer-chemex',
-    d50AnchorUm:760, um:[640, 920], ratio:16.5, ratioBounds:[15.0, 18.0], dose:30, water:500,
+    d50AnchorUm:760, um:[640, 920], ratio:16.5, ratioBounds:[14.0, 17.5], dose:30, water:500,
     tempByRoastC:mkRoastTemps(98, 96, 94, 92, 89, 86),
     rWater:2.25, etaTail:0.24, chiRet:0.06, fAbsDefault:1.00, nLayers:3, bedAreaCm2:34.0, deltaPExtKPa:0,
     defaultFilterId:'chemex-bonded', oilPassFrac:0.01, typicalTimeS:[225, 285], targetRef:{ tdsPct:1.33, eyPct:19.8 },
@@ -604,7 +604,7 @@ const METHOD_PHYSICS_V6 = attachByKey([
   },
   {
     key:'drip', label:'SCA Batch Brewer', short:'Batch Drip', category:'auto-drip', type:'flow', icon:'brewer-drip',
-    d50AnchorUm:700, batchUmPerGOver500:0.22, um:[580, 920], ratio:17.0, ratioBounds:[15.5, 18.5], dose:60, water:1000,
+    d50AnchorUm:700, batchUmPerGOver500:0.22, um:[580, 920], ratio:17.0, ratioBounds:[14.5, 18.5], dose:60, water:1000,
     tempByRoastC:mkRoastTemps(95, 94, 93, 93, 92, 91),
     rWater:2.15, etaTail:0.20, chiRet:0.08, fAbsDefault:1.00, nLayers:3, bedAreaCm2:55.0, deltaPExtKPa:0,
     defaultFilterId:'wave-bleached', oilPassFrac:0.02, typicalTimeS:[240, 360], targetRef:{ tdsPct:1.30, eyPct:19.8 },

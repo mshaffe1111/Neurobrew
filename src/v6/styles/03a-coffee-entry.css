@@ -1286,11 +1286,20 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
+  max-width: 100%;
   padding: 11px 13px;
   border-radius: 14px;
   background: var(--surface);
   border: 1px solid var(--line-soft);
   border-left: 4px solid var(--bag-roast-col, var(--roast-3));
+}
+
+.bt-vault-row-v62 .bt-ce-badge {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+  overflow-wrap: anywhere;
 }
 
 /* ==================== 13. PRINTED ROAST DATE PICKER & INTERACTIVE MONTH CALENDAR ==================== */
@@ -1842,9 +1851,9 @@
   min-height: 22px !important;
   padding: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.20);
+  background: rgba(15, 34, 25, 0.58);
   border: none;
-  color: inherit;
+  color: #FFFDF9;
   font-size: 14px;
   font-weight: 800;
   line-height: 1;
@@ -1857,7 +1866,7 @@
 }
 
 .bt-ce-locked-rm:hover {
-  background: rgba(255, 255, 255, 0.34);
+  background: rgba(15, 34, 25, 0.78);
 }
 
 .bt-ce-locked-empty {

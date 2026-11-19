@@ -275,6 +275,7 @@
 /* ---- BTChartKit Surface, 48px Thumb-Offset Loupe & Hit-Halos ---- */
 .bt-chart-stage {
   position: relative;
+  isolation: isolate;
   width: 100%;
   border-radius: var(--r-md, 16px);
   overflow: hidden;
@@ -411,7 +412,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(16, 12, 10, 0.48);
+  background: var(--backdrop-scrim, rgba(16, 12, 10, 0.48));
   backdrop-filter: blur(4px);
 }
 
@@ -1989,7 +1990,7 @@ html[data-theme="dark"] .bt-r2-reconcile-card {
 .bt-pk-flag-txt {
   font-size: 9px;
   font-weight: 700;
-  fill: #FFFDF9;
+  fill: var(--good-ink, #FFFDF9);
 }
 
 /* World Coffee Belt Map Coastlines, Tropics & Affinity Pins */
@@ -2754,6 +2755,11 @@ button.bt-trait-row:hover {
   background: #FFFDF9;
   border: 3px solid var(--ink-primary, #231811);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+}
+
+[data-theme="dark"] .bt-wim-thumb {
+  background: var(--surface, #1C1815);
+  border-color: var(--ink, #F5EDE4);
 }
 
 .bt-wim-explain {

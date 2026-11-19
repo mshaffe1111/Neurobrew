@@ -195,7 +195,7 @@ function validStars(v){
   if (typeof v !== 'number' && typeof v !== 'string') return 0;
   if (typeof v === 'string' && !/^\s*\d(\.\d+)?\s*$/.test(v)) return 0;
   const x = typeof v === 'number' ? v : parseFloat(v);
-  return (isFinite(x) && x >= 0.5 && x <= 5 && Math.abs(x * 2 - Math.round(x * 2)) < 1e-9) ? Math.round(x * 2) / 2 : 0;
+  return (isFinite(x) && x >= 0.5 && x <= 5 && Math.abs(x * 4 - Math.round(x * 4)) < 1e-9) ? Math.round(x * 4) / 4 : 0;
 }
 function neutralize(s){
   s = String(s == null ? '' : s);
@@ -983,7 +983,8 @@ function tastingEditFromRow(o){
   o = o || {};
   const num = k => { const x = parseFloat(o[k]); return isFinite(x) && x > 0 ? String(x) : ''; };
   const q = quickAnswers(o), cv = cvaRead(o), scores = {};
-  cv.sections.forEach(s => { scores[s.key] = s.final == null ? '' : s.final; });
+  const hasCva = o.mode === 'single_cup' || o.score_kind === CVA_KIND || cv.sections.some(s => s.final != null);
+  if (hasCva) cv.sections.forEach(s => { scores[s.key] = s.final == null ? '' : s.final; });
   return {
     brew:{ dose:num('brew_dose_g'), water:num('brew_water_g'), temp_f:num('brew_temp_f'), actual_s:num('brew_actual_time_s'), out_g:num('brew_out_g'), tds:num('brew_tds_pct'), style:unneutralize(o.brew_style || ''), ey_total:num('brew_ey_total_pct') },
     notes:unneutralize(o.general_notes || ''),
@@ -1080,18 +1081,22 @@ function applyTastingEdit(header, rows, idx, edit){
   }
   if (edit.cupping && Object.keys(edit.cupping).length){
     const st = tastingScoreState(cur);
-    if (st !== 'ok') return { error:st === 'none' ? 'This tasting has no cupping scores. Use Add cupping scores on the tasting screen.' : 'This tasting used an older scoring form, so its scores stay as saved. Everything else can be edited.' };
-    for (const s of CVA_SECTIONS){
-      if (!(s.key in edit.cupping)) continue;
-      const raw = edit.cupping[s.key], v = cvaScore(raw);
-      if (v == null && !(raw === '' || raw == null)) return { error:s.name + ' needs a score from 1 to 9.' };
-      if (v == null && !s.skippable) return { error:s.name + ' needs a score from 1 to 9.' };
-      set(s.col, v == null ? '' : String(v));
-    }
-    if (CVA_SECTIONS.some(s => s.col in next)){
-      const by = {}; CVA_SECTIONS.forEach(s => { by[s.key] = val(s.col); });
-      const t = tastingTotal(by, val('defect_type'));
-      set('total_score', t == null ? '' : t.toFixed(2));
+    const hasCuppingInput = Object.keys(edit.cupping).some(k => edit.cupping[k] !== '' && edit.cupping[k] != null);
+    if (st !== 'ok'){
+      if (hasCuppingInput) return { error:st === 'none' ? 'This tasting has no cupping scores. Use Add cupping scores on the tasting screen.' : 'This tasting used an older scoring form, so its scores stay as saved. Everything else can be edited.' };
+    } else {
+      for (const s of CVA_SECTIONS){
+        if (!(s.key in edit.cupping)) continue;
+        const raw = edit.cupping[s.key], v = cvaScore(raw);
+        if (v == null && !(raw === '' || raw == null)) return { error:s.name + ' needs a score from 1 to 9.' };
+        if (v == null && !s.skippable) return { error:s.name + ' needs a score from 1 to 9.' };
+        set(s.col, v == null ? '' : String(v));
+      }
+      if (CVA_SECTIONS.some(s => s.col in next)){
+        const by = {}; CVA_SECTIONS.forEach(s => { by[s.key] = val(s.col); });
+        const t = tastingTotal(by, val('defect_type'));
+        set('total_score', t == null ? '' : t.toFixed(2));
+      }
     }
   }
   const cols = Object.keys(next);
@@ -3191,5 +3196,13 @@ function encodeQrSvg(text, opts){
     + (bg === 'transparent' || bg === 'none' ? '' : '<rect width="' + dim + '" height="' + dim + '" fill="' + bg + '"/>')
     + '<path fill="' + fg + '" d="' + pathD + '"/>'
     + '</svg>';
+}
+if (typeof window !== 'undefined'){
+  window.encodeQrMatrix = encodeQrMatrix;
+  window.encodeQrSvg = encodeQrSvg;
+}
+if (typeof globalThis !== 'undefined'){
+  globalThis.encodeQrMatrix = encodeQrMatrix;
+  globalThis.encodeQrSvg = encodeQrSvg;
 }
 /*PURE_END*/

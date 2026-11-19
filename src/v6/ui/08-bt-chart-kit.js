@@ -25,11 +25,23 @@ const BTChartKit = (function () {
     return n < lo ? lo : n > hi ? hi : n;
   }
 
+  function stepDecimals(s) {
+    if (!(s > 0) || !Number.isFinite(s) || Number.isInteger(s)) return 0;
+    const str = s.toString();
+    if (str.indexOf('e-') >= 0 || str.indexOf('E-') >= 0) {
+      const parts = str.split(/e-/i);
+      const frac = (parts[0].split('.')[1] || '').length;
+      return Math.min(6, frac + parseInt(parts[1], 10));
+    }
+    const dot = str.indexOf('.');
+    return dot >= 0 ? Math.min(6, str.length - dot - 1) : 0;
+  }
+
   function roundStep(v, step, min) {
     const s = step > 0 && Number.isFinite(step) ? step : 1;
     const base = Number.isFinite(min) ? min : 0;
     const snapped = base + Math.round((v - base) / s) * s;
-    const dec = s < 1 ? Math.min(6, Math.max(0, Math.ceil(-Math.log10(s) - 1e-9))) : 0;
+    const dec = Math.max(stepDecimals(s), stepDecimals(base));
     return dec > 0 ? +snapped.toFixed(dec) : Math.round(snapped);
   }
 
@@ -1432,7 +1444,7 @@ const BTChartKit = (function () {
     const step = c.step > 0 && Number.isFinite(c.step) ? c.step : 1;
     const dec = Number.isInteger(c.decimals)
       ? c.decimals
-      : (step < 1 ? Math.min(4, Math.max(0, Math.ceil(-Math.log10(step) - 1e-9))) : 0);
+      : Math.min(4, Math.max(stepDecimals(step), stepDecimals(min)));
     let curVal = roundStep(clamp(c.value, min, max, min), step, min);
 
     const root = document.createElement('div');

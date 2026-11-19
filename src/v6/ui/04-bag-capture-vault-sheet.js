@@ -1713,8 +1713,9 @@ if (typeof window !== 'undefined') {
     if (/^(?:BT-code:|bt1:|BT6:|#?bt6=)/i.test(txt)) {
       try {
         var bs = (typeof window !== 'undefined' && window.BTBrewStudio) ? window.BTBrewStudio : null;
-        if (bs && typeof bs.decodeAnySharedBrew === 'function') {
-          var dec6 = bs.decodeAnySharedBrew(txt);
+        var decodeFn = bs && (bs.decodeSharedBrew || bs.decodeAnySharedBrew);
+        if (typeof decodeFn === 'function') {
+          var dec6 = decodeFn(txt);
           var c6 = dec6 && (dec6.coffee || dec6.bean);
           if (c6 && typeof c6 === 'object') {
             return Object.assign({ _sourceKind: 'share_code' }, c6);
@@ -1742,6 +1743,14 @@ if (typeof window !== 'undefined') {
         var resV6 = window.parseScanReplyV6(txt);
         if (resV6 && typeof resV6 === 'object') {
           var outV6 = Object.assign({ _sourceKind: 'ai_json' }, resV6);
+          if (resV6.fields && typeof resV6.fields === 'object') {
+            if (resV6.fields.elevation_m && outV6.elevation_masl == null && outV6.elevation_m == null) {
+              outV6.elevation_m = resV6.fields.elevation_m;
+            }
+            if (resV6.fields.bag_weight_g && outV6.bag_weight_g == null) {
+              outV6.bag_weight_g = resV6.fields.bag_weight_g;
+            }
+          }
           if (resV6._rejectedWebRoastDate) outV6._rejectedWebRoastDate = resV6._rejectedWebRoastDate;
           return outV6;
         }
@@ -1946,7 +1955,8 @@ if (typeof window !== 'undefined') {
 
     var origCountry = d.origin_country || '';
     var origRegion = d.origin_region || d.region || '';
-    var fullOrigin = d.origin ? String(d.origin).trim() : [origRegion, origCountry].filter(Boolean).join(', ');
+    var fullOrigin = d.origin ? String(d.origin).trim()
+      : [origRegion, (origCountry && origRegion.toLowerCase().indexOf(origCountry.toLowerCase()) < 0) ? origCountry : ''].filter(Boolean).join(', ');
     if (fullOrigin) {
       pushField('origin', 'Origin & Region', fullOrigin, {
         origin: fullOrigin,
@@ -1996,7 +2006,27 @@ if (typeof window !== 'undefined') {
       }
     }
 
-    var elevNum = typeof d.elevation_masl === 'number' ? Math.round(d.elevation_masl) : parseInt(String(d.elevation_masl || d.elevation || '').replace(/[^\d]/g, ''), 10);
+    var elevNum = NaN;
+    if (typeof d.elevation_masl === 'number' && isFinite(d.elevation_masl)) {
+      elevNum = Math.round(d.elevation_masl);
+    } else if (typeof d.elevation_m === 'number' && isFinite(d.elevation_m)) {
+      elevNum = Math.round(d.elevation_m);
+    } else {
+      var rawElevStr = String(d.elevation_masl || d.elevation_m || d.elevation || d.altitude || '').trim();
+      if (rawElevStr) {
+        var elevMatches = rawElevStr.match(/\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?/g);
+        if (elevMatches && elevMatches.length) {
+          var elevNums = elevMatches.map(function (tok) { return parseFloat(tok.replace(/,/g, '')); }).filter(function (n) { return isFinite(n) && n > 0; });
+          if (elevNums.length) {
+            var elevVal = elevNums.length >= 2 ? ((elevNums[0] + elevNums[1]) / 2) : elevNums[0];
+            if (/\b(?:ft|feet|foot)\b|'/i.test(rawElevStr)) {
+              elevVal = elevVal * 0.3048;
+            }
+            elevNum = Math.round(elevVal);
+          }
+        }
+      }
+    }
     var densRaw = d.estimated_density && String(d.estimated_density).toLowerCase() !== 'null' ? String(d.estimated_density).toLowerCase() : '';
     if ((isFinite(elevNum) && elevNum >= 100 && elevNum <= 3500) || densRaw) {
       var densCalc = densRaw === 'very-high' ? 'very-high' : densRaw === 'high' ? 'high' : densRaw === 'low' ? 'low' : densRaw === 'medium' ? 'mid'
@@ -2108,19 +2138,38 @@ if (typeof window !== 'undefined') {
       }
     }
 
-    var hasBagEcon = (isFinite(+d.price) && +d.price > 0) || (isFinite(+d.bag_weight_g) && +d.bag_weight_g > 0);
+    var parsedWeightG = 0;
+    if (isFinite(+d.bag_weight_g) && +d.bag_weight_g > 0) {
+      parsedWeightG = Math.round(+d.bag_weight_g);
+    } else {
+      var rawWeightStr = String(d.bag_weight || d.weight || d.bag_weight_g || d.net_weight || d.size || '').trim();
+      if (rawWeightStr) {
+        var wm = /([\d.,]+)\s*(oz|ounce|ounces|lb|lbs|pound|pounds|kg|kilo|g|grams?)?/i.exec(rawWeightStr);
+        if (wm) {
+          var wVal = parseFloat(String(wm[1]).replace(/,/g, ''));
+          var wUnit = String(wm[2] || '').toLowerCase();
+          if (isFinite(wVal) && wVal > 0) {
+            if (/^oz|ounce/.test(wUnit)) parsedWeightG = Math.round(wVal * 28.3495);
+            else if (/^lb|pound/.test(wUnit)) parsedWeightG = Math.round(wVal * 453.592);
+            else if (/^kg|kilo/.test(wUnit)) parsedWeightG = Math.round(wVal * 1000);
+            else if (/^g|gram/.test(wUnit) || wVal >= 30) parsedWeightG = Math.round(wVal);
+          }
+        }
+      }
+    }
+    var hasBagEcon = (isFinite(+d.price) && +d.price > 0) || parsedWeightG > 0;
     if (hasBagEcon) {
       var curCode = String(d.currency || 'USD').toUpperCase();
       var econDisp = [
         isFinite(+d.price) && +d.price > 0 ? (currencySymbol(curCode) + (+d.price).toFixed(2) + ' ' + curCode) : '',
-        isFinite(+d.bag_weight_g) && +d.bag_weight_g > 0 ? (Math.round(+d.bag_weight_g) + ' g bag') : ''
+        parsedWeightG > 0 ? (parsedWeightG + ' g bag') : ''
       ].filter(Boolean).join(' / ');
       pushField('bag_econ', 'Bag Price & Weight (Auto-Syncs Cellar Ledger)', econDisp, {
         price: isFinite(+d.price) && +d.price > 0 ? +d.price : '',
-        bag_weight_g: isFinite(+d.bag_weight_g) && +d.bag_weight_g > 0 ? Math.round(+d.bag_weight_g) : '',
+        bag_weight_g: parsedWeightG > 0 ? parsedWeightG : '',
         currency: curCode,
         _syncPriceLedger: true
-      }, ['price', 'bag_weight_g', 'currency']);
+      }, ['price', 'bag_weight_g', 'bag_weight', 'weight', 'currency']);
     }
 
     var urls = Array.isArray(d.source_urls) ? d.source_urls : (Array.isArray(d.sources) ? d.sources : []);
@@ -3240,7 +3289,7 @@ if (typeof window !== 'undefined') {
         type: 'button',
         class: 'bt-ce-back-btn',
         onclick: closeOrBackFromCoffeeModal
-      }, S.iconEl('chevron-left', { size: 15 }), S.h('span', { text: '← Back' })),
+      }, S.iconEl('chevron-left', { size: 15 }), S.h('span', { text: 'Back' })),
       S.h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' },
         S.h('button', {
           type: 'button',
@@ -5331,9 +5380,14 @@ if (typeof window !== 'undefined') {
       var sameIdentity = !a.freshCoffeeMode && String(c.id || '').trim() && (nextCoffeeSig === loadedSig || nextCoffeeSig === initialCoffeeSig);
       if (!sameIdentity) {
         c.id = 'cf_' + Date.now();
+        c.pendingNextRecipe = null;
         a.attempt = 0;
         a.recipeLocked = false;
         a.dialNote = null;
+        if (a.brew) {
+          a.brew.dialAdaptation = null;
+          a.brew._savedDialedMethod = '';
+        }
       }
       c._loadedCoffeeSig = nextCoffeeSig;
       initialCoffeeSig = nextCoffeeSig;
@@ -5344,11 +5398,19 @@ if (typeof window !== 'undefined') {
         a.brew.actualFromTimer = false;
         a.brew.measuredBeverageG = null;
       }
+      var keepAdaptedClosedLoop = sameIdentity && !a.recipeLocked && !!(
+        (a.brew && a.brew.dialAdaptation && a.brew.dialAdaptation.adapted && !a.brew.dialAdaptation.locked) ||
+        (c && c.pendingNextRecipe && !c.pendingNextRecipe.locked)
+      );
       try {
         if (typeof window !== 'undefined' && window.BTBrewStudio) {
           if (typeof window.BTBrewStudio.resetTimerSession === 'function') window.BTBrewStudio.resetTimerSession();
           if (!a.recipeLocked && typeof window.BTBrewStudio.synthesizeForApp === 'function') {
-            window.BTBrewStudio.synthesizeForApp(a, (a.brew && a.brew.method) || 'v60', { force: true });
+            window.BTBrewStudio.synthesizeForApp(
+              a,
+              (a.brew && a.brew.method) || 'v60',
+              keepAdaptedClosedLoop ? { preserveExisting: true, preserveBatch: true } : { force: true }
+            );
           }
         }
         if (typeof window !== 'undefined' && window.BTTasteStep && typeof window.BTTasteStep.resetSession === 'function') {
@@ -6876,7 +6938,7 @@ if (typeof window !== 'undefined') {
           type: 'button',
           class: 'bt-ce-back-btn',
           onclick: closeOrBackFromCoffeeModal
-        }, S.iconEl('chevron-left', { size: 15 }), S.h('span', { text: '← Back' })),
+        }, S.iconEl('chevron-left', { size: 15 }), S.h('span', { text: 'Back' })),
         S.h('button', {
           type: 'button',
           class: 'bt-ce-chip is-compact is-active',
@@ -7036,7 +7098,7 @@ if (typeof window !== 'undefined') {
             style: '--bag-roast-col:' + rCol
           },
             S.h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap' },
-              S.h('div', { style: 'min-width:0;flex:1' },
+              S.h('div', { style: 'min-width:0;flex:1 1 220px' },
                 S.h('div', { class: 'bt-ce-bag-roaster', text: rec.roaster || 'Saved Coffee' }),
                 S.h('div', { class: 'bt-ce-bag-name', style: 'font-size:15px', text: rec.name || 'Unnamed Coffee' }),
                 rowChips.length ? S.h('div', { style: 'display:flex;flex-wrap:wrap;gap:4px;margin-top:4px' }, rowChips) : null,
@@ -7148,7 +7210,7 @@ if (typeof window !== 'undefined') {
         type: 'button',
         class: 'bt-ce-back-btn',
         onclick: closeOrBackFromCoffeeModal
-      }, S.iconEl('chevron-left', { size: 15 }), S.h('span', { text: '← Back' })),
+      }, S.iconEl('chevron-left', { size: 15 }), S.h('span', { text: 'Back' })),
       [
         ['bt-fpart-1', '1. Origin Terroir'],
         ['bt-fpart-2', '2. Botany & Genetics'],

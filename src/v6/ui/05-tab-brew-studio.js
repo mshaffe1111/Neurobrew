@@ -1643,7 +1643,12 @@
     if (origTxt) geoParts.push(origTxt);
     if (regTxt && origTxt.toLowerCase().indexOf(regTxt.toLowerCase()) < 0) geoParts.push(regTxt);
     var geoStr = geoParts.join(', ');
-    if (elevStr) geoStr = geoStr ? (geoStr + ' ' + elevStr) : elevStr;
+    var rawElevDigits = elevNum ? String(elevNum) : '';
+    var geoAlreadyHasElev = !!(elevStr && geoStr && (
+      geoStr.toLowerCase().indexOf(elevStr.toLowerCase()) >= 0 ||
+      (rawElevDigits && new RegExp('\\b' + rawElevDigits.replace(/(\d)(?=(\d{3})+$)/g, '$1,?') + '\\s*(?:m|masl)\\b', 'i').test(geoStr))
+    ));
+    if (elevStr && !geoAlreadyHasElev) geoStr = geoStr ? (geoStr + ' ' + elevStr) : elevStr;
     if (geoStr) parts.push(geoStr);
     if (_isCleanCoffeeVal(coffee.varietal)) parts.push(String(coffee.varietal).trim());
     return parts.join(' \u00B7 ');
@@ -1781,13 +1786,14 @@
     var core = (typeof window !== 'undefined' && window.BTCoreV6) ? window.BTCoreV6 : null;
     var histObjs = getHistoryObjsSafe();
 
+    var ignoreHist = !!opts.ignoreHistory;
     var syn = null;
     if (core && typeof core.synthesizeRecipe === 'function') {
       try {
         syn = core.synthesizeRecipe({
           bean: a.coffee,
           coffee: a.coffee,
-          history: histObjs,
+          history: ignoreHist ? [] : histObjs,
           method: mObj.key,
           methodKey: mObj.key,
           style: activeStyle,
@@ -1795,11 +1801,14 @@
           filterId: a.brew.filterId || mObj.defaultFilterId,
           altitudeM: altM,
           water: waterCfg,
-          ratio: (keepBatch && a.brew.ratio > 0) ? +a.brew.ratio : (smObj && smObj.ratio ? smObj.ratio : undefined),
+          ratio: (keepBatch && a.brew.ratio > 0) ? +a.brew.ratio : (ignoreHist && smObj && smObj.ratio ? smObj.ratio : undefined),
           doseG: (keepBatch && a.brew.dose > 0) ? +a.brew.dose : undefined,
           waterG: (keepBatch && a.brew.water > 0) ? +a.brew.water : undefined,
-          tempC: (preserveParams && a.brew.tempC > 0) ? +a.brew.tempC : (smObj && smObj.tempC != null ? smObj.tempC : undefined),
-          d50Um: (preserveParams && a.brew.grindUm > 0) ? +a.brew.grindUm : (smObj && smObj.d50Um ? smObj.d50Um : undefined),
+          tempC: (preserveParams && a.brew.tempC > 0) ? +a.brew.tempC : (ignoreHist && smObj && smObj.tempC != null ? smObj.tempC : undefined),
+          d50Um: (preserveParams && a.brew.grindUm > 0) ? +a.brew.grindUm : (ignoreHist && smObj && smObj.d50Um ? smObj.d50Um : undefined),
+          preserveRecipeParams: preserveParams ? true : undefined,
+          skipHistoryAdapt: ignoreHist ? true : undefined,
+          ignoreLock: !!opts.ignoreLock,
           calib: a.prefs && (a.prefs.pocketMicronCalib || a.prefs.calib),
           immersionBasis: (a.prefs && a.prefs.immersionBasis) || 'liang'
         });
@@ -1812,17 +1821,18 @@
       var synWater = +(syn.waterG || syn.water || Math.round(synDose * synRatio));
       var synTempC = syn.kettleTempC != null ? +syn.kettleTempC : (syn.tempC != null ? +syn.tempC : 94);
       var synUm = +(syn.d50Um || syn.grindUm || mObj.d50AnchorUm || 550);
-      if (smObj && smObj.d50Mult && !preserveParams) {
+      var isZeroHistSyn = !syn.dialAdaptation || (!syn.dialAdaptation.adapted && !syn.dialAdaptation.locked);
+      if (smObj && smObj.d50Mult && !preserveParams && isZeroHistSyn) {
         synUm = Math.round((synUm * smObj.d50Mult) / 5) * 5;
       }
-      if (smObj && smObj.iced && !preserveParams) {
+      if (smObj && smObj.iced && !preserveParams && isZeroHistSyn) {
         synUm = Math.max(200, Math.round((synUm * 0.91) / 5) * 5);
       }
-      /* Apply retail filter umMult if selected */
+      /* Apply retail filter umMult if selected (only on 0-history synthesis) */
       if (typeof window !== 'undefined' && typeof window.filterV6For === 'function' && (a.brew.filter || a.brew.filterId)) {
         try {
           var fV6 = window.filterV6For(a.brew.filter || a.brew.filterId, mObj.key);
-          if (fV6 && fV6.umMult && fV6.umMult !== 1 && !preserveParams) {
+          if (fV6 && fV6.umMult && fV6.umMult !== 1 && !preserveParams && isZeroHistSyn) {
             synUm = Math.round((synUm * fV6.umMult) / 5) * 5;
           }
         } catch (_) {}
@@ -1836,8 +1846,15 @@
       a.brew.baseSynthUm = (preserveParams && a.brew.grindUm > 0) ? +a.brew.grindUm : synUm;
       a.brew.grindUm = a.brew.baseSynthUm;
       a.brew.grind_um = a.brew.grindUm;
-      if (syn.dialAdaptation) a.brew.dialAdaptation = syn.dialAdaptation;
-      else if (opts.force) a.brew.dialAdaptation = null;
+      if (syn.agitation && !preserveParams) a.brew.agitation = syn.agitation;
+      if (syn.dialAdaptation && !ignoreHist) {
+        a.brew.dialAdaptation = syn.dialAdaptation;
+        a.brew._savedDialedMethod = mObj.key;
+      } else if (ignoreHist && opts.force) {
+        a.brew.dialAdaptation = null;
+      } else if (opts.force && (!a.brew.dialAdaptation || a.brew._savedDialedMethod !== mObj.key)) {
+        a.brew.dialAdaptation = null;
+      }
     } else {
       var rFallback = (keepBatch && a.brew.ratio > 0) ? +a.brew.ratio : ((smObj && smObj.ratio) || mObj.ratio || 16.5);
       var dFallback = (keepBatch && a.brew.dose > 0) ? +a.brew.dose : (mObj.dose || (mObj.outRatio ? 18 : 15));
@@ -1856,7 +1873,9 @@
       a.brew.baseSynthUm = a.brew.grindUm;
     }
 
-    if (opts.force) a.brew._savedDialedMethod = '';
+    if (opts.force && (!a.brew.dialAdaptation || ignoreHist || a.brew._savedDialedMethod !== mObj.key)) {
+      a.brew._savedDialedMethod = '';
+    }
     var gm = mapGrinderClicks(a.brew.grindUm, gKey, mObj.key, a);
     a.brew.grind_setting = gm.short;
     if (!opts.preserveExisting && !opts.preserveBatch) a.brew.customizedNote = '';
@@ -1906,6 +1925,9 @@
           ratio: isIced ? +(hotPourG / doseG).toFixed(2) : ratio,
           tempC: tempC,
           d50Um: um,
+          agitation: a.brew.agitation || undefined,
+          preserveRecipeParams: true,
+          skipHistoryAdapt: true,
           grinderKey: gKey,
           filterId: a.brew.filterId || mObj.defaultFilterId,
           water: waterCfg,
@@ -2115,9 +2137,9 @@
     var c = a.coffee || {};
     var payload = {
       v: 6,
-      n: String(c.name || 'Specialty Coffee').slice(0, 40),
-      r: String(c.roaster || '').slice(0, 32),
-      o: String(c.origin || '').slice(0, 24),
+      n: String(c.name || 'Specialty Coffee').slice(0, 96),
+      r: String(c.roaster || '').slice(0, 64),
+      o: String(c.origin || '').slice(0, 48),
       p: String(c.process || 'washed').slice(0, 18),
       rl: String(c.roast || 'medium-light').slice(0, 16),
       m: rec.method.key,
@@ -2790,16 +2812,34 @@
 
     function selectBrewerMethod(m) {
       var canonKey = m.canonicalKey || m.key;
+      var sameCanon = (a.brew.method === canonKey) && ((a.brew.methodVariant || '') === (m.canonicalKey ? m.key : ''));
+      var hasActiveDial = sameCanon && !!(
+        isRecipeLockedFor(a, canonKey) ||
+        (a.brew.dialAdaptation && a.brew.dialAdaptation.adapted) ||
+        (a.coffee && a.coffee.pendingNextRecipe && (!a.coffee.pendingNextRecipe.methodKey || String(a.coffee.pendingNextRecipe.methodKey).toLowerCase() === canonKey))
+      );
       a.brew.method = canonKey;
       a.brew.methodVariant = m.canonicalKey ? m.key : '';
-      a.brew.style = m.defaultStyle || '';
-      var compatF = getCompatibleFilters(canonKey);
-      if (compatF.length) {
-        a.brew.filter = compatF[0].name;
-        a.brew.filterId = compatF[0].id;
+      if (!sameCanon) {
+        a.brew.style = m.defaultStyle || '';
+        var compatF = getCompatibleFilters(canonKey);
+        if (compatF.length) {
+          a.brew.filter = compatF[0].name;
+          a.brew.filterId = compatF[0].id;
+        }
+        if (a.brew) {
+          a.brew.dialAdaptation = null;
+          a.brew._savedDialedMethod = '';
+        }
+      } else if (!hasActiveDial && !a.brew.style) {
+        a.brew.style = m.defaultStyle || '';
       }
-      /* Fix 05:1786 — synthesize fresh science recipe unless locked */
-      synthesizeScienceIntoApp(a, canonKey, { force: !isRecipeLockedFor(a, canonKey) });
+      /* Fix 05:1786 — preserve active closed-loop/locked dial on same-brewer tap; synthesize fresh/history-adapted recipe otherwise */
+      if (hasActiveDial) {
+        synthesizeScienceIntoApp(a, canonKey, { preserveExisting: true, preserveBatch: true, keepFilter: true });
+      } else {
+        synthesizeScienceIntoApp(a, canonKey, { force: !isRecipeLockedFor(a, canonKey) });
+      }
       haptic('snap');
       saveDraft();
       rerender();
@@ -4195,9 +4235,10 @@
 
     var step3CoffeeSummary = formatCoffeeAttrSummary(a.coffee);
     stageEl.appendChild(dom('div', { class: 'bt-step-context-strip' },
-      dom('div', { style: 'min-width:0;display:flex;flex-direction:column;gap:2px;flex:1' },
+      dom('div', { style: 'min-width:0;display:flex;flex-direction:column;gap:2px;flex:1 1 180px' },
         dom('span', {
           class: 'bt-step-context-copy',
+          style: 'flex:0 0 auto;min-width:0',
           text: (rec.grinder.short || rec.grinder.name) + ' · ' + (a.brew.filter || 'Standard Filter') + ' · ' + (step3Water.short || step3Water.label)
         }),
         step3CoffeeSummary ? dom('span', {
@@ -4340,9 +4381,9 @@
         function () { openSheet('tune-recipe', { tab: 'batch' }, { title: 'Tune Dose, Water, Ratio & Units', detent: 'full' }); }
       ),
 
-      /* Tile 4: GRIND SETTING */
+      /* Tile 4: GRIND */
       makeHeroRecipeTile(
-        'Grind Setting',
+        'Grind',
         'grind',
         dom('b', { class: 'bt-spec-primary is-compact', text: grindPrimary }),
         grindSecondary,
@@ -4415,7 +4456,7 @@
           text: sp.label,
           onclick: function () {
             a.brew.style = sp.id;
-            synthesizeScienceIntoApp(a, rec.method.key, { force: true });
+            synthesizeScienceIntoApp(a, rec.method.key, { force: true, ignoreHistory: true });
             haptic('tick');
             saveDraft();
             rerender();
@@ -4667,11 +4708,13 @@
     stopped: false,
     actualStoppedS: null,
     elapsedS: 0,
+    startedAtMs: 0,
     lastTs: 0,
     rafId: 0,
     bleUnsub: null,
     scaleConnected: false,
     realScaleConnected: false,
+    scaleReconnecting: false,
     hadRealScaleWeight: false,
     pressureConnected: false,
     simOn: false,
@@ -4779,7 +4822,11 @@
   }
 
   function stopActiveTimerSession(resetClock) {
+    if (_timerSession.running && _timerSession.startedAtMs > 0) {
+      _timerSession.elapsedS = Math.max(_timerSession.elapsedS || 0, (Date.now() - _timerSession.startedAtMs) / 1000);
+    }
     _timerSession.running = false;
+    _timerSession.startedAtMs = 0;
     if (_timerSession.rafId) {
       _caf(_timerSession.rafId);
       _timerSession.rafId = 0;
@@ -4793,6 +4840,8 @@
       _timerSession.stopped = false;
       _timerSession.actualStoppedS = null;
       _timerSession.elapsedS = 0;
+      _timerSession.startedAtMs = 0;
+      _timerSession.scaleReconnecting = false;
       _timerSession.lastStepIdx = -1;
       _timerSession.lastPipKey = '';
       _timerSession.midSpoken = {};
@@ -4908,6 +4957,7 @@
       actualSecs: secs,
       out_g: finalYield,
       yield_g: finalYield,
+      agitation: (a.brew && a.brew.agitation) || 'standard',
       attempt: a.attempt,
       waves3: Object.assign({}, _timerSession.waves)
     };
@@ -4928,6 +4978,10 @@
     if (_activeStep4BleEvtCleanup) {
       try { _activeStep4BleEvtCleanup(); } catch (e) {}
       _activeStep4BleEvtCleanup = null;
+    }
+    if (_timerSession.rafId) {
+      _caf(_timerSession.rafId);
+      _timerSession.rafId = 0;
     }
     ensureBrewState(a);
     var rec = runCurrentSynthesis(a);
@@ -4953,8 +5007,10 @@
     var initSim = !!initBle.simulatorActive;
     var initSc = (initBle.slots && initBle.slots.scale) || initBle.scale || {};
     var initRealHw = !initSim && !!(initSc.connected || initBle.scaleConnected);
+    var initReconn = !initSim && !initRealHw && !!(initBle.scaleReconnecting || initSc.reconnecting);
     _timerSession.realScaleConnected = initRealHw;
-    _timerSession.scaleConnected = initRealHw || initSim;
+    _timerSession.scaleReconnecting = initReconn;
+    _timerSession.scaleConnected = initRealHw || initSim || initReconn;
     if (initRealHw) {
       var initW = typeof initBle.weightG === 'number' && isFinite(initBle.weightG)
         ? Math.max(0, initBle.weightG)
@@ -5804,6 +5860,7 @@
             _timerSession.stopped = false;
             _timerSession.actualStoppedS = null;
             _timerSession.elapsedS = st.t;
+            if (_timerSession.running) _timerSession.startedAtMs = Date.now() - Math.round(st.t * 1000);
             _timerSession.lastStepIdx = idx - 1;
             _timerSession.lastSpeechAtS = -99;
             triggerStepCuesIfNeeded(idx);
@@ -6047,7 +6104,8 @@
       var curSt = steps[curIdx] || { title: 'Brewing', human: 'Pour steadily.', targetG: rec.hotPourG, t: 0, endS: totalTargetS };
       var nextSt = steps[curIdx + 1] || null;
       var ghostG = computeGhostTargetAt(elS, rec, bestLockedBrew);
-      var hasScale = _timerSession.realScaleConnected || _timerSession.simOn;
+      var isReconnectingScale = !!_timerSession.scaleReconnecting && !_timerSession.realScaleConnected && !_timerSession.simOn;
+      var hasScale = _timerSession.realScaleConnected || _timerSession.simOn || isReconnectingScale;
       var shownWeight = hasScale ? _timerSession.liveWeightG : ghostG;
       var stepFlowInfo = computeTargetStepFlow(elS, curSt, curIdx, steps, rec, totalTargetS);
       var shownFlowGs = 0;
@@ -6056,6 +6114,9 @@
       if (_timerSession.stopped) {
         shownFlowGs = 0;
         shownFlowLbl = '0.0 g/s · Brew Stopped';
+      } else if (isReconnectingScale) {
+        shownFlowGs = 0;
+        shownFlowLbl = 'Reconnecting... · ' + (_timerSession.liveWeightG || 0).toFixed(0) + ' g held';
       } else if (hasScale) {
         shownFlowGs = +Math.max(0, _timerSession.flowGs || 0).toFixed(1);
         var modeTag = (_timerSession.simOn && !_timerSession.realScaleConnected) ? 'Sim ' : '';
@@ -6121,8 +6182,12 @@
         var liveRoundG = Math.round(_timerSession.liveWeightG || 0);
         var diffScaleG = liveRoundG - ghostRoundG;
         var diffLbl = Math.abs(diffScaleG) <= 4 ? 'on pace' : (diffScaleG > 0 ? ('+' + diffScaleG + ' g') : (diffScaleG + ' g'));
-        approxGramsKickerTxt.textContent = (_timerSession.realScaleConnected ? 'BLE SCALE' : 'DEMO SCALE') + ' VS PACER';
-        approxGramsPctEl.textContent = 'Scale ' + liveRoundG + ' g vs ~' + ghostRoundG + ' g (' + diffLbl + ')';
+        approxGramsKickerTxt.textContent = isReconnectingScale
+          ? 'BLE SCALE RECONNECTING...'
+          : ((_timerSession.realScaleConnected ? 'BLE SCALE' : 'DEMO SCALE') + ' VS PACER');
+        approxGramsPctEl.textContent = isReconnectingScale
+          ? ('Reconnecting... (' + liveRoundG + ' g held)')
+          : ('Scale ' + liveRoundG + ' g vs ~' + ghostRoundG + ' g (' + diffLbl + ')');
         approxGramsScalePinEl.hidden = false;
         approxGramsScalePinEl.style.left = Math.max(0, Math.min(100, (liveRoundG / totalG) * 100)).toFixed(1) + '%';
       } else {
@@ -6232,21 +6297,23 @@
         pressurePillTxt.textContent = (+_timerSession.pressureBar || 0).toFixed(1) + ' bar';
       }
 
-      bleScaleBtn.className = 'bt-demo-scale-btn' + (_timerSession.realScaleConnected ? ' is-active' : '');
-      bleScaleBtn.setAttribute('aria-pressed', String(!!_timerSession.realScaleConnected));
+      bleScaleBtn.className = 'bt-demo-scale-btn' + ((_timerSession.realScaleConnected || isReconnectingScale) ? ' is-active' : '');
+      bleScaleBtn.setAttribute('aria-pressed', String(!!(_timerSession.realScaleConnected || isReconnectingScale)));
       bleScaleBtn.style.cssText = _timerSession.realScaleConnected
         ? 'background:var(--good-bg);color:var(--good);border-color:rgba(24,96,62,0.32);font-weight:800'
-        : '';
-      bleScaleTxt.textContent = _timerSession.realScaleConnected
-        ? ('Scale Live ' + (_timerSession.liveWeightG || 0).toFixed(1) + ' g')
-        : 'Pair Scale';
+        : (isReconnectingScale ? 'background:var(--warn-bg);color:var(--warn);border-color:rgba(217,139,38,0.38);font-weight:800' : '');
+      bleScaleTxt.textContent = isReconnectingScale
+        ? ('Reconnecting... (' + (_timerSession.liveWeightG || 0).toFixed(1) + ' g)')
+        : (_timerSession.realScaleConnected
+          ? ('Scale Live ' + (_timerSession.liveWeightG || 0).toFixed(1) + ' g')
+          : 'Pair Scale');
 
       var showTareNow = !!(_timerSession.realScaleConnected || _timerSession.simOn);
       tareScaleBtn.hidden = !showTareNow;
       tareScaleBtn.style.display = showTareNow ? 'inline-flex' : 'none';
 
-      demoScaleBtn.hidden = !!_timerSession.realScaleConnected;
-      demoScaleBtn.style.display = _timerSession.realScaleConnected ? 'none' : 'inline-flex';
+      demoScaleBtn.hidden = !!(_timerSession.realScaleConnected || isReconnectingScale);
+      demoScaleBtn.style.display = (_timerSession.realScaleConnected || isReconnectingScale) ? 'none' : 'inline-flex';
       demoScaleBtn.className = 'bt-demo-scale-btn' + (_timerSession.simOn ? ' is-active' : '');
       demoScaleBtn.setAttribute('aria-pressed', String(!!_timerSession.simOn));
       demoScaleTxt.textContent = _timerSession.realScaleConnected
@@ -6271,12 +6338,27 @@
     function tickRaf(now) {
       if (!_timerSession.running) return;
       if (!container.isConnected) {
-        stopActiveTimerSession(false);
+        /* Leaving Brew tab detaches the DOM container; stop ONLY the DOM rAF & detached listener so running + startedAtMs persist! */
+        _timerSession.rafId = 0;
+        if (_timerSession.bleUnsub) {
+          try { _timerSession.bleUnsub(); } catch (_) {}
+          _timerSession.bleUnsub = null;
+        }
         return;
       }
       var dt = _timerSession.lastTs ? Math.min(0.25, Math.max(0.008, (now - _timerSession.lastTs) / 1000)) : 0.016;
       _timerSession.lastTs = now;
-      _timerSession.elapsedS += dt;
+      if (_timerSession.startedAtMs > 0) {
+        var wallElapsed = Math.max(0, (Date.now() - _timerSession.startedAtMs) / 1000);
+        if (wallElapsed >= _timerSession.elapsedS) {
+          dt = Math.max(0.008, Math.min(0.25, wallElapsed - _timerSession.elapsedS || dt));
+          _timerSession.elapsedS = wallElapsed;
+        } else {
+          _timerSession.elapsedS += dt;
+        }
+      } else {
+        _timerSession.elapsedS += dt;
+      }
 
       if (_timerSession.simOn && !_timerSession.realScaleConnected) {
         var bleTick = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
@@ -6404,9 +6486,14 @@
           _timerSession.emaFlowGs = 0;
           triggerStepCuesIfNeeded(0);
         }
+        _timerSession.startedAtMs = Date.now() - Math.round((_timerSession.elapsedS || 0) * 1000);
         _timerSession.lastTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
         _timerSession.rafId = _raf(tickRaf);
       } else {
+        if (_timerSession.startedAtMs > 0) {
+          _timerSession.elapsedS = Math.max(_timerSession.elapsedS || 0, (Date.now() - _timerSession.startedAtMs) / 1000);
+        }
+        _timerSession.startedAtMs = 0;
         _timerSession.flowGs = 0;
         if (_timerSession.rafId) {
           _caf(_timerSession.rafId);
@@ -6461,8 +6548,10 @@
           if (isSimPacket && (_timerSession.stopped || !_timerSession.running)) return;
           var sc = (st.slots && st.slots.scale) || st.scale || st;
           var isRealHw = !isSimPacket && !!(sc.connected || st.scaleConnected);
+          var isReconn = !isSimPacket && !isRealHw && !!(st.scaleReconnecting || sc.reconnecting);
           _timerSession.realScaleConnected = isRealHw;
-          _timerSession.scaleConnected = isRealHw || isSimPacket;
+          _timerSession.scaleReconnecting = isReconn;
+          _timerSession.scaleConnected = isRealHw || isSimPacket || isReconn;
           if (isRealHw) _timerSession.simOn = false;
 
           var w = typeof st.weightG === 'number'
@@ -6578,6 +6667,9 @@
       };
     }
 
+    if (_timerSession.running && _timerSession.startedAtMs > 0) {
+      _timerSession.elapsedS = Math.max(_timerSession.elapsedS || 0, (Date.now() - _timerSession.startedAtMs) / 1000);
+    }
     paintDynamicStickyBar();
     syncTimerDom();
     if (_timerSession.running && !_timerSession.rafId) {
@@ -7004,7 +7096,10 @@
       host.appendChild(dom('div', { class: 'bt-qr-card-frame' },
         dom('span', { class: 'bt-badge-v62 is-sci', text: getExperienceLens() === 'scientist' ? 'ISO Reed-Solomon QR · Darcy-D32 Ready' : 'Instant Recipe QR · Auto-Matches Any Grinder' }),
         qrBox,
-        dom('b', { style: 'font-size:0.95rem', text: bundle.summary }),
+        dom('b', {
+          style: 'font-size:0.95rem;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;word-break:break-word',
+          text: bundle.summary
+        }),
         dom('input', {
           type: 'text',
           class: 'bt-input-v62 bt-num',

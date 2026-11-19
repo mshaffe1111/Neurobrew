@@ -1748,6 +1748,22 @@
     };
   }
 
+  function canParseAcaiaSubEvents(b, pos, payloadEnd){
+    if (pos === payloadEnd) return true;
+    if (pos > payloadEnd) return false;
+    const ev = b[pos];
+    if (ev === 0x05){
+      const try6 = pos + 7 <= payloadEnd && b[pos + 5] <= 6 && canParseAcaiaSubEvents(b, pos + 7, payloadEnd);
+      if (try6) return true;
+      return pos + 6 <= payloadEnd && b[pos + 4] <= 6 && canParseAcaiaSubEvents(b, pos + 6, payloadEnd);
+    }
+    if (ev === 0x06 && pos + 2 <= payloadEnd) return canParseAcaiaSubEvents(b, pos + 2, payloadEnd);
+    if (ev === 0x07 && pos + 4 <= payloadEnd) return canParseAcaiaSubEvents(b, pos + 4, payloadEnd);
+    if (ev === 0x08 && pos + 2 <= payloadEnd) return canParseAcaiaSubEvents(b, pos + 2, payloadEnd);
+    if (ev === 0x0B && pos + 3 <= payloadEnd) return canParseAcaiaSubEvents(b, pos + 3, payloadEnd);
+    return false;
+  }
+
   function decodeAcaiaFrame(frame){
     const b = toU8(frame);
     if (b.length < 6 || b[0] !== 0xEF || b[1] !== 0xDD) return null;
@@ -1799,14 +1815,22 @@
       let idx = 4;
       while (idx < payloadEnd){
         const ev = b[idx];
-        if (ev === 0x05 && idx + 7 <= payloadEnd){
-          const w6 = decodeAcaiaWeightSubEvent(b.subarray(idx + 1, idx + 7));
-          if (w6) Object.assign(out, { packetType:'weight' }, w6);
-          idx += 7;
-        } else if (ev === 0x05 && idx + 6 <= payloadEnd){
-          const w5b = decodeAcaiaWeightSubEvent(b.subarray(idx + 1, idx + 6));
-          if (w5b) Object.assign(out, { packetType:'weight' }, w5b);
-          idx += 6;
+        if (ev === 0x05){
+          const can6 = idx + 7 <= payloadEnd && b[idx + 5] <= 6 && canParseAcaiaSubEvents(b, idx + 7, payloadEnd);
+          const can5 = idx + 6 <= payloadEnd && b[idx + 4] <= 6 && canParseAcaiaSubEvents(b, idx + 6, payloadEnd);
+          const use6 = can6 && (!can5 || (b[idx + 4] === 0 && (b[idx + 6] & 0xF0) === 0));
+          const use5 = !use6 && (can5 || (!can6 && idx + 6 <= payloadEnd && b[idx + 4] <= 6 && idx + 7 > payloadEnd));
+          if (use6 || (!use5 && idx + 7 <= payloadEnd && b[idx + 5] <= 6 && (b[idx + 6] & 0xFC) === 0)){
+            const w6 = decodeAcaiaWeightSubEvent(b.subarray(idx + 1, idx + 7));
+            if (w6) Object.assign(out, { packetType:'weight' }, w6);
+            idx += 7;
+          } else if (idx + 6 <= payloadEnd){
+            const w5b = decodeAcaiaWeightSubEvent(b.subarray(idx + 1, idx + 6));
+            if (w5b) Object.assign(out, { packetType:'weight' }, w5b);
+            idx += 6;
+          } else {
+            break;
+          }
         } else if (ev === 0x06 && idx + 2 <= payloadEnd){
           out.batteryPct = b[idx + 1] & 0x7F;
           idx += 2;
@@ -1863,7 +1887,9 @@
           const lenByte = cur[3];
           const rawCands = msgType === 0x08
             ? [lenByte + 4, lenByte + 5, lenByte + 6, 7, 8, 9, 10]
-            : [lenByte + 4, lenByte + 5, lenByte + 6];
+            : (msgType === 0x07
+              ? [lenByte + 4, lenByte + 5, lenByte + 6, 11, 12, 13, 14]
+              : [lenByte + 4, lenByte + 5, lenByte + 6]);
           const cands = [];
           for (let ci = 0; ci < rawCands.length; ci++){
             const cl = rawCands[ci];
@@ -2130,7 +2156,8 @@
         !(b[0] === 0xDF && b[1] === 0xDF) &&
         !(b[0] === 0x01 && b[1] === 0x02) &&
         !(b[0] === 0x03 && (b[1] === 0x0B || b[1] === 0xCE || b[1] === 0xCA || b[1] === 0x0A || b[1] === 0xAA)) &&
-        b[0] !== 0x58 && b[0] !== 0xAA && b[0] !== 0xFA && b[0] !== 0xFB && b[0] !== 0x55){
+        b[0] !== 0x58 && b[0] !== 0xAA && b[0] !== 0xFA && b[0] !== 0xFB && b[0] !== 0x55 &&
+        !isPrintableAsciiScaleFrame(b)){
       const w1 = readTimemoreWeightLE(dv, b, 1);
       if (!Number.isFinite(w1) || Math.abs(w1) > 10000) return null;
       const w2 = b.length >= 9 ? readTimemoreWeightLE(dv, b, 5) : NaN;
@@ -2152,14 +2179,26 @@
   function decodeFelicita(input){
     const b = toU8(input);
     if (b.length < 9 || b[0] !== 0x01 || b[1] !== 0x02) return null;
-    const sign = (b[2] === 0x2D) ? -1 : 1;
+    let sign = (b[2] === 0x2D) ? -1 : 1;
     let digits = '';
+    let seenDigit = false;
+    let seenInnerMinus = false;
     for (let i = 3; i < 9; i++){
       const ch = b[i];
-      if (ch === 0x20) digits += '0';
-      else if (ch >= 0x30 && ch <= 0x39) digits += String.fromCharCode(ch);
-      else return null;
+      if (ch === 0x20){
+        digits += '0';
+      } else if (ch === 0x2D && !seenDigit && !seenInnerMinus && b[2] !== 0x2D){
+        sign = -1;
+        seenInnerMinus = true;
+        digits += '0';
+      } else if (ch >= 0x30 && ch <= 0x39){
+        seenDigit = true;
+        digits += String.fromCharCode(ch);
+      } else {
+        return null;
+      }
     }
+    if (!seenDigit) return null;
     const raw = parseInt(digits, 10);
     if (!Number.isFinite(raw)) return null;
 
@@ -2313,7 +2352,7 @@
     };
   }
 
-  /* --- 9. Eureka Precisa / Brewista II / Acaia-Clone OEM (`CFS-9002`, `0xAA 0x09 0x41`) --- */
+  /* --- 9. Eureka Precisa / Brewista II / Acaia-Clone OEM (`CFS-9002`, `KC200`, `0xAA 0x09 0x41`) --- */
   function decodeEureka(input){
     const b = toU8(input);
     if (b.length < 8 || b[0] !== 0xAA) return null;
@@ -2322,12 +2361,15 @@
       const timeS = b[4] | (b[5] << 8);
       const sign = (b[6] === 1 || b[6] === 0x2D || (b[6] & 0x80) !== 0) ? -1 : 1;
       const rawW = b[7] | (b[8] << 8);
+      if (rawW > 50000) return null;
       const weightG = +(sign * (rawW / 10)).toFixed(1);
       const batteryPct = (b.length >= 11 && b[9] <= 100) ? b[9] : null;
       const lastIdx = b.length - 1;
       const ckXor = xorChecksum(b, lastIdx, 0);
       const ckBodyXor = xorChecksum(b, lastIdx, 2);
       const ckSum = sum8Checksum(b, lastIdx, 0);
+      const checksumValid = (b[lastIdx] === ckXor || b[lastIdx] === ckBodyXor || b[lastIdx] === ckSum);
+      if (!checksumValid) return null;
       return {
         brand: 'eureka',
         slot: 'scale',
@@ -2336,17 +2378,20 @@
         timeS: timeS,
         timerRunning: timerRunning,
         batteryPct: batteryPct,
-        checksumValid: (b[lastIdx] === ckXor || b[lastIdx] === ckBodyXor || b[lastIdx] === ckSum || b[lastIdx] !== undefined)
+        checksumValid: checksumValid
       };
     }
     if (b[1] === 0x09 && b[2] === 0x41 && b.length === 9){
       const timeS9 = b[3] * 60 + b[4];
       const sign9 = (b[5] === 1 || b[5] === 0x2D || (b[5] & 0x80) !== 0) ? -1 : 1;
       const rawW9 = (b[6] << 8) | b[7];
+      if (rawW9 > 50000) return null;
       const weightG9 = +(sign9 * (rawW9 / 10)).toFixed(1);
       const ckXor9 = xorChecksum(b, 8, 0);
       const ckBodyXor9 = xorChecksum(b, 8, 2);
       const ckSum9 = sum8Checksum(b, 8, 0);
+      const checksumValid9 = (b[8] === ckXor9 || b[8] === ckBodyXor9 || b[8] === ckSum9);
+      if (!checksumValid9) return null;
       return {
         brand: 'eureka',
         slot: 'scale',
@@ -2354,12 +2399,17 @@
         weightG: cleanZero(weightG9),
         timeS: timeS9,
         batteryPct: null,
-        checksumValid: (b[8] === ckXor9 || b[8] === ckBodyXor9 || b[8] === ckSum9 || b[8] !== undefined)
+        checksumValid: checksumValid9
       };
     }
     /* Compact 8-byte 0xAA OEM variant: [0xAA, status, sign, wHi, wLo, min, sec, xor] */
-    if (b.length >= 8){
-      const sign = (b[2] === 1 || b[2] === 0x2D) ? -1 : 1;
+    if (b.length >= 8 && !(b[1] === 0x09 && b[2] === 0x41)){
+      const ckXor8 = xorChecksum(b, 7, 0);
+      const ckBodyXor8 = xorChecksum(b, 7, 1);
+      const ckSum8 = sum8Checksum(b, 7, 0);
+      const checksumValid8 = (b[7] === ckXor8 || b[7] === ckBodyXor8 || b[7] === ckSum8);
+      if (!checksumValid8) return null;
+      const sign = (b[2] === 1 || b[2] === 0x2D || (b[2] & 0x80) !== 0) ? -1 : 1;
       const rawW = (b[3] << 8) | b[4];
       if (rawW > 50000) return null;
       const weightG = +(sign * (rawW / 10)).toFixed(1);
@@ -2368,7 +2418,8 @@
         slot: 'scale',
         packetType: 'weight',
         weightG: cleanZero(weightG),
-        stable: (b[1] & 0x01) !== 0
+        stable: (b[1] & 0x01) !== 0,
+        checksumValid: checksumValid8
       };
     }
     return null;
@@ -2942,12 +2993,10 @@
     /* Real Fellow Stagg EKG+ RX notifications: EF DD [type 0x00..0x03] ... */
     if (b[0] === 0xEF && b[1] === 0xDD && b.length >= 4 && b[2] <= 0x03){
       const rType = b[2];
-      const hasSeqPrefix = b.length >= 6 && (
-        (((b[3] + b[4]) & 0xFF) === b[5]) ||
-        ((rType === 0x02 || rType === 0x03) && b[3] < 15 && b[4] >= 15)
-      );
+      const hasSeqPrefix = b.length >= 6;
+      if (hasSeqPrefix && (((b[3] + b[4]) & 0xFF) !== b[5])) return null;
       const valByte = hasSeqPrefix ? b[4] : b[3];
-      const unitOrAux = hasSeqPrefix ? (b.length >= 6 ? b[5] : 0xFF) : (b.length >= 5 ? b[4] : 0xFF);
+      const unitOrAux = hasSeqPrefix ? (b.length >= 7 ? b[6] : 0xFF) : (b.length >= 5 ? b[4] : 0xFF);
 
       if (rType === 0x00){
         const lifted0 = valByte === 2 || valByte === 0xFF || unitOrAux === 2;
@@ -3042,6 +3091,110 @@
     return null;
   }
 
+  /* --- 18. Standard UART / NUS ASCII Text Scale (`ST,GS,  18.50 g\r\n`, `-12.4g`) --- */
+  function isPrintableAsciiScaleBytes(b){
+    if (!b || b.length < 2 || b.length > 64) return false;
+    for (let i = 0; i < b.length; i++){
+      const c = b[i];
+      if (!((c >= 0x20 && c <= 0x7E) || c === 0x0D || c === 0x0A || c === 0x09 || c === 0x00)){
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function asciiBytesToStr(b){
+    let s = '';
+    for (let i = 0; i < b.length; i++){
+      if (b[i] === 0x00) break;
+      s += String.fromCharCode(b[i]);
+    }
+    return s;
+  }
+
+  function decodeAsciiScale(input){
+    let rawStr = '';
+    if (typeof input === 'string'){
+      rawStr = input.trim();
+    } else {
+      const b = toU8(input);
+      if (!isPrintableAsciiScaleBytes(b)) return null;
+      rawStr = asciiBytesToStr(b).trim();
+    }
+    if (!rawStr || rawStr.length < 2 || !/[0-9]/.test(rawStr)) return null;
+    const m = rawStr.match(/^(?:(ST|US|SI|S|U)\s*,\s*(?:GS|NT|TR|PT)\s*,\s*)?(?:[A-Za-z]{1,4}\s*[:=]\s*)?([+-]?\s*\d+(?:\.\d+)?)\s*(kg|g|oz|lb|ml)?$/i);
+    if (!m) return null;
+    const numVal = Number(m[2].replace(/\s+/g, ''));
+    if (!Number.isFinite(numVal)) return null;
+    const unitRaw = m[3] ? m[3].toLowerCase() : 'g';
+    let weightG = numVal;
+    if (unitRaw === 'kg') weightG = numVal * 1000;
+    else if (unitRaw === 'oz') weightG = numVal * 28.3495231;
+    else if (unitRaw === 'lb') weightG = numVal * 453.59237;
+    if (Math.abs(weightG) > 50000) return null;
+    const stabToken = m[1] ? m[1].toUpperCase() : '';
+    const stable = (stabToken === 'ST' || stabToken === 'SI' || stabToken === 'S')
+      ? true
+      : ((stabToken === 'US' || stabToken === 'U') ? false : null);
+    const out = {
+      brand: 'ascii',
+      slot: 'scale',
+      packetType: 'weight',
+      weightG: cleanZero(+(weightG.toFixed(2))),
+      unit: unitRaw || 'g'
+    };
+    if (stable !== null) out.stable = stable;
+    return out;
+  }
+
+  function isPrintableAsciiScaleFrame(b){
+    return !!decodeAsciiScale(b);
+  }
+
+  function createAsciiStreamParser(){
+    const ring = createMtuRingBuffer(MAX_RING_BYTES);
+    return {
+      reset: function(){ ring.clear(); },
+      length: function(){ return ring.length(); },
+      push: function(chunk){
+        ring.append(chunk);
+        const results = [];
+        const buf = ring.peek();
+        if (!buf.length) return results;
+        let lastBreak = -1;
+        for (let i = 0; i < buf.length; i++){
+          if (buf[i] === 0x0A || buf[i] === 0x0D) lastBreak = i;
+        }
+        if (lastBreak >= 0){
+          const lineBytes = buf.subarray(0, lastBreak + 1);
+          const text = asciiBytesToStr(lineBytes);
+          const lines = text.split(/[\r\n]+/);
+          for (let li = 0; li < lines.length; li++){
+            const ln = lines[li].trim();
+            if (!ln) continue;
+            const parsed = decodeAsciiScale(ln);
+            if (parsed) results.push(parsed);
+          }
+          ring.consume(lastBreak + 1);
+          return results;
+        }
+        if (isPrintableAsciiScaleBytes(buf)){
+          const txt = asciiBytesToStr(buf).trim();
+          if (/[a-z]$/i.test(txt)){
+            const single = decodeAsciiScale(txt);
+            if (single){
+              results.push(single);
+              ring.clear();
+            }
+          }
+        } else {
+          ring.clear();
+        }
+        return results;
+      }
+    };
+  }
+
   /* ============================================================================
    * STREAM PARSERS & 0xFFF0 / 0x1820 MAGIC-BYTE AUTO-PROMOTION
    * ============================================================================ */
@@ -3093,9 +3246,21 @@
           } else if (targetMode === 'r2'){
             parsed = slice[2] === 0x04 ? decodeDiFluidOmni(slice) : decodeDiFluidR2(slice);
           } else {
-            if (slice[2] === 0x04) parsed = decodeDiFluidOmni(slice);
-            else if (slice[2] === 0x03 && dataLen >= 13) parsed = decodeDiFluidScale(slice);
-            else parsed = decodeDiFluidR2(slice) || decodeDiFluidScale(slice);
+            if (slice[2] === 0x04){
+              parsed = decodeDiFluidOmni(slice);
+            } else if (slice[2] === 0x03 && (slice[3] === 0x00 || slice[3] === 0x01) && dataLen >= 13){
+              parsed = decodeDiFluidScale(slice);
+            } else if (slice[2] === 0x03 && slice[3] === 0x02 && dataLen === 1){
+              parsed = decodeDiFluidScale(slice);
+            } else {
+              const r2Cand = decodeDiFluidR2(slice);
+              if (r2Cand && r2Cand.packetType !== 'ack' && !(slice[3] === 0x01 && r2Cand.packetType === 'status' && dataLen >= 4)){
+                parsed = r2Cand;
+              } else {
+                const scCand = decodeDiFluidScale(slice);
+                parsed = (scCand && scCand.packetType !== 'ack') ? scCand : (r2Cand || scCand);
+              }
+            }
           }
           if (parsed) results.push(parsed);
           ring.consume(frameLen);
@@ -3270,7 +3435,7 @@
     }
     if (b[0] === 0xFA || b[0] === 0xFB || b[0] === 0x55){
       if (decodeVaria(b)) return 'varia';
-      if (b.length < 5) return 'varia';
+      if (b.length < 5 && !(b[0] === 0x55 && isPrintableAsciiScaleBytes(b))) return 'varia';
     }
     if (b[0] === 0xAA){
       if ((b.length >= 3 && b[1] === 0x09 && b[2] === 0x41) || decodeEureka(b)) return 'eureka';
@@ -3281,11 +3446,17 @@
       }
       if ((b[1] === 0x0B || b[1] === 0xCE) && b.length >= 20) return 'bookoo';
       if ((b[1] === 0xCE || b[1] === 0xCA || b[1] === 0x0A || b[1] === 0xAA || b[1] === 0x0B) && (b.length === 7 || b.length === 10)){
-        return 'decent';
+        /* Prevent chunk 1 of a 20B Bookoo frame (0x03 0x0B/0xCE) from falsely locking onto Decent */
+        if (!(b.length === 10 && (b[1] === 0x0B || b[1] === 0xCE) && (b[6] === 0x2B || b[6] === 0x2D)) && decodeDecent(b, { strictXor: true })){
+          return 'decent';
+        }
       }
     }
     if (b[0] === 0x02 && (chr === UUID.BOOKOO_EM_NOTIFY || ctx.slot === 'pressure')){
       if (decodeBookooPressure(b)) return 'bookoo_pressure';
+    }
+    if (decodeAsciiScale(b) || (isPrintableAsciiScaleBytes(b) && /^(?:ST|US|SI)\s*,/i.test(asciiBytesToStr(b)))){
+      return 'ascii';
     }
     if (svc === UUID.WEIGHT_SIG_SVC && b.length >= 8 && (b[0] & 0x02) === 0){
       if (decodeTimemore(b)) return 'timemore';
@@ -3674,7 +3845,9 @@
       const nn = findChar(UUID.NUS_SVC, UUID.NUS_NOTIFY) || svcMap[UUID.NUS_SVC].chars[0];
       const nw = findChar(UUID.NUS_SVC, UUID.NUS_WRITE);
       if (nn){
-        const nusFam = /varia|aku|cube|mhw|exagram|wacaco/i.test(name) ? 'varia' : 'timemore';
+        let nusFam = 'timemore';
+        if (/varia|aku|cube|mhw|exagram|wacaco/i.test(name)) nusFam = 'varia';
+        else if (/uart|ascii|serial|ohaus|mettler/i.test(name)) nusFam = 'ascii';
         return { family:nusFam, variant:nusFam === 'timemore' ? 'osp' : '', slot:'scale', serviceUuid:UUID.NUS_SVC, notifyUuid:nn.uuid, writeUuid:nw ? nw.uuid : null, autoPromoteOnFirstFrame:true };
       }
     }
@@ -3744,6 +3917,7 @@
     const timemoreOspStream = createTimemoreOspStreamParser();
     const variaStream = createVariaStreamParser();
     const bookooStream = createBookooStreamParser();
+    const asciiStream = createAsciiStreamParser();
     let promoted = false;
 
     function decodeSingleByFamily(fam, u8){
@@ -3778,8 +3952,15 @@
         }
         const tm = decodeTimemore(u8);
         if (tm) return [tm];
-        /* Prevent u8.length >= 8 Timemore packets from falling through to decodeWeightSig (* 5.0 bug) */
-        if (u8.length < 8){
+        /* Prevent u8.length >= 8 Timemore or other non-SIG multi-chunk headers on 0xFFF0/NUS from falling through to decodeWeightSig */
+        const svcNormTm = normUuid(ctx.serviceUuid);
+        const canSigFallback = (!svcNormTm || svcNormTm === UUID.WEIGHT_SIG_SVC) &&
+          u8.length < 8 &&
+          u8[0] !== 0x03 && u8[0] !== 0xEF && u8[0] !== 0xDF && u8[0] !== 0xA5 &&
+          u8[0] !== 0xAA && u8[0] !== 0xFA && u8[0] !== 0xFB && u8[0] !== 0x55 &&
+          u8[0] !== 0x58 && !(u8[0] === 0x01 && u8[1] === 0x02) &&
+          !isPrintableAsciiScaleBytes(u8);
+        if (canSigFallback){
           const sigFallback = decodeWeightSig(u8);
           return sigFallback ? [sigFallback] : [];
         }
@@ -3843,6 +4024,9 @@
         const st = decodeStaggKettle(u8);
         return st ? [st] : [];
       }
+      if (fam === 'ascii'){
+        return asciiStream.push(u8);
+      }
       return [];
     }
 
@@ -3857,6 +4041,7 @@
         timemoreOspStream.reset();
         variaStream.reset();
         bookooStream.reset();
+        asciiStream.reset();
       },
       push: function(chunk){
         const u8 = toU8(chunk);
@@ -3889,12 +4074,12 @@
             const promotedFrames = decodeSingleByFamily(family, buffered);
             return { family:family, promoted:true, promotedFrom:prev, frames:promotedFrames };
           }
-          if (family !== 'auto'){
-            rawRing.clear();
-          }
         }
 
         const frames = decodeSingleByFamily(family, u8);
+        if (canAutoPromote && frames.length > 0){
+          rawRing.clear();
+        }
         return { family:family, promoted:false, frames:frames };
       }
     };
@@ -3912,7 +4097,7 @@
     { id:'decent',          slot:'scale',         name:'Decent Scale & Open-Scale',             tier:'verified_gatt', protocol:'0xFFF0 7B/10B XOR' },
     { id:'varia',           slot:'scale',         name:'Varia AKU / AKU Pro / Mini',            tier:'verified_gatt', protocol:'0xFFF0 0xFA/0x55 XOR' },
     { id:'skale',           slot:'scale',         name:'Atomax Skale II',                       tier:'verified_gatt', protocol:'0xFF08 24-bit LE' },
-    { id:'eureka',          slot:'scale',         name:'Eureka Precisa / CFS-9002 OEM',         tier:'verified_gatt', protocol:'0xFFF0 0xAA 0x09 0x41' },
+    { id:'eureka',          slot:'scale',         name:'Eureka Precisa / CFS-9002 / KC200 / WeighMyBru', tier:'verified_gatt', protocol:'0xFFF0 0xAA 0x09 0x41' },
     { id:'hiroia',          slot:'scale',         name:'Hiroia Jimmy',                          tier:'verified_gatt', protocol:'Hiroia 24-bit LE' },
     { id:'sig',             slot:'scale',         name:'Bluetooth SIG 0x181D Weight Scale',     tier:'verified_gatt', protocol:'GATT 0x181D / 0x2A9D' },
     { id:'pressensor',      slot:'pressure',      name:'Pressensor / Smart Espresso Profiler',  tier:'verified_gatt', protocol:'0x185B / SEP mbar -> bar' },
@@ -3973,6 +4158,7 @@
     decodeDiFluidOmni: decodeDiFluidOmni,
     decodeXBloom: decodeXBloom,
     decodeStaggKettle: decodeStaggKettle,
+    decodeAsciiScale: decodeAsciiScale,
     agtronToRoastSwatch: agtronToRoastSwatch
   };
 
@@ -3984,6 +4170,7 @@
     createTimemoreOspStreamParser: createTimemoreOspStreamParser,
     createVariaStreamParser: createVariaStreamParser,
     createBookooStreamParser: createBookooStreamParser,
+    createAsciiStreamParser: createAsciiStreamParser,
     createCharacteristicStream: createCharacteristicStream
   };
 
@@ -4361,21 +4548,31 @@
 
         if (typeof match.watchAdvertisements === 'function' && typeof AbortController === 'function'){
           const ac = new AbortController();
+          let advTimer = null;
+          let settleAdv = null;
           const advPromise = new Promise(function(resolve){
-            const onAdv = function(){
+            settleAdv = function(found){
+              if (advTimer){ clearTimeout(advTimer); advTimer = null; }
               try { match.removeEventListener('advertisementreceived', onAdv); } catch(e){}
               try { ac.abort(); } catch(e){}
-              resolve(true);
+              resolve(found);
+            };
+            const onAdv = function(){
+              settleAdv(true);
             };
             try { match.addEventListener('advertisementreceived', onAdv, { once:true }); } catch(e){}
-            setTimeout(function(){
-              try { match.removeEventListener('advertisementreceived', onAdv); } catch(e){}
-              try { ac.abort(); } catch(e){}
-              resolve(false);
+            advTimer = setTimeout(function(){
+              settleAdv(false);
             }, 1800);
           });
-          try { await match.watchAdvertisements({ signal:ac.signal }); } catch(e){}
-          await advPromise;
+          let watchStarted = true;
+          try {
+            await match.watchAdvertisements({ signal:ac.signal });
+          } catch(e){
+            watchStarted = false;
+            if (settleAdv) settleAdv(false);
+          }
+          if (watchStarted) await advPromise;
         }
 
         return {
@@ -4404,16 +4601,25 @@
           try { onDisconnect(transportDevice.deviceId); } catch(e){}
         }
       };
+      let listenerAttached = false;
       if (typeof raw.addEventListener === 'function'){
         raw.addEventListener('gattserverdisconnected', discListener);
+        listenerAttached = true;
       }
 
       let server = null;
       try {
         server = await withTimeout(raw.gatt.connect(), 6000, 'GATT connect');
       } catch(connErr){
-        await waitMs(180);
-        server = await withTimeout(raw.gatt.connect(), 6000, 'GATT connect retry');
+        try {
+          await waitMs(180);
+          server = await withTimeout(raw.gatt.connect(), 6000, 'GATT connect retry');
+        } catch(retryErr){
+          if (listenerAttached && typeof raw.removeEventListener === 'function'){
+            try { raw.removeEventListener('gattserverdisconnected', discListener); } catch(e){}
+          }
+          throw retryErr;
+        }
       }
 
       async function ensureConnected(){
@@ -5742,12 +5948,17 @@
       if (Math.abs(newRawG - preRaw) <= 15){
         /* Load cell stayed powered continuously */
         softwareTareOffsetG = preTare;
+        tarePendingZeroCheck = false;
       } else if (Math.abs(newRawG) <= 2.5 && preNet >= 15){
         /* Scale power-cycled / auto-zeroed with wet brewer still on tray: restore preDropNetWeightG! */
         softwareTareOffsetG = +(newRawG - preNet).toFixed(2);
-      } else if (preNet >= 15 && newRawG > 2.5 && newRawG < preNet - 15){
+        tarePendingZeroCheck = false;
+      } else if (preNet >= 15 && newRawG > 2.5 && newRawG < preRaw - 15){
         /* Scale zeroed during drop and user poured +newRawG more water */
         softwareTareOffsetG = -preNet;
+        tarePendingZeroCheck = false;
+      } else if (preNet >= 15){
+        tarePendingZeroCheck = false;
       }
       resetFlowFilter();
     }
@@ -5862,7 +6073,7 @@
     function normalizeScaleBrand(raw){
       const s = String(raw || '').trim().toLowerCase();
       if (!s || s === 'auto') return 'auto';
-      if (/acaia|lunar|pearl|pyxis|cinco|prochbt/.test(s)) return 'acaia';
+      if (/acaia|lunar|pearl|pyxis|cinco|orion|prochbt/.test(s)) return 'acaia';
       if (/difluid|microbalance|dft-?s|df-?s/.test(s)) return 'difluid';
       if (/bookoo|themis/.test(s)) return 'bookoo';
       if (/timemore|black\s*mirror|^tm\b/.test(s)) return 'timemore';
@@ -5872,6 +6083,7 @@
       if (/skale|atomax/.test(s)) return 'skale';
       if (/eureka|precisa|cfs-?9002|brewista|lsj|smart\s*scale|formula|solobarista|kc200|weighmybru/.test(s)) return 'eureka';
       if (/hiroia|jimmy/.test(s)) return 'hiroia';
+      if (/ascii|uart|nus|serial/.test(s)) return 'ascii';
       if (/sig|181d/.test(s)) return 'sig';
       return 'auto';
     }
@@ -5894,7 +6106,8 @@
           { namePrefix:'LUNAR' }, { namePrefix:'Lunar' }, { namePrefix:'lunar' },
           { namePrefix:'PEARL' }, { namePrefix:'Pearl' }, { namePrefix:'pearl' },
           { namePrefix:'PYXIS' }, { namePrefix:'Pyxis' }, { namePrefix:'pyxis' },
-          { namePrefix:'CINCO' }, { namePrefix:'Cinco' }, { namePrefix:'cinco' }
+          { namePrefix:'CINCO' }, { namePrefix:'Cinco' }, { namePrefix:'cinco' },
+          { namePrefix:'ORION' }, { namePrefix:'Orion' }, { namePrefix:'orion' }
         ],
         difluid: [
           { services:[UUID.DIFLUID_SCALE_SVC] }, { services:[UUID.DIFLUID_SCALE_ALT_SVC] },
@@ -5922,9 +6135,9 @@
           { namePrefix:'Decent' }, { namePrefix:'DECENT' }, { namePrefix:'decent' }, { namePrefix:'Half Decent' }, { namePrefix:'half decent' }, { namePrefix:'HDS' }
         ],
         varia: [
-          { services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.FELICITA_SVC] }, { services:[UUID.NUS_SVC] },
+          { services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.EUREKA_ALT_SVC] }, { services:[UUID.FELICITA_SVC] }, { services:[UUID.NUS_SVC] },
           { namePrefix:'Varia' }, { namePrefix:'VARIA' }, { namePrefix:'varia' }, { namePrefix:'AKU' }, { namePrefix:'aku' },
-          { namePrefix:'Cube' }, { namePrefix:'CUBE' }, { namePrefix:'MHW' },
+          { namePrefix:'Cube' }, { namePrefix:'CUBE' }, { namePrefix:'cube' }, { namePrefix:'MHW' }, { namePrefix:'mhw' },
           { namePrefix:'Exagram' }, { namePrefix:'EXAGRAM' }, { namePrefix:'Wacaco' }, { namePrefix:'WACACO' }
         ],
         skale: [
@@ -5933,12 +6146,20 @@
         ],
         eureka: [
           { services:[UUID.SHARED_FFF0_SVC] }, { services:[UUID.EUREKA_ALT_SVC] }, { services:[UUID.FELICITA_SVC] },
-          { namePrefix:'Precisa' }, { namePrefix:'PRECISA' }, { namePrefix:'precisa' }, { namePrefix:'CFS-9002' },
-          { namePrefix:'Eureka' }, { namePrefix:'EUREKA' }, { namePrefix:'eureka' }, { namePrefix:'LSJ' },
-          { namePrefix:'Smart Scale' }, { namePrefix:'Brewista' }, { namePrefix:'BREWISTA' }, { namePrefix:'brewista' },
+          { services:[UUID.BOOKOO_SVC] }, { services:[UUID.NUS_SVC] },
+          { namePrefix:'Precisa' }, { namePrefix:'PRECISA' }, { namePrefix:'precisa' },
+          { namePrefix:'CFS-9002' }, { namePrefix:'cfs-9002' },
+          { namePrefix:'Eureka' }, { namePrefix:'EUREKA' }, { namePrefix:'eureka' },
+          { namePrefix:'LSJ' }, { namePrefix:'lsj' },
+          { namePrefix:'Smart Scale' }, { namePrefix:'smart scale' },
+          { namePrefix:'Brewista' }, { namePrefix:'BREWISTA' }, { namePrefix:'brewista' },
           { namePrefix:'Exagram' }, { namePrefix:'EXAGRAM' }, { namePrefix:'Wacaco' }, { namePrefix:'WACACO' },
-          { namePrefix:'Cube' }, { namePrefix:'CUBE' }, { namePrefix:'MHW' },
-          { namePrefix:'Formula' }, { namePrefix:'SoloBarista' }, { namePrefix:'KC200' }, { namePrefix:'WeighMyBru' }
+          { namePrefix:'Cube' }, { namePrefix:'CUBE' }, { namePrefix:'cube' },
+          { namePrefix:'MHW' }, { namePrefix:'mhw' },
+          { namePrefix:'Formula' }, { namePrefix:'FORMULA' }, { namePrefix:'formula' },
+          { namePrefix:'SoloBarista' }, { namePrefix:'SOLOBARISTA' }, { namePrefix:'solobarista' },
+          { namePrefix:'KC200' }, { namePrefix:'kc200' },
+          { namePrefix:'WeighMyBru' }, { namePrefix:'WEIGHMYBRU' }, { namePrefix:'weighmybru' }
         ],
         hiroia: [
           { services:[UUID.HIROIA_SVC] },
@@ -6081,10 +6302,10 @@
 
       clearScaleTimers();
       scaleReceivedWeightThisSession = false;
+      tarePendingZeroCheck = false;
       if (!isReconnect){
         resetFlowFilter();
         softwareTareOffsetG = 0;
-        tarePendingZeroCheck = false;
         dropRecovery.active = false;
       }
 
@@ -7428,7 +7649,7 @@
       if (/\br2\b|extract|dft-r/.test(s)) return 'refractometer';
       if (/omni|dft-sd/.test(s)) return 'omni';
       if (/stagg|ekg|fellow|xbloom|tbdx/.test(s)) return 'machine';
-      if (/acaia|lunar|pearl|pyxis|cinco|prochbt|microbalance|difluid|dft-s|df-s|bookoo|themis|timemore|black mirror|felicita|decent|hds|varia|aku|skale|eureka|precisa|brewista|hiroia|jimmy|exagram|wacaco/.test(s)) return 'scale';
+      if (/acaia|lunar|pearl|pyxis|cinco|orion|prochbt|microbalance|difluid|dft-s|df-s|bookoo|themis|timemore|black mirror|felicita|decent|hds|varia|aku|skale|eureka|precisa|brewista|hiroia|jimmy|exagram|wacaco|kc200|weighmybru|cfs-?9002|solobarista|formula|lsj|mhw|cube|smart\s*scale/.test(s)) return 'scale';
       return '';
     }
 
@@ -8442,9 +8663,49 @@
       const r2 = [], scale = [], omni = [];
       const num = function(v){
         if (v == null || v === '') return null;
-        const cleaned = String(v).replace(/[%°cbxµumg/s\s]+$/ig, '').replace(/,/g, '.').trim();
+        let cleaned = String(v).replace(/[%°\u2103\u2109cbxµ\u03BCumg/s\s]+$/ig, '').trim();
+        if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(cleaned)) cleaned = cleaned.replace(/,/g, '');
+        else cleaned = cleaned.replace(/,/g, '.');
         const n = Number(cleaned);
         return Number.isFinite(n) ? n : null;
+      };
+      const normHeaderKey = function(k){
+        return String(k || '')
+          .trim()
+          .toLowerCase()
+          .replace(/[\u00B5\u03BC]m/g, 'um')
+          .replace(/[\u00B5\u03BC]/g, 'u')
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_|_$/g, '');
+      };
+      const parseExportTsMs = function(tsVal){
+        if (tsVal == null || tsVal === '') return NaN;
+        if (typeof tsVal === 'number') return Number.isFinite(tsVal) ? (tsVal < 1e12 ? tsVal * 1000 : tsVal) : NaN;
+        const s = String(tsVal).trim();
+        if (!s) return NaN;
+        if (/^\d{10,13}$/.test(s)){
+          const n = Number(s);
+          return n < 1e12 ? n * 1000 : n;
+        }
+        let ms = Date.parse(s);
+        if (Number.isFinite(ms)) return ms;
+        ms = Date.parse(s.replace(/\//g, '-'));
+        return Number.isFinite(ms) ? ms : NaN;
+      };
+      const sortRowsDescByTs = function(list){
+        if (!Array.isArray(list) || list.length < 2) return list;
+        const hasAnyTs = list.some(function(it){ return Number.isFinite(parseExportTsMs(it && it.timestamp)); });
+        if (!hasAnyTs) return list;
+        return list.slice().sort(function(a, b){
+          const ta = parseExportTsMs(a && a.timestamp);
+          const tb = parseExportTsMs(b && b.timestamp);
+          const fa = Number.isFinite(ta);
+          const fb = Number.isFinite(tb);
+          if (fa && fb) return tb - ta;
+          if (fb && !fa) return 1;
+          if (fa && !fb) return -1;
+          return 0;
+        });
       };
       const pick = function(obj, keys){
         for (let i = 0; i < keys.length; i++){
@@ -8458,11 +8719,11 @@
         if (!raw || typeof raw !== 'object') return;
         const o = {};
         Object.keys(raw).forEach(function(k){
-          const nk = k.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+          const nk = normHeaderKey(k);
           o[nk] = raw[k];
           if (raw[k] && typeof raw[k] === 'object' && !Array.isArray(raw[k])){
             Object.keys(raw[k]).forEach(function(sk){
-              const snk = sk.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+              const snk = normHeaderKey(sk);
               if (o[snk] === undefined) o[snk] = raw[k][sk];
             });
           }
@@ -8568,7 +8829,12 @@
           } catch(e){}
         }
         const lines = str.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
-        const delim = lines[0].indexOf('\t') >= 0 ? '\t' : (lines[0].indexOf(',') >= 0 ? ',' : '');
+        const hLine = lines[0] || '';
+        const semiCnt = hLine.split(';').length - 1;
+        const commaCnt = hLine.split(',').length - 1;
+        const delim = hLine.indexOf('\t') >= 0
+          ? '\t'
+          : ((semiCnt > 0 && semiCnt >= commaCnt) ? ';' : (commaCnt > 0 ? ',' : ''));
         if (lines.length >= 2 && delim && /[a-zA-Z]/.test(lines[0]) && !/:\s*\d/.test(lines[0])){
           format = 'csv';
           const splitLine = function(ln){
@@ -8598,29 +8864,29 @@
         } else {
           format = 'text';
           const obj = {};
-          const mTds = str.match(/tds\s*[:=]?\s*(\d+(?:\.\d+)?)\s*%/i) || str.match(/(\d+\.\d+)\s*%\s*tds/i);
+          const mTds = str.match(/tds\s*[:=]?\s*(\d+(?:[.,]\d+)?)\s*%/i) || str.match(/(\d+(?:[.,]\d+)?)\s*%\s*tds/i);
           if (mTds) obj.tds = mTds[1];
-          const mRi = str.match(/(?:nd|nd20|ri|refractive\s*index)\s*[:=]?\s*(1\.\d{4,6})/i);
+          const mRi = str.match(/(?:nd|nd20|ri|refractive\s*index)\s*[:=]?\s*(1[.,]\d{4,6})/i);
           if (mRi) obj.refractive_index = mRi[1];
-          const mTemp = str.match(/(?:temp(?:erature)?)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*°?\s*c/i);
+          const mTemp = str.match(/(?:temp(?:erature)?)\s*[:=]?\s*(\d+(?:[.,]\d+)?)\s*(?:°\s*c|\u2103|c\b)/i);
           if (mTemp) obj.temp_c = mTemp[1];
-          const mBeanAg = str.match(/(?:whole\s*bean|bean)\s*agtron\s*[:=]?\s*(\d+(?:\.\d+)?)/i) || str.match(/(\d+(?:\.\d+)?)\s*\(\s*bean\s*\)/i);
+          const mBeanAg = str.match(/(?:whole\s*bean|bean)\s*agtron\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i) || str.match(/(\d+(?:[.,]\d+)?)\s*\(\s*bean\s*\)/i);
           if (mBeanAg) obj.bean_agtron = mBeanAg[1];
-          const mGroundAg = str.match(/(?:ground|grounds|powder)\s*agtron\s*[:=]?\s*(\d+(?:\.\d+)?)/i) || str.match(/(\d+(?:\.\d+)?)\s*\(\s*ground\s*\)/i);
+          const mGroundAg = str.match(/(?:ground|grounds|powder)\s*agtron\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i) || str.match(/(\d+(?:[.,]\d+)?)\s*\(\s*ground\s*\)/i);
           if (mGroundAg) obj.ground_agtron = mGroundAg[1];
-          const mAg = str.match(/agtron\s*[:=]?\s*(\d+(?:\.\d+)?)/i);
+          const mAg = str.match(/agtron\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
           if (mAg && !obj.bean_agtron && !obj.ground_agtron) obj.agtron = mAg[1];
-          const mD10 = str.match(/d10\s*[:=]?\s*(\d+(?:\.\d+)?)/i);
+          const mD10 = str.match(/d10\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
           if (mD10) obj.d10_um = mD10[1];
-          const mD50 = str.match(/d50\s*[:=]?\s*(\d+(?:\.\d+)?)/i);
+          const mD50 = str.match(/d50\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
           if (mD50) obj.d50_um = mD50[1];
-          const mD90 = str.match(/d90\s*[:=]?\s*(\d+(?:\.\d+)?)/i);
+          const mD90 = str.match(/d90\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
           if (mD90) obj.d90_um = mD90[1];
-          const mDose = str.match(/dose\s*[:=]?\s*(\d+(?:\.\d+)?)\s*g/i);
+          const mDose = str.match(/dose\s*[:=]?\s*(\d+(?:[.,]\d+)?)\s*g/i);
           if (mDose) obj.dose_g = mDose[1];
-          const mWater = str.match(/water\s*[:=]?\s*(\d+(?:\.\d+)?)\s*g/i);
+          const mWater = str.match(/water\s*[:=]?\s*(\d+(?:[.,]\d+)?)\s*g/i);
           if (mWater) obj.water_g = mWater[1];
-          const mYield = str.match(/(?:yield|liquid|out)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*g/i);
+          const mYield = str.match(/(?:yield|liquid|out)\s*[:=]?\s*(\d+(?:[.,]\d+)?)\s*g/i);
           if (mYield) obj.yield_g = mYield[1];
           const mTime = str.match(/(?:time|duration)\s*[:=]?\s*(\d+)\s*s\b/i);
           if (mTime) obj.time_s = mTime[1];
@@ -8628,21 +8894,24 @@
         }
       }
 
-      const totalCount = r2.length + scale.length + omni.length;
+      const sortedR2 = sortRowsDescByTs(r2);
+      const sortedScale = sortRowsDescByTs(scale);
+      const sortedOmni = sortRowsDescByTs(omni);
+      const totalCount = sortedR2.length + sortedScale.length + sortedOmni.length;
       const parts = [];
-      if (r2.length) parts.push(r2.length + ' R2 TDS');
-      if (omni.length) parts.push(omni.length + ' Omni Agtron/PSD');
-      if (scale.length) parts.push(scale.length + ' Microbalance Brew');
+      if (sortedR2.length) parts.push(sortedR2.length + ' R2 TDS');
+      if (sortedOmni.length) parts.push(sortedOmni.length + ' Omni Agtron/PSD');
+      if (sortedScale.length) parts.push(sortedScale.length + ' Microbalance Brew');
 
       const result = {
         ok: totalCount > 0,
         format: format,
-        r2: r2,
-        scale: scale,
-        omni: omni,
-        latestR2: r2.length ? r2[0] : null,
-        latestScale: scale.length ? scale[0] : null,
-        latestOmni: omni.length ? omni[0] : null,
+        r2: sortedR2,
+        scale: sortedScale,
+        omni: sortedOmni,
+        latestR2: sortedR2.length ? sortedR2[0] : null,
+        latestScale: sortedScale.length ? sortedScale[0] : null,
+        latestOmni: sortedOmni.length ? sortedOmni[0] : null,
         totalCount: totalCount,
         summary: totalCount > 0 ? ('Imported ' + parts.join(' + ') + '.') : 'No recognized DiFluid fields found.'
       };

@@ -2004,7 +2004,11 @@
     wrap.appendChild(guideCard);
 
     /* 2. Interactive Zero-Spam In-Store Bag Evaluator ("Don't Know"-Aware + Elevation + Flavor Notes) */
-    const card = domH('section', { class: 'bt-studio-card', id: 'bt-bag-love-evaluator' });
+    const card = domH('section', {
+      class: 'bt-studio-card',
+      id: 'bt-bag-love-evaluator',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box'
+    });
 
     function matchFlavorNoteAffinity(noteWord) {
       const low = String(noteWord || '').trim().toLowerCase();
@@ -2499,10 +2503,16 @@
               roasterGuide: null,
               answered: 'yes'
             };
+            a.attempt = 0;
+            a.recipeLocked = false;
+            a.dialNote = null;
+            a.cupBrew = null;
             if (a.brew && typeof a.brew === 'object') {
               delete a.brew.dialAdaptation;
               delete a.brew.pendingNextRecipe;
               a.brew._savedDialedMethod = '';
+              a.brew.actualSecs = null;
+              a.brew.actualFromTimer = false;
             }
             if (window.BTStorage && typeof window.BTStorage.upsertCoffeeVaultRecord === 'function') {
               try { window.BTStorage.upsertCoffeeVaultRecord(a.coffee, null, { allowClear: true, allowUnlock: true }); } catch (_) {}
@@ -2759,6 +2769,8 @@
 
       /* Elastic 140-Degree 3-Ring Sunburst across 85+ Descriptors */
       let a0 = 0;
+      let lastOuterLabelDeg = -999;
+      let firstOuterLabelDeg = -999;
       for (let fi = 0; fi < nFams; fi++) {
         const fam = wheelData.fams[fi];
         const span = ws.shares[fi];
@@ -2795,6 +2807,9 @@
         svg.appendChild(fTxt);
 
         const gSpan = span / fam.groups.length;
+        const gMinSpan = isFocused ? 15 : 18;
+        const wMinSpan = isFocused ? 4.8 : 6.8;
+        const minSepDeg = isFocused ? 5.2 : 7.2;
         for (let gi = 0; gi < fam.groups.length; gi++) {
           const gr = fam.groups[gi];
           const b0 = a0 + gi * gSpan;
@@ -2810,7 +2825,7 @@
           })(fi);
           svg.appendChild(pGr);
 
-          if (gSpan >= 15) {
+          if (gSpan >= gMinSpan) {
             const gMid = (b0 + b1) * 0.5;
             const gXY = polarXY(121, gMid);
             let rot = gMid - 90;
@@ -2858,9 +2873,13 @@
             })(fi, wStr);
             svg.appendChild(pW);
 
-            if (wSpan >= 4.6) {
-              const wMid = (c0 + c1) * 0.5;
-              const wXY = polarXY(181, wMid);
+            const wMid = (c0 + c1) * 0.5;
+            const sepPrev = wMid - lastOuterLabelDeg;
+            const sepWrap = firstOuterLabelDeg >= 0 ? (firstOuterLabelDeg + 360 - wMid) : 999;
+            if (wSpan >= wMinSpan && sepPrev >= minSepDeg && sepWrap >= minSepDeg) {
+              lastOuterLabelDeg = wMid;
+              if (firstOuterLabelDeg < 0) firstOuterLabelDeg = wMid;
+              const wXY = polarXY(isFocused ? 181 : 183, wMid);
               let wRot = wMid - 90;
               if (wMid > 180) wRot += 180;
               const wTxt = CK.svgEl('text', {
@@ -2870,11 +2889,11 @@
                 'text-anchor': 'middle',
                 'dominant-baseline': 'central',
                 fill: '#FFFDF9',
-                'font-size': isFocused ? '9' : '7.5',
+                'font-size': isFocused ? '9' : '7.2',
                 'font-weight': onWord ? '700' : '600',
                 style: 'pointer-events:none'
               });
-              wTxt.textContent = wStr.length > 12 ? wStr.slice(0, 11) + '.' : wStr;
+              wTxt.textContent = wStr.length > 11 ? wStr.slice(0, 10) + '.' : wStr;
               svg.appendChild(wTxt);
             }
           }

@@ -252,6 +252,98 @@
     }
   }
 
+  function formatDialSymLabel(sym) {
+    var s = String(sym || '').trim();
+    if (!s) return '';
+    var map = {
+      sour: 'Sour / Under-extracted',
+      bitter: 'Bitter / Over-extracted',
+      weak: 'Weak / Thin',
+      strong: 'Strong / Heavy',
+      astringent: 'Dry / Astringent',
+      balanced: 'Balanced'
+    };
+    return map[s.toLowerCase()] || s.replace(/_/g, ' ').replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); });
+  }
+
+  function extractRowRecommendation(r) {
+    if (!r || typeof r !== 'object') return { hasRec: false, isLocked: false };
+    var isLocked = r.dial_locked === 'yes' || r.dial_locked === '1';
+    if (isLocked) return { hasRec: false, isLocked: true };
+    var ad = readRowAdapMetaSafe(r) || {};
+    var nr = (ad && ad.next_recipe && typeof ad.next_recipe === 'object') ? ad.next_recipe : null;
+    var dialChange = String(unneutCellar(r.dial_change || '') || (ad && ad.dial_change) || (nr && nr.headline) || '').trim();
+    var dialSym = String(unneutCellar(r.dial_symptom || '') || (ad && ad.dial_symptom) || (nr && nr.symptom) || unneutCellar(r.fix_symptom || '') || '').trim();
+    var hasNextFields = !!(nr && (nr.grindUm || nr.d50Um || nr.grindSetting || nr.tempC || nr.tempF || nr.ratio || nr.agitation));
+    if (!dialChange && !hasNextFields) return { hasRec: false, isLocked: false, dialSym: dialSym };
+
+    var bGrind = unneutCellar(r.brew_grind_setting || '') || (+r.brew_grind_target_um > 0 ? (+r.brew_grind_target_um + ' \u00B5m') : '');
+    var bTempC = +r.brew_temp_c > 0 ? Math.round(+r.brew_temp_c) : (+r.brew_temp_f > 0 ? Math.round((+r.brew_temp_f - 32) * 5 / 9) : 0);
+    var bRatio = +r.brew_ratio > 0 ? +r.brew_ratio : ((+r.brew_dose_g > 0 && +r.brew_water_g > 0) ? Math.round((+r.brew_water_g / +r.brew_dose_g) * 10) / 10 : 0);
+    var bAgit = String(r.brew_agitation || '').trim();
+
+    var nGrind = nr ? (String(nr.grindSetting || '').trim() || (+nr.grindUm > 0 ? (+nr.grindUm + ' \u00B5m') : (+nr.d50Um > 0 ? (+nr.d50Um + ' \u00B5m') : ''))) : '';
+    var nTempC = nr ? (+nr.tempC > 0 ? Math.round(+nr.tempC) : (+nr.tempF > 0 ? Math.round((+nr.tempF - 32) * 5 / 9) : 0)) : 0;
+    var nRatio = nr && +nr.ratio > 0 ? +nr.ratio : 0;
+    var nAgit = nr && nr.agitation ? String(nr.agitation).trim() : '';
+
+    var diffs = [];
+    if (nGrind) {
+      if (bGrind && bGrind !== nGrind) {
+        var mB = bGrind.match(/^([\d.]+)\s*clicks$/i);
+        var mN = nGrind.match(/^([\d.]+)\s*clicks$/i);
+        diffs.push((mB && mN) ? (mB[1] + ' \u2192 ' + mN[1] + ' clicks') : (bGrind + ' \u2192 ' + nGrind));
+      } else {
+        diffs.push(nGrind);
+      }
+    }
+    if (nTempC > 0) {
+      diffs.push((bTempC > 0 && bTempC !== nTempC) ? (bTempC + ' \u2192 ' + nTempC + '\u00B0C') : (nTempC + '\u00B0C'));
+    }
+    if (nRatio > 0) {
+      diffs.push((bRatio > 0 && Math.abs(bRatio - nRatio) >= 0.05) ? ('1:' + bRatio + ' \u2192 1:' + nRatio) : ('1:' + nRatio));
+    }
+    if (nAgit) {
+      diffs.push((bAgit && bAgit !== nAgit) ? (bAgit + ' \u2192 ' + nAgit + ' agitation') : (nAgit + ' agitation'));
+    }
+
+    var brewedParts = [bGrind, bTempC > 0 ? (bTempC + '\u00B0C') : '', bRatio > 0 ? ('1:' + bRatio) : ''].filter(Boolean);
+    var nextParts = [nGrind, nTempC > 0 ? (nTempC + '\u00B0C') : '', nRatio > 0 ? ('1:' + nRatio) : '', nAgit].filter(Boolean);
+
+    return {
+      hasRec: true,
+      isLocked: false,
+      nextRx: nr,
+      dialChange: dialChange,
+      dialSym: dialSym,
+      diffLine: diffs.join(' \u00B7 '),
+      brewedLine: brewedParts.join(' \u00B7 '),
+      nextLine: nextParts.join(' \u00B7 ')
+    };
+  }
+
+  function buildSavedNextBrewCallout(r, compact) {
+    var info = extractRowRecommendation(r);
+    if (!info.hasRec || info.isLocked) return null;
+    var symTxt = formatDialSymLabel(info.dialSym);
+    return S.h('div', {
+      class: 'bt-tc-well bt-journal-next-rec',
+      style: 'border-left:3px solid var(--accent-copper, #B86B35);padding:' + (compact ? '8px 10px' : '10px 12px') + ';gap:4px'
+    },
+      S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
+        S.h('span', { class: 'bt-tc-kicker', style: 'color:var(--accent-copper, #B86B35)', text: 'Saved Next-Brew Recommendation (Toward Golden Recipe)' }),
+        symTxt ? S.h('span', { class: 'bt-tc-badge is-copper', text: symTxt }) : null
+      ),
+      info.dialChange ? S.h('div', { style: 'font-size:0.84rem;font-weight:700;color:var(--ink)', text: info.dialChange }) : null,
+      info.diffLine ? S.h('div', { class: 'mono', style: 'font-size:0.78rem;color:var(--ink-secondary)', text: info.diffLine }) : null,
+      (!compact && info.brewedLine && info.nextLine) ? S.h('div', {
+        class: 'mono',
+        style: 'font-size:0.74rem;color:var(--ink-muted)',
+        text: 'Brewed: ' + info.brewedLine + '  \u2192  Next: ' + info.nextLine
+      }) : null
+    );
+  }
+
   function getCoffeesVaultSafe() {
     var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
     try {
@@ -332,7 +424,7 @@
   }
 
   /* Complete Lossless Row/Bag -> app.coffee + app.brew Sync (Vault + Unified + Row + Bag) */
-  function hydrateBrewFromRowOrBag(row, uRec, bag) {
+  function hydrateBrewFromRowOrBag(row, uRec, bag, opts) {
     var a = S.getApp();
     var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
     var lookupCid = (uRec && uRec.coffee_id) || (row && row.coffee_id) || (bag && (bag.coffee_id || (!isSyntheticCoffeeId(bag.id) ? bag.id : ''))) || '';
@@ -592,22 +684,43 @@
 
     /* Closed-Loop Golden Lock rule: ONLY lock if dial_locked === 'yes'/'1'; otherwise apply pendingNextRecipe / computeClosedLoopNextRecipe */
     var isExplicitGoldLock = !!(anchor && (anchor.dial_locked === 'yes' || anchor.dial_locked === '1'));
+    var exactOldMode = !!(opts && opts.exactOld);
     a.recipeLocked = isExplicitGoldLock;
 
-    if (isExplicitGoldLock) {
+    if (exactOldMode) {
+      if (anchor || savedBrew) {
+        a.brew._savedDialedMethod = a.brew.method || '';
+      }
+      a.brew.dialAdaptation = null;
+      a.dialNote = null;
+    } else if (isExplicitGoldLock) {
       a.brew._savedDialedMethod = a.brew.method || '';
       a.brew.dialAdaptation = { adapted: false, locked: true };
     } else {
       var core = (typeof window !== 'undefined' && window.BTCoreV6) ? window.BTCoreV6 : null;
+      var hasSavedNext = !!(ad && ad.next_recipe && typeof ad.next_recipe === 'object');
       var closedRx = null;
-      if (!row && core && typeof core.computeClosedLoopNextRecipe === 'function') {
+      if (!hasSavedNext && core && typeof core.computeClosedLoopNextRecipe === 'function') {
         try {
-          closedRx = core.computeClosedLoopNextRecipe(a.coffee, a.brew.method || 'v60', S.getHistoryObjs(), (a.prefs && a.prefs.gear) || a.prefs || {});
+          var histAll = S.getHistoryObjs();
+          var histForClosed = histAll;
+          if (row) {
+            var rowPos = histAll.indexOf(row);
+            if (rowPos < 0 && row.id) {
+              for (var hi = 0; hi < histAll.length; hi++) {
+                if (histAll[hi] && histAll[hi].id === row.id) { rowPos = hi; break; }
+              }
+            }
+            histForClosed = rowPos >= 0 ? histAll.slice(0, rowPos + 1) : [row];
+          }
+          closedRx = core.computeClosedLoopNextRecipe(a.coffee, a.brew.method || 'v60', histForClosed, (a.prefs && a.prefs.gear) || a.prefs || {});
         } catch (_) {}
       }
       var closedAdapt = (closedRx && closedRx.dialAdaptation) ? closedRx.dialAdaptation : null;
-      var pendingNext = (closedRx && (closedRx.nextRecipe || closedRx)) ||
-        (ad && ad.next_recipe) ||
+      var closedAdapted = !!(closedAdapt && closedAdapt.adapted);
+      var shouldApplyNext = !row || hasSavedNext || closedAdapted;
+      var pendingNext = (ad && ad.next_recipe) ||
+        (closedRx && (closedRx.nextRecipe || closedRx)) ||
         (v && v.pendingNextRecipe) ||
         (u && u.pendingNextRecipe) ||
         null;
@@ -617,42 +730,84 @@
         (ad && ad.dial_adaptation) ||
         null;
 
-      if (pendingNext && typeof pendingNext === 'object' && (!row || (ad && ad.next_recipe))) {
+      if (pendingNext && typeof pendingNext === 'object' && shouldApplyNext) {
+        var prevUmBeforeNext = +a.brew.grindUm || +(anchor && anchor.brew_grind_target_um) || 0;
         var pnM = (typeof resolveMethod === 'function' ? resolveMethod(pendingNext.methodKey || pendingNext.method) : '') || pendingNext.methodKey || pendingNext.method;
         if (pnM) a.brew.method = pnM;
         var pnUm = +pendingNext.grindUm || +pendingNext.d50Um || 0;
         if (pnUm > 0) { a.brew.grindUm = pnUm; a.brew.grind_um = pnUm; }
         var pnSet = pendingNext.grindSetting || (pendingNext.grinderSetting && (pendingNext.grinderSetting.shortDisplay || pendingNext.grinderSetting.display)) || pendingNext.grind_setting || '';
-        if (pnSet) a.brew.grind_setting = pnSet;
+        if (pnSet) {
+          a.brew.grind_setting = pnSet;
+        } else if (pnUm > 0 && pnUm !== prevUmBeforeNext) {
+          if (core && typeof core.mapMicronsToGrinder === 'function') {
+            try {
+              var gMappedNext = core.mapMicronsToGrinder(pnUm, a.brew.grinderKey || 'comandante-c40', null, a.brew.method || 'v60');
+              if (gMappedNext && (gMappedNext.shortDisplay || gMappedNext.display)) {
+                a.brew.grind_setting = gMappedNext.shortDisplay || gMappedNext.display;
+              } else {
+                a.brew.grind_setting = '';
+              }
+            } catch (_) { a.brew.grind_setting = ''; }
+          } else {
+            a.brew.grind_setting = '';
+          }
+        }
         if (+pendingNext.tempC > 0) {
           a.brew.tempC = +pendingNext.tempC;
           a.brew.tempF = +pendingNext.tempF > 0 ? +pendingNext.tempF : Math.round(+pendingNext.tempC * 9 / 5 + 32);
+        } else if (+pendingNext.tempF > 0) {
+          a.brew.tempF = +pendingNext.tempF;
+          a.brew.tempC = Math.round(((+pendingNext.tempF - 32) * 5 / 9) * 2) / 2;
         }
         if (+pendingNext.ratio > 0) a.brew.ratio = +pendingNext.ratio;
         if (+pendingNext.doseG > 0) a.brew.dose = +pendingNext.doseG;
-        if (+pendingNext.waterG > 0) a.brew.water = +pendingNext.waterG;
+        if (+pendingNext.waterG > 0) {
+          a.brew.water = +pendingNext.waterG;
+        } else if (+pendingNext.ratio > 0 && +a.brew.dose > 0) {
+          a.brew.water = Math.round(+a.brew.dose * +pendingNext.ratio);
+        }
         if (pendingNext.agitation) a.brew.agitation = pendingNext.agitation;
       }
 
-      if (anchor || savedBrew || (pendingNext && (!row || (ad && ad.next_recipe)))) {
+      if (anchor || savedBrew || (pendingNext && shouldApplyNext)) {
         a.brew._savedDialedMethod = a.brew.method || '';
       }
 
+      var rowDialChange = String((anchor && unneutCellar(anchor.dial_change || '')) || (ad && ad.dial_change) || (pendingNext && pendingNext.headline) || '').trim();
+      var rowDialSym = String((anchor && unneutCellar(anchor.dial_symptom || '')) || (ad && ad.dial_symptom) || (pendingNext && pendingNext.symptom) || (anchor && unneutCellar(anchor.fix_symptom || '')) || '').trim();
+
       if (rawDialAdapt && rawDialAdapt.adapted !== false && (rawDialAdapt.adapted || rawDialAdapt.headline || rawDialAdapt.summaryBanner || rawDialAdapt.dial_change)) {
-        a.brew.dialAdaptation = Object.assign({ adapted: true }, rawDialAdapt);
-      } else if (!closedAdapt && pendingNext && (!row || (ad && ad.next_recipe)) && (pendingNext.headline || pendingNext.symptom)) {
+        a.brew.dialAdaptation = Object.assign({
+          adapted: true,
+          headline: rawDialAdapt.headline || rawDialAdapt.dial_change || rowDialChange || '',
+          summaryBanner: rawDialAdapt.summaryBanner || rawDialAdapt.headline || rawDialAdapt.dial_change || rowDialChange || '',
+          symptom: rawDialAdapt.symptom || rawDialAdapt.dial_symptom || rowDialSym || '',
+          prevUm: rawDialAdapt.prevUm || (anchor && +anchor.brew_grind_target_um) || null,
+          nextUm: rawDialAdapt.nextUm || (pendingNext && (+pendingNext.grindUm || +pendingNext.d50Um)) || a.brew.grindUm || null
+        }, rawDialAdapt);
+      } else if (shouldApplyNext && (hasSavedNext || rowDialChange || (pendingNext && (pendingNext.headline || pendingNext.symptom)))) {
         a.brew.dialAdaptation = {
           adapted: true,
-          fromTry: pendingNext.fromTry || 1,
-          stars: pendingNext.stars,
-          tdsPct: pendingNext.tdsPct,
-          symptom: pendingNext.symptom || '',
-          nextUm: +pendingNext.grindUm || +pendingNext.d50Um || a.brew.grindUm,
-          headline: pendingNext.headline || '',
-          summaryBanner: pendingNext.headline || ''
+          fromTry: (pendingNext && pendingNext.fromTry) || (anchor && +anchor.brew_attempt) || 1,
+          stars: (pendingNext && pendingNext.stars != null) ? pendingNext.stars : (anchor && parseFloat(anchor.my_rating_stars)) || null,
+          tdsPct: (pendingNext && pendingNext.tdsPct) || (anchor && parseFloat(anchor.brew_tds_pct)) || null,
+          symptom: rowDialSym,
+          prevUm: (anchor && +anchor.brew_grind_target_um) || null,
+          nextUm: (pendingNext && (+pendingNext.grindUm || +pendingNext.d50Um)) || a.brew.grindUm,
+          headline: rowDialChange,
+          summaryBanner: rowDialChange
         };
       } else {
         a.brew.dialAdaptation = null;
+      }
+
+      if (a.brew.dialAdaptation && a.brew.dialAdaptation.adapted) {
+        a.dialNote = {
+          symptom: a.brew.dialAdaptation.symptom || rowDialSym,
+          change: [a.brew.dialAdaptation.headline || a.brew.dialAdaptation.summaryBanner || rowDialChange].filter(Boolean),
+          fromId: (anchor && anchor.id) || ''
+        };
       }
     }
 
@@ -1687,7 +1842,7 @@
           class: 'bt-tc-pill is-compact is-copper',
           text: 'Compare Latest 2 Brews \u2192',
           onclick: function () {
-            ui.compareIdxs = [0, 1];
+            ui.compareIdxs = [hObjs.length - 2, hObjs.length - 1];
             repaint();
           }
         })
@@ -1835,6 +1990,8 @@
         .split(/[;,|]/).map(function (s) {
           return s.trim().replace(/\b[a-z]/g, function (ch) { return ch.toUpperCase(); });
         }).filter(Boolean).slice(0, 4);
+      var nextRecInfo = extractRowRecommendation(r);
+      var nextRecCallout = (!isLocked && nextRecInfo.hasRec) ? buildSavedNextBrewCallout(r, true) : null;
 
       wrap.appendChild(S.h('article', {
         class: 'bt-cellar-bag-card',
@@ -1866,6 +2023,7 @@
             return S.h('span', { class: 'bt-tc-badge is-soft', style: 'font-weight:700', text: ft });
           })
         ) : null,
+        nextRecCallout,
         S.h('div', { class: 'bt-tc-pill-scroll' },
           S.h('button', {
             type: 'button',
@@ -1876,7 +2034,7 @@
           S.h('button', {
             type: 'button',
             class: 'bt-tc-pill is-compact is-active',
-            text: 'Brew \u2192',
+            text: (!isLocked && nextRecInfo.hasRec) ? 'Apply Fix & Brew Next \u2192' : 'Brew \u2192',
             onclick: function () {
               hydrateBrewFromRowOrBag(r, null, null);
               navigateToHomeRecipe();
@@ -3235,17 +3393,28 @@
         S.h('span', { class: 'bt-tc-kicker', text: 'Tasting Notes' }),
         S.h('div', { style: 'font-size:0.86rem', text: un(r.general_notes) })
       ) : null,
+      (!isLocked && extractRowRecommendation(r).hasRec) ? buildSavedNextBrewCallout(r, false) : null,
       S.h('div', { class: 'bt-tc-pill-wrap' },
         S.h('button', {
           type: 'button',
           class: 'bt-tc-pill is-active',
-          text: 'Brew This Recipe \u2192',
+          text: (!isLocked && extractRowRecommendation(r).hasRec) ? 'Apply Fix & Brew Next \u2192' : 'Brew This Recipe \u2192',
           onclick: function () {
             hydrateBrewFromRowOrBag(r, null, null);
             S.closeSheetSafe();
             navigateToHomeRecipe();
           }
         }),
+        (!isLocked && extractRowRecommendation(r).hasRec) ? S.h('button', {
+          type: 'button',
+          class: 'bt-tc-pill is-soft',
+          text: 'Re-brew Exact Old Settings',
+          onclick: function () {
+            hydrateBrewFromRowOrBag(r, null, null, { exactOld: true });
+            S.closeSheetSafe();
+            navigateToHomeRecipe();
+          }
+        }) : null,
         S.h('button', {
           type: 'button',
           class: 'bt-tc-pill is-copper',
@@ -3365,7 +3534,7 @@
         if (liveEy) {
           container.appendChild(S.h('div', { class: 'mono', style: 'font-size:0.82rem;color:var(--science);font-weight:700', text: 'Computed Cup Extraction: ' + liveEy }));
         }
-        container.appendChild(S.h('div', { class: 'bt-tc-pill-scroll' },
+        container.appendChild(S.h('div', { class: 'bt-tc-pill-wrap', style: 'flex-wrap:wrap' },
           [2.5, 3.0, 3.5, 4.0, 4.25, 4.5, 4.75, 5.0].map(function (stV) {
             return S.h('button', {
               type: 'button',

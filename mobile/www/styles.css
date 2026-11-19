@@ -14,6 +14,7 @@
   --surface: #FFFDF9;
   --card: #FFFDF9;
   --surface-elevated: #FFFDF9;
+  --bg-elevated: var(--surface-elevated);
   --card-elevated: #FFFDF9;
   --surface-glass: rgba(250, 246, 240, 0.90);
   --well: #EFE6DA;
@@ -22,6 +23,7 @@
   --track: #E1D4C3;
 
   --ink: #1F1712;                /* Espresso ink >= 16.2:1 vs #FAF6F0 / #FFFDF9 */
+  --ink-primary: var(--ink);
   --ink-secondary: #4E3C31;      /* 8.9:1 WCAG AAA */
   --ink-muted: #685244;          /* 5.7:1 WCAG AA */
   --muted: #685244;
@@ -61,6 +63,7 @@
   --science-border: rgba(22, 85, 110, 0.28);
 
   --good: #18603E;
+  --good-ink: #FFFDF9;
   --good-bg: #E2F4EB;
   --warn: #854B04;
   --warn-bg: #FEF1D6;
@@ -138,6 +141,7 @@
 
   /* Typography, Spacing, Radii, Safe Areas & Springs */
   --font-display: "Lora", Georgia, "Times New Roman", serif;
+  --font-serif: var(--font-display);
   --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --font-num: var(--font-mono);
@@ -186,6 +190,7 @@
     --surface: #1C1815;
     --card: #1C1815;
     --surface-elevated: #241F1B;
+    --bg-elevated: var(--surface-elevated);
     --card-elevated: #241F1B;
     --surface-glass: rgba(19, 16, 14, 0.90);
     --well: #151210;
@@ -194,6 +199,7 @@
     --track: #342922;
 
     --ink: #F5EDE4;
+    --ink-primary: var(--ink);
     --ink-secondary: #D2C2B4;
     --ink-muted: #AE9A89;
     --muted: #AE9A89;
@@ -230,6 +236,7 @@
     --science-border: rgba(110, 198, 230, 0.30);
 
     --good: #5CD49C;
+    --good-ink: #13261B;
     --good-bg: #132E22;
     --warn: #F4BC5C;
     --warn-bg: #33230B;
@@ -297,6 +304,7 @@
   --surface: #1C1815;
   --card: #1C1815;
   --surface-elevated: #241F1B;
+  --bg-elevated: var(--surface-elevated);
   --card-elevated: #241F1B;
   --surface-glass: rgba(19, 16, 14, 0.90);
   --well: #151210;
@@ -305,6 +313,7 @@
   --track: #342922;
 
   --ink: #F5EDE4;
+  --ink-primary: var(--ink);
   --ink-secondary: #D2C2B4;
   --ink-muted: #AE9A89;
   --muted: #AE9A89;
@@ -341,6 +350,7 @@
   --science-border: rgba(110, 198, 230, 0.30);
 
   --good: #5CD49C;
+  --good-ink: #13261B;
   --good-bg: #132E22;
   --warn: #F4BC5C;
   --warn-bg: #33230B;
@@ -955,7 +965,8 @@ button:disabled,
   .bt-top-back-btn {
     padding: 0 7px;
     font-size: 11px;
-    min-height: 32px;
+    height: 36px;
+    min-height: 36px;
     gap: 3px;
   }
   .bt-top-right {
@@ -965,13 +976,13 @@ button:disabled,
   }
   .bt-lens-seg button {
     min-width: 0;
-    min-height: 28px;
+    min-height: 32px;
     padding: 4px 6px;
     font-size: 10.5px;
   }
   .bt-gear-btn {
-    height: 34px;
-    min-height: 34px;
+    height: 36px;
+    min-height: 36px;
     min-width: 0;
     padding: 0 6px;
     font-size: 11px;
@@ -986,16 +997,16 @@ button:disabled,
     display: inline;
   }
   #top-ble-pill {
-    height: 34px;
-    min-height: 34px;
-    min-width: 34px;
+    height: 36px;
+    min-height: 36px;
+    min-width: 36px;
     padding: 0 8px;
   }
   #top-theme-btn {
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
-    min-height: 34px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
     padding: 0;
   }
 }
@@ -1032,6 +1043,35 @@ button:disabled,
   #top-ble-pill {
     padding: 0 5px;
     gap: 3px;
+  }
+}
+@media (max-width: 390px) {
+  .bt-gear-btn .bt-gear-label-short {
+    display: none;
+  }
+  .bt-lens-seg button {
+    padding: 3px 4px;
+    font-size: 10px;
+  }
+  .bt-top-back-btn,
+  #top-back-btn {
+    padding: 0 5px;
+    height: 36px;
+    min-height: 36px;
+  }
+  #top-gear-pill,
+  .bt-gear-btn,
+  #top-ble-pill {
+    height: 36px;
+    min-height: 36px;
+    min-width: 36px;
+    padding: 0 6px;
+  }
+  #top-theme-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
   }
 }
 
@@ -2195,12 +2235,12 @@ select.bt-input {
   left: 50%;
   bottom: calc(134px + var(--safe-bottom));
   transform: translateX(-50%);
-  z-index: 90;
+  z-index: 9600;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  width: min(440px, calc(100vw - 24px));
+  width: min(440px, calc(100% - 24px));
   pointer-events: none;
 }
 @media (min-width: 1024px) {
@@ -3111,7 +3151,7 @@ select.bt-input {
   left: 50%;
   bottom: 0;
   transform: translateX(-50%);
-  width: min(440px, 100vw);
+  width: min(440px, 100%);
   padding: 14px 16px calc(18px + var(--safe-bottom)) 16px;
   border-radius: var(--r-xl) var(--r-xl) 0 0;
   background: var(--surface-elevated);
@@ -4497,21 +4537,24 @@ select.bt-input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 3px 4px;
   width: 100%;
   min-width: 0;
 }
 
 .bt-spec-lbl {
+  flex: 1 1 68px;
   font-size: 0.65rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  line-height: 1.15;
   color: var(--ink-muted);
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .bt-spec-actions-grp {
@@ -6799,10 +6842,14 @@ select.bt-input {
   font-size: 0.74rem;
   font-weight: 600;
   color: var(--ink-secondary);
-  flex: 1 1 180px;
+  flex: 0 0 auto;
   min-width: 0;
   max-width: 100%;
   word-break: break-word;
+}
+
+.bt-step-context-strip > .bt-step-context-copy {
+  flex: 1 1 180px;
 }
 
 .bt-step-context-link {
@@ -8349,11 +8396,20 @@ select.bt-input {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
+  max-width: 100%;
   padding: 11px 13px;
   border-radius: 14px;
   background: var(--surface);
   border: 1px solid var(--line-soft);
   border-left: 4px solid var(--bag-roast-col, var(--roast-3));
+}
+
+.bt-vault-row-v62 .bt-ce-badge {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+  overflow-wrap: anywhere;
 }
 
 /* ==================== 13. PRINTED ROAST DATE PICKER & INTERACTIVE MONTH CALENDAR ==================== */
@@ -8905,9 +8961,9 @@ select.bt-input {
   min-height: 22px !important;
   padding: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.20);
+  background: rgba(15, 34, 25, 0.58);
   border: none;
-  color: inherit;
+  color: #FFFDF9;
   font-size: 14px;
   font-weight: 800;
   line-height: 1;
@@ -8920,7 +8976,7 @@ select.bt-input {
 }
 
 .bt-ce-locked-rm:hover {
-  background: rgba(255, 255, 255, 0.34);
+  background: rgba(15, 34, 25, 0.78);
 }
 
 .bt-ce-locked-empty {
@@ -10402,18 +10458,15 @@ select.bt-input {
 .bt-tc-seg-bar {
   display: flex;
   align-items: stretch;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 4px;
   border-radius: var(--r-md, 16px);
   background: var(--well);
   box-shadow: var(--shadow-well-inset);
-  overflow-x: auto;
-  scrollbar-width: none;
+  max-width: 100%;
   min-width: 0;
-}
-
-.bt-tc-seg-bar::-webkit-scrollbar {
-  display: none;
+  box-sizing: border-box;
 }
 
 .bt-tc-seg-btn {
@@ -10432,6 +10485,22 @@ select.bt-input {
   gap: 6px;
   white-space: nowrap;
   transition: background-color 0.16s var(--spring-snappy), color 0.16s ease, box-shadow 0.16s ease;
+}
+
+@media (max-width: 420px) {
+  .bt-tc-seg-bar {
+    gap: 4px;
+    padding: 4px;
+  }
+  .bt-tc-seg-btn {
+    flex: 1 1 auto;
+    min-height: 40px;
+    padding: 6px 8px;
+    font-size: 0.76rem;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.2;
+  }
 }
 
 .bt-tc-seg-btn[aria-selected="true"],
@@ -10508,13 +10577,19 @@ select.bt-input {
 .bt-tc-badge {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   padding: 4px 10px;
   border-radius: var(--r-pill, 9999px);
   font-size: 0.74rem;
   font-weight: 800;
   letter-spacing: 0.03em;
-  white-space: nowrap;
+  line-height: 1.25;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
 }
 
 .bt-tc-badge.is-good {
@@ -10996,7 +11071,7 @@ select.bt-input {
 .bt-tc-gold-lock-btn.is-locked {
   background: var(--good);
   border-color: var(--good);
-  color: #FFFDF9;
+  color: var(--good-ink, var(--accent-ink));
 }
 
 /* ==================== 7. R2 DUAL-PIN SOVEREIGNTY & OFF-DAY SHIELD ==================== */
@@ -12391,6 +12466,7 @@ select.bt-input {
 /* ---- BTChartKit Surface, 48px Thumb-Offset Loupe & Hit-Halos ---- */
 .bt-chart-stage {
   position: relative;
+  isolation: isolate;
   width: 100%;
   border-radius: var(--r-md, 16px);
   overflow: hidden;
@@ -12527,7 +12603,7 @@ select.bt-input {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(16, 12, 10, 0.48);
+  background: var(--backdrop-scrim, rgba(16, 12, 10, 0.48));
   backdrop-filter: blur(4px);
 }
 
@@ -14105,7 +14181,7 @@ html[data-theme="dark"] .bt-r2-reconcile-card {
 .bt-pk-flag-txt {
   font-size: 9px;
   font-weight: 700;
-  fill: #FFFDF9;
+  fill: var(--good-ink, #FFFDF9);
 }
 
 /* World Coffee Belt Map Coastlines, Tropics & Affinity Pins */
@@ -14870,6 +14946,11 @@ button.bt-trait-row:hover {
   background: #FFFDF9;
   border: 3px solid var(--ink-primary, #231811);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+}
+
+[data-theme="dark"] .bt-wim-thumb {
+  background: var(--surface, #1C1815);
+  border-color: var(--ink, #F5EDE4);
 }
 
 .bt-wim-explain {
