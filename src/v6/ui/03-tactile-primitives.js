@@ -684,7 +684,7 @@ function BTLinkedDrumTrio(cfg) {
   let anchor = cfg.lockedKey === 'dose' || cfg.lockedKey === 'water' || cfg.lockedKey === 'ratio' ? cfg.lockedKey : 'ratio';
   let prewet = cfg.prewet !== false;
 
-  const doseRange = isEsp ? { min: 7, max: 26, step: 0.1 } : { min: 6, max: 95, step: 0.5 };
+  const doseRange = isEsp ? { min: 7, max: 26, step: 0.1 } : { min: 6, max: 95, step: 0.1 };
   const waterRange = isEsp ? { min: 14, max: 120, step: 0.5 } : { min: 80, max: 1500, step: 1 };
   const ratioRange = isEsp ? { min: 1.0, max: 5.0, step: 0.1 } : { min: 8.0, max: 22.0, step: 0.1 };
 

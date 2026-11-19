@@ -1262,12 +1262,22 @@ const PREGROUND_PROFILES = {
   }
 };
 
+const KNOT_UM_FLOOR = 45;
+const KNOT_UM_KNEE_MAX = 85;
+
 function interpKnots(knots, um){
   if (!knots || !knots.length) return null;
   if (knots.length >= 2 && um < knots[0][0]){
     const a = knots[0], b = knots[1];
     const slope = b[0] === a[0] ? 0 : (b[1] - a[1]) / (b[0] - a[0]);
-    return Math.max(0, a[1] + (um - a[0]) * slope);
+    const uKnee = Math.min(a[0], KNOT_UM_KNEE_MAX);
+    if (um >= uKnee || uKnee <= KNOT_UM_FLOOR){
+      return Math.max(0, a[1] + (um - a[0]) * slope);
+    }
+    if (um <= KNOT_UM_FLOOR) return 0;
+    const span = uKnee - KNOT_UM_FLOOR;
+    const uLin = uKnee - span * (span / (um - KNOT_UM_FLOOR) - 1);
+    return Math.max(0, a[1] + (uLin - a[0]) * slope);
   }
   const last = knots[knots.length - 1];
   if (knots.length >= 2 && um > last[0]){
@@ -1292,7 +1302,13 @@ function invertKnotsToUm(knots, rawVal){
   if (knots.length >= 2 && rawVal < knots[0][1]){
     const a = knots[0], b = knots[1];
     const invSlope = b[1] === a[1] ? 0 : (b[0] - a[0]) / (b[1] - a[1]);
-    return Math.max(45, a[0] + (rawVal - a[1]) * invSlope);
+    const uLin = a[0] + (rawVal - a[1]) * invSlope;
+    const uKnee = Math.min(a[0], KNOT_UM_KNEE_MAX);
+    if (uLin >= uKnee || uKnee <= KNOT_UM_FLOOR){
+      return Math.max(KNOT_UM_FLOOR, uLin);
+    }
+    const span = uKnee - KNOT_UM_FLOOR;
+    return KNOT_UM_FLOOR + span / (1 + (uKnee - uLin) / span);
   }
   const last = knots[knots.length - 1];
   if (knots.length >= 2 && rawVal > last[1]){
@@ -1314,6 +1330,14 @@ function invertKnotsToUm(knots, rawVal){
 
 function slopeAtUm(knots, um){
   if (!knots || knots.length < 2) return 0.05;
+  const uKnee = Math.min(knots[0][0], KNOT_UM_KNEE_MAX);
+  if (um < uKnee && uKnee > KNOT_UM_FLOOR){
+    const du0 = knots[1][0] - knots[0][0], ds0 = knots[1][1] - knots[0][1];
+    const baseSlope = du0 > 0 ? Math.abs(ds0 / du0) : 0.05;
+    const span = uKnee - KNOT_UM_FLOOR;
+    const d = Math.max(2, um - KNOT_UM_FLOOR);
+    return baseSlope * Math.pow(span / d, 2);
+  }
   for (let i = 0; i < knots.length - 1; i++){
     if (um <= knots[i + 1][0] || i === knots.length - 2){
       const du = knots[i + 1][0] - knots[i][0], ds = knots[i + 1][1] - knots[i][1];
@@ -1830,8 +1854,9 @@ function grinderSettingForMicrons(grinderKey, targetMicrons, methodKey, calib){
       const fmtObj = formatGrinderSetting(g.key, val);
       return { ok:true, incompatible:false, preground:false, grinderKey:g.key, grinder:g.short, name:g.name, kind:'calibrate', raw:val, clicks:val, base:Math.round(refRaw), unit:'click', display:'~' + fmtObj.display + (cal ? ' (calibrated)' : ' (guide)'), shortDisplay:'~' + fmtObj.shortDisplay, headline:'about ' + fmtObj.display, brief:'On your ' + g.short + ': about ' + fmtObj.display + '.', stepClicks:1, calibrated:!!cal, offset:cal ? cal.offset : 0, calN:cal ? cal.n : 0, targetUm:Math.round(um), clamped:'', warning:g.how || '', compensation:null };
     }
-    const anchorDisp = cal ? 'Saved mark ' + cal.offset : 'Calibrate by taste';
-    return { ok:true, incompatible:false, preground:false, grinderKey:g.key, grinder:g.short, name:g.name, kind:'calibrate', raw:cal ? cal.offset : null, clicks:cal ? cal.offset : null, base:0, unit:'mark', display:anchorDisp, shortDisplay:anchorDisp, headline:anchorDisp, brief:g.how || '', stepClicks:1, calibrated:!!cal, offset:cal ? cal.offset : 0, calN:cal ? cal.n : 0, targetUm:Math.round(um), clamped:'', warning:'', compensation:null };
+    const isNut = !!(cv && cv.fmt === 'unmarked_nut');
+    const anchorDisp = cal ? ('Saved mark ' + cal.offset) : 'Stepless / Calibrate by taste';
+    return { ok:true, incompatible:false, preground:false, grinderKey:g.key, grinder:g.short, name:g.name, kind:'calibrate', calibMode:'taste', stepless:true, refKnots:null, fmt:(cv && cv.fmt) || 'stepless', raw:cal ? cal.offset : null, clicks:cal ? cal.offset : null, base:0, unit:isNut ? 'turn' : 'mark', display:anchorDisp, shortDisplay:anchorDisp, headline:anchorDisp, brief:g.how || '', stepClicks:0, calibrated:!!cal, offset:cal ? cal.offset : 0, calN:cal ? cal.n : 0, targetUm:Math.round(um), clamped:'', warning:'', compensation:null };
   }
   const b = grindBase(g, mKey, um);
   if (!b) return null;
@@ -1854,24 +1879,35 @@ function grinderSettingForMicrons(grinderKey, targetMicrons, methodKey, calib){
 }
 
 function micronsForGrinderSetting(grinderKey, settingOrText, methodKey, calib){
+  if (methodKey && typeof methodKey === 'object' && calib === undefined){
+    calib = methodKey;
+    methodKey = 'v60';
+  }
+  const mKey = methodKey || 'v60';
+  const mAnchor = (METHOD_TARGET_UM[mKey] || METHOD_TARGET_UM.v60).anchor || 560;
   const g = grinderFor(grinderKey);
-  if (!g) return null;
+  if (!g) return mAnchor;
   if (g.kind === 'preground') {
     const pg = PREGROUND_PROFILES[g.key];
-    return pg && pg.fixedUm ? pg.fixedUm : 550;
+    return pg && pg.fixedUm ? pg.fixedUm : mAnchor;
   }
   const raw = typeof settingOrText === 'number' ? settingOrText : parseGrinderInput(g.key, settingOrText);
-  if (raw == null || !isFinite(raw)) return null;
-  if (calib && typeof calib === 'object' && !Array.isArray(calib) && calib.slopeM > 0){
+  if (raw != null && isFinite(raw) && calib && typeof calib === 'object' && !Array.isArray(calib) && calib.slopeM > 0){
     const normG = String(g.key || '').toLowerCase().replace(/_/g, '-');
     if (!calib.grinderKey || String(calib.grinderKey).toLowerCase().replace(/_/g, '-') === normG){
-      return rnd(clampNum((+calib.d0OffsetUm || 100) + (+calib.slopeM) * raw, 55, 1600, 560), 1);
+      return rnd(clampNum((+calib.d0OffsetUm || 100) + (+calib.slopeM) * raw, 55, 1600, mAnchor), 1);
     }
   }
   const cv = GRINDER_CURVES[g.key];
   const kn = cv && (cv.knots || cv.refKnots);
-  if (!kn) return null;
-  const cal = calib ? calibOffset(calib, g.key, methodKey || 'v60') : null;
+  if (!kn){
+    if (raw == null || !isFinite(raw)) return mAnchor;
+    if (cv && cv.fmt === 'unmarked_nut') return rnd(clampNum(160 + raw * 420, 70, 1400, mAnchor), 1);
+    if (cv && cv.fmt === 'chirp_relative_marks') return rnd(clampNum(150 + raw * 65, 70, 1400, mAnchor), 1);
+    return rnd(clampNum(160 + raw * 120, 70, 1400, mAnchor), 1);
+  }
+  if (raw == null || !isFinite(raw)) return mAnchor;
+  const cal = calib ? calibOffset(calib, g.key, mKey) : null;
   const unshifted = raw - (cal ? cal.offset : 0);
   return rnd(invertKnotsToUm(kn, unshifted), 1);
 }

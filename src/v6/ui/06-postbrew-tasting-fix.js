@@ -2355,6 +2355,15 @@ if (typeof window !== 'undefined') {
     }
 
     st.id = mintFreshRowId();
+    st.measuredTds = 0;
+    st.measuredEy = 0;
+    st.stars = 0;
+    st.pad_xy = [0, 0];
+    st.general_notes = '';
+    st.dial_locked = '';
+    st.brewFinishedAtMs = 0;
+    st.quick = { make: '', sym: '', areas: {}, liked: [], notLiked: [] };
+    a.taste = {};
     a.cupBrew = null;
     if (a.brew) {
       a.brew.actualSecs = null;
@@ -2362,6 +2371,7 @@ if (typeof window !== 'undefined') {
       a.brew.measuredBeverageG = null;
     }
     _step5Session = null;
+    _lastLiveR2 = null;
     try {
       if (typeof window !== 'undefined' && window.BTBrewStudio && typeof window.BTBrewStudio.resetTimerSession === 'function') {
         window.BTBrewStudio.resetTimerSession();
@@ -4681,7 +4691,25 @@ if (typeof window !== 'undefined') {
   var BTTasteStep = {
     renderStep5: renderStep5,
     getSession: function () { return ensureStep5Session(); },
-    resetSession: function () { _step5Session = null; _lastLiveR2 = null; },
+    resetSession: function () {
+      _step5Session = null;
+      _lastLiveR2 = null;
+      try {
+        var a = S.getApp();
+        var st = S.getState();
+        if (st) {
+          st.measuredTds = 0;
+          st.measuredEy = 0;
+          st.stars = 0;
+          st.pad_xy = [0, 0];
+          st.general_notes = '';
+          st.dial_locked = '';
+          st.brewFinishedAtMs = 0;
+          st.quick = { make: '', sym: '', areas: {}, liked: [], notLiked: [] };
+        }
+        if (a) a.taste = {};
+      } catch (_) {}
+    },
     setUserRating: function (stars, padXY) {
       var s = ensureStep5Session();
       s.stars = clamp(+stars || 4.25, 0.25, 5.0);

@@ -263,7 +263,7 @@
 .bt-lab-chip.is-sweet-peak {
   background: var(--accent, #9A4212);
   border-color: var(--accent, #9A4212);
-  color: #FFFDF9;
+  color: var(--accent-ink, #FFFDF9);
 }
 
 .bt-lab-btn.is-danger {
@@ -2257,14 +2257,23 @@ button.bt-trait-row:hover {
   color: #FFFDF9;
 }
 
+[data-theme="dark"] .bt-quiz-opt.is-correct,
+[data-theme="dark"] .bt-lab-chip.is-correct,
+[data-theme="dark"] .bt-quiz-opt.is-wrong,
+[data-theme="dark"] .bt-lab-chip.is-wrong {
+  color: var(--accent-ink, #160E09);
+}
+
 .bt-sca-bowl-card {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .bt-sca-bowl-top {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -2274,13 +2283,14 @@ button.bt-trait-row:hover {
   padding: 3px 9px;
   border-radius: 9999px;
   background: var(--primary, #1B4D38);
-  color: #FFFDF9;
+  color: var(--primary-ink, #FFFDF9);
   font-size: 0.76rem;
   font-weight: 800;
 }
 
 .bt-sca-score-live {
-  font-size: 0.96rem;
+  font-size: 0.84rem;
+  min-width: 0;
   color: var(--accent, #9A4212);
 }
 
@@ -2360,6 +2370,10 @@ button.bt-trait-row:hover {
 }
 
 .bt-chart-crosshair.is-subtle {
+  opacity: 1;
+}
+
+.bt-chart-crosshair.is-subtle .bt-ch-line {
   opacity: 0.52;
 }
 
@@ -2374,12 +2388,13 @@ button.bt-trait-row:hover {
 }
 
 .bt-ch-pill-bg {
-  fill: var(--ink-primary, #231811);
-  opacity: 0.92;
+  fill: #1F1712;
+  opacity: 1;
 }
 
 [data-theme="dark"] .bt-ch-pill-bg {
   fill: #F5EDE3;
+  opacity: 1;
 }
 
 .bt-ch-pill-txt {

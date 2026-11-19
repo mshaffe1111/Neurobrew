@@ -547,13 +547,13 @@ const Beanjamin = (function() {
         '<ellipse cx="157" cy="166" rx="10.5" ry="9" fill="url(#' + u + '_p)" stroke="' + ink + '" stroke-width="2.8"/></g>';
     } else if (key === 'celebrating') {
       content = '<ellipse cx="120" cy="210" rx="42" ry="6.5" fill="var(--bj-shadow,rgba(26,20,18,0.16))"/>' +
-        '<g class="bj-actor bj-hop" transform="translate(0 -7)">' + baseFeet +
+        '<g transform="translate(0 -7)"><g class="bj-actor bj-hop">' + baseFeet +
         '<ellipse cx="55" cy="96" rx="11" ry="17" transform="rotate(-34 55 96)" fill="url(#' + u + '_p)" stroke="' + ink + '" stroke-width="2.8"/>' +
         '<ellipse cx="185" cy="96" rx="11" ry="17" transform="rotate(34 185 96)" fill="url(#' + u + '_p)" stroke="' + ink + '" stroke-width="2.8"/>' +
         coreBody(u, 0.72) + openEye(100, 118, 0, -1, true) + openEye(149, 118, 0, -1, true) +
         '<path d="M 88 95 Q 100 88 112 94 M 137 94 Q 149 88 161 95" fill="none" stroke="#361809" stroke-width="3.2" stroke-linecap="round"/>' +
         '<path d="M 109 132 Q 125 136 141 132 Q 139 153 125 153 Q 111 153 109 132 Z" fill="#591E17" stroke="' + ink + '" stroke-width="2.8" stroke-linejoin="round"/>' +
-        '<path d="M 116 144 Q 125 139 134 144 Q 125 151 116 144 Z" fill="#EE8578"/></g>' +
+        '<path d="M 116 144 Q 125 139 134 144 Q 125 151 116 144 Z" fill="#EE8578"/></g></g>' +
         '<g class="bj-sparkle">' +
         star4(46, 54, 10.5, 'url(#' + u + '_g)') + star4(80, 27, 10, '#FCE69E') + star4(120, 17, 12.5, 'url(#' + u + '_g)') +
         star4(160, 27, 10, '#FCE69E') + star4(194, 54, 10.5, 'url(#' + u + '_g)') +
@@ -582,8 +582,8 @@ const Beanjamin = (function() {
         '<path d="M 138 96 Q 149 88 160 95" fill="none" stroke="#361809" stroke-width="3.4" stroke-linecap="round"/>' +
         '<path d="M 116 136 Q 125 139 133 133" fill="none" stroke="' + ink + '" stroke-width="3" stroke-linecap="round"/>' +
         '<path d="M 178 152 C 170 166 150 164 141 146 C 138 140 146 135 152 141 C 158 147 168 148 176 140 Z" fill="url(#' + u + '_p)" stroke="' + ink + '" stroke-width="2.8" stroke-linejoin="round"/></g>' +
-        '<g class="bj-float" transform="translate(194 66)"><path d="M -8 -10 C -8 -19 9 -19 9 -9 C 9 -2 0 -1 0 6" fill="none" stroke="url(#' + u + '_g)" stroke-width="5" stroke-linecap="round"/>' +
-        '<circle cx="0" cy="15" r="3.6" fill="#F0A83A"/></g></g>';
+        '<g transform="translate(194 66)"><g class="bj-float"><path d="M -8 -10 C -8 -19 9 -19 9 -9 C 9 -2 0 -1 0 6" fill="none" stroke="url(#' + u + '_g)" stroke-width="5" stroke-linecap="round"/>' +
+        '<circle cx="0" cy="15" r="3.6" fill="#F0A83A"/></g></g></g>';
     }
 
     const extraCls = requested !== key ? (' bj-state-' + _btEsc(requested)) : '';

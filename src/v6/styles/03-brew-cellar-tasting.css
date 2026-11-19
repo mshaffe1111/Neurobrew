@@ -480,8 +480,8 @@
 .bt-tc-primary-btn .bt-tc-primary-sub {
   font-size: 0.74rem;
   font-weight: 600;
-  color: rgba(255, 253, 249, 0.88);
-  opacity: 1;
+  color: inherit;
+  opacity: 0.88;
   line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -493,6 +493,12 @@
   background: var(--accent);
   color: var(--accent-ink);
   box-shadow: 0 6px 18px rgba(154, 66, 18, 0.22);
+}
+
+.bt-cta-btn.bt-cta-copper .bt-cta-sub,
+.bt-tc-primary-btn.is-prompt .bt-tc-primary-sub {
+  color: var(--accent-ink);
+  opacity: 0.88;
 }
 
 .bt-cta-btn.bt-cta-ghost,
@@ -606,7 +612,20 @@
   gap: 8px;
   text-align: left;
   min-height: 126px;
+  min-width: 0;
+  overflow: hidden;
   transition: border-color 0.15s ease, transform 0.14s var(--spring-snappy);
+}
+
+.bt-door-action-card .bt-card-hd {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-door-action-card .bt-badge-v62 {
+  white-space: normal;
+  max-width: 100%;
+  text-align: center;
 }
 
 .bt-door-action-card:hover {
@@ -2240,7 +2259,24 @@
   min-width: 0;
 }
 
-[data-theme="dark"] .bt-active-step-top > span,
+.bt-active-step-kicker {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+}
+
+.bt-water-chem-summary,
+.bt-primary-ink {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+[data-theme="dark"] .bt-active-step-top span,
+[data-theme="dark"] .bt-active-step-kicker,
+[data-theme="dark"] .bt-water-chem-summary,
+[data-theme="dark"] .bt-primary-ink,
 [data-theme="dark"] .bt-active-step-target {
   color: var(--good) !important;
 }
@@ -3141,6 +3177,11 @@
 }
 
 .bt-step-context-link {
+  background: transparent;
+  border: 0;
+  padding: 4px 2px;
+  cursor: pointer;
+  font: inherit;
   font-size: 0.74rem;
   font-weight: 800;
   color: var(--accent);

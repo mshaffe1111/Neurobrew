@@ -370,14 +370,56 @@
     padding: 0;
   }
 }
-@media (max-width: 358px) {
+@media (max-width: 410px) {
+  #top-chrome {
+    padding-left: calc(6px + var(--safe-left));
+    padding-right: calc(6px + var(--safe-right));
+    gap: 3px;
+  }
+  .bt-top-left {
+    gap: 3px;
+  }
+  .bt-top-brand {
+    padding: 4px 0;
+  }
+  .bt-top-brand-mark {
+    width: 24px;
+    height: 24px;
+  }
+  .bt-top-back-btn,
+  #top-back-btn {
+    padding: 0 5px;
+    gap: 2px;
+    font-size: 10.5px;
+  }
+  .bt-top-right {
+    gap: 2px;
+  }
   .bt-lens-seg button {
-    padding: 4px 5px;
+    padding: 4px 4.5px;
+    font-size: 10px;
   }
   .bt-gear-btn,
   #top-ble-pill {
-    padding: 0 6px;
+    padding: 0 5px;
+    gap: 3px;
   }
+}
+
+.bt-link-btn {
+  background: transparent;
+  border: 0;
+  padding: 4px 2px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+}
+.bt-link-btn:hover {
+  text-decoration: underline;
 }
 
 /* Compact Start | Comfy | Sci Experience Lens Pill in Mobile Top Chrome */

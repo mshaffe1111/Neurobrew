@@ -623,26 +623,38 @@ function mapMicronsToGrinder(a, b, calib, methodKey){
       const gObj = typeof G.grinderFor === 'function' ? G.grinderFor(normKey) : null;
       const c = G.GRINDER_CURVES && G.GRINDER_CURVES[normKey];
       const kn = c && (c.knots || c.refKnots);
+      const isSteplessTaste = !!(
+        res.calibMode === 'taste' || res.stepless ||
+        (c && c.kind === 'calibrate' && !c.refKnots && !c.knots) ||
+        (c && (c.fmt === 'unmarked_nut' || c.fmt === 'chirp_relative_marks'))
+      );
       const sl = kn && typeof G.slopeAtUm === 'function' ? G.slopeAtUm(kn, targetUm) : 0.04;
-      const clickInc = _grinderClickIncForFmt(c && c.fmt);
-      const stepUm = res.preground ? 0 : _rnd(1 / Math.max(0.005, sl), 1);
+      const clickInc = isSteplessTaste ? 0 : _grinderClickIncForFmt(c && c.fmt);
+      const stepUm = res.preground ? 0 : (isSteplessTaste ? 25 : _rnd(1 / Math.max(0.005, sl), 1));
       const minRaw = c && c.minSafeRaw != null ? c.minSafeRaw : (gObj && gObj.min != null ? gObj.min : 0);
       const maxRaw = c && c.maxRaw != null ? c.maxRaw : (gObj && gObj.max != null ? gObj.max : 500);
+      const dispTxt = res.display || (isSteplessTaste ? 'Stepless / Calibrate by taste' : '');
+      const shortTxt = res.shortDisplay || dispTxt || (Math.round(targetUm) + ' um');
       return Object.assign({}, res, {
         um:res.fixedUm || targetUm,
         setting:res.raw,
         clicks:res.raw,
-        label:res.incompatible ? (res.headline || res.warning || 'Incompatible') : ((gObj ? gObj.short + ': ' : '') + res.display),
-        unit:gObj ? (gObj.unit || 'clicks') : 'clicks',
+        calibMode:isSteplessTaste ? 'taste' : (res.calibMode || null),
+        stepless:isSteplessTaste || !!res.stepless,
+        fmt:(c && c.fmt) || res.fmt || null,
+        display:dispTxt,
+        shortDisplay:shortTxt,
+        label:res.incompatible ? (res.headline || res.warning || 'Incompatible') : ((gObj ? gObj.short + ': ' : '') + dispTxt),
+        unit:isSteplessTaste ? (res.unit || ((c && c.fmt === 'unmarked_nut') ? 'turn' : 'mark')) : (gObj ? (gObj.unit || 'clicks') : 'clicks'),
         stepUm,
         clickInc,
-        umPerClick:res.preground ? 0 : _rnd(stepUm * clickInc, 1),
+        umPerClick:(res.preground || isSteplessTaste) ? 0 : _rnd(stepUm * clickInc, 1),
         minRaw,
         maxRaw
       });
     }
   }
-  return { ok:false, grinderKey:normKey, um:targetUm, setting:null, clickInc:1, stepUm:25, umPerClick:25, label:Math.round(targetUm) + ' um' };
+  return { ok:false, grinderKey:normKey, um:targetUm, setting:null, clickInc:1, stepUm:25, umPerClick:25, shortDisplay:Math.round(targetUm) + ' um', label:Math.round(targetUm) + ' um' };
 }
 
 /* ============================================================================
@@ -2077,8 +2089,8 @@ function synthesizeRecipe(input){
       symptom:obs.symptom || (diag && diag.topHypothesis ? diag.topHypothesis.id : ''),
       prevClicks:gPrev ? gPrev.clicks : null,
       nextClicks:gNext ? gNext.clicks : null,
-      prevClickDisplay:gPrev ? (gPrev.shortDisplay || gPrev.display) : (prevUm + ' um'),
-      nextClickDisplay:gNext ? (gNext.shortDisplay || gNext.display) : (chosenNextUm + ' um'),
+      prevClickDisplay:gPrev ? ((gPrev.calibMode === 'taste' && gPrev.clicks == null) ? ('Stepless (~' + Math.round(prevUm) + ' um)') : (gPrev.shortDisplay || gPrev.display)) : (prevUm + ' um'),
+      nextClickDisplay:gNext ? ((gNext.calibMode === 'taste' && gNext.clicks == null) ? ('Stepless (~' + Math.round(chosenNextUm) + ' um)') : (gNext.shortDisplay || gNext.display)) : (chosenNextUm + ' um'),
       prevUm,
       nextUm:chosenNextUm,
       grindDeltaUm:Math.round(chosenNextUm - prevUm),
@@ -3375,17 +3387,23 @@ function _solveMakeItPerfectBase(prevRec, obs, hist){
   /* Exact Grinder-Specific Click / Number Step Translation + Minimum +/-1 Click Step Guard & Clamp Fallback */
   const gPrev = mapMicronsToGrinder(curUm, grinderKey, prevRec.calib || null, methodKey);
   let gNext = mapMicronsToGrinder(nextUm, grinderKey, prevRec.calib || null, methodKey);
+  const isSteplessTaste = !!(
+    (gNext && (gNext.calibMode === 'taste' || gNext.stepless || (gNext.clickInc === 0 && !gNext.preground && gNext.kind === 'calibrate'))) ||
+    (gPrev && (gPrev.calibMode === 'taste' || gPrev.stepless || (gPrev.clickInc === 0 && !gPrev.preground && gPrev.kind === 'calibrate')))
+  );
   const realUmPerStep = (gNext && gNext.umPerClick > 0) ? gNext.umPerClick : ((gNext && gNext.stepUm > 0) ? gNext.stepUm : 25.0);
   const clickInc = (gNext && gNext.clickInc > 0) ? gNext.clickInc : 1;
   let grindDeltaUm = Math.round(nextUm - curUm);
-  let grindDeltaClicks = (gPrev && gNext && gPrev.clicks != null && gNext.clicks != null)
-    ? _rnd(gNext.clicks - gPrev.clicks, 2)
-    : _rnd(grindDeltaUm / realUmPerStep, 2);
+  let grindDeltaClicks = isSteplessTaste
+    ? 0
+    : ((gPrev && gNext && gPrev.clicks != null && gNext.clicks != null)
+        ? _rnd(gNext.clicks - gPrev.clicks, 2)
+        : _rnd(grindDeltaUm / realUmPerStep, 2));
   let steppedThermalSpilloverC = 0;
   let grinderClampNote = null;
 
-  /* Coarse & fine grinders must NEVER quantize a real extraction residual (|dx| >= 0.18) back to 0 clicks! */
-  if (!grindLocked && !tabuPivotApplied && Math.abs(dx) >= 0.18 && ringInfo.ring > 0 &&
+  /* Coarse & fine stepped grinders must NEVER quantize a real extraction residual (|dx| >= 0.18) back to 0 clicks! */
+  if (!isSteplessTaste && !grindLocked && !tabuPivotApplied && Math.abs(dx) >= 0.18 && ringInfo.ring > 0 &&
       Math.abs(grindDeltaClicks) < (clickInc * 0.5) && gPrev && gPrev.clicks != null){
     const dir = (nextUm < curUm || (nextUm === curUm && dx < 0)) ? -1 : 1;
     const minC = gPrev.minRaw != null ? gPrev.minRaw : 0;
@@ -3394,7 +3412,7 @@ function _solveMakeItPerfectBase(prevRec, obs, hist){
     let steppedOk = false;
     if (Math.abs(targetClicks - gPrev.clicks) >= (clickInc * 0.5)){
       let candUm = (typeof G.micronsForGrinderSetting === 'function')
-        ? Math.round(G.micronsForGrinderSetting(grinderKey, targetClicks, prevRec.calib || null))
+        ? Math.round(G.micronsForGrinderSetting(grinderKey, targetClicks, methodKey, prevRec.calib || null))
         : Math.round(curUm + dir * realUmPerStep);
       candUm = _clamp(Math.round(candUm / 5) * 5, activeUmFloor, activeUmCeil, curUm);
       let gCand = mapMicronsToGrinder(candUm, grinderKey, prevRec.calib || null, methodKey);
@@ -3424,7 +3442,7 @@ function _solveMakeItPerfectBase(prevRec, obs, hist){
         nextTempC = _clamp(_rnd(curTempC + steppedThermalSpilloverC, 1), tLo, tHi, curTempC);
       }
     }
-  } else if (!grindLocked && Math.abs(grindDeltaUm) >= 6 && Math.abs(grindDeltaClicks) < (clickInc * 0.5) && !tempLocked && methodKey !== 'cold' && methodKey !== 'cold_drip'){
+  } else if (!isSteplessTaste && !grindLocked && Math.abs(grindDeltaUm) >= 6 && Math.abs(grindDeltaClicks) < (clickInc * 0.5) && !tempLocked && methodKey !== 'cold' && methodKey !== 'cold_drip'){
     steppedThermalSpilloverC = _rnd(_clamp(-0.092 * grindDeltaUm, -2.2, 2.2, 0), 1);
     nextTempC = _clamp(_rnd(curTempC + steppedThermalSpilloverC, 1), tLo, tHi, curTempC);
     nextUm = curUm;
@@ -3451,12 +3469,27 @@ function _solveMakeItPerfectBase(prevRec, obs, hist){
     actionParts.push(grinderClampNote);
   }
   if (Math.abs(grindDeltaUm) >= 5){
-    const absClicks = Math.abs(grindDeltaClicks);
-    const unitWord = (gNext && gNext.unit) ? gNext.unit : 'clicks';
-    const clickPhrase = absClicks >= 0.2
-      ? (absClicks + ' ' + (absClicks === 1 ? unitWord.replace(/s$/i, '') : (/s$/i.test(unitWord) ? unitWord : unitWord + 's')) + ' ' + (grindDeltaUm < 0 ? 'FINER' : 'COARSER') + ' (\u2192 ' + gNext.label + ', ' + (grindDeltaUm > 0 ? '+' : '') + grindDeltaUm + ' um)')
-      : ((grindDeltaUm < 0 ? 'FINER ' : 'COARSER +') + grindDeltaUm + ' um (\u2192 ' + nextUm + ' um)');
-    actionParts.push('Grind ' + clickPhrase);
+    const dirWord = grindDeltaUm < 0 ? 'FINER' : 'COARSER';
+    const absUm = Math.abs(grindDeltaUm);
+    if (isSteplessTaste){
+      const fmtKey = (gNext && gNext.fmt) || (gPrev && gPrev.fmt) || '';
+      let steplessCue = 'Stepless \u00B7 Calibrate by taste';
+      if (fmtKey === 'unmarked_nut'){
+        const turnFrac = absUm >= 120 ? '~1/4 wing-nut turn' : absUm >= 55 ? '~1/8 wing-nut turn' : '~1/12 wing-nut turn';
+        steplessCue = turnFrac + ' \u00B7 Calibrate by taste';
+      } else if (fmtKey === 'chirp_relative_marks'){
+        const markEst = _rnd(Math.max(0.25, absUm / 45), 1);
+        steplessCue = '~' + markEst + ' dial marks \u00B7 Calibrate by taste';
+      }
+      actionParts.push('Adjust grind ~' + absUm + ' \u00B5m ' + dirWord + ' (' + steplessCue + ')');
+    } else {
+      const absClicks = Math.abs(grindDeltaClicks);
+      const unitWord = (gNext && gNext.unit) ? gNext.unit : 'clicks';
+      const clickPhrase = absClicks >= 0.2
+        ? (absClicks + ' ' + (absClicks === 1 ? unitWord.replace(/s$/i, '') : (/s$/i.test(unitWord) ? unitWord : unitWord + 's')) + ' ' + dirWord + ' (\u2192 ' + gNext.label + ', ' + (grindDeltaUm > 0 ? '+' : '') + grindDeltaUm + ' um)')
+        : ((grindDeltaUm < 0 ? 'FINER ' : 'COARSER +') + grindDeltaUm + ' um (\u2192 ' + nextUm + ' um)');
+      actionParts.push('Grind ' + clickPhrase);
+    }
   }
   if (Math.abs(ratioDelta) >= (isEsp ? 0.08 : 0.2)){
     const massChangeTxt = lockedParam === 'water'

@@ -999,14 +999,56 @@ button:disabled,
     padding: 0;
   }
 }
-@media (max-width: 358px) {
+@media (max-width: 410px) {
+  #top-chrome {
+    padding-left: calc(6px + var(--safe-left));
+    padding-right: calc(6px + var(--safe-right));
+    gap: 3px;
+  }
+  .bt-top-left {
+    gap: 3px;
+  }
+  .bt-top-brand {
+    padding: 4px 0;
+  }
+  .bt-top-brand-mark {
+    width: 24px;
+    height: 24px;
+  }
+  .bt-top-back-btn,
+  #top-back-btn {
+    padding: 0 5px;
+    gap: 2px;
+    font-size: 10.5px;
+  }
+  .bt-top-right {
+    gap: 2px;
+  }
   .bt-lens-seg button {
-    padding: 4px 5px;
+    padding: 4px 4.5px;
+    font-size: 10px;
   }
   .bt-gear-btn,
   #top-ble-pill {
-    padding: 0 6px;
+    padding: 0 5px;
+    gap: 3px;
   }
+}
+
+.bt-link-btn {
+  background: transparent;
+  border: 0;
+  padding: 4px 2px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+}
+.bt-link-btn:hover {
+  text-decoration: underline;
 }
 
 /* Compact Start | Comfy | Sci Experience Lens Pill in Mobile Top Chrome */
@@ -4067,8 +4109,8 @@ select.bt-input {
 .bt-tc-primary-btn .bt-tc-primary-sub {
   font-size: 0.74rem;
   font-weight: 600;
-  color: rgba(255, 253, 249, 0.88);
-  opacity: 1;
+  color: inherit;
+  opacity: 0.88;
   line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4080,6 +4122,12 @@ select.bt-input {
   background: var(--accent);
   color: var(--accent-ink);
   box-shadow: 0 6px 18px rgba(154, 66, 18, 0.22);
+}
+
+.bt-cta-btn.bt-cta-copper .bt-cta-sub,
+.bt-tc-primary-btn.is-prompt .bt-tc-primary-sub {
+  color: var(--accent-ink);
+  opacity: 0.88;
 }
 
 .bt-cta-btn.bt-cta-ghost,
@@ -4193,7 +4241,20 @@ select.bt-input {
   gap: 8px;
   text-align: left;
   min-height: 126px;
+  min-width: 0;
+  overflow: hidden;
   transition: border-color 0.15s ease, transform 0.14s var(--spring-snappy);
+}
+
+.bt-door-action-card .bt-card-hd {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-door-action-card .bt-badge-v62 {
+  white-space: normal;
+  max-width: 100%;
+  text-align: center;
 }
 
 .bt-door-action-card:hover {
@@ -5827,7 +5888,24 @@ select.bt-input {
   min-width: 0;
 }
 
-[data-theme="dark"] .bt-active-step-top > span,
+.bt-active-step-kicker {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+}
+
+.bt-water-chem-summary,
+.bt-primary-ink {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+[data-theme="dark"] .bt-active-step-top span,
+[data-theme="dark"] .bt-active-step-kicker,
+[data-theme="dark"] .bt-water-chem-summary,
+[data-theme="dark"] .bt-primary-ink,
 [data-theme="dark"] .bt-active-step-target {
   color: var(--good) !important;
 }
@@ -6728,6 +6806,11 @@ select.bt-input {
 }
 
 .bt-step-context-link {
+  background: transparent;
+  border: 0;
+  padding: 4px 2px;
+  cursor: pointer;
+  font: inherit;
   font-size: 0.74rem;
   font-weight: 800;
   color: var(--accent);
@@ -10413,6 +10496,14 @@ select.bt-input {
   font-size: 0.79rem;
 }
 
+#bt-step5-r2-expand-btn {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.25;
+  flex-shrink: 1;
+}
+
 /* Semantic Status Badges */
 .bt-tc-badge {
   display: inline-flex;
@@ -12288,7 +12379,7 @@ select.bt-input {
 .bt-lab-chip.is-sweet-peak {
   background: var(--accent, #9A4212);
   border-color: var(--accent, #9A4212);
-  color: #FFFDF9;
+  color: var(--accent-ink, #FFFDF9);
 }
 
 .bt-lab-btn.is-danger {
@@ -14282,14 +14373,23 @@ button.bt-trait-row:hover {
   color: #FFFDF9;
 }
 
+[data-theme="dark"] .bt-quiz-opt.is-correct,
+[data-theme="dark"] .bt-lab-chip.is-correct,
+[data-theme="dark"] .bt-quiz-opt.is-wrong,
+[data-theme="dark"] .bt-lab-chip.is-wrong {
+  color: var(--accent-ink, #160E09);
+}
+
 .bt-sca-bowl-card {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .bt-sca-bowl-top {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -14299,13 +14399,14 @@ button.bt-trait-row:hover {
   padding: 3px 9px;
   border-radius: 9999px;
   background: var(--primary, #1B4D38);
-  color: #FFFDF9;
+  color: var(--primary-ink, #FFFDF9);
   font-size: 0.76rem;
   font-weight: 800;
 }
 
 .bt-sca-score-live {
-  font-size: 0.96rem;
+  font-size: 0.84rem;
+  min-width: 0;
   color: var(--accent, #9A4212);
 }
 
@@ -14385,6 +14486,10 @@ button.bt-trait-row:hover {
 }
 
 .bt-chart-crosshair.is-subtle {
+  opacity: 1;
+}
+
+.bt-chart-crosshair.is-subtle .bt-ch-line {
   opacity: 0.52;
 }
 
@@ -14399,12 +14504,13 @@ button.bt-trait-row:hover {
 }
 
 .bt-ch-pill-bg {
-  fill: var(--ink-primary, #231811);
-  opacity: 0.92;
+  fill: #1F1712;
+  opacity: 1;
 }
 
 [data-theme="dark"] .bt-ch-pill-bg {
   fill: #F5EDE3;
+  opacity: 1;
 }
 
 .bt-ch-pill-txt {

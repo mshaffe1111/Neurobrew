@@ -549,13 +549,13 @@ const Beanjamin = (function() {
         '<ellipse cx="157" cy="166" rx="10.5" ry="9" fill="url(#' + u + '_p)" stroke="' + ink + '" stroke-width="2.8"/></g>';
     } else if (key === 'celebrating') {
       content = '<ellipse cx="120" cy="210" rx="42" ry="6.5" fill="var(--bj-shadow,rgba(26,20,18,0.16))"/>' +
-        '<g class="bj-actor bj-hop" transform="translate(0 -7)">' + baseFeet +
+        '<g transform="translate(0 -7)"><g class="bj-actor bj-hop">' + baseFeet +
         '<ellipse cx="55" cy="96" rx="11" ry="17" transform="rotate(-34 55 96)" fill="url(#' + u + '_p)" stroke="' + ink + '" stroke-width="2.8"/>' +
         '<ellipse cx="185" cy="96" rx="11" ry="17" transform="rotate(34 185 96)" fill="url(#' + u + '_p)" stroke="' + ink + '" stroke-width="2.8"/>' +
         coreBody(u, 0.72) + openEye(100, 118, 0, -1, true) + openEye(149, 118, 0, -1, true) +
         '<path d="M 88 95 Q 100 88 112 94 M 137 94 Q 149 88 161 95" fill="none" stroke="#361809" stroke-width="3.2" stroke-linecap="round"/>' +
         '<path d="M 109 132 Q 125 136 141 132 Q 139 153 125 153 Q 111 153 109 132 Z" fill="#591E17" stroke="' + ink + '" stroke-width="2.8" stroke-linejoin="round"/>' +
-        '<path d="M 116 144 Q 125 139 134 144 Q 125 151 116 144 Z" fill="#EE8578"/></g>' +
+        '<path d="M 116 144 Q 125 139 134 144 Q 125 151 116 144 Z" fill="#EE8578"/></g></g>' +
         '<g class="bj-sparkle">' +
         star4(46, 54, 10.5, 'url(#' + u + '_g)') + star4(80, 27, 10, '#FCE69E') + star4(120, 17, 12.5, 'url(#' + u + '_g)') +
         star4(160, 27, 10, '#FCE69E') + star4(194, 54, 10.5, 'url(#' + u + '_g)') +
@@ -584,8 +584,8 @@ const Beanjamin = (function() {
         '<path d="M 138 96 Q 149 88 160 95" fill="none" stroke="#361809" stroke-width="3.4" stroke-linecap="round"/>' +
         '<path d="M 116 136 Q 125 139 133 133" fill="none" stroke="' + ink + '" stroke-width="3" stroke-linecap="round"/>' +
         '<path d="M 178 152 C 170 166 150 164 141 146 C 138 140 146 135 152 141 C 158 147 168 148 176 140 Z" fill="url(#' + u + '_p)" stroke="' + ink + '" stroke-width="2.8" stroke-linejoin="round"/></g>' +
-        '<g class="bj-float" transform="translate(194 66)"><path d="M -8 -10 C -8 -19 9 -19 9 -9 C 9 -2 0 -1 0 6" fill="none" stroke="url(#' + u + '_g)" stroke-width="5" stroke-linecap="round"/>' +
-        '<circle cx="0" cy="15" r="3.6" fill="#F0A83A"/></g></g>';
+        '<g transform="translate(194 66)"><g class="bj-float"><path d="M -8 -10 C -8 -19 9 -19 9 -9 C 9 -2 0 -1 0 6" fill="none" stroke="url(#' + u + '_g)" stroke-width="5" stroke-linecap="round"/>' +
+        '<circle cx="0" cy="15" r="3.6" fill="#F0A83A"/></g></g></g>';
     }
 
     const extraCls = requested !== key ? (' bj-state-' + _btEsc(requested)) : '';
@@ -10421,7 +10421,7 @@ function BTLinkedDrumTrio(cfg) {
   let anchor = cfg.lockedKey === 'dose' || cfg.lockedKey === 'water' || cfg.lockedKey === 'ratio' ? cfg.lockedKey : 'ratio';
   let prewet = cfg.prewet !== false;
 
-  const doseRange = isEsp ? { min: 7, max: 26, step: 0.1 } : { min: 6, max: 95, step: 0.5 };
+  const doseRange = isEsp ? { min: 7, max: 26, step: 0.1 } : { min: 6, max: 95, step: 0.1 };
   const waterRange = isEsp ? { min: 14, max: 120, step: 0.5 } : { min: 80, max: 1500, step: 1 };
   const ratioRange = isEsp ? { min: 1.0, max: 5.0, step: 0.1 } : { min: 8.0, max: 22.0, step: 0.1 };
 
@@ -15515,8 +15515,8 @@ const BTChartKit = (function () {
     const vLine = svgEl('line', { class: 'bt-ch-line bt-ch-vline' });
     const hLine = svgEl('line', { class: 'bt-ch-line bt-ch-hline' });
     const xPillG = svgEl('g', { class: 'bt-ch-axis-pill bt-ch-x-pill' });
-    const xBg = svgEl('rect', { x: '-28', y: '3', width: '56', height: '16', rx: '8', class: 'bt-ch-pill-bg' });
-    const xTxt = svgEl('text', { x: '0', y: '14', 'text-anchor': 'middle', class: 'bt-ch-pill-txt num-tab' });
+    const xBg = svgEl('rect', { x: '-28', y: '1', width: '56', height: '15', rx: '7.5', class: 'bt-ch-pill-bg' });
+    const xTxt = svgEl('text', { x: '0', y: '11.5', 'text-anchor': 'middle', class: 'bt-ch-pill-txt num-tab' });
     xPillG.appendChild(xBg);
     xPillG.appendChild(xTxt);
 
@@ -15571,7 +15571,8 @@ const BTChartKit = (function () {
         yPillG.setAttribute('display', 'none');
       }
 
-      g.setAttribute('opacity', activeMode === 'subtle' ? '0.52' : '1');
+      g.setAttribute('opacity', '1');
+      g.classList.toggle('is-subtle', activeMode === 'subtle');
       if (activeMode === 'active') g.classList.add('is-scrubbing');
       else g.classList.remove('is-scrubbing');
     }
@@ -24358,7 +24359,8 @@ if (typeof window !== 'undefined') {
         dom('span', { style: 'font-size:0.75rem;font-weight:800;color:var(--ink)', text: 'Brew Water (1-Tap Everyday or Brand/DIY)' }),
         !opts.inSheet ? dom('button', {
           type: 'button',
-          style: 'font-size:0.73rem;font-weight:800;color:var(--accent)',
+          class: 'bt-link-btn',
+          style: 'font-size:0.73rem;font-weight:800',
           text: 'All ' + presets.length + ' Profiles & Custom \u2192',
           onclick: function () { openSheet('water-quick-pick', {}, { title: 'Select Brew Water Profile', detent: 'full' }); }
         }) : null
@@ -24368,7 +24370,7 @@ if (typeof window !== 'undefined') {
       dom('div', { class: 'bt-water-chem-note' },
         dom('div', { style: 'min-width:0' },
           dom('b', { style: 'color:var(--ink)', text: (curWater.label || curCfg.label) + ' — ' }),
-          dom('span', { class: 'bt-num', style: 'font-weight:700;color:var(--primary)', text: formatWaterChemPlain(curCfg.gh, curCfg.kh) }),
+          dom('span', { class: 'bt-num bt-water-chem-summary', text: formatWaterChemPlain(curCfg.gh, curCfg.kh) }),
           dom('div', { style: 'font-size:0.72rem;color:var(--ink-secondary);margin-top:2px', text: noteTxt })
         )
       )
@@ -25759,7 +25761,8 @@ if (typeof window !== 'undefined') {
         dom('span', { class: 'bt-kicker', text: 'Quick Counter Shortcuts' }),
         vaultCoffees.length ? dom('button', {
           type: 'button',
-          style: 'font-size:0.76rem;font-weight:700;color:var(--accent)',
+          class: 'bt-link-btn',
+          style: 'font-size:0.76rem;font-weight:700',
           text: 'Open Cellar (' + vaultCoffees.length + ') \u2192',
           onclick: function () { navGoRoute('cellar'); }
         }) : null
@@ -25990,7 +25993,8 @@ if (typeof window !== 'undefined') {
           dom('span', { class: 'bt-kicker', text: 'My Saved Brewers (' + savedBrewerObjs.length + ')' }),
           dom('button', {
             type: 'button',
-            style: 'font-size:0.75rem;font-weight:700;color:var(--accent)',
+            class: 'bt-link-btn',
+            style: 'font-size:0.75rem;font-weight:700',
             text: 'Edit Saved Brewers \u2192',
             onclick: function () { openSheet('edit-owned-brewers', {}, { title: 'My Kitchen Counter Brewers', detent: 'half' }); }
           })
@@ -27300,7 +27304,8 @@ if (typeof window !== 'undefined') {
         dom('span', { text: a.recipeLocked ? 'Gold-Seal Locked Recipe Active' : ('Tuned: ' + a.brew.customizedNote) }),
         dom('button', {
           type: 'button',
-          style: 'color:var(--accent);font-weight:800;font-size:0.76rem',
+          class: 'bt-link-btn',
+          style: 'font-weight:800;font-size:0.76rem',
           text: a.recipeLocked ? 'Unlock' : 'Reset Baseline',
           onclick: function () {
             a.recipeLocked = false;
@@ -28646,7 +28651,7 @@ if (typeof window !== 'undefined') {
     }
 
     /* 3. Collapsible High-Contrast Current Step Guide (#bt-timer-active-step) */
-    var stepKickerEl = dom('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--primary)' });
+    var stepKickerEl = dom('span', { class: 'bt-active-step-kicker' });
     var stepCollapsedSumEl = dom('span', { class: 'bt-active-step-collapsed-sum', hidden: !isActiveStepCollapsed });
     var stepTargetEl = dom('span', { class: 'bt-active-step-target' });
     var stepTitleEl = dom('div', { class: 'bt-active-step-title' });
@@ -29771,7 +29776,7 @@ if (typeof window !== 'undefined') {
                         value: a.brew.dose,
                         min: 5,
                         max: 120,
-                        step: 0.5,
+                        step: 0.1,
                         unit: 'g',
                         units: ['g', 'oz', 'tbsp'],
                         onCommit: function (val) {
@@ -29980,7 +29985,7 @@ if (typeof window !== 'undefined') {
           dom('div', { class: 'bt-num', style: 'font-size:0.86rem;font-weight:700', text: mObj.label + ' · ' + dec.doseG + ' g : ' + dec.waterG + ' g (1:' + dec.ratio + ') · ' + dec.tempC + ' °C' }),
           dom('div', { style: 'padding:8px 10px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-size:0.8rem' },
             dom('div', null, 'Friend\'s Grind: ', dom('b', { class: 'bt-num', text: dec.senderSetting + ' (' + dec.senderGrinder + ')' })),
-            dom('div', { style: 'color:var(--primary);font-weight:800;margin-top:3px' },
+            dom('div', { class: 'bt-primary-ink', style: 'font-weight:800;margin-top:3px' },
               'Your ' + dec.rxGrinderLabel + ': ' + dec.rxGrindSetting + ' (~' + dec.localizedUm + ' µm)'
             ),
             dom('div', { style: 'font-size:0.73rem;color:var(--ink-secondary);margin-top:2px', text: dec.spanNote })
@@ -33223,6 +33228,15 @@ if (typeof window !== 'undefined') {
     }
 
     st.id = mintFreshRowId();
+    st.measuredTds = 0;
+    st.measuredEy = 0;
+    st.stars = 0;
+    st.pad_xy = [0, 0];
+    st.general_notes = '';
+    st.dial_locked = '';
+    st.brewFinishedAtMs = 0;
+    st.quick = { make: '', sym: '', areas: {}, liked: [], notLiked: [] };
+    a.taste = {};
     a.cupBrew = null;
     if (a.brew) {
       a.brew.actualSecs = null;
@@ -33230,6 +33244,7 @@ if (typeof window !== 'undefined') {
       a.brew.measuredBeverageG = null;
     }
     _step5Session = null;
+    _lastLiveR2 = null;
     try {
       if (typeof window !== 'undefined' && window.BTBrewStudio && typeof window.BTBrewStudio.resetTimerSession === 'function') {
         window.BTBrewStudio.resetTimerSession();
@@ -35549,7 +35564,25 @@ if (typeof window !== 'undefined') {
   var BTTasteStep = {
     renderStep5: renderStep5,
     getSession: function () { return ensureStep5Session(); },
-    resetSession: function () { _step5Session = null; _lastLiveR2 = null; },
+    resetSession: function () {
+      _step5Session = null;
+      _lastLiveR2 = null;
+      try {
+        var a = S.getApp();
+        var st = S.getState();
+        if (st) {
+          st.measuredTds = 0;
+          st.measuredEy = 0;
+          st.stars = 0;
+          st.pad_xy = [0, 0];
+          st.general_notes = '';
+          st.dial_locked = '';
+          st.brewFinishedAtMs = 0;
+          st.quick = { make: '', sym: '', areas: {}, liked: [], notLiked: [] };
+        }
+        if (a) a.taste = {};
+      } catch (_) {}
+    },
     setUserRating: function (stars, padXY) {
       var s = ensureStep5Session();
       s.stars = clamp(+stars || 4.25, 0.25, 5.0);
@@ -39939,6 +39972,10 @@ if (typeof window !== 'undefined') {
     const khSaltG = (kh * khSalt.mgPerLPpm * batchL) / 1000;
     const clMgL = (mgSalt.clPerPpm ? ghMg * mgSalt.clPerPpm : 0) + (caSalt.clPerPpm ? ghCa * caSalt.clPerPpm : 0);
 
+    const batchMl = Math.round(batchL * 1000);
+    const tapMl = Math.round(fTap * batchMl);
+    const roMl = Math.max(0, batchMl - tapMl);
+
     return {
       gh: gh,
       kh: kh,
@@ -39961,8 +39998,8 @@ if (typeof window !== 'undefined') {
       drops10kCa: Math.round((ghCa * batchL) / 0.5),
       drops10kKh: Math.round((kh * batchL) / 0.5),
       fTap: fTap,
-      tapMl: Math.round(fTap * batchL * 1000),
-      roMl: Math.round((1 - fTap) * batchL * 1000),
+      tapMl: tapMl,
+      roMl: roMl,
       blendedGh: +(fTap * ghTap).toFixed(1),
       epsomBoostPpm: Math.max(0, +(gh - fTap * ghTap).toFixed(1))
     };
@@ -40585,14 +40622,17 @@ if (typeof window !== 'undefined') {
       freezeBulk: true
     },
     grinderLab: {
-      fromKey: 'comandante_c40',
-      toKey: 'fellow_ode_gen2',
+      fromKey: 'comandante-c40',
+      toKey: 'fellow-ode-gen2',
       fromSetting: 22,
       targetUm: 580,
       calPt1Click: 15,
       calPt1Um: 420,
       calPt2Click: 28,
-      calPt2Um: 760
+      calPt2Um: 760,
+      calPt1Locked: false,
+      calPt2Locked: false,
+      calGrinderKey: ''
     },
 
     /* PocketMicronLens state */
@@ -42732,7 +42772,7 @@ if (typeof window !== 'undefined') {
       for (let ey = 14; ey <= 26; ey += 2) {
         const x = mapX(ey);
         gridG.appendChild(CK.svgEl('line', { x1: x.toFixed(1), y1: P.T, x2: x.toFixed(1), y2: P.B, class: 'bt-chart-gridline' }));
-        const t = CK.svgEl('text', { x: x.toFixed(1), y: P.B + 16, 'text-anchor': 'middle', class: 'bt-chart-tick' });
+        const t = CK.svgEl('text', { x: x.toFixed(1), y: P.B + 27, 'text-anchor': 'middle', class: 'bt-chart-tick' });
         t.textContent = ey + '%';
         gridG.appendChild(t);
       }
@@ -43503,8 +43543,17 @@ if (typeof window !== 'undefined') {
             mode: s.mode,
             style: s.stylePreset || 'custom'
           };
-          if (s.mode === 'espresso' && a.brew.method !== 'espresso' && a.brew.method !== 'moka') {
+          const prevMethod = String(a.brew.method || '').toLowerCase();
+          if (s.mode === 'espresso' && prevMethod !== 'espresso' && prevMethod !== 'lever_espresso' && prevMethod !== 'moka') {
             a.brew.method = 'espresso';
+          }
+          if (s.mode === 'espresso') {
+            const curUm = +a.brew.grindUm;
+            const switchedToEsp = prevMethod !== 'espresso' && prevMethod !== 'lever_espresso';
+            if (switchedToEsp || !Number.isFinite(curUm) || curUm < 120 || curUm > 360) {
+              const espUm = Math.round(clamp(245 + (s.targetEy - 20.0) * 3, 235, 260, 245));
+              syncBrewGrindFields(a, espUm, { methodKey: a.brew.method });
+            }
           }
           a.brew.customizedNote = fc.styleHead + ' (' + a.brew.dose + 'g : ' + a.brew.water + 'g · 1:' + rec.ratio.toFixed(1) + ')';
         }, {
@@ -44330,6 +44379,17 @@ if (typeof window !== 'undefined') {
       cutoffRangeEl
     ));
     card.appendChild(readoutBar);
+    function resolveWaveTargetGrindUm(a, waveUm) {
+      const mLow = String((a && a.brew && a.brew.method) || '').toLowerCase();
+      const isEspLike = mLow === 'espresso' || mLow === 'lever_espresso' || mLow === 'turkish';
+      if (isEspLike) {
+        if (Number.isFinite(+waveUm) && +waveUm >= 120 && +waveUm <= 420) return Math.round(+waveUm);
+        const curUm = a && a.brew ? +a.brew.grindUm : NaN;
+        return (Number.isFinite(curUm) && curUm >= 120 && curUm <= 420) ? Math.round(curUm) : 235;
+      }
+      return waveUm;
+    }
+
     card.appendChild(domH('div', { class: 'bt-chart-cta-bar' },
       domH('button', {
         type: 'button',
@@ -44345,7 +44405,7 @@ if (typeof window !== 'undefined') {
           applyLabToBrewAndGo(function (a) {
             a.brew.pullCarafeAtSec = cutSec;
             a.brew.tempC = w.kettleC;
-            syncBrewGrindFields(a, w.d50Um);
+            syncBrewGrindFields(a, resolveWaveTargetGrindUm(a, w.d50Um));
             a.brew.pourNotes = 'Pull dripper at ' + mm + ' (~' + carafeG + ' g in carafe) to block ' + blkPct + '% dry bitters';
             a.brew.customizedNote = 'Cutoff Gate ' + mm + ' (~' + carafeG + 'g · ' + blkPct + '% dry bitters blocked)';
           }, {
@@ -44364,7 +44424,7 @@ if (typeof window !== 'undefined') {
           applyLabToBrewAndGo(function (a) {
             a.brew.pullCarafeAtSec = cutSec;
             a.brew.tempC = w.kettleC;
-            syncBrewGrindFields(a, w.d50Um);
+            syncBrewGrindFields(a, resolveWaveTargetGrindUm(a, w.d50Um));
             a.brew.customizedNote = '3-Wave Tuned (' + w.kettleC + ' °C · Pull @ ' + mm + ')';
           }, {
             targetStep: 'brew',
@@ -44385,7 +44445,7 @@ if (typeof window !== 'undefined') {
     const card = domH('section', { class: 'bt-studio-card', id: 'bt-studio-mug-rescue' });
     const verdictBox = domH('div', { class: 'bt-mug-rescue-verdict' });
     const mugSvg = CK.svgEl('svg', {
-      viewBox: '0 0 360 148',
+      viewBox: '0 0 460 148',
       class: 'bt-chart-svg bt-mug-rescue-svg',
       'aria-label': 'In-Mug Emergency Rescue Cross-Section Gauge'
     });
@@ -44917,9 +44977,10 @@ if (typeof window !== 'undefined') {
         y2: P.B,
         class: 'bt-pk-sws-portal ' + (gatePass ? 'is-safe' : 'is-over')
       }));
+      const glY = (gateY + 13 <= P.B - 4) ? (gateY + 13) : Math.max(P.T + 12, gateY - 17);
       const gl = CK.svgEl('text', {
-        x: (bedX - 5).toFixed(1),
-        y: (gateY - 5).toFixed(1),
+        x: Math.max(P.L + 165, bedX - 5).toFixed(1),
+        y: glY.toFixed(1),
         'text-anchor': 'end',
         class: 'bt-pk-gate-lbl ' + (gatePass ? 'is-safe' : 'is-over')
       });
@@ -46465,6 +46526,7 @@ if (typeof window !== 'undefined') {
     const outBox = domH('div', { class: 'bt-ratio4-out' });
 
     function solveFromAnchor(changedKey, val) {
+      const eyFrac = clamp(r4.eyPct, 2, 36, 20.4) / 100;
       if (changedKey === 'dose') {
         r4.doseG = clamp(val, 4, 250, r4.doseG);
         r4.waterG = +(r4.doseG * r4.ratio).toFixed(0);
@@ -46473,12 +46535,13 @@ if (typeof window !== 'undefined') {
         if (r4.anchor === 'ratio') r4.doseG = +(r4.waterG / Math.max(1.5, r4.ratio)).toFixed(1);
         else r4.ratio = +(r4.waterG / Math.max(0.5, r4.doseG)).toFixed(2);
       } else if (changedKey === 'mug') {
-        r4.mugG = clamp(val, 15, 3600, r4.mugG);
+        const targetMug = clamp(val, 15, 3600, r4.mugG);
+        r4.mugG = targetMug;
         if (r4.anchor === 'ratio') {
-          r4.doseG = +(r4.mugG / Math.max(0.8, r4.ratio - r4.rw)).toFixed(1);
+          r4.doseG = +(targetMug / Math.max(0.8, r4.ratio - r4.rw + eyFrac)).toFixed(1);
           r4.waterG = Math.round(r4.doseG * r4.ratio);
         } else {
-          r4.waterG = Math.round(r4.mugG + r4.rw * r4.doseG);
+          r4.waterG = Math.round(targetMug + (r4.rw - eyFrac) * r4.doseG);
           r4.ratio = +(r4.waterG / Math.max(0.5, r4.doseG)).toFixed(2);
         }
       } else if (changedKey === 'ratio') {
@@ -46486,7 +46549,7 @@ if (typeof window !== 'undefined') {
         if (r4.anchor === 'water') r4.doseG = +(r4.waterG / r4.ratio).toFixed(1);
         else r4.waterG = Math.round(r4.doseG * r4.ratio);
       }
-      const dissG = r4.doseG * (r4.eyPct / 100);
+      const dissG = r4.doseG * eyFrac;
       r4.mugG = Math.max(10, Math.round(r4.waterG - r4.rw * r4.doseG + dissG));
       r4.tdsPct = +((100 * dissG) / Math.max(1, r4.mugG)).toFixed(2);
     }
@@ -46577,7 +46640,7 @@ if (typeof window !== 'undefined') {
       const canReadR2 = !!(stR4.refractometerConnected || stR4.simulatorActive);
       _prevR4CanRead = canReadR2;
       const bleR4 = window.BTBle || {};
-      const cbConcMl = Math.round(r4.coldBrewServeG / (1 + r4.coldBrewDiluteRatio - 1));
+      const cbConcMl = Math.round(r4.coldBrewServeG / (1 + r4.coldBrewDiluteRatio));
       const cbWaterOrMilkMl = Math.max(0, r4.coldBrewServeG - cbConcMl);
       const darcyShiftClicks = Math.round((Math.pow(r4.doseG / 18.0, 0.20) - 1) * 20);
       outBox.textContent = '';
@@ -46594,7 +46657,7 @@ if (typeof window !== 'undefined') {
             ? ('Dripper Sponge Retention r_w = ' + r4.rw.toFixed(2) + ' g/g (' + (r4.rw * r4.doseG).toFixed(1) + ' g held in bed)  ·  Batch Darcy Grind Shift: ')
             : ('Water Held in Grounds: ' + (r4.rw * r4.doseG).toFixed(1) + ' g (' + r4.rw.toFixed(2) + ' g per g coffee)  ·  Large-Batch Grind Guide: ')) +
             (darcyShiftClicks === 0 ? 'Standard 18g grind' : ((darcyShiftClicks > 0 ? '+' : '') + darcyShiftClicks + ' clicks coarser vs 18g')) +
-            '  ·  Cold Brew 1:' + r4.coldBrewConcRatio + ' Serving (' + r4.coldBrewServeG + ' g glass): ' + cbConcMl + ' g concentrate + ' + cbWaterOrMilkMl + ' g water/milk'
+            '  ·  Cold Brew 1:' + r4.coldBrewDiluteRatio + ' Dilution (' + r4.coldBrewServeG + ' g glass): ' + cbConcMl + ' g concentrate + ' + cbWaterOrMilkMl + ' g water/milk'
         }),
         domH('div', { class: 'bt-lab-btn-row', style: 'margin-top:8px' },
           domH('button', {
@@ -47218,12 +47281,12 @@ if (typeof window !== 'undefined') {
     const cmpOut = domH('div', { class: 'bt-bagcmp-out' });
 
     const aNameIn = domH('input', { type: 'text', class: 'bt-lab-text-in', value: bc.aName, 'aria-label': 'Bag A name', oninput: function () { bc.aName = aNameIn.value; paintCmp(); } });
-    const aPriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: String(bc.aPrice), 'aria-label': 'Bag A price', oninput: function () { bc.aPrice = Math.max(1, parseFloat(aPriceIn.value) || 20); paintCmp(); } });
-    const aGramsIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '10', value: String(bc.aGrams), 'aria-label': 'Bag A weight grams', oninput: function () { bc.aGrams = Math.max(50, parseFloat(aGramsIn.value) || 250); paintCmp(); } });
+    const aPriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: String(bc.aPrice), 'aria-label': 'Bag A price', oninput: function () { const v = parseFloat(aPriceIn.value); if (Number.isFinite(v)) { bc.aPrice = Math.max(0, v); paintCmp(); } } });
+    const aGramsIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '10', value: String(bc.aGrams), 'aria-label': 'Bag A weight grams', oninput: function () { const v = parseFloat(aGramsIn.value); if (Number.isFinite(v) && v >= 1) { bc.aGrams = Math.max(10, v); paintCmp(); } } });
 
     const bNameIn = domH('input', { type: 'text', class: 'bt-lab-text-in', value: bc.bName, 'aria-label': 'Bag B name', oninput: function () { bc.bName = bNameIn.value; paintCmp(); } });
-    const bPriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: String(bc.bPrice), 'aria-label': 'Bag B price', oninput: function () { bc.bPrice = Math.max(1, parseFloat(bPriceIn.value) || 24); paintCmp(); } });
-    const bGramsIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '10', value: String(bc.bGrams), 'aria-label': 'Bag B weight grams', oninput: function () { bc.bGrams = Math.max(50, parseFloat(bGramsIn.value) || 340); paintCmp(); } });
+    const bPriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: String(bc.bPrice), 'aria-label': 'Bag B price', oninput: function () { const v = parseFloat(bPriceIn.value); if (Number.isFinite(v)) { bc.bPrice = Math.max(0, v); paintCmp(); } } });
+    const bGramsIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '10', value: String(bc.bGrams), 'aria-label': 'Bag B weight grams', oninput: function () { const v = parseFloat(bGramsIn.value); if (Number.isFinite(v) && v >= 1) { bc.bGrams = Math.max(10, v); paintCmp(); } } });
 
     function paintCmp() {
       const dose = Math.max(8, roi.doseG || 18);
@@ -47290,18 +47353,25 @@ if (typeof window !== 'undefined') {
     const roiCard = domH('section', { class: 'bt-studio-card', id: 'bt-studio-cost-roi' });
     const roiOut = domH('div', { class: 'bt-roi-out' });
 
-    const rBagPriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: String(roi.bagPrice), 'aria-label': 'Bag price USD', oninput: function () { roi.bagPrice = Math.max(1, parseFloat(rBagPriceIn.value) || 20); paintRoi(); } });
-    const rCafePriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.25', value: String(roi.cafeDrinkPrice), 'aria-label': 'Cafe drink price USD', oninput: function () { roi.cafeDrinkPrice = Math.max(1, parseFloat(rCafePriceIn.value) || 5.75); paintRoi(); } });
-    const rGearIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '10', value: String(roi.gearInvestment), 'aria-label': 'Gear investment USD', oninput: function () { roi.gearInvestment = Math.max(0, parseFloat(rGearIn.value) || 300); paintRoi(); } });
+    const rBagPriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: String(roi.bagPrice), 'aria-label': 'Bag price USD', oninput: function () { const v = parseFloat(rBagPriceIn.value); if (Number.isFinite(v)) { roi.bagPrice = Math.max(0, v); paintRoi(); } } });
+    const rCafePriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.25', value: String(roi.cafeDrinkPrice), 'aria-label': 'Cafe drink price USD', oninput: function () { const v = parseFloat(rCafePriceIn.value); if (Number.isFinite(v)) { roi.cafeDrinkPrice = Math.max(0, v); paintRoi(); } } });
+    const rGearIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '10', value: String(roi.gearInvestment), 'aria-label': 'Gear investment USD', oninput: function () { const v = parseFloat(rGearIn.value); if (Number.isFinite(v)) { roi.gearInvestment = Math.max(0, v); paintRoi(); } } });
 
     function paintRoi() {
       const beanCost = (roi.bagPrice / Math.max(50, roi.bagGrams)) * roi.doseG;
       const waterCost = (roi.doseG * 16 / 1000) * roi.waterCostPerL;
       const trueCup = beanCost + roi.filterCost + waterCost + roi.milkCostPerCup;
-      const savedPerCup = Math.max(0.1, roi.cafeDrinkPrice - trueCup);
-      const annualSavings = savedPerCup * roi.cupsPerDay * 365;
-      const breakEvenCups = Math.ceil(roi.gearInvestment / savedPerCup);
-      const breakEvenDays = Math.ceil(breakEvenCups / Math.max(0.25, roi.cupsPerDay));
+      const netPerCup = roi.cafeDrinkPrice - trueCup;
+      const annualSavings = netPerCup * roi.cupsPerDay * 365;
+      const isSaving = netPerCup > 0.005;
+      const breakEvenCups = isSaving ? Math.ceil(roi.gearInvestment / netPerCup) : 0;
+      const breakEvenDays = isSaving ? Math.ceil(breakEvenCups / Math.max(0.25, roi.cupsPerDay)) : 0;
+      const annualText = annualSavings >= 0.5
+        ? ('+$' + Math.round(annualSavings) + ' / yr')
+        : (annualSavings <= -0.5 ? ('-$' + Math.round(Math.abs(annualSavings)) + ' / yr') : '$0 / yr');
+      const breakEvenText = isSaving
+        ? (roi.gearInvestment <= 0 ? '0 cups ($0 gear)' : (breakEvenCups + ' cups (~' + breakEvenDays + ' days)'))
+        : ('Costs $' + Math.abs(netPerCup).toFixed(2) + ' more/cup than cafe · No break-even');
 
       roiOut.textContent = '';
       roiOut.appendChild(domH('div', { class: 'bt-lab-metric-strip' },
@@ -47310,12 +47380,12 @@ if (typeof window !== 'undefined') {
           domH('strong', { class: 'num-tab', text: '$' + trueCup.toFixed(2) + ' / cup' })
         ),
         domH('div', { class: 'bt-lab-kpi' },
-          domH('span', { text: 'Saved vs $' + roi.cafeDrinkPrice.toFixed(2) + ' Cafe' }),
-          domH('strong', { class: 'num-tab', text: '+$' + Math.round(annualSavings) + ' / yr' })
+          domH('span', { text: (isSaving ? 'Saved vs $' : 'Net vs $') + roi.cafeDrinkPrice.toFixed(2) + ' Cafe' }),
+          domH('strong', { class: 'num-tab', text: annualText })
         ),
         domH('div', { class: 'bt-lab-kpi' },
           domH('span', { text: '$' + Math.round(roi.gearInvestment) + ' Gear Break-Even' }),
-          domH('strong', { class: 'num-tab', text: breakEvenCups + ' cups (~' + breakEvenDays + ' days)' })
+          domH('strong', { class: 'num-tab', text: breakEvenText })
         )
       ));
       roiOut.appendChild(domH('p', {
@@ -47364,15 +47434,15 @@ if (typeof window !== 'undefined') {
     const outBox = domH('div', { class: 'bt-grinder-lab-out' });
 
     const fallbackGrinders = [
-      { key: 'comandante_c40', name: 'Comandante C40 MK4 (Std Axle)', unit: 'clicks', min: 5, max: 45, umZero: 40, umPerStep: 25.5 },
-      { key: 'comandante_red', name: 'Comandante C40 (Red Clix)', unit: 'clicks', min: 10, max: 90, umZero: 40, umPerStep: 12.75 },
-      { key: '1zpresso_zp6', name: '1Zpresso ZP6 Special', unit: 'dial', min: 1.5, max: 7.0, umZero: 120, umPerStep: 110 },
-      { key: '1zpresso_k_ultra', name: '1Zpresso K-Ultra', unit: 'dial', min: 2.0, max: 9.5, umZero: 80, umPerStep: 82 },
-      { key: 'kingrinder_k6', name: 'KINGrinder K6', unit: 'clicks', min: 30, max: 160, umZero: 45, umPerStep: 7.2 },
-      { key: 'fellow_ode_gen2', name: 'Fellow Ode Gen 2', unit: 'dial', min: 1, max: 11, umZero: 240, umPerStep: 78 },
-      { key: 'baratza_encore_esp', name: 'Baratza Encore / ESP', unit: 'steps', min: 5, max: 38, umZero: 140, umPerStep: 26 },
-      { key: 'niche_zero', name: 'Niche Zero (63mm Conical)', unit: 'dial', min: 5, max: 50, umZero: 95, umPerStep: 15.5 },
-      { key: 'df64_gen2', name: 'DF64 Gen 2 (64mm Flat)', unit: 'dial', min: 5, max: 85, umZero: 90, umPerStep: 10.2 },
+      { key: 'comandante-c40', name: 'Comandante C40 MK4 (Std Axle)', unit: 'clicks', min: 5, max: 45, umZero: 40, umPerStep: 25.5 },
+      { key: 'comandante-red', name: 'Comandante C40 (Red Clix)', unit: 'clicks', min: 10, max: 90, umZero: 40, umPerStep: 12.75 },
+      { key: '1zpresso-zp6', name: '1Zpresso ZP6 Special', unit: 'dial', min: 1.5, max: 7.0, umZero: 120, umPerStep: 110 },
+      { key: '1zpresso-k-ultra', name: '1Zpresso K-Ultra', unit: 'dial', min: 2.0, max: 9.5, umZero: 80, umPerStep: 82 },
+      { key: 'kingrinder-k6', name: 'KINGrinder K6', unit: 'clicks', min: 30, max: 160, umZero: 45, umPerStep: 7.2 },
+      { key: 'fellow-ode-gen2', name: 'Fellow Ode Gen 2', unit: 'dial', min: 1, max: 11, umZero: 240, umPerStep: 78 },
+      { key: 'baratza-encore-esp', name: 'Baratza Encore / ESP', unit: 'steps', min: 5, max: 38, umZero: 140, umPerStep: 26 },
+      { key: 'niche-zero', name: 'Niche Zero (63mm Conical)', unit: 'dial', min: 5, max: 50, umZero: 95, umPerStep: 15.5 },
+      { key: 'df64-gen2', name: 'DF64 Gen 2 (64mm Flat)', unit: 'dial', min: 5, max: 85, umZero: 90, umPerStep: 10.2 },
       { key: 'ek43', name: 'Mahlkonig EK43 (98mm Flat)', unit: 'dial', min: 1.0, max: 16.0, umZero: 100, umPerStep: 62 }
     ];
 
@@ -47425,17 +47495,40 @@ if (typeof window !== 'undefined') {
     });
 
     const fromSetIn = domH('input', {
-      type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: String(gl.fromSetting),
+      type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: gl.fromSetting == null ? '' : String(gl.fromSetting),
       'aria-label': 'Source grinder setting',
       oninput: function () {
-        const v = parseFloat(fromSetIn.value);
+        const rawStr = String(fromSetIn.value || '').trim();
+        if (!rawStr) {
+          gl.fromSetting = null;
+          paintGrinder();
+          return;
+        }
+        const v = parseFloat(rawStr);
         if (Number.isFinite(v)) { gl.fromSetting = v; paintGrinder(); }
       }
     });
 
-    function settingToUm(g, setting) {
+    function getCustomCalibFor(gKey) {
+      if (!gl.calPt1Locked || !gl.calPt2Locked) return null;
+      const normReq = String(gKey || '').toLowerCase().replace(/_/g, '-');
+      const normCal = String(gl.calGrinderKey || '').toLowerCase().replace(/_/g, '-');
+      if (normCal && normCal !== normReq) return null;
+      const dClick = gl.calPt2Click - gl.calPt1Click;
+      const dUm = gl.calPt2Um - gl.calPt1Um;
+      if (Math.abs(dClick) < 0.5 || dUm * dClick <= 0) return null;
+      const slopeM = dUm / dClick;
+      const d0OffsetUm = gl.calPt1Um - slopeM * gl.calPt1Click;
+      return { grinderKey: normReq, slopeM: slopeM, d0OffsetUm: d0OffsetUm };
+    }
+
+    function settingToUm(g, setting, opts) {
       const aNow = getApp() || {};
-      const mKey = (aNow.brew && aNow.brew.method) || 'v60';
+      const mKey = 'v60';
+      const customCal = (opts && opts.ignoreCustom) ? null : getCustomCalibFor(g.key);
+      if (customCal) {
+        return clamp(customCal.d0OffsetUm + setting * customCal.slopeM, 120, 1400, 580);
+      }
       const calib = (aNow.prefs && (aNow.prefs.pocketMicronCalib || aNow.prefs.calib)) || null;
       const fnCore = window.BTCoreV6 && window.BTCoreV6.psd && typeof window.BTCoreV6.psd.micronsForGrinderSetting === 'function'
         ? window.BTCoreV6.psd.micronsForGrinderSetting
@@ -47449,22 +47542,34 @@ if (typeof window !== 'undefined') {
       return clamp(g.umZero + setting * g.umPerStep, 120, 1400, 580);
     }
 
-    function umToSetting(g, um) {
+    function umToSettingInfo(g, um) {
       const aNow = getApp() || {};
-      const mKey = (aNow.brew && aNow.brew.method) || 'v60';
-      const calib = (aNow.prefs && (aNow.prefs.pocketMicronCalib || aNow.prefs.calib)) || null;
+      const mKey = um < 320 ? 'espresso' : (um > 820 ? 'french_press' : 'v60');
+      const customCal = getCustomCalibFor(g.key);
+      const calib = customCal || (aNow.prefs && (aNow.prefs.pocketMicronCalib || aNow.prefs.calib)) || null;
       if (window.BTCoreV6 && window.BTCoreV6.psd && typeof window.BTCoreV6.psd.mapMicronsToGrinder === 'function' && g.raw) {
         try {
           const res = window.BTCoreV6.psd.mapMicronsToGrinder(um, g.key, calib, mKey);
-          if (res && !res.incompatible) {
-            if (res.clicks != null) return res.clicks;
-            if (res.setting != null) return res.setting;
+          if (res) {
+            if (res.incompatible) {
+              return { num: null, display: res.display || res.shortDisplay || 'Incompatible', incompatible: true };
+            }
+            const num = res.clicks != null ? res.clicks : res.setting;
+            const disp = res.display || res.shortDisplay || (num != null ? (num + ' ' + g.unit) : '');
+            if (num != null || disp) {
+              return { num: num, display: disp };
+            }
           }
         } catch (_) {}
       }
       const raw = (um - g.umZero) / Math.max(0.5, g.umPerStep);
       const clamped = clamp(raw, g.min, g.max, (g.min + g.max) * 0.5);
-      return g.max <= 16 ? +clamped.toFixed(1) : Math.round(clamped * 2) / 2;
+      const num = g.max <= 16 ? +clamped.toFixed(1) : Math.round(clamped * 2) / 2;
+      return { num: num, display: num + ' ' + g.unit };
+    }
+
+    function umToSetting(g, um) {
+      return umToSettingInfo(g, um).num;
     }
 
     let _omniOverrideUm = (labState.omniLive && labState.omniLive.d50Um > 0) ? Math.round(labState.omniLive.d50Um) : 0;
@@ -47568,7 +47673,7 @@ if (typeof window !== 'undefined') {
       psdSvg.appendChild(CK.svgEl('rect', { x: '12', y: '8', width: '356', height: '82', rx: '8', class: 'bt-chart-plot-bg' }));
       const bins = (Array.isArray(omL.bins) && omL.bins.length)
         ? omL.bins
-        : synthesizeFallbackBins(d10Show || 200, d50Show || settingToUm(gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0], gl.fromSetting), d90Show || 820);
+        : synthesizeFallbackBins(d10Show || 200, d50Show || settingToUm(gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0], gl.fromSetting != null ? gl.fromSetting : 22), d90Show || 820);
       let maxPct = 5;
       for (let i = 0; i < bins.length; i++) {
         if (+bins[i].pct > maxPct) maxPct = +bins[i].pct;
@@ -47617,9 +47722,16 @@ if (typeof window !== 'undefined') {
           type: 'button',
           class: 'bt-lab-btn is-sm',
           onclick: function () {
-            const curUm = Math.round(labState.omniLive.d50Um || settingToUm(gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0], gl.fromSetting));
-            gl.calPt1Click = gl.fromSetting;
+            if (gl.fromSetting == null || !Number.isFinite(+gl.fromSetting)) {
+              notify('Enter a valid grinder setting first.');
+              return;
+            }
+            const gFromCur = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
+            const curUm = Math.round(labState.omniLive.d50Um || settingToUm(gFromCur, gl.fromSetting, { ignoreCustom: true }));
+            gl.calPt1Click = +gl.fromSetting;
             gl.calPt1Um = curUm;
+            gl.calPt1Locked = true;
+            gl.calGrinderKey = gFromCur.key;
             CK.haptic('snap');
             paintGrinder();
             notify('Locked Burr Calibration Point 1: ' + gl.calPt1Click + ' \u2192 ' + gl.calPt1Um + ' \u00B5m.');
@@ -47629,12 +47741,23 @@ if (typeof window !== 'undefined') {
           type: 'button',
           class: 'bt-lab-btn is-sm',
           onclick: function () {
-            const curUm = Math.round(labState.omniLive.d50Um || settingToUm(gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0], gl.fromSetting));
-            gl.calPt2Click = gl.fromSetting;
+            if (gl.fromSetting == null || !Number.isFinite(+gl.fromSetting)) {
+              notify('Enter a valid grinder setting first.');
+              return;
+            }
+            const gFromCur = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
+            const curUm = Math.round(labState.omniLive.d50Um || settingToUm(gFromCur, gl.fromSetting, { ignoreCustom: true }));
+            gl.calPt2Click = +gl.fromSetting;
             gl.calPt2Um = curUm;
+            gl.calPt2Locked = true;
+            gl.calGrinderKey = gFromCur.key;
             CK.haptic('snap');
             paintGrinder();
-            notify('Locked Burr Calibration Point 2: ' + gl.calPt2Click + ' \u2192 ' + gl.calPt2Um + ' \u00B5m.');
+            if (Math.abs(gl.calPt2Click - gl.calPt1Click) < 0.5) {
+              notify('Point 2 matches Point 1 — choose a different setting for a 2-point slope.');
+            } else {
+              notify('Locked Burr Calibration Point 2: ' + gl.calPt2Click + ' \u2192 ' + gl.calPt2Um + ' \u00B5m.');
+            }
           }
         }, 'Lock as Burr Point 2')
       )
@@ -47646,21 +47769,42 @@ if (typeof window !== 'undefined') {
     function paintGrinder() {
       const gFrom = gList.find(function (x) { return x.key === gl.fromKey; }) || gList[0];
       const gTo = gList.find(function (x) { return x.key === gl.toKey; }) || gList[1] || gList[0];
-      const d50Um = _omniOverrideUm > 0 ? _omniOverrideUm : Math.round(settingToUm(gFrom, gl.fromSetting));
-      const targetSetting = umToSetting(gTo, d50Um);
-      const slopeCal = +((gl.calPt2Um - gl.calPt1Um) / Math.max(1, gl.calPt2Click - gl.calPt1Click)).toFixed(1);
+      const hasInput = gl.fromSetting != null && Number.isFinite(+gl.fromSetting);
+      const dClick = gl.calPt2Click - gl.calPt1Click;
+      const dUm = gl.calPt2Um - gl.calPt1Um;
+      const customCal = getCustomCalibFor(gFrom.key);
+      const calHintText = Math.abs(dClick) < 0.5 || dUm * dClick <= 0
+        ? '2-Point Burr Calibration: Need 2 distinct settings (Point 1 \u2260 Point 2).'
+        : ('2-Point Burr Calibration Slope: ' + (dUm / dClick).toFixed(1) + ' \u00B5m/step (' +
+            gl.calPt1Click + '\u2192' + gl.calPt1Um + ' \u00B5m, ' + gl.calPt2Click + '\u2192' + gl.calPt2Um + ' \u00B5m)' +
+            (customCal ? ' [Active]' : '') + ' across ' + gList.length + ' mapped grinders.');
 
       outBox.textContent = '';
+      if (!hasInput && !(_omniOverrideUm > 0)) {
+        outBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
+          domH('div', { class: 'bt-studio-human-line num-tab', id: 'bt-grinder-live-readout' },
+            domH('strong', { text: 'Enter a setting for ' + gFrom.name + ' to translate to ' + gTo.name + '.' })
+          ),
+          domH('p', { class: 'bt-lab-hint num-tab', text: calHintText })
+        ));
+        renderOmniPsdHistogram();
+        return;
+      }
+
+      const d50Um = _omniOverrideUm > 0 ? _omniOverrideUm : Math.round(settingToUm(gFrom, gl.fromSetting));
+      const targetInfo = umToSettingInfo(gTo, d50Um);
+      const targetDisp = targetInfo.display || (targetInfo.num + ' ' + gTo.unit);
+
       outBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
         domH('div', { class: 'bt-studio-human-line num-tab', id: 'bt-grinder-live-readout' },
           domH('strong', {
-            text: gFrom.name + ' @ ' + gl.fromSetting + ' ' + gFrom.unit + ' (~' + d50Um + ' \u00B5m D50)  \u2192  ' +
-              gTo.name + ' @ ' + targetSetting + ' ' + gTo.unit
+            text: gFrom.name + ' @ ' + (hasInput ? (gl.fromSetting + ' ' + gFrom.unit) : 'Omni D50') + ' (~' + d50Um + ' \u00B5m D50)  \u2192  ' +
+              gTo.name + ' @ ' + targetDisp
           })
         ),
         domH('p', {
           class: 'bt-lab-hint num-tab',
-          text: '2-Point Burr Calibration Slope: ' + slopeCal + ' \u00B5m/step (' + gl.calPt1Click + '\u2192' + gl.calPt1Um + ' \u00B5m, ' + gl.calPt2Click + '\u2192' + gl.calPt2Um + ' \u00B5m) across ' + gList.length + ' mapped grinders.'
+          text: calHintText
         }),
         domH('div', { class: 'bt-lab-btn-row', style: 'margin-top:8px' },
           domH('button', {
@@ -47678,11 +47822,11 @@ if (typeof window !== 'undefined') {
                 a.brew.grinderKey = gTo.key;
                 a.brew.grinderName = gTo.name;
                 const mappedSettingTxt = syncBrewGrindFields(a, d50Um, { grinderKey: gTo.key });
-                a.brew.customizedNote = gTo.name + ' @ ' + (mappedSettingTxt || (targetSetting + ' ' + gTo.unit)) + ' (~' + d50Um + ' \u00B5m)';
+                a.brew.customizedNote = gTo.name + ' @ ' + (mappedSettingTxt || targetDisp) + ' (~' + d50Um + ' \u00B5m)';
               }, {
                 targetStep: 'brew',
                 returnRoute: 'devices',
-                toast: 'Applied ' + gTo.name + ' @ ' + targetSetting + ' ' + gTo.unit + ' (~' + d50Um + ' \u00B5m) to your recipe!'
+                toast: 'Applied ' + gTo.name + ' @ ' + targetDisp + ' (~' + d50Um + ' \u00B5m) to your recipe!'
               });
             }
           }, ic('grinder-burr', { size: 14 }), domH('span', { text: 'Apply Translated Setting to My Recipe \u2192' }))

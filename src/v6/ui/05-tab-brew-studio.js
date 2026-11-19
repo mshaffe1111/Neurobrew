@@ -1289,7 +1289,8 @@
         dom('span', { style: 'font-size:0.75rem;font-weight:800;color:var(--ink)', text: 'Brew Water (1-Tap Everyday or Brand/DIY)' }),
         !opts.inSheet ? dom('button', {
           type: 'button',
-          style: 'font-size:0.73rem;font-weight:800;color:var(--accent)',
+          class: 'bt-link-btn',
+          style: 'font-size:0.73rem;font-weight:800',
           text: 'All ' + presets.length + ' Profiles & Custom \u2192',
           onclick: function () { openSheet('water-quick-pick', {}, { title: 'Select Brew Water Profile', detent: 'full' }); }
         }) : null
@@ -1299,7 +1300,7 @@
       dom('div', { class: 'bt-water-chem-note' },
         dom('div', { style: 'min-width:0' },
           dom('b', { style: 'color:var(--ink)', text: (curWater.label || curCfg.label) + ' — ' }),
-          dom('span', { class: 'bt-num', style: 'font-weight:700;color:var(--primary)', text: formatWaterChemPlain(curCfg.gh, curCfg.kh) }),
+          dom('span', { class: 'bt-num bt-water-chem-summary', text: formatWaterChemPlain(curCfg.gh, curCfg.kh) }),
           dom('div', { style: 'font-size:0.72rem;color:var(--ink-secondary);margin-top:2px', text: noteTxt })
         )
       )
@@ -2690,7 +2691,8 @@
         dom('span', { class: 'bt-kicker', text: 'Quick Counter Shortcuts' }),
         vaultCoffees.length ? dom('button', {
           type: 'button',
-          style: 'font-size:0.76rem;font-weight:700;color:var(--accent)',
+          class: 'bt-link-btn',
+          style: 'font-size:0.76rem;font-weight:700',
           text: 'Open Cellar (' + vaultCoffees.length + ') \u2192',
           onclick: function () { navGoRoute('cellar'); }
         }) : null
@@ -2921,7 +2923,8 @@
           dom('span', { class: 'bt-kicker', text: 'My Saved Brewers (' + savedBrewerObjs.length + ')' }),
           dom('button', {
             type: 'button',
-            style: 'font-size:0.75rem;font-weight:700;color:var(--accent)',
+            class: 'bt-link-btn',
+            style: 'font-size:0.75rem;font-weight:700',
             text: 'Edit Saved Brewers \u2192',
             onclick: function () { openSheet('edit-owned-brewers', {}, { title: 'My Kitchen Counter Brewers', detent: 'half' }); }
           })
@@ -4231,7 +4234,8 @@
         dom('span', { text: a.recipeLocked ? 'Gold-Seal Locked Recipe Active' : ('Tuned: ' + a.brew.customizedNote) }),
         dom('button', {
           type: 'button',
-          style: 'color:var(--accent);font-weight:800;font-size:0.76rem',
+          class: 'bt-link-btn',
+          style: 'font-weight:800;font-size:0.76rem',
           text: a.recipeLocked ? 'Unlock' : 'Reset Baseline',
           onclick: function () {
             a.recipeLocked = false;
@@ -5577,7 +5581,7 @@
     }
 
     /* 3. Collapsible High-Contrast Current Step Guide (#bt-timer-active-step) */
-    var stepKickerEl = dom('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--primary)' });
+    var stepKickerEl = dom('span', { class: 'bt-active-step-kicker' });
     var stepCollapsedSumEl = dom('span', { class: 'bt-active-step-collapsed-sum', hidden: !isActiveStepCollapsed });
     var stepTargetEl = dom('span', { class: 'bt-active-step-target' });
     var stepTitleEl = dom('div', { class: 'bt-active-step-title' });
@@ -6702,7 +6706,7 @@
                         value: a.brew.dose,
                         min: 5,
                         max: 120,
-                        step: 0.5,
+                        step: 0.1,
                         unit: 'g',
                         units: ['g', 'oz', 'tbsp'],
                         onCommit: function (val) {
@@ -6911,7 +6915,7 @@
           dom('div', { class: 'bt-num', style: 'font-size:0.86rem;font-weight:700', text: mObj.label + ' · ' + dec.doseG + ' g : ' + dec.waterG + ' g (1:' + dec.ratio + ') · ' + dec.tempC + ' °C' }),
           dom('div', { style: 'padding:8px 10px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-size:0.8rem' },
             dom('div', null, 'Friend\'s Grind: ', dom('b', { class: 'bt-num', text: dec.senderSetting + ' (' + dec.senderGrinder + ')' })),
-            dom('div', { style: 'color:var(--primary);font-weight:800;margin-top:3px' },
+            dom('div', { class: 'bt-primary-ink', style: 'font-weight:800;margin-top:3px' },
               'Your ' + dec.rxGrinderLabel + ': ' + dec.rxGrindSetting + ' (~' + dec.localizedUm + ' µm)'
             ),
             dom('div', { style: 'font-size:0.73rem;color:var(--ink-secondary);margin-top:2px', text: dec.spanNote })

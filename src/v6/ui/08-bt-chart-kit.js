@@ -1841,8 +1841,8 @@ const BTChartKit = (function () {
     const vLine = svgEl('line', { class: 'bt-ch-line bt-ch-vline' });
     const hLine = svgEl('line', { class: 'bt-ch-line bt-ch-hline' });
     const xPillG = svgEl('g', { class: 'bt-ch-axis-pill bt-ch-x-pill' });
-    const xBg = svgEl('rect', { x: '-28', y: '3', width: '56', height: '16', rx: '8', class: 'bt-ch-pill-bg' });
-    const xTxt = svgEl('text', { x: '0', y: '14', 'text-anchor': 'middle', class: 'bt-ch-pill-txt num-tab' });
+    const xBg = svgEl('rect', { x: '-28', y: '1', width: '56', height: '15', rx: '7.5', class: 'bt-ch-pill-bg' });
+    const xTxt = svgEl('text', { x: '0', y: '11.5', 'text-anchor': 'middle', class: 'bt-ch-pill-txt num-tab' });
     xPillG.appendChild(xBg);
     xPillG.appendChild(xTxt);
 
@@ -1897,7 +1897,8 @@ const BTChartKit = (function () {
         yPillG.setAttribute('display', 'none');
       }
 
-      g.setAttribute('opacity', activeMode === 'subtle' ? '0.52' : '1');
+      g.setAttribute('opacity', '1');
+      g.classList.toggle('is-subtle', activeMode === 'subtle');
       if (activeMode === 'active') g.classList.add('is-scrubbing');
       else g.classList.remove('is-scrubbing');
     }

@@ -4457,12 +4457,22 @@ const PREGROUND_PROFILES = {
   }
 };
 
+const KNOT_UM_FLOOR = 45;
+const KNOT_UM_KNEE_MAX = 85;
+
 function interpKnots(knots, um){
   if (!knots || !knots.length) return null;
   if (knots.length >= 2 && um < knots[0][0]){
     const a = knots[0], b = knots[1];
     const slope = b[0] === a[0] ? 0 : (b[1] - a[1]) / (b[0] - a[0]);
-    return Math.max(0, a[1] + (um - a[0]) * slope);
+    const uKnee = Math.min(a[0], KNOT_UM_KNEE_MAX);
+    if (um >= uKnee || uKnee <= KNOT_UM_FLOOR){
+      return Math.max(0, a[1] + (um - a[0]) * slope);
+    }
+    if (um <= KNOT_UM_FLOOR) return 0;
+    const span = uKnee - KNOT_UM_FLOOR;
+    const uLin = uKnee - span * (span / (um - KNOT_UM_FLOOR) - 1);
+    return Math.max(0, a[1] + (uLin - a[0]) * slope);
   }
   const last = knots[knots.length - 1];
   if (knots.length >= 2 && um > last[0]){
@@ -4487,7 +4497,13 @@ function invertKnotsToUm(knots, rawVal){
   if (knots.length >= 2 && rawVal < knots[0][1]){
     const a = knots[0], b = knots[1];
     const invSlope = b[1] === a[1] ? 0 : (b[0] - a[0]) / (b[1] - a[1]);
-    return Math.max(45, a[0] + (rawVal - a[1]) * invSlope);
+    const uLin = a[0] + (rawVal - a[1]) * invSlope;
+    const uKnee = Math.min(a[0], KNOT_UM_KNEE_MAX);
+    if (uLin >= uKnee || uKnee <= KNOT_UM_FLOOR){
+      return Math.max(KNOT_UM_FLOOR, uLin);
+    }
+    const span = uKnee - KNOT_UM_FLOOR;
+    return KNOT_UM_FLOOR + span / (1 + (uKnee - uLin) / span);
   }
   const last = knots[knots.length - 1];
   if (knots.length >= 2 && rawVal > last[1]){
@@ -4509,6 +4525,14 @@ function invertKnotsToUm(knots, rawVal){
 
 function slopeAtUm(knots, um){
   if (!knots || knots.length < 2) return 0.05;
+  const uKnee = Math.min(knots[0][0], KNOT_UM_KNEE_MAX);
+  if (um < uKnee && uKnee > KNOT_UM_FLOOR){
+    const du0 = knots[1][0] - knots[0][0], ds0 = knots[1][1] - knots[0][1];
+    const baseSlope = du0 > 0 ? Math.abs(ds0 / du0) : 0.05;
+    const span = uKnee - KNOT_UM_FLOOR;
+    const d = Math.max(2, um - KNOT_UM_FLOOR);
+    return baseSlope * Math.pow(span / d, 2);
+  }
   for (let i = 0; i < knots.length - 1; i++){
     if (um <= knots[i + 1][0] || i === knots.length - 2){
       const du = knots[i + 1][0] - knots[i][0], ds = knots[i + 1][1] - knots[i][1];
@@ -5025,8 +5049,9 @@ function grinderSettingForMicrons(grinderKey, targetMicrons, methodKey, calib){
       const fmtObj = formatGrinderSetting(g.key, val);
       return { ok:true, incompatible:false, preground:false, grinderKey:g.key, grinder:g.short, name:g.name, kind:'calibrate', raw:val, clicks:val, base:Math.round(refRaw), unit:'click', display:'~' + fmtObj.display + (cal ? ' (calibrated)' : ' (guide)'), shortDisplay:'~' + fmtObj.shortDisplay, headline:'about ' + fmtObj.display, brief:'On your ' + g.short + ': about ' + fmtObj.display + '.', stepClicks:1, calibrated:!!cal, offset:cal ? cal.offset : 0, calN:cal ? cal.n : 0, targetUm:Math.round(um), clamped:'', warning:g.how || '', compensation:null };
     }
-    const anchorDisp = cal ? 'Saved mark ' + cal.offset : 'Calibrate by taste';
-    return { ok:true, incompatible:false, preground:false, grinderKey:g.key, grinder:g.short, name:g.name, kind:'calibrate', raw:cal ? cal.offset : null, clicks:cal ? cal.offset : null, base:0, unit:'mark', display:anchorDisp, shortDisplay:anchorDisp, headline:anchorDisp, brief:g.how || '', stepClicks:1, calibrated:!!cal, offset:cal ? cal.offset : 0, calN:cal ? cal.n : 0, targetUm:Math.round(um), clamped:'', warning:'', compensation:null };
+    const isNut = !!(cv && cv.fmt === 'unmarked_nut');
+    const anchorDisp = cal ? ('Saved mark ' + cal.offset) : 'Stepless / Calibrate by taste';
+    return { ok:true, incompatible:false, preground:false, grinderKey:g.key, grinder:g.short, name:g.name, kind:'calibrate', calibMode:'taste', stepless:true, refKnots:null, fmt:(cv && cv.fmt) || 'stepless', raw:cal ? cal.offset : null, clicks:cal ? cal.offset : null, base:0, unit:isNut ? 'turn' : 'mark', display:anchorDisp, shortDisplay:anchorDisp, headline:anchorDisp, brief:g.how || '', stepClicks:0, calibrated:!!cal, offset:cal ? cal.offset : 0, calN:cal ? cal.n : 0, targetUm:Math.round(um), clamped:'', warning:'', compensation:null };
   }
   const b = grindBase(g, mKey, um);
   if (!b) return null;
@@ -5049,24 +5074,35 @@ function grinderSettingForMicrons(grinderKey, targetMicrons, methodKey, calib){
 }
 
 function micronsForGrinderSetting(grinderKey, settingOrText, methodKey, calib){
+  if (methodKey && typeof methodKey === 'object' && calib === undefined){
+    calib = methodKey;
+    methodKey = 'v60';
+  }
+  const mKey = methodKey || 'v60';
+  const mAnchor = (METHOD_TARGET_UM[mKey] || METHOD_TARGET_UM.v60).anchor || 560;
   const g = grinderFor(grinderKey);
-  if (!g) return null;
+  if (!g) return mAnchor;
   if (g.kind === 'preground') {
     const pg = PREGROUND_PROFILES[g.key];
-    return pg && pg.fixedUm ? pg.fixedUm : 550;
+    return pg && pg.fixedUm ? pg.fixedUm : mAnchor;
   }
   const raw = typeof settingOrText === 'number' ? settingOrText : parseGrinderInput(g.key, settingOrText);
-  if (raw == null || !isFinite(raw)) return null;
-  if (calib && typeof calib === 'object' && !Array.isArray(calib) && calib.slopeM > 0){
+  if (raw != null && isFinite(raw) && calib && typeof calib === 'object' && !Array.isArray(calib) && calib.slopeM > 0){
     const normG = String(g.key || '').toLowerCase().replace(/_/g, '-');
     if (!calib.grinderKey || String(calib.grinderKey).toLowerCase().replace(/_/g, '-') === normG){
-      return rnd(clampNum((+calib.d0OffsetUm || 100) + (+calib.slopeM) * raw, 55, 1600, 560), 1);
+      return rnd(clampNum((+calib.d0OffsetUm || 100) + (+calib.slopeM) * raw, 55, 1600, mAnchor), 1);
     }
   }
   const cv = GRINDER_CURVES[g.key];
   const kn = cv && (cv.knots || cv.refKnots);
-  if (!kn) return null;
-  const cal = calib ? calibOffset(calib, g.key, methodKey || 'v60') : null;
+  if (!kn){
+    if (raw == null || !isFinite(raw)) return mAnchor;
+    if (cv && cv.fmt === 'unmarked_nut') return rnd(clampNum(160 + raw * 420, 70, 1400, mAnchor), 1);
+    if (cv && cv.fmt === 'chirp_relative_marks') return rnd(clampNum(150 + raw * 65, 70, 1400, mAnchor), 1);
+    return rnd(clampNum(160 + raw * 120, 70, 1400, mAnchor), 1);
+  }
+  if (raw == null || !isFinite(raw)) return mAnchor;
+  const cal = calib ? calibOffset(calib, g.key, mKey) : null;
   const unshifted = raw - (cal ? cal.offset : 0);
   return rnd(invertKnotsToUm(kn, unshifted), 1);
 }
@@ -7279,26 +7315,38 @@ function mapMicronsToGrinder(a, b, calib, methodKey){
       const gObj = typeof G.grinderFor === 'function' ? G.grinderFor(normKey) : null;
       const c = G.GRINDER_CURVES && G.GRINDER_CURVES[normKey];
       const kn = c && (c.knots || c.refKnots);
+      const isSteplessTaste = !!(
+        res.calibMode === 'taste' || res.stepless ||
+        (c && c.kind === 'calibrate' && !c.refKnots && !c.knots) ||
+        (c && (c.fmt === 'unmarked_nut' || c.fmt === 'chirp_relative_marks'))
+      );
       const sl = kn && typeof G.slopeAtUm === 'function' ? G.slopeAtUm(kn, targetUm) : 0.04;
-      const clickInc = _grinderClickIncForFmt(c && c.fmt);
-      const stepUm = res.preground ? 0 : _rnd(1 / Math.max(0.005, sl), 1);
+      const clickInc = isSteplessTaste ? 0 : _grinderClickIncForFmt(c && c.fmt);
+      const stepUm = res.preground ? 0 : (isSteplessTaste ? 25 : _rnd(1 / Math.max(0.005, sl), 1));
       const minRaw = c && c.minSafeRaw != null ? c.minSafeRaw : (gObj && gObj.min != null ? gObj.min : 0);
       const maxRaw = c && c.maxRaw != null ? c.maxRaw : (gObj && gObj.max != null ? gObj.max : 500);
+      const dispTxt = res.display || (isSteplessTaste ? 'Stepless / Calibrate by taste' : '');
+      const shortTxt = res.shortDisplay || dispTxt || (Math.round(targetUm) + ' um');
       return Object.assign({}, res, {
         um:res.fixedUm || targetUm,
         setting:res.raw,
         clicks:res.raw,
-        label:res.incompatible ? (res.headline || res.warning || 'Incompatible') : ((gObj ? gObj.short + ': ' : '') + res.display),
-        unit:gObj ? (gObj.unit || 'clicks') : 'clicks',
+        calibMode:isSteplessTaste ? 'taste' : (res.calibMode || null),
+        stepless:isSteplessTaste || !!res.stepless,
+        fmt:(c && c.fmt) || res.fmt || null,
+        display:dispTxt,
+        shortDisplay:shortTxt,
+        label:res.incompatible ? (res.headline || res.warning || 'Incompatible') : ((gObj ? gObj.short + ': ' : '') + dispTxt),
+        unit:isSteplessTaste ? (res.unit || ((c && c.fmt === 'unmarked_nut') ? 'turn' : 'mark')) : (gObj ? (gObj.unit || 'clicks') : 'clicks'),
         stepUm,
         clickInc,
-        umPerClick:res.preground ? 0 : _rnd(stepUm * clickInc, 1),
+        umPerClick:(res.preground || isSteplessTaste) ? 0 : _rnd(stepUm * clickInc, 1),
         minRaw,
         maxRaw
       });
     }
   }
-  return { ok:false, grinderKey:normKey, um:targetUm, setting:null, clickInc:1, stepUm:25, umPerClick:25, label:Math.round(targetUm) + ' um' };
+  return { ok:false, grinderKey:normKey, um:targetUm, setting:null, clickInc:1, stepUm:25, umPerClick:25, shortDisplay:Math.round(targetUm) + ' um', label:Math.round(targetUm) + ' um' };
 }
 
 /* ============================================================================
@@ -8733,8 +8781,8 @@ function synthesizeRecipe(input){
       symptom:obs.symptom || (diag && diag.topHypothesis ? diag.topHypothesis.id : ''),
       prevClicks:gPrev ? gPrev.clicks : null,
       nextClicks:gNext ? gNext.clicks : null,
-      prevClickDisplay:gPrev ? (gPrev.shortDisplay || gPrev.display) : (prevUm + ' um'),
-      nextClickDisplay:gNext ? (gNext.shortDisplay || gNext.display) : (chosenNextUm + ' um'),
+      prevClickDisplay:gPrev ? ((gPrev.calibMode === 'taste' && gPrev.clicks == null) ? ('Stepless (~' + Math.round(prevUm) + ' um)') : (gPrev.shortDisplay || gPrev.display)) : (prevUm + ' um'),
+      nextClickDisplay:gNext ? ((gNext.calibMode === 'taste' && gNext.clicks == null) ? ('Stepless (~' + Math.round(chosenNextUm) + ' um)') : (gNext.shortDisplay || gNext.display)) : (chosenNextUm + ' um'),
       prevUm,
       nextUm:chosenNextUm,
       grindDeltaUm:Math.round(chosenNextUm - prevUm),
@@ -10031,17 +10079,23 @@ function _solveMakeItPerfectBase(prevRec, obs, hist){
   /* Exact Grinder-Specific Click / Number Step Translation + Minimum +/-1 Click Step Guard & Clamp Fallback */
   const gPrev = mapMicronsToGrinder(curUm, grinderKey, prevRec.calib || null, methodKey);
   let gNext = mapMicronsToGrinder(nextUm, grinderKey, prevRec.calib || null, methodKey);
+  const isSteplessTaste = !!(
+    (gNext && (gNext.calibMode === 'taste' || gNext.stepless || (gNext.clickInc === 0 && !gNext.preground && gNext.kind === 'calibrate'))) ||
+    (gPrev && (gPrev.calibMode === 'taste' || gPrev.stepless || (gPrev.clickInc === 0 && !gPrev.preground && gPrev.kind === 'calibrate')))
+  );
   const realUmPerStep = (gNext && gNext.umPerClick > 0) ? gNext.umPerClick : ((gNext && gNext.stepUm > 0) ? gNext.stepUm : 25.0);
   const clickInc = (gNext && gNext.clickInc > 0) ? gNext.clickInc : 1;
   let grindDeltaUm = Math.round(nextUm - curUm);
-  let grindDeltaClicks = (gPrev && gNext && gPrev.clicks != null && gNext.clicks != null)
-    ? _rnd(gNext.clicks - gPrev.clicks, 2)
-    : _rnd(grindDeltaUm / realUmPerStep, 2);
+  let grindDeltaClicks = isSteplessTaste
+    ? 0
+    : ((gPrev && gNext && gPrev.clicks != null && gNext.clicks != null)
+        ? _rnd(gNext.clicks - gPrev.clicks, 2)
+        : _rnd(grindDeltaUm / realUmPerStep, 2));
   let steppedThermalSpilloverC = 0;
   let grinderClampNote = null;
 
-  /* Coarse & fine grinders must NEVER quantize a real extraction residual (|dx| >= 0.18) back to 0 clicks! */
-  if (!grindLocked && !tabuPivotApplied && Math.abs(dx) >= 0.18 && ringInfo.ring > 0 &&
+  /* Coarse & fine stepped grinders must NEVER quantize a real extraction residual (|dx| >= 0.18) back to 0 clicks! */
+  if (!isSteplessTaste && !grindLocked && !tabuPivotApplied && Math.abs(dx) >= 0.18 && ringInfo.ring > 0 &&
       Math.abs(grindDeltaClicks) < (clickInc * 0.5) && gPrev && gPrev.clicks != null){
     const dir = (nextUm < curUm || (nextUm === curUm && dx < 0)) ? -1 : 1;
     const minC = gPrev.minRaw != null ? gPrev.minRaw : 0;
@@ -10050,7 +10104,7 @@ function _solveMakeItPerfectBase(prevRec, obs, hist){
     let steppedOk = false;
     if (Math.abs(targetClicks - gPrev.clicks) >= (clickInc * 0.5)){
       let candUm = (typeof G.micronsForGrinderSetting === 'function')
-        ? Math.round(G.micronsForGrinderSetting(grinderKey, targetClicks, prevRec.calib || null))
+        ? Math.round(G.micronsForGrinderSetting(grinderKey, targetClicks, methodKey, prevRec.calib || null))
         : Math.round(curUm + dir * realUmPerStep);
       candUm = _clamp(Math.round(candUm / 5) * 5, activeUmFloor, activeUmCeil, curUm);
       let gCand = mapMicronsToGrinder(candUm, grinderKey, prevRec.calib || null, methodKey);
@@ -10080,7 +10134,7 @@ function _solveMakeItPerfectBase(prevRec, obs, hist){
         nextTempC = _clamp(_rnd(curTempC + steppedThermalSpilloverC, 1), tLo, tHi, curTempC);
       }
     }
-  } else if (!grindLocked && Math.abs(grindDeltaUm) >= 6 && Math.abs(grindDeltaClicks) < (clickInc * 0.5) && !tempLocked && methodKey !== 'cold' && methodKey !== 'cold_drip'){
+  } else if (!isSteplessTaste && !grindLocked && Math.abs(grindDeltaUm) >= 6 && Math.abs(grindDeltaClicks) < (clickInc * 0.5) && !tempLocked && methodKey !== 'cold' && methodKey !== 'cold_drip'){
     steppedThermalSpilloverC = _rnd(_clamp(-0.092 * grindDeltaUm, -2.2, 2.2, 0), 1);
     nextTempC = _clamp(_rnd(curTempC + steppedThermalSpilloverC, 1), tLo, tHi, curTempC);
     nextUm = curUm;
@@ -10107,12 +10161,27 @@ function _solveMakeItPerfectBase(prevRec, obs, hist){
     actionParts.push(grinderClampNote);
   }
   if (Math.abs(grindDeltaUm) >= 5){
-    const absClicks = Math.abs(grindDeltaClicks);
-    const unitWord = (gNext && gNext.unit) ? gNext.unit : 'clicks';
-    const clickPhrase = absClicks >= 0.2
-      ? (absClicks + ' ' + (absClicks === 1 ? unitWord.replace(/s$/i, '') : (/s$/i.test(unitWord) ? unitWord : unitWord + 's')) + ' ' + (grindDeltaUm < 0 ? 'FINER' : 'COARSER') + ' (\u2192 ' + gNext.label + ', ' + (grindDeltaUm > 0 ? '+' : '') + grindDeltaUm + ' um)')
-      : ((grindDeltaUm < 0 ? 'FINER ' : 'COARSER +') + grindDeltaUm + ' um (\u2192 ' + nextUm + ' um)');
-    actionParts.push('Grind ' + clickPhrase);
+    const dirWord = grindDeltaUm < 0 ? 'FINER' : 'COARSER';
+    const absUm = Math.abs(grindDeltaUm);
+    if (isSteplessTaste){
+      const fmtKey = (gNext && gNext.fmt) || (gPrev && gPrev.fmt) || '';
+      let steplessCue = 'Stepless \u00B7 Calibrate by taste';
+      if (fmtKey === 'unmarked_nut'){
+        const turnFrac = absUm >= 120 ? '~1/4 wing-nut turn' : absUm >= 55 ? '~1/8 wing-nut turn' : '~1/12 wing-nut turn';
+        steplessCue = turnFrac + ' \u00B7 Calibrate by taste';
+      } else if (fmtKey === 'chirp_relative_marks'){
+        const markEst = _rnd(Math.max(0.25, absUm / 45), 1);
+        steplessCue = '~' + markEst + ' dial marks \u00B7 Calibrate by taste';
+      }
+      actionParts.push('Adjust grind ~' + absUm + ' \u00B5m ' + dirWord + ' (' + steplessCue + ')');
+    } else {
+      const absClicks = Math.abs(grindDeltaClicks);
+      const unitWord = (gNext && gNext.unit) ? gNext.unit : 'clicks';
+      const clickPhrase = absClicks >= 0.2
+        ? (absClicks + ' ' + (absClicks === 1 ? unitWord.replace(/s$/i, '') : (/s$/i.test(unitWord) ? unitWord : unitWord + 's')) + ' ' + dirWord + ' (\u2192 ' + gNext.label + ', ' + (grindDeltaUm > 0 ? '+' : '') + grindDeltaUm + ' um)')
+        : ((grindDeltaUm < 0 ? 'FINER ' : 'COARSER +') + grindDeltaUm + ' um (\u2192 ' + nextUm + ' um)');
+      actionParts.push('Grind ' + clickPhrase);
+    }
   }
   if (Math.abs(ratioDelta) >= (isEsp ? 0.08 : 0.2)){
     const massChangeTxt = lockedParam === 'water'
