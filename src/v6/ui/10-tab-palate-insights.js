@@ -727,8 +727,55 @@
     return normKey(rawOrigin);
   }
 
+  function extractPalateRowBlendInfo(r) {
+    if (!r || typeof r !== 'object') return { isBlend: false, pillText: '', components: [] };
+    function parseObj(raw) {
+      if (!raw) return null;
+      if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
+      if (typeof raw !== 'string') return null;
+      try {
+        const p = JSON.parse(raw);
+        return (p && typeof p === 'object' && !Array.isArray(p)) ? p : null;
+      } catch (_) { return null; }
+    }
+    const ad = parseObj(r.recipe_adaptation_json) || {};
+    const ej = parseObj(r.extra_json) || {};
+    const adCe = parseObj(ad.coffee_extra) || {};
+    const ejCe = parseObj(ej.coffee_extra) || {};
+    const directCe = parseObj(r.coffee_extra) || {};
+    const comps = (Array.isArray(adCe.blendComponents) && adCe.blendComponents.length >= 2) ? adCe.blendComponents
+      : (Array.isArray(ejCe.blendComponents) && ejCe.blendComponents.length >= 2) ? ejCe.blendComponents
+      : (Array.isArray(ej.blendComponents) && ej.blendComponents.length >= 2) ? ej.blendComponents
+      : (Array.isArray(directCe.blendComponents) && directCe.blendComponents.length >= 2) ? directCe.blendComponents
+      : (Array.isArray(r.blendComponents) && r.blendComponents.length >= 2) ? r.blendComponents
+      : null;
+    const isBlend = !!(adCe.isBlend || ejCe.isBlend || ej.isBlend || directCe.isBlend || ad.isBlend || r.isBlend || (comps && comps.length >= 2));
+    if (!isBlend || !comps) return { isBlend: false, pillText: '', components: [] };
+    const wA = parseFloat(comps[0] && comps[0].weightG);
+    const wB = parseFloat(comps[1] && comps[1].weightG);
+    let pA = parseFloat(comps[0] && comps[0].ratioPct);
+    let pB = parseFloat(comps[1] && comps[1].ratioPct);
+    if (Number.isFinite(wA) && wA > 0 && Number.isFinite(wB) && wB > 0) {
+      pA = Math.round((wA / (wA + wB)) * 100);
+      pB = 100 - pA;
+    } else if (Number.isFinite(pA) && pA > 0) {
+      pA = Math.round(clamp(pA, 1, 99, 50));
+      pB = 100 - pA;
+    } else {
+      pA = 50; pB = 50;
+    }
+    const fmtG = function (v) { return (Number.isFinite(v) && v > 0) ? (String(Math.round(v * 10) / 10).replace(/\.0$/, '') + 'g') : ''; };
+    const wTxt = (Number.isFinite(wA) && wA > 0 && Number.isFinite(wB) && wB > 0) ? (fmtG(wA) + ' + ' + fmtG(wB) + ' \u00B7 ') : '';
+    return {
+      isBlend: true,
+      pillText: '2-Coffee Blend (' + wTxt + pA + '%/' + pB + '%)',
+      components: comps.slice(0, 2)
+    };
+  }
+
   /* Hierarchical Empirical-Bayes Shrinkage Engine ("Don't Know"-Safe + Elevation + Flavors) */
-  function computeBayesianPalate(rows) {
+  function computeBayesianPalate(rows, opts) {
+    opts = opts || {};
     rows = Array.isArray(rows) ? rows : getHistoryRows();
     const atlas = getFullOriginAtlas();
     const byCoffee = new Map();
@@ -840,27 +887,40 @@
     let unknownFilteredCount = 0;
     const coffees = Array.from(byCoffee.values()).map(function (c) {
       if (!c.origin || !c.process || !c.roast || !c.elevationBand) unknownFilteredCount++;
-      c.dialScore = (window.BTCoreV6 && typeof window.BTCoreV6.computeRobustBagDialScore === 'function')
+      const rawDial = (window.BTCoreV6 && typeof window.BTCoreV6.computeRobustBagDialScore === 'function')
         ? window.BTCoreV6.computeRobustBagDialScore(c.stars)
         : computeRobustBagDialScoreLocal(c.stars);
+      c.dialScore = Number.isFinite(+rawDial) ? clamp(+rawDial, 0.5, 5.0, 3.8) : 3.8;
       return c;
     });
 
     const nC = coffees.length;
-    const globalMean = nC
-      ? coffees.reduce(function (acc, c) { return acc + c.dialScore; }, 0) / nC
+    const rawGlobalMean = nC
+      ? coffees.reduce(function (acc, c) { return acc + (Number.isFinite(c.dialScore) ? c.dialScore : 3.8); }, 0) / nC
       : 3.95;
+    const globalMean = Number.isFinite(rawGlobalMean) ? rawGlobalMean : 3.95;
 
     let wSum = 0, acSum = 0, swSum = 0, bdSum = 0, rstSum = 0, fnkSum = 0;
+    function meanOfFinite(arr) {
+      if (!Array.isArray(arr) || !arr.length) return null;
+      let s = 0, cnt = 0;
+      for (let i = 0; i < arr.length; i++) {
+        if (Number.isFinite(arr[i])) { s += arr[i]; cnt++; }
+      }
+      return cnt ? (s / cnt) : null;
+    }
     coffees.forEach(function (c) {
-      const w = Math.max(0.15, c.dialScore - 2.5);
+      const w = Math.max(0.15, (Number.isFinite(c.dialScore) ? c.dialScore : 3.8) - 2.5);
       wSum += w;
-      const ac = c.ac.length
-        ? c.ac[0]
+      const acMean = meanOfFinite(c.ac);
+      const swMean = meanOfFinite(c.sw);
+      const bdMean = meanOfFinite(c.bd);
+      const ac = acMean != null
+        ? acMean
         : (!c.roast ? (c.elevationBand === 'high' ? 4.1 : 3.4) : (c.roast.indexOf('light') >= 0 ? 4.2 : 2.8));
-      const sw = c.sw.length ? c.sw[0] : 4.2;
-      const bd = c.bd.length
-        ? c.bd[0]
+      const sw = swMean != null ? swMean : 4.2;
+      const bd = bdMean != null
+        ? bdMean
         : (!c.process ? 3.2 : (c.process.indexOf('natural') >= 0 ? 3.9 : 2.8));
       const rst = !c.roast
         ? 2.8
@@ -875,13 +935,15 @@
       fnkSum += w * fnk;
     });
 
-    const shrink = nC / (nC + 3);
+    const isScopedCalc = !!opts.scoped;
+    const shrink = isScopedCalc ? (nC ? 1.0 : 0) : (nC / (nC + 3));
+    const safeW = wSum > 0 ? wSum : 1;
     const axes = [
-      { key: 'acidity', label: 'Acidity', val: nC ? shrink * (acSum / wSum) + (1 - shrink) * palateState.seedAcidity : palateState.seedAcidity },
-      { key: 'sweetness', label: 'Sweetness', val: nC ? shrink * (swSum / wSum) + (1 - shrink) * palateState.seedSweetness : palateState.seedSweetness },
-      { key: 'body', label: 'Body Weight', val: nC ? shrink * (bdSum / wSum) + (1 - shrink) * palateState.seedBody : palateState.seedBody },
-      { key: 'roast', label: 'Roast Depth', val: nC ? shrink * (rstSum / wSum) + (1 - shrink) * palateState.seedRoast : palateState.seedRoast },
-      { key: 'funk', label: 'Funk vs Clarity', val: nC ? shrink * (fnkSum / wSum) + (1 - shrink) * palateState.seedFunk : palateState.seedFunk }
+      { key: 'acidity', label: 'Acidity', val: nC ? shrink * (acSum / safeW) + (1 - shrink) * palateState.seedAcidity : palateState.seedAcidity },
+      { key: 'sweetness', label: 'Sweetness', val: nC ? shrink * (swSum / safeW) + (1 - shrink) * palateState.seedSweetness : palateState.seedSweetness },
+      { key: 'body', label: 'Body Weight', val: nC ? shrink * (bdSum / safeW) + (1 - shrink) * palateState.seedBody : palateState.seedBody },
+      { key: 'roast', label: 'Roast Depth', val: nC ? shrink * (rstSum / safeW) + (1 - shrink) * palateState.seedRoast : palateState.seedRoast },
+      { key: 'funk', label: 'Funk vs Clarity', val: nC ? shrink * (fnkSum / safeW) + (1 - shrink) * palateState.seedFunk : palateState.seedFunk }
     ];
     const ciHalf = clamp(0.75 / Math.sqrt(Math.max(1, nC)), 0.14, 0.72, 0.45);
 
@@ -1098,6 +1160,7 @@
     }
     const un = unneutPalate;
     const applyFn = function (a) {
+      const bInfo = extractPalateRowBlendInfo(r);
       a.coffee = Object.assign(a.coffee || {}, {
         coffee_id: r.coffee_id || (a.coffee && a.coffee.coffee_id) || '',
         name: un(r.coffee_name) || 'Golden Brew',
@@ -1105,6 +1168,9 @@
         origin: un(r.origin),
         process: un(r.process),
         roast: un(r.roast_level) || 'light',
+        isBlend: !!bInfo.isBlend,
+        _blendSummaryOn: !!bInfo.isBlend,
+        blendComponents: bInfo.isBlend ? bInfo.components.map(function (c) { return Object.assign({}, c); }) : [],
         answered: 'yes'
       });
       a.brew = a.brew || {};
@@ -1233,8 +1299,11 @@
     const rName = un(r.roaster);
     const isGold = r.dial_locked === 'yes' || r.dial_locked === '1';
     const isCup = String(r.brew_method || '').toLowerCase() === 'cupping' || String(r.score_kind || '').toLowerCase() === 'cva_affective';
-    const st = parseFloat(r.my_rating_stars) || rowStar(r);
-    const sc = parseFloat(r.total_score) || 0;
+    const bInfo = extractPalateRowBlendInfo(r);
+    const stRaw = parseFloat(r.my_rating_stars);
+    const st = (Number.isFinite(stRaw) && stRaw > 0) ? stRaw : rowStar(r);
+    const scRaw = parseFloat(r.total_score);
+    const sc = (Number.isFinite(scRaw) && scRaw > 0) ? scRaw : 0;
     const tempC = +r.brew_temp_c > 0 ? Math.round(+r.brew_temp_c) : (+r.brew_temp_f > 0 ? Math.round((+r.brew_temp_f - 32) * 5 / 9) : 0);
     const ratioStr = +r.brew_ratio > 0 ? ('1:' + (+r.brew_ratio).toFixed(1).replace(/\.0$/, '')) : ((+r.brew_dose_g > 0 && +r.brew_water_g > 0) ? (r.brew_dose_g + 'g:' + r.brew_water_g + 'g') : '');
     const grindStr = un(r.brew_grind_setting) || (+r.brew_grind_target_um > 0 ? (r.brew_grind_target_um + ' \u00B5m') : '');
@@ -1258,6 +1327,7 @@
           domH('strong', { class: 'bt-drill-cup-title', text: cName })
         ),
         domH('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+          bInfo.isBlend ? domH('span', { class: 'bt-tc-badge bt-journal-blend-badge is-copper', text: bInfo.pillText }) : null,
           isGold ? domH('span', { class: 'bt-tc-badge is-gold', text: 'Golden' }) : null,
           isCup ? domH('span', { class: 'bt-tc-badge is-sci', text: 'Cupping' }) : null,
           sc > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: sc.toFixed(1) + ' SCA' }) : null,
@@ -1669,15 +1739,33 @@
     const a = getApp();
     a.prefs = a.prefs || {};
     const saved = (a.prefs.palateTargets && typeof a.prefs.palateTargets === 'object') ? a.prefs.palateTargets : {};
+    const normSavedStrength = (saved.strength === 'medium') ? 'balanced' : (saved.strength || 'balanced');
     if (!palateState.prefTargetDraft) {
       palateState.prefTargetDraft = {
         brightness: saved.brightness || 'balanced',
-        strength: saved.strength || 'balanced',
+        strength: normSavedStrength,
         texture: saved.texture || 'balanced'
       };
     }
     const tgt = palateState.prefTargetDraft;
     const list = Array.isArray(rows) ? rows.filter(Boolean) : [];
+    const eliteCrossBagN = list.filter(function (r) { return rowStar(r) >= 4.5; }).length;
+
+    function persistPalateTargetsNow() {
+      const appNow = getApp();
+      appNow.prefs = appNow.prefs || {};
+      appNow.prefs.palateTargets = {
+        brightness: tgt.brightness,
+        strength: tgt.strength,
+        texture: tgt.texture
+      };
+      appNow.prefs.flavorBias = tgt.brightness;
+      if (window.BTStorage && typeof window.BTStorage.savePrefs === 'function') {
+        try { window.BTStorage.savePrefs(appNow.prefs); } catch (_) {}
+      }
+      saveDraftSoon();
+      return appNow;
+    }
 
     const axesDefs = [
       {
@@ -1744,8 +1832,10 @@
     }).sort(function (a, b) { return rowStar(b) - rowStar(a); });
 
     const isDirty = (saved.brightness || 'balanced') !== tgt.brightness ||
-      (saved.strength || 'balanced') !== tgt.strength ||
+      normSavedStrength !== tgt.strength ||
       (saved.texture || 'balanced') !== tgt.texture;
+    const hasCustomBias = tgt.brightness !== 'balanced' || tgt.strength !== 'balanced' || tgt.texture !== 'balanced';
+    const activeBagName = (a.coffee && a.coffee.name) ? unneutPalate(a.coffee.name) : '';
 
     return domH('section', { class: 'bt-studio-card', id: 'bt-palate-pref-targets' },
       domH('div', { class: 'bt-lab-card-head' },
@@ -1753,7 +1843,7 @@
           ic('sliders', { size: 22 }),
           domH('div', { style: 'min-width:0;flex:1' },
             domH('h3', { text: 'Interactive Palate Targets & Recipe Bias' }),
-            domH('p', { class: 'bt-lab-sub', text: 'Dial in your ideal brightness, strength (%TDS), and texture — steers new recipes & filters your matching favorite cups below.' })
+            domH('p', { class: 'bt-lab-sub', text: 'Dial in your ideal brightness, strength (%TDS), and texture — actively steers Cup #1 recipes in Brew Studio & filters matching cups.' })
           )
         ),
         domH('button', {
@@ -1761,23 +1851,54 @@
           id: 'bt-save-pref-bias-btn',
           class: 'bt-lab-btn is-sm ' + (isDirty ? 'is-primary' : ''),
           onclick: function () {
-            const appNow = getApp();
-            appNow.prefs = appNow.prefs || {};
-            appNow.prefs.palateTargets = {
-              brightness: tgt.brightness,
-              strength: tgt.strength,
-              texture: tgt.texture
-            };
-            appNow.prefs.flavorBias = tgt.brightness;
-            if (window.BTStorage && typeof window.BTStorage.savePrefs === 'function') {
-              try { window.BTStorage.savePrefs(appNow.prefs); } catch (_) {}
-            }
-            saveDraftSoon();
+            persistPalateTargetsNow();
             CK.haptic('celebrate');
-            notify('Saved Palate Target Bias (' + tgt.brightness + ' \u00B7 ' + tgt.strength + ' \u00B7 ' + tgt.texture + ')!');
+            notify('Saved Palate Target Bias (' + tgt.brightness + ' \u00B7 ' + tgt.strength + ' \u00B7 ' + tgt.texture + ') — active for Cup #1 recipes!');
             rerenderPalateTab();
           }
         }, ic('check-seal', { size: 14 }), domH('span', { text: isDirty ? 'Save Preference Bias' : 'Preference Bias Saved' }))
+      ),
+      domH('div', { class: 'bt-palate-steer-banner', id: 'bt-palate-active-steer-banner' },
+        domH('div', { style: 'display:flex;flex-direction:column;gap:4px;min-width:0;flex:1 1 220px' },
+          domH('div', { style: 'display:flex;align-items:center;gap:6px;flex-wrap:wrap' },
+            domH('span', {
+              id: 'bt-palate-active-steer-badge',
+              class: 'bt-tc-badge ' + (isDirty ? 'is-warn' : 'is-good'),
+              text: isDirty ? 'Draft Unsaved \u00B7 Tap Save or Test' : 'Active Cup #1 Steering ON'
+            }),
+            eliteCrossBagN > 0 ? domH('span', {
+              class: 'bt-tc-badge is-gold num-tab',
+              text: eliteCrossBagN + ' Cross-Bag 4.5+\u2605 Cup' + (eliteCrossBagN === 1 ? '' : 's')
+            }) : null
+          ),
+          domH('p', {
+            class: 'bt-lab-hint',
+            style: 'margin:0',
+            text: 'Saved Palate Targets (' + tgt.brightness + ' \u00B7 ' + tgt.strength + ' \u00B7 ' + tgt.texture + ')' +
+              (eliteCrossBagN > 0
+                ? (' + ' + eliteCrossBagN + ' proven 4.5+\u2605 cross-bag brew' + (eliteCrossBagN === 1 ? '' : 's') + ' now actively steer Cup #1 grind, temp, %TDS & agitation in Brew Studio.')
+                : (hasCustomBias
+                  ? ' now actively steer Cup #1 grind, temp, %TDS & agitation in Brew Studio (and 4.5+\u2605 brews add cross-bag transfer).'
+                  : ' + 4.5+\u2605 cross-bag history now actively steer Cup #1 recipes in Brew Studio.'))
+          })
+        ),
+        domH('button', {
+          type: 'button',
+          id: 'bt-test-palate-bias-brew-btn',
+          class: 'bt-lab-btn is-sm is-primary bt-palate-steer-cta',
+          onclick: function () {
+            const appNow = persistPalateTargetsNow();
+            CK.haptic('snap');
+            notify(activeBagName
+              ? ('Applied Palate Bias to ' + activeBagName + ' in Brew Studio!')
+              : 'Saved Palate Bias — opening Brew Studio to test on your active bag!');
+            if (typeof sh().go === 'function') {
+              sh().go(appNow.coffee && appNow.coffee.name ? 'recipe' : 'door');
+            } else if (typeof sh().switchTab === 'function') {
+              sh().switchTab('brew', { step: appNow.coffee && appNow.coffee.name ? 'brew' : 'door' });
+            }
+          }
+        }, 'Test on Active Bag in Brew Studio \u2192')
       ),
       domH('div', { class: 'bt-pref-target-grid' },
         axesDefs.map(function (ax) {
@@ -2631,6 +2752,8 @@
     function paintActiveBoard() {
       boardHost.textContent = '';
       renderBreadcrumbs();
+      if (typeof syncBackLevelBtn === 'function') syncBackLevelBtn();
+      if (typeof paintRadarCard === 'function') paintRadarCard();
       if (palateState.drillPath.length > 0) {
         paintDrillDownView();
         return;
@@ -2795,6 +2918,20 @@
       }, bt.lbl);
     });
 
+    const backLevelBtn = domH('button', {
+      type: 'button',
+      class: 'bt-lab-btn is-sm bt-back-escape-btn',
+      hidden: !(palateState.drillPath.length > 0),
+      onclick: function () {
+        palateState.drillPath.pop();
+        CK.haptic('tick');
+        paintActiveBoard();
+      }
+    }, '\u2190 Back One Level');
+    function syncBackLevelBtn() {
+      backLevelBtn.hidden = !(palateState.drillPath.length > 0);
+    }
+
     boardsCard.appendChild(domH('div', { class: 'bt-lab-card-head' },
       domH('div', { class: 'bt-lab-title-group' },
         ic('search-filter', { size: 20 }),
@@ -2812,29 +2949,125 @@
           })
         )
       ),
-      palateState.drillPath.length > 0 ? domH('button', {
-        type: 'button',
-        class: 'bt-lab-btn is-sm bt-back-escape-btn',
-        onclick: function () {
-          palateState.drillPath.pop();
-          CK.haptic('tick');
-          paintActiveBoard();
-        }
-      }, '\u2190 Back One Level') : null
+      backLevelBtn
     ));
     boardsCard.appendChild(domH('div', { class: 'bt-lab-chip-row' }, tabBtns));
     boardsCard.appendChild(breadcrumbRow);
     boardsCard.appendChild(boardHost);
-    paintActiveBoard();
-    wrap.appendChild(boardsCard);
 
-    /* 3. 5-Axis Bayesian Radar + Time-Lapse Scrubber */
-    const radarCard = domH('section', { class: 'bt-studio-card' });
-    const radarSvg = CK.svgEl('svg', {
-      viewBox: '0 0 360 288',
-      class: 'bt-chart-svg bt-radar-svg',
-      'aria-label': '5-Axis Bayesian Palate DNA Radar with Confidence Band'
-    });
+    /* 3. Scoped 5-Axis Bayesian Radar + Time-Lapse Scrubber */
+    function resolveScopedRadarRows(allRows, atlasList) {
+      let cur = Array.isArray(allRows) ? allRows.filter(Boolean) : [];
+      const labels = [];
+
+      const path = Array.isArray(palateState.drillPath) ? palateState.drillPath : [];
+      let hasOriginInPath = false;
+      path.forEach(function (step) {
+        if (!step || !step.level) return;
+        if (step.label) labels.push(step.label);
+        if (step.level === 'origin') {
+          hasOriginInPath = true;
+          cur = cur.filter(function (r) { return matchOriginKey(r.origin || r.country, atlasList) === step.key; });
+        } else if (step.level === 'region') {
+          const wantReg = String(step.key || '').toLowerCase();
+          cur = cur.filter(function (r) {
+            const rawR = String(r.region || r.subregion || r.farm || '').trim();
+            const regName = (!rawR || isUnknownTrait(rawR)) ? 'General Region' : rawR;
+            return regName.toLowerCase() === wantReg;
+          });
+        } else if (step.level === 'process') {
+          cur = cur.filter(function (r) { return !isUnknownTrait(r.process) && normKey(r.process) === step.key; });
+        } else if (step.level === 'roast') {
+          cur = cur.filter(function (r) { return !isUnknownTrait(r.roast_level || r.roast) && normKey(r.roast_level || r.roast) === step.key; });
+        } else if (step.level === 'elevation') {
+          cur = cur.filter(function (r) { return classifyElevationBand(r) === step.key; });
+        } else if (step.level === 'varietal') {
+          cur = cur.filter(function (r) { return !isUnknownTrait(r.varietal) && normKey(r.varietal) === step.key; });
+        } else if (step.level === 'brewer') {
+          const wantB = String(step.key || '').toLowerCase();
+          cur = cur.filter(function (r) { return String(r.brew_method || 'v60').toLowerCase() === wantB; });
+        } else if (step.level === 'flavor') {
+          const wantF = String(step.key || '').toLowerCase();
+          cur = cur.filter(function (r) {
+            const hay = [r.flavors_liked, r.words_flavor, r.bag_notes, r.general_notes].map(unneutPalate).join(' ').toLowerCase();
+            return wantF && hay.indexOf(wantF) >= 0;
+          });
+        }
+      });
+
+      if (palateState.selectedOriginKey && !hasOriginInPath) {
+        const oMeta = (atlasList || []).find(function (o) { return o.key === palateState.selectedOriginKey; });
+        labels.push(oMeta ? oMeta.name : palateState.selectedOriginKey);
+        cur = cur.filter(function (r) { return matchOriginKey(r.origin || r.country, atlasList) === palateState.selectedOriginKey; });
+      }
+
+      if (palateState.selectedRoastZone) {
+        const rz = palateState.selectedRoastZone;
+        const rzLabelMap = {
+          'ultra-light': 'Ultra-Light Roast',
+          'light': 'Light Roast',
+          'medium-light': 'Med-Light Roast',
+          'medium': 'Medium Roast',
+          'dark': 'Dark Roast',
+          'zone_sweet': 'Sweet Spot (18\u201322% EY)',
+          'zone_clarity': 'Tea-Like Clarity (<1.35% TDS)',
+          'zone_syrupy': 'Rich & Full (>=1.45% TDS)',
+          'zone_high_ey': 'High Extraction (>21% EY)',
+          'zone_hot_filter': 'Hot Pour-Over (>=93\u00B0C)',
+          'zone_cool_gentle': 'Gentle Temp (<93\u00B0C)'
+        };
+        labels.push(rzLabelMap[rz] || rz);
+        cur = cur.filter(function (r) {
+          if (rz === 'zone_sweet') { const ey = parseFloat(r.brew_ey_pct); return Number.isFinite(ey) && ey >= 18 && ey <= 22.2; }
+          if (rz === 'zone_clarity') { const tds = parseFloat(r.brew_tds_pct); return Number.isFinite(tds) && tds > 0 && tds < 1.35; }
+          if (rz === 'zone_syrupy') { const tds = parseFloat(r.brew_tds_pct); return Number.isFinite(tds) && tds >= 1.45; }
+          if (rz === 'zone_high_ey') { const ey = parseFloat(r.brew_ey_pct); return Number.isFinite(ey) && ey > 21.0; }
+          if (rz === 'zone_hot_filter') {
+            const tc = +r.brew_temp_c > 0 ? +r.brew_temp_c : (+r.brew_temp_f > 0 ? (+r.brew_temp_f - 32) * 5 / 9 : 0);
+            return tc >= 93;
+          }
+          if (rz === 'zone_cool_gentle') {
+            const tc = +r.brew_temp_c > 0 ? +r.brew_temp_c : (+r.brew_temp_f > 0 ? (+r.brew_temp_f - 32) * 5 / 9 : 0);
+            return tc >= 70 && tc < 93;
+          }
+          const rk = isUnknownTrait(r.roast_level || r.roast) ? '' : normKey(r.roast_level || r.roast);
+          return rk === rz || (rz === 'medium-light' && rk === 'med-light') || (rz === 'ultra-light' && rk === 'ultralight');
+        });
+      }
+
+      if (palateState.selectedRatingTier) {
+        const rt = palateState.selectedRatingTier;
+        const rtMap = {
+          tier5: '5\u2605 Favorites',
+          tier4: '4\u20134.75\u2605 Great Cups',
+          tier3: '3\u20133.75\u2605 Dialing In',
+          tierLow: '<3\u2605 Needs Fix',
+          locked: 'Golden Locked'
+        };
+        labels.push(rtMap[rt] || rt);
+        cur = cur.filter(function (r) {
+          if (rt === 'locked') return r.dial_locked === 'yes' || r.dial_locked === '1';
+          return classifyRatingTier(r) === rt;
+        });
+      }
+
+      if (palateState.selectedBeanCid) {
+        const beanObj = (bayes.coffees || []).find(function (c) { return c.cid === palateState.selectedBeanCid; });
+        labels.push(beanObj ? (unneutPalate(beanObj.name) || 'Selected Bean') : 'Selected Bean');
+        cur = cur.filter(function (r) {
+          const rCid = r.coffee_id || (normKey(r.coffee_name) + '|' + normKey(r.roaster));
+          return rCid === palateState.selectedBeanCid;
+        });
+      }
+
+      return {
+        rows: cur,
+        isScoped: labels.length > 0,
+        scopeLabel: labels.join(' \u00B7 ')
+      };
+    }
+
+    const radarCard = domH('section', { class: 'bt-studio-card', id: 'bt-palate-radar-card' });
     const CX = 180, CY = 148, RMAX = 100;
 
     function polarPt(axisIdx, val1to5) {
@@ -2843,147 +3076,218 @@
       return [CX + r * Math.cos(ang), CY + r * Math.sin(ang)];
     }
 
-    [1, 2, 3, 4, 5].forEach(function (ring) {
-      const pts = [0, 1, 2, 3, 4].map(function (i) { return polarPt(i, ring).map(function (v) { return v.toFixed(1); }).join(','); }).join(' ');
-      radarSvg.appendChild(CK.svgEl('polygon', { points: pts, class: 'bt-radar-ring' }));
-    });
-
-    bayes.axes.forEach(function (ax, idx) {
-      const tip = polarPt(idx, 5.0);
-      const lblPt = polarPt(idx, 5.82);
-      radarSvg.appendChild(CK.svgEl('line', { x1: CX, y1: CY, x2: tip[0].toFixed(1), y2: tip[1].toFixed(1), class: 'bt-radar-spoke' }));
-      const t = CK.svgEl('text', {
-        x: lblPt[0].toFixed(1),
-        y: lblPt[1].toFixed(1),
-        'text-anchor': 'middle',
-        'dominant-baseline': 'central',
-        class: 'bt-radar-lbl'
-      });
-      t.textContent = ax.label + ' (' + ax.val.toFixed(1) + ')';
-      radarSvg.appendChild(t);
-    });
-
-    const outerPts = bayes.axes.map(function (ax, i) { return polarPt(i, Math.min(5, ax.val + bayes.ciHalf)); });
-    const innerPts = bayes.axes.map(function (ax, i) { return polarPt(i, Math.max(0.8, ax.val - bayes.ciHalf)); }).reverse();
-    const bandD = 'M ' + outerPts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ') + ' Z ' +
-      'M ' + innerPts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ') + ' Z';
-    radarSvg.appendChild(CK.svgEl('path', { d: bandD, 'fill-rule': 'evenodd', class: 'bt-radar-ci-band' }));
-
-    const polyPts = bayes.axes.map(function (ax, i) { return polarPt(i, ax.val); });
-    radarSvg.appendChild(CK.svgEl('polygon', {
-      points: polyPts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' '),
-      class: 'bt-radar-poly'
-    }));
-    polyPts.forEach(function (p) {
-      radarSvg.appendChild(CK.svgEl('circle', { cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: '4.8', class: 'bt-radar-dot' }));
-    });
-
-    const timelapsePill = CK.vernierPill({
-      label: 'Palate Evolution Time-Lapse',
-      value: palateState.timelapsePct,
-      min: 20,
-      max: 100,
-      step: 5,
-      unit: '% history',
-      compact: true,
-      onChange: function (v) {
-        palateState.timelapsePct = v;
-        rerenderPalateTab();
-      }
-    });
-
-    radarCard.appendChild(domH('div', { class: 'bt-lab-card-head' },
-      domH('div', { class: 'bt-lab-title-group' },
-        ic('palate', { size: 22 }),
-        domH('div', null,
-          domH('h3', { text: isScienceXray() ? '5-Axis Bayesian Palate DNA Radar' : '5-Axis Personal Taste Profile' }),
-          domH('p', {
-            class: 'bt-lab-sub',
-            text: bayes.uniqueCoffees + ' unique coffee(s) across ' + bayes.totalRows + ' cup(s) · Personal Average ' + bayes.globalMean + '/5.0'
-          })
-        )
-      )
-    ));
-    radarCard.appendChild(domH('div', { class: 'bt-chart-stage' }, radarSvg));
-
-    const axisDrillHost = domH('div', { id: 'bt-radar-axis-drawer-host' });
     const axisDescs = {
-      acidity: 'Top high-brightness & sparkling-acidity cups from your history:',
-      sweetness: 'Your sweetest, richest-finish cups across all brewers:',
-      body: 'Fullest-bodied, syrupy & creamy mouthfeel cups:',
-      roast: 'Cups aligned with your preferred roast depth:',
+      acidity: 'Top high-brightness & sparkling-acidity cups from this view:',
+      sweetness: 'Your sweetest, richest-finish cups in this view:',
+      body: 'Fullest-bodied, syrupy & creamy mouthfeel cups in this view:',
+      roast: 'Cups aligned with your preferred roast depth in this view:',
       funk: 'Wild/fermented vs. clean washed clarity cups driving this axis:'
     };
-    function getAxisTopRows(axKey) {
-      return slicedRows.slice().sort(function (a, b) {
-        const scoreFor = function (r) {
-          const base = rowStar(r);
-          if (axKey === 'acidity') return (parseFloat(r.acidity_intensity) || parseFloat(r.acidity) || (String(r.roast_level || '').indexOf('light') >= 0 ? 4 : 2.5)) * 2 + base;
-          if (axKey === 'sweetness') return (parseFloat(r.sweetness_intensity) || parseFloat(r.sweetness) || 3.5) * 2 + base;
-          if (axKey === 'body') return (parseFloat(r.body_intensity) || parseFloat(r.body) || (/natural|espresso|press/.test(String(r.process + ' ' + r.brew_method).toLowerCase()) ? 4 : 2.5)) * 2 + base;
-          if (axKey === 'roast') {
-            const rk = String(r.roast_level || r.roast || '').toLowerCase();
-            const rNum = rk.indexOf('dark') >= 0 ? 4.5 : (rk === 'medium' ? 3.3 : (rk.indexOf('ultra') >= 0 ? 1.4 : 2.1));
-            return (5 - Math.abs(rNum - bayes.axes[3].val)) * 2 + base;
-          }
-          const pr = String(r.process || '').toLowerCase();
-          const fNum = /anaerobic|carbonic|natural|ferment/.test(pr) ? 4.2 : 2.1;
-          return (5 - Math.abs(fNum - bayes.axes[4].val)) * 2 + base;
-        };
-        return scoreFor(b) - scoreFor(a);
+
+    function paintRadarCard() {
+      radarCard.textContent = '';
+      const scope = resolveScopedRadarRows(slicedRows, atlas);
+      const hasScopedMatch = scope.isScoped && scope.rows.length > 0;
+      const activeRows = hasScopedMatch ? scope.rows : slicedRows;
+      const activeBayes = hasScopedMatch ? computeBayesianPalate(scope.rows, { scoped: true }) : bayes;
+
+      const radarSvg = CK.svgEl('svg', {
+        viewBox: '0 0 360 288',
+        class: 'bt-chart-svg bt-radar-svg',
+        'aria-label': hasScopedMatch
+          ? ('5-Axis Personal Taste Profile filtered by ' + scope.scopeLabel)
+          : '5-Axis Bayesian Palate DNA Radar with Confidence Band'
       });
-    }
-    function paintAxisDrawer() {
-      axisDrillHost.textContent = '';
-      const k = palateState.selectedRadarAxis;
-      if (!k) return;
-      const axObj = bayes.axes.find(function (x) { return x.key === k; });
-      if (!axObj) return;
-      const matched = getAxisTopRows(k).slice(0, 5);
-      axisDrillHost.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-radar-axis-drawer' },
-        domH('div', { class: 'bt-drill-drawer-head' },
+
+      [1, 2, 3, 4, 5].forEach(function (ring) {
+        const pts = [0, 1, 2, 3, 4].map(function (i) { return polarPt(i, ring).map(function (v) { return v.toFixed(1); }).join(','); }).join(' ');
+        radarSvg.appendChild(CK.svgEl('polygon', { points: pts, class: 'bt-radar-ring' }));
+      });
+
+      activeBayes.axes.forEach(function (ax, idx) {
+        const tip = polarPt(idx, 5.0);
+        const lblPt = polarPt(idx, 5.82);
+        radarSvg.appendChild(CK.svgEl('line', { x1: CX, y1: CY, x2: tip[0].toFixed(1), y2: tip[1].toFixed(1), class: 'bt-radar-spoke' }));
+        const t = CK.svgEl('text', {
+          x: lblPt[0].toFixed(1),
+          y: lblPt[1].toFixed(1),
+          'text-anchor': 'middle',
+          'dominant-baseline': 'central',
+          class: 'bt-radar-lbl'
+        });
+        t.textContent = ax.label + ' (' + ax.val.toFixed(1) + ')';
+        radarSvg.appendChild(t);
+      });
+
+      /* When scoped, render subtle dashed All-Time Baseline silhouette behind active scoped polygon */
+      if (hasScopedMatch) {
+        const basePts = bayes.axes.map(function (ax, i) { return polarPt(i, ax.val); });
+        radarSvg.appendChild(CK.svgEl('polygon', {
+          points: basePts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' '),
+          class: 'bt-radar-baseline-poly'
+        }));
+      }
+
+      const outerPts = activeBayes.axes.map(function (ax, i) { return polarPt(i, Math.min(5, ax.val + activeBayes.ciHalf)); });
+      const innerPts = activeBayes.axes.map(function (ax, i) { return polarPt(i, Math.max(0.8, ax.val - activeBayes.ciHalf)); }).reverse();
+      const bandD = 'M ' + outerPts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ') + ' Z ' +
+        'M ' + innerPts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L ') + ' Z';
+      radarSvg.appendChild(CK.svgEl('path', { d: bandD, 'fill-rule': 'evenodd', class: 'bt-radar-ci-band' }));
+
+      const polyPts = activeBayes.axes.map(function (ax, i) { return polarPt(i, ax.val); });
+      radarSvg.appendChild(CK.svgEl('polygon', {
+        points: polyPts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' '),
+        class: 'bt-radar-poly'
+      }));
+      polyPts.forEach(function (p) {
+        radarSvg.appendChild(CK.svgEl('circle', { cx: p[0].toFixed(1), cy: p[1].toFixed(1), r: '4.8', class: 'bt-radar-dot' }));
+      });
+
+      const subLine = hasScopedMatch
+        ? ('Filtered: ' + scope.scopeLabel + ' \u00B7 ' + activeBayes.totalRows + ' cup' + (activeBayes.totalRows === 1 ? '' : 's') + ' \u00B7 Avg ' + activeBayes.globalMean + '/5.0')
+        : (scope.isScoped
+          ? ('No logged cups in "' + scope.scopeLabel + '" yet \u2014 showing All-Time baseline (' + bayes.totalRows + ' cups)')
+          : (bayes.uniqueCoffees + ' unique coffee(s) across ' + bayes.totalRows + ' cup(s) \u00B7 Personal Average ' + bayes.globalMean + '/5.0'));
+
+      radarCard.appendChild(domH('div', { class: 'bt-lab-card-head' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1' },
+          ic('palate', { size: 22 }),
           domH('div', { style: 'min-width:0;flex:1' },
-            domH('div', { class: 'bt-pref-tile-lbl', text: 'TASTE AXIS DRILL-DOWN' }),
-            domH('strong', { class: 'bt-drill-drawer-title', text: axObj.label + ' (' + axObj.val.toFixed(1) + ' / 5.0)' })
-          ),
+            domH('h3', { text: isScienceXray() ? '5-Axis Bayesian Palate DNA Radar' : '5-Axis Personal Taste Profile' }),
+            domH('p', { class: 'bt-lab-sub', id: 'bt-radar-subtitle', text: subLine })
+          )
+        )
+      ));
+
+      if (scope.isScoped) {
+        radarCard.appendChild(domH('div', { class: 'bt-radar-scope-bar', id: 'bt-radar-scope-bar' },
+          domH('span', {
+            class: 'bt-radar-scope-pill',
+            text: 'Showing: ' + scope.scopeLabel + ' (' + scope.rows.length + ' cup' + (scope.rows.length === 1 ? '' : 's') + ')'
+          }),
           domH('button', {
             type: 'button',
-            class: 'bt-drill-close-btn bt-lab-btn is-sm',
-            onclick: function () { palateState.selectedRadarAxis = ''; CK.haptic('tick'); rerenderPalateTab(); }
-          }, 'Close \u00D7')
-        ),
-        domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: axisDescs[k] || '' }),
-        matched.length > 0 ? domH('div', { class: 'bt-drill-cup-list' },
-          matched.map(function (r) { return buildDrillCupCard(r); })
-        ) : domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: 'Log cups with ratings to explore your top ' + axObj.label + ' matches.' })
+            id: 'bt-radar-clear-scope-btn',
+            class: 'bt-radar-scope-clear',
+            onclick: function () {
+              palateState.drillPath = [];
+              palateState.selectedOriginKey = '';
+              palateState.selectedRoastZone = '';
+              palateState.selectedRatingTier = '';
+              palateState.selectedBeanCid = '';
+              CK.haptic('tick');
+              rerenderPalateTab();
+            }
+          }, 'Clear Scope \u00D7')
+        ));
+      }
+
+      radarCard.appendChild(domH('div', { class: 'bt-chart-stage' }, radarSvg));
+
+      if (hasScopedMatch) {
+        radarCard.appendChild(domH('div', { class: 'bt-radar-legend', 'aria-label': 'Radar polygon legend' },
+          domH('span', { style: 'display:inline-flex;align-items:center;gap:5px' },
+            domH('span', { class: 'bt-radar-leg-swatch is-scoped', 'aria-hidden': 'true' }),
+            domH('span', { text: 'Filtered: ' + scope.scopeLabel })
+          ),
+          domH('span', { style: 'display:inline-flex;align-items:center;gap:5px' },
+            domH('span', { class: 'bt-radar-leg-swatch is-baseline', 'aria-hidden': 'true' }),
+            domH('span', { text: 'All-Time Baseline' })
+          )
+        ));
+      }
+
+      const axisDrillHost = domH('div', { id: 'bt-radar-axis-drawer-host' });
+      function getAxisTopRows(axKey) {
+        return activeRows.slice().sort(function (a, b) {
+          const scoreFor = function (r) {
+            const base = rowStar(r);
+            if (axKey === 'acidity') return (parseFloat(r.acidity_intensity) || parseFloat(r.acidity) || (String(r.roast_level || '').indexOf('light') >= 0 ? 4 : 2.5)) * 2 + base;
+            if (axKey === 'sweetness') return (parseFloat(r.sweetness_intensity) || parseFloat(r.sweetness) || 3.5) * 2 + base;
+            if (axKey === 'body') return (parseFloat(r.body_intensity) || parseFloat(r.body) || (/natural|espresso|press/.test(String(r.process + ' ' + r.brew_method).toLowerCase()) ? 4 : 2.5)) * 2 + base;
+            if (axKey === 'roast') {
+              const rk = String(r.roast_level || r.roast || '').toLowerCase();
+              const rNum = rk.indexOf('dark') >= 0 ? 4.5 : (rk === 'medium' ? 3.3 : (rk.indexOf('ultra') >= 0 ? 1.4 : 2.1));
+              return (5 - Math.abs(rNum - activeBayes.axes[3].val)) * 2 + base;
+            }
+            const pr = String(r.process || '').toLowerCase();
+            const fNum = /anaerobic|carbonic|natural|ferment/.test(pr) ? 4.2 : 2.1;
+            return (5 - Math.abs(fNum - activeBayes.axes[4].val)) * 2 + base;
+          };
+          return scoreFor(b) - scoreFor(a);
+        });
+      }
+      function paintAxisDrawer() {
+        axisDrillHost.textContent = '';
+        const k = palateState.selectedRadarAxis;
+        if (!k) return;
+        const axObj = activeBayes.axes.find(function (x) { return x.key === k; });
+        if (!axObj) return;
+        const matched = getAxisTopRows(k).slice(0, 5);
+        axisDrillHost.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-radar-axis-drawer' },
+          domH('div', { class: 'bt-drill-drawer-head' },
+            domH('div', { style: 'min-width:0;flex:1' },
+              domH('div', { class: 'bt-pref-tile-lbl', text: 'TASTE AXIS DRILL-DOWN' + (hasScopedMatch ? (' \u00B7 ' + scope.scopeLabel.toUpperCase()) : '') }),
+              domH('strong', { class: 'bt-drill-drawer-title', text: axObj.label + ' (' + axObj.val.toFixed(1) + ' / 5.0)' })
+            ),
+            domH('button', {
+              type: 'button',
+              class: 'bt-drill-close-btn bt-lab-btn is-sm',
+              onclick: function () { palateState.selectedRadarAxis = ''; CK.haptic('tick'); rerenderPalateTab(); }
+            }, 'Close \u00D7')
+          ),
+          domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: axisDescs[k] || '' }),
+          matched.length > 0 ? domH('div', { class: 'bt-drill-cup-list' },
+            matched.map(function (r) { return buildDrillCupCard(r); })
+          ) : domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: 'Log cups with ratings to explore your top ' + axObj.label + ' matches.' })
+        ));
+      }
+
+      radarCard.appendChild(domH('div', { class: 'bt-rating-tier-bar', role: 'group', 'aria-label': 'Drill into any taste axis' },
+        activeBayes.axes.map(function (ax) {
+          const active = palateState.selectedRadarAxis === ax.key;
+          return domH('button', {
+            type: 'button',
+            class: 'bt-rating-tier-btn bt-lab-chip bt-drillable' + (active ? ' is-active' : ''),
+            'aria-pressed': String(active),
+            'data-radar-axis': ax.key,
+            onclick: function () {
+              palateState.selectedRadarAxis = active ? '' : ax.key;
+              CK.haptic('tick');
+              paintRadarCard();
+            }
+          }, ax.label + ' (' + ax.val.toFixed(1) + ')');
+        })
+      ));
+      paintAxisDrawer();
+      radarCard.appendChild(axisDrillHost);
+
+      const timelapsePill = CK.vernierPill({
+        label: 'Palate Evolution Time-Lapse',
+        value: palateState.timelapsePct,
+        min: 20,
+        max: 100,
+        step: 5,
+        unit: '% history',
+        compact: true,
+        onChange: function (v) {
+          palateState.timelapsePct = v;
+          rerenderPalateTab();
+        }
+      });
+
+      radarCard.appendChild(domH('div', { class: 'bt-lab-chip-row' },
+        timelapsePill,
+        isScienceXray() ? domH('span', {
+          class: 'bt-studio-xray-line num-tab',
+          text: (hasScopedMatch ? ('Scoped n=' + activeBayes.totalRows + ' · ') : '') +
+            'Empirical Bayes shrinkage = ' + (activeBayes.uniqueCoffees / (activeBayes.uniqueCoffees + 3)).toFixed(2) + ' \u00B7 80% CI = \u00B1' + activeBayes.ciHalf.toFixed(2)
+        }) : null
       ));
     }
 
-    radarCard.appendChild(domH('div', { class: 'bt-rating-tier-bar', role: 'group', 'aria-label': 'Drill into any taste axis' },
-      bayes.axes.map(function (ax) {
-        const active = palateState.selectedRadarAxis === ax.key;
-        return domH('button', {
-          type: 'button',
-          class: 'bt-rating-tier-btn bt-lab-chip bt-drillable' + (active ? ' is-active' : ''),
-          'aria-pressed': String(active),
-          'data-radar-axis': ax.key,
-          onclick: function () {
-            palateState.selectedRadarAxis = active ? '' : ax.key;
-            CK.haptic('tick');
-            rerenderPalateTab();
-          }
-        }, ax.label + ' (' + ax.val.toFixed(1) + ')');
-      })
-    ));
-    paintAxisDrawer();
-    radarCard.appendChild(axisDrillHost);
-    radarCard.appendChild(domH('div', { class: 'bt-lab-chip-row' },
-      timelapsePill,
-      isScienceXray() ? domH('span', {
-        class: 'bt-studio-xray-line num-tab',
-        text: 'Empirical Bayes shrinkage = ' + (bayes.uniqueCoffees / (bayes.uniqueCoffees + 3)).toFixed(2) + ' · 80% CI = ±' + bayes.ciHalf.toFixed(2)
-      }) : null
-    ));
+    paintActiveBoard();
+    wrap.appendChild(boardsCard);
     wrap.appendChild(radarCard);
 
     return wrap;
@@ -3128,6 +3432,11 @@
       let knownSignals = 0;
       const totalSignals = 5;
       const reasons = [];
+      const safeGlobalMean = Number.isFinite(bayes && bayes.globalMean) ? bayes.globalMean : 3.95;
+      const safeAxisVal = function (idx, fb) {
+        const ax = bayes && Array.isArray(bayes.axes) ? bayes.axes[idx] : null;
+        return (ax && Number.isFinite(ax.val)) ? ax.val : fb;
+      };
 
       /* 1. Origin */
       const origUnknown = !sc.origin || sc.origin === 'unknown' || isUnknownTrait(sc.origin);
@@ -3136,10 +3445,10 @@
         reasons.push('Origin (Don\'t Know / Blend): Unlisted on bag — skipped cleanly without guessing an origin.');
       } else {
         knownSignals++;
-        origHit = bayes.originBoard.find(function (b) { return b.key === sc.origin; });
-        const origMeta = atlas.find(function (o) { return o.key === sc.origin; }) || { name: sc.origin };
-        if (origHit && origHit.n > 0) {
-          rawDelta += (origHit.mean - bayes.globalMean) * 16;
+        origHit = (bayes.originBoard || []).find(function (b) { return b.key === sc.origin; });
+        const origMeta = atlas.find(function (o) { return o.key === sc.origin; }) || { name: sc.origin || 'Origin' };
+        if (origHit && origHit.n > 0 && Number.isFinite(origHit.mean)) {
+          rawDelta += (origHit.mean - safeGlobalMean) * 16;
           reasons.push('Origin (' + origMeta.name + '): Personal affinity ' + origHit.mean.toFixed(2) + '/5.0 across ' + origHit.n + ' bag' + (origHit.n === 1 ? '' : 's'));
         } else {
           rawDelta += 1.5;
@@ -3153,12 +3462,12 @@
         reasons.push('Process (Don\'t Know): Not listed on bag — neutral weight used so score stays honest.');
       } else {
         knownSignals++;
-        const procHit = bayes.processBoard.find(function (b) { return b.key.indexOf(sc.process) >= 0 || sc.process.indexOf(b.key) >= 0; });
-        if (procHit && procHit.n > 0) {
-          rawDelta += (procHit.mean - bayes.globalMean) * 13;
+        const procHit = (bayes.processBoard || []).find(function (b) { return b && b.key && (b.key.indexOf(sc.process) >= 0 || sc.process.indexOf(b.key) >= 0); });
+        if (procHit && procHit.n > 0 && Number.isFinite(procHit.mean)) {
+          rawDelta += (procHit.mean - safeGlobalMean) * 13;
           reasons.push('Process (' + formatProcessHuman(sc.process) + '): ' + procHit.mean.toFixed(2) + '/5.0 ' + (isScienceXray() ? 'Empirical-Bayes affinity' : 'personal rating match'));
         } else {
-          const funkAxis = bayes.axes[4].val;
+          const funkAxis = safeAxisVal(4, 3.2);
           const isWild = /anaerobic|natural|honey|wet-hulled/.test(sc.process);
           rawDelta += isWild ? (funkAxis - 3.0) * 5.5 : (3.6 - funkAxis) * 4.5;
           reasons.push('Process (' + formatProcessHuman(sc.process) + '): Aligned against your ' + (isWild ? 'fruit-ferment' : 'clean-washed') + ' taste profile');
@@ -3171,16 +3480,16 @@
         reasons.push('Roast Level (Don\'t Know): Unlisted on bag — skipped without assuming Light or Dark.');
       } else {
         knownSignals++;
-        const roastHit = bayes.roastBoard.find(function (b) { return b.key === sc.roast; });
-        const roastAxis = bayes.axes[3].val;
+        const roastHit = (bayes.roastBoard || []).find(function (b) { return b && b.key === sc.roast; });
+        const roastAxis = safeAxisVal(3, 2.4);
         const bagRoastNum = sc.roast === 'ultra-light' ? 1.4
           : sc.roast === 'light' ? 2.0
           : sc.roast === 'medium-light' ? 2.6
           : sc.roast === 'medium' ? 3.3
           : 4.5;
         const roastGap = Math.abs(roastAxis - bagRoastNum);
-        if (roastHit && roastHit.n > 0) {
-          rawDelta += (roastHit.mean - bayes.globalMean) * 12 + (1.1 - roastGap) * 5;
+        if (roastHit && roastHit.n > 0 && Number.isFinite(roastHit.mean)) {
+          rawDelta += (roastHit.mean - safeGlobalMean) * 12 + (1.1 - roastGap) * 5;
           reasons.push('Roast (' + formatRoastHuman(sc.roast) + '): ' + roastHit.mean.toFixed(2) + '/5.0 personal roast score (' + roastHit.n + ' bag' + (roastHit.n === 1 ? '' : 's') + ')');
         } else {
           rawDelta += (1.25 - roastGap) * 9;
@@ -3195,13 +3504,13 @@
       } else {
         knownSignals++;
         const elevDef = ELEVATION_BAND_DEFS[sc.elevation] || ELEVATION_BAND_DEFS.mid;
-        const elevHit = bayes.elevationBoard.find(function (b) { return b.key === sc.elevation; });
-        if (elevHit && elevHit.n > 0) {
-          rawDelta += (elevHit.mean - bayes.globalMean) * 11;
+        const elevHit = (bayes.elevationBoard || []).find(function (b) { return b && b.key === sc.elevation; });
+        if (elevHit && elevHit.n > 0 && Number.isFinite(elevHit.mean)) {
+          rawDelta += (elevHit.mean - safeGlobalMean) * 11;
           reasons.push('Elevation (' + elevDef.label + '): ' + elevHit.mean.toFixed(2) + '/5.0 across ' + elevHit.n + ' bag' + (elevHit.n === 1 ? '' : 's'));
         } else {
-          const acAxis = bayes.axes[0].val;
-          const bdAxis = bayes.axes[2].val;
+          const acAxis = safeAxisVal(0, 3.8);
+          const bdAxis = safeAxisVal(2, 3.4);
           const elevFit = sc.elevation === 'high' ? (acAxis - 3.0) * 4.5
             : sc.elevation === 'low' ? (bdAxis - 3.0) * 4.0
             : 2.5;
@@ -3219,8 +3528,8 @@
         let noteBonus = 0;
         const matchedFavs = [];
         const matchedDislikes = [];
-        const acAxis = bayes.axes[0].val;
-        const bdAxis = bayes.axes[2].val;
+        const acAxis = safeAxisVal(0, 3.8);
+        const bdAxis = safeAxisVal(2, 3.4);
         activeNotes.forEach(function (n) {
           const nf = matchFlavorNoteAffinity(n);
           if (nf.disliked) {
@@ -3228,7 +3537,7 @@
             matchedDislikes.push(n);
           } else if (nf.exactHit) {
             const favLift = 4.5 + Math.max(0, ((nf.exactHit.sumStar / Math.max(1, nf.exactHit.n)) - 3.8) * 3.0);
-            noteBonus += favLift;
+            noteBonus += Number.isFinite(favLift) ? favLift : 4.5;
             matchedFavs.push(n);
           } else if (nf.familyKind === 'bright') {
             noteBonus += (acAxis - 3.0) * 2.2;
@@ -3253,10 +3562,11 @@
       const coverage = knownSignals / totalSignals;
       const confScale = 0.35 + 0.65 * coverage;
       const baseAnchor = 74;
-      const finalScore = baseAnchor + rawDelta * confScale;
+      const finalScore = baseAnchor + (Number.isFinite(rawDelta) ? rawDelta : 0) * confScale;
       const pct = Math.round(clamp(finalScore, 24, 99, 74));
-      const historyFactor = bayes.uniqueCoffees > 0
-        ? clamp(0.60 + 0.40 * (bayes.uniqueCoffees / (bayes.uniqueCoffees + 2)), 0.60, 1.0, 0.75)
+      const uniqueCoffeesN = Number.isFinite(bayes && bayes.uniqueCoffees) ? bayes.uniqueCoffees : 0;
+      const historyFactor = uniqueCoffeesN > 0
+        ? clamp(0.60 + 0.40 * (uniqueCoffeesN / (uniqueCoffeesN + 2)), 0.60, 1.0, 0.75)
         : 0.68;
       const confPct = Math.round(clamp((0.28 + 0.72 * coverage) * historyFactor * 100, 25, 98, 70));
       const isUnexplored = !origUnknown && (!origHit || origHit.n === 0);

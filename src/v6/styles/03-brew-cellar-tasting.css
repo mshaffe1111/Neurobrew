@@ -3965,9 +3965,595 @@
   .bt-kettle-seg-preheat,
   .bt-phase-step,
   .bt-phase-pill,
-  .bt-phase-bar-fill {
+  .bt-phase-bar-fill,
+  .bt-blend-pct-seg-a,
+  .bt-blend-pct-seg-b,
+  #bt-door-blend-toggle,
+  #bt-timer-flow-coach {
     transition: none !important;
   }
+}
+
+/* ==================== v7.4 DOOR BLEND TOGGLE, STEP 3 WEIGHT SPLITTER, RECIPE INTEL CHIPS & FLOW COACH ==================== */
+
+/* 1. Door Compact Blend Toggle Pill */
+#bt-door-blend-toggle,
+.bt-door-blend-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 44px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 7px 13px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px dashed var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, transform 0.12s var(--spring-snappy);
+  box-sizing: border-box;
+}
+
+#bt-door-blend-toggle:hover,
+.bt-door-blend-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+#bt-door-blend-toggle:active,
+.bt-door-blend-toggle:active {
+  transform: scale(0.975);
+}
+
+#bt-door-blend-toggle:focus-visible,
+.bt-door-blend-toggle:focus-visible {
+  outline: 2.5px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+#bt-door-blend-toggle.is-active,
+#bt-door-blend-toggle[aria-pressed="true"],
+.bt-door-blend-toggle.is-active,
+.bt-door-blend-toggle[aria-pressed="true"] {
+  border-style: solid;
+  border-width: 1.5px;
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 800;
+}
+
+/* 2. Step 3 Under-Recipe 2-Coffee Weight & Split Controller */
+#bt-step3-blend-split-card,
+.bt-blend-split-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+#bt-step3-blend-split-card.is-collapsed,
+#bt-step3-blend-split-card.is-single,
+#bt-step3-blend-split-card[data-blend="false"] {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 2px 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.bt-blend-add-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 7px 14px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px dashed var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: normal;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background-color 0.14s ease, color 0.14s ease;
+  box-sizing: border-box;
+}
+
+.bt-blend-add-pill:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+#bt-step3-blend-split-card.is-active,
+#bt-step3-blend-split-card.is-blend,
+#bt-step3-blend-split-card[data-blend="true"],
+#bt-step3-blend-split-card:has(.bt-blend-split-row) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 13px;
+  border-radius: 16px;
+  background: var(--surface-card-grad, var(--surface));
+  border: 1.5px solid var(--accent-border);
+  box-shadow: var(--shadow-card);
+}
+
+.bt-blend-split-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  min-width: 0;
+}
+
+.bt-blend-split-title {
+  font-family: var(--font-display);
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bt-blend-pct-bar {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  height: 10px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--track);
+  overflow: hidden;
+  gap: 2px;
+  box-sizing: border-box;
+}
+
+.bt-blend-pct-seg-a {
+  height: 100%;
+  background: var(--primary);
+  border-radius: var(--r-pill, 9999px) 2px 2px var(--r-pill, 9999px);
+  min-width: 4%;
+  transition: width 0.2s var(--spring-snappy);
+}
+
+.bt-blend-pct-seg-b {
+  height: 100%;
+  flex: 1 1 auto;
+  background: var(--accent);
+  border-radius: 2px var(--r-pill, 9999px) var(--r-pill, 9999px) 2px;
+  min-width: 4%;
+  transition: width 0.2s var(--spring-snappy);
+}
+
+.bt-blend-split-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.bt-blend-comp-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 7px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 10px 11px;
+  border-radius: 13px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  box-sizing: border-box;
+}
+
+.bt-blend-comp-box.is-a {
+  border-left: 3.5px solid var(--primary);
+}
+
+.bt-blend-comp-box.is-b {
+  border-left: 3.5px solid var(--accent);
+}
+
+.bt-blend-comp-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+.bt-blend-comp-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.bt-blend-comp-box.is-a .bt-blend-comp-tag {
+  color: var(--primary);
+}
+
+:root[data-theme="dark"] .bt-blend-comp-box.is-a .bt-blend-comp-tag {
+  color: var(--leaf);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .bt-blend-comp-box.is-a .bt-blend-comp-tag {
+    color: var(--leaf);
+  }
+}
+
+.bt-blend-comp-box.is-b .bt-blend-comp-tag {
+  color: var(--accent);
+}
+
+.bt-blend-comp-name {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.bt-blend-comp-meta {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.bt-blend-step-btns {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  margin-top: 2px;
+}
+
+.bt-blend-step-btns button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: none;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 0.14s ease, background-color 0.14s ease, transform 0.1s ease;
+}
+
+.bt-blend-step-btns button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.bt-blend-step-btns button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.bt-blend-step-btns .bt-blend-wt-readout {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.bt-blend-presets-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.bt-blend-preset-btn {
+  min-height: 44px;
+  padding: 6px 11px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.14s ease, background-color 0.14s ease, color 0.14s ease;
+  box-sizing: border-box;
+}
+
+.bt-blend-preset-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.bt-blend-preset-btn.is-active,
+.bt-blend-preset-btn[aria-pressed="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+}
+
+.bt-blend-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  width: 100%;
+  min-width: 0;
+  padding-top: 2px;
+  border-top: 1px solid var(--line-hairline);
+}
+
+@media (max-width: 460px) {
+  .bt-blend-split-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 3. Step 3 Compact Recipe Intelligence Chips */
+#bt-step3-smart-tags,
+.bt-step3-smart-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 2px 0;
+  box-sizing: border-box;
+}
+
+#bt-step3-smart-tags:empty {
+  display: none;
+}
+
+.bt-recipe-intel-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 4px 10px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--science-bg);
+  border: 1px solid var(--science-border);
+  color: var(--science);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+}
+
+.bt-recipe-intel-pill.is-temp,
+.bt-recipe-intel-pill.is-accent {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.bt-recipe-intel-pill.is-warn,
+.bt-recipe-intel-pill.is-water {
+  background: var(--warn-bg);
+  border-color: rgba(133, 75, 4, 0.34);
+  color: var(--warn);
+}
+
+:root[data-theme="dark"] .bt-recipe-intel-pill.is-warn,
+:root[data-theme="dark"] .bt-recipe-intel-pill.is-water {
+  border-color: rgba(244, 188, 92, 0.36);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .bt-recipe-intel-pill.is-warn,
+  :root:not([data-theme="light"]) .bt-recipe-intel-pill.is-water {
+    border-color: rgba(244, 188, 92, 0.36);
+  }
+}
+
+.bt-recipe-intel-pill.is-good,
+.bt-recipe-intel-pill.is-palate {
+  background: var(--good-bg);
+  border-color: var(--good-border);
+  color: var(--good);
+}
+
+.bt-recipe-intel-pill.is-blend {
+  background: var(--primary-soft);
+  border-color: rgba(28, 74, 54, 0.32);
+  color: var(--primary);
+}
+
+:root[data-theme="dark"] .bt-recipe-intel-pill.is-blend {
+  border-color: rgba(122, 214, 164, 0.34);
+  color: var(--leaf);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .bt-recipe-intel-pill.is-blend {
+    border-color: rgba(122, 214, 164, 0.34);
+    color: var(--leaf);
+  }
+}
+
+/* 4. Step 4 Declining Temp Step Cue & Live Mid-Brew Flow Coach */
+.bt-timer-temp-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--science-bg);
+  border: 1.5px solid var(--science-border);
+  color: var(--science);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.25;
+  max-width: 100%;
+  white-space: normal;
+  box-sizing: border-box;
+}
+
+.bt-phase-step .bt-timer-temp-cue,
+.bt-phase-pill .bt-timer-temp-cue {
+  padding: 2px 7px;
+  font-size: 0.68rem;
+  border-width: 1px;
+}
+
+#bt-timer-flow-coach,
+.bt-timer-flow-coach {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--well);
+  border: 1.5px solid var(--line);
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+  box-sizing: border-box;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+#bt-timer-flow-coach[hidden],
+.bt-timer-flow-coach[hidden] {
+  display: none !important;
+}
+
+#bt-timer-flow-coach.is-stalling,
+.bt-timer-flow-coach.is-stalling {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+#bt-timer-flow-coach.is-channeling,
+.bt-timer-flow-coach.is-channeling {
+  background: var(--bad-bg);
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+#bt-timer-flow-coach.is-ok,
+.bt-timer-flow-coach.is-ok {
+  background: var(--good-bg);
+  border-color: var(--good-border);
+  color: var(--good);
+}
+
+.bt-flow-coach-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bt-flow-coach-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.28;
+  color: inherit;
+}
+
+.bt-flow-coach-action {
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.38;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.bt-flow-coach-dismiss {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.14s ease, transform 0.1s ease;
+}
+
+.bt-flow-coach-dismiss:hover {
+  opacity: 0.82;
+}
+
+.bt-flow-coach-dismiss:active {
+  transform: scale(0.96);
 }
 
 

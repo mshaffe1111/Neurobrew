@@ -3233,6 +3233,110 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+/* ==================== v7.4 MY GEAR THERMAL PILLS & DESKTOP ASIDE BLEND META ==================== */
+.bt-gear-thermal-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.bt-gear-thermal-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.bt-gear-pill-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+}
+
+.bt-gear-thermal-pill {
+  min-height: 44px;
+  padding: 7px 13px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 0.14s ease, background-color 0.14s ease, color 0.14s ease, transform 0.12s var(--spring-snappy);
+  box-sizing: border-box;
+}
+
+.bt-gear-thermal-pill:hover:not(:disabled):not(.is-active):not([aria-pressed="true"]) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.bt-gear-thermal-pill:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.bt-gear-thermal-pill.is-active,
+.bt-gear-thermal-pill[aria-pressed="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+}
+
+.bt-aside-blend-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 9px;
+  border-radius: 11px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.32;
+  overflow-wrap: anywhere;
+}
+
+.bt-aside-temp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--science-bg);
+  border: 1px solid var(--science-border);
+  color: var(--science);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.71rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bt-gear-thermal-pill {
+    transition: none !important;
+  }
+}
+
 @media print {
   @page {
     margin: 12mm 14mm;
@@ -3453,7 +3557,10 @@ textarea:focus-visible {
   .bt-step5-saved-banner,
   .bt-cupping-compare-table th,
   .bt-cupping-compare-table td,
-  .bt-bean-scorecard-row {
+  .bt-bean-scorecard-row,
+  #bt-step3-blend-split-card.is-active,
+  #bt-step3-blend-split-card:has(.bt-blend-split-row),
+  .bt-journal-blend-split {
     background: #FFFFFF !important;
     background-image: none !important;
     color: #111111 !important;

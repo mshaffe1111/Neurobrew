@@ -3067,6 +3067,7 @@ function BTChronoDial(cfg) {
     phaseLabel: cfg.phaseLabel || '',
     subLabel: cfg.subLabel || '',
     tachLabel: initFlowLbl,
+    tempCue: typeof cfg.tempCue === 'string' ? cfg.tempCue : '',
     waves: Object.assign({ thetaA: 0, thetaS: 0, thetaB: 0 }, cfg.waves || cfg.waveState || {})
   };
 
@@ -3254,6 +3255,17 @@ function BTChronoDial(cfg) {
   );
 
   /* 8. Center Chronograph Typography Register (00:00.0 — Enlarged High-Contrast Readout) */
+  /* v7.4 Declining Temp Step Cue (e.g. '\u2193 89 °C') — sits just above the phase kicker, hidden when empty */
+  const tempCueEl = h('text', {
+    class: 'bt-chrono-temp-cue',
+    x: CX, y: 86,
+    'text-anchor': 'middle',
+    fill: ghostCol,
+    'font-family': 'var(--font-mono)',
+    'font-size': 9.8,
+    'font-weight': 800,
+    text: ''
+  });
   const phaseKickerEl = h('text', {
     x: CX, y: 100,
     'text-anchor': 'middle',
@@ -3305,6 +3317,7 @@ function BTChronoDial(cfg) {
     waveB.bg, waveB.fg,
     tachTrack, tachSweet, tachLiveArc, tachNeedle, tachText,
     sweepSecHand,
+    tempCueEl,
     phaseKickerEl,
     digitsMainEl,
     subReadoutEl
@@ -3335,6 +3348,7 @@ function BTChronoDial(cfg) {
   let cPhase = '';
   let cSub = '';
   let cTach = '';
+  let cTempCue = null;
 
   function formatChronoTime(sec) {
     const s = Math.max(0, +sec || 0);
@@ -3496,6 +3510,14 @@ function BTChronoDial(cfg) {
       tachText.textContent = nextTach;
       tachText.setAttribute('font-size', nextTach.length > 13 ? '9.6' : (nextTach.length > 9 ? '10.6' : '11.8'));
     }
+
+    const nextTempCue = isOvertime ? '' : String(st.tempCue || '').slice(0, 16);
+    if (nextTempCue !== cTempCue) {
+      cTempCue = nextTempCue;
+      tempCueEl.textContent = nextTempCue;
+      tempCueEl.setAttribute('display', nextTempCue ? 'inline' : 'none');
+      root.classList.toggle('has-temp-cue', !!nextTempCue);
+    }
   }
 
   root.update = function(live) {
@@ -3516,6 +3538,7 @@ function BTChronoDial(cfg) {
     if (typeof live.subLabel === 'string') st.subLabel = live.subLabel;
     if (typeof live.flowLabel === 'string') st.tachLabel = live.flowLabel;
     else if (typeof live.tachLabel === 'string') st.tachLabel = live.tachLabel;
+    if (typeof live.tempCue === 'string') st.tempCue = live.tempCue;
     const wObj = live.waves || live.waveState;
     if (wObj && typeof wObj === 'object') {
       if (wObj.thetaA != null) st.waves.thetaA = +wObj.thetaA;

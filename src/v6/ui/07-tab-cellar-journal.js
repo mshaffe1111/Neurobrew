@@ -266,6 +266,217 @@
     }
   }
 
+  function parseJsonObjSafe(raw) {
+    if (!raw) return null;
+    if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
+    if (typeof raw !== 'string') return null;
+    try {
+      var parsed = JSON.parse(raw);
+      return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function fmtBlendGrams(g) {
+    var n = parseFloat(g);
+    if (!isFinite(n) || n <= 0) return '';
+    var rounded = Math.round(n * 10) / 10;
+    return String(rounded).replace(/\.0$/, '') + 'g';
+  }
+
+  function normalizeBlendComponent(raw, fallbackName) {
+    var c = (raw && typeof raw === 'object') ? raw : {};
+    var wG = parseFloat(c.weightG != null ? c.weightG : (c.doseG != null ? c.doseG : c.grams));
+    var rPct = parseFloat(c.ratioPct != null ? c.ratioPct : (c.pct != null ? c.pct : c.sharePct));
+    var ag = parseFloat(c.agtron);
+    var elv = c.elevation_m != null && c.elevation_m !== '' ? String(c.elevation_m).trim() : '';
+    var isDecaf = c.decaf === 'yes' || c.decaf === true || /decaf/i.test(String(c.decaf || ''));
+    return {
+      coffeeId: String(c.coffeeId || c.coffee_id || c.id || '').trim(),
+      name: unneutCellar(c.name || c.coffee_name || c.coffee || '') || fallbackName || 'Coffee',
+      roaster: unneutCellar(c.roaster || ''),
+      roast: unneutCellar(c.roast || c.roast_level || ''),
+      agtron: isFinite(ag) && ag > 0 ? ag : '',
+      process: unneutCellar(c.process || ''),
+      origin: unneutCellar(c.origin || ''),
+      elevation_m: elv,
+      varietal: unneutCellar(c.varietal || ''),
+      decaf: isDecaf ? 'yes' : '',
+      species: unneutCellar(c.species || '') || 'arabica',
+      weightG: (isFinite(wG) && wG > 0) ? Math.round(wG * 10) / 10 : 0,
+      ratioPct: (isFinite(rPct) && rPct > 0) ? Math.round(rPct) : 0
+    };
+  }
+
+  function extractRowBlendInfo(rowOrBag) {
+    if (!rowOrBag || typeof rowOrBag !== 'object') return { isBlend: false, components: [] };
+    var ad = readRowAdapMetaSafe(rowOrBag) || {};
+    var ej = parseJsonObjSafe(rowOrBag.extra_json) || {};
+    var directCe = parseJsonObjSafe(rowOrBag.coffee_extra) || {};
+    var adCe = (ad.coffee_extra && typeof ad.coffee_extra === 'object') ? ad.coffee_extra : {};
+    var ejCe = (ej.coffee_extra && typeof ej.coffee_extra === 'object') ? ej.coffee_extra : {};
+
+    var rawComps = null;
+    if (Array.isArray(adCe.blendComponents) && adCe.blendComponents.length >= 2) rawComps = adCe.blendComponents;
+    else if (Array.isArray(ejCe.blendComponents) && ejCe.blendComponents.length >= 2) rawComps = ejCe.blendComponents;
+    else if (Array.isArray(ej.blendComponents) && ej.blendComponents.length >= 2) rawComps = ej.blendComponents;
+    else if (Array.isArray(directCe.blendComponents) && directCe.blendComponents.length >= 2) rawComps = directCe.blendComponents;
+    else if (Array.isArray(ad.blendComponents) && ad.blendComponents.length >= 2) rawComps = ad.blendComponents;
+    else if (Array.isArray(rowOrBag.blendComponents) && rowOrBag.blendComponents.length >= 2) rawComps = rowOrBag.blendComponents;
+
+    var bd = ad.blendBreakdown || ad.blend_breakdown || adCe.blendBreakdown || ej.blendBreakdown || ejCe.blendBreakdown || directCe.blendBreakdown || rowOrBag.blendBreakdown || null;
+    if (!rawComps && bd && typeof bd === 'object' && (bd.nameA || bd.nameB || +bd.doseA_g > 0 || +bd.doseB_g > 0)) {
+      rawComps = [
+        { coffeeId: bd.coffeeIdA || '', name: bd.nameA || 'Coffee A', weightG: +bd.doseA_g || 0, ratioPct: +bd.pctA || 0 },
+        { coffeeId: bd.coffeeIdB || '', name: bd.nameB || 'Coffee B', weightG: +bd.doseB_g || 0, ratioPct: +bd.pctB || 0 }
+      ];
+    }
+
+    var flag = !!(
+      adCe.isBlend === true || adCe.isBlend === 'yes' ||
+      ejCe.isBlend === true || ejCe.isBlend === 'yes' ||
+      ej.isBlend === true || ej.isBlend === 'yes' ||
+      directCe.isBlend === true || directCe.isBlend === 'yes' ||
+      ad.isBlend === true ||
+      (bd && bd.isBlend === true) ||
+      rowOrBag.isBlend === true
+    );
+
+    if (!rawComps || rawComps.length < 2) {
+      return { isBlend: false, components: [] };
+    }
+    if (!flag && !(rawComps[0] && rawComps[1] && (rawComps[0].name || rawComps[0].coffeeId) && (rawComps[1].name || rawComps[1].coffeeId))) {
+      return { isBlend: false, components: [] };
+    }
+
+    var compA = normalizeBlendComponent(rawComps[0], 'Coffee A');
+    var compB = normalizeBlendComponent(rawComps[1], 'Coffee B');
+    var totalDose = parseFloat(rowOrBag.brew_dose_g || rowOrBag.doseG || rowOrBag.dose || 0);
+    if (!isFinite(totalDose) || totalDose <= 0) totalDose = 0;
+
+    var wA = compA.weightG > 0 ? compA.weightG : (bd && +bd.doseA_g > 0 ? +bd.doseA_g : 0);
+    var wB = compB.weightG > 0 ? compB.weightG : (bd && +bd.doseB_g > 0 ? +bd.doseB_g : 0);
+    var pA = compA.ratioPct > 0 ? compA.ratioPct : (bd && +bd.pctA > 0 ? +bd.pctA : 0);
+    var pB = compB.ratioPct > 0 ? compB.ratioPct : (bd && +bd.pctB > 0 ? +bd.pctB : 0);
+
+    if (wA > 0 && wB > 0) {
+      var wSum = wA + wB;
+      pA = Math.round((wA / wSum) * 100);
+      pB = 100 - pA;
+    } else if (pA > 0 || pB > 0) {
+      var pSum = (pA > 0 ? pA : 0) + (pB > 0 ? pB : 0);
+      if (pSum > 0) {
+        pA = Math.round(((pA > 0 ? pA : 0) / pSum) * 100);
+        pB = 100 - pA;
+      } else {
+        pA = 50; pB = 50;
+      }
+      if (totalDose > 0) {
+        wA = Math.round((totalDose * (pA / 100)) * 10) / 10;
+        wB = Math.round((totalDose - wA) * 10) / 10;
+      }
+    } else {
+      pA = 50; pB = 50;
+      if (totalDose > 0) {
+        wA = Math.round((totalDose * 0.5) * 10) / 10;
+        wB = Math.round((totalDose - wA) * 10) / 10;
+      }
+    }
+
+    compA.weightG = wA > 0 ? Math.round(wA * 10) / 10 : 0;
+    compB.weightG = wB > 0 ? Math.round(wB * 10) / 10 : 0;
+    compA.ratioPct = pA;
+    compB.ratioPct = pB;
+
+    var wPart = (compA.weightG > 0 && compB.weightG > 0) ? (fmtBlendGrams(compA.weightG) + ' + ' + fmtBlendGrams(compB.weightG) + ' \u00B7 ') : '';
+    var pillText = '2-Coffee Blend (' + wPart + pA + '%/' + pB + '%)';
+    var partA = compA.name + ' (' + (compA.weightG > 0 ? (fmtBlendGrams(compA.weightG) + ' \u00B7 ') : '') + pA + '%)';
+    var partB = compB.name + ' (' + (compB.weightG > 0 ? (fmtBlendGrams(compB.weightG) + ' \u00B7 ') : '') + pB + '%)';
+    var detailLine = partA + ' + ' + partB;
+
+    return {
+      isBlend: true,
+      components: [compA, compB],
+      doseA_g: compA.weightG,
+      doseB_g: compB.weightG,
+      pctA: pA,
+      pctB: pB,
+      nameA: compA.name,
+      nameB: compB.name,
+      pillText: pillText,
+      detailLine: detailLine
+    };
+  }
+
+  function extractRowV74Meta(row) {
+    if (!row || typeof row !== 'object') {
+      return { brewerMaterialLabel: '', tempProfileLabel: '', palateTargetsLabel: '', appliedRecipeTags: [] };
+    }
+    var ad = readRowAdapMetaSafe(row) || {};
+    var ej = parseJsonObjSafe(row.extra_json) || {};
+    var ce = (ad.coffee_extra && typeof ad.coffee_extra === 'object') ? ad.coffee_extra
+      : ((ej.coffee_extra && typeof ej.coffee_extra === 'object') ? ej.coffee_extra : (parseJsonObjSafe(row.coffee_extra) || {}));
+
+    var rawMat = String(ad.brewerMaterial || ad.brewer_material || ej.brewerMaterial || ej.brewer_material || ce.brewerMaterial || row.brewer_material || '').trim();
+    var rawPre = String(ad.preheat || ad.brewerPreheat || ad.preheat_habit || ej.preheat || ej.brewerPreheat || ce.preheat || row.brewer_preheat || '').trim();
+    var matMap = { plastic: 'Plastic', ceramic: 'Ceramic', glass: 'Glass', metal: 'Metal' };
+    var preMap = { boiling_rinse: 'Boiling Rinse', warm_rinse: 'Warm Rinse', none: 'Cold / Dry' };
+    var matHuman = rawMat ? (matMap[rawMat.toLowerCase()] || rawMat.replace(/[_-]+/g, ' ').replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); })) : '';
+    var preHuman = rawPre ? (preMap[rawPre.toLowerCase()] || rawPre.replace(/[_-]+/g, ' ').replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); })) : '';
+    var brewerMaterialLabel = [matHuman, preHuman].filter(Boolean).join(' \u00B7 ');
+
+    var tp = ad.tempProfile || ad.temp_profile || ej.tempProfile || ej.temp_profile || ce.tempProfile || row.temp_profile || null;
+    var tempProfileLabel = '';
+    if (tp && typeof tp === 'object') {
+      var sT = parseFloat(tp.startTempC != null ? tp.startTempC : tp.start_c);
+      var eT = parseFloat(tp.tailTempC != null ? tp.tailTempC : (tp.endTempC != null ? tp.endTempC : tp.tail_c));
+      if (isFinite(sT) && sT > 0 && isFinite(eT) && eT > 0) {
+        tempProfileLabel = Math.round(sT) + ' \u2192 ' + Math.round(eT) + ' \u00B0C' + (tp.type === 'step-down' ? ' (Step-Down)' : '');
+      }
+    } else if (typeof tp === 'string' && tp.trim()) {
+      tempProfileLabel = tp.trim();
+    }
+
+    var pt = ad.palateTargets || ad.palate_targets || ej.palateTargets || ej.palate_targets || ce.palateTargets || row.palate_targets || null;
+    var palateTargetsLabel = '';
+    if (pt && typeof pt === 'object') {
+      var capWord = function (w) {
+        var s = String(w || '').trim().toLowerCase();
+        if (!s) return '';
+        if (s === 'bright') return 'Bright';
+        if (s === 'smooth') return 'Smooth';
+        if (s === 'light') return 'Light Strength';
+        if (s === 'strong') return 'Strong';
+        if (s === 'clarity') return 'High Clarity';
+        if (s === 'body') return 'Full Body';
+        if (s === 'medium' || s === 'balanced') return 'Balanced';
+        return s.charAt(0).toUpperCase() + s.slice(1);
+      };
+      var ptBits = [];
+      if (pt.brightness) ptBits.push(capWord(pt.brightness));
+      if (pt.strength) ptBits.push(capWord(pt.strength));
+      if (pt.texture) ptBits.push(capWord(pt.texture));
+      if (ptBits.length) {
+        palateTargetsLabel = ptBits.join(' \u00B7 ');
+      }
+    } else if (typeof pt === 'string' && pt.trim()) {
+      palateTargetsLabel = pt.trim();
+    }
+
+    var rawTags = ad.appliedRecipeTags || ad.applied_recipe_tags || ej.appliedRecipeTags || ce.appliedRecipeTags || [];
+    var appliedRecipeTags = Array.isArray(rawTags)
+      ? rawTags.map(function (t) { return String(t || '').trim(); }).filter(Boolean)
+      : [];
+
+    return {
+      brewerMaterialLabel: brewerMaterialLabel,
+      tempProfileLabel: tempProfileLabel,
+      palateTargetsLabel: palateTargetsLabel,
+      appliedRecipeTags: appliedRecipeTags
+    };
+  }
+
   function formatDialSymLabel(sym) {
     var s = String(sym || '').trim();
     if (!s) return '';
@@ -699,6 +910,7 @@
           var stars = parseFloat(r.my_rating_stars) || 0;
           var cName = unneutCellar(r.coffee_name || '') || 'Golden Brew';
           var rName = unneutCellar(r.roaster || '');
+          var goldBlend = extractRowBlendInfo(r);
           var tempC = +r.brew_temp_c > 0 ? Math.round(+r.brew_temp_c) : (+r.brew_temp_f > 0 ? Math.round((+r.brew_temp_f - 32) * 5 / 9) : 0);
           var specs = [
             S.humanMethodName(r.brew_method),
@@ -720,6 +932,9 @@
               ),
               stars > 0 ? S.h('span', { class: 'bt-tc-badge mono ' + (isGold ? 'is-gold' : 'is-good'), text: stars.toFixed(2) + ' / 5' }) : null
             ),
+            goldBlend.isBlend ? S.h('div', { style: 'display:flex;flex-wrap:wrap;gap:4px' },
+              S.h('span', { class: 'bt-tc-badge bt-journal-blend-badge is-copper', title: goldBlend.detailLine, text: goldBlend.pillText })
+            ) : null,
             S.h('div', { class: 'mono', style: 'font-size:0.75rem;color:var(--ink-secondary);line-height:1.35', text: specs }),
             S.h('div', { class: 'bt-tc-pill-wrap' },
               S.h('button', {
@@ -880,7 +1095,16 @@
     var b = resolvedBag || {};
     var pb = matched.priceBag || {};
     var ad = readRowAdapMetaSafe(r) || {};
-    var ce = (ad && ad.coffee_extra && typeof ad.coffee_extra === 'object') ? ad.coffee_extra : {};
+    var ej = parseJsonObjSafe(r && r.extra_json) || {};
+    var ce = (ad && ad.coffee_extra && typeof ad.coffee_extra === 'object') ? ad.coffee_extra
+      : ((ej && ej.coffee_extra && typeof ej.coffee_extra === 'object') ? ej.coffee_extra : (parseJsonObjSafe(r && r.coffee_extra) || {}));
+    var rowBlendInfo = extractRowBlendInfo(r);
+    if (!rowBlendInfo.isBlend) {
+      var fallbackBlend = extractRowBlendInfo(v);
+      if (!fallbackBlend.isBlend) fallbackBlend = extractRowBlendInfo(u);
+      if (!fallbackBlend.isBlend) fallbackBlend = extractRowBlendInfo(b);
+      if (fallbackBlend.isBlend) rowBlendInfo = fallbackBlend;
+    }
     var curC = (a && a.coffee && typeof a.coffee === 'object') ? a.coffee : {};
 
     var finalCid = '';
@@ -1007,6 +1231,29 @@
     nextC.notesUnsure = nextC.bag_notes ? '' : 'yes';
     nextC.bagNotesUnsure = nextC.notesUnsure;
     nextC.notes_unknown = nextC.notesUnsure;
+
+    /* Restore 2-Coffee Blend state cleanly (never collapse to flat string, and clear stale blend state on single-bag hydrate!) */
+    if (rowBlendInfo && rowBlendInfo.isBlend && Array.isArray(rowBlendInfo.components) && rowBlendInfo.components.length >= 2) {
+      nextC.isBlend = true;
+      nextC._blendSummaryOn = true;
+      nextC.blendId = String(ce.blendId || (/^blend_/i.test(finalCid) ? finalCid : '') || '').trim();
+      if (nextC.blendId) {
+        nextC.id = nextC.blendId;
+        nextC.coffee_id = nextC.blendId;
+      }
+      nextC.blendComponents = rowBlendInfo.components.slice(0, 2).map(function (bc) {
+        return Object.assign({}, bc);
+      });
+      if (!nextC.name) {
+        nextC.name = rowBlendInfo.nameA + ' + ' + rowBlendInfo.nameB;
+      }
+      nextC.blend = 'blend';
+    } else {
+      nextC.isBlend = false;
+      nextC._blendSummaryOn = false;
+      nextC.blendId = '';
+      nextC.blendComponents = [];
+    }
     a.coffee = nextC;
 
     /* Restore saved brew parameters (Row -> Vault lastBrew -> Unified lastBrew) */
@@ -1213,6 +1460,22 @@
 
     a.attempt = (resolvedU && resolvedU.n_cups) || (anchor && +anchor.brew_attempt) || a.attempt || 0;
     a.cupBrew = null;
+    if (a.coffee && a.coffee.isBlend && Array.isArray(a.coffee.blendComponents) && a.coffee.blendComponents.length >= 2) {
+      var bcA = a.coffee.blendComponents[0];
+      var bcB = a.coffee.blendComponents[1];
+      var targetDose = +(a.brew && a.brew.dose) || ((+bcA.weightG || 0) + (+bcB.weightG || 0));
+      if (targetDose > 0) {
+        if (a.brew && !(+a.brew.dose > 0)) a.brew.dose = Math.round(targetDose * 10) / 10;
+        var sumBC = (+bcA.weightG || 0) + (+bcB.weightG || 0);
+        if (sumBC <= 0 || Math.abs(sumBC - targetDose) > 0.15) {
+          var pShareA = (+bcA.ratioPct > 0 && +bcA.ratioPct < 100) ? (+bcA.ratioPct / 100) : 0.5;
+          bcA.weightG = Math.round((targetDose * pShareA) * 10) / 10;
+          bcB.weightG = Math.round((targetDose - bcA.weightG) * 10) / 10;
+          bcA.ratioPct = Math.round(pShareA * 100);
+          bcB.ratioPct = 100 - bcA.ratioPct;
+        }
+      }
+    }
     if (a.brew) {
       a.brew.actualSecs = null;
       a.brew.actualFromTimer = false;
@@ -1301,6 +1564,11 @@
   function buildPassportArtifacts(rowOrBag) {
     var a = S.getApp();
     var inn = (typeof window !== 'undefined' && window.BTInnovate) ? window.BTInnovate : null;
+    var blendInfo = extractRowBlendInfo(rowOrBag);
+    if (!blendInfo.isBlend && !rowOrBag && a.coffee && a.coffee.isBlend) {
+      blendInfo = extractRowBlendInfo(a.coffee);
+    }
+    var v74Meta = extractRowV74Meta(rowOrBag);
     var cName = (rowOrBag && (rowOrBag.coffee_name || rowOrBag.coffee || rowOrBag.name)) || (a.coffee && a.coffee.name) || 'Specialty Coffee';
     var cRoaster = (rowOrBag && rowOrBag.roaster) || (a.coffee && a.coffee.roaster) || 'Specialty Roaster';
     var cOrigin = (rowOrBag && rowOrBag.origin) || (a.coffee && a.coffee.origin) || '';
@@ -1316,12 +1584,48 @@
     var stars = +(rowOrBag && rowOrBag.my_rating_stars) || 0;
     var notes = (rowOrBag && (rowOrBag.flavors_liked || rowOrBag.bag_notes)) || (a.coffee && a.coffee.bag_notes) || '';
 
+    var jsonPayload = {
+      schema: 'beantelligence-passport-v7.4',
+      coffee: {
+        name: cName,
+        roaster: cRoaster,
+        origin: cOrigin,
+        process: cProc,
+        roast: cRoast,
+        isBlend: !!blendInfo.isBlend,
+        blendComponents: blendInfo.isBlend ? blendInfo.components : []
+      },
+      brew: {
+        method: method,
+        doseG: doseG,
+        waterG: waterG,
+        ratio: ratio,
+        d50Um: um,
+        grindSetting: gSet,
+        tempC: tempC,
+        tempProfile: v74Meta.tempProfileLabel || '',
+        brewerMaterial: v74Meta.brewerMaterialLabel || ''
+      },
+      ratingStars: stars || null,
+      notes: notes
+    };
+    var jsonShareStr = '';
+    try { jsonShareStr = JSON.stringify(jsonPayload, null, 2); } catch (_) {}
+
     var btUri = '';
     var btTextCode = '';
     if (inn && typeof inn.encodeBrewPassport === 'function') {
       try {
         var enc = inn.encodeBrewPassport({
-          bean: { name: cName, roaster: cRoaster, origin: cOrigin, process: cProc, roast: cRoast },
+          bean: {
+            name: cName,
+            roaster: cRoaster,
+            origin: cOrigin,
+            process: cProc,
+            roast: cRoast,
+            isBlend: !!blendInfo.isBlend,
+            blendComponents: blendInfo.isBlend ? blendInfo.components : undefined
+          },
           recipe: { method: method, doseG: doseG, waterG: waterG, d50Um: um, tempC: tempC, grinderKey: (a.brew && a.brew.grinderKey) || 'comandante-c40' }
         });
         if (enc && enc.uri) {
@@ -1369,19 +1673,27 @@
       return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     };
 
+    var svgSubLine = blendInfo.isBlend
+      ? blendInfo.pillText
+      : [cOrigin, cProc, cRoast].filter(Boolean).join(' \u00B7 ');
+    var svgTempDisp = v74Meta.tempProfileLabel || (tempC + ' \u00B0C');
+    var svgFooterLine = blendInfo.isBlend
+      ? ('Blend: ' + blendInfo.detailLine.slice(0, 58))
+      : (notes ? ('Notes: ' + notes.slice(0, 56)) : '');
+
     var tradingCardSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 900" width="720" height="900" role="img" aria-label="BeanTelligence Trading Card Brew Passport">' +
       '<rect width="720" height="900" rx="36" fill="#FAF6F0"/>' +
       '<rect x="20" y="20" width="680" height="860" rx="28" fill="#FFFDF9" stroke="#D8C8B6" stroke-width="2"/>' +
       '<rect x="20" y="20" width="680" height="156" rx="28" fill="#1C4A36"/>' +
       '<text x="52" y="68" fill="#F2AE4B" font-family="sans-serif" font-size="16" font-weight="800" letter-spacing="2">' + safeEsc(cRoaster.toUpperCase()) + '</text>' +
       '<text x="52" y="114" fill="#FFFDF9" font-family="Georgia,serif" font-size="34" font-weight="700">' + safeEsc(cName.slice(0, 32)) + '</text>' +
-      '<text x="52" y="148" fill="#E3F2EA" font-family="sans-serif" font-size="18" font-weight="600">' + safeEsc([cOrigin, cProc, cRoast].filter(Boolean).join(' \u00B7 ')) + '</text>' +
+      '<text x="52" y="148" fill="#E3F2EA" font-family="sans-serif" font-size="18" font-weight="600">' + safeEsc(svgSubLine) + '</text>' +
       (stars > 0 ? ('<circle cx="634" cy="98" r="38" fill="#F2AE4B"/><text x="634" y="106" text-anchor="middle" fill="#1A1412" font-family="monospace" font-size="22" font-weight="800">' + stars.toFixed(2) + '</text>') : '') +
       '<rect x="48" y="206" width="624" height="196" rx="20" fill="#EFE6DA"/>' +
       '<text x="76" y="246" fill="#685244" font-family="sans-serif" font-size="14" font-weight="800" letter-spacing="1.5">SHARED BREW RECIPE (' + safeEsc(String(method).toUpperCase()) + ')</text>' +
       '<text x="76" y="294" fill="#1A1412" font-family="monospace" font-size="28" font-weight="800">' + doseG + ' g \u2192 ' + waterG + ' g (1:' + ratio + ')</text>' +
-      '<text x="76" y="336" fill="#4E3C31" font-family="monospace" font-size="21" font-weight="700">Grind: ' + safeEsc(gSet) + ' (~' + um + ' \u00B5m) \u00B7 ' + tempC + ' \u00B0C</text>' +
-      (notes ? ('<text x="76" y="376" fill="#9A4212" font-family="sans-serif" font-size="18" font-weight="700">Notes: ' + safeEsc(notes.slice(0, 56)) + '</text>') : '') +
+      '<text x="76" y="336" fill="#4E3C31" font-family="monospace" font-size="21" font-weight="700">Grind: ' + safeEsc(gSet) + ' (~' + um + ' \u00B5m) \u00B7 ' + safeEsc(svgTempDisp) + '</text>' +
+      (svgFooterLine ? ('<text x="76" y="376" fill="#9A4212" font-family="sans-serif" font-size="18" font-weight="700">' + safeEsc(svgFooterLine) + '</text>') : '') +
       '<g transform="translate(260, 446)">' + realQrSvg.replace(/width="\d+"/, 'width="200"').replace(/height="\d+"/, 'height="200"') + '</g>' +
       '<text x="360" y="690" text-anchor="middle" fill="#1A1412" font-family="sans-serif" font-size="18" font-weight="800">Scan to Auto-Match Grind to Any Home Grinder</text>' +
       '<text x="360" y="720" text-anchor="middle" fill="#685244" font-family="monospace" font-size="13">' + safeEsc(btUri.slice(0, 64)) + '</text>' +
@@ -1391,6 +1703,7 @@
     return {
       uri: btUri,
       textCode: btTextCode,
+      jsonCode: jsonShareStr,
       qrSvg: realQrSvg,
       tradingCardSvg: tradingCardSvg,
       title: cName,
@@ -1399,10 +1712,15 @@
         originLine: [cOrigin, cProc, cRoast].filter(Boolean).join(' \u00B7 '),
         methodLabel: S.humanMethodName(method),
         recipeLine: doseG + ' g \u2192 ' + waterG + ' g (1:' + ratio + ')',
-        grindTempLine: gSet + ' (~' + um + ' \u00B5m) \u00B7 ' + tempC + ' \u00B0C',
+        grindTempLine: gSet + ' (~' + um + ' \u00B5m) \u00B7 ' + (v74Meta.tempProfileLabel || (tempC + ' \u00B0C')),
         stars: stars,
         isLocked: !!(rowOrBag && (rowOrBag.dial_locked === 'yes' || rowOrBag.dial_locked === '1')),
-        notes: notes
+        notes: notes,
+        isBlend: !!blendInfo.isBlend,
+        blendLine: blendInfo.isBlend ? blendInfo.pillText : '',
+        blendDetail: blendInfo.isBlend ? blendInfo.detailLine : '',
+        tempProfileLine: v74Meta.tempProfileLabel || '',
+        brewerMaterialLine: v74Meta.brewerMaterialLabel || ''
       }
     };
   }
@@ -2764,7 +3082,17 @@
             var bs = (typeof window !== 'undefined' && window.BTBrewStudio) ? window.BTBrewStudio : null;
             var a = S.getApp();
             var res = null;
-            if (bs && typeof bs.decodeAnySharedBrew === 'function') {
+            if (raw.charAt(0) === '{') {
+              var parsedJsonShare = parseJsonObjSafe(raw);
+              if (parsedJsonShare && (parsedJsonShare.coffee || parsedJsonShare.bean || parsedJsonShare.brew || parsedJsonShare.blendComponents)) {
+                res = {
+                  ok: true,
+                  coffee: parsedJsonShare.coffee || parsedJsonShare.bean || parsedJsonShare,
+                  brew: parsedJsonShare.brew || parsedJsonShare.recipe || {}
+                };
+              }
+            }
+            if (!res && bs && typeof bs.decodeAnySharedBrew === 'function') {
               try {
                 var bt6Res = bs.decodeAnySharedBrew(raw);
                 if (bt6Res && bt6Res.ok && (bt6Res.coffee || bt6Res.brew)) res = bt6Res;
@@ -2777,7 +3105,13 @@
             }
             if (res && (res.ok || res.coffee || res.bean)) {
               if (res.bean || res.coffee) {
-                a.coffee = Object.assign(a.coffee || {}, res.bean || res.coffee, { answered: 'yes' });
+                var importedC = res.bean || res.coffee;
+                var impBlend = extractRowBlendInfo(importedC);
+                a.coffee = Object.assign(a.coffee || {}, importedC, {
+                  answered: 'yes',
+                  isBlend: !!impBlend.isBlend,
+                  blendComponents: impBlend.isBlend ? impBlend.components : []
+                });
                 if (a.coffee.bag_notes && !a.coffee.notes) a.coffee.notes = a.coffee.bag_notes;
               }
               var locRx = res.localizedRecipe || res.brew || {};
@@ -2875,23 +3209,36 @@
     if (ui.compareIdxs.length >= 2) {
       var cmpRows = ui.compareIdxs.map(function (i) { return { idx: i, r: hObjs[i] }; }).filter(function (x) { return !!x.r; });
       if (cmpRows.length >= 2) {
+        var anyCmpBlend = cmpRows.some(function (c) { return extractRowBlendInfo(c.r).isBlend; });
+        var anyCmpMat = cmpRows.some(function (c) { return !!extractRowV74Meta(c.r).brewerMaterialLabel; });
+        var anyCmpPal = cmpRows.some(function (c) { return !!extractRowV74Meta(c.r).palateTargetsLabel; });
         var specRows = [
           { lbl: 'Coffee', fn: function (r) { return (typeof unneutralize === 'function' ? unneutralize(r.coffee_name || '') : r.coffee_name) || '\u2014'; } },
+          anyCmpBlend ? { lbl: '2-Coffee Blend', fn: function (r) {
+            var bi = extractRowBlendInfo(r);
+            return bi.isBlend ? (bi.pillText + ' \u2014 ' + bi.nameA + ' + ' + bi.nameB) : 'Single Coffee';
+          } } : null,
           { lbl: 'Brewer', fn: function (r) { return S.humanMethodName(r.brew_method); } },
+          anyCmpMat ? { lbl: 'Brewer Material', fn: function (r) { return extractRowV74Meta(r).brewerMaterialLabel || '\u2014'; } } : null,
           { lbl: 'Try #', fn: function (r) { return r.brew_attempt ? ('#' + r.brew_attempt) : '\u2014'; } },
           { lbl: 'Dose : Water', fn: function (r) { return (r.brew_dose_g || '\u2014') + ' g : ' + (r.brew_water_g || '\u2014') + ' g'; } },
           { lbl: 'Ratio', fn: function (r) { return r.brew_ratio ? ('1:' + r.brew_ratio) : '\u2014'; } },
           { lbl: 'Grind Setting', fn: function (r) { return [r.brew_grind_setting, r.brew_grind_target_um ? (r.brew_grind_target_um + ' \u00B5m') : ''].filter(Boolean).join(' \u00B7 ') || '\u2014'; } },
-          { lbl: 'Water Temp', fn: function (r) { return r.brew_temp_c ? (r.brew_temp_c + ' \u00B0C') : (r.brew_temp_f ? (r.brew_temp_f + ' \u00B0F') : '\u2014'); } },
+          { lbl: 'Water Temp', fn: function (r) {
+            var vm = extractRowV74Meta(r);
+            if (vm.tempProfileLabel) return vm.tempProfileLabel;
+            return r.brew_temp_c ? (r.brew_temp_c + ' \u00B0C') : (r.brew_temp_f ? (r.brew_temp_f + ' \u00B0F') : '\u2014');
+          } },
           { lbl: 'Brew Time', fn: function (r) {
             var sVal = +(r.brew_actual_time_s || r.brew_time_s) || 0;
             return sVal > 0 ? (S.fmtMmSs(sVal) + ' (' + sVal + 's)') : '\u2014';
           } },
           { lbl: 'Strength (%TDS) / Extraction (%EY)', fn: function (r) { return r.brew_tds_pct ? (r.brew_tds_pct + '% / ' + (r.brew_ey_pct || '\u2014') + '%') : '\u2014'; } },
+          anyCmpPal ? { lbl: 'Palate Targets', fn: function (r) { return extractRowV74Meta(r).palateTargetsLabel || '\u2014'; } } : null,
           { lbl: 'Rating', fn: function (r) { return r.my_rating_stars ? (r.my_rating_stars + ' / 5.00') : (r.total_score ? (r.total_score + ' / 100') : '\u2014'); } },
           { lbl: 'Balance Note', fn: function (r) { return r.fix_symptom || 'balanced'; } },
           { lbl: 'Flavors Liked', fn: function (r) { return (typeof unneutralize === 'function' ? unneutralize(r.flavors_liked || '') : r.flavors_liked) || '\u2014'; } }
-        ];
+        ].filter(Boolean);
 
         var cupScore = function (r) {
           var st = parseFloat(r.my_rating_stars);
@@ -2923,11 +3270,13 @@
           ));
         });
 
+        var anyCmpTempProf = cmpRows.some(function (c) { return !!extractRowV74Meta(c.r).tempProfileLabel; });
         var tbody = S.h('tbody');
         specRows.forEach(function (sr) {
           var vals = cmpRows.map(function (c) { return sr.fn(c.r); });
           var varied = vals.some(function (v) { return v !== vals[0]; });
-          if (ui.compareOnlyVaried && !varied && sr.lbl !== 'Coffee' && sr.lbl !== 'Rating') return;
+          var keepAlways = sr.lbl === 'Coffee' || sr.lbl === 'Rating' || sr.lbl === '2-Coffee Blend' || (sr.lbl === 'Water Temp' && anyCmpTempProf);
+          if (ui.compareOnlyVaried && !varied && !keepAlways) return;
           var tr = S.h('tr', { class: varied ? 'is-diff' : '' }, S.h('td', null,
             S.h('b', { text: sr.lbl }),
             varied ? S.h('span', { class: 'bt-compare-diff-tag', style: 'margin-left:6px', text: 'Changed' }) : null
@@ -2997,7 +3346,9 @@
       if (ui.journalFilter === 'espresso' && mk.indexOf('espresso') < 0 && mk.indexOf('moka') < 0) return false;
       if (ui.journalFilter === 'r2' && !(parseFloat(r.brew_tds_pct) > 0)) return false;
       if (!q) return true;
-      return [r.coffee_name, r.roaster, r.origin, r.brew_method, S.humanMethodName(r.brew_method), r.flavors_liked, r.general_notes].join(' ').toLowerCase().indexOf(q) >= 0;
+      var qBlend = extractRowBlendInfo(r);
+      var blendSearch = qBlend.isBlend ? ('blend ' + qBlend.nameA + ' ' + qBlend.nameB + ' ' + qBlend.components[0].roaster + ' ' + qBlend.components[1].roaster) : '';
+      return [r.coffee_name, r.roaster, r.origin, r.brew_method, S.humanMethodName(r.brew_method), r.flavors_liked, r.general_notes, blendSearch].join(' ').toLowerCase().indexOf(q) >= 0;
     });
 
     filtered.sort(function (a, b) {
@@ -3038,6 +3389,8 @@
         }).filter(Boolean).slice(0, 4);
       var nextRecInfo = extractRowRecommendation(r);
       var nextRecCallout = (!isLocked && nextRecInfo.hasRec) ? buildSavedNextBrewCallout(r, true) : null;
+      var blendInfo = extractRowBlendInfo(r);
+      var v74Meta = extractRowV74Meta(r);
 
       wrap.appendChild(S.h('article', {
         class: 'bt-cellar-bag-card',
@@ -3063,12 +3416,15 @@
             (scaNum <= 0 && starsNum <= 0) ? S.h('span', { class: 'bt-tc-badge is-soft', text: 'Logged' }) : null
           )
         ),
-        (isCupping || flavorTags.length > 0) ? S.h('div', { class: 'bt-journal-flavor-row' },
+        (blendInfo.isBlend || v74Meta.tempProfileLabel || isCupping || flavorTags.length > 0) ? S.h('div', { class: 'bt-journal-flavor-row' },
+          blendInfo.isBlend ? S.h('span', { class: 'bt-tc-badge bt-journal-blend-badge is-copper', title: blendInfo.detailLine, text: blendInfo.pillText }) : null,
+          v74Meta.tempProfileLabel ? S.h('span', { class: 'bt-tc-badge is-sci mono', text: v74Meta.tempProfileLabel }) : null,
           isCupping ? S.h('span', { class: 'bt-tc-badge is-sci', text: 'Cupping Table' }) : null,
           flavorTags.map(function (ft) {
             return S.h('span', { class: 'bt-tc-badge is-soft', style: 'font-weight:700', text: ft });
           })
         ) : null,
+        blendInfo.isBlend ? S.h('div', { class: 'bt-journal-blend-split', text: blendInfo.detailLine }) : null,
         cvaCardTraits.hasAny ? S.h('div', { class: 'bt-sca-attr-grid bt-journal-cva-mini', 'aria-label': 'Cupping attribute scores' },
           cvaCardTraits.items.filter(function (it) { return it.val != null; }).map(function (it) {
             var isSel = ui.selectedCvaTrait === it.key;
@@ -4371,9 +4727,14 @@
           S.h('b', { style: 'font-family:var(--font-display);font-size:1.18rem', text: art.title })
         ),
         (m.roaster || m.originLine) ? S.h('div', { style: 'font-size:0.82rem;color:var(--ink-secondary);font-weight:600', text: [m.roaster, m.originLine].filter(Boolean).join(' \u00B7 ') }) : null,
+        m.isBlend ? S.h('div', { style: 'display:flex;flex-direction:column;align-items:center;gap:4px' },
+          S.h('span', { class: 'bt-tc-badge bt-journal-blend-badge is-copper', text: m.blendLine }),
+          m.blendDetail ? S.h('div', { class: 'bt-journal-blend-split', style: 'text-align:center', text: m.blendDetail }) : null
+        ) : null,
         (m.methodLabel || m.recipeLine) ? S.h('div', { class: 'bt-tc-well', style: 'width:100%;max-width:420px;align-items:center;text-align:center;gap:3px' },
           S.h('div', { class: 'mono', style: 'font-size:0.82rem;font-weight:800;color:var(--ink)', text: [m.methodLabel, m.recipeLine].filter(Boolean).join(' \u00B7 ') }),
           m.grindTempLine ? S.h('div', { class: 'mono', style: 'font-size:0.76rem;color:var(--ink-secondary)', text: m.grindTempLine }) : null,
+          m.brewerMaterialLine ? S.h('div', { class: 'mono', style: 'font-size:0.74rem;color:var(--ink-secondary)', text: 'Brewer: ' + m.brewerMaterialLine }) : null,
           m.stars > 0 ? S.h('div', { class: 'mono', style: 'font-size:0.76rem;font-weight:700;color:var(--accent)', text: 'Rated ' + m.stars.toFixed(2) + ' / 5.00' + (m.isLocked ? ' \u00B7 Golden Recipe' : '') }) : null
         ) : null,
         qrBox,
@@ -4389,6 +4750,16 @@
             S.toastSafe('Copied Brew Passport code to clipboard!');
           }
         }),
+        art.jsonCode ? S.h('button', {
+          type: 'button',
+          id: 'bt-qr-passport-copy-json-btn',
+          class: 'bt-tc-pill is-soft',
+          text: m.isBlend ? 'Copy Blend JSON' : 'Copy JSON Card',
+          onclick: function () {
+            try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(art.jsonCode); } catch (_) {}
+            S.toastSafe(m.isBlend ? 'Copied 2-Coffee Blend JSON recipe!' : 'Copied JSON recipe card!');
+          }
+        }) : null,
         S.h('button', {
           type: 'button',
           class: 'bt-tc-pill is-copper',
@@ -4429,6 +4800,8 @@
     var timeSecs = +(r.brew_actual_time_s || r.brew_time_s) || 0;
     var detailChron = getCoffeeHistoryChronological(r.coffee_name, r.roaster, r.coffee_id, hObjs);
     var detailTimeline = buildDialInConvergenceTimeline(detailChron, r, { compact: false });
+    var blendInfo = extractRowBlendInfo(r);
+    var v74Meta = extractRowV74Meta(r);
 
     var kvPairs = [
       ['Date', r.cupping_date],
@@ -4437,19 +4810,31 @@
       ['Process', un(r.process)],
       ['Roast', un(r.roast_level)],
       ['Varietal', un(r.varietal)],
+      blendInfo.isBlend ? ['Blend Split', blendInfo.detailLine] : null,
       ['Brewer', S.humanMethodName(un(r.brew_method))],
+      v74Meta.brewerMaterialLabel ? ['Brewer Material', v74Meta.brewerMaterialLabel] : null,
       ['Try #', r.brew_attempt],
       ['Dose : Water', (r.brew_dose_g || '\u2014') + ' g : ' + (r.brew_water_g || '\u2014') + ' g'],
       ['Ratio', r.brew_ratio ? ('1:' + r.brew_ratio) : ''],
       ['Grind', [un(r.brew_grind_setting), r.brew_grind_target_um ? (r.brew_grind_target_um + ' \u00B5m') : ''].filter(Boolean).join(' \u00B7 ')],
       ['Temp', r.brew_temp_c ? (r.brew_temp_c + ' \u00B0C') : (r.brew_temp_f ? (r.brew_temp_f + ' \u00B0F') : '')],
+      v74Meta.tempProfileLabel ? ['Temp Profile', v74Meta.tempProfileLabel] : null,
       ['Brew Time', timeSecs > 0 ? (S.fmtMmSs(timeSecs) + ' (' + timeSecs + 's)') : ''],
       ['Beverage Yield', r.brew_out_g ? (r.brew_out_g + ' g') : ''],
       ['Strength (%TDS) / Extraction (%EY)', r.brew_tds_pct ? (r.brew_tds_pct + '% / ' + (r.brew_ey_pct || '\u2014') + '%') : ''],
+      v74Meta.palateTargetsLabel ? ['Palate Targets', v74Meta.palateTargetsLabel] : null,
       ['Cupping Score', r.total_score ? (r.total_score + ' / 100') : ''],
       ['Flavors Liked', un(r.flavors_liked)],
       ['Bag Notes', un(r.bag_notes)]
-    ].filter(function (p) { return !!p[1]; });
+    ].filter(function (p) { return !!(p && p[1]); });
+
+    var intelPills = [];
+    if (v74Meta.brewerMaterialLabel) intelPills.push('Brewer: ' + v74Meta.brewerMaterialLabel);
+    if (v74Meta.tempProfileLabel) intelPills.push('Temp: ' + v74Meta.tempProfileLabel);
+    if (v74Meta.palateTargetsLabel) intelPills.push('Palate: ' + v74Meta.palateTargetsLabel);
+    v74Meta.appliedRecipeTags.forEach(function (tg) {
+      if (intelPills.indexOf(tg) < 0) intelPills.push(tg);
+    });
 
     return S.h('div', { class: 'bt-tc-sheet', id: 'bt-screen-detail', style: 'display:flex;flex-direction:column;gap:12px' },
       S.h('div', { class: 'bt-sheet-back-bar no-print' },
@@ -4466,15 +4851,40 @@
         })
       ),
       S.h('div', { class: 'bt-tc-row-between' },
-        S.h('div', { style: 'display:flex;align-items:center;gap:8px' },
+        S.h('div', { style: 'display:flex;align-items:center;gap:8px;min-width:0;flex:1' },
           isLocked ? buildGoldSealSvg(28) : null,
-          S.h('div', null,
+          S.h('div', { style: 'min-width:0' },
             S.h('div', { class: 'bt-tc-kicker', text: un(r.roaster) || 'Tasting Passport' }),
             S.h('h3', { style: 'margin:0;font-family:var(--font-display)', text: un(r.coffee_name) || 'Logged Cup' })
           )
         ),
         S.h('span', { class: 'bt-tc-badge is-good mono', text: r.my_rating_stars ? (r.my_rating_stars + ' / 5.00') : (r.total_score ? r.total_score + ' / 100' : 'Logged') })
       ),
+      blendInfo.isBlend ? S.h('section', { class: 'bt-tc-well', id: 'bt-detail-blend-breakdown', style: 'gap:6px' },
+        S.h('div', { class: 'bt-tc-row-between' },
+          S.h('span', { class: 'bt-tc-kicker', text: '2-Coffee Blend Breakdown' }),
+          S.h('span', { class: 'bt-tc-badge bt-journal-blend-badge is-copper', text: blendInfo.pillText })
+        ),
+        S.h('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px' },
+          blendInfo.components.map(function (comp, cIdx) {
+            var cMeta = [comp.roaster, comp.origin, comp.process, comp.roast, comp.decaf === 'yes' ? 'Decaf' : ''].filter(Boolean).join(' \u00B7 ');
+            var cWeight = [comp.weightG > 0 ? fmtBlendGrams(comp.weightG) : '', comp.ratioPct + '%'].filter(Boolean).join(' \u00B7 ');
+            return S.h('div', { class: 'bt-journal-blend-split', style: 'display:flex;flex-direction:column;gap:2px' },
+              S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px' },
+                S.h('span', { class: 'bt-tc-kicker', text: 'Coffee ' + (cIdx === 0 ? 'A' : 'B') }),
+                S.h('strong', { class: 'mono', style: 'font-size:0.78rem', text: cWeight })
+              ),
+              S.h('b', { style: 'font-size:0.86rem;color:var(--ink);overflow-wrap:anywhere', text: comp.name }),
+              cMeta ? S.h('span', { style: 'font-size:0.74rem;color:var(--ink-secondary)', text: cMeta }) : null
+            );
+          })
+        )
+      ) : null,
+      intelPills.length ? S.h('div', { class: 'bt-passport-intel-row', id: 'bt-detail-v74-intel' },
+        intelPills.map(function (lbl) {
+          return S.h('span', { class: 'bt-passport-intel-pill mono', text: lbl });
+        })
+      ) : null,
       S.h('div', { class: 'bt-detail-kv-grid' },
         kvPairs.map(function (kv) {
           return S.h('div', { class: 'bt-detail-kv' }, S.h('span', { text: kv[0] }), S.h('b', { text: kv[1] }));
@@ -4677,17 +5087,19 @@
                 if (isFinite(oldDoseG) && isFinite(newDoseG) && Math.abs(newDoseG - oldDoseG) > 0.0001 && typeof storage.reconcileBagDoseDelta === 'function') {
                   try { storage.reconcileBagDoseDelta(updatedRow, Math.round((newDoseG - oldDoseG) * 10) / 10); } catch (_) {}
                 }
-                upsertVaultSafe({
-                  id: updatedRow.coffee_id || '',
-                  name: un(updatedRow.coffee_name),
-                  roaster: un(updatedRow.roaster),
-                  origin: un(updatedRow.origin),
-                  process: un(updatedRow.process),
-                  roast: un(updatedRow.roast_level),
-                  varietal: un(updatedRow.varietal),
-                  bag_notes: un(updatedRow.bag_notes),
-                  notes: un(updatedRow.bag_notes)
-                }, updatedRow);
+                if (!extractRowBlendInfo(updatedRow).isBlend) {
+                  upsertVaultSafe({
+                    id: updatedRow.coffee_id || '',
+                    name: un(updatedRow.coffee_name),
+                    roaster: un(updatedRow.roaster),
+                    origin: un(updatedRow.origin),
+                    process: un(updatedRow.process),
+                    roast: un(updatedRow.roast_level),
+                    varietal: un(updatedRow.varietal),
+                    bag_notes: un(updatedRow.bag_notes),
+                    notes: un(updatedRow.bag_notes)
+                  }, updatedRow);
+                }
                 S.toastSafe('Saved tasting update!', {
                   durationMs: 10000,
                   actionLabel: 'Undo',

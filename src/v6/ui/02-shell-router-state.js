@@ -190,11 +190,19 @@ function _defaultToolModes() {
 
 function _defaultGear() {
   if (typeof setupDefaults === 'function') {
-    try { return setupDefaults().gear; } catch (e) {}
+    try {
+      const sg = setupDefaults().gear;
+      if (sg && typeof sg === 'object') {
+        if (sg.brewerMaterial == null) sg.brewerMaterial = 'plastic';
+        if (sg.preheat == null) sg.preheat = 'boiling_rinse';
+        return sg;
+      }
+    } catch (e) {}
   }
   return {
     grinderKey: '', grinderName: '', grinderType: '', waterType: '', waterAlk: '', waterGH: '',
     filter: '', altitudeFt: '', waterProfileKey: '', kettle: '', scale: '', ownedBrewers: ['v60', 'aeropress', 'switch', 'espresso'],
+    brewerMaterial: 'plastic', preheat: 'boiling_rinse',
     ble: { preferredBrand: 'auto', autoStart: true, autoTare: true, captureYield: true, difluidEnabled: true, omniD10Um: null, omniD50Um: null, omniD90Um: null, omniSpan: null, omniDial: '', rememberedDevices: [] }
   };
 }
@@ -255,8 +263,122 @@ function newCoffee() {
     answered: '', varietalUnsure: '', provenanceLabel: '',
     roasterGuide: null,
     bag_weight_g: '', bagWeightG: '', remaining_g: '',
-    price: '', bagPrice: '', currency: 'USD'
+    price: '', bagPrice: '', currency: 'USD',
+    isBlend: false, blendComponents: []
   };
+}
+
+/* ==================== v7.4 BLEND + GEAR THERMAL + RECIPE CONTEXT HELPERS ==================== */
+const GEAR_BREWER_MATERIALS = [['plastic', 'Plastic'], ['ceramic', 'Ceramic'], ['glass', 'Glass'], ['metal', 'Metal']];
+const GEAR_PREHEAT_HABITS = [['boiling_rinse', 'Boiling Rinse'], ['warm_rinse', 'Warm Rinse'], ['none', 'Cold / Dry']];
+
+function _cleanBrewerMaterialKey(v) {
+  const s = String(v == null ? '' : v).trim().toLowerCase();
+  return GEAR_BREWER_MATERIALS.some(function(m) { return m[0] === s; }) ? s : 'plastic';
+}
+
+function _cleanPreheatKey(v) {
+  const s = String(v == null ? '' : v).trim().toLowerCase();
+  if (s === 'boiling' || s === 'boiling_rinse') return 'boiling_rinse';
+  if (s === 'warm' || s === 'warm_rinse') return 'warm_rinse';
+  if (s === 'none' || s === 'cold' || s === 'dry' || s === 'cold_dry' || s === 'unpreheated') return 'none';
+  return 'boiling_rinse';
+}
+
+function _cleanPalateTargets(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const out = {};
+  const allowed = {
+    brightness: ['bright', 'balanced', 'smooth'],
+    strength: ['light', 'medium', 'balanced', 'strong'],
+    texture: ['clarity', 'balanced', 'body']
+  };
+  Object.keys(raw).slice(0, 12).forEach(function(k) {
+    const v = raw[k];
+    if (allowed[k]) {
+      if (allowed[k].indexOf(v) >= 0) out[k] = v;
+    } else if ((typeof v === 'string' && v.length <= 40) || (typeof v === 'number' && isFinite(v)) || typeof v === 'boolean') {
+      out[String(k).slice(0, 24)] = v;
+    }
+  });
+  return Object.keys(out).length ? out : null;
+}
+
+/* Ensure gear thermal habit keys exist on any prefs object (survives setupClean/cleanFullPrefs whitelists) */
+function _ensureGearThermal(prefs, srcGear) {
+  if (!prefs || typeof prefs !== 'object') return prefs;
+  if (!prefs.gear || typeof prefs.gear !== 'object') prefs.gear = _defaultGear();
+  const sg = (srcGear && typeof srcGear === 'object') ? srcGear : prefs.gear;
+  prefs.gear.brewerMaterial = _cleanBrewerMaterialKey(sg.brewerMaterial != null ? sg.brewerMaterial : prefs.gear.brewerMaterial);
+  prefs.gear.preheat = _cleanPreheatKey(sg.preheat != null ? sg.preheat : prefs.gear.preheat);
+  return prefs;
+}
+
+function getGearThermal() {
+  const g = (app && app.prefs && app.prefs.gear) || {};
+  return { brewerMaterial: _cleanBrewerMaterialKey(g.brewerMaterial), preheat: _cleanPreheatKey(g.preheat) };
+}
+
+function _getCrossBagHistory() {
+  try {
+    if (typeof window !== 'undefined' && window.BTStorage && typeof window.BTStorage.getHistory === 'function') {
+      const hObj = window.BTStorage.getHistory();
+      if (Array.isArray(hObj)) return hObj;
+      if (hObj && Array.isArray(hObj.objs)) return hObj.objs;
+    }
+  } catch (e) {}
+  return [];
+}
+
+/* Single source for Step 3 synthesizeRecipe() context: palateTargets, cross-bag history, brewer thermal habit */
+function getRecipeContext() {
+  const th = getGearThermal();
+  return {
+    palateTargets: (app && app.prefs && app.prefs.palateTargets) ? Object.assign({}, app.prefs.palateTargets) : null,
+    crossBagHistory: _getCrossBagHistory(),
+    brewerMaterial: th.brewerMaterial,
+    preheat: th.preheat,
+    isBlend: !!(app && app.coffee && app.coffee.isBlend === true),
+    blendComponents: (app && app.coffee && Array.isArray(app.coffee.blendComponents)) ? app.coffee.blendComponents.slice() : []
+  };
+}
+
+/* Normalize persisted blend state (exactly 2 components, numeric weights) — drops broken blends to single */
+function _normalizeBlendCoffee(c) {
+  if (!c || typeof c !== 'object') return c;
+  if (c.isBlend !== true) {
+    c.isBlend = false;
+    if (!Array.isArray(c.blendComponents)) c.blendComponents = [];
+    return c;
+  }
+  const comps = Array.isArray(c.blendComponents) ? c.blendComponents.filter(function(x) { return x && typeof x === 'object'; }).slice(0, 2) : [];
+  if (comps.length < 2) {
+    if (comps.length === 1 && !c._blendSummaryOn) {
+      c.blendComponents = comps;
+      return c; /* Step 1 editing in progress (Coffee B not chosen yet) */
+    }
+    c.isBlend = false;
+    c.blendComponents = [];
+    return c;
+  }
+  comps.forEach(function(bc) {
+    bc.weightG = (isFinite(+bc.weightG) && +bc.weightG > 0) ? Math.round(+bc.weightG * 10) / 10 : '';
+    bc.ratioPct = (isFinite(+bc.ratioPct) && +bc.ratioPct > 0) ? Math.round(+bc.ratioPct) : '';
+    bc.name = String(bc.name == null ? '' : bc.name).slice(0, 160);
+  });
+  c.blendComponents = comps;
+  return c;
+}
+
+/* Leaving Step 1 with a 2-coffee blend: write combined blend identity (04 owns the logic) */
+function _finalizeBlendIfLeavingCoffee(targetStep) {
+  try {
+    if (!app || !app.coffee || app.coffee.isBlend !== true) return;
+    if (targetStep === 'coffee') return;
+    if (typeof window !== 'undefined' && window.BTCoffeeEntry && typeof window.BTCoffeeEntry.finalizeBlend === 'function') {
+      window.BTCoffeeEntry.finalizeBlend(app.coffee);
+    }
+  } catch (e) {}
 }
 
 function newApp() {
@@ -494,6 +616,11 @@ function hydratePrefsInto(dst, sp) {
       dst.gear = Object.assign(_defaultGear(), sp.gear);
     }
   }
+  _ensureGearThermal(dst, (sp.gear && typeof sp.gear === 'object') ? sp.gear : null);
+  if (sp.palateTargets && typeof sp.palateTargets === 'object' && !Array.isArray(sp.palateTargets)) {
+    const cpt = _cleanPalateTargets(sp.palateTargets);
+    if (cpt) dst.palateTargets = cpt;
+  }
   if (sp.roasterSites && typeof sp.roasterSites === 'object' && !Array.isArray(sp.roasterSites)) dst.roasterSites = Object.assign({}, sp.roasterSites);
   if (sp.brewerMaterials && typeof sp.brewerMaterials === 'object') dst.brewerMaterials = Object.assign({}, sp.brewerMaterials);
   if (Array.isArray(sp.cryoTubes)) dst.cryoTubes = sp.cryoTubes.slice(0, 64);
@@ -596,6 +723,7 @@ function loadDraft() {
           a.coffee.bag_notes = Array.isArray(a.coffee.flavors) ? a.coffee.flavors.join(', ') : String(a.coffee.notes || a.coffee.bagNotes || '');
         }
         syncCoffeeAliases(a.coffee);
+        _normalizeBlendCoffee(a.coffee);
       }
       if (src.brew && typeof src.brew === 'object') {
         Object.assign(a.brew, src.brew);
@@ -727,12 +855,19 @@ function loadDraft() {
             soundOff: parsedMirror.soundOff
           });
         }
+        /* v7.4: overlay mirrored palate targets when the draft lacks them */
+        if (!app.prefs.palateTargets && parsedMirror.palateTargets) {
+          const mpt = _cleanPalateTargets(parsedMirror.palateTargets);
+          if (mpt) app.prefs.palateTargets = mpt;
+        }
       }
     }
   } catch (e) {}
 
   /* Hydrate Cafe Shop Draft 100% independently */
   _shellLoadShopDraft();
+  _ensureGearThermal(app.prefs);
+  if (app.coffee) _normalizeBlendCoffee(app.coffee);
   _navHistoryStack.length = 0;
   _lastCommittedNav = null;
 
@@ -762,6 +897,10 @@ function writePrefsMirror() {
         }
       );
     }
+    /* v7.4: keep gear thermal habit + palate targets even if storage sanitizer whitelists them away */
+    const th = getGearThermal();
+    payload.gear = Object.assign({}, payload.gear || app.prefs.gear || {}, { brewerMaterial: th.brewerMaterial, preheat: th.preheat });
+    if (app.prefs.palateTargets && typeof app.prefs.palateTargets === 'object') payload.palateTargets = Object.assign({}, app.prefs.palateTargets);
     localStorage.setItem(_SHELL_PREFS_MIRROR_KEY, JSON.stringify(payload));
   } catch (e) {}
 }
@@ -2069,7 +2208,64 @@ function _renderWorkflowToolsSheet(bodyEl, payload, api) {
           changed();
         }
       })
-    )
+    ),
+    (function buildGearThermalGroup() {
+      const th = getGearThermal();
+      const saveThermal = function(field, val) {
+        _ensureGearThermal(app.prefs);
+        app.prefs.gear[field] = field === 'brewerMaterial' ? _cleanBrewerMaterialKey(val) : _cleanPreheatKey(val);
+        if (app.brew) {
+          app.brew.brewerMaterial = app.prefs.gear.brewerMaterial;
+          app.brew.preheated = app.prefs.gear.preheat !== 'none';
+          app.brew.preheat = app.prefs.gear.preheat;
+        }
+        try {
+          if (typeof window !== 'undefined' && window.BTStorage && typeof window.BTStorage.savePrefs === 'function') {
+            window.BTStorage.savePrefs(app.prefs);
+          }
+          if (typeof window !== 'undefined' && window.BTBrewStudio && typeof window.BTBrewStudio.synthesizeForApp === 'function') {
+            const locked = !!(app.recipeLocked || (app.coffee && app.coffee.dial_locked === 'yes'));
+            if (!locked) window.BTBrewStudio.synthesizeForApp(app, (app.brew && app.brew.method) || 'v60', { force: true, preserveBatch: true, keepFilter: true });
+          }
+        } catch (e) {}
+        changed();
+        render();
+        rebuild();
+      };
+      const pillRow = function(label, opts, cur, field, groupId) {
+        return h('div', { class: 'bt-gear-thermal-row', style: 'display:flex;flex-direction:column;gap:5px' },
+          h('span', { style: 'font-size:11px;font-weight:700;color:var(--ink-secondary)', text: label }),
+          h('div', { class: 'bt-gear-pill-row bt-pill-row', id: groupId, role: 'group', 'aria-label': label },
+            opts.map(function(o) {
+              const on = cur === o[0];
+              return h('button', {
+                type: 'button',
+                class: 'bt-chip bt-gear-thermal-pill' + (on ? ' is-active' : ''),
+                style: 'min-height:44px;padding:4px 12px;font-size:12px',
+                'data-gear-value': o[0],
+                'aria-pressed': String(on),
+                text: o[1],
+                onclick: function() { if (!on) saveThermal(field, o[0]); }
+              });
+            })
+          )
+        );
+      };
+      return h('div', {
+        class: 'bt-gear-thermal-group',
+        id: 'bt-gear-thermal-group',
+        style: 'display:flex;flex-direction:column;gap:8px;padding-top:6px;border-top:1px solid var(--line-hairline)'
+      },
+        pillRow('Brewer Material', GEAR_BREWER_MATERIALS, th.brewerMaterial, 'brewerMaterial', 'bt-gear-brewer-material'),
+        pillRow('Preheat Habit', GEAR_PREHEAT_HABITS, th.preheat, 'preheat', 'bt-gear-preheat-habit'),
+        h('p', {
+          style: 'margin:0;font-size:11.5px;color:var(--ink-secondary);line-height:1.35',
+          text: (th.preheat === 'none' && th.brewerMaterial !== 'plastic')
+            ? 'Cold ' + th.brewerMaterial + ' brewers soak up heat \u2014 Step 3 warms your kettle a few degrees to compensate.'
+            : 'Step 3 uses this to compensate for heat your brewer absorbs from the slurry.'
+        })
+      );
+    })()
   );
 
   /* 4. Brew Water Profile */
@@ -2089,6 +2285,21 @@ function _renderWorkflowToolsSheet(bodyEl, payload, api) {
         app.prefs.gear.waterAlk = String(wp.kh);
       }
     }
+    if (app.brew) {
+      app.brew.waterProfileKey = wk;
+      app.brew.waterProfile = wk;
+      if (wp) {
+        app.brew.waterType = wp.waterType || app.brew.waterType;
+        app.brew.waterGH = wp.gh;
+        app.brew.waterAlk = wp.kh;
+      }
+    }
+    try {
+      if (typeof window !== 'undefined' && window.BTBrewStudio && typeof window.BTBrewStudio.synthesizeForApp === 'function') {
+        const locked = !!(app.recipeLocked || (app.coffee && app.coffee.dial_locked === 'yes'));
+        if (!locked) window.BTBrewStudio.synthesizeForApp(app, (app.brew && app.brew.method) || 'v60', { force: true, preserveBatch: true, keepFilter: true });
+      }
+    } catch (e) {}
     changed();
     render();
     paintStudioAside();
@@ -2875,6 +3086,7 @@ function switchTab(tabKey, opts) {
   opts = opts || {};
   const k = String(tabKey || 'brew').trim().toLowerCase();
   const target = k === 'learn' ? 'academy' : ((k === 'prefs' || k === 'preferences') ? 'palate' : (TAB_DEFS[k] ? k : 'brew'));
+  _finalizeBlendIfLeavingCoffee(target === 'brew' ? 'door' : '');
   if (BTSheet.isOpen()) BTSheet.close();
 
   const prevSuppress = _suppressHistoryPush;
@@ -2928,6 +3140,12 @@ function go(routeOrTabKey, payload) {
   if (_sheetRegistry.has(key) && !ROUTE_MAP[key] && !TAB_DEFS[key]) {
     BTSheet.open(key, payload);
     return;
+  }
+
+  {
+    const peekInfo = ROUTE_MAP[key] || (TAB_DEFS[key] ? { tab: key } : ROUTE_MAP.door);
+    const peekStep = (peekInfo && (peekInfo.tab || 'brew') === 'brew') ? normalizeBrewStep(peekInfo.brewStep || key) : '';
+    _finalizeBlendIfLeavingCoffee(peekStep);
   }
 
   const prevSuppress = _suppressHistoryPush;
@@ -3714,13 +3932,39 @@ function paintStudioAside() {
       ) : null
     ) : null;
 
+    /* v7.4: 2-Coffee Blend weights (10g A + 8g B) */
+    let asideBlendMetaEl = null;
+    if (c.isBlend === true && Array.isArray(c.blendComponents) && c.blendComponents.length >= 2) {
+      const bA = c.blendComponents[0] || {};
+      const bB = c.blendComponents[1] || {};
+      const doseNow = +b.dose > 0 ? +b.dose : 15;
+      let gA = +bA.weightG > 0 ? +bA.weightG : 0;
+      let gB = +bB.weightG > 0 ? +bB.weightG : 0;
+      if (!(gA > 0 && gB > 0)) {
+        const pA = +bA.ratioPct > 0 ? +bA.ratioPct / 100 : 0.5;
+        gA = Math.round(doseNow * pA * 10) / 10;
+        gB = Math.round((doseNow - gA) * 10) / 10;
+      }
+      const fmtG = function(g) { return (Math.round(g * 10) / 10).toString().replace(/\.0$/, '') + 'g'; };
+      const pctA = Math.round((gA / Math.max(0.1, gA + gB)) * 100);
+      asideBlendMetaEl = h('div', {
+        class: 'bt-aside-blend-meta',
+        id: 'bt-aside-blend-meta',
+        style: 'display:flex;flex-direction:column;gap:2px;font-size:11.5px;color:var(--ink-secondary);line-height:1.35;overflow-wrap:anywhere'
+      },
+        h('b', { class: 'mono', style: 'color:var(--ink);font-weight:700', text: '2-Coffee Blend: ' + fmtG(gA) + ' A + ' + fmtG(gB) + ' B (' + pctA + '/' + (100 - pctA) + ')' }),
+        h('span', { text: 'A: ' + (_cleanDisplayName(bA.name) || 'Coffee A') + ' \u00B7 B: ' + (_cleanDisplayName(bB.name) || 'Coffee B') })
+      );
+    }
+
     const passportCard = h('div', { class: 'bt-passport-card' },
       h('div', { style: 'display:flex;flex-direction:column;gap:5px' },
         h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
           h('div', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: croaster || 'Active Coffee Bag' }),
           h('span', { class: 'bt-badge good', text: _formatFreshnessBadge(c) })
         ),
-        h('div', { id: 'bt-aside-coffee-name', class: 'bt-serif', style: 'font-size:16px;font-weight:700;line-height:1.28;overflow-wrap:anywhere;word-break:break-word', text: cname || 'No coffee loaded yet' })
+        h('div', { id: 'bt-aside-coffee-name', class: 'bt-serif', style: 'font-size:16px;font-weight:700;line-height:1.28;overflow-wrap:anywhere;word-break:break-word', text: cname || 'No coffee loaded yet' }),
+        asideBlendMetaEl
       ),
       h('div', { class: 'bt-passport-grid' },
         h('div', { class: 'bt-passport-cell' },
@@ -3807,6 +4051,21 @@ function paintStudioAside() {
   printIcon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
 
   const shopActive = !!(app.shopDraft && app.shopDraft.on && (app.shopDraft.name || app.shopDraft.shop || app.shopDraft.drink));
+  /* v7.4: applied declining temperature profile (96 -> 90 °C step-down) */
+  const tProf = (function() {
+    const cands = [b.tempProfile, b.recipe && b.recipe.tempProfile, b._lastSynth && b._lastSynth.tempProfile, b.lastSynth && b.lastSynth.tempProfile, b.synth && b.synth.tempProfile];
+    for (let i = 0; i < cands.length; i++) {
+      const tp = cands[i];
+      if (tp && typeof tp === 'object' && isFinite(+tp.startTempC) && isFinite(+tp.tailTempC) && +tp.startTempC > 0 && +tp.tailTempC > 0 && Math.abs(+tp.startTempC - +tp.tailTempC) >= 0.5) return tp;
+    }
+    return null;
+  })();
+  const tProfTxt = tProf ? (function() {
+    const sC = Math.round(+tProf.startTempC), tC = Math.round(+tProf.tailTempC);
+    const cTxt = sC + ' \u2192 ' + tC + ' \u00B0C';
+    const fTxt = Math.round(sC * 9 / 5 + 32) + ' \u2192 ' + Math.round(tC * 9 / 5 + 32) + ' \u00B0F';
+    return (app.prefs.tempUnit === 'F' ? fTxt : cTxt) + ' ' + (tProf.type === 'step-down' || tC < sC ? 'step-down' : 'step-up');
+  })() : '';
   const telemetryCard = h('div', { class: 'bt-passport-card' },
     h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
       h('span', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: 'Live Recipe & Telemetry' }),
@@ -3825,6 +4084,13 @@ function paintStudioAside() {
     dialSummaryText ? h('div', {
       style: 'font-size:11px;line-height:1.35;padding:6px 8px;border-radius:var(--r-xs);background:' + (dialAd && dialAd.locked ? 'var(--good-bg)' : 'var(--accent-soft)') + ';color:' + (dialAd && dialAd.locked ? 'var(--good)' : 'var(--ink)') + ';font-weight:600;overflow-wrap:anywhere',
       text: dialSummaryText
+    }) : null,
+    tProfTxt ? h('div', {
+      class: 'bt-aside-temp-pill mono',
+      id: 'bt-aside-temp-profile',
+      title: 'Declining temperature pour: start hot, finish cooler to keep the tail sweet.',
+      style: 'align-self:flex-start;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--bg-subtle);border:1px solid var(--line-soft);color:var(--ink)',
+      text: 'Temp Profile: ' + tProfTxt
     }) : null,
     h('div', { class: 'bt-passport-grid' },
       h('div', { class: 'bt-passport-cell' },
@@ -3993,6 +4259,12 @@ const BTShell = {
   paintChrome: paintChrome,
   paintBlePill: paintBlePill,
   paintStudioAside: paintStudioAside,
+  getGearThermal: getGearThermal,
+  getRecipeContext: getRecipeContext,
+  getCrossBagHistory: _getCrossBagHistory,
+  normalizeBlendCoffee: _normalizeBlendCoffee,
+  GEAR_BREWER_MATERIALS: GEAR_BREWER_MATERIALS,
+  GEAR_PREHEAT_HABITS: GEAR_PREHEAT_HABITS,
   formatPalateBiasSummary: formatPalateBiasSummary,
   BTSheet: BTSheet,
   BTScienceLens: BTScienceLens,

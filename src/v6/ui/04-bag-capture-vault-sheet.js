@@ -2764,6 +2764,17 @@ if (typeof window !== 'undefined') {
     nextC._v64Touched = 'yes';
     nextC.answered = 'yes';
     nextC._loadedCoffeeSig = S.normCoffeeIdentity(nextC.roaster, nextC.name);
+    /* v7.4: picking Coffee A inside Step 1 while `Combine 2 Coffees` is on keeps Coffee B intact */
+    var prevCoffeeForBlend = a.coffee;
+    if ((extraOpts.keepBlend || extraOpts.stayOnCoffee) && prevCoffeeForBlend && prevCoffeeForBlend.isBlend === true &&
+        Array.isArray(prevCoffeeForBlend.blendComponents) && prevCoffeeForBlend.blendComponents.length) {
+      nextC.isBlend = true;
+      nextC.blendComponents = prevCoffeeForBlend.blendComponents.map(function (bc) { return Object.assign({}, bc); });
+      nextC._blendSummaryOn = false;
+      nextC.blendComponents[0] = blendComponentFromCoffee(nextC, nextC.blendComponents[0]);
+    } else if (prevCoffeeForBlend && Array.isArray(prevCoffeeForBlend._blendStash) && (extraOpts.keepBlend || extraOpts.stayOnCoffee)) {
+      nextC._blendStash = prevCoffeeForBlend._blendStash.map(function (bc) { return Object.assign({}, bc); });
+    }
     a.coffee = nextC;
     var c = a.coffee;
 
@@ -4937,6 +4948,10 @@ if (typeof window !== 'undefined') {
       if (dA != null) parts.push(dA === 0 ? 'Today' : (dA + 'd ago'));
     }
     if (!parts.length) return 'No coffee loaded yet \u00B7 Skipped fields use balanced defaults';
+    if (c.isBlend === true && Array.isArray(c.blendComponents) && c.blendComponents.length >= 2) {
+      var bSum = getBlendSummaryInfo(c);
+      parts.push('+ ' + (bSum.nameB || 'Coffee B') + ' (' + bSum.pctA + '/' + bSum.pctB + ')');
+    }
     return parts.join(' \u00B7 ');
   }
 
@@ -5439,6 +5454,346 @@ if (typeof window !== 'undefined') {
     return { el: stripEl, sync: renderStripBody };
   }
 
+  /* -------------------- v7.4 2-Coffee Blend Mode (`Single Coffee | Combine 2 Coffees`) --------------------
+     Schema (agreed with core-physics #532): coffee.isBlend === true + coffee.blendComponents = exactly 2 of
+     { coffeeId, name, roaster, roast, agtron, process, origin, elevation_m, varietal, decaf('yes'|''), species, weightG, ratioPct }.
+     While Step 1 is open, Coffee A lives in the normal coffee fields (`_blendSummaryOn = false`); leaving Step 1
+     (`finalizeBlend`) stores A in blendComponents[0] and writes the combined display name/roast/process/decaf. */
+  var BLEND_ROAST_ORDER = ['ultra-light', 'light', 'medium-light', 'medium', 'medium-dark', 'dark'];
+  var BLEND_PROCESS_OPTS = [
+    ['', 'Process (optional)'], ['washed', 'Washed'], ['natural', 'Natural'], ['honey', 'Honey'],
+    ['anaerobic', 'Anaerobic'], ['wet-hulled', 'Wet-Hulled'], ['experimental', 'Experimental']
+  ];
+
+  function blendCleanStr(v) {
+    var s = String(v == null ? '' : v).trim();
+    return /^(unknown|undefined|null|--|nan)$/i.test(s) ? '' : s;
+  }
+
+  function blendDoseTotal(a) {
+    var d = +((a && a.brew && a.brew.dose) || 15);
+    return (isFinite(d) && d > 0) ? d : 15;
+  }
+
+  function blendComponentFromCoffee(src, prev) {
+    src = src || {};
+    prev = prev || {};
+    var agRaw = src.agtron != null && src.agtron !== '' && src.coffeeId != null ? src.agtron : (src.ground_agtron || src.bean_agtron || src.agtron || '');
+    var agNum = parseFloat(agRaw);
+    var decRaw = src.decaf;
+    return {
+      coffeeId: String(src.coffeeId || src.coffee_id || src.id || prev.coffeeId || ''),
+      name: blendCleanStr(src.name || src.coffee_name),
+      roaster: blendCleanStr(src.roaster),
+      roast: blendCleanStr(src.roast || src.rlevel || src.roast_level),
+      agtron: (isFinite(agNum) && agNum > 0) ? agNum : '',
+      process: blendCleanStr(src.process),
+      origin: blendCleanStr(src.origin),
+      elevation_m: (isFinite(+src.elevation_m) && +src.elevation_m > 0) ? Math.round(+src.elevation_m) : '',
+      varietal: blendCleanStr(src.varietal),
+      decaf: (decRaw === 'yes' || decRaw === true) ? 'yes' : '',
+      species: blendCleanStr(src.species) || 'arabica',
+      weightG: (isFinite(+prev.weightG) && +prev.weightG > 0) ? +prev.weightG : '',
+      ratioPct: (isFinite(+prev.ratioPct) && +prev.ratioPct > 0) ? +prev.ratioPct : ''
+    };
+  }
+
+  function blendIsEmptyComp(comp) {
+    return !comp || !(comp.name || comp.roaster || comp.roast || comp.process || comp.coffeeId);
+  }
+
+  function normalizeBlendWeights(comps, a) {
+    var A = comps[0], B = comps[1];
+    var wA = +A.weightG, wB = +B.weightG;
+    if (!(wA > 0 && wB > 0)) {
+      var dose = blendDoseTotal(a);
+      var pA = +A.ratioPct, pB = +B.ratioPct;
+      var fracA = (pA > 0 && pB > 0) ? pA / (pA + pB) : (pA > 0 && pA < 100 ? pA / 100 : 0.5);
+      wA = Math.round(dose * fracA * 10) / 10;
+      wB = Math.round((dose - wA) * 10) / 10;
+    }
+    var tot = wA + wB;
+    A.weightG = wA;
+    B.weightG = wB;
+    A.ratioPct = Math.round((wA / tot) * 100);
+    B.ratioPct = 100 - A.ratioPct;
+    return comps;
+  }
+
+  /* True when the coffee fields hold the combined blend identity (finalized here, or hydrated by Journal Re-brew) */
+  function isBlendSummaryState(c) {
+    if (!c) return false;
+    if (c._blendSummaryOn) return true;
+    var comps = Array.isArray(c.blendComponents) ? c.blendComponents : [];
+    if (!comps[0] || !comps[0].name) return false;
+    return String(c.id || '').indexOf('blend_') === 0 || c.blend === 'blend' || / \+ .+ Blend$/.test(String(c.name || ''));
+  }
+
+  /* Coffee A as it currently stands (live fields while editing, or the stored component after finalize) */
+  function getBlendA(c) {
+    var comps = Array.isArray(c.blendComponents) ? c.blendComponents : [];
+    if (isBlendSummaryState(c) && comps[0]) return comps[0];
+    return blendComponentFromCoffee(c, comps[0]);
+  }
+
+  function ensureBlendComponents(c, a) {
+    var comps = Array.isArray(c.blendComponents) ? c.blendComponents : [];
+    var A = getBlendA(c);
+    var B = comps[1] ? Object.assign({}, comps[1]) : blendComponentFromCoffee({}, {});
+    var out = [Object.assign({}, A), B];
+    if (!(+out[0].weightG > 0 && +out[1].weightG > 0) && comps[0] && comps[1]) {
+      out[0].weightG = comps[0].weightG; out[0].ratioPct = comps[0].ratioPct;
+      out[1].weightG = comps[1].weightG; out[1].ratioPct = comps[1].ratioPct;
+    }
+    normalizeBlendWeights(out, a);
+    c.blendComponents = out;
+    return out;
+  }
+
+  function getBlendSummaryInfo(c) {
+    var comps = Array.isArray(c && c.blendComponents) ? c.blendComponents : [];
+    var A = (c && !isBlendSummaryState(c)) ? blendComponentFromCoffee(c, comps[0]) : (comps[0] || {});
+    var B = comps[1] || {};
+    var wA = +A.weightG > 0 ? +A.weightG : 0;
+    var wB = +B.weightG > 0 ? +B.weightG : 0;
+    var pctA = (wA + wB) > 0 ? Math.round((wA / (wA + wB)) * 100) : (+A.ratioPct || 50);
+    return {
+      nameA: A.name || 'Coffee A',
+      nameB: B.name || 'Coffee B',
+      gramsA: wA, gramsB: wB,
+      pctA: pctA, pctB: 100 - pctA
+    };
+  }
+
+  /* Write the combined display identity (name / roast / process / decaf) from the weighted components */
+  function applyBlendSummaryToCoffee(c, comps) {
+    var A = comps[0], B = comps[1];
+    var tot = (+A.weightG || 0) + (+B.weightG || 0);
+    var fA = tot > 0 ? (+A.weightG || 0) / tot : 0.5;
+    var iA = BLEND_ROAST_ORDER.indexOf(A.roast), iB = BLEND_ROAST_ORDER.indexOf(B.roast);
+    var roastKey = '';
+    if (iA >= 0 && iB >= 0) roastKey = BLEND_ROAST_ORDER[Math.round(fA * iA + (1 - fA) * iB)];
+    else if (iA >= 0) roastKey = A.roast;
+    else if (iB >= 0) roastKey = B.roast;
+    var procKey = '';
+    if (A.process && B.process) procKey = (A.process === B.process) ? A.process : (fA >= 0.5 ? A.process : B.process);
+    else procKey = A.process || B.process || '';
+    c.name = (A.name || 'Coffee A') + ' + ' + (B.name || 'Coffee B') + ' Blend';
+    if (roastKey) { c.roast = roastKey; c.roastUnsure = ''; c.roast_unknown = ''; }
+    if (procKey) { c.process = procKey; c.processUnsure = ''; c.process_unknown = ''; }
+    c.decaf = (A.decaf === 'yes' && B.decaf === 'yes') ? 'yes' : '';
+    c.blend = 'blend';
+    c._blendSummaryOn = true;
+  }
+
+  /* Restore Coffee A's own identity into the coffee fields so Step 1 inputs edit Coffee A */
+  function beginBlendEdit(c) {
+    if (!c || c.isBlend !== true || !isBlendSummaryState(c)) return c;
+    var A = (Array.isArray(c.blendComponents) && c.blendComponents[0]) || null;
+    if (A) {
+      c.name = A.name || '';
+      c.roaster = A.roaster || c.roaster || '';
+      c.roast = A.roast || '';
+      c.process = A.process || '';
+      c.decaf = A.decaf === 'yes' ? 'yes' : '';
+      c.blend = '';
+      if (A.coffeeId) {
+        c.id = A.coffeeId;
+        c.coffee_id = A.coffeeId;
+      }
+    }
+    c._blendSummaryOn = false;
+    return c;
+  }
+
+  function finalizeBlend(coffeeArg) {
+    var a = S.getApp();
+    var c = coffeeArg || (a && a.coffee);
+    if (!c || c.isBlend !== true) return null;
+    var comps = ensureBlendComponents(c, a);
+    if (blendIsEmptyComp(comps[1])) {
+      comps[1].name = comps[1].name || 'Coffee B';
+      if (!comps[1].roast) comps[1].roast = comps[0].roast || '';
+      if (!comps[1].process) comps[1].process = comps[0].process || '';
+    }
+    applyBlendSummaryToCoffee(c, comps);
+    var slugPart = function (comp) {
+      return String((comp && (comp.coffeeId || ((comp.roaster || '') + '-' + (comp.name || '')))) || 'x')
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'x';
+    };
+    c.blendId = 'blend_' + slugPart(comps[0]) + '__' + slugPart(comps[1]);
+    /* Key the finalized blend by its own id so any downstream Vault/history upsert of a.coffee never renames Coffee A */
+    c.id = c.blendId;
+    c.coffee_id = c.blendId;
+    return comps;
+  }
+
+  function setBlendMode(on, opts) {
+    opts = opts || {};
+    var a = S.getApp();
+    a.coffee = a.coffee || {};
+    var c = a.coffee;
+    if (on) {
+      if (c.isBlend === true) { ensureBlendComponents(c, a); return c.blendComponents; }
+      var stash = Array.isArray(c._blendStash) ? c._blendStash : null;
+      c.isBlend = true;
+      c._blendSummaryOn = false;
+      c.blendComponents = stash ? stash.map(function (bc) { return Object.assign({}, bc); }) : [];
+      if (c.blendComponents.length) c.blendComponents[0] = blendComponentFromCoffee(c, c.blendComponents[0]);
+      delete c._blendStash;
+      ensureBlendComponents(c, a);
+    } else {
+      if (c.isBlend !== true) return null;
+      beginBlendEdit(c);
+      c._blendStash = (Array.isArray(c.blendComponents) ? c.blendComponents : []).map(function (bc) { return Object.assign({}, bc); });
+      c.isBlend = false;
+      c.blendComponents = [];
+      c._blendSummaryOn = false;
+      if (c.blend === 'blend') c.blend = '';
+    }
+    if (!opts.silent) {
+      S.haptic('tick');
+      S.saveDraftSafe();
+      S.notifyChromeSafe();
+    }
+    return c.blendComponents;
+  }
+
+  function setBlendCoffeeBFromRec(rec) {
+    var a = S.getApp();
+    var c = a.coffee || {};
+    if (c.isBlend !== true) setBlendMode(true, { silent: true });
+    var comps = ensureBlendComponents(c, a);
+    var vaultRec = S.findMatchingVaultRecord(rec) || {};
+    var merged = Object.assign({}, vaultRec, rec || {});
+    ['roast', 'process', 'origin', 'varietal', 'decaf', 'species', 'elevation_m'].forEach(function (k) {
+      if (!blendCleanStr(merged[k]) && blendCleanStr(vaultRec[k])) merged[k] = vaultRec[k];
+    });
+    merged.coffee_id = (rec && (rec.coffee_id || rec.id)) || vaultRec.coffee_id || vaultRec.id || '';
+    comps[1] = blendComponentFromCoffee(merged, comps[1]);
+    normalizeBlendWeights(comps, a);
+    c.blendComponents = comps;
+    S.saveDraftSafe();
+    S.notifyChromeSafe();
+    return comps[1];
+  }
+
+  function openPickBagB() {
+    var a = S.getApp();
+    if (a && a.coffee) {
+      flushPendingStep1Drafts(a.coffee);
+      if (a.coffee.isBlend !== true) setBlendMode(true, { silent: true });
+      S.saveDraftSafe();
+    }
+    S.openSheetSafe('my-coffees', { pickFor: 'blendB' }, { title: 'Pick Coffee B from Cellar', detent: 'full' });
+  }
+
+  function buildBlendCoffeeBCard(c, a, repaintAll, syncLiveSummariesOnly) {
+    var comps = ensureBlendComponents(c, a);
+    var B = comps[1];
+    var summaryPill = S.h('span', { class: 'bt-blend-summary-pill', id: 'bt-step1-blend-summary-pill' });
+    var splitPreview = S.h('div', { class: 'bt-ce-zone-cue', id: 'bt-step1-blend-split-preview' });
+
+    function syncSummary() {
+      var info = getBlendSummaryInfo(c);
+      summaryPill.textContent = 'A: ' + info.nameA + ' ' + info.pctA + '% \u00B7 B: ' + info.nameB + ' ' + info.pctB + '%';
+      splitPreview.textContent = 'Split Grams: ' + info.pctA + '% / ' + info.pctB + '% (' +
+        (Math.round(info.gramsA * 10) / 10) + ' g A + ' + (Math.round(info.gramsB * 10) / 10) +
+        ' g B) \u2014 fine-tune exact grams under your Step 3 recipe!';
+    }
+
+    function touchB() {
+      c.blendComponents[1] = B;
+      syncSummary();
+      if (typeof syncLiveSummariesOnly === 'function') syncLiveSummariesOnly();
+      else { S.saveDraftSafe(); S.notifyChromeSafe(); }
+    }
+
+    var nameInp = S.h('input', {
+      type: 'text',
+      id: 'bt-step1-coffee-b-name',
+      value: B.name || '',
+      placeholder: 'Coffee B name (optional)',
+      'aria-label': 'Coffee B name',
+      style: 'font-size:16px;min-height:44px;width:100%;box-sizing:border-box',
+      oninput: function (e) { B.name = String(e.target.value || '').slice(0, 120); touchB(); }
+    });
+
+    var roastSel = S.h('select', {
+      id: 'bt-step1-coffee-b-roast',
+      'aria-label': 'Coffee B roast level',
+      style: 'font-size:16px;min-height:44px;width:100%;box-sizing:border-box',
+      onchange: function (e) { B.roast = e.target.value; touchB(); }
+    },
+      S.h('option', { value: '', selected: !B.roast, text: 'Roast (optional)' }),
+      S.ROAST_STOPS.map(function (rs) {
+        return S.h('option', { value: rs.key, selected: B.roast === rs.key, text: rs.label });
+      })
+    );
+
+    var procSel = S.h('select', {
+      id: 'bt-step1-coffee-b-process',
+      'aria-label': 'Coffee B process',
+      style: 'font-size:16px;min-height:44px;width:100%;box-sizing:border-box',
+      onchange: function (e) { B.process = e.target.value; touchB(); }
+    },
+      BLEND_PROCESS_OPTS.map(function (po) {
+        return S.h('option', { value: po[0], selected: (B.process || '') === po[0], text: po[1] });
+      })
+    );
+
+    var decafBtn = S.h('button', {
+      type: 'button',
+      id: 'bt-step1-coffee-b-decaf',
+      class: 'bt-ce-chip is-compact' + (B.decaf === 'yes' ? ' is-active' : ''),
+      'aria-pressed': String(B.decaf === 'yes'),
+      style: 'min-height:44px',
+      text: B.decaf === 'yes' ? 'Decaf: Yes' : 'Decaf: No',
+      onclick: function () {
+        B.decaf = B.decaf === 'yes' ? '' : 'yes';
+        decafBtn.setAttribute('aria-pressed', String(B.decaf === 'yes'));
+        decafBtn.className = 'bt-ce-chip is-compact' + (B.decaf === 'yes' ? ' is-active' : '');
+        decafBtn.textContent = B.decaf === 'yes' ? 'Decaf: Yes' : 'Decaf: No';
+        S.haptic('tick');
+        touchB();
+      }
+    });
+
+    syncSummary();
+    var aInfo = getBlendSummaryInfo(c);
+    return S.h('section', { id: 'bt-step1-coffee-b-card', class: 'bt-ce-card', 'aria-label': 'Coffee B for your 2-coffee blend' },
+      S.h('div', { class: 'bt-blend-b-head' },
+        S.h('h2', { class: 'bt-ce-zone-title', text: 'Coffee B' }),
+        summaryPill
+      ),
+      S.h('p', { class: 'bt-ce-sub', style: 'margin:0', text: 'Coffee A = ' + (aInfo.nameA === 'Coffee A' ? 'the bag in the fields below' : aInfo.nameA) + ' (pick or type it as usual).' }),
+      S.h('div', { class: 'bt-blend-b-actions' },
+        S.h('button', {
+          type: 'button',
+          id: 'bt-step1-pick-bag-b-btn',
+          class: 'bt-ce-source-btn bt-blend-pick-btn',
+          onclick: function () { openPickBagB(); }
+        }, S.iconEl('cellar', { size: 16 }), S.h('span', { text: B.coffeeId || B.name ? 'Pick Different Bag B' : 'Pick Bag B from Cellar' })),
+        !blendIsEmptyComp(B) ? S.h('button', {
+          type: 'button',
+          class: 'bt-ce-link-btn',
+          id: 'bt-step1-clear-bag-b-btn',
+          text: 'Clear B',
+          onclick: function () {
+            var keepW = { weightG: B.weightG, ratioPct: B.ratioPct };
+            c.blendComponents[1] = Object.assign(blendComponentFromCoffee({}, {}), keepW);
+            S.haptic('tick');
+            S.saveDraftSafe();
+            S.notifyChromeSafe();
+            repaintAll();
+          }
+        }) : null
+      ),
+      S.h('div', { class: 'bt-blend-b-grid' }, nameInp, roastSel, procSel, decafBtn),
+      splitPreview
+    );
+  }
+
   function renderStep1(containerEl, opts) {
     ensureStep1OmniListeners();
     opts = opts || {};
@@ -5446,6 +5801,7 @@ if (typeof window !== 'undefined') {
     var a = S.getApp();
     a.coffee = a.coffee || {};
     var c = a.coffee;
+    beginBlendEdit(c);
 
     if (ceUi.moreDetailsCoffeeId !== String(c.id || '')) {
       ceUi.moreDetailsCoffeeId = String(c.id || '');
@@ -5658,6 +6014,14 @@ if (typeof window !== 'undefined') {
         (a.brew && a.brew.dialAdaptation && a.brew.dialAdaptation.adapted && !a.brew.dialAdaptation.locked) ||
         (c && c.pendingNextRecipe && !c.pendingNextRecipe.locked)
       );
+      /* v7.4 blend: Coffee A snapshot goes to the Vault; the coffee itself carries the combined blend identity */
+      var vaultSrcCoffee = c;
+      if (c.isBlend === true) {
+        vaultSrcCoffee = Object.assign({}, c);
+        delete vaultSrcCoffee.isBlend;
+        delete vaultSrcCoffee.blendComponents;
+        finalizeBlend(c);
+      }
       try {
         if (typeof window !== 'undefined' && window.BTBrewStudio) {
           if (typeof window.BTBrewStudio.resetTimerSession === 'function') window.BTBrewStudio.resetTimerSession();
@@ -5674,16 +6038,16 @@ if (typeof window !== 'undefined') {
         }
       } catch (_) {}
       /* Save all entered Step 1 fields to lossless Bean Vault (even if price & bag_weight_g are blank) */
-      if ((String(c.name || '').trim() && c.name !== 'Unlabeled Coffee') ||
-          String(c.roaster || '').trim() ||
-          String(c.origin || '').trim() ||
-          String(c.bag_notes || '').trim() ||
-          String(c.varietal || '').trim() ||
-          (isFinite(+c.elevation_m) && +c.elevation_m > 0)) {
-        S.upsertStep1CoffeeToVault(c, a.brew);
+      if ((String(vaultSrcCoffee.name || '').trim() && vaultSrcCoffee.name !== 'Unlabeled Coffee') ||
+          String(vaultSrcCoffee.roaster || '').trim() ||
+          String(vaultSrcCoffee.origin || '').trim() ||
+          String(vaultSrcCoffee.bag_notes || '').trim() ||
+          String(vaultSrcCoffee.varietal || '').trim() ||
+          (isFinite(+vaultSrcCoffee.elevation_m) && +vaultSrcCoffee.elevation_m > 0)) {
+        S.upsertStep1CoffeeToVault(vaultSrcCoffee, a.brew);
       }
-      if ((isFinite(+c.price) && +c.price > 0) || (isFinite(+c.bag_weight_g) && +c.bag_weight_g > 0)) {
-        syncBagPriceToLedger(c);
+      if ((isFinite(+vaultSrcCoffee.price) && +vaultSrcCoffee.price > 0) || (isFinite(+vaultSrcCoffee.bag_weight_g) && +vaultSrcCoffee.bag_weight_g > 0)) {
+        syncBagPriceToLedger(vaultSrcCoffee);
       }
       S.haptic('snap');
       S.saveDraftSafe();
@@ -5841,6 +6205,45 @@ if (typeof window !== 'undefined') {
         ));
       }
 
+      /* ==================== v7.4 SINGLE COFFEE | COMBINE 2 COFFEES ==================== */
+      var isBlendOn = c.isBlend === true;
+      root.appendChild(S.h('div', {
+        id: 'bt-step1-blend-toggle',
+        class: 'bt-ce-mode-pill bt-blend-mode-toggle',
+        role: 'group',
+        'aria-label': 'Brew a single coffee or combine two coffees'
+      },
+        S.h('button', {
+          type: 'button',
+          class: 'bt-blend-mode-pill' + (!isBlendOn ? ' is-active' : ''),
+          'data-blend-mode': 'single',
+          'aria-pressed': String(!isBlendOn),
+          text: 'Single Coffee',
+          onclick: function () {
+            if (c.isBlend !== true) return;
+            flushPendingStep1Drafts(c);
+            setBlendMode(false);
+            repaintAll();
+          }
+        }),
+        S.h('button', {
+          type: 'button',
+          class: 'bt-blend-mode-pill' + (isBlendOn ? ' is-active' : ''),
+          'data-blend-mode': 'blend',
+          'aria-pressed': String(isBlendOn),
+          text: 'Combine 2 Coffees',
+          onclick: function () {
+            if (c.isBlend === true) return;
+            flushPendingStep1Drafts(c);
+            setBlendMode(true);
+            repaintAll();
+          }
+        })
+      ));
+      if (isBlendOn) {
+        root.appendChild(buildBlendCoffeeBCard(c, a, repaintAll, syncLiveSummariesOnly));
+      }
+
       /* ==================== ZONE 1: BAG SOURCE STRIP ==================== */
       var sourceStrip = S.h('section', { class: 'bt-ce-source-strip', 'aria-label': 'Bag Source Actions' },
         S.h('div', { class: 'bt-ce-source-actions' },
@@ -5848,10 +6251,17 @@ if (typeof window !== 'undefined') {
             type: 'button',
             id: 'bt-step1-pick-bag-btn',
             class: 'bt-ce-source-btn',
-            onclick: function () { flushPendingStep1Drafts(c); openMyCoffeesSheet(); }
+            onclick: function () {
+              flushPendingStep1Drafts(c);
+              if (c.isBlend === true) {
+                S.openSheetSafe('my-coffees', { pickFor: 'blendA' }, { title: 'Pick Coffee A from Cellar', detent: 'full' });
+              } else {
+                openMyCoffeesSheet();
+              }
+            }
           },
             S.iconEl('cellar', { size: 16 }),
-            S.h('span', { text: unifiedRecs.length ? ('Pick Saved Bag (' + unifiedRecs.length + ')') : 'Pick Saved Bag' })
+            S.h('span', { text: (isBlendOn ? 'Pick Coffee A' : 'Pick Saved Bag') + (unifiedRecs.length ? (' (' + unifiedRecs.length + ')') : '') })
           ),
           S.h('button', {
             type: 'button',
@@ -5959,6 +6369,7 @@ if (typeof window !== 'undefined') {
     _activeStep1Hook = function () {
       if (root.isConnected) {
         c = S.getApp().coffee || c;
+        beginBlendEdit(c);
         initialCoffeeSig = c._loadedCoffeeSig || S.normCoffeeIdentity(c.roaster, c.name);
         repaintAll();
         return true;
@@ -5967,6 +6378,10 @@ if (typeof window !== 'undefined') {
     };
 
     repaintAll();
+    if (a._openBlendBagBPicker) {
+      delete a._openBlendBagBPicker;
+      setTimeout(function () { try { openPickBagB(); } catch (_) {} }, 0);
+    }
     return root;
   }
 
@@ -7300,8 +7715,35 @@ if (typeof window !== 'undefined') {
     return Math.max(+r.updatedAt || 0, isFinite(lb) ? lb : 0);
   }
 
-  function buildMyCoffeesVault() {
-    var root = S.h('div', { class: 'bt-ce-sheet', id: 'bt-my-coffees-vault' });
+  function buildMyCoffeesVault(payload) {
+    var pickFor = (payload && (payload.pickFor === 'blendB' || payload.pickFor === 'blendA')) ? payload.pickFor : '';
+    var root = S.h('div', { class: 'bt-ce-sheet', id: 'bt-my-coffees-vault', 'data-pick-for': pickFor || null });
+
+    function finishBlendPick(rec) {
+      var appNow = S.getApp();
+      if (pickFor === 'blendA') {
+        applySavedCoffeeSelection(rec, { targetRoute: 'coffee', keepBlend: true });
+        return;
+      }
+      var aNow = appNow && appNow.coffee ? getBlendA(appNow.coffee) : null;
+      var recId = String(rec.coffee_id || rec.id || '').trim().toLowerCase();
+      var sameAsA = !!(aNow && ((recId && String(aNow.coffeeId || '').trim().toLowerCase() === recId) ||
+        (!recId && S.normCoffeeIdentity(rec.roaster, rec.name) === S.normCoffeeIdentity(aNow.roaster, aNow.name))));
+      if (sameAsA) {
+        S.toastSafe('That bag is already Coffee A \u2014 pick a different bag for Coffee B.');
+        return;
+      }
+      var compB = setBlendCoffeeBFromRec(rec);
+      S.haptic('snap');
+      S.closeSheetSafe();
+      var repainted = false;
+      try { repainted = typeof _activeStep1Hook === 'function' && _activeStep1Hook() === true; } catch (_) {}
+      if (!repainted && !(appNow && appNow.activeTab === 'brew' && appNow.brewStep === 'coffee')) {
+        S.navGo('coffee');
+      }
+      S.rerenderSafe();
+      S.toastSafe('Coffee B: ' + ((compB && compB.name) || 'Saved Bag') + ' added to your 2-coffee blend.');
+    }
 
     function repaint() {
       root.textContent = '';
@@ -7323,12 +7765,14 @@ if (typeof window !== 'undefined') {
       ));
 
       root.appendChild(S.h('div', null,
-        S.h('div', { class: 'bt-ce-kicker', text: 'Living Bean Vault' }),
+        S.h('div', { class: 'bt-ce-kicker', text: pickFor === 'blendB' ? 'Pick Coffee B' : (pickFor === 'blendA' ? 'Pick Coffee A' : 'Living Bean Vault') }),
         S.h('p', {
           class: 'bt-ce-sub',
-          text: allRecs.length
-            ? (allRecs.length + ' saved ' + (allRecs.length === 1 ? 'coffee' : 'coffees') + ' \u00B7 1 tap restores bean & winning recipe.')
-            : '0 saved coffees yet \u2014 capture a bag on Step 1 or import your CSV backup.'
+          text: pickFor
+            ? ('Tap a bag to use it as ' + (pickFor === 'blendB' ? 'Coffee B' : 'Coffee A') + ' in your 2-coffee blend \u2014 fine-tune grams under your Step 3 recipe.')
+            : (allRecs.length
+              ? (allRecs.length + ' saved ' + (allRecs.length === 1 ? 'coffee' : 'coffees') + ' \u00B7 1 tap restores bean & winning recipe.')
+              : '0 saved coffees yet \u2014 capture a bag on Step 1 or import your CSV backup.')
         })
       ));
 
@@ -7611,7 +8055,17 @@ if (typeof window !== 'undefined') {
                   }) : null
                 )
               ),
-              S.h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' },
+              pickFor ? S.h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' },
+                S.h('button', {
+                  type: 'button',
+                  class: 'bt-ce-bag-brew bt-blend-pick-btn',
+                  style: 'padding:0 12px;min-height:44px',
+                  'data-blend-pick': pickFor,
+                  'aria-label': 'Use ' + cleanName + (pickFor === 'blendB' ? ' as Coffee B' : ' as Coffee A'),
+                  text: pickFor === 'blendB' ? 'Use as Coffee B \u2192' : 'Use as Coffee A \u2192',
+                  onclick: function () { finishBlendPick(rec); }
+                })
+              ) : S.h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' },
                 S.h('button', {
                   type: 'button',
                   class: 'bt-ce-bag-fresh',
@@ -7969,8 +8423,8 @@ if (typeof window !== 'undefined') {
     return renderStep1(host, { inSheet: true, payload: payload });
   }, { title: 'Add or Scan Coffee Bag', detent: 'full' });
 
-  S.registerSheetSafe('my-coffees', function () {
-    return buildMyCoffeesVault();
+  S.registerSheetSafe('my-coffees', function (payload) {
+    return buildMyCoffeesVault(payload);
   }, { title: 'My Coffees Vault', detent: 'full' });
 
   S.registerSheetSafe('ai-paste', function (payload) {
@@ -8020,6 +8474,12 @@ if (typeof window !== 'undefined') {
     buildRoastCalendarControl: buildRoastCalendarControl,
     buildBagFlavorNotesWidget: buildBagFlavorNotesWidget,
     flushPendingStep1Drafts: flushPendingStep1Drafts,
+    setBlendMode: setBlendMode,
+    openPickBagB: openPickBagB,
+    finalizeBlend: finalizeBlend,
+    beginBlendEdit: beginBlendEdit,
+    setBlendCoffeeB: setBlendCoffeeBFromRec,
+    getBlendSummary: getBlendSummaryInfo,
     QUICK_ARCHETYPES_12: QUICK_ARCHETYPES_12
   };
 

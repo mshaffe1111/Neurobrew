@@ -2539,4 +2539,84 @@ button.bt-step5-recap-chip:focus-visible {
   }
 }
 
+/* ==================== v7.4 JOURNAL & PASSPORT 2-COFFEE BLEND BADGES ==================== */
+.bt-journal-blend-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.28;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+}
+
+.bt-journal-blend-split {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  box-sizing: border-box;
+}
+
+.bt-journal-blend-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 0.8rem;
+  line-height: 1.32;
+  color: var(--ink);
+}
+
+.bt-journal-blend-row .mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.bt-passport-intel-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.bt-passport-intel-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--science-bg);
+  border: 1px solid var(--science-border);
+  color: var(--science);
+  font-size: 0.73rem;
+  font-weight: 700;
+  line-height: 1.25;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+}
+
 

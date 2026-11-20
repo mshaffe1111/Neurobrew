@@ -3262,8 +3262,233 @@ button.bt-step1-pref-pill:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bt-bean-chem-strip {
+  .bt-bean-chem-strip,
+  .bt-blend-mode-pill,
+  .bt-blend-pick-btn {
     transition: none !important;
+  }
+}
+
+/* ==================== 19. v7.4 CALM 2-COFFEE BLEND ENTRY ==================== */
+#bt-step1-blend-toggle,
+.bt-blend-mode-bar {
+  display: inline-flex;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  box-shadow: var(--shadow-well-inset);
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-blend-mode-pill {
+  flex: 1 1 auto;
+  min-height: 44px;
+  min-width: 0;
+  padding: 7px 14px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.12s var(--spring-snappy);
+  box-sizing: border-box;
+}
+
+.bt-blend-mode-pill:hover:not(:disabled):not(.is-active):not([aria-pressed="true"]):not([aria-selected="true"]) {
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.bt-blend-mode-pill:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+.bt-blend-mode-pill:focus-visible {
+  outline: 2.5px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.bt-blend-mode-pill.is-active,
+.bt-blend-mode-pill[aria-pressed="true"],
+.bt-blend-mode-pill[aria-selected="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+  box-shadow: var(--shadow-xs);
+}
+
+#bt-step1-coffee-b-card,
+.bt-blend-b-card {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  background: var(--surface-card-grad, var(--surface));
+  border: 1.5px solid var(--accent-border);
+  border-left: 4px solid var(--accent);
+  border-radius: 16px;
+  padding: 12px 13px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  box-sizing: border-box;
+}
+
+#bt-step1-coffee-b-card[hidden] {
+  display: none !important;
+}
+
+.bt-blend-b-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.bt-blend-b-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.bt-blend-b-grid > .is-full {
+  grid-column: 1 / -1;
+}
+
+.bt-blend-b-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.bt-blend-b-field label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.bt-blend-b-field input,
+.bt-blend-b-field select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 11px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.bt-blend-b-field input:focus,
+.bt-blend-b-field select:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.bt-blend-b-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-width: 0;
+}
+
+.bt-blend-pick-btn {
+  min-height: 44px;
+  padding: 8px 13px;
+  border-radius: 12px;
+  border: 1.5px solid var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease, transform 0.12s var(--spring-snappy);
+  box-sizing: border-box;
+}
+
+.bt-blend-pick-btn:hover {
+  border-color: var(--accent);
+}
+
+.bt-blend-pick-btn:active {
+  transform: scale(0.975);
+}
+
+.bt-blend-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  min-height: 32px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 6px 11px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.32;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+}
+
+.bt-blend-summary-pill strong,
+.bt-blend-summary-pill b {
+  font-weight: 800;
+}
+
+@media (max-width: 420px) {
+  #bt-step1-blend-toggle,
+  .bt-blend-mode-bar {
+    width: 100%;
+  }
+
+  .bt-blend-mode-pill {
+    padding: 6px 10px;
+    font-size: 0.76rem;
+    white-space: normal;
+  }
+
+  .bt-blend-b-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

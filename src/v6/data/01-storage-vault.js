@@ -269,6 +269,24 @@ var BTStorage;
     if (src.switchSize === '03' || src.switchSize === '02') out.switchSize = src.switchSize;
     if (src.experienceLens === 'starter' || src.experienceLens === 'scientist') out.experienceLens = src.experienceLens;
     if (src.timerAudioMode === 'chimes' || src.timerAudioMode === 'silent') out.timerAudioMode = src.timerAudioMode;
+    /* v7.4 overlays dropped by setupClean's gear whitelist: brewer material, preheat habit, palate targets */
+    const srcGear = (src.gear && typeof src.gear === 'object' && !Array.isArray(src.gear)) ? src.gear : {};
+    const bmIn = String(srcGear.brewerMaterial || src.brewerMaterial || '').toLowerCase();
+    const phIn = String(srcGear.preheat || src.preheat || '').toLowerCase();
+    const bmOk = ['plastic', 'ceramic', 'glass', 'metal'].includes(bmIn);
+    const phOk = ['boiling_rinse', 'warm_rinse', 'none'].includes(phIn);
+    if (bmOk || phOk){
+      out.gear = Object.assign({}, out.gear || {});
+      if (bmOk) out.gear.brewerMaterial = bmIn;
+      if (phOk) out.gear.preheat = phIn;
+    }
+    if (src.palateTargets && typeof src.palateTargets === 'object' && !Array.isArray(src.palateTargets)){
+      const ptIn = src.palateTargets, ptOut = {};
+      if (['bright', 'balanced', 'smooth'].includes(ptIn.brightness)) ptOut.brightness = ptIn.brightness;
+      if (['light', 'medium', 'strong'].includes(ptIn.strength)) ptOut.strength = ptIn.strength;
+      if (['clarity', 'balanced', 'body'].includes(ptIn.texture)) ptOut.texture = ptIn.texture;
+      if (Object.keys(ptOut).length) out.palateTargets = ptOut;
+    }
     /* Strip any accidental credentials */
     delete out.difluidAuth; delete out.apiKey; delete out[DIFLUID_AUTH_LS_KEY];
     return out;
@@ -707,6 +725,40 @@ var BTStorage;
     const n = typeof v === 'number' ? v : parseFloat(v);
     return isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
   }
+  /* v7.4 2-Coffee blend components sanitizer (lossless round-trip through coffee_extra JSON / Vault) */
+  const _BLEND_STR_KEYS = [['coffeeId', 80], ['name', 120], ['roaster', 120], ['roast', 32], ['process', 48], ['origin', 100], ['varietal', 100], ['species', 32], ['roast_date', 10], ['decaf_process', 32]];
+  function _cleanBlendComponents(arr){
+    if (!Array.isArray(arr)) return null;
+    const out = [];
+    for (let i = 0; i < arr.length && out.length < 2; i++){
+      const c = arr[i];
+      if (!c || typeof c !== 'object' || Array.isArray(c)) continue;
+      const o = {};
+      const cidRaw = c.coffeeId != null && c.coffeeId !== '' ? c.coffeeId : (c.coffee_id != null && c.coffee_id !== '' ? c.coffee_id : c.id);
+      _BLEND_STR_KEYS.forEach(p => {
+        const raw = p[0] === 'coffeeId' ? cidRaw : c[p[0]];
+        if (raw === undefined || raw === null || raw === '') return;
+        const s = String(raw).replace(/[\r\n\t]+/g, ' ').trim().slice(0, p[1]);
+        if (s) o[p[0]] = s;
+      });
+      const ag = parseFloat(c.agtron);
+      if (isFinite(ag) && ag >= 15 && ag <= 120) o.agtron = Math.round(ag * 10) / 10;
+      const el = parseFloat(c.elevation_m);
+      if (isFinite(el) && el > 0 && el <= 12000) o.elevation_m = Math.round(el);
+      o.decaf = (c.decaf === 'yes' || c.decaf === true) ? 'yes' : '';
+      const wg = parseFloat(c.weightG);
+      if (isFinite(wg) && wg >= 0 && wg <= 2000) o.weightG = Math.round(wg * 10) / 10;
+      const rp = parseFloat(c.ratioPct);
+      if (isFinite(rp) && rp >= 0 && rp <= 100) o.ratioPct = Math.round(rp * 10) / 10;
+      const rem = parseFloat(c.remaining_g);
+      if (isFinite(rem) && rem >= 0 && rem <= 100000) o.remaining_g = Math.round(rem * 10) / 10;
+      if (o.name || o.coffeeId || o.roast || o.process || o.agtron != null) out.push(o);
+    }
+    return out.length === 2 ? out : null;
+  }
+  function _coffeeIsBlend(co){
+    return !!(co && (co.isBlend === true || co.isBlend === 'yes' || co.isBlend === 'true') && Array.isArray(co.blendComponents) && co.blendComponents.length >= 2);
+  }
   function _readRowAdaptationMeta(o){
     if (typeof readV6Adaptation === 'function') return readV6Adaptation(o);
     if (!o || !o.recipe_adaptation_json) return null;
@@ -971,7 +1023,59 @@ var BTStorage;
     if (restRaw != null && restRaw !== '' && isFinite(+restRaw) && +restRaw >= 0){
       coffeeExtra.recommended_rest_days = Math.round(+restRaw);
     }
+    if (_coffeeIsBlend(co)){
+      const bc = _cleanBlendComponents(co.blendComponents);
+      if (bc){
+        coffeeExtra.isBlend = true;
+        coffeeExtra.blendComponents = bc;
+        const bidRaw = String(co.blendId || '').replace(/[\r\n\t]+/g, '').trim().slice(0, 200);
+        if (bidRaw) coffeeExtra.blendId = bidRaw;
+      }
+    }
     if (Object.keys(coffeeExtra).length) adapOut.coffee_extra = coffeeExtra;
+
+    /* v7.4 recipe-physics context (journal / passport continuity) */
+    if (b && typeof b === 'object'){
+      const aBrew = (a && a.brew && typeof a.brew === 'object') ? a.brew : {};
+      const gearP = (a && a.prefs && a.prefs.gear && typeof a.prefs.gear === 'object') ? a.prefs.gear : {};
+      const bmRaw = String(b.brewerMaterial || aBrew.brewerMaterial || gearP.brewerMaterial || '').toLowerCase();
+      if (['plastic', 'ceramic', 'glass', 'metal'].includes(bmRaw)) adapOut.brewerMaterial = bmRaw;
+      const phRaw = String(b.preheat || aBrew.preheat || gearP.preheat || '').toLowerCase();
+      if (['boiling_rinse', 'warm_rinse', 'none'].includes(phRaw)) adapOut.preheat = phRaw;
+      const tp = (b.tempProfile && typeof b.tempProfile === 'object') ? b.tempProfile : ((aBrew.tempProfile && typeof aBrew.tempProfile === 'object' && !b.machine) ? aBrew.tempProfile : null);
+      if (tp && tp.type === 'step-down' && isFinite(+tp.startTempC) && isFinite(+tp.tailTempC)){
+        adapOut.tempProfile = { type:'step-down', startTempC:Math.round(+tp.startTempC * 10) / 10, tailTempC:Math.round(+tp.tailTempC * 10) / 10 };
+      }
+      const ptSrc = (b.palateTargetsApplied && typeof b.palateTargetsApplied === 'object') ? b.palateTargetsApplied : ((b.palateTargets && typeof b.palateTargets === 'object') ? b.palateTargets : null);
+      if (ptSrc){
+        const pt = {};
+        if (['bright', 'balanced', 'smooth'].includes(ptSrc.brightness)) pt.brightness = ptSrc.brightness;
+        if (['light', 'medium', 'strong'].includes(ptSrc.strength)) pt.strength = ptSrc.strength;
+        if (['clarity', 'balanced', 'body'].includes(ptSrc.texture)) pt.texture = ptSrc.texture;
+        if (Object.keys(pt).length) adapOut.palateTargets = pt;
+      }
+      const tagSrc = Array.isArray(b.appliedRecipeTags) ? b.appliedRecipeTags : (Array.isArray(aBrew.appliedRecipeTags) && !b.machine ? aBrew.appliedRecipeTags : null);
+      if (tagSrc){
+        const tg = tagSrc.map(x => String(x == null ? '' : x).replace(/[\r\n\t]+/g, ' ').trim().slice(0, 48)).filter(Boolean).slice(0, 10);
+        if (tg.length) adapOut.appliedRecipeTags = tg;
+      }
+      const bbSrc = (b.blendBreakdown && typeof b.blendBreakdown === 'object') ? b.blendBreakdown : null;
+      if (bbSrc && bbSrc.isBlend && isFinite(+bbSrc.doseA_g) && isFinite(+bbSrc.doseB_g)){
+        adapOut.blendBreakdown = {
+          isBlend:true,
+          doseA_g:Math.round(+bbSrc.doseA_g * 10) / 10,
+          doseB_g:Math.round(+bbSrc.doseB_g * 10) / 10,
+          pctA:isFinite(+bbSrc.pctA) ? Math.round(+bbSrc.pctA * 10) / 10 : null,
+          pctB:isFinite(+bbSrc.pctB) ? Math.round(+bbSrc.pctB * 10) / 10 : null,
+          effAgtron:isFinite(+bbSrc.effAgtron) ? Math.round(+bbSrc.effAgtron * 10) / 10 : null,
+          decafFrac:isFinite(+bbSrc.decafFrac) ? Math.round(+bbSrc.decafFrac * 1000) / 1000 : 0,
+          nameA:String(bbSrc.nameA || '').slice(0, 120),
+          nameB:String(bbSrc.nameB || '').slice(0, 120),
+          coffeeIdA:String(bbSrc.coffeeIdA || '').slice(0, 80),
+          coffeeIdB:String(bbSrc.coffeeIdB || '').slice(0, 80)
+        };
+      }
+    }
 
     if (Object.keys(adapOut).length){
       try {
@@ -1132,6 +1236,10 @@ var BTStorage;
         }
         if (ce.currency) c.currency = String(ce.currency);
         if (Array.isArray(ce.flavors) && ce.flavors.length) c.flavors = ce.flavors.slice();
+        if (ce.isBlend && Array.isArray(ce.blendComponents)){
+          const bcR = _cleanBlendComponents(ce.blendComponents);
+          if (bcR){ c.isBlend = true; c.blendComponents = bcR; if (ce.blendId) c.blendId = String(ce.blendId); }
+        }
         if (!c.bag_notes && (ce.bag_notes || ce.notes)){
           c.bag_notes = String(ce.bag_notes || ce.notes);
           c.notes = c.bag_notes;
@@ -1486,6 +1594,70 @@ var BTStorage;
     prState.deductUndo = { fn:undoFn, at:stampedAt, coffee:coffeeLabel, doseG:dose, remG:nextRem };
     if (!opts.silent){
       _notifyToast('Deducted ' + Math.round(dose * 10) / 10 + ' g (' + nextRem + ' g left in bag)', { actionLabel:'Undo', onAction:undoFn, durationMs:10000 });
+    }
+    return undoFn;
+  }
+
+  /* v7.4 Dual-Bag Lossless Burn-Down: deduct each blend component from its own bag (Prices / Vault / UnifiedIndex / App / Draft)
+     Returns a unified undo() callback carrying { ok, okA, okB, remA, remB, empty, emptyA, emptyB, deductedA_g, deductedB_g, undo }. */
+  function _blendCompAsCoffee(x){
+    if (!x || typeof x !== 'object') return null;
+    if (x.coffee && typeof x.coffee === 'object') return x;
+    if ((x.coffee_id || x.id) || !x.coffeeId) return x;
+    return Object.assign({}, x, { id:x.coffeeId, coffee_id:x.coffeeId });
+  }
+  function _deductBlendGramsImpl(coffeeA, gramsA, coffeeB, gramsB, opts){
+    opts = opts || {};
+    const subOpts = Object.assign({}, opts, { silent:true });
+    const runOne = (cf, g) => {
+      const grams = +g;
+      const target = _blendCompAsCoffee(cf);
+      if (!target || !(grams > 0 && isFinite(grams))) return { ok:false, fn:null, rem:null, empty:false, skipped:true };
+      let r = null;
+      try { r = _deductBagGramsImpl(target, grams, subOpts); } catch(e){ r = null; }
+      if (target !== cf && cf && typeof cf === 'object' && typeof r === 'function' && r.ok){
+        if (Object.prototype.hasOwnProperty.call(cf, 'remaining_g')) cf.remaining_g = r.remaining_g;
+      }
+      if (typeof r === 'function' && r.ok){
+        return { ok:true, fn:r, rem:r.remaining_g, empty:!(r.remaining_g > 0.4), deducted:r.deducted_g };
+      }
+      if (r && typeof r === 'object' && r.empty) return { ok:false, fn:null, rem:0, empty:true };
+      return { ok:false, fn:null, rem:null, empty:false };
+    };
+    const resA = runOne(coffeeA, gramsA);
+    const resB = runOne(coffeeB, gramsB);
+    const stampedAt = Date.now();
+    let undone = false;
+    const undoFn = function undoBlendDeduct(){
+      if (undone) return false;
+      if (!opts.ignoreExpiry && Date.now() - stampedAt > 10000) return false;
+      let any = false;
+      /* Reverse order: B restores the post-A snapshot, then A restores the original snapshot */
+      if (resB.fn){ try { any = !!resB.fn() || any; } catch(e){} }
+      if (resA.fn){ try { any = !!resA.fn() || any; } catch(e){} }
+      undone = true;
+      _unifiedIndexCache.key = '';
+      return any;
+    };
+    undoFn.ok = !!(resA.ok || resB.ok);
+    undoFn.okA = !!resA.ok;
+    undoFn.okB = !!resB.ok;
+    undoFn.remA = resA.rem;
+    undoFn.remB = resB.rem;
+    undoFn.emptyA = !!resA.empty;
+    undoFn.emptyB = !!resB.empty;
+    undoFn.empty = !!(resA.empty || resB.empty);
+    undoFn.deductedA_g = resA.ok ? resA.deducted : 0;
+    undoFn.deductedB_g = resB.ok ? resB.deducted : 0;
+    undoFn.undo = undoFn;
+    if (undoFn.ok){
+      const nmA = (coffeeA && (coffeeA.name || coffeeA.coffee_name)) || 'Coffee A';
+      const nmB = (coffeeB && (coffeeB.name || coffeeB.coffee_name)) || 'Coffee B';
+      prState.deductUndo = { fn:undoFn, at:stampedAt, coffee:nmA + ' + ' + nmB, doseG:(+gramsA || 0) + (+gramsB || 0), remG:resA.rem, remA:resA.rem, remB:resB.rem, isBlend:true };
+      if (!opts.silent){
+        const part = (lbl, res) => lbl + ': ' + (res.ok ? (res.rem + ' g left') : (res.empty ? 'bag empty' : 'not tracked'));
+        _notifyToast('Deducted blend grams (' + part('Coffee A', resA) + ' / ' + part('Coffee B', resB) + ')', { actionLabel:'Undo', onAction:undoFn, durationMs:10000 });
+      }
     }
     return undoFn;
   }
@@ -2720,6 +2892,10 @@ var BTStorage;
     if (c.roasterGuide && typeof c.roasterGuide === 'object' && !Array.isArray(c.roasterGuide)) cand.roasterGuide = _cloneObj(c.roasterGuide);
     const restRaw = c.recommended_rest_days != null && c.recommended_rest_days !== '' ? c.recommended_rest_days : c.recommendedRestDays;
     if (restRaw != null && restRaw !== '' && isFinite(+restRaw) && +restRaw >= 0) cand.recommended_rest_days = Math.round(+restRaw);
+    if (_coffeeIsBlend(c)){
+      const bcV = _cleanBlendComponents(c.blendComponents);
+      if (bcV){ cand.isBlend = true; cand.blendComponents = bcV; }
+    }
 
     const lb = _buildBrewSnapshot(b);
     if (lb){
@@ -2820,6 +2996,10 @@ var BTStorage;
         }
       });
       if (cand.bag_notes && !cand.notes) existing.notes = cand.bag_notes;
+      if (cand.isBlend && Array.isArray(cand.blendComponents) && !incomingOlder){
+        existing.isBlend = true;
+        existing.blendComponents = _cloneObj(cand.blendComponents);
+      }
       if (existing.bag_notes && !existing.notes) existing.notes = existing.bag_notes;
       if (existing.notes && !existing.bag_notes) existing.bag_notes = existing.notes;
       if (cand.lastBrew){
@@ -2852,6 +3032,8 @@ var BTStorage;
     const populated = _populateCoffeeFromRowObj(rowObj);
     const c = populated.coffee || {};
     const ad = populated.adMeta || {};
+    /* v7.4: 2-coffee blend rows never spawn a pseudo "A + B Blend" Vault bag; blend data stays lossless in coffee_extra */
+    if (_coffeeIsBlend(c)) return null;
     const a = _getApp();
     const rCid = String(rowObj.coffee_id || c.id || '').trim();
     const rNr = _normKeyPart(c.name || rowObj.coffee_name || '') + '|' + _normKeyPart(c.roaster || rowObj.roaster || '');
@@ -3166,6 +3348,10 @@ var BTStorage;
             if (Array.isArray(ce.flavors) && ce.flavors.length && (!rec.flavors.length || isNewerRow)) rec.flavors = ce.flavors.slice();
             if (ce.roasterGuide && typeof ce.roasterGuide === 'object' && (!rec.roasterGuide || isNewerRow)) rec.roasterGuide = ce.roasterGuide;
             if (ce.recommended_rest_days != null && (rec.recommended_rest_days == null || isNewerRow)) rec.recommended_rest_days = ce.recommended_rest_days;
+            if (ce.isBlend && Array.isArray(ce.blendComponents) && (!rec.isBlend || isNewerRow)){
+              const bcI = _cleanBlendComponents(ce.blendComponents);
+              if (bcI){ rec.isBlend = true; rec.blendComponents = bcI; if (ce.blendId) rec.blendId = String(ce.blendId); }
+            }
           }
         }
       }
@@ -4912,6 +5098,8 @@ var BTStorage;
     deletePriceBag:idx => { const e = prState.list[idx]; if (!e) return false; prState.undo = { e, at:idx, t:Date.now() }; prState.list = prState.list.filter((_, k) => k !== idx); prState.changes++; _persistPrices(); return true; },
     undoPriceDelete:() => { if (!prState.undo) return false; const l = prState.list.slice(); l.splice(Math.min(prState.undo.at, l.length), 0, prState.undo.e); prState.list = l; prState.changes = Math.max(0, prState.changes - 1); prState.undo = null; _persistPrices(); return true; },
     deductBagGrams:_deductBagGramsImpl,
+    deductBlendGrams:_deductBlendGramsImpl,
+    cleanBlendComponents:_cleanBlendComponents,
     reconcileBagDoseDelta:_reconcileBagDoseDeltaImpl,
     undoLastBagDeduct:() => (prState.deductUndo && typeof prState.deductUndo.fn === 'function') ? prState.deductUndo.fn() : false,
 
@@ -5037,6 +5225,7 @@ function baseRow(overrides){ return BTStorage.baseRow(overrides); }
 function buildRow(overrides){ return BTStorage.buildRow(overrides); }
 function useCoffeeFromRow(rowObj, stay, withMachineProfile){ return BTStorage.useCoffeeFromRow(rowObj, stay, withMachineProfile); }
 function deductBagGrams(coffee, doseG, opts){ return BTStorage.deductBagGrams(coffee, doseG, opts); }
+function deductBlendGrams(coffeeA, gramsA, coffeeB, gramsB, opts){ return BTStorage.deductBlendGrams(coffeeA, gramsA, coffeeB, gramsB, opts); }
 function reconcileBagDoseDelta(rowOrCoffee, deltaDoseG){ return BTStorage.reconcileBagDoseDelta(rowOrCoffee, deltaDoseG); }
 function savePrices(nextList){ return BTStorage.savePrices(nextList); }
 function loadPrices(){ return BTStorage.loadPrices(); }

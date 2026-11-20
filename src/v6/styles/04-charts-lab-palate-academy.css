@@ -4479,9 +4479,168 @@ button.bt-trait-row:hover {
 @media (prefers-reduced-motion: reduce) {
   .bt-studio-card,
   .bt-lab-subcard,
-  .bt-lab-swap-btn {
+  .bt-lab-swap-btn,
+  .bt-palate-steer-cta {
     transition: none !important;
   }
+}
+
+/* ==================== v7.4 PALATE ACTIVE STEERING BANNER & CTA ==================== */
+.bt-palate-steer-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: var(--good-bg);
+  border: 1px solid var(--good-border, rgba(24, 96, 62, 0.30));
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.38;
+  box-sizing: border-box;
+}
+
+.bt-palate-steer-banner strong {
+  color: var(--good);
+  font-weight: 800;
+}
+
+.bt-palate-steer-cta {
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1.5px solid var(--primary);
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: 0.79rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease, transform 0.12s var(--spring-snappy);
+  box-sizing: border-box;
+}
+
+.bt-palate-steer-cta:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.bt-palate-steer-cta:active {
+  transform: scale(0.975);
+}
+
+/* ==================== v7.4 SCOPED 5-AXIS RADAR BASELINE & FILTER BAR ==================== */
+.bt-radar-baseline-poly {
+  fill: rgba(104, 82, 68, 0.08);
+  stroke: var(--ink-muted, #685244);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  stroke-linejoin: round;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+:root[data-theme="dark"] .bt-radar-baseline-poly {
+  fill: rgba(245, 237, 228, 0.08);
+  stroke: var(--ink-muted, #AE9A89);
+  opacity: 0.84;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .bt-radar-baseline-poly {
+    fill: rgba(245, 237, 228, 0.08);
+    stroke: var(--ink-muted, #AE9A89);
+    opacity: 0.84;
+  }
+}
+
+.bt-radar-scope-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.32;
+  box-sizing: border-box;
+}
+
+.bt-radar-scope-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.bt-radar-scope-clear {
+  min-height: 36px;
+  padding: 5px 11px;
+  border-radius: var(--r-pill, 9999px);
+  border: 1px solid var(--accent);
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  flex: none;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+.bt-radar-scope-clear:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.bt-radar-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-secondary);
+}
+
+.bt-radar-leg-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.bt-radar-leg-swatch.is-scoped {
+  background: var(--accent);
+}
+
+.bt-radar-leg-swatch.is-baseline {
+  border-top: 2px dashed var(--ink-muted);
+  height: 0;
 }
 
 

@@ -548,17 +548,73 @@
   /* ==========================================================================
    * SEGMENT 1: 19 MINI-COURSES (Accordion Modules & Lessons + Quiz Checkpoints)
    * ========================================================================== */
+  function extractAcademyRowBlendInfo(rowOrCoffee) {
+    if (!rowOrCoffee || typeof rowOrCoffee !== 'object') return { isBlend: false, pillText: '', namesLine: '', hasDecaf: false };
+    function parseObj(raw) {
+      if (!raw) return null;
+      if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
+      if (typeof raw !== 'string') return null;
+      try {
+        const p = JSON.parse(raw);
+        return (p && typeof p === 'object' && !Array.isArray(p)) ? p : null;
+      } catch (_) { return null; }
+    }
+    const ad = parseObj(rowOrCoffee.recipe_adaptation_json) || {};
+    const ej = parseObj(rowOrCoffee.extra_json) || {};
+    const adCe = parseObj(ad.coffee_extra) || {};
+    const ejCe = parseObj(ej.coffee_extra) || {};
+    const directCe = parseObj(rowOrCoffee.coffee_extra) || {};
+    const comps = (Array.isArray(adCe.blendComponents) && adCe.blendComponents.length >= 2) ? adCe.blendComponents
+      : (Array.isArray(ejCe.blendComponents) && ejCe.blendComponents.length >= 2) ? ejCe.blendComponents
+      : (Array.isArray(ej.blendComponents) && ej.blendComponents.length >= 2) ? ej.blendComponents
+      : (Array.isArray(directCe.blendComponents) && directCe.blendComponents.length >= 2) ? directCe.blendComponents
+      : (Array.isArray(rowOrCoffee.blendComponents) && rowOrCoffee.blendComponents.length >= 2) ? rowOrCoffee.blendComponents
+      : null;
+    const isBlend = !!(adCe.isBlend || ejCe.isBlend || ej.isBlend || directCe.isBlend || ad.isBlend || rowOrCoffee.isBlend || (comps && comps.length >= 2));
+    if (!isBlend || !comps) return { isBlend: false, pillText: '', namesLine: '', hasDecaf: false };
+    const cA = comps[0] || {};
+    const cB = comps[1] || {};
+    const nameA = String(cA.name || cA.coffee_name || 'Coffee A').trim() || 'Coffee A';
+    const nameB = String(cB.name || cB.coffee_name || 'Coffee B').trim() || 'Coffee B';
+    const wA = parseFloat(cA.weightG);
+    const wB = parseFloat(cB.weightG);
+    let pA = parseFloat(cA.ratioPct);
+    let pB = parseFloat(cB.ratioPct);
+    if (Number.isFinite(wA) && wA > 0 && Number.isFinite(wB) && wB > 0) {
+      pA = Math.round((wA / (wA + wB)) * 100);
+      pB = 100 - pA;
+    } else if (Number.isFinite(pA) && pA > 0) {
+      pA = Math.round(clamp(pA, 1, 99, 50));
+      pB = 100 - pA;
+    } else {
+      pA = 50; pB = 50;
+    }
+    const fmtG = function (v) { return (Number.isFinite(v) && v > 0) ? (String(Math.round(v * 10) / 10).replace(/\.0$/, '') + 'g') : ''; };
+    const wPart = (Number.isFinite(wA) && wA > 0 && Number.isFinite(wB) && wB > 0) ? (fmtG(wA) + ' + ' + fmtG(wB) + ' \u00B7 ') : '';
+    const hasDecaf = !!(cA.decaf === 'yes' || cA.decaf === true || cB.decaf === 'yes' || cB.decaf === true);
+    return {
+      isBlend: true,
+      pillText: '2-Coffee Blend (' + wPart + pA + '%/' + pB + '%)',
+      namesLine: nameA + ' (' + pA + '%) + ' + nameB + ' (' + pB + '%)',
+      hasDecaf: hasDecaf
+    };
+  }
+
   function renderExplainCurrentCoffeeCard() {
     const c = (getApp() && getApp().coffee) || {};
-    const name = c.name || 'Active Bag (Specialty Reference)';
-    const origin = c.origin || 'Ethiopia';
-    const proc = c.process || 'Washed';
-    const roast = c.roast || 'Light';
-    const isDecaf = c.decaf === 'yes' || c.decaf === true || /decaf/i.test(String(c.decaf || ''));
+    const bInfo = extractAcademyRowBlendInfo(c);
+    const name = String(c.name || '').trim() || (bInfo.isBlend ? bInfo.namesLine : 'Active Bag (Specialty Reference)');
+    const origin = String(c.origin || '').trim() || (bInfo.isBlend ? '2-Coffee Blend' : 'Ethiopia');
+    const proc = String(c.process || '').trim() || 'Washed';
+    const roast = String(c.roast || '').trim() || 'Light';
+    const isDecaf = c.decaf === 'yes' || c.decaf === true || /decaf/i.test(String(c.decaf || '')) || bInfo.hasDecaf;
 
     const acExp = /light/i.test(roast) ? 84 : (/dark/i.test(roast) ? 38 : 62);
     const swExp = /honey|natural/i.test(proc) ? 88 : 78;
     const bdExp = /natural|wet|dark/i.test(proc + ' ' + roast) ? 82 : 54;
+    const subText = bInfo.isBlend
+      ? (bInfo.pillText + ' · ' + bInfo.namesLine)
+      : (name + ' · ' + origin + ' · ' + proc + ' · ' + roast);
 
     return domH('section', { class: 'bt-studio-card bt-coffee-xray-card' },
       domH('div', { class: 'bt-lab-card-head' },
@@ -566,7 +622,7 @@
           ic('xray-loupe', { size: 22 }),
           domH('div', null,
             domH('h3', { text: 'Explain My Current Coffee — Live Bean X-Ray' }),
-            domH('p', { class: 'bt-lab-sub', text: name + ' · ' + origin + ' · ' + proc + ' · ' + roast })
+            domH('p', { class: 'bt-lab-sub', text: subText })
           )
         ),
         epistemicPill('verified_science')
@@ -1053,20 +1109,22 @@
         for (let i = 0; i < take; i++) {
           const b = list[i] || {};
           const rawC = (b.coffee && typeof b.coffee === 'object') ? b.coffee : b;
-          const bNotes = String(rawC.bag_notes || rawC.notes || (Array.isArray(rawC.flavors) ? rawC.flavors.join(', ') : '') || '').trim();
-          sca.bowls[i].coffee_id = rawC.coffee_id || rawC.id || b.coffee_id || b.id || '';
-          sca.bowls[i].name = rawC.name || rawC.coffee || b.name || b.coffee || ('Sample #' + (i + 1));
-          sca.bowls[i].roaster = rawC.roaster || b.roaster || '';
-          sca.bowls[i].origin = rawC.origin || b.origin || '';
-          sca.bowls[i].process = rawC.process || b.process || '';
-          sca.bowls[i].roast = rawC.roast || rawC.rlevel || b.roast || b.rlevel || '';
-          sca.bowls[i].varietal = rawC.varietal || b.varietal || '';
-          sca.bowls[i].farm = rawC.farm || rawC.farm_or_station || b.farm || '';
-          sca.bowls[i].elevation_m = rawC.elevation_m || b.elevation_m || '';
-          sca.bowls[i].agtron = rawC.agtron || b.agtron || '';
+          const bInfo = extractAcademyRowBlendInfo(rawC);
+          const safeStr = function (v) { return (v == null || String(v) === 'undefined' || String(v) === 'NaN') ? '' : String(v).trim(); };
+          const bNotes = safeStr(rawC.bag_notes || rawC.notes || (Array.isArray(rawC.flavors) ? rawC.flavors.join(', ') : ''));
+          sca.bowls[i].coffee_id = safeStr(rawC.coffee_id || rawC.id || b.coffee_id || b.id);
+          sca.bowls[i].name = safeStr(rawC.name || rawC.coffee || b.name || b.coffee) || (bInfo.isBlend ? bInfo.namesLine : ('Sample #' + (i + 1)));
+          sca.bowls[i].roaster = safeStr(rawC.roaster || b.roaster);
+          sca.bowls[i].origin = safeStr(rawC.origin || b.origin) || (bInfo.isBlend ? '2-Coffee Blend' : '');
+          sca.bowls[i].process = safeStr(rawC.process || b.process);
+          sca.bowls[i].roast = safeStr(rawC.roast || rawC.rlevel || b.roast || b.rlevel);
+          sca.bowls[i].varietal = safeStr(rawC.varietal || b.varietal);
+          sca.bowls[i].farm = safeStr(rawC.farm || rawC.farm_or_station || b.farm);
+          sca.bowls[i].elevation_m = safeStr(rawC.elevation_m || b.elevation_m);
+          sca.bowls[i].agtron = safeStr(rawC.agtron || b.agtron);
           sca.bowls[i].bag_notes = bNotes;
           sca.bowls[i].notes = bNotes;
-          sca.bowls[i].flavors = Array.isArray(rawC.flavors) ? rawC.flavors.slice() : (bNotes ? bNotes.split(/[,;/]+/).map(function (s) { return s.trim(); }).filter(Boolean) : []);
+          sca.bowls[i].flavors = Array.isArray(rawC.flavors) ? rawC.flavors.filter(Boolean) : (bNotes ? bNotes.split(/[,;/]+/).map(function (s) { return s.trim(); }).filter(Boolean) : []);
           sca.bowls[i].nonUniformCups = 0;
           sca.bowls[i].defectiveCups = 0;
           sca.bowls[i].defects = 0;
@@ -1905,15 +1963,19 @@
       let traitCount = 0;
       CUPPING_TRAIT_GUIDES.forEach(function (tg) { if (getTraitVal(r, tg) != null) traitCount++; });
       if (mk === 'cupping' || sk === 'cva_affective' || traitCount >= 4) {
+        const bInfo = extractAcademyRowBlendInfo(r);
+        const rawSca = parseFloat(r.total_score);
+        const rawStars = parseFloat(r.my_rating_stars);
         cuppingEntries.push({
           r: r,
           idx: idx,
-          coffee: un(r.coffee_name) || 'Cupped Sample',
+          coffee: un(r.coffee_name) || (bInfo.isBlend ? bInfo.namesLine : 'Cupped Sample'),
           roaster: un(r.roaster),
-          date: r.cupping_date || r.brew_date || '',
-          sca: parseFloat(r.total_score) || 0,
-          stars: parseFloat(r.my_rating_stars) || 0,
-          notes: un(r.flavors_liked || r.bag_notes || '')
+          date: String(r.cupping_date || r.brew_date || '').trim(),
+          sca: Number.isFinite(rawSca) && rawSca > 0 ? rawSca : 0,
+          stars: Number.isFinite(rawStars) && rawStars > 0 ? rawStars : 0,
+          notes: un(r.flavors_liked || r.bag_notes || ''),
+          blendInfo: bInfo
         });
       }
     });
@@ -2109,6 +2171,7 @@
               domH('strong', { class: 'bt-drill-cup-title', text: ce.coffee })
             ),
             domH('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+              ce.blendInfo && ce.blendInfo.isBlend ? domH('span', { class: 'bt-tc-badge bt-journal-blend-badge is-copper', text: ce.blendInfo.pillText }) : null,
               selVal != null ? domH('span', { class: 'bt-tc-badge is-gold num-tab', text: activeTraitObj.tg.name.replace(' (Mouthfeel)', '') + ' ' + selVal.toFixed(1).replace(/\.0$/, '') + '/' + maxScale }) : null,
               ce.sca > 0 ? domH('span', { class: 'bt-tc-badge is-good num-tab', text: ce.sca.toFixed(1) + ' SCA' }) : null,
               ce.stars > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: ce.stars.toFixed(2) + ' \u2605' }) : null
