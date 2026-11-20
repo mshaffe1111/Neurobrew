@@ -90,6 +90,9 @@
     return ALL_CAFE_DRINKS.find(function (d) { return d.v === v; }) || ALL_CAFE_DRINKS[1];
   }
 
+  var SHELF_MAX_BAGS = 200; /* hard collection ceiling (Shelf shows first 30 until "Show All Bags") */
+  var SHELF_VISIBLE_DEFAULT = 30;
+
   var ui = {
     seg: 'shelf', /* 'shelf' | 'journal' | 'cafes' | 'prices' */
     cryoOpenMap: {},
@@ -115,6 +118,10 @@
     priceShow: 'open', /* 'open' | 'finished' | 'all' */
     priceSort: 'use_first', /* 'use_first' | 'newest' | 'cheap' | 'name' */
     priceQ: '',
+    shelfQ: '',
+    shelfFilter: 'all', /* 'all' | 'peak' | 'frozen' | 'golden' | 'low' */
+    shelfSort: 'use_first', /* 'use_first' | 'cups_left' | 'newest' | 'name' */
+    showAllBags: false,
     priceDraft: {
       coffee: '',
       roaster: '',
@@ -1056,7 +1063,19 @@
 
     var thawMin = Math.max(12, Math.round(26 * Math.pow(Math.max(40, remG) / 250, 0.67)));
 
+    var shelfApp = S.getApp() || {};
+    var doseRef = +(shelfApp.brew && shelfApp.brew.dose) || +bag.dose || 15;
+    var isEmptyBag = remG <= 0.4;
+    var cupsLeft = isEmptyBag ? 0 : Math.floor(remG / Math.max(1, doseRef));
+    var isLowBag = !isEmptyBag && remG < doseRef * 2;
+    var inPeak = effAge != null && effAge >= restEnd && effAge <= peakEnd;
+
     return {
+      doseRef: doseRef,
+      cupsLeft: cupsLeft,
+      isLowBag: isLowBag,
+      isEmpty: isEmptyBag,
+      inPeak: inPeak,
       rawAge: rawAge,
       effAge: effAge != null ? effAge : 10,
       isFrozen: isFrozen,
@@ -1394,6 +1413,14 @@
               };
             });
             sparkEl.innerHTML = ck.dialInSparklineSvg(pts, lockedRow ? null : { val: 4.75 });
+            /* Lift the "Sweet Spot" zone label above the band so the trajectory curve never slices through the text */
+            var zoneLbl = sparkEl.querySelector('.bt-spark-zone-lbl');
+            if (zoneLbl) {
+              zoneLbl.setAttribute('y', '10');
+              zoneLbl.setAttribute('x', '353');
+              zoneLbl.setAttribute('text-anchor', 'end');
+              zoneLbl.setAttribute('pointer-events', 'none');
+            }
           } catch (_) {}
         }
 
@@ -1474,7 +1501,7 @@
 
     unified.forEach(function (u) {
       if (!u || !u.name) return;
-      if (!hasOpenBagMatch(u.coffee_id, u.name, u.roaster) && openBags.length < 12) {
+      if (!hasOpenBagMatch(u.coffee_id, u.name, u.roaster) && openBags.length < SHELF_MAX_BAGS) {
         openBags.push({
           _priceIdx: -1,
           _unifiedRec: u,
@@ -1503,7 +1530,7 @@
 
     vaultList.forEach(function (vr) {
       if (!vr || !vr.name) return;
-      if (!hasOpenBagMatch(vr.coffee_id || vr.id, vr.name, vr.roaster) && openBags.length < 12) {
+      if (!hasOpenBagMatch(vr.coffee_id || vr.id, vr.name, vr.roaster) && openBags.length < SHELF_MAX_BAGS) {
         openBags.push({
           _priceIdx: -1,
           _vaultRec: vr,
@@ -1581,7 +1608,169 @@
       return wrap;
     }
 
-    openBags.forEach(function (bag, bIdx) {
+    /* Shelf Search / Filter / Sort pre-pass (evaluates every bag once) */
+    var shelfMeta = openBags.map(function (bag, bIdx) {
+      var mb = findCoffeeRecordsMatch(bag.coffee_id || bag.id, bag.coffee, bag.roaster, {
+        unified: unified,
+        prices: priceList,
+        vaultList: vaultList
+      });
+      var uR = bag._unifiedRec || mb.uRec || null;
+      var vR = bag._vaultRec || mb.vaultRec || null;
+      var e = evaluateShelfBag(bag, uR || vR);
+      var hay = [
+        bag.coffee, bag.roaster, bag.origin, bag.region, bag.process, bag.varietal, bag.rlevel, bag.bag_notes, bag.notes,
+        vR && vR.origin, vR && vR.bag_notes, vR && vR.notes, vR && vR.process,
+        uR && uR.origin, uR && uR.bag_notes, uR && uR.process
+      ].filter(Boolean).join(' ').toLowerCase();
+      return { bag: bag, bIdx: bIdx, ev: e, golden: !!(uR && uR.lockedBrew), hay: hay };
+    });
+
+    var SHELF_FILTERS = [
+      ['all', 'All Bags'],
+      ['peak', 'At Peak'],
+      ['frozen', 'Frozen'],
+      ['golden', 'Golden Locked'],
+      ['low', 'Low / Empty']
+    ];
+    var SHELF_SORTS = [
+      ['use_first', 'Use First'],
+      ['cups_left', 'Cups Left'],
+      ['newest', 'Newest Roast'],
+      ['name', 'Name A\u2013Z']
+    ];
+
+    function getShelfVisible() {
+      var q = String(ui.shelfQ || '').trim().toLowerCase();
+      var list = shelfMeta.filter(function (m) {
+        if (ui.shelfFilter === 'peak' && !(m.ev.inPeak && !m.ev.isEmpty)) return false;
+        if (ui.shelfFilter === 'frozen' && !m.ev.isFrozen) return false;
+        if (ui.shelfFilter === 'golden' && !m.golden) return false;
+        if (ui.shelfFilter === 'low' && !(m.ev.isLowBag || m.ev.isEmpty)) return false;
+        if (!q) return true;
+        return q.split(/\s+/).every(function (tok) { return m.hay.indexOf(tok) >= 0; });
+      });
+      list.sort(function (x, y) {
+        var r = 0;
+        if (ui.shelfSort === 'cups_left') {
+          r = x.ev.remG - y.ev.remG;
+        } else if (ui.shelfSort === 'newest') {
+          var xa = x.ev.rawAge == null ? 9999 : x.ev.rawAge;
+          var ya = y.ev.rawAge == null ? 9999 : y.ev.rawAge;
+          r = xa - ya;
+        } else if (ui.shelfSort === 'name') {
+          r = String(x.bag.coffee || '').localeCompare(String(y.bag.coffee || ''));
+        } else {
+          /* Use First: unfrozen bags closest to (or past) the end of their peak window come first; empty bags last */
+          var xe = x.ev.isEmpty ? 1 : 0;
+          var ye = y.ev.isEmpty ? 1 : 0;
+          r = xe - ye;
+          if (!r) {
+            var xl = x.ev.isFrozen ? 9999 : (x.ev.peakEnd - x.ev.effAge);
+            var yl = y.ev.isFrozen ? 9999 : (y.ev.peakEnd - y.ev.effAge);
+            r = xl - yl;
+          }
+        }
+        return r || (x.bIdx - y.bIdx);
+      });
+      return list;
+    }
+
+    var shelfCountEl = S.h('span', { class: 'bt-tc-sub', style: 'margin:0', 'aria-live': 'polite' });
+    var shelfListHost = S.h('div', { style: 'display:flex;flex-direction:column;gap:14px' });
+
+    function paintShelfList() {
+      var vis = getShelfVisible();
+      var cap = ui.showAllBags ? vis.length : Math.min(vis.length, SHELF_VISIBLE_DEFAULT);
+      shelfListHost.textContent = '';
+      shelfCountEl.textContent = 'Showing ' + cap + ' of ' + openBags.length + ' bag' + (openBags.length === 1 ? '' : 's');
+      if (!vis.length) {
+        shelfListHost.appendChild(S.h('section', { class: 'bt-tc-card', style: 'text-align:center;padding:20px 16px' },
+          S.h('b', { text: 'No bags match this search or filter.' }),
+          S.h('div', { class: 'bt-tc-pill-wrap', style: 'justify-content:center' },
+            S.h('button', {
+              type: 'button',
+              class: 'bt-tc-pill is-compact is-copper',
+              text: 'Clear Search & Filters',
+              onclick: function () { ui.shelfQ = ''; ui.shelfFilter = 'all'; repaint(); }
+            })
+          )
+        ));
+        return;
+      }
+      vis.slice(0, cap).forEach(function (m) { shelfListHost.appendChild(buildBagCard(m)); });
+      if (vis.length > SHELF_VISIBLE_DEFAULT) {
+        shelfListHost.appendChild(S.h('button', {
+          type: 'button',
+          class: 'bt-tc-pill is-compact is-soft no-print',
+          style: 'align-self:flex-start',
+          text: ui.showAllBags ? ('Show First ' + SHELF_VISIBLE_DEFAULT + ' Only') : ('Show All Bags (' + vis.length + ')'),
+          onclick: function () { ui.showAllBags = !ui.showAllBags; S.haptic('tick'); repaint(); }
+        }));
+      }
+    }
+
+    var shelfInput = S.h('input', {
+      type: 'search',
+      class: 'bt-tc-search',
+      placeholder: 'Search shelf by coffee, roaster, origin, or flavor note...',
+      value: ui.shelfQ,
+      'aria-label': 'Search open bags on shelf',
+      oninput: function (e) {
+        ui.shelfQ = e.target.value;
+        shelfClear.style.display = ui.shelfQ ? '' : 'none';
+        paintShelfList();
+      }
+    });
+    var shelfClear = S.h('button', {
+      type: 'button',
+      class: 'bt-tc-search-clear no-print',
+      'aria-label': 'Clear shelf search',
+      style: 'display:' + (ui.shelfQ ? '' : 'none') + ';background:none;border:0;font-size:1.25rem;line-height:1;min-width:32px;min-height:32px;cursor:pointer;color:var(--ink-secondary)',
+      text: '\u00D7',
+      onclick: function () {
+        ui.shelfQ = '';
+        shelfInput.value = '';
+        shelfClear.style.display = 'none';
+        paintShelfList();
+        shelfInput.focus();
+      }
+    });
+
+    wrap.appendChild(S.h('div', { class: 'bt-tc-spotlight no-print' },
+      S.iconEl('search-filter', { size: 17 }),
+      shelfInput,
+      shelfClear
+    ));
+    wrap.appendChild(S.h('div', { class: 'bt-tc-pill-scroll no-print', role: 'group', 'aria-label': 'Shelf filter and sort' },
+      SHELF_FILTERS.map(function (fc) {
+        var on = ui.shelfFilter === fc[0];
+        return S.h('button', {
+          type: 'button',
+          class: 'bt-tc-pill is-compact' + (on ? ' is-active' : ' is-soft'),
+          'aria-pressed': String(on),
+          text: fc[1],
+          onclick: function () { ui.shelfFilter = fc[0]; repaint(); }
+        });
+      }),
+      S.h('button', {
+        type: 'button',
+        class: 'bt-tc-pill is-compact is-soft',
+        text: 'Sort: ' + (SHELF_SORTS.filter(function (s) { return s[0] === ui.shelfSort; })[0] || SHELF_SORTS[0])[1],
+        onclick: function () {
+          var ix = 0;
+          SHELF_SORTS.forEach(function (s, i) { if (s[0] === ui.shelfSort) ix = i; });
+          ui.shelfSort = SHELF_SORTS[(ix + 1) % SHELF_SORTS.length][0];
+          repaint();
+        }
+      })
+    ));
+    wrap.appendChild(shelfCountEl);
+    wrap.appendChild(shelfListHost);
+
+    function buildBagCard(meta) {
+      var bag = meta.bag;
+      var bIdx = meta.bIdx;
       var matchedBag = findCoffeeRecordsMatch(bag.coffee_id || bag.id, bag.coffee, bag.roaster, {
         unified: unified,
         prices: priceList,
@@ -1698,9 +1887,20 @@
             }, S.iconEl('cryo-snowflake', { size: 14 }), S.h('span', { text: ev.isFrozen ? 'Frozen at -18 \u00B0C' : 'Freeze Bag Now' })),
             S.h('button', {
               type: 'button',
-              class: 'bt-tc-pill is-compact is-copper',
+              class: 'bt-tc-pill is-compact is-copper bt-pull-dose-btn' + (ev.isEmpty ? ' is-disabled' : ''),
+              'aria-disabled': ev.isEmpty ? 'true' : 'false',
+              title: ev.isEmpty ? 'Bag empty \u2014 tap Fresh Bag to refill or start a new bag' : ('Remove ' + pullDose + ' g from this bag for thawing (inventory only, does not start a brew)'),
+              style: ev.isEmpty ? 'opacity:0.55;cursor:not-allowed' : '',
               onclick: function () {
-                var nextRem = Math.max(0, Math.round((ev.remG - pullDose) * 10) / 10);
+                /* 0 g guard: never pull from an empty bag */
+                var curRem = ev.remG;
+                if (ev.isEmpty || curRem <= 0.4) {
+                  S.toastSafe('Bag empty \u2014 tap Fresh Bag to refill or start a new bag');
+                  return;
+                }
+                /* Pull Dose is an inventory-only action (stays on Shelf). Brewing is a separate path that deducts exactly once at the timer/save step. */
+                var pullG = Math.min(pullDose, curRem);
+                var nextRem = Math.max(0, Math.round((curRem - pullG) * 10) / 10);
                 if (bag._priceIdx >= 0) {
                   var list = S.getNormalizedPrices();
                   if (list[bag._priceIdx]) {
@@ -1717,18 +1917,11 @@
                   is_frozen: 'yes',
                   remaining_g: nextRem
                 });
-                hydrateBrewFromRowOrBag(null, uRec, Object.assign({}, bag, { is_frozen: 'yes' }));
-                a.brew.dose = pullDose;
-                if (ui.frozenGrindOffset) {
-                  var baseUm = +a.brew.grindUm || +a.brew.grind_um || 550;
-                  a.brew.grindUm = baseUm + 12;
-                  a.brew.grind_um = baseUm + 12;
-                }
                 var bagSymPull = bag.sym || (bag.currency === 'EUR' ? '\u20AC' : bag.currency === 'GBP' ? '\u00A3' : '$');
-                S.toastSafe('Pulled ' + pullDose + ' g frozen dose (' + nextRem + ' g left \u00B7 ' + bagSymPull + ev.perCup.toFixed(2) + '/cup)!');
-                navigateToHomeRecipe();
+                S.toastSafe('Pulled ' + pullG + ' g frozen dose (' + nextRem + ' g left \u00B7 ' + bagSymPull + ev.perCup.toFixed(2) + '/cup). Bag updated only \u2014 brewing it later deducts again.');
+                repaint();
               }
-            }, S.h('span', { text: 'Pull ' + pullDose + ' g Dose \u2192 Brew' })),
+            }, S.h('span', { text: ev.isEmpty ? 'Bag Empty' : ('Pull ' + pullDose + ' g Dose (\u2212' + pullDose + ' g)') })),
             S.h('button', {
               type: 'button',
               class: 'bt-tc-pill is-compact is-soft',
@@ -1805,7 +1998,7 @@
       var bagChron = getCoffeeHistoryChronological(bag.coffee, bag.roaster, bag.coffee_id || (uRec && uRec.coffee_id), hObjs);
       var bagTimeline = buildDialInConvergenceTimeline(bagChron, null, { compact: true });
 
-      wrap.appendChild(S.h('article', {
+      return S.h('article', {
         class: 'bt-cellar-bag-card',
         style: '--bag-roast-color:' + S.roastColorFor(cardRoast || bag.rlevel)
       },
@@ -1830,8 +2023,11 @@
           })
         ) : null,
         S.h('div', { class: 'bt-tc-row-between' },
-          S.h('span', { class: 'mono', style: 'font-size:0.8rem;color:var(--ink-secondary)', text: ev.remG + ' g / ' + ev.totalG + ' g remaining (' + ev.pctLeft + '%)' }),
-          isLocked ? S.h('span', { class: 'bt-tc-badge is-gold', text: 'Gold Recipe Locked' }) : null
+          S.h('span', { class: 'mono', style: 'font-size:0.8rem;color:var(--ink-secondary)', text: ev.remG + ' g / ' + ev.totalG + ' g remaining (' + ev.pctLeft + '%)' + (ev.isEmpty ? '' : (' \u00B7 ~' + ev.cupsLeft + ' cup' + (ev.cupsLeft === 1 ? '' : 's') + ' left')) }),
+          S.h('div', { class: 'bt-tc-pill-wrap', style: 'gap:6px' },
+            ev.isEmpty ? S.h('span', { class: 'bt-tc-badge is-warn', text: 'Empty' }) : (ev.isLowBag ? S.h('span', { class: 'bt-tc-badge is-warn bt-low-bag-pill', text: 'Low Bag' }) : null),
+            isLocked ? S.h('span', { class: 'bt-tc-badge is-gold', text: 'Gold Recipe Locked' }) : null
+          )
         ),
         S.h('div', { class: 'bt-cellar-meter' }, S.h('i', { style: 'width:' + ev.pctLeft + '%' })),
         bagTimeline,
@@ -1881,9 +2077,10 @@
         ),
         freshDrawer,
         cryoBlock
-      ));
-    });
+      );
+    }
 
+    paintShelfList();
     return wrap;
   }
 
@@ -2094,13 +2291,26 @@
           { lbl: 'Flavors Liked', fn: function (r) { return (typeof unneutralize === 'function' ? unneutralize(r.flavors_liked || '') : r.flavors_liked) || '\u2014'; } }
         ];
 
+        var cupScore = function (r) {
+          var st = parseFloat(r.my_rating_stars);
+          if (st > 0) return st;
+          var ts = parseFloat(r.total_score);
+          return ts > 0 ? ts / 20 : 0;
+        };
+        var cupScores = cmpRows.map(function (c) { return cupScore(c.r); });
+        var bestScore = Math.max.apply(null, cupScores);
+        var allTied = cupScores.every(function (s) { return s === cupScores[0]; });
+        var isWinnerCol = function (cIdx) { return bestScore > 0 && !allTied && cupScores[cIdx] === bestScore; };
+
         var theadTr = S.h('tr', null, S.h('th', { text: 'Parameter' }));
         cmpRows.forEach(function (item, cIdx) {
-          theadTr.appendChild(S.h('th', null,
+          var win = isWinnerCol(cIdx);
+          theadTr.appendChild(S.h('th', { class: win ? 'bt-compare-winner-col' : '' },
+            win ? S.h('span', { class: 'bt-tc-badge is-gold', style: 'display:inline-block;margin-bottom:4px', text: '\u2605 Best Cup' }) : null,
             S.h('div', { text: 'Cup ' + String.fromCharCode(65 + cIdx) + (item.r.cupping_date ? ' (' + item.r.cupping_date + ')' : '') }),
             S.h('button', {
               type: 'button',
-              class: 'bt-tc-pill is-compact is-active',
+              class: 'bt-tc-pill is-compact is-active no-print',
               style: 'margin-top:4px;min-height:32px',
               text: 'Brew \u2192',
               onclick: function () {
@@ -2116,9 +2326,13 @@
           var vals = cmpRows.map(function (c) { return sr.fn(c.r); });
           var varied = vals.some(function (v) { return v !== vals[0]; });
           if (ui.compareOnlyVaried && !varied && sr.lbl !== 'Coffee' && sr.lbl !== 'Rating') return;
-          var tr = S.h('tr', { class: varied ? 'is-diff' : '' }, S.h('td', null, S.h('b', { text: sr.lbl })));
-          vals.forEach(function (v) {
-            tr.appendChild(S.h('td', { class: 'mono', text: v }));
+          var tr = S.h('tr', { class: varied ? 'is-diff' : '' }, S.h('td', null,
+            S.h('b', { text: sr.lbl }),
+            varied ? S.h('span', { class: 'bt-compare-diff-tag', style: 'margin-left:6px', text: 'Changed' }) : null
+          ));
+          vals.forEach(function (v, vIdx) {
+            var cls = 'mono' + (varied && vIdx > 0 && v !== vals[0] ? ' is-diff-cell' : '') + (isWinnerCol(vIdx) ? ' bt-compare-winner-col' : '');
+            tr.appendChild(S.h('td', { class: cls, text: v }));
           });
           tbody.appendChild(tr);
         });
@@ -3824,6 +4038,8 @@
             style: 'flex:1 1 200px;width:auto',
             onclick: function () {
               if (storage && typeof storage.commitTastingEdit === 'function') {
+                var oldDoseG = parseFloat(r.brew_dose_g);
+                var newDoseG = parseFloat(baseEdit.brew && baseEdit.brew.dose);
                 var res = storage.commitTastingEdit(rIdx, baseEdit);
                 if (res && res.error) {
                   S.toastSafe(res.error);
@@ -3831,6 +4047,9 @@
                 }
                 var updatedObjs = S.getHistoryObjs();
                 var updatedRow = updatedObjs[rIdx] || r;
+                if (isFinite(oldDoseG) && isFinite(newDoseG) && Math.abs(newDoseG - oldDoseG) > 0.0001 && typeof storage.reconcileBagDoseDelta === 'function') {
+                  try { storage.reconcileBagDoseDelta(updatedRow, Math.round((newDoseG - oldDoseG) * 10) / 10); } catch (_) {}
+                }
                 upsertVaultSafe({
                   id: updatedRow.coffee_id || '',
                   name: un(updatedRow.coffee_name),

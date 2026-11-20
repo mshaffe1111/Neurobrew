@@ -2770,7 +2770,8 @@ const _sheetTitles = {
   'onboarding-tour':    'Welcome to BeanTelligence',
   'about-charter':      'Science & Epistemic Charter',
   'share-qr-passport':  'Share QR Recipe Passport',
-  'recipe-science-why': 'Why These Numbers?'
+  'recipe-science-why': 'Why These Numbers?',
+  'screen-detail':      'Tasting Passport'
 };
 
 const BTSheet = (function() {
@@ -4884,8 +4885,8 @@ function paintStudioAside() {
   const doseG = +b.dose > 0 ? +b.dose : 15;
   const waterG = +b.water > 0 ? +b.water : 250;
   const ratio = +b.ratio > 0 ? +b.ratio : +(waterG / Math.max(1, doseG)).toFixed(1);
-  const tempF = +b.tempF > 0 ? Math.round(+b.tempF) : 200;
-  const tempC = Math.round((tempF - 32) * 5 / 9);
+  const tempF = +b.tempF > 0 ? Math.round(+b.tempF) : (+b.tempC > 0 ? Math.round(+b.tempC * 9 / 5 + 32) : 200);
+  const tempC = +b.tempC > 0 ? Math.round(+b.tempC) : Math.round((tempF - 32) * 5 / 9);
   const tempDisp = app.prefs.tempUnit === 'C' ? (tempC + ' °C (' + tempF + ' °F)') : (tempF + ' °F (' + tempC + ' °C)');
 
   let predTxt = '~1.38% · ~20.2% Extraction (%EY)';
@@ -4962,7 +4963,7 @@ function paintStudioAside() {
         h('span', { class: 'bt-status-dot' + (ble.active ? (ble.sim ? ' is-sim' : ' is-live') : '') }),
         h('span', { 'data-aside-fsm': '1', text: 'Smart Scale: ' + (ble.fsmHuman || _humanFsmLabel(ble.fsm)) })
       ),
-      bleState.lastTds ? h('b', { class: 'mono', style: 'color:var(--science)', text: (+bleState.lastTds).toFixed(2) + '% TDS' }) : h('span', { class: 'mono', style: 'color:var(--ink-muted)', text: tempDisp.split(' ')[0] })
+      bleState.lastTds ? h('b', { class: 'mono', style: 'color:var(--science)', text: (+bleState.lastTds).toFixed(2) + '% TDS' }) : h('span', { class: 'mono', style: 'color:var(--ink-muted)', text: app.prefs.tempUnit === 'C' ? (tempC + '°C') : (tempF + '°F') })
     ),
     h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px' },
       h('button', {
@@ -5457,6 +5458,7 @@ var BTStorage;
           if (d.app.adjust && typeof d.app.adjust === 'object') a.adjust = Object.assign(a.adjust || {}, d.app.adjust);
           if (d.app.cupBrew && typeof d.app.cupBrew === 'object') a.cupBrew = d.app.cupBrew;
           if (typeof d.app.attempt === 'number' && isFinite(d.app.attempt)) a.attempt = d.app.attempt;
+          if (typeof d.app.recipeLocked === 'boolean') a.recipeLocked = d.app.recipeLocked;
           if (typeof d.app.screen === 'string' && d.app.screen) a.screen = d.app.screen;
           if (typeof d.app.tab === 'string' && d.app.tab) a.tab = d.app.tab;
           if (d.app.prefs && typeof d.app.prefs === 'object'){
@@ -5721,25 +5723,66 @@ var BTStorage;
     });
     return edits;
   }
+  function _syncDialLockAcrossVaultAndApp(targetObj, lockBool){
+    if (!targetObj || typeof targetObj !== 'object') return;
+    const idInfo = _extractCoffeeIdentity(targetObj);
+    const vList = _getCoffeesVaultListImpl();
+    const vIdx = _findVaultCoffeeIdx(vList, idInfo);
+    if (vIdx >= 0){
+      const nextV = Object.assign({}, vList[vIdx]);
+      nextV.dial_locked = lockBool ? 'yes' : '';
+      if (!lockBool){
+        delete nextV.lockedBrew;
+      }
+      if (nextV.dialAdaptation && typeof nextV.dialAdaptation === 'object'){
+        nextV.dialAdaptation = Object.assign({}, nextV.dialAdaptation, { locked:!!lockBool });
+      }
+      nextV.updatedAt = Date.now();
+      vList[vIdx] = nextV;
+      _saveCoffeesVaultListImpl(vList);
+    }
+    const a = _getApp();
+    if (_matchesAppCoffee(a, idInfo)){
+      a.recipeLocked = !!lockBool;
+      if (a.coffee){
+        a.coffee.dial_locked = lockBool ? 'yes' : '';
+        if (!lockBool && a.coffee.lockedBrew) delete a.coffee.lockedBrew;
+        if (a.coffee.dialAdaptation && typeof a.coffee.dialAdaptation === 'object'){
+          a.coffee.dialAdaptation = Object.assign({}, a.coffee.dialAdaptation, { locked:!!lockBool });
+        }
+      }
+      if (a.brew && a.brew.dialAdaptation && typeof a.brew.dialAdaptation === 'object'){
+        if (!lockBool && a.brew.dialAdaptation.adapted === false && a.brew.dialAdaptation.locked === true && !a.brew.dialAdaptation.headline && !a.brew.dialAdaptation.summaryBanner){
+          delete a.brew.dialAdaptation;
+        } else {
+          a.brew.dialAdaptation = Object.assign({}, a.brew.dialAdaptation, { locked:!!lockBool });
+        }
+      }
+      saveDraftFromApp();
+    }
+  }
   function _commitDialLockImpl(oOrIdx, on){
     if (!historyState || !historyState.ex) return { changed:0 };
     const o = typeof oOrIdx === 'number' ? historyState.objs[oOrIdx] : oOrIdx;
     if (!o || !historyState.ex.rows[o._i]) return { changed:0 };
-    if (on !== false && typeof isRowExcludedFromLearning === 'function' && isRowExcludedFromLearning(o)) return { changed:0, shielded:true };
-    const edits = _computeLockEdits(historyState.objs, o, on !== false);
-    if (!edits.length) return { changed:0 };
-    const header = historyState.ex.header.slice();
-    if (!header.includes('dial_locked')) header.push('dial_locked');
-    const ci = header.indexOf('dial_locked'), idi = header.indexOf('id');
-    const rows = historyState.ex.rows.map(r => { const rr = r.slice(); while (rr.length < header.length) rr.push(''); return rr; });
-    edits.forEach(e => {
-      rows[e.i][ci] = e.val;
-      const id = rows[e.i][idi] || String(e.i), tag = id + '|lock';
-      if (!lockedIds.has(tag)){ lockedIds.add(tag); histEdited += 1; }
-    });
-    _persistEdited();
-    historyState.ex.header = header;
-    _applyHistoryRowsImpl(rows);
+    const lockBool = on !== false;
+    if (lockBool && typeof isRowExcludedFromLearning === 'function' && isRowExcludedFromLearning(o)) return { changed:0, shielded:true };
+    const edits = _computeLockEdits(historyState.objs, o, lockBool);
+    if (edits.length){
+      const header = historyState.ex.header.slice();
+      if (!header.includes('dial_locked')) header.push('dial_locked');
+      const ci = header.indexOf('dial_locked'), idi = header.indexOf('id');
+      const rows = historyState.ex.rows.map(r => { const rr = r.slice(); while (rr.length < header.length) rr.push(''); return rr; });
+      edits.forEach(e => {
+        rows[e.i][ci] = e.val;
+        const id = rows[e.i][idi] || String(e.i), tag = id + '|lock';
+        if (!lockedIds.has(tag)){ lockedIds.add(tag); histEdited += 1; }
+      });
+      _persistEdited();
+      historyState.ex.header = header;
+      _applyHistoryRowsImpl(rows);
+    }
+    _syncDialLockAcrossVaultAndApp(o, lockBool);
     return { changed:edits.length };
   }
   function _loadHistoryImpl(){
@@ -6346,58 +6389,268 @@ var BTStorage;
     return { ok:true, added:m.added, list:prState.list };
   }
 
-  /* Deduct brewed dose from active open bag with 10-second Undo function */
+  function _extractCoffeeIdentity(coffeeOrRec){
+    const c = (coffeeOrRec && coffeeOrRec.coffee && typeof coffeeOrRec.coffee === 'object') ? coffeeOrRec.coffee : (coffeeOrRec || (_getApp().coffee) || {});
+    const cid = String(c.coffee_id || c.id || (coffeeOrRec && coffeeOrRec.coffee_id) || '').trim();
+    const rawName = cleanLine(unneutralize(
+      c.name || c.coffee_name || (typeof c.coffee === 'string' ? c.coffee : '') ||
+      (coffeeOrRec && (coffeeOrRec.name || coffeeOrRec.coffee_name || (typeof coffeeOrRec.coffee === 'string' ? coffeeOrRec.coffee : ''))) || ''
+    ));
+    const rawRoaster = cleanLine(unneutralize(c.roaster || (coffeeOrRec && coffeeOrRec.roaster) || ''));
+    const cName = _normKeyPart(rawName);
+    const cRoast = _normKeyPart(rawRoaster);
+    return { c, cid, rawName, rawRoaster, cName, cRoast, nrKey:cName ? (cName + '|' + cRoast) : '' };
+  }
+  function _matchesPriceEntry(e, idInfo){
+    if (!e || e.kind === 'pods') return false;
+    if (idInfo.cid && e.coffee_id && e.coffee_id === idInfo.cid) return true;
+    return !!(idInfo.cName && _normKeyPart(e.coffee) === idInfo.cName && (!idInfo.cRoast || !_normKeyPart(e.roaster) || _normKeyPart(e.roaster) === idInfo.cRoast));
+  }
+  function _findPriceBagIndices(coffeeOrRec, idInfo){
+    let openIdx = -1;
+    let finishedIdx = -1;
+    if (coffeeOrRec && coffeeOrRec.openBag && Number.isInteger(coffeeOrRec.openBag.bagIndex) && prState.list[coffeeOrRec.openBag.bagIndex]){
+      const ob = prState.list[coffeeOrRec.openBag.bagIndex];
+      if (ob && !ob.finished && ob.kind !== 'pods') openIdx = coffeeOrRec.openBag.bagIndex;
+    }
+    if (openIdx < 0){
+      for (let i = 0; i < prState.list.length; i++){
+        const e = prState.list[i];
+        if (!e || e.finished || e.kind === 'pods') continue;
+        if (_matchesPriceEntry(e, idInfo)){ openIdx = i; break; }
+      }
+    }
+    for (let i = prState.list.length - 1; i >= 0; i--){
+      const e = prState.list[i];
+      if (e && e.finished && _matchesPriceEntry(e, idInfo)){ finishedIdx = i; break; }
+    }
+    return { openIdx, finishedIdx };
+  }
+  function _findVaultCoffeeIdx(vList, idInfo){
+    if (!Array.isArray(vList) || !vList.length) return -1;
+    if (idInfo.cid){
+      for (let i = 0; i < vList.length; i++){
+        const it = vList[i];
+        if (!it || typeof it !== 'object') continue;
+        const itCid = String(it.coffee_id || it.id || '').trim();
+        if (itCid && itCid === idInfo.cid) return i;
+      }
+    }
+    if (idInfo.cName){
+      for (let i = 0; i < vList.length; i++){
+        const it = vList[i];
+        if (!it || typeof it !== 'object') continue;
+        const itName = _normKeyPart(it.name || it.coffee_name || it.coffee || '');
+        const itRoast = _normKeyPart(it.roaster || '');
+        if (itName === idInfo.cName && (!idInfo.cRoast || !itRoast || itRoast === idInfo.cRoast)) return i;
+      }
+    }
+    return -1;
+  }
+  function _matchesAppCoffee(a, idInfo){
+    if (!a || !a.coffee) return false;
+    const ac = a.coffee;
+    const appCid = String(ac.coffee_id || ac.id || '').trim();
+    if (idInfo.cid && appCid && idInfo.cid === appCid) return true;
+    const appName = _normKeyPart(ac.name || '');
+    const appRoast = _normKeyPart(ac.roaster || '');
+    return !!(idInfo.cName && appName && appName === idInfo.cName && (!idInfo.cRoast || !appRoast || appRoast === idInfo.cRoast));
+  }
+  function _isTastingRowSnapshot(obj){
+    return !!(obj && typeof obj === 'object' && (obj.cupping_date || obj.brew_dose_g || obj.saved_at || obj.coffee_name));
+  }
+  function _resolveBagInventoryContext(coffeeOrRec, idInfo){
+    const a = _getApp();
+    const pr = _findPriceBagIndices(coffeeOrRec, idInfo);
+    const vList = _getCoffeesVaultListImpl();
+    const vaultIdx = _findVaultCoffeeIdx(vList, idInfo);
+    const appMatches = _matchesAppCoffee(a, idInfo);
+    const hasOpenPrice = pr.openIdx >= 0;
+    const hasFinishedPrice = !hasOpenPrice && pr.finishedIdx >= 0;
+    const priceEntryRef = hasOpenPrice ? prState.list[pr.openIdx] : (hasFinishedPrice ? prState.list[pr.finishedIdx] : null);
+    const vaultRec = vaultIdx >= 0 ? vList[vaultIdx] : null;
+    const vaultHasWeight = !!(vaultRec && ((vaultRec.remaining_g != null && vaultRec.remaining_g !== '' && isFinite(+vaultRec.remaining_g)) || (+vaultRec.bag_weight_g > 0)));
+    const appHasWeight = !!(appMatches && a.coffee && ((a.coffee.remaining_g != null && a.coffee.remaining_g !== '' && isFinite(+a.coffee.remaining_g)) || (+a.coffee.bag_weight_g > 0)));
+    const recHasWeight = !!(coffeeOrRec && ((coffeeOrRec.remaining_g != null && coffeeOrRec.remaining_g !== '' && isFinite(+coffeeOrRec.remaining_g)) || (+coffeeOrRec.bag_weight_g > 0)));
+    const hasTrackedBag = hasOpenPrice || hasFinishedPrice || vaultHasWeight || appHasWeight || recHasWeight;
+    const priceTotalG = priceEntryRef ? costGrams(priceEntryRef.size, priceEntryRef.unit) : 0;
+    const vaultTotalG = (vaultRec && +vaultRec.bag_weight_g > 0) ? +vaultRec.bag_weight_g : 0;
+    const appTotalG = (appMatches && a.coffee && +a.coffee.bag_weight_g > 0) ? +a.coffee.bag_weight_g : 0;
+    const recTotalG = (coffeeOrRec && +coffeeOrRec.bag_weight_g > 0) ? +coffeeOrRec.bag_weight_g : 0;
+    const totalG = Math.round((priceTotalG || vaultTotalG || appTotalG || recTotalG || 0) * 10) / 10;
+    let curRem = NaN;
+    if (hasOpenPrice && priceEntryRef){
+      curRem = (priceEntryRef.rem_g != null && priceEntryRef.rem_g !== '' && isFinite(+priceEntryRef.rem_g)) ? +priceEntryRef.rem_g : priceTotalG;
+    } else if (vaultHasWeight && vaultRec){
+      curRem = (vaultRec.remaining_g != null && vaultRec.remaining_g !== '' && isFinite(+vaultRec.remaining_g)) ? +vaultRec.remaining_g : vaultTotalG;
+    } else if (hasFinishedPrice && priceEntryRef){
+      curRem = (priceEntryRef.rem_g != null && priceEntryRef.rem_g !== '' && isFinite(+priceEntryRef.rem_g)) ? +priceEntryRef.rem_g : 0;
+    } else if (appHasWeight){
+      curRem = (a.coffee.remaining_g != null && a.coffee.remaining_g !== '' && isFinite(+a.coffee.remaining_g)) ? +a.coffee.remaining_g : appTotalG;
+    } else if (recHasWeight){
+      curRem = (coffeeOrRec.remaining_g != null && coffeeOrRec.remaining_g !== '' && isFinite(+coffeeOrRec.remaining_g)) ? +coffeeOrRec.remaining_g : recTotalG;
+    }
+    return { a, pr, vList, vaultIdx, vaultRec, appMatches, hasOpenPrice, hasFinishedPrice, hasTrackedBag, totalG, curRem };
+  }
+  function _syncVaultRemaining(vList, vaultIdx, idInfo, priceEntryRef, totalG, nextRem){
+    if (vaultIdx >= 0 && vList[vaultIdx]){
+      const nextV = Object.assign({}, vList[vaultIdx], {
+        remaining_g:nextRem,
+        updatedAt:Date.now()
+      });
+      if (totalG > 0 && !(+nextV.bag_weight_g > 0)) nextV.bag_weight_g = totalG;
+      vList[vaultIdx] = nextV;
+      _saveCoffeesVaultListImpl(vList);
+      return nextV;
+    }
+    const baseName = idInfo.rawName || (priceEntryRef && priceEntryRef.coffee) || '';
+    const baseCid = idInfo.cid || (priceEntryRef && priceEntryRef.coffee_id) || '';
+    if (!baseName && !baseCid) return null;
+    return _upsertCoffeeVaultRecordImpl({
+      id:baseCid,
+      coffee_id:baseCid,
+      name:baseName,
+      roaster:idInfo.rawRoaster || (priceEntryRef && priceEntryRef.roaster) || '',
+      bag_weight_g:totalG > 0 ? totalG : undefined,
+      remaining_g:nextRem
+    }, null, { forceRemaining:true });
+  }
+
+  /* Deduct brewed dose from active open bag across Prices, Vault, and app.coffee with 0g guard & 10-second Undo */
   function _deductBagGramsImpl(coffeeOrRec, doseG, opts){
     opts = opts || {};
     const dose = +doseG;
     if (!(dose > 0 && isFinite(dose))) return () => false;
-    const c = coffeeOrRec && coffeeOrRec.coffee ? coffeeOrRec.coffee : (coffeeOrRec || (_getApp().coffee) || {});
-    const cid = String(c.coffee_id || c.id || '').trim();
-    const cName = _normKeyPart(c.name || c.coffee_name || c.coffee || '');
-    const cRoast = _normKeyPart(c.roaster || '');
-    let targetIdx = -1;
-    if (coffeeOrRec && coffeeOrRec.openBag && Number.isInteger(coffeeOrRec.openBag.bagIndex) && prState.list[coffeeOrRec.openBag.bagIndex]){
-      targetIdx = coffeeOrRec.openBag.bagIndex;
-    } else {
-      for (let i = 0; i < prState.list.length; i++){
-        const e = prState.list[i];
-        if (!e || e.finished || e.kind === 'pods') continue;
-        if (cid && e.coffee_id && e.coffee_id === cid){ targetIdx = i; break; }
-        if (cName && _normKeyPart(e.coffee) === cName && (!cRoast || !_normKeyPart(e.roaster) || _normKeyPart(e.roaster) === cRoast)){
-          targetIdx = i; break;
-        }
+    const idInfo = _extractCoffeeIdentity(coffeeOrRec);
+    const ctx = _resolveBagInventoryContext(coffeeOrRec, idInfo);
+    if (!ctx.hasTrackedBag) return () => false;
+    if (!isFinite(ctx.curRem) || ctx.curRem <= 0.4){
+      return { ok:false, empty:true, remaining_g:0 };
+    }
+
+    const nextRem = Math.max(0, Math.round((ctx.curRem - dose) * 10) / 10);
+    const targetIdx = ctx.pr.openIdx;
+    const hasPrice = targetIdx >= 0;
+    const prevPriceEntry = hasPrice ? Object.assign({}, prState.list[targetIdx]) : null;
+    const prevVaultList = ctx.vList.map(it => _cloneObj(it) || it);
+    const prevAppMatches = ctx.appMatches;
+    const prevAppRem = prevAppMatches && ctx.a.coffee ? ctx.a.coffee.remaining_g : undefined;
+    const prevAppOpenBag = (prevAppMatches && ctx.a.coffee && ctx.a.coffee.openBag) ? _cloneObj(ctx.a.coffee.openBag) : undefined;
+
+    if (hasPrice){
+      const patch = { rem_g:nextRem };
+      if (nextRem <= 0.4 && opts.autoFinish) patch.finished = _todayIso();
+      const updated = priceSet(prState.list, targetIdx, patch);
+      if (!updated.ok) return () => false;
+      prState.list = updated.list;
+      prState.changes++;
+      _persistPrices();
+    }
+    const priceRefAfter = hasPrice ? prState.list[targetIdx] : null;
+    _syncVaultRemaining(ctx.vList, ctx.vaultIdx, idInfo, priceRefAfter, ctx.totalG, nextRem);
+
+    if (prevAppMatches && ctx.a.coffee){
+      ctx.a.coffee.remaining_g = nextRem;
+      if (ctx.totalG > 0 && !(+ctx.a.coffee.bag_weight_g > 0)){
+        ctx.a.coffee.bag_weight_g = ctx.totalG;
+        ctx.a.coffee.bagWeightG = ctx.totalG;
+      }
+      if (ctx.a.coffee.openBag && typeof ctx.a.coffee.openBag === 'object'){
+        ctx.a.coffee.openBag.rem_g = nextRem;
+      }
+      saveDraftFromApp();
+    }
+    if (coffeeOrRec && typeof coffeeOrRec === 'object' && coffeeOrRec !== ctx.a.coffee){
+      if (Object.prototype.hasOwnProperty.call(coffeeOrRec, 'remaining_g') || coffeeOrRec.openBag !== undefined){
+        coffeeOrRec.remaining_g = nextRem;
+      }
+      if (coffeeOrRec.openBag && typeof coffeeOrRec.openBag === 'object'){
+        coffeeOrRec.openBag.rem_g = nextRem;
       }
     }
-    if (targetIdx < 0) return () => false;
-    const prevEntry = Object.assign({}, prState.list[targetIdx]);
-    const totalG = costGrams(prevEntry.size, prevEntry.unit);
-    const curRem = prevEntry.rem_g != null ? +prevEntry.rem_g : totalG;
-    const nextRem = Math.max(0, Math.round((curRem - dose) * 10) / 10);
-    const patch = { rem_g:nextRem };
-    if (nextRem <= 0.4 && opts.autoFinish) patch.finished = _todayIso();
-    const updated = priceSet(prState.list, targetIdx, patch);
-    if (!updated.ok) return () => false;
-    prState.list = updated.list;
-    prState.changes++;
-    _persistPrices();
+    _unifiedIndexCache.key = '';
+
+    const coffeeLabel = (prevPriceEntry && prevPriceEntry.coffee) || (ctx.vaultRec && ctx.vaultRec.name) || idInfo.rawName || 'coffee';
     const stampedAt = Date.now();
     let undone = false;
     const undoFn = function undoBagDeduct(){
       if (undone) return false;
       if (!opts.ignoreExpiry && Date.now() - stampedAt > 10000) return false;
-      if (!prState.list[targetIdx]) return false;
-      prState.list[targetIdx] = prevEntry;
-      prState.changes = Math.max(0, prState.changes - 1);
-      _persistPrices();
+      if (hasPrice){
+        if (!prState.list[targetIdx]) return false;
+        prState.list[targetIdx] = prevPriceEntry;
+        prState.changes = Math.max(0, prState.changes - 1);
+        _persistPrices();
+      }
+      _saveCoffeesVaultListImpl(prevVaultList);
+      if (prevAppMatches && ctx.a.coffee){
+        if (prevAppRem === undefined) delete ctx.a.coffee.remaining_g;
+        else ctx.a.coffee.remaining_g = prevAppRem;
+        if (prevAppOpenBag !== undefined) ctx.a.coffee.openBag = prevAppOpenBag;
+        saveDraftFromApp();
+      }
+      _unifiedIndexCache.key = '';
       undone = true;
       _triggerRender();
       return true;
     };
-    prState.deductUndo = { fn:undoFn, at:stampedAt, coffee:prevEntry.coffee, doseG:dose, remG:nextRem };
+    undoFn.ok = true;
+    undoFn.empty = false;
+    undoFn.remaining_g = nextRem;
+    undoFn.bag_weight_g = ctx.totalG;
+    undoFn.deducted_g = Math.round(dose * 10) / 10;
+    undoFn.undo = undoFn;
+
+    prState.deductUndo = { fn:undoFn, at:stampedAt, coffee:coffeeLabel, doseG:dose, remG:nextRem };
     if (!opts.silent){
       _notifyToast('Deducted ' + Math.round(dose * 10) / 10 + ' g (' + nextRem + ' g left in bag)', { actionLabel:'Undo', onAction:undoFn, durationMs:10000 });
     }
     return undoFn;
+  }
+
+  /* Reconcile remaining bag grams when an existing tasting dose is edited (delta = newDose - oldDose) */
+  function _reconcileBagDoseDeltaImpl(rowOrCoffee, deltaDoseG){
+    const delta = +deltaDoseG;
+    if (!isFinite(delta)) return { ok:false, changed:false, remaining_g:null };
+    if (Math.abs(delta) < 0.01) return { ok:true, changed:false, delta:0 };
+    const idInfo = _extractCoffeeIdentity(rowOrCoffee);
+    const ctx = _resolveBagInventoryContext(rowOrCoffee, idInfo);
+    if (!ctx.hasTrackedBag || !isFinite(ctx.curRem)){
+      return { ok:false, changed:false, remaining_g:null };
+    }
+    const rawNext = Math.round((ctx.curRem - delta) * 10) / 10;
+    const nextRem = ctx.totalG > 0 ? Math.min(ctx.totalG, Math.max(0, rawNext)) : Math.max(0, rawNext);
+
+    const priceIdx = ctx.pr.openIdx >= 0 ? ctx.pr.openIdx : (delta < 0 ? ctx.pr.finishedIdx : -1);
+    let priceRefAfter = null;
+    if (priceIdx >= 0 && prState.list[priceIdx]){
+      const patch = { rem_g:nextRem };
+      if (nextRem > 0.4 && prState.list[priceIdx].finished) patch.finished = '';
+      const updated = priceSet(prState.list, priceIdx, patch);
+      if (updated.ok){
+        prState.list = updated.list;
+        prState.changes++;
+        _persistPrices();
+        priceRefAfter = prState.list[priceIdx];
+      }
+    }
+    _syncVaultRemaining(ctx.vList, ctx.vaultIdx, idInfo, priceRefAfter, ctx.totalG, nextRem);
+
+    if (ctx.appMatches && ctx.a.coffee){
+      ctx.a.coffee.remaining_g = nextRem;
+      if (ctx.a.coffee.openBag && typeof ctx.a.coffee.openBag === 'object'){
+        ctx.a.coffee.openBag.rem_g = nextRem;
+      }
+      saveDraftFromApp();
+    }
+    _unifiedIndexCache.key = '';
+    return {
+      ok:true,
+      changed:true,
+      remaining_g:nextRem,
+      total_g:ctx.totalG,
+      delta:Math.round(delta * 10) / 10
+    };
   }
 
   /* ---------- Coffee Shops ('brew-and-cup-shops-v1' & 'brew-and-cup-shopdraft-v1') ---------- */
@@ -7645,6 +7898,7 @@ var BTStorage;
     const allowClear = opts.allowClear === true;
     const rawIn = (coffeeIn && coffeeIn.coffee && typeof coffeeIn.coffee === 'object') ? coffeeIn.coffee : (coffeeIn || {});
     const nowTs = typeof opts.updatedAt === 'number' && isFinite(opts.updatedAt) ? opts.updatedAt : (opts.updatedAt ? (Date.parse(opts.updatedAt) || Date.now()) : Date.now());
+    const fromRowSnapshot = opts.fromRowSnapshot === true || (!opts.fromPriceList && opts.forceRemaining !== true && _isTastingRowSnapshot(brewIn));
 
     let merged;
     if (hitIdx >= 0){
@@ -7661,6 +7915,14 @@ var BTStorage;
             delete existing[k];
             return;
           }
+        }
+        if (k === 'remaining_g' && fromRowSnapshot && _hasMeaningfulVal(existing.remaining_g, true)){
+          const idInfoSnap = _extractCoffeeIdentity(existing);
+          const prSnap = _findPriceBagIndices(null, idInfoSnap);
+          if (prSnap.openIdx >= 0 && prState.list[prSnap.openIdx] && prState.list[prSnap.openIdx].rem_g != null){
+            existing.remaining_g = Math.round(+prState.list[prSnap.openIdx].rem_g * 10) / 10;
+          }
+          return;
         }
         if (_hasMeaningfulVal(newVal, allowZero)){
           if (incomingOlder && _hasMeaningfulVal(existing[k], allowZero)) return;
@@ -7723,6 +7985,20 @@ var BTStorage;
         }
       });
     }
+    /* Never let a historical tasting row's coffee_extra.remaining_g overwrite live inventory in Prices / app.coffee / Vault */
+    const rowIdInfo = _extractCoffeeIdentity(mergedCoffee);
+    const prRowBags = _findPriceBagIndices(null, rowIdInfo);
+    if (prRowBags.openIdx >= 0 && prState.list[prRowBags.openIdx] && prState.list[prRowBags.openIdx].rem_g != null){
+      mergedCoffee.remaining_g = Math.round(+prState.list[prRowBags.openIdx].rem_g * 10) / 10;
+    } else if (sameAppCoffee && _hasMeaningfulVal(appCoffee.remaining_g, true)){
+      mergedCoffee.remaining_g = Math.round(+appCoffee.remaining_g * 10) / 10;
+    } else {
+      const curVaultList = _getCoffeesVaultListImpl();
+      const curVIdx = _findVaultCoffeeIdx(curVaultList, rowIdInfo);
+      if (curVIdx >= 0 && _hasMeaningfulVal(curVaultList[curVIdx].remaining_g, true)){
+        mergedCoffee.remaining_g = Math.round(+curVaultList[curVIdx].remaining_g * 10) / 10;
+      }
+    }
     if (_isGoldenLockedRow(rowObj)) mergedCoffee.dial_locked = 'yes';
     else if (Object.prototype.hasOwnProperty.call(rowObj, 'dial_locked')) mergedCoffee.dial_locked = '';
     if (ad.next_recipe && typeof ad.next_recipe === 'object') mergedCoffee.pendingNextRecipe = ad.next_recipe;
@@ -7739,7 +8015,7 @@ var BTStorage;
     if (ad.machine_profile) rowBrew.machineProfile = ad.machine_profile;
     const appBrew = (sameAppCoffee && a && a.brew) ? (_buildBrewSnapshot(a.brew) || {}) : {};
     const mergedBrew = Object.assign({}, appBrew, rowBrew);
-    return _upsertCoffeeVaultRecordImpl(mergedCoffee, Object.keys(mergedBrew).length ? mergedBrew : null);
+    return _upsertCoffeeVaultRecordImpl(mergedCoffee, Object.keys(mergedBrew).length ? mergedBrew : null, { fromRowSnapshot:true });
   }
 
   function _upsertVaultFromPriceList(list){
@@ -7770,7 +8046,7 @@ var BTStorage;
         remaining_g:bag.rem_g != null ? Math.round(+bag.rem_g * 10) / 10 : (totalG > 0 ? Math.round(totalG * 10) / 10 : ''),
         price:bag.price,
         currency:bag.currency || bag.sym || '$'
-      });
+      }, null, { fromPriceList:true });
     }
   }
 
@@ -8081,7 +8357,14 @@ var BTStorage;
       if (!rec.roaster_location && (bag.city || bag.state)) rec.roaster_location = [bag.city, bag.state].filter(Boolean).join(', ');
       const bagTotalG = costGrams(bag.size, bag.unit);
       if (bagTotalG > 0 && !rec.bag_weight_g) rec.bag_weight_g = Math.round(bagTotalG * 10) / 10;
-      if (bag.rem_g != null && rec.remaining_g === '') rec.remaining_g = Math.round(+bag.rem_g * 10) / 10;
+      if (bag.rem_g != null){
+        if (!bag.finished){
+          rec.remaining_g = Math.round(+bag.rem_g * 10) / 10;
+          rec._hasLivePriceRem = true;
+        } else if (rec.remaining_g === '' || !rec._hasLivePriceRem){
+          rec.remaining_g = Math.round(+bag.rem_g * 10) / 10;
+        }
+      }
       if (bag.price > 0 && !rec.price) rec.price = bag.price;
       if ((bag.currency || bag.sym) && !rec.currency) rec.currency = bag.currency || bag.sym;
 
@@ -8162,7 +8445,9 @@ var BTStorage;
       if (Array.isArray(v.flavors) && v.flavors.length && (!rec.flavors.length || vIsNewer)) rec.flavors = v.flavors.slice();
       mergeVaultVal('personal_note', v.personal_note);
       mergeVaultVal('bag_weight_g', v.bag_weight_g);
-      mergeVaultVal('remaining_g', v.remaining_g, true);
+      if (_hasMeaningfulVal(v.remaining_g, true)){
+        if (!rec._hasLivePriceRem || vIsNewer) rec.remaining_g = Math.round(+v.remaining_g * 10) / 10;
+      }
       mergeVaultVal('price', v.price);
       mergeVaultVal('currency', v.currency);
       ['agtron', 'bean_agtron', 'ground_agtron', 'agtron_scale', 'roast_delta', 'psd_d10_um', 'psd_d50_um', 'psd_d90_um', 'psd_span'].forEach(ak => {
@@ -8186,12 +8471,15 @@ var BTStorage;
       if (v.dialAdaptation && typeof v.dialAdaptation === 'object' && (!rec.dialAdaptation || vIsNewer)){
         rec.dialAdaptation = _cloneObj(v.dialAdaptation);
       }
+      if (v.dial_locked === 'yes' && !rec.latestBrew) rec.dial_locked = 'yes';
+      else if (Object.prototype.hasOwnProperty.call(v, 'dial_locked') && !v.dial_locked && !rec.lockedBrew) rec.dial_locked = '';
       if (vTs > rec.updatedAt) rec.updatedAt = vTs;
     }
 
     /* Pass 4: Finalize derived freshness & dial status + deterministic sort */
     for (let k = 0; k < records.length; k++){
       const rec = records[k];
+      delete rec._hasLivePriceRem;
       if (rec.latestBrew && !rec.last_brewed_at){
         const lb = rec.latestBrew;
         rec.last_brewed_at = lb.cupping_date || (lb.saved_at ? lb.saved_at.slice(0, 10) : '');
@@ -8599,11 +8887,17 @@ var BTStorage;
         }
       }
       const wantResetG = bagOpts.sizeG != null ? +bagOpts.sizeG : (bagOpts.rem_g != null ? +bagOpts.rem_g : null);
+      let resetRemainingG = null;
+      let resetTotalG = null;
       if (openIdx >= 0){
         const curBag = prState.list[openIdx];
         const totalG = wantResetG > 0 ? wantResetG : costGrams(curBag.size, curBag.unit);
         const patch = { roast:iso, finished:'' };
-        if (bagOpts.resetBagGrams !== false && totalG > 0) patch.rem_g = Math.round(totalG * 10) / 10;
+        if (bagOpts.resetBagGrams !== false && totalG > 0){
+          patch.rem_g = Math.round(totalG * 10) / 10;
+          resetRemainingG = patch.rem_g;
+          resetTotalG = Math.round(totalG * 10) / 10;
+        }
         if (wantResetG > 0 && curBag.unit === 'g') patch.size = wantResetG;
         const upd = priceSet(prState.list, openIdx, patch);
         if (upd.ok){ prState.list = upd.list; prState.changes++; _persistPrices(); targetCoffee.openBag = prState.list[openIdx]; }
@@ -8634,11 +8928,42 @@ var BTStorage;
           prState.changes++;
           _persistPrices();
           targetCoffee.openBag = prState.list[prState.list.length - 1];
+          resetRemainingG = Math.round(totalG * 10) / 10;
+          resetTotalG = resetRemainingG;
         }
+      } else if (bagOpts.resetBagGrams !== false){
+        const fallbackTotal = wantResetG > 0 ? wantResetG : (+targetCoffee.bag_weight_g || (recOrCoffee && +recOrCoffee.bag_weight_g) || 0);
+        if (fallbackTotal > 0){
+          resetRemainingG = Math.round(fallbackTotal * 10) / 10;
+          resetTotalG = resetRemainingG;
+        }
+      }
+      if (resetRemainingG != null){
+        targetCoffee.remaining_g = resetRemainingG;
+        if (resetTotalG > 0){ targetCoffee.bag_weight_g = resetTotalG; targetCoffee.bagWeightG = resetTotalG; }
+        if (a.coffee && targetCoffee !== a.coffee){
+          a.coffee.remaining_g = resetRemainingG;
+          if (resetTotalG > 0){ a.coffee.bag_weight_g = resetTotalG; a.coffee.bagWeightG = resetTotalG; }
+          if (targetCoffee.openBag) a.coffee.openBag = targetCoffee.openBag;
+        }
+        const freshVaultPatch = {
+          id:cid,
+          coffee_id:cid,
+          name:cName,
+          roaster:cRoaster,
+          roast_date:targetCoffee.roast_date,
+          is_frozen:targetCoffee.is_frozen,
+          frozen_date:targetCoffee.frozen_date,
+          freeze_days_offset:targetCoffee.freeze_days_offset,
+          remaining_g:resetRemainingG
+        };
+        if (resetTotalG > 0) freshVaultPatch.bag_weight_g = resetTotalG;
+        _upsertCoffeeVaultRecordImpl(freshVaultPatch, null, { forceRemaining:true, allowClear:true });
       }
     }
 
     _unifiedIndexCache.key = '';
+    saveDraftFromApp();
     _triggerScheduleDraft();
     if (!bagOpts.silent) _triggerRender();
     return targetCoffee;
@@ -9705,6 +10030,7 @@ var BTStorage;
     deletePriceBag:idx => { const e = prState.list[idx]; if (!e) return false; prState.undo = { e, at:idx, t:Date.now() }; prState.list = prState.list.filter((_, k) => k !== idx); prState.changes++; _persistPrices(); return true; },
     undoPriceDelete:() => { if (!prState.undo) return false; const l = prState.list.slice(); l.splice(Math.min(prState.undo.at, l.length), 0, prState.undo.e); prState.list = l; prState.changes = Math.max(0, prState.changes - 1); prState.undo = null; _persistPrices(); return true; },
     deductBagGrams:_deductBagGramsImpl,
+    reconcileBagDoseDelta:_reconcileBagDoseDeltaImpl,
     undoLastBagDeduct:() => (prState.deductUndo && typeof prState.deductUndo.fn === 'function') ? prState.deductUndo.fn() : false,
 
     getShops:() => shState,
@@ -9829,6 +10155,7 @@ function baseRow(overrides){ return BTStorage.baseRow(overrides); }
 function buildRow(overrides){ return BTStorage.buildRow(overrides); }
 function useCoffeeFromRow(rowObj, stay, withMachineProfile){ return BTStorage.useCoffeeFromRow(rowObj, stay, withMachineProfile); }
 function deductBagGrams(coffee, doseG, opts){ return BTStorage.deductBagGrams(coffee, doseG, opts); }
+function reconcileBagDoseDelta(rowOrCoffee, deltaDoseG){ return BTStorage.reconcileBagDoseDelta(rowOrCoffee, deltaDoseG); }
 function savePrices(nextList){ return BTStorage.savePrices(nextList); }
 function loadPrices(){ return BTStorage.loadPrices(); }
 function saveShops(nextStore){ return BTStorage.saveShops(nextStore); }
@@ -17199,6 +17526,36 @@ if (typeof window !== 'undefined') {
 (function () {
   var S = BTBrewCellarShared;
 
+  function computeCoffeeCupsLeftMeta(rec, fallbackDoseG) {
+    if (!rec || typeof rec !== 'object') return null;
+    var bag = rec.openBag;
+    var rawRem = null;
+    if (bag && bag.rem_g != null && bag.rem_g !== '' && isFinite(+bag.rem_g)) {
+      rawRem = +bag.rem_g;
+    } else if (rec.remaining_g != null && rec.remaining_g !== '' && isFinite(+rec.remaining_g)) {
+      rawRem = +rec.remaining_g;
+    } else if (bag && bag.grams != null && +bag.grams > 0 && isFinite(+bag.grams)) {
+      rawRem = +bag.grams;
+    }
+    if (rawRem == null || !isFinite(rawRem) || rawRem < 0) return null;
+    var remG = Math.max(0, Math.round(rawRem * 10) / 10);
+    var doseRef = Math.max(1, +(fallbackDoseG || (rec.lastBrew && rec.lastBrew.brew_dose_g) || 15));
+    var isEmpty = remG <= 0.4;
+    var cupsLeft = isEmpty ? 0 : Math.floor(remG / doseRef);
+    var isLow = !isEmpty && remG < doseRef * 2;
+    var remDisp = Math.round(remG);
+    var cupsTxt = '~' + cupsLeft + (cupsLeft === 1 ? ' cup left' : ' cups left');
+    return {
+      remG: remG,
+      doseRef: doseRef,
+      cupsLeft: cupsLeft,
+      isEmpty: isEmpty,
+      isLow: isLow,
+      shortLabel: isEmpty ? 'Empty' : (remDisp + 'g \u00B7 ' + cupsTxt),
+      longLabel: isEmpty ? '0 g left \u00B7 Empty' : (remDisp + ' g \u00B7 ' + cupsTxt)
+    };
+  }
+
   /* -------------------- 1. 12 Quick Specialty Archetypes -------------------- */
   var QUICK_ARCHETYPES_12 = [
     {
@@ -21482,15 +21839,18 @@ if (typeof window !== 'undefined') {
 
       if (openAndRecent.length) {
         var quickRow = S.h('div', { class: 'bt-ce-quick-bags-row', role: 'group', 'aria-label': 'Quick Saved Bags' });
+        var activeDoseG = Math.max(1, +((a && a.brew && a.brew.dose) || 15));
+        var isSingleQuick = openAndRecent.length === 1;
         openAndRecent.forEach(function (rec) {
           var isSelected = !!(c.name && rec.name && c.name === rec.name && (c.roaster || '') === (rec.roaster || ''));
           var rCol = S.roastColorFor(rec.roast || rec.ground_agtron);
           var bag = rec.openBag;
           var ageDays = S.daysSinceIso(rec.roast_date || (bag && (bag.roast || bag.rdate)));
-          var suffix = ageDays != null ? (' · ' + ageDays + 'd') : '';
+          var suffix = ageDays != null ? (' \u00B7 ' + ageDays + 'd') : '';
+          var cupsMeta = computeCoffeeCupsLeftMeta(rec, activeDoseG);
           quickRow.appendChild(S.h('button', {
             type: 'button',
-            class: 'bt-ce-quick-bag-pill' + (isSelected ? ' is-active' : ''),
+            class: 'bt-ce-quick-bag-pill' + (isSingleQuick ? ' is-single-full' : '') + (isSelected ? ' is-active' : ''),
             'aria-pressed': String(isSelected),
             onclick: function () {
               flushPendingStep1Drafts(c);
@@ -21498,7 +21858,11 @@ if (typeof window !== 'undefined') {
             }
           },
             S.h('span', { class: 'bt-ce-roast-dot', style: 'background:' + rCol }),
-            S.h('span', { class: 'bt-ce-quick-bag-lbl', text: (rec.name || 'Saved Bag') + suffix })
+            S.h('span', { class: 'bt-ce-quick-bag-lbl', text: (rec.name || 'Saved Bag') + suffix }),
+            cupsMeta ? S.h('span', {
+              class: 'bt-low-bag-pill' + ((cupsMeta.isLow || cupsMeta.isEmpty) ? ' is-warn' : ''),
+              text: cupsMeta.shortLabel
+            }) : null
           ));
         });
         sourceStrip.appendChild(quickRow);
@@ -22813,6 +23177,7 @@ if (typeof window !== 'undefined') {
   /* -------------------- 10. `My Coffees` Vault Sheet (`BTMyCoffeesVault`) -------------------- */
   var vaultUi = {
     facet: 'all',
+    sort: 'recent',
     originFilter: '',
     query: '',
     freshOpenKey: '',
@@ -22822,12 +23187,32 @@ if (typeof window !== 'undefined') {
     visibleLimit: 60
   };
 
+  function isVaultRecLocked(r) {
+    return !!(r && (r.isGoldenLocked || r.lockedBrew || String(r.dial_locked || '').toLowerCase() === 'yes'));
+  }
+
+  function isVaultRecFrozen(r) {
+    return !!(r && (r.is_frozen === 'yes' || r.is_frozen === true || (r.openBag && r.openBag.is_frozen === 'yes')));
+  }
+
+  function isVaultRecDialed(r) {
+    return !!(r && (isVaultRecLocked(r) || r.isDialedIn || (r.bestStars && r.bestStars >= 4.25)));
+  }
+
+  function vaultRecTimestamp(r) {
+    if (!r) return 0;
+    var lb = r.last_brewed_at ? Date.parse(r.last_brewed_at) : 0;
+    return Math.max(+r.updatedAt || 0, isFinite(lb) ? lb : 0);
+  }
+
   function buildMyCoffeesVault() {
     var root = S.h('div', { class: 'bt-ce-sheet', id: 'bt-my-coffees-vault' });
 
     function repaint() {
       root.textContent = '';
       var allRecs = S.buildUnifiedCoffeesSafe();
+      var appNow = S.getApp();
+      var activeDoseG = Math.max(1, +((appNow && appNow.brew && appNow.brew.dose) || 15));
 
       root.appendChild(S.h('div', { class: 'bt-ce-sheet-topbar' },
         S.h('button', {
@@ -22844,42 +23229,100 @@ if (typeof window !== 'undefined') {
 
       root.appendChild(S.h('div', null,
         S.h('div', { class: 'bt-ce-kicker', text: 'Living Bean Vault' }),
-        S.h('p', { class: 'bt-ce-sub', text: allRecs.length + ' saved coffee(s) · 1 tap restores bean & winning recipe.' })
+        S.h('p', { class: 'bt-ce-sub', text: allRecs.length + ' saved coffee(s) \u00B7 1 tap restores bean & winning recipe.' })
       ));
 
+      var clearBtn = S.h('button', {
+        type: 'button',
+        class: 'bt-ce-spotlight-clear',
+        id: 'bt-vault-search-clear-btn',
+        'aria-label': 'Clear coffee search',
+        hidden: !vaultUi.query,
+        text: '\u00D7',
+        onclick: function () {
+          vaultUi.query = '';
+          vaultUi.visibleLimit = 60;
+          searchInp.value = '';
+          clearBtn.hidden = true;
+          S.haptic('tick');
+          paintRowsOnly();
+          try { searchInp.focus(); } catch (_) {}
+        }
+      });
       var searchInp = S.h('input', {
         type: 'search',
+        id: 'bt-vault-search-input',
         placeholder: 'Search coffee, roaster, origin, varietal, or notes...',
         value: vaultUi.query,
         'aria-label': 'Search saved coffees',
         oninput: function (e) {
           vaultUi.query = e.target.value;
           vaultUi.visibleLimit = 60;
+          clearBtn.hidden = !vaultUi.query;
           paintRowsOnly();
         }
       });
-      root.appendChild(S.h('div', { class: 'bt-ce-spotlight' }, S.iconEl('search-filter', { size: 16 }), searchInp));
+      root.appendChild(S.h('div', { class: 'bt-ce-spotlight' }, S.iconEl('search-filter', { size: 16 }), searchInp, clearBtn));
 
       var facets = [
-        { k: 'all',      lbl: 'All (' + allRecs.length + ')' },
-        { k: 'open',     lbl: 'Open Bags' },
-        { k: 'dialed',   lbl: 'Dialed In' },
-        { k: 'light',    lbl: 'Light' },
-        { k: 'medium',   lbl: 'Medium' },
-        { k: 'dark',     lbl: 'Dark' },
-        { k: 'decaf',    lbl: 'Decaf' }
+        { k: 'all',        lbl: 'All (' + allRecs.length + ')' },
+        { k: 'open',       lbl: 'Open Bags' },
+        { k: 'locked',     lbl: 'Golden Locked' },
+        { k: 'needs_dial', lbl: 'Needs Dialing' },
+        { k: 'frozen',     lbl: 'Frozen' },
+        { k: 'dialed',     lbl: 'Dialed In' },
+        { k: 'light',      lbl: 'Light' },
+        { k: 'medium',     lbl: 'Medium' },
+        { k: 'dark',       lbl: 'Dark' },
+        { k: 'decaf',      lbl: 'Decaf' }
       ];
       root.appendChild(S.h('div', { class: 'bt-ce-chips-scroll', role: 'tablist', 'aria-label': 'Filter Vault' },
         facets.map(function (f) {
           return S.h('button', {
             type: 'button',
             class: 'bt-ce-chip is-compact',
+            'data-vault-facet': f.k,
             'aria-pressed': String(vaultUi.facet === f.k),
             text: f.lbl,
-            onclick: function () { vaultUi.facet = f.k; S.haptic('tick'); repaint(); }
+            onclick: function () { vaultUi.facet = f.k; vaultUi.visibleLimit = 60; S.haptic('tick'); repaint(); }
           });
         })
       ));
+
+      var sortModes = [
+        { k: 'recent',  lbl: 'Recent' },
+        { k: 'rating',  lbl: 'Rating' },
+        { k: 'brews',   lbl: 'Most Brews' },
+        { k: 'low_bag', lbl: 'Low Bag' },
+        { k: 'name',    lbl: 'Name A\u2013Z' }
+      ];
+      root.appendChild(S.h('div', {
+        class: 'bt-ce-chips-scroll',
+        id: 'bt-vault-sort-bar',
+        role: 'group',
+        'aria-label': 'Sort Vault'
+      },
+        S.h('span', { class: 'bt-ce-eyebrow', style: 'align-self:center;margin-right:2px;white-space:nowrap', text: 'Sort:' }),
+        sortModes.map(function (sm) {
+          return S.h('button', {
+            type: 'button',
+            class: 'bt-ce-chip is-compact' + (vaultUi.sort === sm.k ? ' is-active' : ''),
+            'data-vault-sort': sm.k,
+            'aria-pressed': String(vaultUi.sort === sm.k),
+            text: sm.lbl,
+            onclick: function () { vaultUi.sort = sm.k; vaultUi.visibleLimit = 60; S.haptic('tick'); repaint(); }
+          });
+        })
+      ));
+
+      var countEl = S.h('div', {
+        id: 'bt-vault-count-status',
+        class: 'bt-ce-sub num-tab',
+        style: 'font-size:12px;margin:2px 0 0',
+        role: 'status',
+        'aria-live': 'polite'
+      });
+      root.appendChild(countEl);
 
       var listHost = S.h('div', { style: 'display:flex;flex-direction:column;gap:8px' });
       root.appendChild(listHost);
@@ -22894,7 +23337,10 @@ if (typeof window !== 'undefined') {
           }
           var rl = String(r.roast || '').toLowerCase();
           if (vaultUi.facet === 'open') return !!r.openBag;
-          if (vaultUi.facet === 'dialed') return !!(r.lockedBrew || (r.bestStars && r.bestStars >= 4.25));
+          if (vaultUi.facet === 'locked') return isVaultRecLocked(r);
+          if (vaultUi.facet === 'needs_dial') return !isVaultRecDialed(r);
+          if (vaultUi.facet === 'frozen') return isVaultRecFrozen(r);
+          if (vaultUi.facet === 'dialed') return isVaultRecDialed(r);
           if (vaultUi.facet === 'light') return rl.indexOf('light') >= 0;
           if (vaultUi.facet === 'medium') return rl === 'medium' || rl.indexOf('med') === 0;
           if (vaultUi.facet === 'dark') return rl.indexOf('dark') >= 0;
@@ -22902,17 +23348,50 @@ if (typeof window !== 'undefined') {
           return true;
         });
 
+        filtered.sort(function (aRec, bRec) {
+          if (vaultUi.sort === 'rating') {
+            var dr = (+bRec.bestStars || 0) - (+aRec.bestStars || 0);
+            if (Math.abs(dr) > 1e-6) return dr;
+            return (+bRec.n_cups || 0) - (+aRec.n_cups || 0);
+          }
+          if (vaultUi.sort === 'brews') {
+            var dc = (+bRec.n_cups || 0) - (+aRec.n_cups || 0);
+            if (dc !== 0) return dc;
+            return (+bRec.bestStars || 0) - (+aRec.bestStars || 0);
+          }
+          if (vaultUi.sort === 'low_bag') {
+            var ma = computeCoffeeCupsLeftMeta(aRec, activeDoseG);
+            var mb = computeCoffeeCupsLeftMeta(bRec, activeDoseG);
+            if (ma && !mb) return -1;
+            if (!ma && mb) return 1;
+            if (ma && mb && ma.remG !== mb.remG) return ma.remG - mb.remG;
+            return String(aRec.name || '').localeCompare(String(bRec.name || ''));
+          }
+          if (vaultUi.sort === 'name') {
+            return String(aRec.name || '').localeCompare(String(bRec.name || ''));
+          }
+          var dt = vaultRecTimestamp(bRec) - vaultRecTimestamp(aRec);
+          if (dt !== 0) return dt;
+          return (+bRec.bestStars || 0) - (+aRec.bestStars || 0);
+        });
+
+        var shown = filtered.slice(0, vaultUi.visibleLimit);
+        countEl.textContent = filtered.length
+          ? ('Showing ' + shown.length + ' of ' + filtered.length + (filtered.length !== allRecs.length ? (' (' + allRecs.length + ' total)') : ''))
+          : ('Showing 0 of ' + allRecs.length);
+
         if (!filtered.length) {
           listHost.appendChild(S.h('div', { class: 'bt-ce-subwell', style: 'text-align:center;padding:20px' },
-            S.h('p', { class: 'bt-ce-sub', text: allRecs.length ? 'No saved coffees matched that search.' : 'Your Coffee Vault is ready — capture a bag on Step 1 or import your CSV backup.' })
+            S.h('p', { class: 'bt-ce-sub', text: allRecs.length ? 'No saved coffees matched that search.' : 'Your Coffee Vault is ready \u2014 capture a bag on Step 1 or import your CSV backup.' })
           ));
           return;
         }
 
-        filtered.slice(0, vaultUi.visibleLimit).forEach(function (rec, idx) {
+        shown.forEach(function (rec, idx) {
           var rKey = 'vrow_' + (rec.key || rec.coffee_id || idx);
           var anchor = rec.lockedBrew || rec.bestBrew || rec.latestBrew;
           var rCol = S.roastColorFor(rec.roast || rec.ground_agtron);
+          var cupsMeta = computeCoffeeCupsLeftMeta(rec, activeDoseG);
 
           var freshInlineNode = null;
           if (vaultUi.freshOpenKey === rKey) {
@@ -22933,7 +23412,7 @@ if (typeof window !== 'undefined') {
               type: 'button',
               class: 'bt-ce-bag-brew',
               style: 'min-height:42px;padding:0 14px;width:100%',
-              text: 'Use ' + (formatHumanIsoDate(vFreshDraft.roast_date) || 'Selected Date') + ' & Brew →',
+              text: 'Use ' + (formatHumanIsoDate(vFreshDraft.roast_date) || 'Selected Date') + ' & Brew \u2192',
               onclick: function () {
                 var chosen = vFreshDraft.dateUnsure ? 'unsure' : (vFreshDraft.roast_date || S.isoDaysAgo(0));
                 var isFz = vFreshDraft.is_frozen === 'yes';
@@ -22958,8 +23437,8 @@ if (typeof window !== 'undefined') {
                   vaultUi.freshIso = vFreshDraft.roast_date || '';
                   vaultUi.freshFreeze = vFreshDraft.is_frozen === 'yes';
                   vApplyBtn.textContent = vFreshDraft.dateUnsure
-                    ? 'Use Unstamped Bag & Brew →'
-                    : ('Use ' + (formatHumanIsoDate(vFreshDraft.roast_date) || 'Selected Date') + (vFreshDraft.is_frozen === 'yes' ? ' (-18 °C)' : '') + ' & Brew →');
+                    ? 'Use Unstamped Bag & Brew \u2192'
+                    : ('Use ' + (formatHumanIsoDate(vFreshDraft.roast_date) || 'Selected Date') + (vFreshDraft.is_frozen === 'yes' ? ' (-18 \u00B0C)' : '') + ' & Brew \u2192');
                 }
               }),
               vApplyBtn
@@ -22977,7 +23456,7 @@ if (typeof window !== 'undefined') {
             ));
           }
           if (rec.origin && String(rec.origin).toLowerCase() !== 'unknown') {
-            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: rec.region ? (rec.origin + ' · ' + rec.region) : rec.origin }));
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: rec.region ? (rec.origin + ' \u00B7 ' + rec.region) : rec.origin }));
           }
           if (rec.process && String(rec.process).toLowerCase() !== 'unknown') {
             rowChips.push(S.h('span', { class: 'bt-ce-badge', text: formatProcessDisplay(rec.process) }));
@@ -22987,6 +23466,12 @@ if (typeof window !== 'undefined') {
           }
           if (isFinite(+rec.elevation_m) && +rec.elevation_m > 0) {
             rowChips.push(S.h('span', { class: 'bt-ce-badge', text: Math.round(+rec.elevation_m) + 'm' }));
+          }
+          if (isVaultRecFrozen(rec)) {
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: 'Frozen -18 \u00B0C' }));
+          }
+          if (isVaultRecLocked(rec)) {
+            rowChips.push(S.h('span', { class: 'bt-ce-badge is-good', text: 'Golden Locked' }));
           }
 
           listHost.appendChild(S.h('div', {
@@ -23003,7 +23488,13 @@ if (typeof window !== 'undefined') {
                     return S.h('span', { class: 'bt-ce-badge is-good', text: fl });
                   })
                 ) : null,
-                S.h('div', { style: 'font-size:12px;color:var(--ink-secondary);margin-top:4px', text: anchor ? formatProvenanceBadge(anchor) : (rec.lastBrew ? 'Saved bean + last recipe' : 'Saved bean profile') })
+                S.h('div', { style: 'display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:5px' },
+                  S.h('span', { style: 'font-size:12px;color:var(--ink-secondary)', text: anchor ? formatProvenanceBadge(anchor) : (rec.lastBrew ? 'Saved bean + last recipe' : 'Saved bean profile') }),
+                  cupsMeta ? S.h('span', {
+                    class: 'bt-low-bag-pill' + ((cupsMeta.isLow || cupsMeta.isEmpty) ? ' is-warn' : ''),
+                    text: cupsMeta.longLabel
+                  }) : null
+                )
               ),
               S.h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' },
                 S.h('button', {
@@ -23016,7 +23507,7 @@ if (typeof window !== 'undefined') {
                   type: 'button',
                   class: 'bt-ce-bag-brew',
                   style: 'padding:0 12px',
-                  text: 'Brew →',
+                  text: 'Brew \u2192',
                   onclick: function () { applySavedCoffeeSelection(rec, { targetRoute: 'method' }); }
                 }),
                 S.h('button', {
@@ -23041,6 +23532,22 @@ if (typeof window !== 'undefined') {
             freshInlineNode
           ));
         });
+
+        if (filtered.length > shown.length) {
+          var remainingCount = filtered.length - shown.length;
+          listHost.appendChild(S.h('button', {
+            type: 'button',
+            id: 'bt-vault-show-more-btn',
+            class: 'bt-ce-bag-fresh',
+            style: 'width:100%;min-height:42px;justify-content:center;font-weight:700',
+            text: 'Show more (' + remainingCount + ' remaining)',
+            onclick: function () {
+              vaultUi.visibleLimit += 60;
+              S.haptic('tick');
+              paintRowsOnly();
+            }
+          }));
+        }
       }
 
       paintRowsOnly();
@@ -24505,7 +25012,8 @@ if (typeof window !== 'undefined') {
   }
 
   function getActiveGrinderKey(a) {
-    var raw = (a.brew && a.brew.grinderKey) || (a.prefs && a.prefs.gear && (a.prefs.gear.grinderKey || a.prefs.gear.grinder)) || 'comandante-c40';
+    var gearRaw = a && a.prefs && a.prefs.gear && (a.prefs.gear.grinderKey || a.prefs.gear.grinder);
+    var raw = gearRaw || (a.brew && a.brew.grinderKey) || 'comandante-c40';
     return normalizeGrinderKey(raw);
   }
 
@@ -25073,9 +25581,10 @@ if (typeof window !== 'undefined') {
     var gUmVal = +brewSnap.grindUm > 0 ? +brewSnap.grindUm : (+brewSnap.grind_um > 0 ? +brewSnap.grind_um : (+brewSnap.d50Um > 0 ? +brewSnap.d50Um : 0));
     if (gUmVal > 0 && canSet(b.grindUm)) b.grindUm = gUmVal;
     var gSetStr = brewSnap.grind_setting || brewSnap.grindSetting || (brewSnap.grinderSetting && brewSnap.grinderSetting.shortDisplay) || '';
-    if (gSetStr && canSet(b.grind_setting)) b.grind_setting = gSetStr;
-    if (brewSnap.grinderKey && canSet(b.grinderKey)) b.grinderKey = normalizeGrinderKey(brewSnap.grinderKey);
-    if (brewSnap.grinderName && canSet(b.grinderName)) b.grinderName = brewSnap.grinderName;
+    var hasGearGrinder = !!(a.prefs && a.prefs.gear && (a.prefs.gear.grinderKey || a.prefs.gear.grinder));
+    if (gSetStr && canSet(b.grind_setting) && !hasGearGrinder) b.grind_setting = gSetStr;
+    if (brewSnap.grinderKey && canSet(b.grinderKey) && !hasGearGrinder) b.grinderKey = normalizeGrinderKey(brewSnap.grinderKey);
+    if (brewSnap.grinderName && canSet(b.grinderName) && !hasGearGrinder) b.grinderName = brewSnap.grinderName;
     if (brewSnap.agitation && canSet(b.agitation)) b.agitation = brewSnap.agitation;
     if (brewSnap.technique && canSet(b.technique)) b.technique = brewSnap.technique;
     if (brewSnap.waterType && canSet(b.waterType)) b.waterType = brewSnap.waterType;
@@ -25470,6 +25979,8 @@ if (typeof window !== 'undefined') {
 
     var gMapped = mapGrinderClicks(um, gKey, mObj.key, a);
     a.brew.grind_setting = gMapped.short;
+    a.brew.grinderKey = gKey;
+    a.brew.grinderName = gObj ? (gObj.short || gObj.name) : '';
 
     var totalSecs = (syn && (syn.totalSecs || (syn.sim && syn.sim.brewTimeS))) ? Math.round(syn.totalSecs || syn.sim.brewTimeS)
       : (mObj.outRatio ? 28 : mObj.key === 'aeropress' ? 135 : mObj.key === 'press' ? 510 : mObj.key === 'cold' ? 64800 : 165);
@@ -25572,6 +26083,127 @@ if (typeof window !== 'undefined') {
     };
   }
 
+  function resolveCoffeeRemainingInfo(coffee, doseG, fallbackVaultRec) {
+    if (!coffee || typeof coffee !== 'object') return null;
+    var vm = fallbackVaultRec || findVaultCoffeeMatch(coffee);
+    var rawRem = null;
+    if (vm && vm.openBag && vm.openBag.rem_g != null && isFinite(+vm.openBag.rem_g)) rawRem = +vm.openBag.rem_g;
+    else if (vm && vm.remaining_g != null && vm.remaining_g !== '' && isFinite(+vm.remaining_g)) rawRem = +vm.remaining_g;
+    else if (coffee.remaining_g != null && coffee.remaining_g !== '' && isFinite(+coffee.remaining_g)) rawRem = +coffee.remaining_g;
+    else if (coffee.openBag && coffee.openBag.rem_g != null && isFinite(+coffee.openBag.rem_g)) rawRem = +coffee.openBag.rem_g;
+    else if (coffee.rem_g != null && coffee.rem_g !== '' && isFinite(+coffee.rem_g)) rawRem = +coffee.rem_g;
+    else if (coffee.bag_weight_g != null && coffee.bag_weight_g !== '' && isFinite(+coffee.bag_weight_g)) rawRem = +coffee.bag_weight_g;
+    else if (coffee.bagWeightG != null && coffee.bagWeightG !== '' && isFinite(+coffee.bagWeightG)) rawRem = +coffee.bagWeightG;
+    else if (vm && vm.bag_weight_g != null && vm.bag_weight_g !== '' && isFinite(+vm.bag_weight_g)) rawRem = +vm.bag_weight_g;
+    if (rawRem == null || !isFinite(rawRem) || rawRem < 0) return null;
+    var dG = Math.max(1, +doseG || 15);
+    var remG = Math.max(0, Math.round(rawRem * 10) / 10);
+    var cups = Math.floor(remG / dG);
+    var isEmpty = remG <= 0.4;
+    var isWarn = !isEmpty && remG < dG * 2;
+    return { remG: remG, cups: cups, isEmpty: isEmpty, isWarn: isWarn };
+  }
+
+  function computeStep3LivePreview(a, rec) {
+    rec = rec || runCurrentSynthesis(a);
+    var isEsp = !!(rec && rec.method && rec.method.outRatio);
+    var tdsVal = +(rec && rec.predTds) || (isEsp ? 9.6 : 1.38);
+    var eyVal = +(rec && rec.predEy) || 20.3;
+    var secs = Math.max(12, +(rec && rec.totalSecs) || (isEsp ? 28 : 165));
+    var pourMass = isEsp ? (+(rec && rec.yieldMl) || +(rec && rec.waterG) || 36) : (+(rec && rec.hotPourG) || +(rec && rec.waterG) || 250);
+    var flowVal = +(pourMass / secs).toFixed(1);
+    var loEy = isEsp ? 18.0 : 18.5;
+    var hiEy = isEsp ? 22.0 : 21.5;
+    var zoneTone = eyVal < loEy ? 'under' : (eyVal > hiEy ? 'over' : 'sweet');
+    var zoneLabel = zoneTone === 'under'
+      ? 'Under-Extracted / Bright'
+      : (zoneTone === 'over' ? 'Over-Extracted / Rich' : 'Sweet Spot');
+    return {
+      tds: tdsVal.toFixed(2),
+      ey: eyVal.toFixed(1),
+      flowGs: flowVal.toFixed(1),
+      zoneLabel: zoneLabel,
+      zoneTone: zoneTone
+    };
+  }
+
+  function buildLiveSimPreviewBar(id, cls, a, rec) {
+    var tdsValEl = dom('b', { class: 'bt-num' });
+    var eyValEl = dom('b', { class: 'bt-num' });
+    var flowValEl = dom('b', { class: 'bt-num' });
+    var zoneValEl = dom('b');
+    var zoneCell = dom('div', null, dom('span', { style: 'font-size:0.67rem;font-weight:700;opacity:0.82', text: 'Flavor Balance Zone' }), zoneValEl);
+    var bar = dom('div', {
+      id: id,
+      class: cls,
+      'aria-live': 'polite'
+    },
+      dom('div', null, dom('span', { style: 'font-size:0.67rem;font-weight:700;color:var(--ink-muted)', text: 'Est. %TDS' }), tdsValEl),
+      dom('div', null, dom('span', { style: 'font-size:0.67rem;font-weight:700;color:var(--ink-muted)', text: 'Extraction (%EY)' }), eyValEl),
+      dom('div', null, dom('span', { style: 'font-size:0.67rem;font-weight:700;color:var(--ink-muted)', text: 'Flow Rate' }), flowValEl),
+      zoneCell
+    );
+    bar.updateSim = function (nextA, nextRec) {
+      var pv = computeStep3LivePreview(nextA || a, nextRec);
+      tdsValEl.textContent = pv.tds + '%';
+      eyValEl.textContent = pv.ey + '%';
+      flowValEl.textContent = pv.flowGs + ' g/s';
+      zoneValEl.textContent = pv.zoneLabel;
+      zoneCell.className = 'is-' + pv.zoneTone;
+    };
+    bar.updateSim(a, rec);
+    return bar;
+  }
+
+  function rescaleAidenGrindForWater(a, waterG, styleId) {
+    if (!a || !a.brew || isRecipeLockedFor(a, 'aiden')) return;
+    var wG = Math.max(150, +waterG || +a.brew.water || 300);
+    var isIced = /iced|flash/i.test(styleId || a.brew.style || '');
+    var hotW = isIced ? Math.max(150, wG - Math.round(wG * 0.38)) : wG;
+    var core = (typeof window !== 'undefined' && window.BTCoreV6) ? window.BTCoreV6 : null;
+    var gKey = getActiveGrinderKey(a);
+    var nextUm = 0;
+    if (core && typeof core.synthesizeRecipe === 'function') {
+      try {
+        var syn = core.synthesizeRecipe({
+          bean: a.coffee,
+          coffee: a.coffee,
+          history: [],
+          method: 'aiden',
+          methodKey: 'aiden',
+          style: styleId || a.brew.style || 'aiden_declining',
+          grinderKey: gKey,
+          filterId: a.brew.filterId || getMethodObj('aiden').defaultFilterId,
+          water: getActiveWaterConfig(a),
+          doseG: +a.brew.dose || 15,
+          waterG: hotW,
+          ratio: +a.brew.ratio || 16.5,
+          tempC: +a.brew.tempC || 93,
+          skipHistoryAdapt: true
+        });
+        if (syn && +syn.d50Um > 0) nextUm = +syn.d50Um;
+      } catch (_) {}
+    }
+    if (!(nextUm > 0)) {
+      var baseUm = hotW > 450 ? 860 * Math.pow(hotW / 750, 0.25) : 580 * Math.pow(hotW / 300, 0.20);
+      var isDecaf = !!(a.coffee && String(a.coffee.decaf || '').toLowerCase() === 'yes');
+      if (isDecaf) baseUm *= 1.08;
+      if (typeof window !== 'undefined' && typeof window.filterV6For === 'function' && (a.brew.filter || a.brew.filterId)) {
+        try {
+          var fV6 = window.filterV6For(a.brew.filter || a.brew.filterId, 'aiden');
+          if (fV6 && fV6.umMult) baseUm *= fV6.umMult;
+        } catch (_) {}
+      }
+      nextUm = baseUm;
+    }
+    if (isIced) nextUm *= 0.91;
+    var qUm = Math.max(200, Math.min(1150, Math.round(nextUm / 5) * 5));
+    a.brew.grindUm = qUm;
+    a.brew.grind_um = qUm;
+    a.brew.baseSynthUm = qUm;
+    a.brew.grind_setting = mapGrinderClicks(qUm, gKey, 'aiden', a).short;
+  }
+
   function fmtClock(secs, withTenths) {
     var s = Math.max(0, +secs || 0);
     if (!withTenths && s >= 3600) {
@@ -25589,11 +26221,11 @@ if (typeof window !== 'undefined') {
 
   function buildStickyCtaBar(cfg) {
     if (!cfg) return null;
-    var bar = dom('div', { class: 'bt-brew-sticky-bar bt-sticky-cta-wrap' });
+    var bar = dom('div', { class: 'bt-brew-sticky-bar bt-sticky-cta-wrap no-print' });
     if (cfg.secondaryLabel && typeof cfg.onSecondary === 'function') {
       bar.appendChild(dom('button', {
         type: 'button',
-        class: 'bt-secondary-cta',
+        class: 'bt-secondary-cta no-print',
         onclick: cfg.onSecondary
       }, cfg.secondaryIcon ? ico(cfg.secondaryIcon, 16) : null, dom('span', { text: cfg.secondaryLabel })));
     }
@@ -25932,7 +26564,14 @@ if (typeof window !== 'undefined') {
       a.freshCoffeeMode = false;
       syncCoffeeObjAliases(a.coffee);
       var liveMatch = findVaultCoffeeMatch(a.coffee);
-      if (liveMatch) mergeRichCoffeeFields(a.coffee, liveMatch, true);
+      if (liveMatch) {
+        mergeRichCoffeeFields(a.coffee, liveMatch, true);
+        if (liveMatch.openBag && liveMatch.openBag.rem_g != null && isFinite(+liveMatch.openBag.rem_g)) {
+          a.coffee.remaining_g = +liveMatch.openBag.rem_g;
+        } else if (liveMatch.remaining_g != null && liveMatch.remaining_g !== '' && isFinite(+liveMatch.remaining_g)) {
+          a.coffee.remaining_g = +liveMatch.remaining_g;
+        }
+      }
     }
     var topVaultBag = vaultCoffees.find(function (r) { return !!r.openBag; }) || vaultCoffees[0] || null;
     if (topVaultBag) {
@@ -26022,15 +26661,30 @@ if (typeof window !== 'undefined') {
         (heroCoffee.lockedBrew && (String(heroCoffee.lockedBrew.dial_locked || '').toLowerCase() === 'yes' || heroCoffee.lockedBrew.dial_locked === '1'))
       );
       var lockedTag = heroLockedExplicit ? dom('span', { class: 'bt-badge-v62 is-gold', text: 'Gold-Seal Locked' }) : null;
-      var tryNum = Math.max(1, (a.attempt || (heroCoffee.n_cups || 0)) + 1);
-      var primaryBtnText = isMidBrew
-        ? (a.cupBrew ? 'Continue to Taste \u2192' : 'Continue Active Timer \u2192')
-        : (hasLiveCoffee ? 'Brew This Coffee \u2192' : 'Load & Brew Bag \u2192');
-      var heroAttrSummary = formatCoffeeAttrSummary(heroCoffee);
-      var lastTastingRow = findLatestTastingForCoffee(heroCoffee);
       var heroDialAdapt = !heroLockedExplicit
         ? (rec.dialAdaptation || (a.brew && a.brew.dialAdaptation) || (heroCoffee && heroCoffee.dialAdaptation) || null)
         : null;
+      var tryNum = Math.max(
+        1,
+        (a.attempt || (heroCoffee.n_cups || 0)) + 1,
+        (heroDialAdapt && +heroDialAdapt.nextTry) || 0,
+        (heroDialAdapt && +heroDialAdapt.fromTry) ? (+heroDialAdapt.fromTry + 1) : 0
+      );
+      var primaryBtnText = isMidBrew
+        ? (a.cupBrew ? 'Continue to Taste' : 'Continue Active Timer')
+        : (hasLiveCoffee ? 'Brew This Coffee' : 'Load & Brew Bag');
+      var heroAttrSummary = formatCoffeeAttrSummary(heroCoffee);
+      var lastTastingRow = findLatestTastingForCoffee(heroCoffee);
+      var heroRemInfo = resolveCoffeeRemainingInfo(heroCoffee, rec.doseG, topVaultBag);
+      var cupsLeftBadge = (heroRemInfo && heroRemInfo.remG != null) ? dom('span', {
+        id: 'bt-door-cups-left-badge',
+        class: 'bt-badge-v62 ' + ((heroRemInfo.isEmpty || heroRemInfo.isWarn) ? 'is-warn' : 'is-muted'),
+        style: (heroRemInfo.isEmpty || heroRemInfo.isWarn) ? 'background:var(--warn-bg);color:var(--warn);border-color:rgba(217,139,38,0.4)' : '',
+        text: heroRemInfo.isEmpty
+          ? 'Bag Empty'
+          : (Math.round(heroRemInfo.remG) + 'g \u00B7 ~' + heroRemInfo.cups + (heroRemInfo.cups === 1 ? ' cup left' : ' cups left'))
+      }) : null;
+      var doorTempStr = (a.prefs && a.prefs.tempUnit === 'C') ? (rec.tempC + '\u00B0C') : (rec.tempF + '\u00B0F');
       var heroPendingNr = (!heroLockedExplicit && heroCoffee && heroCoffee.pendingNextRecipe && typeof heroCoffee.pendingNextRecipe === 'object')
         ? heroCoffee.pendingNextRecipe
         : null;
@@ -26066,9 +26720,10 @@ if (typeof window !== 'undefined') {
           dom('div', { class: 'bt-pill-wrap' },
             dom('span', { class: 'bt-badge-v62 is-good', text: hasLiveCoffee ? ('Active Home Bag · Try #' + tryNum) : 'Recent Open Bag' }),
             dom('span', { class: 'bt-badge-v62 ' + degas.cls, text: degas.text }),
+            cupsLeftBadge,
             lockedTag
           ),
-          dom('span', { class: 'bt-num', style: 'font-size:0.76rem;color:var(--ink-muted);font-weight:700', text: rec.method.short + ' · 1:' + rec.ratio })
+          dom('span', { class: 'bt-num', style: 'font-size:0.76rem;color:var(--ink-muted);font-weight:700', text: rec.method.short + ' · 1:' + rec.ratio + ' · ' + doorTempStr })
         ),
         dom('div', null,
           dom('div', { style: 'font-size:0.74rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: bagRoaster }),
@@ -26128,15 +26783,6 @@ if (typeof window !== 'undefined') {
               }
             }
           }, ico('spark-star', 15), dom('span', { text: lastTastingBtnText })) : null,
-          dom('button', {
-            type: 'button',
-            class: 'bt-secondary-cta',
-            style: 'min-height:46px',
-            onclick: function () {
-              haptic('snap');
-              startFreshCoffeeFlow(a, true);
-            }
-          }, ico('fresh-bag', 16), dom('span', { text: '+ Start Fresh Coffee' })),
           dom('button', {
             type: 'button',
             class: 'bt-secondary-cta',
@@ -26264,9 +26910,8 @@ if (typeof window !== 'undefined') {
         dom('div', { style: 'width:100%;min-width:0' },
           dom('b', { style: 'font-size:0.95rem;display:block;color:var(--ink)', text: 'Open Cupping Table' }),
           dom('span', {
-            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px',
-            text: 'Side-by-side 5-bowl blind tasting, reveal cards & CVA 100-pt scoring \u2192'
-          })
+            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px'
+          }, 'Side-by-side 5-bowl blind tasting, reveal cards & CVA 100-pt ', dom('span', { style: 'white-space:nowrap', text: 'scoring \u2192' }))
         )
       ),
       dom('button', {
@@ -26288,12 +26933,14 @@ if (typeof window !== 'undefined') {
         ),
         dom('div', { style: 'width:100%;min-width:0' },
           dom('b', { style: 'font-size:0.95rem;display:block;color:var(--ink)', text: 'At a Coffee Shop' }),
-          dom('span', {
-            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px',
-            text: shopInfo
-              ? ('Continue ' + shopInfo.drinkName + ' at ' + shopInfo.shopName + ' (home draft untouched)')
-              : 'Log a cafe drink & reverse-engineer it for your home gear \u2192'
-          })
+          shopInfo
+            ? dom('span', {
+                style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px',
+                text: 'Continue ' + shopInfo.drinkName + ' at ' + shopInfo.shopName + ' (home draft untouched)'
+              })
+            : dom('span', {
+                style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px'
+              }, 'Log a cafe drink & reverse-engineer it for your home ', dom('span', { style: 'white-space:nowrap', text: 'gear \u2192' }))
         )
       ),
       dom('button', {
@@ -26308,14 +26955,13 @@ if (typeof window !== 'undefined') {
       },
         dom('div', { class: 'bt-card-hd', style: 'width:100%' },
           ico('paste-card', 20),
-          dom('span', { class: 'bt-badge-v62 is-sci', text: lens === 'scientist' ? 'Darcy-D32 Auto' : 'Auto-Matched to Your Grinder' })
+          dom('span', { class: 'bt-badge-v62 is-sci', text: lens === 'scientist' ? 'Darcy-D32 Auto' : 'Auto-Matched' })
         ),
         dom('div', { style: 'width:100%;min-width:0' },
           dom('b', { style: 'font-size:0.95rem;display:block;color:var(--ink)', text: 'Import Shared Brew' }),
           dom('span', {
-            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px',
-            text: 'Paste a friend\'s BT6: code or link & auto-translate clicks to your grinder \u2192'
-          })
+            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px'
+          }, 'Paste a friend\'s BT6: code or link & auto-translate clicks to your ', dom('span', { style: 'white-space:nowrap', text: 'grinder \u2192' }))
         )
       )
     ));
@@ -26854,7 +27500,7 @@ if (typeof window !== 'undefined') {
     var fk = String(whyKey || 'all').toLowerCase();
     return dom('button', {
       type: 'button',
-      class: 'bt-spec-why-pill' + (opts.dark ? ' is-dark-surface' : ''),
+      class: 'bt-spec-why-pill no-print' + (opts.dark ? ' is-dark-surface' : ''),
       'data-science-why': fk,
       'aria-label': 'Show brew science for ' + fk,
       onclick: function (ev) {
@@ -26917,6 +27563,8 @@ if (typeof window !== 'undefined') {
           v: vk,
           label: d.label || d.name || fb.label,
           panel: PHILIPS_FRONT_7_SET[vk] ? 'front' : 'more',
+          water: vk === 'travelmug' ? [0, 0] : d.water,
+          waterBarsMl: vk === 'travelmug' ? null : d.waterBarsMl,
           extraOk: d.supportsExtra != null ? !!d.supportsExtra : !!fb.extraOk,
           twoXOk: d.twoXOk != null ? !!d.twoXOk : !!fb.twoXOk,
           iced: d.iced != null ? !!d.iced : !!fb.iced
@@ -26982,8 +27630,12 @@ if (typeof window !== 'undefined') {
     var singleDose = !d.coffee ? 0 : ph.scoopMode ? 8.0 : (SAS_DOSE[ph.strength] || 9.3) + (ph.extra ? 7.4 : 0);
     var mult = ph.twoX ? 2 : 1;
     var doseG = Math.round(singleDose * mult * 10) / 10;
-    var cMl = d.v === 'travelmug' ? ph.travelSizeMl : (calMemo.coffeeMl || (d.coffee ? interpBarMl(d.coffeeBarsMl || d.coffee, ph.coffeeBar) : 0)) + (ph.extra ? 25 : 0);
-    var wMl = calMemo.waterMl || (d.water ? interpBarMl(d.waterBarsMl || d.water, ph.waterBar) : 0);
+    var cMl = d.v === 'travelmug'
+      ? (ph.travelSizeMl + (ph.extra ? 20 : 0))
+      : ((calMemo.coffeeMl || (d.coffee ? interpBarMl(d.coffeeBarsMl || d.coffee, ph.coffeeBar) : 0)) + (ph.extra ? 25 : 0));
+    var wMl = d.v === 'travelmug'
+      ? 0
+      : (calMemo.waterMl || (d.water ? interpBarMl(d.waterBarsMl || d.water, ph.waterBar) : 0));
     var mMl = calMemo.milkMl || (d.milk ? interpBarMl(d.milkBarsMl || d.milk, ph.milkBar) : 0);
     var totalMl = (cMl + wMl + mMl) * mult;
     var tempC = d.iced ? 76 : (ph.globalTemp === 1 ? 88 : ph.globalTemp === 2 ? 91 : 93);
@@ -27834,7 +28486,7 @@ if (typeof window !== 'undefined') {
       ),
       dom('button', {
         type: 'button',
-        class: 'bt-chip-v6 bt-num',
+        class: 'bt-chip-v6 bt-num no-print',
         style: 'min-height:40px;padding:0 12px;font-weight:800',
         title: 'Toggle Fahrenheit / Celsius',
         onclick: function () {
@@ -27847,22 +28499,35 @@ if (typeof window !== 'undefined') {
     ));
 
     var step3CoffeeSummary = formatCoffeeAttrSummary(a.coffee);
-    stageEl.appendChild(dom('div', { class: 'bt-step-context-strip' },
-      dom('div', { style: 'min-width:0;display:flex;flex-direction:column;gap:2px;flex:1 1 180px' },
+    var step3RemInfo = resolveCoffeeRemainingInfo(a.coffee, rec.doseG, findVaultCoffeeMatch(a.coffee));
+    var step3CupsTxt = (step3RemInfo && step3RemInfo.remG != null)
+      ? (' \u00B7 ' + (step3RemInfo.isEmpty ? 'Bag Empty (0g)' : (Math.round(step3RemInfo.remG) + 'g (~' + step3RemInfo.cups + (step3RemInfo.cups === 1 ? ' cup left' : ' cups left') + ')')))
+      : '';
+    stageEl.appendChild(dom('div', { class: 'bt-step-context-strip', style: 'align-items:flex-start' },
+      dom('div', { style: 'min-width:0;display:flex;flex-direction:column;gap:4px;flex:1 1 180px' },
         dom('span', {
           class: 'bt-step-context-copy',
           style: 'flex:0 0 auto;min-width:0',
-          text: (rec.grinder.short || rec.grinder.name) + ' · ' + (a.brew.filter || 'Standard Filter') + ' · ' + (step3Water.short || step3Water.label)
+          text: (rec.grinder.short || rec.grinder.name) + ' · ' + (a.brew.filter || 'Standard Filter') + ' · ' + (step3Water.short || step3Water.label) + step3CupsTxt
         }),
         step3CoffeeSummary ? dom('span', {
           id: 'bt-step3-coffee-context',
           style: 'font-size:0.74rem;color:var(--ink-secondary);font-weight:600;line-height:1.3',
           text: step3CoffeeSummary
+        }) : null,
+        (step3RemInfo && (step3RemInfo.isEmpty || step3RemInfo.isWarn)) ? dom('span', {
+          id: 'bt-step3-low-bag-pill',
+          class: 'bt-low-bag-pill ' + (step3RemInfo.isEmpty ? 'is-empty' : 'is-warn'),
+          style: 'align-self:flex-start',
+          text: step3RemInfo.isEmpty
+            ? 'Bag Empty (0g left)'
+            : ('Low Bag · ~' + step3RemInfo.cups + (step3RemInfo.cups === 1 ? ' brew left' : ' brews left'))
         }) : null
       ),
       dom('button', {
         type: 'button',
-        class: 'bt-step-context-link',
+        class: 'bt-step-context-link no-print',
+        style: 'align-self:flex-start;margin-top:1px;white-space:nowrap',
         onclick: function () { haptic('tick'); goBrewStep('method'); }
       }, dom('span', { text: 'Change Gear \u2192' }))
     ));
@@ -27960,6 +28625,9 @@ if (typeof window !== 'undefined') {
           a.brew.ratio = +activeRatio;
           a.brew.customizedNote = 'Batch ' + targetDoseG + 'g : ' + a.brew.water + 'g (1:' + activeRatio + ')';
         }
+        if (mKeyS3 === 'aiden' && !isRecipeLockedFor(a, 'aiden')) {
+          rescaleAidenGrindForWater(a, a.brew.water, a.brew.style);
+        }
         syncBrewUnitAliases(a.brew);
         haptic('snap');
         saveDraft();
@@ -28012,7 +28680,7 @@ if (typeof window !== 'undefined') {
           dom('span', { class: 'bt-spec-lbl', text: lbl }),
           dom('span', { class: 'bt-spec-actions-grp' },
             makeWhyPill(whyKey, '? Why'),
-            hideTuneBadge ? null : dom('span', { class: 'bt-spec-tune', text: 'Tune' })
+            hideTuneBadge ? null : dom('span', { class: 'bt-spec-tune no-print', text: 'Tune' })
           )
         ),
         primaryNode,
@@ -28079,7 +28747,7 @@ if (typeof window !== 'undefined') {
 
     var heroScienceBtn = dom('button', {
       type: 'button',
-      class: 'bt-recipe-science-hero-btn',
+      class: 'bt-recipe-science-hero-btn no-print',
       id: 'bt-recipe-science-why-btn',
       'data-science-why': 'all',
       onclick: function () { openScienceWhySheet('all'); }
@@ -28091,7 +28759,7 @@ if (typeof window !== 'undefined') {
           dom('span', { text: 'Step-by-step physics for your temp, grind, ratio, roast age & water' })
         )
       ),
-      dom('span', { class: 'bt-recipe-science-hero-cta', text: '6 Breakdowns \u2192' })
+      dom('span', { class: 'bt-recipe-science-hero-cta no-print', text: '6 Breakdowns \u2192' })
     );
 
     /* 3. Single-Row Action Pills (NO multi-line wrapping!) */
@@ -28180,7 +28848,7 @@ if (typeof window !== 'undefined') {
       kettleBleBtn = dom('button', {
         type: 'button',
         id: 'bt-step3-kettle-ble-btn',
-        class: 'bt-chip-v6 bt-chip-soft',
+        class: 'bt-chip-v6 bt-chip-soft no-print',
         style: 'min-height:34px;padding:0 10px;font-size:0.74rem;font-weight:800',
         onclick: function () {
           var ble = (typeof window !== 'undefined' && window.BTBle) ? window.BTBle : null;
@@ -28225,10 +28893,10 @@ if (typeof window !== 'undefined') {
             ? Math.round(+st.kettleTempC)
             : Math.round(rec.tempC);
           kettleBleTxtEl.textContent = 'Kettle ' + liveC + '\u00B0C \u00B7 Push Target';
-          kettleBleBtn.className = 'bt-chip-v6 bt-chip-accent is-active';
+          kettleBleBtn.className = 'bt-chip-v6 bt-chip-accent is-active no-print';
         } else {
           kettleBleTxtEl.textContent = 'Pair BLE Kettle';
-          kettleBleBtn.className = 'bt-chip-v6 bt-chip-soft';
+          kettleBleBtn.className = 'bt-chip-v6 bt-chip-soft no-print';
         }
       }
       syncKettlePill();
@@ -28268,11 +28936,13 @@ if (typeof window !== 'undefined') {
     }
 
     var kettleWarmHero = buildKettleWarmBanner(a, rec, 'bt-step3-kettle-fill-pill', kettleBleBtn, null);
+    var step3LiveSimStrip = buildLiveSimPreviewBar('bt-step3-live-sim-strip', 'bt-step3-sim-strip', a, rec);
 
     stageEl.appendChild(dom('section', { class: 'bt-card-v6 bt-card-hero' },
       kettleWarmHero,
       batchChipStrip,
       tiles6,
+      step3LiveSimStrip,
       heroScienceBtn,
       actionStrip
     ));
@@ -28342,8 +29012,12 @@ if (typeof window !== 'undefined') {
             styleId: a.brew.style,
             steps: rec.steps
           });
-          return dom('div', { class: 'bt-pour-row' },
-            dom('span', { class: 'bt-pour-time', text: fmtClock(s.t, false) }),
+          return dom('div', { class: 'bt-pour-row', style: 'align-items:start' },
+            dom('span', {
+              class: 'bt-pour-time',
+              style: 'align-self:start;padding:3px 6px;border-radius:8px;background:var(--surface);border:1px solid var(--line);text-align:center;line-height:1.2',
+              text: fmtClock(s.t, false)
+            }),
             dom('div', { style: 'min-width:0;display:flex;flex-direction:column;gap:4px' },
               dom('b', { style: 'font-size:0.86rem;display:block;color:var(--ink)', text: s.title }),
               dom('span', { style: 'font-size:0.78rem;color:var(--ink-secondary);line-height:1.36;display:block', text: s.human }),
@@ -28369,7 +29043,7 @@ if (typeof window !== 'undefined') {
               ),
               lens === 'scientist' && s.scientist ? dom('span', { style: 'font-size:0.71rem;color:var(--science);display:block;margin-top:1px', text: s.scientist }) : null
             ),
-            dom('span', { class: 'bt-pour-gram', text: s.targetG + ' g' })
+            dom('span', { class: 'bt-pour-gram', style: 'align-self:start', text: s.targetG + ' g' })
           );
         })
       )
@@ -28658,11 +29332,13 @@ if (typeof window !== 'undefined') {
     };
     getCupState().brewFinishedAtMs = Date.now();
     try {
-      if (typeof window !== 'undefined' && window.BTStorage && typeof window.BTStorage.deductBagGrams === 'function' && rec.doseG > 0 && a.coffee && a.coffee.name) {
+      if (typeof window !== 'undefined' && window.BTStorage && typeof window.BTStorage.deductBagGrams === 'function' && rec.doseG > 0 && a.coffee && a.coffee.name && !a.brew._preDeducted) {
         var undoFn = window.BTStorage.deductBagGrams(a.coffee, rec.doseG, { silent: true });
-        if (undoFn) {
+        if (typeof undoFn === 'function') {
           a.cupBrew._bagDeducted = true;
           showToast('Logged brew (' + fmtClock(secs, false) + ') & deducted ' + rec.doseG + ' g', { actionLabel: 'Undo', onAction: function () { a.cupBrew._bagDeducted = false; return undoFn(); } });
+        } else if (undoFn && undoFn.empty) {
+          showToast('Logged brew (' + fmtClock(secs, false) + ') · Bag already at 0 g');
         }
       }
     } catch (_) {}
@@ -29095,7 +29771,7 @@ if (typeof window !== 'undefined') {
       class: 'bt-phase-progress',
       role: 'list',
       'aria-label': 'Brew Phase Progress',
-      style: 'display:flex;align-items:center;flex-wrap:wrap;gap:4px 5px;min-width:0'
+      style: 'display:flex;flex-direction:row;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 5px;min-width:0;padding:5px 8px'
     });
     steps.forEach(function (stP, pIdx) {
       if (pIdx > 0) {
@@ -30490,7 +31166,7 @@ if (typeof window !== 'undefined') {
         var rec = runCurrentSynthesis(a);
         var isEsp = !!rec.method.outRatio;
 
-        host.appendChild(dom('div', { class: 'bt-seg-bar', style: 'margin-bottom:12px' },
+        host.appendChild(dom('div', { class: 'bt-seg-bar', style: 'margin-bottom:10px' },
           [
             ['batch', 'Dose, Ratio & Units'],
             ['grind', 'Grind & 2-Pt Cal'],
@@ -30505,10 +31181,43 @@ if (typeof window !== 'undefined') {
           })
         ));
 
+        var tuneLiveSimBar = buildLiveSimPreviewBar('bt-tune-live-sim-bar', 'bt-tune-live-sim', a, rec);
+        tuneLiveSimBar.style.marginBottom = '12px';
+        host.appendChild(tuneLiveSimBar);
+
         if (activeTab === 'batch') {
           var presets = isEsp
             ? [[18, 27, 'Ristretto 1:1.5'], [18, 36, 'Classic 1:2.0'], [18, 50, 'Turbo 1:2.8']]
             : [[15, 250, '1 Mug · 250g'], [19, 320, 'Large · 320g'], [30, 500, '2 Mugs · 500g'], [45, 750, 'Carafe · 750g']];
+          var ratioSummaryBtn = dom('button', {
+            type: 'button',
+            class: 'bt-num',
+            style: 'display:block;font-size:1.25rem;font-weight:800;margin:2px auto 0;color:var(--accent)',
+            text: '1:' + a.brew.ratio + ' (' + a.brew.dose + 'g : ' + a.brew.water + 'g)',
+            onclick: function () {
+              if (tac && tac.BTPrecisionKeypad && typeof tac.BTPrecisionKeypad.open === 'function') {
+                tac.BTPrecisionKeypad.open({
+                  label: 'Coffee Dose',
+                  value: a.brew.dose,
+                  min: 5,
+                  max: 120,
+                  step: 0.1,
+                  unit: 'g',
+                  units: ['g', 'oz', 'tbsp'],
+                  onCommit: function (val) {
+                    var prevW = +a.brew.water || 0;
+                    a.brew.dose = val;
+                    a.brew.water = Math.round(val * a.brew.ratio * (isEsp ? 2 : 1)) / (isEsp ? 2 : 1);
+                    if (rec.method.key === 'aiden' && !isRecipeLockedFor(a, 'aiden') && ((prevW <= 450 && a.brew.water > 450) || (prevW > 450 && a.brew.water <= 450))) {
+                      rescaleAidenGrindForWater(a, a.brew.water, a.brew.style);
+                    }
+                    a.brew.customizedNote = val + 'g : ' + a.brew.water + 'g';
+                    saveDraft(); rerender(); paintSheet();
+                  }
+                });
+              }
+            }
+          });
 
           host.appendChild(dom('div', { style: 'display:flex;flex-direction:column;gap:12px' },
             dom('div', { class: 'bt-pill-row' },
@@ -30521,6 +31230,9 @@ if (typeof window !== 'undefined') {
                     a.brew.dose = p[0];
                     a.brew.water = p[1];
                     a.brew.ratio = +(p[1] / p[0]).toFixed(isEsp ? 2 : 1);
+                    if (rec.method.key === 'aiden' && !isRecipeLockedFor(a, 'aiden')) {
+                      rescaleAidenGrindForWater(a, a.brew.water, a.brew.style);
+                    }
                     a.brew.customizedNote = p[0] + 'g : ' + p[1] + 'g (1:' + a.brew.ratio + ')';
                     haptic('snap'); saveDraft(); rerender(); paintSheet();
                   }
@@ -30557,11 +31269,17 @@ if (typeof window !== 'undefined') {
                   isEspresso: isEsp,
                   onChange: function (chg) {
                     if (!chg) return;
+                    var prevW = +a.brew.water || 0;
                     if (chg.dose != null) a.brew.dose = +chg.dose;
                     if (chg.water != null) a.brew.water = +chg.water;
                     if (chg.ratio != null) a.brew.ratio = +chg.ratio;
                     if (chg.lockedKey) a.brew.lockedParam = chg.lockedKey;
+                    if (rec.method.key === 'aiden' && !isRecipeLockedFor(a, 'aiden') && chg.water != null && ((prevW <= 450 && +chg.water > 450) || (prevW > 450 && +chg.water <= 450))) {
+                      rescaleAidenGrindForWater(a, +chg.water, a.brew.style);
+                    }
                     a.brew.customizedNote = a.brew.dose + 'g : ' + a.brew.water + 'g (1:' + a.brew.ratio + ')';
+                    ratioSummaryBtn.textContent = '1:' + a.brew.ratio + ' (' + a.brew.dose + 'g : ' + a.brew.water + 'g)';
+                    tuneLiveSimBar.updateSim(a, runCurrentSynthesis(a));
                     saveDraft();
                     rerender();
                   }
@@ -30574,46 +31292,30 @@ if (typeof window !== 'undefined') {
                 type: 'button', class: 'bt-nudge-btn', text: '-',
                 onclick: function () {
                   var step = isEsp ? 0.1 : 0.5;
+                  var prevW = +a.brew.water || 0;
                   a.brew.ratio = Math.max(isEsp ? 1.2 : 4.0, +(a.brew.ratio - step).toFixed(2));
                   a.brew.water = Math.round(a.brew.dose * a.brew.ratio * (isEsp ? 2 : 1)) / (isEsp ? 2 : 1);
+                  if (rec.method.key === 'aiden' && !isRecipeLockedFor(a, 'aiden') && ((prevW <= 450 && a.brew.water > 450) || (prevW > 450 && a.brew.water <= 450))) {
+                    rescaleAidenGrindForWater(a, a.brew.water, a.brew.style);
+                  }
                   a.brew.customizedNote = 'Ratio 1:' + a.brew.ratio;
                   haptic('tick'); saveDraft(); rerender(); paintSheet();
                 }
               }),
               dom('div', { style: 'text-align:center' },
                 dom('span', { class: 'bt-kicker', text: 'Brew Ratio · Tap for Keypad' }),
-                dom('button', {
-                  type: 'button',
-                  class: 'bt-num',
-                  style: 'display:block;font-size:1.25rem;font-weight:800;margin:2px auto 0;color:var(--accent)',
-                  text: '1:' + a.brew.ratio + ' (' + a.brew.dose + 'g : ' + a.brew.water + 'g)',
-                  onclick: function () {
-                    if (tac && tac.BTPrecisionKeypad && typeof tac.BTPrecisionKeypad.open === 'function') {
-                      tac.BTPrecisionKeypad.open({
-                        label: 'Coffee Dose',
-                        value: a.brew.dose,
-                        min: 5,
-                        max: 120,
-                        step: 0.1,
-                        unit: 'g',
-                        units: ['g', 'oz', 'tbsp'],
-                        onCommit: function (val) {
-                          a.brew.dose = val;
-                          a.brew.water = Math.round(val * a.brew.ratio * (isEsp ? 2 : 1)) / (isEsp ? 2 : 1);
-                          a.brew.customizedNote = val + 'g : ' + a.brew.water + 'g';
-                          saveDraft(); rerender(); paintSheet();
-                        }
-                      });
-                    }
-                  }
-                })
+                ratioSummaryBtn
               ),
               dom('button', {
                 type: 'button', class: 'bt-nudge-btn', text: '+',
                 onclick: function () {
                   var step = isEsp ? 0.1 : 0.5;
+                  var prevW = +a.brew.water || 0;
                   a.brew.ratio = Math.min(isEsp ? 5.5 : 22.0, +(a.brew.ratio + step).toFixed(2));
                   a.brew.water = Math.round(a.brew.dose * a.brew.ratio * (isEsp ? 2 : 1)) / (isEsp ? 2 : 1);
+                  if (rec.method.key === 'aiden' && !isRecipeLockedFor(a, 'aiden') && ((prevW <= 450 && a.brew.water > 450) || (prevW > 450 && a.brew.water <= 450))) {
+                    rescaleAidenGrindForWater(a, a.brew.water, a.brew.style);
+                  }
                   a.brew.customizedNote = 'Ratio 1:' + a.brew.ratio;
                   haptic('tick'); saveDraft(); rerender(); paintSheet();
                 }
@@ -30634,6 +31336,7 @@ if (typeof window !== 'undefined') {
                 title: '1 click finer',
                 onclick: function () {
                   a.brew.grindUm = Math.max(80, Math.round(rec.d50Um - stepUm));
+                  a.brew.grind_um = a.brew.grindUm;
                   a.brew.customizedNote = 'Grind finer (' + mapGrinderClicks(a.brew.grindUm, rec.grinderKey, rec.method.key, a).short + ')';
                   haptic('tick'); saveDraft(); rerender(); paintSheet();
                 }
@@ -30648,6 +31351,7 @@ if (typeof window !== 'undefined') {
                 title: '1 click coarser',
                 onclick: function () {
                   a.brew.grindUm = Math.min(1250, Math.round(rec.d50Um + stepUm));
+                  a.brew.grind_um = a.brew.grindUm;
                   a.brew.customizedNote = 'Grind coarser (' + mapGrinderClicks(a.brew.grindUm, rec.grinderKey, rec.method.key, a).short + ')';
                   haptic('tick'); saveDraft(); rerender(); paintSheet();
                 }
@@ -30706,33 +31410,63 @@ if (typeof window !== 'undefined') {
             ),
             dom('div', { class: 'bt-tune-stepper-row' },
               dom('button', {
-                type: 'button', class: 'bt-nudge-btn', text: '-1°',
+                type: 'button', class: 'bt-nudge-btn', text: tUnit === 'F' ? '-1°F' : '-1°C',
                 onclick: function () {
-                  var prevT = +a.brew.tempC || 94;
-                  var nextT = Math.max(75, prevT - 1);
-                  a.brew.tempC = nextT;
-                  if (a.brew.tempComp) {
-                    /* Keep Extraction Steady: -1°C cooler water -> -8 um finer grind */
-                    a.brew.grindUm = Math.max(120, Math.round((+a.brew.grindUm || 550) - 8));
+                  var nextC, nextF;
+                  if (tUnit === 'F') {
+                    var curF = (+a.brew.tempF > 0 && Math.abs(Math.round((+a.brew.tempC || 93) * 9 / 5 + 32) - Math.round(+a.brew.tempF)) <= 1)
+                      ? Math.round(+a.brew.tempF)
+                      : Math.round((+a.brew.tempC || 93) * 9 / 5 + 32);
+                    nextF = Math.max(167, curF - 1);
+                    nextC = +((nextF - 32) * 5 / 9).toFixed(2);
+                  } else {
+                    var prevT = Math.round(+a.brew.tempC || 94);
+                    nextC = Math.max(75, prevT - 1);
+                    nextF = Math.round(nextC * 9 / 5 + 32);
                   }
-                  a.brew.customizedNote = nextT + ' °C (' + Math.round(nextT * 9 / 5 + 32) + ' °F)' + (a.brew.tempComp ? ' · Keep Extraction Steady' : '');
+                  a.brew.tempC = nextC;
+                  a.brew.tempF = nextF;
+                  if (a.brew.tempComp) {
+                    /* Keep Extraction Steady: -1°C cooler water -> -8 um finer grind (-4 um per 1°F) */
+                    var deltaUm = tUnit === 'F' ? 4 : 8;
+                    a.brew.grindUm = Math.max(120, Math.round((+a.brew.grindUm || 550) - deltaUm));
+                    a.brew.grind_um = a.brew.grindUm;
+                  }
+                  a.brew.customizedNote = (tUnit === 'F' ? (nextF + ' °F (' + (+nextC.toFixed(1)) + ' °C)') : (nextC + ' °C (' + nextF + ' °F)')) + (a.brew.tempComp ? ' · Keep Extraction Steady' : '');
                   haptic('tick'); saveDraft(); rerender(); paintSheet();
                 }
               }),
               dom('div', { style: 'text-align:center' },
                 dom('span', { class: 'bt-kicker', text: 'Kettle Setpoint' }),
-                dom('b', { class: 'bt-num', style: 'display:block;font-size:1.3rem;margin-top:2px', text: rec.tempF + ' °F · ' + rec.tempC + ' °C' })
+                dom('b', {
+                  class: 'bt-num',
+                  style: 'display:block;font-size:1.3rem;margin-top:2px',
+                  text: tUnit === 'F' ? (rec.tempF + ' °F · ' + (+rec.tempC.toFixed(1)) + ' °C') : (Math.round(rec.tempC) + ' °C · ' + rec.tempF + ' °F')
+                })
               ),
               dom('button', {
-                type: 'button', class: 'bt-nudge-btn', text: '+1°',
+                type: 'button', class: 'bt-nudge-btn', text: tUnit === 'F' ? '+1°F' : '+1°C',
                 onclick: function () {
-                  var prevT = +a.brew.tempC || 94;
-                  var nextT = Math.min(100, prevT + 1);
-                  a.brew.tempC = nextT;
-                  if (a.brew.tempComp) {
-                    a.brew.grindUm = Math.min(1200, Math.round((+a.brew.grindUm || 550) + 8));
+                  var nextC, nextF;
+                  if (tUnit === 'F') {
+                    var curF = (+a.brew.tempF > 0 && Math.abs(Math.round((+a.brew.tempC || 93) * 9 / 5 + 32) - Math.round(+a.brew.tempF)) <= 1)
+                      ? Math.round(+a.brew.tempF)
+                      : Math.round((+a.brew.tempC || 93) * 9 / 5 + 32);
+                    nextF = Math.min(212, curF + 1);
+                    nextC = +((nextF - 32) * 5 / 9).toFixed(2);
+                  } else {
+                    var prevT = Math.round(+a.brew.tempC || 94);
+                    nextC = Math.min(100, prevT + 1);
+                    nextF = Math.round(nextC * 9 / 5 + 32);
                   }
-                  a.brew.customizedNote = nextT + ' °C (' + Math.round(nextT * 9 / 5 + 32) + ' °F)' + (a.brew.tempComp ? ' · Keep Extraction Steady' : '');
+                  a.brew.tempC = nextC;
+                  a.brew.tempF = nextF;
+                  if (a.brew.tempComp) {
+                    var deltaUm = tUnit === 'F' ? 4 : 8;
+                    a.brew.grindUm = Math.min(1200, Math.round((+a.brew.grindUm || 550) + deltaUm));
+                    a.brew.grind_um = a.brew.grindUm;
+                  }
+                  a.brew.customizedNote = (tUnit === 'F' ? (nextF + ' °F (' + (+nextC.toFixed(1)) + ' °C)') : (nextC + ' °C (' + nextF + ' °F)')) + (a.brew.tempComp ? ' · Keep Extraction Steady' : '');
                   haptic('tick'); saveDraft(); rerender(); paintSheet();
                 }
               })
@@ -34186,11 +34920,84 @@ if (typeof window !== 'undefined') {
       try { storage.appendHistoryRow(built); } catch (_) {}
     }
 
+    function normBagSigPart(s) {
+      return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    }
+
+    function resolveActiveBagWeightAfterBrew(stObj, coffeeObj, doseG, deductRes) {
+      var doseRef = Math.max(1, +doseG || 15);
+      if (deductRes && typeof deductRes === 'object') {
+        if (deductRes.empty === true) {
+          return { tracked: true, empty: true, remainingG: 0, cupsLeft: 0 };
+        }
+        if (deductRes.remaining_g != null && isFinite(+deductRes.remaining_g)) {
+          var remFromRes = Math.max(0, Math.round(+deductRes.remaining_g * 10) / 10);
+          var isEmpRes = remFromRes <= 0.4;
+          return {
+            tracked: true,
+            empty: isEmpRes,
+            remainingG: remFromRes,
+            cupsLeft: isEmpRes ? 0 : Math.floor(remFromRes / doseRef)
+          };
+        }
+      }
+      var cid = String((coffeeObj && (coffeeObj.coffee_id || coffeeObj.id)) || '').trim().toLowerCase();
+      var cname = normBagSigPart(coffeeObj && (coffeeObj.name || coffeeObj.coffee_name));
+      var croast = normBagSigPart(coffeeObj && coffeeObj.roaster);
+      var remFound = null;
+
+      if (stObj && typeof stObj.getPricesList === 'function') {
+        try {
+          var plist = stObj.getPricesList() || [];
+          for (var pi = 0; pi < plist.length; pi++) {
+            var pe = plist[pi];
+            if (!pe || pe.finished || pe.kind === 'pods') continue;
+            var pIdHit = !!(cid && pe.coffee_id && String(pe.coffee_id).trim().toLowerCase() === cid);
+            var pNmHit = !!(cname && normBagSigPart(pe.coffee) === cname && (!croast || !normBagSigPart(pe.roaster) || normBagSigPart(pe.roaster) === croast));
+            if (pIdHit || pNmHit) {
+              if (pe.rem_g != null && isFinite(+pe.rem_g)) { remFound = +pe.rem_g; break; }
+            }
+          }
+        } catch (_) {}
+      }
+      if (remFound == null && stObj && typeof stObj.getCoffeesVaultList === 'function') {
+        try {
+          var vlist = stObj.getCoffeesVaultList() || [];
+          for (var vi = 0; vi < vlist.length; vi++) {
+            var ve = vlist[vi];
+            if (!ve) continue;
+            var vIdHit = !!(cid && (String(ve.coffee_id || ve.id || '').trim().toLowerCase() === cid));
+            var vNmHit = !!(cname && normBagSigPart(ve.name || ve.coffee_name) === cname && (!croast || !normBagSigPart(ve.roaster) || normBagSigPart(ve.roaster) === croast));
+            if ((vIdHit || vNmHit) && ve.remaining_g != null && ve.remaining_g !== '' && isFinite(+ve.remaining_g)) {
+              remFound = +ve.remaining_g;
+              break;
+            }
+          }
+        } catch (_) {}
+      }
+      if (remFound == null && coffeeObj && coffeeObj.remaining_g != null && coffeeObj.remaining_g !== '' && isFinite(+coffeeObj.remaining_g)) {
+        remFound = +coffeeObj.remaining_g;
+      }
+      if (remFound == null || !isFinite(remFound) || remFound < 0) {
+        return { tracked: false, empty: false, remainingG: null, cupsLeft: null };
+      }
+      var remRounded = Math.max(0, Math.round(remFound * 10) / 10);
+      var isEmp = remRounded <= 0.4;
+      return {
+        tracked: true,
+        empty: isEmp,
+        remainingG: remRounded,
+        cupsLeft: isEmp ? 0 : Math.floor(remRounded / doseRef)
+      };
+    }
+
     var alreadyDeductedOnTimer = !!(a.cupBrew && a.cupBrew._bagDeducted);
     var usedDose = +((a.cupBrew && a.cupBrew.dose) || (a.brew && a.brew.dose) || 15);
+    var deductResult = null;
     if (!alreadyDeductedOnTimer && storage && typeof storage.deductBagGrams === 'function' && usedDose > 0) {
-      try { storage.deductBagGrams(a.coffee, usedDose, { silent: true }); } catch (_) {}
+      try { deductResult = storage.deductBagGrams(a.coffee, usedDose, { silent: true }); } catch (_) {}
     }
+    var bagStatus = resolveActiveBagWeightAfterBrew(storage, a.coffee, usedDose, deductResult);
 
     var prevUmBeforeSave = +((a.cupBrew && (a.cupBrew.grind_um || a.cupBrew.grindUm)) || (a.brew && (a.brew.grindUm || a.brew.grind_um)) || (built && built.brew_grind_target_um) || 0);
     if (!tSt.excludeLearning && !tSt.notMyStyle) {
@@ -34281,17 +35088,30 @@ if (typeof window !== 'undefined') {
       }
     } catch (_) {}
 
+    var bagBurnSummary = '';
+    if (bagStatus && bagStatus.tracked) {
+      bagBurnSummary = bagStatus.empty
+        ? 'Bag empty (0 g left)'
+        : ('Bag: ' + Math.round(bagStatus.remainingG) + 'g \u00B7 ~' + bagStatus.cupsLeft + (bagStatus.cupsLeft === 1 ? ' cup left' : ' cups left'));
+    }
+    var baseRxHeadline = (tSt.excludeLearning || tSt.notMyStyle)
+      ? 'Off-Day Shield active \u2014 recipe kept unchanged'
+      : (lockGold ? 'Locked as your 1-tap Gold Recipe!' : rx.headline);
+
     a.justSavedTasting = {
       coffeeName: (a.coffee && a.coffee.name) || 'Your Cup',
       roaster: (a.coffee && a.coffee.roaster) || '',
       stars: effStars,
-      rxHeadline: (tSt.excludeLearning || tSt.notMyStyle)
-        ? 'Off-Day Shield active \u2014 recipe kept unchanged'
-        : (lockGold ? 'Locked as your 1-tap Gold Recipe!' : rx.headline),
+      rxHeadline: bagBurnSummary ? (baseRxHeadline + ' \u00B7 ' + bagBurnSummary) : baseRxHeadline,
       goldLocked: lockGold,
       tryNum: rx.tryNum,
       nextTryNum: rx.nextTryNum,
       shielded: !!(tSt.excludeLearning || tSt.notMyStyle),
+      bag_tracked: !!(bagStatus && bagStatus.tracked),
+      bag_empty: !!(bagStatus && bagStatus.empty),
+      remaining_g: bagStatus && bagStatus.tracked ? bagStatus.remainingG : null,
+      cups_left: bagStatus && bagStatus.tracked ? bagStatus.cupsLeft : null,
+      bagSummary: bagBurnSummary,
       at: Date.now()
     };
 
@@ -34306,42 +35126,43 @@ if (typeof window !== 'undefined') {
       : (rawDest === 'prefs' || rawDest === 'preferences') ? 'palate'
       : rawDest === 'recipe' ? 'brew'
       : rawDest;
+    var toastBagSuffix = bagBurnSummary ? (' \u00B7 ' + bagBurnSummary) : '';
 
     if (dest === 'cellar') {
       a.brewStep = 'door';
       if (a.tabSegments) a.tabSegments.cellar = 'shelf';
       S.saveDraftSafe();
       S.navGo('cellar');
-      S.toastSafe(lockGold
+      S.toastSafe((lockGold
         ? ('Gold Recipe & Tasting saved to Cellar for ' + ((a.coffee && a.coffee.name) || 'this bag') + '!')
-        : 'Saved tasting to your Cellar Journal!');
+        : 'Saved tasting to your Cellar Journal!') + toastBagSuffix);
     } else if (dest === 'brew') {
       S.saveDraftSafe();
       S.navGo('recipe');
-      S.toastSafe(tSt.excludeLearning
+      S.toastSafe((tSt.excludeLearning
         ? 'Saved tasting with Off-Day Shield (Recipe Protected)!'
         : lockGold
         ? ('Gold Recipe Locked & Saved for ' + ((a.coffee && a.coffee.name) || 'this bag') + '!')
-        : ('Saved Try #' + rx.tryNum + ' & loaded #1 fix for Try #' + rx.nextTryNum + '!'));
+        : ('Saved Try #' + rx.tryNum + ' & loaded #1 fix for Try #' + rx.nextTryNum + '!')) + toastBagSuffix);
     } else if (dest === 'door') {
       a.brewStep = 'door';
       S.saveDraftSafe();
       S.navGo('door');
-      S.toastSafe(tSt.excludeLearning
+      S.toastSafe((tSt.excludeLearning
         ? 'Cup saved with Off-Day Shield \u2014 back on Home!'
         : lockGold
         ? ('Gold Recipe locked & saved for ' + ((a.coffee && a.coffee.name) || 'this bag') + '!')
-        : ('Saved Try #' + rx.tryNum + ' (+ Try #' + rx.nextTryNum + ' fix ready on your bag)!'));
+        : ('Saved Try #' + rx.tryNum + ' (+ Try #' + rx.nextTryNum + ' fix ready on your bag)!')) + toastBagSuffix);
     } else {
       a.brewStep = 'door';
       if (a.tabSegments) a.tabSegments.palate = 'dna';
       S.saveDraftSafe();
       S.navGo('palate');
-      S.toastSafe(tSt.excludeLearning
+      S.toastSafe((tSt.excludeLearning
         ? 'Cup saved with Off-Day Shield \u2014 Preferences & recipe protected!'
         : lockGold
         ? ('Gold Recipe locked & Preferences updated for ' + ((a.coffee && a.coffee.name) || 'this bag') + '!')
-        : ('Cup saved & Taste Preferences updated (+ Try #' + rx.nextTryNum + ' fix saved)!'));
+        : ('Cup saved & Taste Preferences updated (+ Try #' + rx.nextTryNum + ' fix saved)!')) + toastBagSuffix);
     }
     return built;
   }
@@ -35406,13 +36227,13 @@ if (typeof window !== 'undefined') {
       );
 
       var slimCoolingLabel = S.h('span', {
-        class: 'mono',
-        style: 'font-size:0.78rem;font-weight:700;color:var(--ink-secondary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap',
+        class: 'mono bt-tc-cooling-label',
+        style: 'font-size:0.78rem;font-weight:700;color:var(--ink-secondary);min-width:0;flex:1 1 165px;white-space:normal;line-height:1.3',
         text: 'Cup Cooling: ~' + gsInit.tempC.toFixed(0) + ' \u00B0C \u00B7 ' + (gsInit.secsToGolden > 0 ? (gsInit.countdownMmSs + ' to 60 \u00B0C') : '60 \u00B0C Sweet Sip Ready')
       });
 
       if (tSt.coolingCardCollapsed) {
-        gsCard.appendChild(S.h('div', { class: 'bt-tc-row-between', style: 'flex-wrap:nowrap' },
+        gsCard.appendChild(S.h('div', { class: 'bt-tc-row-between', style: 'flex-wrap:wrap;gap:8px;align-items:center' },
           slimCoolingLabel,
           S.h('div', { style: 'display:flex;align-items:center;gap:6px;flex-shrink:0' },
             S.h('button', {
@@ -35898,11 +36719,18 @@ if (typeof window !== 'undefined') {
         });
       }
 
-      var shortcutRow = S.h('div', { class: 'bt-tc-diag-grid', id: 'bt-step5-diag-grid', role: 'group', 'aria-label': 'How Did It Taste quick diagnosis cards' });
+      var shortcutRow = S.h('div', {
+        class: 'bt-tc-diag-grid',
+        id: 'bt-step5-diag-grid',
+        role: 'group',
+        'aria-label': 'How Did It Taste quick diagnosis cards',
+        'aria-describedby': 'bt-step5-diag-hint'
+      });
       QUICK_TASTE_SHORTCUTS.forEach(function (sc) {
         var btn = S.h('button', {
           type: 'button',
           class: 'bt-tc-diag-card',
+          'aria-label': sc.label + ': ' + sc.hint,
           onclick: function () {
             tSt.padX = sc.x;
             tSt.padY = sc.y;
@@ -36261,6 +37089,12 @@ if (typeof window !== 'undefined') {
           ),
           (r2EffectiveOn && +tSt.tdsPct > 0) ? S.h('span', { class: 'bt-tc-badge is-sci', id: 'bt-step5-dual-pin-badge', text: 'Dual-Pin Active' }) : null
         ),
+        S.h('p', {
+          id: 'bt-step5-diag-hint',
+          class: 'bt-tc-sub',
+          style: 'margin:0;font-size:0.78rem;color:var(--ink-secondary);line-height:1.35',
+          text: 'Tap a quick shortcut or drag the bullseye dot below: center = Sweet Spot, left/right tunes grind, up/down tunes dose.'
+        }),
         shortcutRow,
         padWidget,
         bullseyeCheatSheet,
@@ -36834,6 +37668,9 @@ if (typeof window !== 'undefined') {
     return ALL_CAFE_DRINKS.find(function (d) { return d.v === v; }) || ALL_CAFE_DRINKS[1];
   }
 
+  var SHELF_MAX_BAGS = 200; /* hard collection ceiling (Shelf shows first 30 until "Show All Bags") */
+  var SHELF_VISIBLE_DEFAULT = 30;
+
   var ui = {
     seg: 'shelf', /* 'shelf' | 'journal' | 'cafes' | 'prices' */
     cryoOpenMap: {},
@@ -36859,6 +37696,10 @@ if (typeof window !== 'undefined') {
     priceShow: 'open', /* 'open' | 'finished' | 'all' */
     priceSort: 'use_first', /* 'use_first' | 'newest' | 'cheap' | 'name' */
     priceQ: '',
+    shelfQ: '',
+    shelfFilter: 'all', /* 'all' | 'peak' | 'frozen' | 'golden' | 'low' */
+    shelfSort: 'use_first', /* 'use_first' | 'cups_left' | 'newest' | 'name' */
+    showAllBags: false,
     priceDraft: {
       coffee: '',
       roaster: '',
@@ -37800,7 +38641,19 @@ if (typeof window !== 'undefined') {
 
     var thawMin = Math.max(12, Math.round(26 * Math.pow(Math.max(40, remG) / 250, 0.67)));
 
+    var shelfApp = S.getApp() || {};
+    var doseRef = +(shelfApp.brew && shelfApp.brew.dose) || +bag.dose || 15;
+    var isEmptyBag = remG <= 0.4;
+    var cupsLeft = isEmptyBag ? 0 : Math.floor(remG / Math.max(1, doseRef));
+    var isLowBag = !isEmptyBag && remG < doseRef * 2;
+    var inPeak = effAge != null && effAge >= restEnd && effAge <= peakEnd;
+
     return {
+      doseRef: doseRef,
+      cupsLeft: cupsLeft,
+      isLowBag: isLowBag,
+      isEmpty: isEmptyBag,
+      inPeak: inPeak,
       rawAge: rawAge,
       effAge: effAge != null ? effAge : 10,
       isFrozen: isFrozen,
@@ -38138,6 +38991,14 @@ if (typeof window !== 'undefined') {
               };
             });
             sparkEl.innerHTML = ck.dialInSparklineSvg(pts, lockedRow ? null : { val: 4.75 });
+            /* Lift the "Sweet Spot" zone label above the band so the trajectory curve never slices through the text */
+            var zoneLbl = sparkEl.querySelector('.bt-spark-zone-lbl');
+            if (zoneLbl) {
+              zoneLbl.setAttribute('y', '10');
+              zoneLbl.setAttribute('x', '353');
+              zoneLbl.setAttribute('text-anchor', 'end');
+              zoneLbl.setAttribute('pointer-events', 'none');
+            }
           } catch (_) {}
         }
 
@@ -38218,7 +39079,7 @@ if (typeof window !== 'undefined') {
 
     unified.forEach(function (u) {
       if (!u || !u.name) return;
-      if (!hasOpenBagMatch(u.coffee_id, u.name, u.roaster) && openBags.length < 12) {
+      if (!hasOpenBagMatch(u.coffee_id, u.name, u.roaster) && openBags.length < SHELF_MAX_BAGS) {
         openBags.push({
           _priceIdx: -1,
           _unifiedRec: u,
@@ -38247,7 +39108,7 @@ if (typeof window !== 'undefined') {
 
     vaultList.forEach(function (vr) {
       if (!vr || !vr.name) return;
-      if (!hasOpenBagMatch(vr.coffee_id || vr.id, vr.name, vr.roaster) && openBags.length < 12) {
+      if (!hasOpenBagMatch(vr.coffee_id || vr.id, vr.name, vr.roaster) && openBags.length < SHELF_MAX_BAGS) {
         openBags.push({
           _priceIdx: -1,
           _vaultRec: vr,
@@ -38325,7 +39186,169 @@ if (typeof window !== 'undefined') {
       return wrap;
     }
 
-    openBags.forEach(function (bag, bIdx) {
+    /* Shelf Search / Filter / Sort pre-pass (evaluates every bag once) */
+    var shelfMeta = openBags.map(function (bag, bIdx) {
+      var mb = findCoffeeRecordsMatch(bag.coffee_id || bag.id, bag.coffee, bag.roaster, {
+        unified: unified,
+        prices: priceList,
+        vaultList: vaultList
+      });
+      var uR = bag._unifiedRec || mb.uRec || null;
+      var vR = bag._vaultRec || mb.vaultRec || null;
+      var e = evaluateShelfBag(bag, uR || vR);
+      var hay = [
+        bag.coffee, bag.roaster, bag.origin, bag.region, bag.process, bag.varietal, bag.rlevel, bag.bag_notes, bag.notes,
+        vR && vR.origin, vR && vR.bag_notes, vR && vR.notes, vR && vR.process,
+        uR && uR.origin, uR && uR.bag_notes, uR && uR.process
+      ].filter(Boolean).join(' ').toLowerCase();
+      return { bag: bag, bIdx: bIdx, ev: e, golden: !!(uR && uR.lockedBrew), hay: hay };
+    });
+
+    var SHELF_FILTERS = [
+      ['all', 'All Bags'],
+      ['peak', 'At Peak'],
+      ['frozen', 'Frozen'],
+      ['golden', 'Golden Locked'],
+      ['low', 'Low / Empty']
+    ];
+    var SHELF_SORTS = [
+      ['use_first', 'Use First'],
+      ['cups_left', 'Cups Left'],
+      ['newest', 'Newest Roast'],
+      ['name', 'Name A\u2013Z']
+    ];
+
+    function getShelfVisible() {
+      var q = String(ui.shelfQ || '').trim().toLowerCase();
+      var list = shelfMeta.filter(function (m) {
+        if (ui.shelfFilter === 'peak' && !(m.ev.inPeak && !m.ev.isEmpty)) return false;
+        if (ui.shelfFilter === 'frozen' && !m.ev.isFrozen) return false;
+        if (ui.shelfFilter === 'golden' && !m.golden) return false;
+        if (ui.shelfFilter === 'low' && !(m.ev.isLowBag || m.ev.isEmpty)) return false;
+        if (!q) return true;
+        return q.split(/\s+/).every(function (tok) { return m.hay.indexOf(tok) >= 0; });
+      });
+      list.sort(function (x, y) {
+        var r = 0;
+        if (ui.shelfSort === 'cups_left') {
+          r = x.ev.remG - y.ev.remG;
+        } else if (ui.shelfSort === 'newest') {
+          var xa = x.ev.rawAge == null ? 9999 : x.ev.rawAge;
+          var ya = y.ev.rawAge == null ? 9999 : y.ev.rawAge;
+          r = xa - ya;
+        } else if (ui.shelfSort === 'name') {
+          r = String(x.bag.coffee || '').localeCompare(String(y.bag.coffee || ''));
+        } else {
+          /* Use First: unfrozen bags closest to (or past) the end of their peak window come first; empty bags last */
+          var xe = x.ev.isEmpty ? 1 : 0;
+          var ye = y.ev.isEmpty ? 1 : 0;
+          r = xe - ye;
+          if (!r) {
+            var xl = x.ev.isFrozen ? 9999 : (x.ev.peakEnd - x.ev.effAge);
+            var yl = y.ev.isFrozen ? 9999 : (y.ev.peakEnd - y.ev.effAge);
+            r = xl - yl;
+          }
+        }
+        return r || (x.bIdx - y.bIdx);
+      });
+      return list;
+    }
+
+    var shelfCountEl = S.h('span', { class: 'bt-tc-sub', style: 'margin:0', 'aria-live': 'polite' });
+    var shelfListHost = S.h('div', { style: 'display:flex;flex-direction:column;gap:14px' });
+
+    function paintShelfList() {
+      var vis = getShelfVisible();
+      var cap = ui.showAllBags ? vis.length : Math.min(vis.length, SHELF_VISIBLE_DEFAULT);
+      shelfListHost.textContent = '';
+      shelfCountEl.textContent = 'Showing ' + cap + ' of ' + openBags.length + ' bag' + (openBags.length === 1 ? '' : 's');
+      if (!vis.length) {
+        shelfListHost.appendChild(S.h('section', { class: 'bt-tc-card', style: 'text-align:center;padding:20px 16px' },
+          S.h('b', { text: 'No bags match this search or filter.' }),
+          S.h('div', { class: 'bt-tc-pill-wrap', style: 'justify-content:center' },
+            S.h('button', {
+              type: 'button',
+              class: 'bt-tc-pill is-compact is-copper',
+              text: 'Clear Search & Filters',
+              onclick: function () { ui.shelfQ = ''; ui.shelfFilter = 'all'; repaint(); }
+            })
+          )
+        ));
+        return;
+      }
+      vis.slice(0, cap).forEach(function (m) { shelfListHost.appendChild(buildBagCard(m)); });
+      if (vis.length > SHELF_VISIBLE_DEFAULT) {
+        shelfListHost.appendChild(S.h('button', {
+          type: 'button',
+          class: 'bt-tc-pill is-compact is-soft no-print',
+          style: 'align-self:flex-start',
+          text: ui.showAllBags ? ('Show First ' + SHELF_VISIBLE_DEFAULT + ' Only') : ('Show All Bags (' + vis.length + ')'),
+          onclick: function () { ui.showAllBags = !ui.showAllBags; S.haptic('tick'); repaint(); }
+        }));
+      }
+    }
+
+    var shelfInput = S.h('input', {
+      type: 'search',
+      class: 'bt-tc-search',
+      placeholder: 'Search shelf by coffee, roaster, origin, or flavor note...',
+      value: ui.shelfQ,
+      'aria-label': 'Search open bags on shelf',
+      oninput: function (e) {
+        ui.shelfQ = e.target.value;
+        shelfClear.style.display = ui.shelfQ ? '' : 'none';
+        paintShelfList();
+      }
+    });
+    var shelfClear = S.h('button', {
+      type: 'button',
+      class: 'bt-tc-search-clear no-print',
+      'aria-label': 'Clear shelf search',
+      style: 'display:' + (ui.shelfQ ? '' : 'none') + ';background:none;border:0;font-size:1.25rem;line-height:1;min-width:32px;min-height:32px;cursor:pointer;color:var(--ink-secondary)',
+      text: '\u00D7',
+      onclick: function () {
+        ui.shelfQ = '';
+        shelfInput.value = '';
+        shelfClear.style.display = 'none';
+        paintShelfList();
+        shelfInput.focus();
+      }
+    });
+
+    wrap.appendChild(S.h('div', { class: 'bt-tc-spotlight no-print' },
+      S.iconEl('search-filter', { size: 17 }),
+      shelfInput,
+      shelfClear
+    ));
+    wrap.appendChild(S.h('div', { class: 'bt-tc-pill-scroll no-print', role: 'group', 'aria-label': 'Shelf filter and sort' },
+      SHELF_FILTERS.map(function (fc) {
+        var on = ui.shelfFilter === fc[0];
+        return S.h('button', {
+          type: 'button',
+          class: 'bt-tc-pill is-compact' + (on ? ' is-active' : ' is-soft'),
+          'aria-pressed': String(on),
+          text: fc[1],
+          onclick: function () { ui.shelfFilter = fc[0]; repaint(); }
+        });
+      }),
+      S.h('button', {
+        type: 'button',
+        class: 'bt-tc-pill is-compact is-soft',
+        text: 'Sort: ' + (SHELF_SORTS.filter(function (s) { return s[0] === ui.shelfSort; })[0] || SHELF_SORTS[0])[1],
+        onclick: function () {
+          var ix = 0;
+          SHELF_SORTS.forEach(function (s, i) { if (s[0] === ui.shelfSort) ix = i; });
+          ui.shelfSort = SHELF_SORTS[(ix + 1) % SHELF_SORTS.length][0];
+          repaint();
+        }
+      })
+    ));
+    wrap.appendChild(shelfCountEl);
+    wrap.appendChild(shelfListHost);
+
+    function buildBagCard(meta) {
+      var bag = meta.bag;
+      var bIdx = meta.bIdx;
       var matchedBag = findCoffeeRecordsMatch(bag.coffee_id || bag.id, bag.coffee, bag.roaster, {
         unified: unified,
         prices: priceList,
@@ -38442,9 +39465,20 @@ if (typeof window !== 'undefined') {
             }, S.iconEl('cryo-snowflake', { size: 14 }), S.h('span', { text: ev.isFrozen ? 'Frozen at -18 \u00B0C' : 'Freeze Bag Now' })),
             S.h('button', {
               type: 'button',
-              class: 'bt-tc-pill is-compact is-copper',
+              class: 'bt-tc-pill is-compact is-copper bt-pull-dose-btn' + (ev.isEmpty ? ' is-disabled' : ''),
+              'aria-disabled': ev.isEmpty ? 'true' : 'false',
+              title: ev.isEmpty ? 'Bag empty \u2014 tap Fresh Bag to refill or start a new bag' : ('Remove ' + pullDose + ' g from this bag for thawing (inventory only, does not start a brew)'),
+              style: ev.isEmpty ? 'opacity:0.55;cursor:not-allowed' : '',
               onclick: function () {
-                var nextRem = Math.max(0, Math.round((ev.remG - pullDose) * 10) / 10);
+                /* 0 g guard: never pull from an empty bag */
+                var curRem = ev.remG;
+                if (ev.isEmpty || curRem <= 0.4) {
+                  S.toastSafe('Bag empty \u2014 tap Fresh Bag to refill or start a new bag');
+                  return;
+                }
+                /* Pull Dose is an inventory-only action (stays on Shelf). Brewing is a separate path that deducts exactly once at the timer/save step. */
+                var pullG = Math.min(pullDose, curRem);
+                var nextRem = Math.max(0, Math.round((curRem - pullG) * 10) / 10);
                 if (bag._priceIdx >= 0) {
                   var list = S.getNormalizedPrices();
                   if (list[bag._priceIdx]) {
@@ -38461,18 +39495,11 @@ if (typeof window !== 'undefined') {
                   is_frozen: 'yes',
                   remaining_g: nextRem
                 });
-                hydrateBrewFromRowOrBag(null, uRec, Object.assign({}, bag, { is_frozen: 'yes' }));
-                a.brew.dose = pullDose;
-                if (ui.frozenGrindOffset) {
-                  var baseUm = +a.brew.grindUm || +a.brew.grind_um || 550;
-                  a.brew.grindUm = baseUm + 12;
-                  a.brew.grind_um = baseUm + 12;
-                }
                 var bagSymPull = bag.sym || (bag.currency === 'EUR' ? '\u20AC' : bag.currency === 'GBP' ? '\u00A3' : '$');
-                S.toastSafe('Pulled ' + pullDose + ' g frozen dose (' + nextRem + ' g left \u00B7 ' + bagSymPull + ev.perCup.toFixed(2) + '/cup)!');
-                navigateToHomeRecipe();
+                S.toastSafe('Pulled ' + pullG + ' g frozen dose (' + nextRem + ' g left \u00B7 ' + bagSymPull + ev.perCup.toFixed(2) + '/cup). Bag updated only \u2014 brewing it later deducts again.');
+                repaint();
               }
-            }, S.h('span', { text: 'Pull ' + pullDose + ' g Dose \u2192 Brew' })),
+            }, S.h('span', { text: ev.isEmpty ? 'Bag Empty' : ('Pull ' + pullDose + ' g Dose (\u2212' + pullDose + ' g)') })),
             S.h('button', {
               type: 'button',
               class: 'bt-tc-pill is-compact is-soft',
@@ -38549,7 +39576,7 @@ if (typeof window !== 'undefined') {
       var bagChron = getCoffeeHistoryChronological(bag.coffee, bag.roaster, bag.coffee_id || (uRec && uRec.coffee_id), hObjs);
       var bagTimeline = buildDialInConvergenceTimeline(bagChron, null, { compact: true });
 
-      wrap.appendChild(S.h('article', {
+      return S.h('article', {
         class: 'bt-cellar-bag-card',
         style: '--bag-roast-color:' + S.roastColorFor(cardRoast || bag.rlevel)
       },
@@ -38574,8 +39601,11 @@ if (typeof window !== 'undefined') {
           })
         ) : null,
         S.h('div', { class: 'bt-tc-row-between' },
-          S.h('span', { class: 'mono', style: 'font-size:0.8rem;color:var(--ink-secondary)', text: ev.remG + ' g / ' + ev.totalG + ' g remaining (' + ev.pctLeft + '%)' }),
-          isLocked ? S.h('span', { class: 'bt-tc-badge is-gold', text: 'Gold Recipe Locked' }) : null
+          S.h('span', { class: 'mono', style: 'font-size:0.8rem;color:var(--ink-secondary)', text: ev.remG + ' g / ' + ev.totalG + ' g remaining (' + ev.pctLeft + '%)' + (ev.isEmpty ? '' : (' \u00B7 ~' + ev.cupsLeft + ' cup' + (ev.cupsLeft === 1 ? '' : 's') + ' left')) }),
+          S.h('div', { class: 'bt-tc-pill-wrap', style: 'gap:6px' },
+            ev.isEmpty ? S.h('span', { class: 'bt-tc-badge is-warn', text: 'Empty' }) : (ev.isLowBag ? S.h('span', { class: 'bt-tc-badge is-warn bt-low-bag-pill', text: 'Low Bag' }) : null),
+            isLocked ? S.h('span', { class: 'bt-tc-badge is-gold', text: 'Gold Recipe Locked' }) : null
+          )
         ),
         S.h('div', { class: 'bt-cellar-meter' }, S.h('i', { style: 'width:' + ev.pctLeft + '%' })),
         bagTimeline,
@@ -38625,9 +39655,10 @@ if (typeof window !== 'undefined') {
         ),
         freshDrawer,
         cryoBlock
-      ));
-    });
+      );
+    }
 
+    paintShelfList();
     return wrap;
   }
 
@@ -38838,13 +39869,26 @@ if (typeof window !== 'undefined') {
           { lbl: 'Flavors Liked', fn: function (r) { return (typeof unneutralize === 'function' ? unneutralize(r.flavors_liked || '') : r.flavors_liked) || '\u2014'; } }
         ];
 
+        var cupScore = function (r) {
+          var st = parseFloat(r.my_rating_stars);
+          if (st > 0) return st;
+          var ts = parseFloat(r.total_score);
+          return ts > 0 ? ts / 20 : 0;
+        };
+        var cupScores = cmpRows.map(function (c) { return cupScore(c.r); });
+        var bestScore = Math.max.apply(null, cupScores);
+        var allTied = cupScores.every(function (s) { return s === cupScores[0]; });
+        var isWinnerCol = function (cIdx) { return bestScore > 0 && !allTied && cupScores[cIdx] === bestScore; };
+
         var theadTr = S.h('tr', null, S.h('th', { text: 'Parameter' }));
         cmpRows.forEach(function (item, cIdx) {
-          theadTr.appendChild(S.h('th', null,
+          var win = isWinnerCol(cIdx);
+          theadTr.appendChild(S.h('th', { class: win ? 'bt-compare-winner-col' : '' },
+            win ? S.h('span', { class: 'bt-tc-badge is-gold', style: 'display:inline-block;margin-bottom:4px', text: '\u2605 Best Cup' }) : null,
             S.h('div', { text: 'Cup ' + String.fromCharCode(65 + cIdx) + (item.r.cupping_date ? ' (' + item.r.cupping_date + ')' : '') }),
             S.h('button', {
               type: 'button',
-              class: 'bt-tc-pill is-compact is-active',
+              class: 'bt-tc-pill is-compact is-active no-print',
               style: 'margin-top:4px;min-height:32px',
               text: 'Brew \u2192',
               onclick: function () {
@@ -38860,9 +39904,13 @@ if (typeof window !== 'undefined') {
           var vals = cmpRows.map(function (c) { return sr.fn(c.r); });
           var varied = vals.some(function (v) { return v !== vals[0]; });
           if (ui.compareOnlyVaried && !varied && sr.lbl !== 'Coffee' && sr.lbl !== 'Rating') return;
-          var tr = S.h('tr', { class: varied ? 'is-diff' : '' }, S.h('td', null, S.h('b', { text: sr.lbl })));
-          vals.forEach(function (v) {
-            tr.appendChild(S.h('td', { class: 'mono', text: v }));
+          var tr = S.h('tr', { class: varied ? 'is-diff' : '' }, S.h('td', null,
+            S.h('b', { text: sr.lbl }),
+            varied ? S.h('span', { class: 'bt-compare-diff-tag', style: 'margin-left:6px', text: 'Changed' }) : null
+          ));
+          vals.forEach(function (v, vIdx) {
+            var cls = 'mono' + (varied && vIdx > 0 && v !== vals[0] ? ' is-diff-cell' : '') + (isWinnerCol(vIdx) ? ' bt-compare-winner-col' : '');
+            tr.appendChild(S.h('td', { class: cls, text: v }));
           });
           tbody.appendChild(tr);
         });
@@ -40568,6 +41616,8 @@ if (typeof window !== 'undefined') {
             style: 'flex:1 1 200px;width:auto',
             onclick: function () {
               if (storage && typeof storage.commitTastingEdit === 'function') {
+                var oldDoseG = parseFloat(r.brew_dose_g);
+                var newDoseG = parseFloat(baseEdit.brew && baseEdit.brew.dose);
                 var res = storage.commitTastingEdit(rIdx, baseEdit);
                 if (res && res.error) {
                   S.toastSafe(res.error);
@@ -40575,6 +41625,9 @@ if (typeof window !== 'undefined') {
                 }
                 var updatedObjs = S.getHistoryObjs();
                 var updatedRow = updatedObjs[rIdx] || r;
+                if (isFinite(oldDoseG) && isFinite(newDoseG) && Math.abs(newDoseG - oldDoseG) > 0.0001 && typeof storage.reconcileBagDoseDelta === 'function') {
+                  try { storage.reconcileBagDoseDelta(updatedRow, Math.round((newDoseG - oldDoseG) * 10) / 10); } catch (_) {}
+                }
                 upsertVaultSafe({
                   id: updatedRow.coffee_id || '',
                   name: un(updatedRow.coffee_name),
@@ -41160,15 +42213,16 @@ if (typeof window !== 'undefined') {
 
   function epistemicBadge(tierKey, labelOverride) {
     const map = {
-      verified_physics: { txt: '[Verified Science]', cls: 'is-verified', icon: 'check-seal' },
-      calibrated_biophysics: { txt: '[Active Research]', cls: 'is-research', icon: 'xray-loupe' },
-      craft_convention: { txt: '[Craft Best Practice]', cls: 'is-craft', icon: 'spark-star' },
-      myth_debunked: { txt: '[Myth Debunked]', cls: 'is-myth', icon: 'close-x' }
+      verified_physics: { txt: 'Verified Science', cls: 'is-verified', icon: 'check-seal' },
+      calibrated_biophysics: { txt: 'Active Research', cls: 'is-research', icon: 'xray-loupe' },
+      craft_convention: { txt: 'Craft Best Practice', cls: 'is-craft', icon: 'spark-star' },
+      myth_debunked: { txt: 'Myth Debunked', cls: 'is-myth', icon: 'close-x' }
     };
     const meta = map[tierKey] || map.verified_physics;
+    const cleanTxt = String(labelOverride || meta.txt).replace(/^\s*\[|\]\s*$/g, '');
     return domH('span', { class: 'bt-epistemic-pill ' + meta.cls },
       ic(meta.icon, { size: 14 }),
-      domH('span', { text: labelOverride || meta.txt })
+      domH('span', { text: cleanTxt })
     );
   }
 
@@ -43701,7 +44755,7 @@ if (typeof window !== 'undefined') {
     );
 
     const machineCard = domH('div', {
-      class: 'bt-ble-slot-card',
+      class: 'bt-ble-slot-card bt-lab-ble-wide',
       'data-slot': 'machine',
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
@@ -44874,6 +45928,7 @@ if (typeof window !== 'undefined') {
       ariaMin: 14,
       ariaMax: 26,
       ariaNow: s.targetEy,
+      ariaText: s.targetEy.toFixed(1) + '% EY at ' + s.targetTds.toFixed(2) + '% TDS',
       detentStep: 0.2,
       defaultHandleId: 'target_puck',
       getHandles: function () {
@@ -45006,8 +46061,8 @@ if (typeof window !== 'undefined') {
       const curBasis = (a.prefs && a.prefs.immersionBasis) || 'liang';
       immersionBasisRow.appendChild(domH('span', { class: 'bt-lab-inline-lbl', text: 'Immersion Basis:' }));
       [
-        { k: 'liang', lbl: 'Liang f_abs = 0.00 [Verified Science]' },
-        { k: 'gagne', lbl: 'Gagne f_abs = 1.00 [Active Research]' }
+        { k: 'liang', lbl: 'Liang f_abs = 0.00', badge: 'Verified Science', badgeCls: 'is-verified' },
+        { k: 'gagne', lbl: 'Gagne f_abs = 1.00', badge: 'Active Research', badgeCls: 'is-research' }
       ].forEach(function (opt) {
         immersionBasisRow.appendChild(domH('button', {
           type: 'button',
@@ -45021,7 +46076,10 @@ if (typeof window !== 'undefined') {
             redrawStaticBackdrop();
             updatePuckAndReadouts();
           }
-        }, opt.lbl));
+        },
+          domH('span', { text: opt.lbl }),
+          domH('span', { class: 'bt-epistemic-pill ' + opt.badgeCls, style: 'padding:1px 6px;font-size:0.68rem', text: opt.badge })
+        ));
       });
     }
     buildImmersionBasisButtons();
@@ -45473,6 +46531,12 @@ if (typeof window !== 'undefined') {
     const T1 = 16, B1 = 162, PH1 = 146;
     const T2 = 172, B2 = 224, PH2 = 52;
 
+    const fmtMmSs = function (sec) {
+      const m = Math.floor(sec / 60);
+      const sRem = Math.round(sec % 60);
+      return m + ':' + String(sRem).padStart(2, '0');
+    };
+
     function simulateTrajectory() {
       const maxT = Math.max(120, w.knots[w.knots.length - 1].t + 15);
       const maxM = Math.max(100, w.knots[w.knots.length - 1].m * 1.08);
@@ -45753,12 +46817,6 @@ if (typeof window !== 'undefined') {
       const sugarsKeptPct = spEnd.yS > 0.005 ? Math.min(100, Math.round((spCut.yS / spEnd.yS) * 100)) : 100;
       const earlyDeltaSec = Math.max(0, Math.round(endDrainSec - cutSec));
 
-      const fmtMmSs = function (sec) {
-        const m = Math.floor(sec / 60);
-        const sRem = Math.round(sec % 60);
-        return m + ':' + String(sRem).padStart(2, '0');
-      };
-
       /* Tactile Draggable Emerald Cutoff Gate Handle right on the chart (shifted 14px lower & clamped clear of axis labels) */
       const cutHandleX = txSvg(cutSec);
       const cutPillX = clamp(cutHandleX, L + 46, R - 48, cutHandleX);
@@ -45775,6 +46833,9 @@ if (typeof window !== 'undefined') {
       if (cutoffRangeEl && document.activeElement !== cutoffRangeEl) {
         cutoffRangeEl.max = String(Math.round(endDrainSec));
         cutoffRangeEl.value = String(cutSec);
+      }
+      if (cutoffRangeEl) {
+        cutoffRangeEl.setAttribute('aria-valuetext', fmtMmSs(cutSec) + ' (~' + pullCarafeG + ' g in carafe)');
       }
       if (cutoffLblEl) {
         cutoffLblEl.textContent = 'Pull Dripper at ' + fmtMmSs(cutSec) + ' (~' + pullCarafeG + ' g in carafe)' +
@@ -45794,7 +46855,7 @@ if (typeof window !== 'undefined') {
       if (isScienceXray()) {
         readoutBar.appendChild(domH('p', {
           class: 'bt-studio-xray-line',
-          text: '[Polarity Kinetics & First-Law Open-CV Calorimetry] Wave 1 Bright Acids ' + Math.round(sp.yA * 100) + '% · Wave 2 Sweet Sugars ' + Math.round(sp.yS * 100) + '% · Wave 3 Dry Bitters ' + Math.round(sp.yB * 100) + '% — drag Cutoff Gate pill or diamond pour knots.'
+          text: 'Polarity Kinetics & First-Law Open-CV Calorimetry \u00B7 Wave 1 Bright Acids ' + Math.round(sp.yA * 100) + '% · Wave 2 Sweet Sugars ' + Math.round(sp.yS * 100) + '% · Wave 3 Dry Bitters ' + Math.round(sp.yB * 100) + '% — drag Cutoff Gate pill or diamond pour knots.'
         }));
       }
     }
@@ -45809,6 +46870,7 @@ if (typeof window !== 'undefined') {
       step: '5',
       value: String(w.cutoffSec || 150),
       'aria-label': 'Dripper Pull-Early Cutoff Gate in seconds',
+      'aria-valuetext': fmtMmSs(w.cutoffSec || 150) + ' pull cutoff',
       oninput: function () {
         w.cutoffSec = parseInt(cutoffRangeEl.value, 10) || 150;
         w.scrubT = w.cutoffSec;
@@ -45819,6 +46881,10 @@ if (typeof window !== 'undefined') {
 
     CK.bindChartSurface(svg, {
       ariaLabel: 'Extraction Wave Pour Knots, Cutoff Gate and Replay Scrubber',
+      ariaMin: 65,
+      ariaMax: 260,
+      ariaNow: w.cutoffSec || 150,
+      ariaText: fmtMmSs(w.cutoffSec || 150) + ' pull cutoff',
       detentStep: 5,
       getHandles: function () {
         if (!cachedSim) return [];
@@ -45843,6 +46909,8 @@ if (typeof window !== 'undefined') {
             const mm = Math.floor(nextSec / 60) + ':' + String(Math.round(nextSec % 60)).padStart(2, '0');
             return {
               detentValue: nextSec,
+              ariaNow: nextSec,
+              ariaText: mm + ' (' + Math.round(spC.carafeG || 200) + ' g, ' + blk + '% bitters blocked)',
               loupe: 'Pull @ ' + mm + ' (~' + Math.round(spC.carafeG || 200) + 'g) · ' + blk + '% Dry Bitters Blocked'
             };
           }
@@ -45890,7 +46958,7 @@ if (typeof window !== 'undefined') {
         if (!cachedSim) return {};
         w.scrubT = clamp(w.scrubT + k.dx * 5, 0, cachedSim.maxT, w.scrubT);
         renderWaveCanvasAndOverlay();
-        return { ariaNow: w.scrubT };
+        return { ariaNow: w.scrubT, ariaText: 'Replay ' + fmtMmSs(w.scrubT) };
       }
     });
 
@@ -46356,13 +47424,13 @@ if (typeof window !== 'undefined') {
 
     const readoutBanner = domH('div', { class: 'bt-studio-readout-banner' });
     const safeSipHero = domH('div', { class: 'bt-pk-safesip-hero', id: 'bt-pk-safesip-hero' });
-    const scheduleSummaryPill = domH('div', {
-      class: 'bt-pk-daily-schedule-pill num-tab',
-      id: 'bt-pk-daily-schedule-pill',
-      role: 'region',
-      'aria-label': 'Daily Coffee Budget and Cutoff Schedule',
-      style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px;padding:10px 12px;border-radius:14px;background:var(--bg-subtle, #F2EAE0);border:1px solid var(--line, #DCCDBE);box-sizing:border-box;min-width:0;max-width:100%;'
-    });
+      const scheduleSummaryPill = domH('div', {
+        class: 'bt-pk-daily-schedule-pill num-tab',
+        id: 'bt-pk-daily-schedule-pill',
+        role: 'region',
+        'aria-label': 'Daily Coffee Budget and Cutoff Schedule',
+        style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px;padding:10px 12px;border-radius:14px;background:var(--bg-subtle, #F2EAE0);border:1px solid var(--line, #DCCDBE);box-sizing:border-box;min-width:0;max-width:100%;'
+      });
     const inspectorRow = domH('div', { class: 'bt-pk-cup-inspector' });
 
     function persistCaffeinePrefs() {
@@ -46722,11 +47790,11 @@ if (typeof window !== 'undefined') {
       const budgetRemainingMg = Math.max(0, cyp.dailyCapMg - totalDailyMg);
       const gateHeadroomMg = Math.round(pk.swsGateMg - bedMg);
       const wakeShort = fmtClock(pk.wakeHour).replace(':00 ', '').toLowerCase();
-      const peakWinText = fmtClock(pfStartH) + '–' + fmtClock(pfEndH);
-      const cutoffText = cutoffRefFlag == null ? 'No safe time today' : fmtClock(cutoffRefFlag);
+      const peakWinText = fmtClock(pfStartH) + '\u2013' + fmtClock(pfEndH);
+      const cutoffText = cutoffRefFlag == null ? 'Over Limit Today' : fmtClock(cutoffRefFlag);
       const gateRemainingText = gatePass
-        ? (gateHeadroomMg + ' mg under ' + pk.swsGateMg + ' mg gate')
-        : ('+' + Math.abs(gateHeadroomMg) + ' mg over ' + pk.swsGateMg + ' mg gate');
+        ? (gateHeadroomMg + ' mg under ' + pk.swsGateMg + ' mg')
+        : ('+' + Math.abs(gateHeadroomMg) + ' mg vs ' + pk.swsGateMg + ' mg');
 
       scheduleSummaryPill.textContent = '';
       scheduleSummaryPill.appendChild(domH('div', {
@@ -46734,14 +47802,14 @@ if (typeof window !== 'undefined') {
         style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
       },
         domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Wake & Budget' }),
-        domH('strong', { style: 'font-size:0.84rem;color:var(--ink, #1C130E);', text: 'Wake ' + wakeShort + ' · ' + budgetRemainingMg + ' mg left' })
+        domH('strong', { style: 'font-size:0.84rem;line-height:1.25;color:var(--ink, #1C130E);', text: 'Wake ' + wakeShort + ' · ' + budgetRemainingMg + ' mg left' })
       ));
       scheduleSummaryPill.appendChild(domH('div', {
         class: 'bt-pk-sched-item',
         style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
       },
         domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Peak Window' }),
-        domH('strong', { style: 'font-size:0.84rem;color:var(--good, #1B6341);', text: peakWinText })
+        domH('strong', { style: 'font-size:0.84rem;line-height:1.25;color:var(--good, #1B6341);', text: peakWinText })
       ));
       scheduleSummaryPill.appendChild(domH('div', {
         class: 'bt-pk-sched-item',
@@ -46749,7 +47817,7 @@ if (typeof window !== 'undefined') {
       },
         domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Cutoff Time' }),
         domH('strong', {
-          style: 'font-size:0.84rem;color:' + (cutoffRefFlag == null ? 'var(--bad, #A1231F)' : 'var(--primary, #1B4D38)') + ';',
+          style: 'font-size:0.84rem;line-height:1.25;color:' + (cutoffRefFlag == null ? 'var(--bad, #A1231F)' : 'var(--primary, #1B4D38)') + ';',
           text: cutoffText
         })
       ));
@@ -46757,9 +47825,9 @@ if (typeof window !== 'undefined') {
         class: 'bt-pk-sched-item',
         style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
       },
-        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Bedtime Gate (' + fmtClock(bed) + ')' }),
+        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Bed Gate (' + fmtClock(bed) + ')' }),
         domH('strong', {
-          style: 'font-size:0.84rem;color:' + (gatePass ? 'var(--good, #1B6341)' : 'var(--bad, #A1231F)') + ';',
+          style: 'font-size:0.84rem;line-height:1.25;color:' + (gatePass ? 'var(--good, #1B6341)' : 'var(--bad, #A1231F)') + ';',
           text: gateRemainingText
         })
       ));
@@ -46850,6 +47918,10 @@ if (typeof window !== 'undefined') {
 
     CK.bindChartSurface(svg, {
       ariaLabel: '24-Hour Caffeine Cup Tokens and Wake/Bed Curtains',
+      ariaMin: 0,
+      ariaMax: 24,
+      ariaNow: pk.cups[pk.selectedCupIdx] ? pk.cups[pk.selectedCupIdx].hour : pk.wakeHour,
+      ariaText: pk.cups[pk.selectedCupIdx] ? (pk.cups[pk.selectedCupIdx].label + ' at ' + fmtClock(pk.cups[pk.selectedCupIdx].hour)) : ('Wake ' + fmtClock(pk.wakeHour)),
       allowBackgroundJump: false,
       detentStep: 1 / 12,
       getHandles: function () {
@@ -47348,6 +48420,10 @@ if (typeof window !== 'undefined') {
 
     CK.bindChartSurface(svg, {
       ariaLabel: '2D Water GH and KH Droplet Pad',
+      ariaMin: 0,
+      ariaMax: 320,
+      ariaNow: wt.kh,
+      ariaText: wt.gh + ' GH, ' + wt.kh + ' KH ppm',
       detentStep: 1,
       getHandles: function () {
         const list = [{
@@ -47398,7 +48474,7 @@ if (typeof window !== 'undefined') {
           syncWaterStateToAppLive({ markCustom: true });
           redrawWater();
           paint4WayAndImpact();
-          return { ariaNow: wt.kh };
+          return { ariaNow: wt.kh, ariaText: wt.gh + ' GH, ' + wt.kh + ' KH ppm' };
         }
       });
 
@@ -48200,6 +49276,10 @@ if (typeof window !== 'undefined') {
 
     CK.bindChartSurface(svg, {
       ariaLabel: 'Interactive Carafe Liquid Meniscus',
+      ariaMin: 2.0,
+      ariaMax: 22.0,
+      ariaNow: vs.ratio,
+      ariaText: '1:' + vs.ratio.toFixed(1) + ' ratio, ' + Math.round(vs.doseG) + ' g dose',
       detentStep: 5,
       onPointer: function (p) {
         const frac = clamp((V_BOT - p.uy) / V_H, 0.08, 0.94, 0.42);
@@ -48215,12 +49295,17 @@ if (typeof window !== 'undefined') {
         waveVel = 0;
         waveAnim.wake();
         redrawVessel();
-        return { detentValue: targetBev, loupe: Math.round(targetBev) + 'g Mug · 1:' + vs.ratio.toFixed(1) };
+        return {
+          detentValue: targetBev,
+          ariaNow: vs.ratio,
+          ariaText: Math.round(targetBev) + ' g mug, 1:' + vs.ratio.toFixed(1),
+          loupe: Math.round(targetBev) + 'g Mug · 1:' + vs.ratio.toFixed(1)
+        };
       },
       onKeyStep: function (k) {
         vs.ratio = clamp(vs.ratio + k.dy * 0.5 + k.dx * 0.5, 2.0, 22.0, vs.ratio);
         redrawVessel();
-        return { ariaNow: vs.ratio };
+        return { ariaNow: vs.ratio, ariaText: '1:' + vs.ratio.toFixed(1) + ' ratio' };
       }
     });
 
@@ -48732,6 +49817,10 @@ if (typeof window !== 'undefined') {
 
     CK.bindChartSurface(agSvg, {
       ariaLabel: '5-Scale Agtron Whole-Bean and Ground Pucks',
+      ariaMin: 25,
+      ariaMax: 105,
+      ariaNow: rf.groundG,
+      ariaText: 'Whole bean ' + rf.beanG.toFixed(1) + ', Ground ' + rf.groundG.toFixed(1) + ' Gourmet Agtron',
       detentStep: 0.5,
       getHandles: function () {
         return [
@@ -48743,7 +49832,7 @@ if (typeof window !== 'undefined') {
               rf.beanG = +invG(p.ux).toFixed(1);
               redrawAgtron();
               redrawFreshness();
-              return { detentValue: rf.beanG, loupe: 'Whole Bean: ' + rf.beanG.toFixed(1) + ' Gourmet' };
+              return { detentValue: rf.beanG, ariaNow: rf.beanG, ariaText: 'Whole Bean ' + rf.beanG.toFixed(1) + ' Gourmet', loupe: 'Whole Bean: ' + rf.beanG.toFixed(1) + ' Gourmet' };
             }
           },
           {
@@ -48754,7 +49843,7 @@ if (typeof window !== 'undefined') {
               rf.groundG = +invG(p.ux).toFixed(1);
               redrawAgtron();
               redrawFreshness();
-              return { detentValue: rf.groundG, loupe: 'Ground Core: ' + rf.groundG.toFixed(1) + ' (Tonino ' + toninoFromGourmet(rf.groundG).toFixed(0) + ')' };
+              return { detentValue: rf.groundG, ariaNow: rf.groundG, ariaText: 'Ground Core ' + rf.groundG.toFixed(1) + ' Gourmet', loupe: 'Ground Core: ' + rf.groundG.toFixed(1) + ' (Tonino ' + toninoFromGourmet(rf.groundG).toFixed(0) + ')' };
             }
           }
         ];
@@ -48763,7 +49852,7 @@ if (typeof window !== 'undefined') {
         rf.groundG = clamp(rf.groundG + k.dx * 0.5, 25, 105, rf.groundG);
         redrawAgtron();
         redrawFreshness();
-        return { ariaNow: rf.groundG };
+        return { ariaNow: rf.groundG, ariaText: 'Ground Core ' + rf.groundG.toFixed(1) + ' Gourmet' };
       }
     });
 
@@ -48900,6 +49989,10 @@ if (typeof window !== 'undefined') {
 
     CK.bindChartSurface(frSvg, {
       ariaLabel: 'Freshness Curve Freeze Day and Today Handles',
+      ariaMin: 0,
+      ariaMax: MAX_DAYS,
+      ariaNow: rf.daysToday,
+      ariaText: 'Day ' + rf.daysToday + (rf.freezeOn ? (', frozen day ' + rf.freezeDay) : ''),
       detentStep: 1,
       getHandles: function () {
         const fx = function (d) { return FP.L + (clamp(d, 0, MAX_DAYS, 0) / MAX_DAYS) * FP.PW; };
@@ -48912,7 +50005,7 @@ if (typeof window !== 'undefined') {
             onMove: function (p) {
               rf.freezeDay = Math.round(clamp(((p.ux - FP.L) / FP.PW) * MAX_DAYS, 1, 45, rf.freezeDay));
               redrawFreshness();
-              return { detentValue: rf.freezeDay, loupe: 'Freeze on Day ' + rf.freezeDay + ' (-18C 12.3x slower)' };
+              return { detentValue: rf.freezeDay, ariaNow: rf.freezeDay, ariaText: 'Freeze on Day ' + rf.freezeDay, loupe: 'Freeze on Day ' + rf.freezeDay + ' (-18C 12.3x slower)' };
             }
           },
           {
@@ -48927,7 +50020,7 @@ if (typeof window !== 'undefined') {
             onMove: function (p) {
               rf.daysToday = Math.round(clamp(((p.ux - FP.L) / FP.PW) * MAX_DAYS, 0, MAX_DAYS, rf.daysToday));
               redrawFreshness();
-              return { detentValue: rf.daysToday, loupe: 'Calendar Day ' + rf.daysToday };
+              return { detentValue: rf.daysToday, ariaNow: rf.daysToday, ariaText: 'Calendar Day ' + rf.daysToday, loupe: 'Calendar Day ' + rf.daysToday };
             }
           }
         ];
@@ -48935,7 +50028,7 @@ if (typeof window !== 'undefined') {
       onKeyStep: function (k) {
         rf.daysToday = clamp(rf.daysToday + k.dx, 0, MAX_DAYS, rf.daysToday);
         redrawFreshness();
-        return { ariaNow: rf.daysToday };
+        return { ariaNow: rf.daysToday, ariaText: 'Calendar Day ' + rf.daysToday };
       }
     });
 
@@ -49747,7 +50840,7 @@ if (typeof window !== 'undefined') {
         ? '2-Point Burr Calibration: Lock 2 distinct settings on the same grinder (Point 1 \u2260 Point 2).'
         : ('2-Point Burr Calibration (' + (gl.calGrinderKey || gFrom.key) + '): ' + (dUm / dClick).toFixed(1) + ' \u00B5m/step (' +
             gl.calPt1Click + '\u2192' + gl.calPt1Um + ' \u00B5m, ' + gl.calPt2Click + '\u2192' + gl.calPt2Um + ' \u00B5m)' +
-            (customCal ? ' [Active]' : ' [Other grinder]'));
+            (customCal ? ' · Active' : ' · Other grinder'));
 
       outBox.textContent = '';
       if (!hasInput && !(_omniOverrideUm > 0)) {
@@ -49992,7 +51085,9 @@ if (typeof window !== 'undefined') {
       }
       if (ktOn) parts.push('Kettle ' + (st.kettleTempC != null ? (Math.round(+st.kettleTempC) + ' \u00B0C') : 'On'));
       if (xbOn) parts.push('xBloom ' + (st.xbloomStage || 'Ready'));
-      setTextIfChanged(statusTxt, parts.length ? ('Live: ' + parts.join(' \u00B7 ')) : 'Scale / Pressure / R2 / Omni / Kettle Standby');
+      const isNarrowViewport = (typeof window !== 'undefined' && window.innerWidth > 0 && window.innerWidth < 480);
+      const idleStatusTxt = isNarrowViewport ? 'Scale / R2 Standby' : 'Scale / Pressure / R2 / Omni / Kettle Standby';
+      setTextIfChanged(statusTxt, parts.length ? ('Live: ' + parts.join(' \u00B7 ')) : idleStatusTxt);
       quickReadR2Btn.hidden = !(r2On || simOn);
       return barRoot && barRoot.isConnected;
     }
@@ -50176,6 +51271,27 @@ if (typeof window !== 'undefined') {
     page.appendChild(studioIntroBanner);
     page.appendChild(studioStage);
     mountActiveStudio();
+
+    page.appendChild(domH('div', {
+      class: 'bt-lab-bottom-actions no-print',
+      style: 'display:flex;justify-content:center;padding:8px 0 4px;'
+    },
+      domH('button', {
+        type: 'button',
+        id: 'bt-lab-back-to-top-btn',
+        class: 'bt-lab-btn is-sm',
+        'aria-label': 'Back to top of Lab & Tools',
+        onclick: function () {
+          CK.haptic('tick');
+          if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+            try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { window.scrollTo(0, 0); }
+          }
+          if (navBar && typeof navBar.scrollIntoView === 'function') {
+            try { navBar.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
+          }
+        }
+      }, 'Back to Top \u2191')
+    ));
 
     if (mountEl && mountEl.nodeType === 1) {
       mountEl.textContent = '';
@@ -53584,7 +54700,7 @@ if (typeof window !== 'undefined') {
       domH('button', {
         type: 'button',
         id: 'bt-prefs-backup-saves-btn',
-        class: 'bt-lab-btn is-accent',
+        class: 'bt-lab-btn is-accent no-print',
         style: 'min-height:44px;font-weight:700;flex-shrink:0',
         onclick: function () {
           if (CK && typeof CK.haptic === 'function') CK.haptic('snap');
@@ -53598,7 +54714,7 @@ if (typeof window !== 'undefined') {
     );
     page.appendChild(palateHeadRow);
 
-    const segNav = domH('nav', { class: 'bt-studio-pill-nav', 'aria-label': 'Preferences & Palate Views' },
+    const segNav = domH('nav', { class: 'bt-studio-pill-nav no-print', 'aria-label': 'Preferences & Palate Views' },
       [
         { id: 'dna', lbl: 'Preferences & Palate DNA', icon: 'origin-globe' },
         { id: 'matcher', lbl: 'Will I Love This Bag?', icon: 'fresh-bag' },
@@ -57316,7 +58432,7 @@ if (typeof window !== 'undefined') {
     const page = domH('div', { class: 'bt-tab-page bt-academy-page' });
     const glCount = getGlossaryEntries().length;
 
-    const nav = domH('nav', { class: 'bt-studio-pill-nav', 'aria-label': 'Learn and Vault Sections' },
+    const nav = domH('nav', { class: 'bt-studio-pill-nav no-print', 'aria-label': 'Learn and Vault Sections' },
       [
         { id: 'gym', lbl: '5-Bowl Cupping Table', icon: 'cafe-cup' },
         { id: 'curriculum', lbl: '19 Mini-Courses', icon: 'academy' },

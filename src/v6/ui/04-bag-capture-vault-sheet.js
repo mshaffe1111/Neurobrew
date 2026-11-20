@@ -1440,6 +1440,36 @@ if (typeof window !== 'undefined') {
 (function () {
   var S = BTBrewCellarShared;
 
+  function computeCoffeeCupsLeftMeta(rec, fallbackDoseG) {
+    if (!rec || typeof rec !== 'object') return null;
+    var bag = rec.openBag;
+    var rawRem = null;
+    if (bag && bag.rem_g != null && bag.rem_g !== '' && isFinite(+bag.rem_g)) {
+      rawRem = +bag.rem_g;
+    } else if (rec.remaining_g != null && rec.remaining_g !== '' && isFinite(+rec.remaining_g)) {
+      rawRem = +rec.remaining_g;
+    } else if (bag && bag.grams != null && +bag.grams > 0 && isFinite(+bag.grams)) {
+      rawRem = +bag.grams;
+    }
+    if (rawRem == null || !isFinite(rawRem) || rawRem < 0) return null;
+    var remG = Math.max(0, Math.round(rawRem * 10) / 10);
+    var doseRef = Math.max(1, +(fallbackDoseG || (rec.lastBrew && rec.lastBrew.brew_dose_g) || 15));
+    var isEmpty = remG <= 0.4;
+    var cupsLeft = isEmpty ? 0 : Math.floor(remG / doseRef);
+    var isLow = !isEmpty && remG < doseRef * 2;
+    var remDisp = Math.round(remG);
+    var cupsTxt = '~' + cupsLeft + (cupsLeft === 1 ? ' cup left' : ' cups left');
+    return {
+      remG: remG,
+      doseRef: doseRef,
+      cupsLeft: cupsLeft,
+      isEmpty: isEmpty,
+      isLow: isLow,
+      shortLabel: isEmpty ? 'Empty' : (remDisp + 'g \u00B7 ' + cupsTxt),
+      longLabel: isEmpty ? '0 g left \u00B7 Empty' : (remDisp + ' g \u00B7 ' + cupsTxt)
+    };
+  }
+
   /* -------------------- 1. 12 Quick Specialty Archetypes -------------------- */
   var QUICK_ARCHETYPES_12 = [
     {
@@ -5723,15 +5753,18 @@ if (typeof window !== 'undefined') {
 
       if (openAndRecent.length) {
         var quickRow = S.h('div', { class: 'bt-ce-quick-bags-row', role: 'group', 'aria-label': 'Quick Saved Bags' });
+        var activeDoseG = Math.max(1, +((a && a.brew && a.brew.dose) || 15));
+        var isSingleQuick = openAndRecent.length === 1;
         openAndRecent.forEach(function (rec) {
           var isSelected = !!(c.name && rec.name && c.name === rec.name && (c.roaster || '') === (rec.roaster || ''));
           var rCol = S.roastColorFor(rec.roast || rec.ground_agtron);
           var bag = rec.openBag;
           var ageDays = S.daysSinceIso(rec.roast_date || (bag && (bag.roast || bag.rdate)));
-          var suffix = ageDays != null ? (' · ' + ageDays + 'd') : '';
+          var suffix = ageDays != null ? (' \u00B7 ' + ageDays + 'd') : '';
+          var cupsMeta = computeCoffeeCupsLeftMeta(rec, activeDoseG);
           quickRow.appendChild(S.h('button', {
             type: 'button',
-            class: 'bt-ce-quick-bag-pill' + (isSelected ? ' is-active' : ''),
+            class: 'bt-ce-quick-bag-pill' + (isSingleQuick ? ' is-single-full' : '') + (isSelected ? ' is-active' : ''),
             'aria-pressed': String(isSelected),
             onclick: function () {
               flushPendingStep1Drafts(c);
@@ -5739,7 +5772,11 @@ if (typeof window !== 'undefined') {
             }
           },
             S.h('span', { class: 'bt-ce-roast-dot', style: 'background:' + rCol }),
-            S.h('span', { class: 'bt-ce-quick-bag-lbl', text: (rec.name || 'Saved Bag') + suffix })
+            S.h('span', { class: 'bt-ce-quick-bag-lbl', text: (rec.name || 'Saved Bag') + suffix }),
+            cupsMeta ? S.h('span', {
+              class: 'bt-low-bag-pill' + ((cupsMeta.isLow || cupsMeta.isEmpty) ? ' is-warn' : ''),
+              text: cupsMeta.shortLabel
+            }) : null
           ));
         });
         sourceStrip.appendChild(quickRow);
@@ -7054,6 +7091,7 @@ if (typeof window !== 'undefined') {
   /* -------------------- 10. `My Coffees` Vault Sheet (`BTMyCoffeesVault`) -------------------- */
   var vaultUi = {
     facet: 'all',
+    sort: 'recent',
     originFilter: '',
     query: '',
     freshOpenKey: '',
@@ -7063,12 +7101,32 @@ if (typeof window !== 'undefined') {
     visibleLimit: 60
   };
 
+  function isVaultRecLocked(r) {
+    return !!(r && (r.isGoldenLocked || r.lockedBrew || String(r.dial_locked || '').toLowerCase() === 'yes'));
+  }
+
+  function isVaultRecFrozen(r) {
+    return !!(r && (r.is_frozen === 'yes' || r.is_frozen === true || (r.openBag && r.openBag.is_frozen === 'yes')));
+  }
+
+  function isVaultRecDialed(r) {
+    return !!(r && (isVaultRecLocked(r) || r.isDialedIn || (r.bestStars && r.bestStars >= 4.25)));
+  }
+
+  function vaultRecTimestamp(r) {
+    if (!r) return 0;
+    var lb = r.last_brewed_at ? Date.parse(r.last_brewed_at) : 0;
+    return Math.max(+r.updatedAt || 0, isFinite(lb) ? lb : 0);
+  }
+
   function buildMyCoffeesVault() {
     var root = S.h('div', { class: 'bt-ce-sheet', id: 'bt-my-coffees-vault' });
 
     function repaint() {
       root.textContent = '';
       var allRecs = S.buildUnifiedCoffeesSafe();
+      var appNow = S.getApp();
+      var activeDoseG = Math.max(1, +((appNow && appNow.brew && appNow.brew.dose) || 15));
 
       root.appendChild(S.h('div', { class: 'bt-ce-sheet-topbar' },
         S.h('button', {
@@ -7085,42 +7143,100 @@ if (typeof window !== 'undefined') {
 
       root.appendChild(S.h('div', null,
         S.h('div', { class: 'bt-ce-kicker', text: 'Living Bean Vault' }),
-        S.h('p', { class: 'bt-ce-sub', text: allRecs.length + ' saved coffee(s) · 1 tap restores bean & winning recipe.' })
+        S.h('p', { class: 'bt-ce-sub', text: allRecs.length + ' saved coffee(s) \u00B7 1 tap restores bean & winning recipe.' })
       ));
 
+      var clearBtn = S.h('button', {
+        type: 'button',
+        class: 'bt-ce-spotlight-clear',
+        id: 'bt-vault-search-clear-btn',
+        'aria-label': 'Clear coffee search',
+        hidden: !vaultUi.query,
+        text: '\u00D7',
+        onclick: function () {
+          vaultUi.query = '';
+          vaultUi.visibleLimit = 60;
+          searchInp.value = '';
+          clearBtn.hidden = true;
+          S.haptic('tick');
+          paintRowsOnly();
+          try { searchInp.focus(); } catch (_) {}
+        }
+      });
       var searchInp = S.h('input', {
         type: 'search',
+        id: 'bt-vault-search-input',
         placeholder: 'Search coffee, roaster, origin, varietal, or notes...',
         value: vaultUi.query,
         'aria-label': 'Search saved coffees',
         oninput: function (e) {
           vaultUi.query = e.target.value;
           vaultUi.visibleLimit = 60;
+          clearBtn.hidden = !vaultUi.query;
           paintRowsOnly();
         }
       });
-      root.appendChild(S.h('div', { class: 'bt-ce-spotlight' }, S.iconEl('search-filter', { size: 16 }), searchInp));
+      root.appendChild(S.h('div', { class: 'bt-ce-spotlight' }, S.iconEl('search-filter', { size: 16 }), searchInp, clearBtn));
 
       var facets = [
-        { k: 'all',      lbl: 'All (' + allRecs.length + ')' },
-        { k: 'open',     lbl: 'Open Bags' },
-        { k: 'dialed',   lbl: 'Dialed In' },
-        { k: 'light',    lbl: 'Light' },
-        { k: 'medium',   lbl: 'Medium' },
-        { k: 'dark',     lbl: 'Dark' },
-        { k: 'decaf',    lbl: 'Decaf' }
+        { k: 'all',        lbl: 'All (' + allRecs.length + ')' },
+        { k: 'open',       lbl: 'Open Bags' },
+        { k: 'locked',     lbl: 'Golden Locked' },
+        { k: 'needs_dial', lbl: 'Needs Dialing' },
+        { k: 'frozen',     lbl: 'Frozen' },
+        { k: 'dialed',     lbl: 'Dialed In' },
+        { k: 'light',      lbl: 'Light' },
+        { k: 'medium',     lbl: 'Medium' },
+        { k: 'dark',       lbl: 'Dark' },
+        { k: 'decaf',      lbl: 'Decaf' }
       ];
       root.appendChild(S.h('div', { class: 'bt-ce-chips-scroll', role: 'tablist', 'aria-label': 'Filter Vault' },
         facets.map(function (f) {
           return S.h('button', {
             type: 'button',
             class: 'bt-ce-chip is-compact',
+            'data-vault-facet': f.k,
             'aria-pressed': String(vaultUi.facet === f.k),
             text: f.lbl,
-            onclick: function () { vaultUi.facet = f.k; S.haptic('tick'); repaint(); }
+            onclick: function () { vaultUi.facet = f.k; vaultUi.visibleLimit = 60; S.haptic('tick'); repaint(); }
           });
         })
       ));
+
+      var sortModes = [
+        { k: 'recent',  lbl: 'Recent' },
+        { k: 'rating',  lbl: 'Rating' },
+        { k: 'brews',   lbl: 'Most Brews' },
+        { k: 'low_bag', lbl: 'Low Bag' },
+        { k: 'name',    lbl: 'Name A\u2013Z' }
+      ];
+      root.appendChild(S.h('div', {
+        class: 'bt-ce-chips-scroll',
+        id: 'bt-vault-sort-bar',
+        role: 'group',
+        'aria-label': 'Sort Vault'
+      },
+        S.h('span', { class: 'bt-ce-eyebrow', style: 'align-self:center;margin-right:2px;white-space:nowrap', text: 'Sort:' }),
+        sortModes.map(function (sm) {
+          return S.h('button', {
+            type: 'button',
+            class: 'bt-ce-chip is-compact' + (vaultUi.sort === sm.k ? ' is-active' : ''),
+            'data-vault-sort': sm.k,
+            'aria-pressed': String(vaultUi.sort === sm.k),
+            text: sm.lbl,
+            onclick: function () { vaultUi.sort = sm.k; vaultUi.visibleLimit = 60; S.haptic('tick'); repaint(); }
+          });
+        })
+      ));
+
+      var countEl = S.h('div', {
+        id: 'bt-vault-count-status',
+        class: 'bt-ce-sub num-tab',
+        style: 'font-size:12px;margin:2px 0 0',
+        role: 'status',
+        'aria-live': 'polite'
+      });
+      root.appendChild(countEl);
 
       var listHost = S.h('div', { style: 'display:flex;flex-direction:column;gap:8px' });
       root.appendChild(listHost);
@@ -7135,7 +7251,10 @@ if (typeof window !== 'undefined') {
           }
           var rl = String(r.roast || '').toLowerCase();
           if (vaultUi.facet === 'open') return !!r.openBag;
-          if (vaultUi.facet === 'dialed') return !!(r.lockedBrew || (r.bestStars && r.bestStars >= 4.25));
+          if (vaultUi.facet === 'locked') return isVaultRecLocked(r);
+          if (vaultUi.facet === 'needs_dial') return !isVaultRecDialed(r);
+          if (vaultUi.facet === 'frozen') return isVaultRecFrozen(r);
+          if (vaultUi.facet === 'dialed') return isVaultRecDialed(r);
           if (vaultUi.facet === 'light') return rl.indexOf('light') >= 0;
           if (vaultUi.facet === 'medium') return rl === 'medium' || rl.indexOf('med') === 0;
           if (vaultUi.facet === 'dark') return rl.indexOf('dark') >= 0;
@@ -7143,17 +7262,50 @@ if (typeof window !== 'undefined') {
           return true;
         });
 
+        filtered.sort(function (aRec, bRec) {
+          if (vaultUi.sort === 'rating') {
+            var dr = (+bRec.bestStars || 0) - (+aRec.bestStars || 0);
+            if (Math.abs(dr) > 1e-6) return dr;
+            return (+bRec.n_cups || 0) - (+aRec.n_cups || 0);
+          }
+          if (vaultUi.sort === 'brews') {
+            var dc = (+bRec.n_cups || 0) - (+aRec.n_cups || 0);
+            if (dc !== 0) return dc;
+            return (+bRec.bestStars || 0) - (+aRec.bestStars || 0);
+          }
+          if (vaultUi.sort === 'low_bag') {
+            var ma = computeCoffeeCupsLeftMeta(aRec, activeDoseG);
+            var mb = computeCoffeeCupsLeftMeta(bRec, activeDoseG);
+            if (ma && !mb) return -1;
+            if (!ma && mb) return 1;
+            if (ma && mb && ma.remG !== mb.remG) return ma.remG - mb.remG;
+            return String(aRec.name || '').localeCompare(String(bRec.name || ''));
+          }
+          if (vaultUi.sort === 'name') {
+            return String(aRec.name || '').localeCompare(String(bRec.name || ''));
+          }
+          var dt = vaultRecTimestamp(bRec) - vaultRecTimestamp(aRec);
+          if (dt !== 0) return dt;
+          return (+bRec.bestStars || 0) - (+aRec.bestStars || 0);
+        });
+
+        var shown = filtered.slice(0, vaultUi.visibleLimit);
+        countEl.textContent = filtered.length
+          ? ('Showing ' + shown.length + ' of ' + filtered.length + (filtered.length !== allRecs.length ? (' (' + allRecs.length + ' total)') : ''))
+          : ('Showing 0 of ' + allRecs.length);
+
         if (!filtered.length) {
           listHost.appendChild(S.h('div', { class: 'bt-ce-subwell', style: 'text-align:center;padding:20px' },
-            S.h('p', { class: 'bt-ce-sub', text: allRecs.length ? 'No saved coffees matched that search.' : 'Your Coffee Vault is ready — capture a bag on Step 1 or import your CSV backup.' })
+            S.h('p', { class: 'bt-ce-sub', text: allRecs.length ? 'No saved coffees matched that search.' : 'Your Coffee Vault is ready \u2014 capture a bag on Step 1 or import your CSV backup.' })
           ));
           return;
         }
 
-        filtered.slice(0, vaultUi.visibleLimit).forEach(function (rec, idx) {
+        shown.forEach(function (rec, idx) {
           var rKey = 'vrow_' + (rec.key || rec.coffee_id || idx);
           var anchor = rec.lockedBrew || rec.bestBrew || rec.latestBrew;
           var rCol = S.roastColorFor(rec.roast || rec.ground_agtron);
+          var cupsMeta = computeCoffeeCupsLeftMeta(rec, activeDoseG);
 
           var freshInlineNode = null;
           if (vaultUi.freshOpenKey === rKey) {
@@ -7174,7 +7326,7 @@ if (typeof window !== 'undefined') {
               type: 'button',
               class: 'bt-ce-bag-brew',
               style: 'min-height:42px;padding:0 14px;width:100%',
-              text: 'Use ' + (formatHumanIsoDate(vFreshDraft.roast_date) || 'Selected Date') + ' & Brew →',
+              text: 'Use ' + (formatHumanIsoDate(vFreshDraft.roast_date) || 'Selected Date') + ' & Brew \u2192',
               onclick: function () {
                 var chosen = vFreshDraft.dateUnsure ? 'unsure' : (vFreshDraft.roast_date || S.isoDaysAgo(0));
                 var isFz = vFreshDraft.is_frozen === 'yes';
@@ -7199,8 +7351,8 @@ if (typeof window !== 'undefined') {
                   vaultUi.freshIso = vFreshDraft.roast_date || '';
                   vaultUi.freshFreeze = vFreshDraft.is_frozen === 'yes';
                   vApplyBtn.textContent = vFreshDraft.dateUnsure
-                    ? 'Use Unstamped Bag & Brew →'
-                    : ('Use ' + (formatHumanIsoDate(vFreshDraft.roast_date) || 'Selected Date') + (vFreshDraft.is_frozen === 'yes' ? ' (-18 °C)' : '') + ' & Brew →');
+                    ? 'Use Unstamped Bag & Brew \u2192'
+                    : ('Use ' + (formatHumanIsoDate(vFreshDraft.roast_date) || 'Selected Date') + (vFreshDraft.is_frozen === 'yes' ? ' (-18 \u00B0C)' : '') + ' & Brew \u2192');
                 }
               }),
               vApplyBtn
@@ -7218,7 +7370,7 @@ if (typeof window !== 'undefined') {
             ));
           }
           if (rec.origin && String(rec.origin).toLowerCase() !== 'unknown') {
-            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: rec.region ? (rec.origin + ' · ' + rec.region) : rec.origin }));
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: rec.region ? (rec.origin + ' \u00B7 ' + rec.region) : rec.origin }));
           }
           if (rec.process && String(rec.process).toLowerCase() !== 'unknown') {
             rowChips.push(S.h('span', { class: 'bt-ce-badge', text: formatProcessDisplay(rec.process) }));
@@ -7228,6 +7380,12 @@ if (typeof window !== 'undefined') {
           }
           if (isFinite(+rec.elevation_m) && +rec.elevation_m > 0) {
             rowChips.push(S.h('span', { class: 'bt-ce-badge', text: Math.round(+rec.elevation_m) + 'm' }));
+          }
+          if (isVaultRecFrozen(rec)) {
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: 'Frozen -18 \u00B0C' }));
+          }
+          if (isVaultRecLocked(rec)) {
+            rowChips.push(S.h('span', { class: 'bt-ce-badge is-good', text: 'Golden Locked' }));
           }
 
           listHost.appendChild(S.h('div', {
@@ -7244,7 +7402,13 @@ if (typeof window !== 'undefined') {
                     return S.h('span', { class: 'bt-ce-badge is-good', text: fl });
                   })
                 ) : null,
-                S.h('div', { style: 'font-size:12px;color:var(--ink-secondary);margin-top:4px', text: anchor ? formatProvenanceBadge(anchor) : (rec.lastBrew ? 'Saved bean + last recipe' : 'Saved bean profile') })
+                S.h('div', { style: 'display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:5px' },
+                  S.h('span', { style: 'font-size:12px;color:var(--ink-secondary)', text: anchor ? formatProvenanceBadge(anchor) : (rec.lastBrew ? 'Saved bean + last recipe' : 'Saved bean profile') }),
+                  cupsMeta ? S.h('span', {
+                    class: 'bt-low-bag-pill' + ((cupsMeta.isLow || cupsMeta.isEmpty) ? ' is-warn' : ''),
+                    text: cupsMeta.longLabel
+                  }) : null
+                )
               ),
               S.h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' },
                 S.h('button', {
@@ -7257,7 +7421,7 @@ if (typeof window !== 'undefined') {
                   type: 'button',
                   class: 'bt-ce-bag-brew',
                   style: 'padding:0 12px',
-                  text: 'Brew →',
+                  text: 'Brew \u2192',
                   onclick: function () { applySavedCoffeeSelection(rec, { targetRoute: 'method' }); }
                 }),
                 S.h('button', {
@@ -7282,6 +7446,22 @@ if (typeof window !== 'undefined') {
             freshInlineNode
           ));
         });
+
+        if (filtered.length > shown.length) {
+          var remainingCount = filtered.length - shown.length;
+          listHost.appendChild(S.h('button', {
+            type: 'button',
+            id: 'bt-vault-show-more-btn',
+            class: 'bt-ce-bag-fresh',
+            style: 'width:100%;min-height:42px;justify-content:center;font-weight:700',
+            text: 'Show more (' + remainingCount + ' remaining)',
+            onclick: function () {
+              vaultUi.visibleLimit += 60;
+              S.haptic('tick');
+              paintRowsOnly();
+            }
+          }));
+        }
       }
 
       paintRowsOnly();

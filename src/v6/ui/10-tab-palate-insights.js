@@ -3301,7 +3301,7 @@
       domH('button', {
         type: 'button',
         id: 'bt-prefs-backup-saves-btn',
-        class: 'bt-lab-btn is-accent',
+        class: 'bt-lab-btn is-accent no-print',
         style: 'min-height:44px;font-weight:700;flex-shrink:0',
         onclick: function () {
           if (CK && typeof CK.haptic === 'function') CK.haptic('snap');
@@ -3315,7 +3315,7 @@
     );
     page.appendChild(palateHeadRow);
 
-    const segNav = domH('nav', { class: 'bt-studio-pill-nav', 'aria-label': 'Preferences & Palate Views' },
+    const segNav = domH('nav', { class: 'bt-studio-pill-nav no-print', 'aria-label': 'Preferences & Palate Views' },
       [
         { id: 'dna', lbl: 'Preferences & Palate DNA', icon: 'origin-globe' },
         { id: 'matcher', lbl: 'Will I Love This Bag?', icon: 'fresh-bag' },

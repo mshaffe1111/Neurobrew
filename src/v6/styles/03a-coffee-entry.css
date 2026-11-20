@@ -479,6 +479,30 @@
   cursor: pointer;
 }
 
+.bt-ce-spotlight-clear {
+  flex-shrink: 0;
+  min-width: 30px;
+  min-height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--line-soft, var(--line));
+  background: var(--well);
+  color: var(--ink-secondary);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.bt-ce-spotlight-clear:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .bt-ce-ai-btns {
   display: grid;
   grid-template-columns: minmax(0, 1.14fr) minmax(0, 0.86fr);
@@ -2772,6 +2796,13 @@
   border-color: var(--primary);
   background: var(--primary-soft);
   font-weight: 700;
+}
+
+.bt-ce-quick-bag-pill.is-single-full {
+  max-width: 100%;
+  width: 100%;
+  flex: 1 1 100%;
+  justify-content: space-between;
 }
 
 .bt-ce-quick-bag-lbl {

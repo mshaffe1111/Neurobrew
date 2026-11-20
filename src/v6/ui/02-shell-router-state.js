@@ -1445,7 +1445,8 @@ const _sheetTitles = {
   'onboarding-tour':    'Welcome to BeanTelligence',
   'about-charter':      'Science & Epistemic Charter',
   'share-qr-passport':  'Share QR Recipe Passport',
-  'recipe-science-why': 'Why These Numbers?'
+  'recipe-science-why': 'Why These Numbers?',
+  'screen-detail':      'Tasting Passport'
 };
 
 const BTSheet = (function() {
@@ -3559,8 +3560,8 @@ function paintStudioAside() {
   const doseG = +b.dose > 0 ? +b.dose : 15;
   const waterG = +b.water > 0 ? +b.water : 250;
   const ratio = +b.ratio > 0 ? +b.ratio : +(waterG / Math.max(1, doseG)).toFixed(1);
-  const tempF = +b.tempF > 0 ? Math.round(+b.tempF) : 200;
-  const tempC = Math.round((tempF - 32) * 5 / 9);
+  const tempF = +b.tempF > 0 ? Math.round(+b.tempF) : (+b.tempC > 0 ? Math.round(+b.tempC * 9 / 5 + 32) : 200);
+  const tempC = +b.tempC > 0 ? Math.round(+b.tempC) : Math.round((tempF - 32) * 5 / 9);
   const tempDisp = app.prefs.tempUnit === 'C' ? (tempC + ' °C (' + tempF + ' °F)') : (tempF + ' °F (' + tempC + ' °C)');
 
   let predTxt = '~1.38% · ~20.2% Extraction (%EY)';
@@ -3637,7 +3638,7 @@ function paintStudioAside() {
         h('span', { class: 'bt-status-dot' + (ble.active ? (ble.sim ? ' is-sim' : ' is-live') : '') }),
         h('span', { 'data-aside-fsm': '1', text: 'Smart Scale: ' + (ble.fsmHuman || _humanFsmLabel(ble.fsm)) })
       ),
-      bleState.lastTds ? h('b', { class: 'mono', style: 'color:var(--science)', text: (+bleState.lastTds).toFixed(2) + '% TDS' }) : h('span', { class: 'mono', style: 'color:var(--ink-muted)', text: tempDisp.split(' ')[0] })
+      bleState.lastTds ? h('b', { class: 'mono', style: 'color:var(--science)', text: (+bleState.lastTds).toFixed(2) + '% TDS' }) : h('span', { class: 'mono', style: 'color:var(--ink-muted)', text: app.prefs.tempUnit === 'C' ? (tempC + '°C') : (tempF + '°F') })
     ),
     h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px' },
       h('button', {

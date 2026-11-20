@@ -3615,7 +3615,7 @@
     const page = domH('div', { class: 'bt-tab-page bt-academy-page' });
     const glCount = getGlossaryEntries().length;
 
-    const nav = domH('nav', { class: 'bt-studio-pill-nav', 'aria-label': 'Learn and Vault Sections' },
+    const nav = domH('nav', { class: 'bt-studio-pill-nav no-print', 'aria-label': 'Learn and Vault Sections' },
       [
         { id: 'gym', lbl: '5-Bowl Cupping Table', icon: 'cafe-cup' },
         { id: 'curriculum', lbl: '19 Mini-Courses', icon: 'academy' },

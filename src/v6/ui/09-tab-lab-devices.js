@@ -268,15 +268,16 @@
 
   function epistemicBadge(tierKey, labelOverride) {
     const map = {
-      verified_physics: { txt: '[Verified Science]', cls: 'is-verified', icon: 'check-seal' },
-      calibrated_biophysics: { txt: '[Active Research]', cls: 'is-research', icon: 'xray-loupe' },
-      craft_convention: { txt: '[Craft Best Practice]', cls: 'is-craft', icon: 'spark-star' },
-      myth_debunked: { txt: '[Myth Debunked]', cls: 'is-myth', icon: 'close-x' }
+      verified_physics: { txt: 'Verified Science', cls: 'is-verified', icon: 'check-seal' },
+      calibrated_biophysics: { txt: 'Active Research', cls: 'is-research', icon: 'xray-loupe' },
+      craft_convention: { txt: 'Craft Best Practice', cls: 'is-craft', icon: 'spark-star' },
+      myth_debunked: { txt: 'Myth Debunked', cls: 'is-myth', icon: 'close-x' }
     };
     const meta = map[tierKey] || map.verified_physics;
+    const cleanTxt = String(labelOverride || meta.txt).replace(/^\s*\[|\]\s*$/g, '');
     return domH('span', { class: 'bt-epistemic-pill ' + meta.cls },
       ic(meta.icon, { size: 14 }),
-      domH('span', { text: labelOverride || meta.txt })
+      domH('span', { text: cleanTxt })
     );
   }
 
@@ -2809,7 +2810,7 @@
     );
 
     const machineCard = domH('div', {
-      class: 'bt-ble-slot-card',
+      class: 'bt-ble-slot-card bt-lab-ble-wide',
       'data-slot': 'machine',
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
@@ -3982,6 +3983,7 @@
       ariaMin: 14,
       ariaMax: 26,
       ariaNow: s.targetEy,
+      ariaText: s.targetEy.toFixed(1) + '% EY at ' + s.targetTds.toFixed(2) + '% TDS',
       detentStep: 0.2,
       defaultHandleId: 'target_puck',
       getHandles: function () {
@@ -4114,8 +4116,8 @@
       const curBasis = (a.prefs && a.prefs.immersionBasis) || 'liang';
       immersionBasisRow.appendChild(domH('span', { class: 'bt-lab-inline-lbl', text: 'Immersion Basis:' }));
       [
-        { k: 'liang', lbl: 'Liang f_abs = 0.00 [Verified Science]' },
-        { k: 'gagne', lbl: 'Gagne f_abs = 1.00 [Active Research]' }
+        { k: 'liang', lbl: 'Liang f_abs = 0.00', badge: 'Verified Science', badgeCls: 'is-verified' },
+        { k: 'gagne', lbl: 'Gagne f_abs = 1.00', badge: 'Active Research', badgeCls: 'is-research' }
       ].forEach(function (opt) {
         immersionBasisRow.appendChild(domH('button', {
           type: 'button',
@@ -4129,7 +4131,10 @@
             redrawStaticBackdrop();
             updatePuckAndReadouts();
           }
-        }, opt.lbl));
+        },
+          domH('span', { text: opt.lbl }),
+          domH('span', { class: 'bt-epistemic-pill ' + opt.badgeCls, style: 'padding:1px 6px;font-size:0.68rem', text: opt.badge })
+        ));
       });
     }
     buildImmersionBasisButtons();
@@ -4581,6 +4586,12 @@
     const T1 = 16, B1 = 162, PH1 = 146;
     const T2 = 172, B2 = 224, PH2 = 52;
 
+    const fmtMmSs = function (sec) {
+      const m = Math.floor(sec / 60);
+      const sRem = Math.round(sec % 60);
+      return m + ':' + String(sRem).padStart(2, '0');
+    };
+
     function simulateTrajectory() {
       const maxT = Math.max(120, w.knots[w.knots.length - 1].t + 15);
       const maxM = Math.max(100, w.knots[w.knots.length - 1].m * 1.08);
@@ -4861,12 +4872,6 @@
       const sugarsKeptPct = spEnd.yS > 0.005 ? Math.min(100, Math.round((spCut.yS / spEnd.yS) * 100)) : 100;
       const earlyDeltaSec = Math.max(0, Math.round(endDrainSec - cutSec));
 
-      const fmtMmSs = function (sec) {
-        const m = Math.floor(sec / 60);
-        const sRem = Math.round(sec % 60);
-        return m + ':' + String(sRem).padStart(2, '0');
-      };
-
       /* Tactile Draggable Emerald Cutoff Gate Handle right on the chart (shifted 14px lower & clamped clear of axis labels) */
       const cutHandleX = txSvg(cutSec);
       const cutPillX = clamp(cutHandleX, L + 46, R - 48, cutHandleX);
@@ -4883,6 +4888,9 @@
       if (cutoffRangeEl && document.activeElement !== cutoffRangeEl) {
         cutoffRangeEl.max = String(Math.round(endDrainSec));
         cutoffRangeEl.value = String(cutSec);
+      }
+      if (cutoffRangeEl) {
+        cutoffRangeEl.setAttribute('aria-valuetext', fmtMmSs(cutSec) + ' (~' + pullCarafeG + ' g in carafe)');
       }
       if (cutoffLblEl) {
         cutoffLblEl.textContent = 'Pull Dripper at ' + fmtMmSs(cutSec) + ' (~' + pullCarafeG + ' g in carafe)' +
@@ -4902,7 +4910,7 @@
       if (isScienceXray()) {
         readoutBar.appendChild(domH('p', {
           class: 'bt-studio-xray-line',
-          text: '[Polarity Kinetics & First-Law Open-CV Calorimetry] Wave 1 Bright Acids ' + Math.round(sp.yA * 100) + '% · Wave 2 Sweet Sugars ' + Math.round(sp.yS * 100) + '% · Wave 3 Dry Bitters ' + Math.round(sp.yB * 100) + '% — drag Cutoff Gate pill or diamond pour knots.'
+          text: 'Polarity Kinetics & First-Law Open-CV Calorimetry \u00B7 Wave 1 Bright Acids ' + Math.round(sp.yA * 100) + '% · Wave 2 Sweet Sugars ' + Math.round(sp.yS * 100) + '% · Wave 3 Dry Bitters ' + Math.round(sp.yB * 100) + '% — drag Cutoff Gate pill or diamond pour knots.'
         }));
       }
     }
@@ -4917,6 +4925,7 @@
       step: '5',
       value: String(w.cutoffSec || 150),
       'aria-label': 'Dripper Pull-Early Cutoff Gate in seconds',
+      'aria-valuetext': fmtMmSs(w.cutoffSec || 150) + ' pull cutoff',
       oninput: function () {
         w.cutoffSec = parseInt(cutoffRangeEl.value, 10) || 150;
         w.scrubT = w.cutoffSec;
@@ -4927,6 +4936,10 @@
 
     CK.bindChartSurface(svg, {
       ariaLabel: 'Extraction Wave Pour Knots, Cutoff Gate and Replay Scrubber',
+      ariaMin: 65,
+      ariaMax: 260,
+      ariaNow: w.cutoffSec || 150,
+      ariaText: fmtMmSs(w.cutoffSec || 150) + ' pull cutoff',
       detentStep: 5,
       getHandles: function () {
         if (!cachedSim) return [];
@@ -4951,6 +4964,8 @@
             const mm = Math.floor(nextSec / 60) + ':' + String(Math.round(nextSec % 60)).padStart(2, '0');
             return {
               detentValue: nextSec,
+              ariaNow: nextSec,
+              ariaText: mm + ' (' + Math.round(spC.carafeG || 200) + ' g, ' + blk + '% bitters blocked)',
               loupe: 'Pull @ ' + mm + ' (~' + Math.round(spC.carafeG || 200) + 'g) · ' + blk + '% Dry Bitters Blocked'
             };
           }
@@ -4998,7 +5013,7 @@
         if (!cachedSim) return {};
         w.scrubT = clamp(w.scrubT + k.dx * 5, 0, cachedSim.maxT, w.scrubT);
         renderWaveCanvasAndOverlay();
-        return { ariaNow: w.scrubT };
+        return { ariaNow: w.scrubT, ariaText: 'Replay ' + fmtMmSs(w.scrubT) };
       }
     });
 
@@ -5464,13 +5479,13 @@
 
     const readoutBanner = domH('div', { class: 'bt-studio-readout-banner' });
     const safeSipHero = domH('div', { class: 'bt-pk-safesip-hero', id: 'bt-pk-safesip-hero' });
-    const scheduleSummaryPill = domH('div', {
-      class: 'bt-pk-daily-schedule-pill num-tab',
-      id: 'bt-pk-daily-schedule-pill',
-      role: 'region',
-      'aria-label': 'Daily Coffee Budget and Cutoff Schedule',
-      style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px;padding:10px 12px;border-radius:14px;background:var(--bg-subtle, #F2EAE0);border:1px solid var(--line, #DCCDBE);box-sizing:border-box;min-width:0;max-width:100%;'
-    });
+      const scheduleSummaryPill = domH('div', {
+        class: 'bt-pk-daily-schedule-pill num-tab',
+        id: 'bt-pk-daily-schedule-pill',
+        role: 'region',
+        'aria-label': 'Daily Coffee Budget and Cutoff Schedule',
+        style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px;padding:10px 12px;border-radius:14px;background:var(--bg-subtle, #F2EAE0);border:1px solid var(--line, #DCCDBE);box-sizing:border-box;min-width:0;max-width:100%;'
+      });
     const inspectorRow = domH('div', { class: 'bt-pk-cup-inspector' });
 
     function persistCaffeinePrefs() {
@@ -5830,11 +5845,11 @@
       const budgetRemainingMg = Math.max(0, cyp.dailyCapMg - totalDailyMg);
       const gateHeadroomMg = Math.round(pk.swsGateMg - bedMg);
       const wakeShort = fmtClock(pk.wakeHour).replace(':00 ', '').toLowerCase();
-      const peakWinText = fmtClock(pfStartH) + '–' + fmtClock(pfEndH);
-      const cutoffText = cutoffRefFlag == null ? 'No safe time today' : fmtClock(cutoffRefFlag);
+      const peakWinText = fmtClock(pfStartH) + '\u2013' + fmtClock(pfEndH);
+      const cutoffText = cutoffRefFlag == null ? 'Over Limit Today' : fmtClock(cutoffRefFlag);
       const gateRemainingText = gatePass
-        ? (gateHeadroomMg + ' mg under ' + pk.swsGateMg + ' mg gate')
-        : ('+' + Math.abs(gateHeadroomMg) + ' mg over ' + pk.swsGateMg + ' mg gate');
+        ? (gateHeadroomMg + ' mg under ' + pk.swsGateMg + ' mg')
+        : ('+' + Math.abs(gateHeadroomMg) + ' mg vs ' + pk.swsGateMg + ' mg');
 
       scheduleSummaryPill.textContent = '';
       scheduleSummaryPill.appendChild(domH('div', {
@@ -5842,14 +5857,14 @@
         style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
       },
         domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Wake & Budget' }),
-        domH('strong', { style: 'font-size:0.84rem;color:var(--ink, #1C130E);', text: 'Wake ' + wakeShort + ' · ' + budgetRemainingMg + ' mg left' })
+        domH('strong', { style: 'font-size:0.84rem;line-height:1.25;color:var(--ink, #1C130E);', text: 'Wake ' + wakeShort + ' · ' + budgetRemainingMg + ' mg left' })
       ));
       scheduleSummaryPill.appendChild(domH('div', {
         class: 'bt-pk-sched-item',
         style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
       },
         domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Peak Window' }),
-        domH('strong', { style: 'font-size:0.84rem;color:var(--good, #1B6341);', text: peakWinText })
+        domH('strong', { style: 'font-size:0.84rem;line-height:1.25;color:var(--good, #1B6341);', text: peakWinText })
       ));
       scheduleSummaryPill.appendChild(domH('div', {
         class: 'bt-pk-sched-item',
@@ -5857,7 +5872,7 @@
       },
         domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Cutoff Time' }),
         domH('strong', {
-          style: 'font-size:0.84rem;color:' + (cutoffRefFlag == null ? 'var(--bad, #A1231F)' : 'var(--primary, #1B4D38)') + ';',
+          style: 'font-size:0.84rem;line-height:1.25;color:' + (cutoffRefFlag == null ? 'var(--bad, #A1231F)' : 'var(--primary, #1B4D38)') + ';',
           text: cutoffText
         })
       ));
@@ -5865,9 +5880,9 @@
         class: 'bt-pk-sched-item',
         style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
       },
-        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Bedtime Gate (' + fmtClock(bed) + ')' }),
+        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Bed Gate (' + fmtClock(bed) + ')' }),
         domH('strong', {
-          style: 'font-size:0.84rem;color:' + (gatePass ? 'var(--good, #1B6341)' : 'var(--bad, #A1231F)') + ';',
+          style: 'font-size:0.84rem;line-height:1.25;color:' + (gatePass ? 'var(--good, #1B6341)' : 'var(--bad, #A1231F)') + ';',
           text: gateRemainingText
         })
       ));
@@ -5958,6 +5973,10 @@
 
     CK.bindChartSurface(svg, {
       ariaLabel: '24-Hour Caffeine Cup Tokens and Wake/Bed Curtains',
+      ariaMin: 0,
+      ariaMax: 24,
+      ariaNow: pk.cups[pk.selectedCupIdx] ? pk.cups[pk.selectedCupIdx].hour : pk.wakeHour,
+      ariaText: pk.cups[pk.selectedCupIdx] ? (pk.cups[pk.selectedCupIdx].label + ' at ' + fmtClock(pk.cups[pk.selectedCupIdx].hour)) : ('Wake ' + fmtClock(pk.wakeHour)),
       allowBackgroundJump: false,
       detentStep: 1 / 12,
       getHandles: function () {
@@ -6456,6 +6475,10 @@
 
     CK.bindChartSurface(svg, {
       ariaLabel: '2D Water GH and KH Droplet Pad',
+      ariaMin: 0,
+      ariaMax: 320,
+      ariaNow: wt.kh,
+      ariaText: wt.gh + ' GH, ' + wt.kh + ' KH ppm',
       detentStep: 1,
       getHandles: function () {
         const list = [{
@@ -6506,7 +6529,7 @@
           syncWaterStateToAppLive({ markCustom: true });
           redrawWater();
           paint4WayAndImpact();
-          return { ariaNow: wt.kh };
+          return { ariaNow: wt.kh, ariaText: wt.gh + ' GH, ' + wt.kh + ' KH ppm' };
         }
       });
 
@@ -7308,6 +7331,10 @@
 
     CK.bindChartSurface(svg, {
       ariaLabel: 'Interactive Carafe Liquid Meniscus',
+      ariaMin: 2.0,
+      ariaMax: 22.0,
+      ariaNow: vs.ratio,
+      ariaText: '1:' + vs.ratio.toFixed(1) + ' ratio, ' + Math.round(vs.doseG) + ' g dose',
       detentStep: 5,
       onPointer: function (p) {
         const frac = clamp((V_BOT - p.uy) / V_H, 0.08, 0.94, 0.42);
@@ -7323,12 +7350,17 @@
         waveVel = 0;
         waveAnim.wake();
         redrawVessel();
-        return { detentValue: targetBev, loupe: Math.round(targetBev) + 'g Mug · 1:' + vs.ratio.toFixed(1) };
+        return {
+          detentValue: targetBev,
+          ariaNow: vs.ratio,
+          ariaText: Math.round(targetBev) + ' g mug, 1:' + vs.ratio.toFixed(1),
+          loupe: Math.round(targetBev) + 'g Mug · 1:' + vs.ratio.toFixed(1)
+        };
       },
       onKeyStep: function (k) {
         vs.ratio = clamp(vs.ratio + k.dy * 0.5 + k.dx * 0.5, 2.0, 22.0, vs.ratio);
         redrawVessel();
-        return { ariaNow: vs.ratio };
+        return { ariaNow: vs.ratio, ariaText: '1:' + vs.ratio.toFixed(1) + ' ratio' };
       }
     });
 
@@ -7840,6 +7872,10 @@
 
     CK.bindChartSurface(agSvg, {
       ariaLabel: '5-Scale Agtron Whole-Bean and Ground Pucks',
+      ariaMin: 25,
+      ariaMax: 105,
+      ariaNow: rf.groundG,
+      ariaText: 'Whole bean ' + rf.beanG.toFixed(1) + ', Ground ' + rf.groundG.toFixed(1) + ' Gourmet Agtron',
       detentStep: 0.5,
       getHandles: function () {
         return [
@@ -7851,7 +7887,7 @@
               rf.beanG = +invG(p.ux).toFixed(1);
               redrawAgtron();
               redrawFreshness();
-              return { detentValue: rf.beanG, loupe: 'Whole Bean: ' + rf.beanG.toFixed(1) + ' Gourmet' };
+              return { detentValue: rf.beanG, ariaNow: rf.beanG, ariaText: 'Whole Bean ' + rf.beanG.toFixed(1) + ' Gourmet', loupe: 'Whole Bean: ' + rf.beanG.toFixed(1) + ' Gourmet' };
             }
           },
           {
@@ -7862,7 +7898,7 @@
               rf.groundG = +invG(p.ux).toFixed(1);
               redrawAgtron();
               redrawFreshness();
-              return { detentValue: rf.groundG, loupe: 'Ground Core: ' + rf.groundG.toFixed(1) + ' (Tonino ' + toninoFromGourmet(rf.groundG).toFixed(0) + ')' };
+              return { detentValue: rf.groundG, ariaNow: rf.groundG, ariaText: 'Ground Core ' + rf.groundG.toFixed(1) + ' Gourmet', loupe: 'Ground Core: ' + rf.groundG.toFixed(1) + ' (Tonino ' + toninoFromGourmet(rf.groundG).toFixed(0) + ')' };
             }
           }
         ];
@@ -7871,7 +7907,7 @@
         rf.groundG = clamp(rf.groundG + k.dx * 0.5, 25, 105, rf.groundG);
         redrawAgtron();
         redrawFreshness();
-        return { ariaNow: rf.groundG };
+        return { ariaNow: rf.groundG, ariaText: 'Ground Core ' + rf.groundG.toFixed(1) + ' Gourmet' };
       }
     });
 
@@ -8008,6 +8044,10 @@
 
     CK.bindChartSurface(frSvg, {
       ariaLabel: 'Freshness Curve Freeze Day and Today Handles',
+      ariaMin: 0,
+      ariaMax: MAX_DAYS,
+      ariaNow: rf.daysToday,
+      ariaText: 'Day ' + rf.daysToday + (rf.freezeOn ? (', frozen day ' + rf.freezeDay) : ''),
       detentStep: 1,
       getHandles: function () {
         const fx = function (d) { return FP.L + (clamp(d, 0, MAX_DAYS, 0) / MAX_DAYS) * FP.PW; };
@@ -8020,7 +8060,7 @@
             onMove: function (p) {
               rf.freezeDay = Math.round(clamp(((p.ux - FP.L) / FP.PW) * MAX_DAYS, 1, 45, rf.freezeDay));
               redrawFreshness();
-              return { detentValue: rf.freezeDay, loupe: 'Freeze on Day ' + rf.freezeDay + ' (-18C 12.3x slower)' };
+              return { detentValue: rf.freezeDay, ariaNow: rf.freezeDay, ariaText: 'Freeze on Day ' + rf.freezeDay, loupe: 'Freeze on Day ' + rf.freezeDay + ' (-18C 12.3x slower)' };
             }
           },
           {
@@ -8035,7 +8075,7 @@
             onMove: function (p) {
               rf.daysToday = Math.round(clamp(((p.ux - FP.L) / FP.PW) * MAX_DAYS, 0, MAX_DAYS, rf.daysToday));
               redrawFreshness();
-              return { detentValue: rf.daysToday, loupe: 'Calendar Day ' + rf.daysToday };
+              return { detentValue: rf.daysToday, ariaNow: rf.daysToday, ariaText: 'Calendar Day ' + rf.daysToday, loupe: 'Calendar Day ' + rf.daysToday };
             }
           }
         ];
@@ -8043,7 +8083,7 @@
       onKeyStep: function (k) {
         rf.daysToday = clamp(rf.daysToday + k.dx, 0, MAX_DAYS, rf.daysToday);
         redrawFreshness();
-        return { ariaNow: rf.daysToday };
+        return { ariaNow: rf.daysToday, ariaText: 'Calendar Day ' + rf.daysToday };
       }
     });
 
@@ -8855,7 +8895,7 @@
         ? '2-Point Burr Calibration: Lock 2 distinct settings on the same grinder (Point 1 \u2260 Point 2).'
         : ('2-Point Burr Calibration (' + (gl.calGrinderKey || gFrom.key) + '): ' + (dUm / dClick).toFixed(1) + ' \u00B5m/step (' +
             gl.calPt1Click + '\u2192' + gl.calPt1Um + ' \u00B5m, ' + gl.calPt2Click + '\u2192' + gl.calPt2Um + ' \u00B5m)' +
-            (customCal ? ' [Active]' : ' [Other grinder]'));
+            (customCal ? ' · Active' : ' · Other grinder'));
 
       outBox.textContent = '';
       if (!hasInput && !(_omniOverrideUm > 0)) {
@@ -9100,7 +9140,9 @@
       }
       if (ktOn) parts.push('Kettle ' + (st.kettleTempC != null ? (Math.round(+st.kettleTempC) + ' \u00B0C') : 'On'));
       if (xbOn) parts.push('xBloom ' + (st.xbloomStage || 'Ready'));
-      setTextIfChanged(statusTxt, parts.length ? ('Live: ' + parts.join(' \u00B7 ')) : 'Scale / Pressure / R2 / Omni / Kettle Standby');
+      const isNarrowViewport = (typeof window !== 'undefined' && window.innerWidth > 0 && window.innerWidth < 480);
+      const idleStatusTxt = isNarrowViewport ? 'Scale / R2 Standby' : 'Scale / Pressure / R2 / Omni / Kettle Standby';
+      setTextIfChanged(statusTxt, parts.length ? ('Live: ' + parts.join(' \u00B7 ')) : idleStatusTxt);
       quickReadR2Btn.hidden = !(r2On || simOn);
       return barRoot && barRoot.isConnected;
     }
@@ -9284,6 +9326,27 @@
     page.appendChild(studioIntroBanner);
     page.appendChild(studioStage);
     mountActiveStudio();
+
+    page.appendChild(domH('div', {
+      class: 'bt-lab-bottom-actions no-print',
+      style: 'display:flex;justify-content:center;padding:8px 0 4px;'
+    },
+      domH('button', {
+        type: 'button',
+        id: 'bt-lab-back-to-top-btn',
+        class: 'bt-lab-btn is-sm',
+        'aria-label': 'Back to top of Lab & Tools',
+        onclick: function () {
+          CK.haptic('tick');
+          if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+            try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { window.scrollTo(0, 0); }
+          }
+          if (navBar && typeof navBar.scrollIntoView === 'function') {
+            try { navBar.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
+          }
+        }
+      }, 'Back to Top \u2191')
+    ));
 
     if (mountEl && mountEl.nodeType === 1) {
       mountEl.textContent = '';

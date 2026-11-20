@@ -1263,14 +1263,25 @@ select.bt-input {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  padding-bottom: 2px;
+  padding: 3px 22px 4px 2px;
   max-width: 100%;
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 24px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 24px), transparent 100%);
 }
 .bt-pill-row::-webkit-scrollbar {
   display: none;
 }
 .bt-pill-row > * {
   flex: 0 0 auto;
+}
+@media (min-width: 900px) {
+  .bt-pill-row {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    padding: 3px 2px 4px;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 }
 
 /* 3E. Audible Kitchen Chronograph Control Bar (.bt-audio-bar) */
@@ -3044,12 +3055,64 @@ select.bt-input {
   }
 }
 
+#mount [id],
+#sheet [id] {
+  scroll-margin-top: 74px;
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2.5px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 @media print {
   @page {
     margin: 12mm 14mm;
   }
 
+  :root,
+  :root[data-theme="dark"],
+  :root:not([data-theme="light"]) {
+    color-scheme: light !important;
+    --bg: #FFFFFF !important;
+    --bg-subtle: #FAF8F5 !important;
+    --surface: #FFFFFF !important;
+    --surface-elevated: #FFFFFF !important;
+    --surface-card-grad: #FFFFFF !important;
+    --card: #FFFFFF !important;
+    --card-elevated: #FFFFFF !important;
+    --well: #F7F5F0 !important;
+    --field: #FFFFFF !important;
+    --tint: #F7F5F0 !important;
+    --ink: #111111 !important;
+    --ink-primary: #111111 !important;
+    --ink-secondary: #333333 !important;
+    --ink-muted: #555555 !important;
+    --muted: #555555 !important;
+    --label: #111111 !important;
+    --line: #D4CDC4 !important;
+    --line-soft: #E5E0D8 !important;
+    --accent: #7E3B16 !important;
+    --accent-soft: #FAF2EB !important;
+    --primary: #1C4A36 !important;
+    --primary-soft: #EDF5F1 !important;
+    --good: #18603E !important;
+    --good-bg: #EDF6F1 !important;
+    --warn: #854B04 !important;
+    --warn-bg: #FEF6E4 !important;
+    --science: #16556E !important;
+    --science-bg: #EEF6F9 !important;
+    --gold-soft: #FEF8EA !important;
+  }
+
   html,
+  html[data-theme="dark"],
   body {
     background: #FFFFFF !important;
     background-image: none !important;
@@ -3068,6 +3131,8 @@ select.bt-input {
   #studio-aside,
   .bt-studio-aside-col,
   #cta-shelf,
+  .bt-sticky-cta-wrap,
+  .bt-sticky-cta-inner,
   #sheet-backdrop,
   #sheet:not(.is-open),
   .bt-sheet-host:not(.is-open),
@@ -3100,6 +3165,17 @@ select.bt-input {
   .bt-pill-wrap:has(button),
   .bt-tc-pill-wrap:has(button),
   .bt-tc-actions-row,
+  .bt-action-row-1line,
+  #bt-step3-print-card-btn,
+  #bt-step3-kettle-ble-btn,
+  .bt-screen-head > button.bt-chip-v6,
+  button[title*="Fahrenheit"],
+  .bt-temp-toggle,
+  .bt-pill-btn-why,
+  .bt-spec-why-pill,
+  .bt-tile-tune-tag,
+  .bt-spec-tune,
+  .bt-recipe-science-hero-btn,
   .no-print {
     display: none !important;
   }
@@ -3167,6 +3243,12 @@ select.bt-input {
     margin: 0 !important;
   }
 
+  .bt-screen-title,
+  .bt-screen-sub,
+  .bt-screen-kicker {
+    color: #111111 !important;
+  }
+
   /* Clean black-on-white cards with page-break guards */
   .bt-card,
   .bt-card-v6,
@@ -3174,6 +3256,18 @@ select.bt-input {
   .bt-tile-v6,
   .bt-kettle-warm-card,
   .bt-step-context-strip,
+  .bt-step3-coffee-context,
+  #bt-step3-coffee-context,
+  .bt-spec-tile-v62,
+  .bt-pour-row,
+  .bt-pour-step,
+  .bt-recipe-science-hero-btn,
+  .bt-hero-bag-card,
+  .bt-cellar-bag-card,
+  .bt-bj-coach-banner,
+  .bt-compare-table th,
+  .bt-compare-table td,
+  .bt-step3-sim-strip,
   .bt-tc-card,
   .bt-tc-hero-fix,
   .bt-passport-card,
@@ -3189,17 +3283,31 @@ select.bt-input {
     background: #FFFFFF !important;
     background-image: none !important;
     color: #111111 !important;
-    border: 1px solid #333333 !important;
+    border: 1px solid #D4CDC4 !important;
     box-shadow: none !important;
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  .bt-compare-table th {
+    background: #FAF8F5 !important;
   }
 
   .bt-card *,
   .bt-card-v6 *,
   .bt-tc-card *,
   .bt-qr-card-frame *,
-  .bt-passport-preview * {
+  .bt-passport-preview *,
+  .bt-spec-tile-v62 *,
+  .bt-pour-row *,
+  .bt-pour-step *,
+  .bt-hero-bag-card *,
+  .bt-cellar-bag-card *,
+  .bt-bj-coach-banner *,
+  .bt-step3-sim-strip *,
+  .bt-kettle-warm-card *,
+  .bt-step-context-strip *,
+  .bt-compare-table * {
     color: #111111 !important;
   }
 

@@ -340,6 +340,7 @@ var BTStorage;
           if (d.app.adjust && typeof d.app.adjust === 'object') a.adjust = Object.assign(a.adjust || {}, d.app.adjust);
           if (d.app.cupBrew && typeof d.app.cupBrew === 'object') a.cupBrew = d.app.cupBrew;
           if (typeof d.app.attempt === 'number' && isFinite(d.app.attempt)) a.attempt = d.app.attempt;
+          if (typeof d.app.recipeLocked === 'boolean') a.recipeLocked = d.app.recipeLocked;
           if (typeof d.app.screen === 'string' && d.app.screen) a.screen = d.app.screen;
           if (typeof d.app.tab === 'string' && d.app.tab) a.tab = d.app.tab;
           if (d.app.prefs && typeof d.app.prefs === 'object'){
@@ -604,25 +605,66 @@ var BTStorage;
     });
     return edits;
   }
+  function _syncDialLockAcrossVaultAndApp(targetObj, lockBool){
+    if (!targetObj || typeof targetObj !== 'object') return;
+    const idInfo = _extractCoffeeIdentity(targetObj);
+    const vList = _getCoffeesVaultListImpl();
+    const vIdx = _findVaultCoffeeIdx(vList, idInfo);
+    if (vIdx >= 0){
+      const nextV = Object.assign({}, vList[vIdx]);
+      nextV.dial_locked = lockBool ? 'yes' : '';
+      if (!lockBool){
+        delete nextV.lockedBrew;
+      }
+      if (nextV.dialAdaptation && typeof nextV.dialAdaptation === 'object'){
+        nextV.dialAdaptation = Object.assign({}, nextV.dialAdaptation, { locked:!!lockBool });
+      }
+      nextV.updatedAt = Date.now();
+      vList[vIdx] = nextV;
+      _saveCoffeesVaultListImpl(vList);
+    }
+    const a = _getApp();
+    if (_matchesAppCoffee(a, idInfo)){
+      a.recipeLocked = !!lockBool;
+      if (a.coffee){
+        a.coffee.dial_locked = lockBool ? 'yes' : '';
+        if (!lockBool && a.coffee.lockedBrew) delete a.coffee.lockedBrew;
+        if (a.coffee.dialAdaptation && typeof a.coffee.dialAdaptation === 'object'){
+          a.coffee.dialAdaptation = Object.assign({}, a.coffee.dialAdaptation, { locked:!!lockBool });
+        }
+      }
+      if (a.brew && a.brew.dialAdaptation && typeof a.brew.dialAdaptation === 'object'){
+        if (!lockBool && a.brew.dialAdaptation.adapted === false && a.brew.dialAdaptation.locked === true && !a.brew.dialAdaptation.headline && !a.brew.dialAdaptation.summaryBanner){
+          delete a.brew.dialAdaptation;
+        } else {
+          a.brew.dialAdaptation = Object.assign({}, a.brew.dialAdaptation, { locked:!!lockBool });
+        }
+      }
+      saveDraftFromApp();
+    }
+  }
   function _commitDialLockImpl(oOrIdx, on){
     if (!historyState || !historyState.ex) return { changed:0 };
     const o = typeof oOrIdx === 'number' ? historyState.objs[oOrIdx] : oOrIdx;
     if (!o || !historyState.ex.rows[o._i]) return { changed:0 };
-    if (on !== false && typeof isRowExcludedFromLearning === 'function' && isRowExcludedFromLearning(o)) return { changed:0, shielded:true };
-    const edits = _computeLockEdits(historyState.objs, o, on !== false);
-    if (!edits.length) return { changed:0 };
-    const header = historyState.ex.header.slice();
-    if (!header.includes('dial_locked')) header.push('dial_locked');
-    const ci = header.indexOf('dial_locked'), idi = header.indexOf('id');
-    const rows = historyState.ex.rows.map(r => { const rr = r.slice(); while (rr.length < header.length) rr.push(''); return rr; });
-    edits.forEach(e => {
-      rows[e.i][ci] = e.val;
-      const id = rows[e.i][idi] || String(e.i), tag = id + '|lock';
-      if (!lockedIds.has(tag)){ lockedIds.add(tag); histEdited += 1; }
-    });
-    _persistEdited();
-    historyState.ex.header = header;
-    _applyHistoryRowsImpl(rows);
+    const lockBool = on !== false;
+    if (lockBool && typeof isRowExcludedFromLearning === 'function' && isRowExcludedFromLearning(o)) return { changed:0, shielded:true };
+    const edits = _computeLockEdits(historyState.objs, o, lockBool);
+    if (edits.length){
+      const header = historyState.ex.header.slice();
+      if (!header.includes('dial_locked')) header.push('dial_locked');
+      const ci = header.indexOf('dial_locked'), idi = header.indexOf('id');
+      const rows = historyState.ex.rows.map(r => { const rr = r.slice(); while (rr.length < header.length) rr.push(''); return rr; });
+      edits.forEach(e => {
+        rows[e.i][ci] = e.val;
+        const id = rows[e.i][idi] || String(e.i), tag = id + '|lock';
+        if (!lockedIds.has(tag)){ lockedIds.add(tag); histEdited += 1; }
+      });
+      _persistEdited();
+      historyState.ex.header = header;
+      _applyHistoryRowsImpl(rows);
+    }
+    _syncDialLockAcrossVaultAndApp(o, lockBool);
     return { changed:edits.length };
   }
   function _loadHistoryImpl(){
@@ -1229,58 +1271,268 @@ var BTStorage;
     return { ok:true, added:m.added, list:prState.list };
   }
 
-  /* Deduct brewed dose from active open bag with 10-second Undo function */
+  function _extractCoffeeIdentity(coffeeOrRec){
+    const c = (coffeeOrRec && coffeeOrRec.coffee && typeof coffeeOrRec.coffee === 'object') ? coffeeOrRec.coffee : (coffeeOrRec || (_getApp().coffee) || {});
+    const cid = String(c.coffee_id || c.id || (coffeeOrRec && coffeeOrRec.coffee_id) || '').trim();
+    const rawName = cleanLine(unneutralize(
+      c.name || c.coffee_name || (typeof c.coffee === 'string' ? c.coffee : '') ||
+      (coffeeOrRec && (coffeeOrRec.name || coffeeOrRec.coffee_name || (typeof coffeeOrRec.coffee === 'string' ? coffeeOrRec.coffee : ''))) || ''
+    ));
+    const rawRoaster = cleanLine(unneutralize(c.roaster || (coffeeOrRec && coffeeOrRec.roaster) || ''));
+    const cName = _normKeyPart(rawName);
+    const cRoast = _normKeyPart(rawRoaster);
+    return { c, cid, rawName, rawRoaster, cName, cRoast, nrKey:cName ? (cName + '|' + cRoast) : '' };
+  }
+  function _matchesPriceEntry(e, idInfo){
+    if (!e || e.kind === 'pods') return false;
+    if (idInfo.cid && e.coffee_id && e.coffee_id === idInfo.cid) return true;
+    return !!(idInfo.cName && _normKeyPart(e.coffee) === idInfo.cName && (!idInfo.cRoast || !_normKeyPart(e.roaster) || _normKeyPart(e.roaster) === idInfo.cRoast));
+  }
+  function _findPriceBagIndices(coffeeOrRec, idInfo){
+    let openIdx = -1;
+    let finishedIdx = -1;
+    if (coffeeOrRec && coffeeOrRec.openBag && Number.isInteger(coffeeOrRec.openBag.bagIndex) && prState.list[coffeeOrRec.openBag.bagIndex]){
+      const ob = prState.list[coffeeOrRec.openBag.bagIndex];
+      if (ob && !ob.finished && ob.kind !== 'pods') openIdx = coffeeOrRec.openBag.bagIndex;
+    }
+    if (openIdx < 0){
+      for (let i = 0; i < prState.list.length; i++){
+        const e = prState.list[i];
+        if (!e || e.finished || e.kind === 'pods') continue;
+        if (_matchesPriceEntry(e, idInfo)){ openIdx = i; break; }
+      }
+    }
+    for (let i = prState.list.length - 1; i >= 0; i--){
+      const e = prState.list[i];
+      if (e && e.finished && _matchesPriceEntry(e, idInfo)){ finishedIdx = i; break; }
+    }
+    return { openIdx, finishedIdx };
+  }
+  function _findVaultCoffeeIdx(vList, idInfo){
+    if (!Array.isArray(vList) || !vList.length) return -1;
+    if (idInfo.cid){
+      for (let i = 0; i < vList.length; i++){
+        const it = vList[i];
+        if (!it || typeof it !== 'object') continue;
+        const itCid = String(it.coffee_id || it.id || '').trim();
+        if (itCid && itCid === idInfo.cid) return i;
+      }
+    }
+    if (idInfo.cName){
+      for (let i = 0; i < vList.length; i++){
+        const it = vList[i];
+        if (!it || typeof it !== 'object') continue;
+        const itName = _normKeyPart(it.name || it.coffee_name || it.coffee || '');
+        const itRoast = _normKeyPart(it.roaster || '');
+        if (itName === idInfo.cName && (!idInfo.cRoast || !itRoast || itRoast === idInfo.cRoast)) return i;
+      }
+    }
+    return -1;
+  }
+  function _matchesAppCoffee(a, idInfo){
+    if (!a || !a.coffee) return false;
+    const ac = a.coffee;
+    const appCid = String(ac.coffee_id || ac.id || '').trim();
+    if (idInfo.cid && appCid && idInfo.cid === appCid) return true;
+    const appName = _normKeyPart(ac.name || '');
+    const appRoast = _normKeyPart(ac.roaster || '');
+    return !!(idInfo.cName && appName && appName === idInfo.cName && (!idInfo.cRoast || !appRoast || appRoast === idInfo.cRoast));
+  }
+  function _isTastingRowSnapshot(obj){
+    return !!(obj && typeof obj === 'object' && (obj.cupping_date || obj.brew_dose_g || obj.saved_at || obj.coffee_name));
+  }
+  function _resolveBagInventoryContext(coffeeOrRec, idInfo){
+    const a = _getApp();
+    const pr = _findPriceBagIndices(coffeeOrRec, idInfo);
+    const vList = _getCoffeesVaultListImpl();
+    const vaultIdx = _findVaultCoffeeIdx(vList, idInfo);
+    const appMatches = _matchesAppCoffee(a, idInfo);
+    const hasOpenPrice = pr.openIdx >= 0;
+    const hasFinishedPrice = !hasOpenPrice && pr.finishedIdx >= 0;
+    const priceEntryRef = hasOpenPrice ? prState.list[pr.openIdx] : (hasFinishedPrice ? prState.list[pr.finishedIdx] : null);
+    const vaultRec = vaultIdx >= 0 ? vList[vaultIdx] : null;
+    const vaultHasWeight = !!(vaultRec && ((vaultRec.remaining_g != null && vaultRec.remaining_g !== '' && isFinite(+vaultRec.remaining_g)) || (+vaultRec.bag_weight_g > 0)));
+    const appHasWeight = !!(appMatches && a.coffee && ((a.coffee.remaining_g != null && a.coffee.remaining_g !== '' && isFinite(+a.coffee.remaining_g)) || (+a.coffee.bag_weight_g > 0)));
+    const recHasWeight = !!(coffeeOrRec && ((coffeeOrRec.remaining_g != null && coffeeOrRec.remaining_g !== '' && isFinite(+coffeeOrRec.remaining_g)) || (+coffeeOrRec.bag_weight_g > 0)));
+    const hasTrackedBag = hasOpenPrice || hasFinishedPrice || vaultHasWeight || appHasWeight || recHasWeight;
+    const priceTotalG = priceEntryRef ? costGrams(priceEntryRef.size, priceEntryRef.unit) : 0;
+    const vaultTotalG = (vaultRec && +vaultRec.bag_weight_g > 0) ? +vaultRec.bag_weight_g : 0;
+    const appTotalG = (appMatches && a.coffee && +a.coffee.bag_weight_g > 0) ? +a.coffee.bag_weight_g : 0;
+    const recTotalG = (coffeeOrRec && +coffeeOrRec.bag_weight_g > 0) ? +coffeeOrRec.bag_weight_g : 0;
+    const totalG = Math.round((priceTotalG || vaultTotalG || appTotalG || recTotalG || 0) * 10) / 10;
+    let curRem = NaN;
+    if (hasOpenPrice && priceEntryRef){
+      curRem = (priceEntryRef.rem_g != null && priceEntryRef.rem_g !== '' && isFinite(+priceEntryRef.rem_g)) ? +priceEntryRef.rem_g : priceTotalG;
+    } else if (vaultHasWeight && vaultRec){
+      curRem = (vaultRec.remaining_g != null && vaultRec.remaining_g !== '' && isFinite(+vaultRec.remaining_g)) ? +vaultRec.remaining_g : vaultTotalG;
+    } else if (hasFinishedPrice && priceEntryRef){
+      curRem = (priceEntryRef.rem_g != null && priceEntryRef.rem_g !== '' && isFinite(+priceEntryRef.rem_g)) ? +priceEntryRef.rem_g : 0;
+    } else if (appHasWeight){
+      curRem = (a.coffee.remaining_g != null && a.coffee.remaining_g !== '' && isFinite(+a.coffee.remaining_g)) ? +a.coffee.remaining_g : appTotalG;
+    } else if (recHasWeight){
+      curRem = (coffeeOrRec.remaining_g != null && coffeeOrRec.remaining_g !== '' && isFinite(+coffeeOrRec.remaining_g)) ? +coffeeOrRec.remaining_g : recTotalG;
+    }
+    return { a, pr, vList, vaultIdx, vaultRec, appMatches, hasOpenPrice, hasFinishedPrice, hasTrackedBag, totalG, curRem };
+  }
+  function _syncVaultRemaining(vList, vaultIdx, idInfo, priceEntryRef, totalG, nextRem){
+    if (vaultIdx >= 0 && vList[vaultIdx]){
+      const nextV = Object.assign({}, vList[vaultIdx], {
+        remaining_g:nextRem,
+        updatedAt:Date.now()
+      });
+      if (totalG > 0 && !(+nextV.bag_weight_g > 0)) nextV.bag_weight_g = totalG;
+      vList[vaultIdx] = nextV;
+      _saveCoffeesVaultListImpl(vList);
+      return nextV;
+    }
+    const baseName = idInfo.rawName || (priceEntryRef && priceEntryRef.coffee) || '';
+    const baseCid = idInfo.cid || (priceEntryRef && priceEntryRef.coffee_id) || '';
+    if (!baseName && !baseCid) return null;
+    return _upsertCoffeeVaultRecordImpl({
+      id:baseCid,
+      coffee_id:baseCid,
+      name:baseName,
+      roaster:idInfo.rawRoaster || (priceEntryRef && priceEntryRef.roaster) || '',
+      bag_weight_g:totalG > 0 ? totalG : undefined,
+      remaining_g:nextRem
+    }, null, { forceRemaining:true });
+  }
+
+  /* Deduct brewed dose from active open bag across Prices, Vault, and app.coffee with 0g guard & 10-second Undo */
   function _deductBagGramsImpl(coffeeOrRec, doseG, opts){
     opts = opts || {};
     const dose = +doseG;
     if (!(dose > 0 && isFinite(dose))) return () => false;
-    const c = coffeeOrRec && coffeeOrRec.coffee ? coffeeOrRec.coffee : (coffeeOrRec || (_getApp().coffee) || {});
-    const cid = String(c.coffee_id || c.id || '').trim();
-    const cName = _normKeyPart(c.name || c.coffee_name || c.coffee || '');
-    const cRoast = _normKeyPart(c.roaster || '');
-    let targetIdx = -1;
-    if (coffeeOrRec && coffeeOrRec.openBag && Number.isInteger(coffeeOrRec.openBag.bagIndex) && prState.list[coffeeOrRec.openBag.bagIndex]){
-      targetIdx = coffeeOrRec.openBag.bagIndex;
-    } else {
-      for (let i = 0; i < prState.list.length; i++){
-        const e = prState.list[i];
-        if (!e || e.finished || e.kind === 'pods') continue;
-        if (cid && e.coffee_id && e.coffee_id === cid){ targetIdx = i; break; }
-        if (cName && _normKeyPart(e.coffee) === cName && (!cRoast || !_normKeyPart(e.roaster) || _normKeyPart(e.roaster) === cRoast)){
-          targetIdx = i; break;
-        }
+    const idInfo = _extractCoffeeIdentity(coffeeOrRec);
+    const ctx = _resolveBagInventoryContext(coffeeOrRec, idInfo);
+    if (!ctx.hasTrackedBag) return () => false;
+    if (!isFinite(ctx.curRem) || ctx.curRem <= 0.4){
+      return { ok:false, empty:true, remaining_g:0 };
+    }
+
+    const nextRem = Math.max(0, Math.round((ctx.curRem - dose) * 10) / 10);
+    const targetIdx = ctx.pr.openIdx;
+    const hasPrice = targetIdx >= 0;
+    const prevPriceEntry = hasPrice ? Object.assign({}, prState.list[targetIdx]) : null;
+    const prevVaultList = ctx.vList.map(it => _cloneObj(it) || it);
+    const prevAppMatches = ctx.appMatches;
+    const prevAppRem = prevAppMatches && ctx.a.coffee ? ctx.a.coffee.remaining_g : undefined;
+    const prevAppOpenBag = (prevAppMatches && ctx.a.coffee && ctx.a.coffee.openBag) ? _cloneObj(ctx.a.coffee.openBag) : undefined;
+
+    if (hasPrice){
+      const patch = { rem_g:nextRem };
+      if (nextRem <= 0.4 && opts.autoFinish) patch.finished = _todayIso();
+      const updated = priceSet(prState.list, targetIdx, patch);
+      if (!updated.ok) return () => false;
+      prState.list = updated.list;
+      prState.changes++;
+      _persistPrices();
+    }
+    const priceRefAfter = hasPrice ? prState.list[targetIdx] : null;
+    _syncVaultRemaining(ctx.vList, ctx.vaultIdx, idInfo, priceRefAfter, ctx.totalG, nextRem);
+
+    if (prevAppMatches && ctx.a.coffee){
+      ctx.a.coffee.remaining_g = nextRem;
+      if (ctx.totalG > 0 && !(+ctx.a.coffee.bag_weight_g > 0)){
+        ctx.a.coffee.bag_weight_g = ctx.totalG;
+        ctx.a.coffee.bagWeightG = ctx.totalG;
+      }
+      if (ctx.a.coffee.openBag && typeof ctx.a.coffee.openBag === 'object'){
+        ctx.a.coffee.openBag.rem_g = nextRem;
+      }
+      saveDraftFromApp();
+    }
+    if (coffeeOrRec && typeof coffeeOrRec === 'object' && coffeeOrRec !== ctx.a.coffee){
+      if (Object.prototype.hasOwnProperty.call(coffeeOrRec, 'remaining_g') || coffeeOrRec.openBag !== undefined){
+        coffeeOrRec.remaining_g = nextRem;
+      }
+      if (coffeeOrRec.openBag && typeof coffeeOrRec.openBag === 'object'){
+        coffeeOrRec.openBag.rem_g = nextRem;
       }
     }
-    if (targetIdx < 0) return () => false;
-    const prevEntry = Object.assign({}, prState.list[targetIdx]);
-    const totalG = costGrams(prevEntry.size, prevEntry.unit);
-    const curRem = prevEntry.rem_g != null ? +prevEntry.rem_g : totalG;
-    const nextRem = Math.max(0, Math.round((curRem - dose) * 10) / 10);
-    const patch = { rem_g:nextRem };
-    if (nextRem <= 0.4 && opts.autoFinish) patch.finished = _todayIso();
-    const updated = priceSet(prState.list, targetIdx, patch);
-    if (!updated.ok) return () => false;
-    prState.list = updated.list;
-    prState.changes++;
-    _persistPrices();
+    _unifiedIndexCache.key = '';
+
+    const coffeeLabel = (prevPriceEntry && prevPriceEntry.coffee) || (ctx.vaultRec && ctx.vaultRec.name) || idInfo.rawName || 'coffee';
     const stampedAt = Date.now();
     let undone = false;
     const undoFn = function undoBagDeduct(){
       if (undone) return false;
       if (!opts.ignoreExpiry && Date.now() - stampedAt > 10000) return false;
-      if (!prState.list[targetIdx]) return false;
-      prState.list[targetIdx] = prevEntry;
-      prState.changes = Math.max(0, prState.changes - 1);
-      _persistPrices();
+      if (hasPrice){
+        if (!prState.list[targetIdx]) return false;
+        prState.list[targetIdx] = prevPriceEntry;
+        prState.changes = Math.max(0, prState.changes - 1);
+        _persistPrices();
+      }
+      _saveCoffeesVaultListImpl(prevVaultList);
+      if (prevAppMatches && ctx.a.coffee){
+        if (prevAppRem === undefined) delete ctx.a.coffee.remaining_g;
+        else ctx.a.coffee.remaining_g = prevAppRem;
+        if (prevAppOpenBag !== undefined) ctx.a.coffee.openBag = prevAppOpenBag;
+        saveDraftFromApp();
+      }
+      _unifiedIndexCache.key = '';
       undone = true;
       _triggerRender();
       return true;
     };
-    prState.deductUndo = { fn:undoFn, at:stampedAt, coffee:prevEntry.coffee, doseG:dose, remG:nextRem };
+    undoFn.ok = true;
+    undoFn.empty = false;
+    undoFn.remaining_g = nextRem;
+    undoFn.bag_weight_g = ctx.totalG;
+    undoFn.deducted_g = Math.round(dose * 10) / 10;
+    undoFn.undo = undoFn;
+
+    prState.deductUndo = { fn:undoFn, at:stampedAt, coffee:coffeeLabel, doseG:dose, remG:nextRem };
     if (!opts.silent){
       _notifyToast('Deducted ' + Math.round(dose * 10) / 10 + ' g (' + nextRem + ' g left in bag)', { actionLabel:'Undo', onAction:undoFn, durationMs:10000 });
     }
     return undoFn;
+  }
+
+  /* Reconcile remaining bag grams when an existing tasting dose is edited (delta = newDose - oldDose) */
+  function _reconcileBagDoseDeltaImpl(rowOrCoffee, deltaDoseG){
+    const delta = +deltaDoseG;
+    if (!isFinite(delta)) return { ok:false, changed:false, remaining_g:null };
+    if (Math.abs(delta) < 0.01) return { ok:true, changed:false, delta:0 };
+    const idInfo = _extractCoffeeIdentity(rowOrCoffee);
+    const ctx = _resolveBagInventoryContext(rowOrCoffee, idInfo);
+    if (!ctx.hasTrackedBag || !isFinite(ctx.curRem)){
+      return { ok:false, changed:false, remaining_g:null };
+    }
+    const rawNext = Math.round((ctx.curRem - delta) * 10) / 10;
+    const nextRem = ctx.totalG > 0 ? Math.min(ctx.totalG, Math.max(0, rawNext)) : Math.max(0, rawNext);
+
+    const priceIdx = ctx.pr.openIdx >= 0 ? ctx.pr.openIdx : (delta < 0 ? ctx.pr.finishedIdx : -1);
+    let priceRefAfter = null;
+    if (priceIdx >= 0 && prState.list[priceIdx]){
+      const patch = { rem_g:nextRem };
+      if (nextRem > 0.4 && prState.list[priceIdx].finished) patch.finished = '';
+      const updated = priceSet(prState.list, priceIdx, patch);
+      if (updated.ok){
+        prState.list = updated.list;
+        prState.changes++;
+        _persistPrices();
+        priceRefAfter = prState.list[priceIdx];
+      }
+    }
+    _syncVaultRemaining(ctx.vList, ctx.vaultIdx, idInfo, priceRefAfter, ctx.totalG, nextRem);
+
+    if (ctx.appMatches && ctx.a.coffee){
+      ctx.a.coffee.remaining_g = nextRem;
+      if (ctx.a.coffee.openBag && typeof ctx.a.coffee.openBag === 'object'){
+        ctx.a.coffee.openBag.rem_g = nextRem;
+      }
+      saveDraftFromApp();
+    }
+    _unifiedIndexCache.key = '';
+    return {
+      ok:true,
+      changed:true,
+      remaining_g:nextRem,
+      total_g:ctx.totalG,
+      delta:Math.round(delta * 10) / 10
+    };
   }
 
   /* ---------- Coffee Shops ('brew-and-cup-shops-v1' & 'brew-and-cup-shopdraft-v1') ---------- */
@@ -2528,6 +2780,7 @@ var BTStorage;
     const allowClear = opts.allowClear === true;
     const rawIn = (coffeeIn && coffeeIn.coffee && typeof coffeeIn.coffee === 'object') ? coffeeIn.coffee : (coffeeIn || {});
     const nowTs = typeof opts.updatedAt === 'number' && isFinite(opts.updatedAt) ? opts.updatedAt : (opts.updatedAt ? (Date.parse(opts.updatedAt) || Date.now()) : Date.now());
+    const fromRowSnapshot = opts.fromRowSnapshot === true || (!opts.fromPriceList && opts.forceRemaining !== true && _isTastingRowSnapshot(brewIn));
 
     let merged;
     if (hitIdx >= 0){
@@ -2544,6 +2797,14 @@ var BTStorage;
             delete existing[k];
             return;
           }
+        }
+        if (k === 'remaining_g' && fromRowSnapshot && _hasMeaningfulVal(existing.remaining_g, true)){
+          const idInfoSnap = _extractCoffeeIdentity(existing);
+          const prSnap = _findPriceBagIndices(null, idInfoSnap);
+          if (prSnap.openIdx >= 0 && prState.list[prSnap.openIdx] && prState.list[prSnap.openIdx].rem_g != null){
+            existing.remaining_g = Math.round(+prState.list[prSnap.openIdx].rem_g * 10) / 10;
+          }
+          return;
         }
         if (_hasMeaningfulVal(newVal, allowZero)){
           if (incomingOlder && _hasMeaningfulVal(existing[k], allowZero)) return;
@@ -2606,6 +2867,20 @@ var BTStorage;
         }
       });
     }
+    /* Never let a historical tasting row's coffee_extra.remaining_g overwrite live inventory in Prices / app.coffee / Vault */
+    const rowIdInfo = _extractCoffeeIdentity(mergedCoffee);
+    const prRowBags = _findPriceBagIndices(null, rowIdInfo);
+    if (prRowBags.openIdx >= 0 && prState.list[prRowBags.openIdx] && prState.list[prRowBags.openIdx].rem_g != null){
+      mergedCoffee.remaining_g = Math.round(+prState.list[prRowBags.openIdx].rem_g * 10) / 10;
+    } else if (sameAppCoffee && _hasMeaningfulVal(appCoffee.remaining_g, true)){
+      mergedCoffee.remaining_g = Math.round(+appCoffee.remaining_g * 10) / 10;
+    } else {
+      const curVaultList = _getCoffeesVaultListImpl();
+      const curVIdx = _findVaultCoffeeIdx(curVaultList, rowIdInfo);
+      if (curVIdx >= 0 && _hasMeaningfulVal(curVaultList[curVIdx].remaining_g, true)){
+        mergedCoffee.remaining_g = Math.round(+curVaultList[curVIdx].remaining_g * 10) / 10;
+      }
+    }
     if (_isGoldenLockedRow(rowObj)) mergedCoffee.dial_locked = 'yes';
     else if (Object.prototype.hasOwnProperty.call(rowObj, 'dial_locked')) mergedCoffee.dial_locked = '';
     if (ad.next_recipe && typeof ad.next_recipe === 'object') mergedCoffee.pendingNextRecipe = ad.next_recipe;
@@ -2622,7 +2897,7 @@ var BTStorage;
     if (ad.machine_profile) rowBrew.machineProfile = ad.machine_profile;
     const appBrew = (sameAppCoffee && a && a.brew) ? (_buildBrewSnapshot(a.brew) || {}) : {};
     const mergedBrew = Object.assign({}, appBrew, rowBrew);
-    return _upsertCoffeeVaultRecordImpl(mergedCoffee, Object.keys(mergedBrew).length ? mergedBrew : null);
+    return _upsertCoffeeVaultRecordImpl(mergedCoffee, Object.keys(mergedBrew).length ? mergedBrew : null, { fromRowSnapshot:true });
   }
 
   function _upsertVaultFromPriceList(list){
@@ -2653,7 +2928,7 @@ var BTStorage;
         remaining_g:bag.rem_g != null ? Math.round(+bag.rem_g * 10) / 10 : (totalG > 0 ? Math.round(totalG * 10) / 10 : ''),
         price:bag.price,
         currency:bag.currency || bag.sym || '$'
-      });
+      }, null, { fromPriceList:true });
     }
   }
 
@@ -2964,7 +3239,14 @@ var BTStorage;
       if (!rec.roaster_location && (bag.city || bag.state)) rec.roaster_location = [bag.city, bag.state].filter(Boolean).join(', ');
       const bagTotalG = costGrams(bag.size, bag.unit);
       if (bagTotalG > 0 && !rec.bag_weight_g) rec.bag_weight_g = Math.round(bagTotalG * 10) / 10;
-      if (bag.rem_g != null && rec.remaining_g === '') rec.remaining_g = Math.round(+bag.rem_g * 10) / 10;
+      if (bag.rem_g != null){
+        if (!bag.finished){
+          rec.remaining_g = Math.round(+bag.rem_g * 10) / 10;
+          rec._hasLivePriceRem = true;
+        } else if (rec.remaining_g === '' || !rec._hasLivePriceRem){
+          rec.remaining_g = Math.round(+bag.rem_g * 10) / 10;
+        }
+      }
       if (bag.price > 0 && !rec.price) rec.price = bag.price;
       if ((bag.currency || bag.sym) && !rec.currency) rec.currency = bag.currency || bag.sym;
 
@@ -3045,7 +3327,9 @@ var BTStorage;
       if (Array.isArray(v.flavors) && v.flavors.length && (!rec.flavors.length || vIsNewer)) rec.flavors = v.flavors.slice();
       mergeVaultVal('personal_note', v.personal_note);
       mergeVaultVal('bag_weight_g', v.bag_weight_g);
-      mergeVaultVal('remaining_g', v.remaining_g, true);
+      if (_hasMeaningfulVal(v.remaining_g, true)){
+        if (!rec._hasLivePriceRem || vIsNewer) rec.remaining_g = Math.round(+v.remaining_g * 10) / 10;
+      }
       mergeVaultVal('price', v.price);
       mergeVaultVal('currency', v.currency);
       ['agtron', 'bean_agtron', 'ground_agtron', 'agtron_scale', 'roast_delta', 'psd_d10_um', 'psd_d50_um', 'psd_d90_um', 'psd_span'].forEach(ak => {
@@ -3069,12 +3353,15 @@ var BTStorage;
       if (v.dialAdaptation && typeof v.dialAdaptation === 'object' && (!rec.dialAdaptation || vIsNewer)){
         rec.dialAdaptation = _cloneObj(v.dialAdaptation);
       }
+      if (v.dial_locked === 'yes' && !rec.latestBrew) rec.dial_locked = 'yes';
+      else if (Object.prototype.hasOwnProperty.call(v, 'dial_locked') && !v.dial_locked && !rec.lockedBrew) rec.dial_locked = '';
       if (vTs > rec.updatedAt) rec.updatedAt = vTs;
     }
 
     /* Pass 4: Finalize derived freshness & dial status + deterministic sort */
     for (let k = 0; k < records.length; k++){
       const rec = records[k];
+      delete rec._hasLivePriceRem;
       if (rec.latestBrew && !rec.last_brewed_at){
         const lb = rec.latestBrew;
         rec.last_brewed_at = lb.cupping_date || (lb.saved_at ? lb.saved_at.slice(0, 10) : '');
@@ -3482,11 +3769,17 @@ var BTStorage;
         }
       }
       const wantResetG = bagOpts.sizeG != null ? +bagOpts.sizeG : (bagOpts.rem_g != null ? +bagOpts.rem_g : null);
+      let resetRemainingG = null;
+      let resetTotalG = null;
       if (openIdx >= 0){
         const curBag = prState.list[openIdx];
         const totalG = wantResetG > 0 ? wantResetG : costGrams(curBag.size, curBag.unit);
         const patch = { roast:iso, finished:'' };
-        if (bagOpts.resetBagGrams !== false && totalG > 0) patch.rem_g = Math.round(totalG * 10) / 10;
+        if (bagOpts.resetBagGrams !== false && totalG > 0){
+          patch.rem_g = Math.round(totalG * 10) / 10;
+          resetRemainingG = patch.rem_g;
+          resetTotalG = Math.round(totalG * 10) / 10;
+        }
         if (wantResetG > 0 && curBag.unit === 'g') patch.size = wantResetG;
         const upd = priceSet(prState.list, openIdx, patch);
         if (upd.ok){ prState.list = upd.list; prState.changes++; _persistPrices(); targetCoffee.openBag = prState.list[openIdx]; }
@@ -3517,11 +3810,42 @@ var BTStorage;
           prState.changes++;
           _persistPrices();
           targetCoffee.openBag = prState.list[prState.list.length - 1];
+          resetRemainingG = Math.round(totalG * 10) / 10;
+          resetTotalG = resetRemainingG;
         }
+      } else if (bagOpts.resetBagGrams !== false){
+        const fallbackTotal = wantResetG > 0 ? wantResetG : (+targetCoffee.bag_weight_g || (recOrCoffee && +recOrCoffee.bag_weight_g) || 0);
+        if (fallbackTotal > 0){
+          resetRemainingG = Math.round(fallbackTotal * 10) / 10;
+          resetTotalG = resetRemainingG;
+        }
+      }
+      if (resetRemainingG != null){
+        targetCoffee.remaining_g = resetRemainingG;
+        if (resetTotalG > 0){ targetCoffee.bag_weight_g = resetTotalG; targetCoffee.bagWeightG = resetTotalG; }
+        if (a.coffee && targetCoffee !== a.coffee){
+          a.coffee.remaining_g = resetRemainingG;
+          if (resetTotalG > 0){ a.coffee.bag_weight_g = resetTotalG; a.coffee.bagWeightG = resetTotalG; }
+          if (targetCoffee.openBag) a.coffee.openBag = targetCoffee.openBag;
+        }
+        const freshVaultPatch = {
+          id:cid,
+          coffee_id:cid,
+          name:cName,
+          roaster:cRoaster,
+          roast_date:targetCoffee.roast_date,
+          is_frozen:targetCoffee.is_frozen,
+          frozen_date:targetCoffee.frozen_date,
+          freeze_days_offset:targetCoffee.freeze_days_offset,
+          remaining_g:resetRemainingG
+        };
+        if (resetTotalG > 0) freshVaultPatch.bag_weight_g = resetTotalG;
+        _upsertCoffeeVaultRecordImpl(freshVaultPatch, null, { forceRemaining:true, allowClear:true });
       }
     }
 
     _unifiedIndexCache.key = '';
+    saveDraftFromApp();
     _triggerScheduleDraft();
     if (!bagOpts.silent) _triggerRender();
     return targetCoffee;
@@ -4588,6 +4912,7 @@ var BTStorage;
     deletePriceBag:idx => { const e = prState.list[idx]; if (!e) return false; prState.undo = { e, at:idx, t:Date.now() }; prState.list = prState.list.filter((_, k) => k !== idx); prState.changes++; _persistPrices(); return true; },
     undoPriceDelete:() => { if (!prState.undo) return false; const l = prState.list.slice(); l.splice(Math.min(prState.undo.at, l.length), 0, prState.undo.e); prState.list = l; prState.changes = Math.max(0, prState.changes - 1); prState.undo = null; _persistPrices(); return true; },
     deductBagGrams:_deductBagGramsImpl,
+    reconcileBagDoseDelta:_reconcileBagDoseDeltaImpl,
     undoLastBagDeduct:() => (prState.deductUndo && typeof prState.deductUndo.fn === 'function') ? prState.deductUndo.fn() : false,
 
     getShops:() => shState,
@@ -4712,6 +5037,7 @@ function baseRow(overrides){ return BTStorage.baseRow(overrides); }
 function buildRow(overrides){ return BTStorage.buildRow(overrides); }
 function useCoffeeFromRow(rowObj, stay, withMachineProfile){ return BTStorage.useCoffeeFromRow(rowObj, stay, withMachineProfile); }
 function deductBagGrams(coffee, doseG, opts){ return BTStorage.deductBagGrams(coffee, doseG, opts); }
+function reconcileBagDoseDelta(rowOrCoffee, deltaDoseG){ return BTStorage.reconcileBagDoseDelta(rowOrCoffee, deltaDoseG); }
 function savePrices(nextList){ return BTStorage.savePrices(nextList); }
 function loadPrices(){ return BTStorage.loadPrices(); }
 function saveShops(nextStore){ return BTStorage.saveShops(nextStore); }
