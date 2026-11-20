@@ -104,6 +104,11 @@
     journalQ: '',
     journalFilter: 'all',
     journalSort: 'newest',
+    journalBreakdownOpen: true,
+    selectedCvaTrait: '',
+    cuppingCompareOpen: true,
+    cuppingCmpA: 0,
+    cuppingCmpB: 1,
     compareIdxs: [],
     compareOnlyVaried: true,
     passportCodeInput: '',
@@ -164,9 +169,11 @@
   function homeDraftReturnLabel() {
     var a = S.getApp();
     var step = String((a && a.brewStep) || 'door');
-    if (step === 'taste') return '\u2190 Back to Tasting';
-    if (step === 'timer') return '\u2190 Back to Brew Timer';
-    if (step === 'brew' || step === 'method') return '\u2190 Back to Home Brew';
+    var cName = (a && a.coffee && a.coffee.name) ? unneutCellar(a.coffee.name) : '';
+    var shortName = cName ? (' \u00B7 ' + (cName.length > 26 ? (cName.slice(0, 25) + '\u2026') : cName)) : '';
+    if (step === 'taste') return '\u2190 Back to Tasting' + shortName;
+    if (step === 'timer') return '\u2190 Back to Brew Timer' + shortName;
+    if (step === 'brew' || step === 'method') return '\u2190 Back to Home Brew' + shortName;
     return '\u2190 Home Brew';
   }
 
@@ -329,16 +336,213 @@
     };
   }
 
+  var CVA_8_TRAITS = [
+    { key: 'fragrance', label: 'Fragrance', hint: 'Dry ground aroma before pouring hot water' },
+    { key: 'aroma', label: 'Aroma', hint: 'Wet aroma on pour & breaking the 4:00 crust' },
+    { key: 'flavor', label: 'Flavor', hint: 'Combined taste & retronasal flavor when slurping' },
+    { key: 'aftertaste', label: 'Aftertaste', hint: 'Sweetness, cleanliness & linger of the finish' },
+    { key: 'acidity', label: 'Acidity', hint: 'Bright, juicy fruit liveliness (apple, berry, citrus)' },
+    { key: 'sweetness', altKey: 'q_sweetness', label: 'Sweetness', hint: 'Ripe fruit, honey or caramel roundness' },
+    { key: 'body', label: 'Body', hint: 'Mouthfeel weight, silkiness & tactile texture' },
+    { key: 'overall', label: 'Overall', hint: 'Holistic harmony & personal enjoyment' }
+  ];
+
+  function isCuppingRow(r) {
+    if (!r || typeof r !== 'object') return false;
+    var mk = String(r.brew_method || '').toLowerCase();
+    var sk = String(r.score_kind || '').toLowerCase();
+    if (mk === 'cupping' || sk === 'cva_affective') return true;
+    var filled = 0;
+    CVA_8_TRAITS.forEach(function (tr) {
+      var v = parseFloat(r[tr.key] != null && r[tr.key] !== '' ? r[tr.key] : (tr.altKey ? r[tr.altKey] : ''));
+      if (isFinite(v) && v > 0) filled++;
+    });
+    return filled >= 4;
+  }
+
+  function extractRowCvaTraits(r) {
+    if (!r || typeof r !== 'object') return { hasAny: false, maxScale: 9, items: [] };
+    var items = [];
+    var maxVal = 0;
+    CVA_8_TRAITS.forEach(function (tr) {
+      var raw = (r[tr.key] != null && r[tr.key] !== '') ? r[tr.key] : (tr.altKey ? r[tr.altKey] : '');
+      var num = parseFloat(raw);
+      var valid = isFinite(num) && num > 0;
+      if (valid && num > maxVal) maxVal = num;
+      items.push({ key: tr.key, label: tr.label, hint: tr.hint, val: valid ? num : null });
+    });
+    var filledItems = items.filter(function (it) { return it.val != null; });
+    if (!filledItems.length) return { hasAny: false, maxScale: 9, items: items };
+    var maxScale = maxVal > 9.05 ? 10 : 9;
+    var hi = Math.max.apply(null, filledItems.map(function (it) { return it.val; }));
+    var lo = Math.min.apply(null, filledItems.map(function (it) { return it.val; }));
+    items.forEach(function (it) {
+      it.pct = it.val != null ? Math.max(6, Math.min(100, Math.round((it.val / maxScale) * 100))) : 0;
+      it.isHigh = it.val != null && filledItems.length >= 2 && hi - lo >= 0.25 && Math.abs(it.val - hi) < 0.01;
+      it.isLow = it.val != null && filledItems.length >= 2 && hi - lo >= 0.25 && Math.abs(it.val - lo) < 0.01;
+    });
+    return { hasAny: true, maxScale: maxScale, items: items, hi: hi, lo: lo };
+  }
+
+  function classifyJournalRatingTier(r) {
+    if (!r) return '';
+    var st = parseFloat(r.my_rating_stars) || 0;
+    if (st <= 0) {
+      var sc = parseFloat(r.total_score) || 0;
+      if (sc >= 60) st = Math.max(1, Math.min(5, 1 + ((sc - 58) / 34) * 4));
+    }
+    if (st <= 0) return '';
+    if (st >= 4.875) return 'tier5';
+    if (st >= 4.0) return 'tier4';
+    if (st >= 3.0) return 'tier3';
+    return 'tierLow';
+  }
+
+  function buildCvaDetailScorecard(r, hObjs) {
+    var parsed = extractRowCvaTraits(r);
+    if (!parsed.hasAny) return null;
+    var activeKey = '';
+    var host = S.h('section', { class: 'bt-tc-well bt-cva-detail-card', id: 'bt-detail-cva-grid', style: 'gap:8px' });
+    var noteEl = S.h('p', { class: 'bt-tc-sub', style: 'margin:0', text: 'Tap any attribute pill to inspect what it measures & compare against your cupping average.' });
+
+    /* Compute personal averages across logged cupping rows for comparison */
+    var cupRows = (Array.isArray(hObjs) ? hObjs : []).filter(isCuppingRow);
+    var avgByTrait = Object.create(null);
+    CVA_8_TRAITS.forEach(function (tr) {
+      var sum = 0, n = 0;
+      cupRows.forEach(function (cr) {
+        var v = parseFloat(cr[tr.key] != null && cr[tr.key] !== '' ? cr[tr.key] : (tr.altKey ? cr[tr.altKey] : ''));
+        if (isFinite(v) && v > 0) { sum += v; n++; }
+      });
+      if (n > 0) avgByTrait[tr.key] = +(sum / n).toFixed(2);
+    });
+
+    var gridEl = S.h('div', { class: 'bt-sca-attr-grid' });
+    var pillRefs = [];
+
+    function paintPills() {
+      gridEl.textContent = '';
+      pillRefs.length = 0;
+      parsed.items.forEach(function (it) {
+        if (it.val == null) return;
+        var isAct = activeKey === it.key;
+        var btn = S.h('button', {
+          type: 'button',
+          class: 'bt-sca-attr-pill bt-drillable' + (isAct ? ' is-active' : '') + (it.isHigh ? ' is-high' : '') + (it.isLow ? ' is-low' : ''),
+          'aria-pressed': String(isAct),
+          onclick: function () {
+            activeKey = (activeKey === it.key) ? '' : it.key;
+            var myAvg = avgByTrait[it.key];
+            if (activeKey) {
+              var deltaTxt = (myAvg != null && cupRows.length >= 2)
+                ? (' (Your cupping avg: ' + myAvg.toFixed(1) + '/' + parsed.maxScale + ', ' + (it.val >= myAvg ? '+' : '') + (it.val - myAvg).toFixed(1) + ')')
+                : '';
+              noteEl.textContent = it.label + ' (' + it.val.toFixed(1).replace(/\.0$/, '') + '/' + parsed.maxScale + '): ' + it.hint + '.' + deltaTxt;
+            } else {
+              noteEl.textContent = 'Tap any attribute pill to inspect what it measures & compare against your cupping average.';
+            }
+            S.haptic('tick');
+            paintPills();
+          }
+        },
+          S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%' },
+            S.h('span', { class: 'bt-sca-attr-name', text: it.label }),
+            S.h('strong', { class: 'bt-sca-attr-val mono', text: it.val.toFixed(1).replace(/\.0$/, '') + '/' + parsed.maxScale })
+          ),
+          S.h('div', { class: 'bt-rating-dist-track', style: 'width:100%' },
+            S.h('div', { class: 'bt-rating-dist-fill', style: 'width:' + it.pct + '%' })
+          )
+        );
+        pillRefs.push(btn);
+        gridEl.appendChild(btn);
+      });
+    }
+    paintPills();
+
+    var taintN = parseInt(r.taint_cups, 10) || 0;
+    var faultN = parseInt(r.fault_cups, 10) || 0;
+    var totalSca = parseFloat(r.total_score) || 0;
+
+    host.appendChild(S.h('div', { class: 'bt-tc-row-between' },
+      S.h('span', { class: 'bt-tc-kicker', text: 'SCA / CVA 8-Trait Cupping Scorecard' }),
+      S.h('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+        totalSca > 0 ? S.h('span', { class: 'bt-tc-badge is-good mono', text: totalSca.toFixed(2) + ' / 100 SCA' }) : null,
+        (taintN > 0 || faultN > 0) ? S.h('span', { class: 'bt-tc-badge is-warn mono', text: 'Taints: ' + taintN + ' \u00B7 Faults: ' + faultN }) : S.h('span', { class: 'bt-tc-badge is-sci', text: 'Clean Cup (0 Defects)' })
+      )
+    ));
+    host.appendChild(gridEl);
+    host.appendChild(noteEl);
+    return host;
+  }
+
+  function findNewestHistoryEntry(hObjs) {
+    if (!Array.isArray(hObjs) || !hObjs.length) return null;
+    var bestIdx = -1;
+    var bestRow = null;
+    var bestKey = '';
+    var normTs = function (r) {
+      if (!r || typeof r !== 'object') return '';
+      var sa = String(r.saved_at || '').trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(sa)) return sa;
+      var cd = String(r.cupping_date || r.brew_date || r.date || '').trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(cd)) return cd + 'T00:00:00Z';
+      return sa || cd || '';
+    };
+    for (var i = 0; i < hObjs.length; i++) {
+      var r = hObjs[i];
+      if (!r || typeof r !== 'object') continue;
+      var k = normTs(r);
+      if (!bestRow || (k && (!bestKey || k > bestKey)) || (k === bestKey && i > bestIdx)) {
+        bestRow = r;
+        bestIdx = i;
+        bestKey = k;
+      }
+    }
+    return bestRow ? { r: bestRow, idx: bestIdx } : null;
+  }
+
+  function buildLastCupJumpBar(hObjs) {
+    var newest = findNewestHistoryEntry(hObjs);
+    if (!newest || !newest.r) return null;
+    var lastIdx = newest.idx;
+    var lastRow = newest.r;
+    var cName = unneutCellar(lastRow.coffee_name || '') || 'Latest Brew';
+    var rName = unneutCellar(lastRow.roaster || '');
+    var st = parseFloat(lastRow.my_rating_stars) || 0;
+    var sc = parseFloat(lastRow.total_score) || 0;
+    var metaTxt = st > 0 ? (st.toFixed(2) + '\u2605') : (sc > 0 ? (sc.toFixed(1) + ' SCA') : 'Logged');
+    return S.h('div', { class: 'bt-tc-well', id: 'bt-cellar-last-cup-card', style: 'flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:10px 12px' },
+      S.h('div', { style: 'min-width:0;flex:1 1 180px' },
+        S.h('span', { class: 'bt-tc-kicker', text: 'Last Cup Logged' + (lastRow.cupping_date ? (' \u00B7 ' + lastRow.cupping_date) : '') }),
+        S.h('div', { style: 'font-weight:800;font-size:0.92rem;color:var(--ink);overflow-wrap:anywhere' },
+          cName + (rName ? (' \u00B7 ' + rName) : '')
+        )
+      ),
+      S.h('button', {
+        type: 'button',
+        class: 'bt-tc-pill is-compact is-copper bt-last-cup-btn',
+        onclick: function () { openTastingDetailSheet(lastIdx); }
+      },
+        S.h('span', { class: 'bt-last-cup-name', text: 'Inspect ' + cName }),
+        S.h('span', { class: 'bt-last-cup-meta mono', text: '(' + metaTxt + ') \u2192' })
+      )
+    );
+  }
+
   function buildSavedNextBrewCallout(r, compact) {
     var info = extractRowRecommendation(r);
     if (!info.hasRec || info.isLocked) return null;
     var symTxt = formatDialSymLabel(info.dialSym);
+    var cName = unneutCellar(r.coffee_name || '').trim();
+    var headerLbl = cName
+      ? ('Saved Next-Brew Recommendation for ' + cName)
+      : 'Saved Next-Brew Recommendation (Toward Golden Recipe)';
     return S.h('div', {
       class: 'bt-tc-well bt-journal-next-rec',
       style: 'border-left:3px solid var(--accent-copper, #B86B35);padding:' + (compact ? '8px 10px' : '10px 12px') + ';gap:4px'
     },
       S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
-        S.h('span', { class: 'bt-tc-kicker', style: 'color:var(--accent-copper, #B86B35)', text: 'Saved Next-Brew Recommendation (Toward Golden Recipe)' }),
+        S.h('span', { class: 'bt-tc-kicker', style: 'color:var(--accent-copper, #B86B35)', text: headerLbl }),
         symTxt ? S.h('span', { class: 'bt-tc-badge is-copper', text: symTxt }) : null
       ),
       info.dialChange ? S.h('div', { style: 'font-size:0.84rem;font-weight:700;color:var(--ink)', text: info.dialChange }) : null,
@@ -1358,7 +1562,9 @@
 
     var wrap = S.h('div', { style: 'display:flex;flex-direction:column;gap:14px' });
 
-    /* 0. Best & Golden Recipes Hall-of-Fame Strip (only when >=1 qualifying brew exists) */
+    /* 0. Last Cup Quick-Jump & Best/Golden Recipes Hall-of-Fame Strip */
+    var shelfLastCup = buildLastCupJumpBar(hObjs);
+    if (shelfLastCup) wrap.appendChild(shelfLastCup);
     var goldenShowcase = buildGoldenShowcaseSection(hObjs);
     if (goldenShowcase) wrap.appendChild(goldenShowcase);
 
@@ -2109,9 +2315,9 @@
     var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
     var wrap = S.h('div', { style: 'display:flex;flex-direction:column;gap:14px' });
 
-    /* 5-Tile KPI Strip */
+    /* 6-Tile Symmetric KPI Strip (3x2 on mobile) */
     var distinctSet = Object.create(null);
-    var gemsCount = 0, lockedCount = 0, starSum = 0, starN = 0;
+    var gemsCount = 0, lockedCount = 0, cuppingsCount = 0, starSum = 0, starN = 0;
     hObjs.forEach(function (r) {
       if (!r) return;
       distinctSet[(r.coffee_id || r.coffee_name || '').toLowerCase()] = 1;
@@ -2119,22 +2325,420 @@
       if (st >= 4.5) gemsCount++;
       if (st > 0) { starSum += st; starN++; }
       if (r.dial_locked === 'yes' || r.dial_locked === '1') lockedCount++;
+      if (isCuppingRow(r)) cuppingsCount++;
     });
 
     wrap.appendChild(S.h('div', { class: 'bt-tc-kpi-grid' },
       [
-        ['Logged Cups', String(hObjs.length)],
-        ['Coffees', String(Object.keys(distinctSet).length)],
-        ['4.5+ Gems', String(gemsCount)],
-        ['Gold Locked', String(lockedCount)],
-        ['Avg Rating', starN ? (starSum / starN).toFixed(2) : '\u2014']
+        ['Logged Cups', String(hObjs.length), 'all'],
+        ['Coffees', String(Object.keys(distinctSet).length), 'all'],
+        ['4.5+ Gems', String(gemsCount), 'gems'],
+        ['Gold Locked', String(lockedCount), 'locked'],
+        ['Cuppings', String(cuppingsCount), 'cupping'],
+        ['Avg Rating', starN ? (starSum / starN).toFixed(2) : '\u2014', 'all']
       ].map(function (kp) {
-        return S.h('div', { class: 'bt-tc-kpi-tile' },
+        return S.h('button', {
+          type: 'button',
+          class: 'bt-tc-kpi-tile bt-drillable' + (ui.journalFilter === kp[2] && kp[2] !== 'all' ? ' is-active' : ''),
+          style: 'text-align:center;cursor:pointer',
+          onclick: function () {
+            ui.journalFilter = kp[2];
+            S.haptic('tick');
+            repaint();
+          }
+        },
           S.h('span', { class: 'bt-tc-kpi-val', text: kp[1] }),
           S.h('span', { class: 'bt-tc-kpi-lbl', text: kp[0] })
         );
       })
     ));
+
+    var lastCupBar = buildLastCupJumpBar(hObjs);
+    if (lastCupBar) wrap.appendChild(lastCupBar);
+
+    /* Interactive Ratings & Cuppings Drill-Down Strip + Expandable Rating & CVA Breakdown */
+    var tierBuckets = {
+      all: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 },
+      tier5: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 },
+      tier4: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 },
+      tier3: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 },
+      tierLow: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 },
+      locked: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 },
+      cupping: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 }
+    };
+    var originAgg = Object.create(null);
+    var methodAgg = Object.create(null);
+    var pushBucket = function (bk, r, idx) {
+      var b = tierBuckets[bk];
+      if (!b) return;
+      b.rows.push({ r: r, idx: idx });
+      var st = parseFloat(r.my_rating_stars) || 0;
+      var sc = parseFloat(r.total_score) || 0;
+      if (st > 0) { b.starSum += st; b.starN++; }
+      if (sc > 0) { b.scaSum += sc; b.scaN++; }
+    };
+    hObjs.forEach(function (r, idx) {
+      if (!r) return;
+      pushBucket('all', r, idx);
+      var tk = classifyJournalRatingTier(r);
+      if (tk && tierBuckets[tk]) pushBucket(tk, r, idx);
+      if (r.dial_locked === 'yes' || r.dial_locked === '1') pushBucket('locked', r, idx);
+      if (isCuppingRow(r)) pushBucket('cupping', r, idx);
+
+      var stVal = parseFloat(r.my_rating_stars) || 0;
+      var orig = unneutCellar(r.origin || '');
+      if (orig && !isUnkCoffeeVal(orig) && stVal > 0) {
+        if (!originAgg[orig]) originAgg[orig] = { label: orig, sum: 0, n: 0 };
+        originAgg[orig].sum += stVal; originAgg[orig].n++;
+      }
+      var isCupMeth = String(r.brew_method || '').toLowerCase() === 'cupping';
+      var meth = isCupMeth ? 'Cupping Table' : S.humanMethodName(r.brew_method);
+      if (meth && stVal > 0) {
+        if (!methodAgg[meth]) methodAgg[meth] = { label: meth, isCupping: isCupMeth, sum: 0, n: 0 };
+        methodAgg[meth].sum += stVal; methodAgg[meth].n++;
+      }
+    });
+
+    var ratingPillDefs = [
+      { k: 'all', lbl: 'All', showSca: false },
+      { k: 'tier5', lbl: '5\u2605 Favorites', showSca: false },
+      { k: 'tier4', lbl: '4\u20134.75\u2605', showSca: false },
+      { k: 'tier3', lbl: '3\u20133.75\u2605', showSca: false },
+      { k: 'tierLow', lbl: '<3\u2605', showSca: false },
+      { k: 'locked', lbl: 'Golden Locked', showSca: false },
+      { k: 'cupping', lbl: '5-Bowl Cuppings', showSca: true }
+    ];
+
+    var ratingStripCard = S.h('section', { class: 'bt-tc-card bt-journal-breakdown-card', id: 'bt-journal-rating-strip' },
+      S.h('div', { class: 'bt-tc-row-between' },
+        S.h('div', { style: 'min-width:0;flex:1 1 180px' },
+          S.h('div', { class: 'bt-tc-kicker', text: 'Ratings & 5-Bowl Cuppings Drill-Down' }),
+          S.h('b', { style: 'font-size:0.96rem', text: 'Filter by Rating Tier or Inspect Cupping Attributes' })
+        ),
+        S.h('button', {
+          type: 'button',
+          id: 'bt-journal-breakdown-toggle',
+          class: 'bt-tc-pill is-compact is-soft',
+          'aria-expanded': String(!!ui.journalBreakdownOpen),
+          text: ui.journalBreakdownOpen ? 'Hide Breakdown \u25B2' : 'Show Breakdown \u25BC',
+          onclick: function () { ui.journalBreakdownOpen = !ui.journalBreakdownOpen; S.haptic('tick'); repaint(); }
+        })
+      ),
+      S.h('div', { class: 'bt-rating-tier-bar', role: 'group', 'aria-label': 'Ratings and cuppings quick drill-down strip' },
+        ratingPillDefs.map(function (pd) {
+          var b = tierBuckets[pd.k];
+          var on = ui.journalFilter === pd.k;
+          var avgStr = '';
+          if (pd.showSca && b.scaN > 0) avgStr = ' \u00B7 ' + (b.scaSum / b.scaN).toFixed(1) + ' SCA';
+          else if (b.starN > 0) avgStr = ' \u00B7 ' + (b.starSum / b.starN).toFixed(1) + '\u2605';
+          return S.h('button', {
+            type: 'button',
+            class: 'bt-rating-tier-btn bt-tc-pill is-compact bt-drillable' + (on ? ' is-active' : ' is-soft'),
+            'aria-pressed': String(on),
+            'data-journal-tier': pd.k,
+            onclick: function () {
+              ui.journalFilter = (on && pd.k !== 'all') ? 'all' : pd.k;
+              S.haptic('tick');
+              repaint();
+            }
+          }, pd.lbl + ' (' + b.rows.length + avgStr + ')');
+        })
+      )
+    );
+
+    if (ui.journalBreakdownOpen) {
+      var drawer = S.h('div', { class: 'bt-drill-drawer', id: 'bt-journal-breakdown-drawer' });
+      var distTiers = [
+        { k: 'tier5', lbl: '5\u2605 Favorites' },
+        { k: 'tier4', lbl: '4\u20134.75\u2605 Great' },
+        { k: 'tier3', lbl: '3\u20133.75\u2605 Dialing' },
+        { k: 'tierLow', lbl: '<3\u2605 Needs Fix' }
+      ];
+      var totalStarRows = hObjs.length || 1;
+      drawer.appendChild(S.h('div', { class: 'bt-drill-drawer-head' },
+        S.h('strong', { class: 'bt-drill-drawer-title', text: 'Star Distribution (Tap any bar to filter)' })
+      ));
+      drawer.appendChild(S.h('div', { class: 'bt-rating-dist-list' },
+        distTiers.map(function (dt) {
+          var b = tierBuckets[dt.k];
+          var cnt = b.rows.length;
+          var pct = hObjs.length ? Math.round((cnt / totalStarRows) * 100) : 0;
+          var barW = cnt > 0 ? Math.max(8, pct) : 0;
+          var active = ui.journalFilter === dt.k;
+          return S.h('button', {
+            type: 'button',
+            class: 'bt-rating-dist-row bt-drillable' + (active ? ' is-active' : ''),
+            'aria-pressed': String(active),
+            onclick: function () {
+              ui.journalFilter = active ? 'all' : dt.k;
+              S.haptic('tick');
+              repaint();
+            }
+          },
+            S.h('span', { class: 'bt-rating-dist-label', text: dt.lbl }),
+            S.h('div', { class: 'bt-rating-dist-track' },
+              S.h('div', { class: 'bt-rating-dist-fill', style: 'width:' + barW + '%' })
+            ),
+            S.h('span', { class: 'bt-rating-dist-count mono', text: cnt + ' (' + pct + '%)' })
+          );
+        })
+      ));
+
+      var topOrigs = Object.keys(originAgg).map(function (k) { return originAgg[k]; })
+        .sort(function (a, b) { return (b.sum / b.n) - (a.sum / a.n) || b.n - a.n; }).slice(0, 4);
+      var topMeths = Object.keys(methodAgg).map(function (k) { return methodAgg[k]; })
+        .sort(function (a, b) { return (b.sum / b.n) - (a.sum / a.n) || b.n - a.n; }).slice(0, 4);
+
+      if (topOrigs.length || topMeths.length) {
+        drawer.appendChild(S.h('div', { class: 'bt-drill-meta-row' },
+          topOrigs.length ? S.h('span', { class: 'bt-tc-kicker', text: 'Top Origins:' }) : null,
+          topOrigs.map(function (og) {
+            return S.h('button', {
+              type: 'button',
+              class: 'bt-tc-pill is-compact is-soft bt-drillable',
+              text: og.label + ' (' + (og.sum / og.n).toFixed(1) + '\u2605)',
+              onclick: function () { ui.journalQ = og.label; S.haptic('tick'); repaint(); }
+            });
+          }),
+          topMeths.length ? S.h('span', { class: 'bt-tc-kicker', style: 'margin-left:4px', text: 'Top Methods:' }) : null,
+          topMeths.map(function (mt) {
+            return S.h('button', {
+              type: 'button',
+              class: 'bt-tc-pill is-compact is-soft bt-drillable',
+              text: mt.label + ' (' + (mt.sum / mt.n).toFixed(1) + '\u2605)',
+              onclick: function () {
+                if (mt.isCupping) { ui.journalFilter = 'cupping'; ui.journalQ = ''; }
+                else { ui.journalQ = mt.label; }
+                S.haptic('tick');
+                repaint();
+              }
+            });
+          })
+        ));
+      }
+
+      /* 5-Bowl / SCA Cupping 8-Trait Average & Min-Max Spread Breakdown */
+      var cupList = tierBuckets.cupping.rows;
+      if (cupList.length > 0) {
+        var traitStats = CVA_8_TRAITS.map(function (tr) {
+          var vals = [];
+          cupList.forEach(function (it) {
+            var raw = (it.r[tr.key] != null && it.r[tr.key] !== '') ? it.r[tr.key] : (tr.altKey ? it.r[tr.altKey] : '');
+            var v = parseFloat(raw);
+            if (isFinite(v) && v > 0) vals.push({ v: v, item: it });
+          });
+          if (!vals.length) return { key: tr.key, label: tr.label, hint: tr.hint, n: 0, avg: 0, min: 0, max: 0, vals: [] };
+          var sum = vals.reduce(function (a, x) { return a + x.v; }, 0);
+          var mn = Math.min.apply(null, vals.map(function (x) { return x.v; }));
+          var mx = Math.max.apply(null, vals.map(function (x) { return x.v; }));
+          return { key: tr.key, label: tr.label, hint: tr.hint, n: vals.length, avg: +(sum / vals.length).toFixed(2), min: mn, max: mx, vals: vals };
+        });
+        var scoredTraits = traitStats.filter(function (t) { return t.n > 0; });
+        var hiAvg = scoredTraits.length ? Math.max.apply(null, scoredTraits.map(function (t) { return t.avg; })) : 0;
+        var loAvg = scoredTraits.length ? Math.min.apply(null, scoredTraits.map(function (t) { return t.avg; })) : 0;
+        var maxScaleAll = scoredTraits.some(function (t) { return t.max > 9.05; }) ? 10 : 9;
+
+        drawer.appendChild(S.h('div', { class: 'bt-drill-drawer-head', style: 'margin-top:4px' },
+          S.h('div', { style: 'min-width:0;flex:1' },
+            S.h('div', { class: 'bt-tc-kicker', text: '5-Bowl / SCA Cupping 8-Trait Spread (' + cupList.length + ' Round' + (cupList.length === 1 ? '' : 's') + ')' }),
+            S.h('strong', { class: 'bt-drill-drawer-title', text: scoredTraits.length > 0 ? 'Average & Min\u2013Max Across All 8 Attributes (Tap any trait to drill)' : '5-Bowl / SCA Cupping Summary' })
+          ),
+          ui.selectedCvaTrait ? S.h('button', {
+            type: 'button',
+            class: 'bt-tc-pill is-compact is-soft',
+            text: 'Clear Trait',
+            onclick: function () { ui.selectedCvaTrait = ''; repaint(); }
+          }) : null
+        ));
+
+        if (scoredTraits.length > 0) {
+          drawer.appendChild(S.h('div', { class: 'bt-sca-attr-grid', id: 'bt-journal-cva-spread-grid' },
+            traitStats.map(function (ts) {
+              var active = ui.selectedCvaTrait === ts.key;
+              var isHi = ts.n > 0 && hiAvg - loAvg >= 0.2 && Math.abs(ts.avg - hiAvg) < 0.01;
+              var isLo = ts.n > 0 && hiAvg - loAvg >= 0.2 && Math.abs(ts.avg - loAvg) < 0.01;
+              var pct = ts.n > 0 ? Math.max(8, Math.min(100, Math.round((ts.avg / maxScaleAll) * 100))) : 0;
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-sca-attr-pill bt-drillable' + (active ? ' is-active' : '') + (isHi ? ' is-high' : '') + (isLo ? ' is-low' : ''),
+                'aria-pressed': String(active),
+                'data-cva-trait': ts.key,
+                onclick: function () {
+                  ui.selectedCvaTrait = active ? '' : ts.key;
+                  if (!active) ui.journalFilter = 'cupping';
+                  S.haptic('tick');
+                  repaint();
+                }
+              },
+                S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:5px;width:100%' },
+                  S.h('span', { class: 'bt-sca-attr-name', text: ts.label }),
+                  S.h('strong', { class: 'bt-sca-attr-val mono', text: ts.n > 0 ? (ts.avg.toFixed(1) + '/' + maxScaleAll) : '\u2014' })
+                ),
+                S.h('div', { class: 'bt-rating-dist-track', style: 'width:100%' },
+                  S.h('div', { class: 'bt-rating-dist-fill', style: 'width:' + pct + '%' })
+                ),
+                S.h('span', { class: 'bt-drill-cup-sub mono', text: ts.n > 0 ? ('Range ' + ts.min.toFixed(1).replace(/\.0$/, '') + '\u2013' + ts.max.toFixed(1).replace(/\.0$/, '')) : 'No scores' })
+              );
+            })
+          ));
+        } else {
+          drawer.appendChild(S.h('p', {
+            class: 'bt-tc-sub',
+            id: 'bt-journal-cva-empty-note',
+            style: 'margin:0',
+            text: 'Log 0\u201310 attribute scores in the 5-Bowl Cupping Table to unlock trait-by-trait spreads here.'
+          }));
+        }
+
+        /* Matching Cupping Rounds List (sorted by selected trait when one is clicked!) */
+        var selTraitObj = traitStats.find(function (t) { return t.key === ui.selectedCvaTrait; }) || null;
+        var cupPreview = selTraitObj
+          ? selTraitObj.vals.slice().sort(function (a, b) { return b.v - a.v; }).map(function (x) { return { r: x.item.r, idx: x.item.idx, traitVal: x.v }; })
+          : cupList.slice().sort(function (a, b) { return (parseFloat(b.r.total_score) || 0) - (parseFloat(a.r.total_score) || 0); }).map(function (x) { return { r: x.r, idx: x.idx, traitVal: null }; });
+
+        if (cupPreview.length > 0) {
+          drawer.appendChild(S.h('div', { class: 'bt-drill-cup-list', style: 'margin-top:4px' },
+            S.h('span', {
+              class: 'bt-tc-kicker',
+              text: selTraitObj
+                ? ('Cupping Rounds Ranked by ' + selTraitObj.label + ' (' + selTraitObj.hint + ')')
+                : 'Recent & Top Cupping Rounds (Tap any row to open full Scorecard):'
+            }),
+            cupPreview.slice(0, 5).map(function (cp) {
+              var cName = unneutCellar(cp.r.coffee_name || '') || 'Cupped Sample';
+              var scVal = parseFloat(cp.r.total_score) || 0;
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-drill-cup-card bt-drillable',
+                style: 'text-align:left;width:100%',
+                onclick: function () { openTastingDetailSheet(cp.idx); }
+              },
+                S.h('div', { class: 'bt-drill-cup-head' },
+                  S.h('div', { style: 'min-width:0;flex:1' },
+                    S.h('strong', { class: 'bt-drill-cup-title', text: cName }),
+                    S.h('div', { class: 'bt-drill-cup-sub', text: [unneutCellar(cp.r.roaster || ''), cp.r.cupping_date || '', unneutCellar(cp.r.flavors_liked || '')].filter(Boolean).join(' \u00B7 ') })
+                  ),
+                  S.h('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+                    cp.traitVal != null ? S.h('span', { class: 'bt-tc-badge is-gold mono', text: selTraitObj.label + ' ' + cp.traitVal.toFixed(1).replace(/\.0$/, '') + '/' + maxScaleAll }) : null,
+                    scVal > 0 ? S.h('span', { class: 'bt-tc-badge is-sci mono', text: scVal.toFixed(1) + ' SCA' }) : null
+                  )
+                )
+              );
+            })
+          ));
+        }
+
+        /* Side-by-Side 2-Round 8-Trait CVA Cupping Comparison (when >=2 cupping rounds exist) */
+        if (cupList.length >= 2) {
+          var cmpList = cupList.slice().sort(function (a, b) {
+            return (parseFloat(b.r.total_score) || 0) - (parseFloat(a.r.total_score) || 0) || (b.idx - a.idx);
+          });
+          var idxA = (ui.cuppingCmpA >= 0 && ui.cuppingCmpA < cmpList.length) ? ui.cuppingCmpA : 0;
+          var idxB = (ui.cuppingCmpB >= 0 && ui.cuppingCmpB < cmpList.length && ui.cuppingCmpB !== idxA) ? ui.cuppingCmpB : (idxA === 0 ? 1 : 0);
+          ui.cuppingCmpA = idxA;
+          ui.cuppingCmpB = idxB;
+          var rowA = cmpList[idxA].r;
+          var rowB = cmpList[idxB].r;
+          var nameA = unneutCellar(rowA.coffee_name || '') || 'Round A';
+          var nameB = unneutCellar(rowB.coffee_name || '') || 'Round B';
+
+          var cmpWrap = S.h('div', { id: 'bt-journal-cupping-compare', style: 'margin-top:8px;display:flex;flex-direction:column;gap:8px' },
+            S.h('div', { class: 'bt-drill-drawer-head' },
+              S.h('div', { style: 'min-width:0;flex:1' },
+                S.h('div', { class: 'bt-tc-kicker', text: 'Side-by-Side 8-Trait CVA Comparison' }),
+                S.h('strong', { class: 'bt-drill-drawer-title', text: 'Compare 2 Cupping Rounds (Delta Grid)' })
+              ),
+              S.h('button', {
+                type: 'button',
+                class: 'bt-tc-pill is-compact is-soft',
+                'aria-expanded': String(!!ui.cuppingCompareOpen),
+                text: ui.cuppingCompareOpen ? 'Hide Compare \u25B2' : 'Compare 2 Rounds \u25BC',
+                onclick: function () { ui.cuppingCompareOpen = !ui.cuppingCompareOpen; S.haptic('tick'); repaint(); }
+              })
+            )
+          );
+
+          if (ui.cuppingCompareOpen) {
+            var mkRoundSelect = function (curIdx, labelTxt, onPick) {
+              var sel = S.h('select', {
+                class: 'bt-tc-input',
+                'aria-label': labelTxt,
+                style: 'min-height:40px;flex:1 1 140px;min-width:0',
+                onchange: function (e) { onPick(parseInt(e.target.value, 10) || 0); }
+              },
+                cmpList.map(function (it, ci) {
+                  var lbl = (unneutCellar(it.r.coffee_name || '') || 'Sample') + (it.r.total_score ? (' (' + (+it.r.total_score).toFixed(1) + ')') : '');
+                  var opt = S.h('option', { value: String(ci), text: lbl });
+                  if (ci === curIdx) opt.selected = true;
+                  return opt;
+                })
+              );
+              return sel;
+            };
+
+            cmpWrap.appendChild(S.h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' },
+              mkRoundSelect(idxA, 'Select Cupping Round A', function (v) { ui.cuppingCmpA = v; repaint(); }),
+              S.h('span', { class: 'bt-tc-kicker', text: 'vs' }),
+              mkRoundSelect(idxB, 'Select Cupping Round B', function (v) { ui.cuppingCmpB = v; repaint(); })
+            ));
+
+            var cmpBody = S.h('tbody');
+            CVA_8_TRAITS.forEach(function (tr) {
+              var vA = parseFloat(rowA[tr.key] != null && rowA[tr.key] !== '' ? rowA[tr.key] : (tr.altKey ? rowA[tr.altKey] : ''));
+              var vB = parseFloat(rowB[tr.key] != null && rowB[tr.key] !== '' ? rowB[tr.key] : (tr.altKey ? rowB[tr.altKey] : ''));
+              var okA = isFinite(vA) && vA > 0;
+              var okB = isFinite(vB) && vB > 0;
+              var diff = (okA && okB) ? +(vA - vB).toFixed(2) : null;
+              var diffTxt = diff == null ? '\u2014' : (Math.abs(diff) < 0.01 ? '0.0' : ((diff > 0 ? '+' : '') + diff.toFixed(1).replace(/\.0$/, '')));
+              var diffCls = 'mono' + (diff != null && diff > 0.05 ? ' is-pos' : (diff != null && diff < -0.05 ? ' is-neg' : ''));
+              cmpBody.appendChild(S.h('tr', { class: diff != null && Math.abs(diff) >= 0.25 ? 'is-diff' : '' },
+                S.h('td', null, S.h('b', { text: tr.label })),
+                S.h('td', { class: 'mono' + (diff != null && diff > 0.05 ? ' bt-compare-winner-col' : ''), text: okA ? vA.toFixed(1).replace(/\.0$/, '') : '\u2014' }),
+                S.h('td', { class: 'mono' + (diff != null && diff < -0.05 ? ' bt-compare-winner-col' : ''), text: okB ? vB.toFixed(1).replace(/\.0$/, '') : '\u2014' }),
+                S.h('td', { class: diffCls, text: diffTxt })
+              ));
+            });
+            var scaA = parseFloat(rowA.total_score) || 0;
+            var scaB = parseFloat(rowB.total_score) || 0;
+            var scaDiff = (scaA > 0 && scaB > 0) ? +(scaA - scaB).toFixed(2) : null;
+            cmpBody.appendChild(S.h('tr', { class: 'is-total-row' },
+              S.h('td', null, S.h('b', { text: 'Total SCA' })),
+              S.h('td', { class: 'mono' + (scaDiff > 0 ? ' bt-compare-winner-col' : ''), text: scaA > 0 ? scaA.toFixed(2) : '\u2014' }),
+              S.h('td', { class: 'mono' + (scaDiff < 0 ? ' bt-compare-winner-col' : ''), text: scaB > 0 ? scaB.toFixed(2) : '\u2014' }),
+              S.h('td', { class: 'mono', text: scaDiff == null ? '\u2014' : ((scaDiff > 0 ? '+' : '') + scaDiff.toFixed(2)) })
+            ));
+
+            cmpWrap.appendChild(S.h('div', { class: 'bt-compare-scroll' },
+              S.h('table', { class: 'bt-cupping-compare-table' },
+                S.h('thead', null,
+                  S.h('tr', null,
+                    S.h('th', { text: 'Trait' }),
+                    S.h('th', { text: 'A: ' + (nameA.length > 18 ? (nameA.slice(0, 17) + '\u2026') : nameA) }),
+                    S.h('th', { text: 'B: ' + (nameB.length > 18 ? (nameB.slice(0, 17) + '\u2026') : nameB) }),
+                    S.h('th', { text: 'Delta' })
+                  )
+                ),
+                cmpBody
+              )
+            ));
+          }
+          drawer.appendChild(cmpWrap);
+        }
+      } else {
+        drawer.appendChild(S.h('div', { class: 'bt-tc-row-between', style: 'padding-top:4px' },
+          S.h('span', { class: 'bt-tc-sub', text: 'No 5-Bowl SCA/CVA cuppings logged yet — cup coffees side-by-side to unlock your 8-trait spread!' }),
+          S.h('button', {
+            type: 'button',
+            class: 'bt-tc-pill is-compact is-copper',
+            text: 'Open 5-Bowl Cupping \u2192',
+            onclick: function () { S.navGo('sca'); }
+          })
+        ));
+      }
+
+      ratingStripCard.appendChild(drawer);
+    }
+    wrap.appendChild(ratingStripCard);
 
     /* Import Shared Brew Recipe Bar (Plain-English Header!) */
     wrap.appendChild(S.h('div', { class: 'bt-tc-card' },
@@ -2220,9 +2824,7 @@
       [
         ['all',     'All Logs'],
         ['dialed',  'Dialed'],
-        ['cupping', 'Cupping Table'],
         ['gems',    '4.5+ Gems'],
-        ['locked',  'Locked Gold'],
         ['dialing', 'Needs Dial-In'],
         ['filter',  'Pour-Over / Drip'],
         ['espresso','Espresso'],
@@ -2381,8 +2983,13 @@
       var st = parseFloat(r.my_rating_stars) || 0;
       var mk = String(r.brew_method || '').toLowerCase();
       var sk = String(r.score_kind || '').toLowerCase();
+      var tierKey = classifyJournalRatingTier(r);
+      if (ui.journalFilter === 'tier5' && tierKey !== 'tier5') return false;
+      if (ui.journalFilter === 'tier4' && tierKey !== 'tier4') return false;
+      if (ui.journalFilter === 'tier3' && tierKey !== 'tier3') return false;
+      if (ui.journalFilter === 'tierLow' && tierKey !== 'tierLow') return false;
       if (ui.journalFilter === 'dialed' && !(r.dial_locked === 'yes' || r.dial_locked === '1' || st >= 4.25)) return false;
-      if (ui.journalFilter === 'cupping' && mk !== 'cupping' && sk !== 'cva_affective') return false;
+      if (ui.journalFilter === 'cupping' && !isCuppingRow(r)) return false;
       if (ui.journalFilter === 'gems' && st < 4.5) return false;
       if (ui.journalFilter === 'locked' && r.dial_locked !== 'yes' && r.dial_locked !== '1') return false;
       if (ui.journalFilter === 'dialing' && (st >= 4.25 || r.dial_locked === 'yes')) return false;
@@ -2390,7 +2997,7 @@
       if (ui.journalFilter === 'espresso' && mk.indexOf('espresso') < 0 && mk.indexOf('moka') < 0) return false;
       if (ui.journalFilter === 'r2' && !(parseFloat(r.brew_tds_pct) > 0)) return false;
       if (!q) return true;
-      return [r.coffee_name, r.roaster, r.brew_method, r.flavors_liked, r.general_notes].join(' ').toLowerCase().indexOf(q) >= 0;
+      return [r.coffee_name, r.roaster, r.origin, r.brew_method, S.humanMethodName(r.brew_method), r.flavors_liked, r.general_notes].join(' ').toLowerCase().indexOf(q) >= 0;
     });
 
     filtered.sort(function (a, b) {
@@ -2423,7 +3030,8 @@
       var scaNum = (isFinite(rawSca) && rawSca > 0)
         ? rawSca
         : (starsNum > 0 ? Math.round((58.0 + ((starsNum - 1.0) / 4.0) * 34.0) * 4) / 4 : 0);
-      var isCupping = String(r.brew_method || '').toLowerCase() === 'cupping' || String(r.score_kind || '').toLowerCase() === 'cva_affective';
+      var isCupping = isCuppingRow(r);
+      var cvaCardTraits = extractRowCvaTraits(r);
       var flavorTags = String((typeof unneutralize === 'function' ? unneutralize(r.flavors_liked || '') : r.flavors_liked) || '')
         .split(/[;,|]/).map(function (s) {
           return s.trim().replace(/\b[a-z]/g, function (ch) { return ch.toUpperCase(); });
@@ -2450,7 +3058,7 @@
               text: scaNum.toFixed(1) + ' SCA'
             }) : null,
             starsNum > 0 ? S.h('span', {
-              class: 'bt-tc-badge mono ' + (starsNum >= 4.5 ? 'is-gold' : 'is-good')
+              class: 'bt-tc-badge mono ' + (starsNum >= 4.5 ? 'is-gold' : (starsNum >= 3.5 ? 'is-good' : 'is-warn'))
             }, S.iconEl('spark-star', { size: 12 }), S.h('span', { text: starsNum.toFixed(1) + ' / 5' })) : null,
             (scaNum <= 0 && starsNum <= 0) ? S.h('span', { class: 'bt-tc-badge is-soft', text: 'Logged' }) : null
           )
@@ -2461,8 +3069,26 @@
             return S.h('span', { class: 'bt-tc-badge is-soft', style: 'font-weight:700', text: ft });
           })
         ) : null,
+        cvaCardTraits.hasAny ? S.h('div', { class: 'bt-sca-attr-grid bt-journal-cva-mini', 'aria-label': 'Cupping attribute scores' },
+          cvaCardTraits.items.filter(function (it) { return it.val != null; }).map(function (it) {
+            var isSel = ui.selectedCvaTrait === it.key;
+            return S.h('button', {
+              type: 'button',
+              class: 'bt-sca-attr-pill bt-drillable' + (isSel ? ' is-active' : '') + (it.isHigh ? ' is-high' : '') + (it.isLow ? ' is-low' : ''),
+              onclick: function () { openTastingDetailSheet(rIdx); }
+            },
+              S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:4px;width:100%' },
+                S.h('span', { class: 'bt-sca-attr-name', text: it.label }),
+                S.h('strong', { class: 'bt-sca-attr-val mono', text: it.val.toFixed(1).replace(/\.0$/, '') })
+              ),
+              S.h('div', { class: 'bt-rating-dist-track', style: 'width:100%' },
+                S.h('div', { class: 'bt-rating-dist-fill', style: 'width:' + it.pct + '%' })
+              )
+            );
+          })
+        ) : null,
         nextRecCallout,
-        S.h('div', { class: 'bt-tc-pill-scroll' },
+        S.h('div', { class: 'bt-tc-pill-wrap', style: 'flex-wrap:wrap;gap:6px' },
           S.h('button', {
             type: 'button',
             class: 'bt-tc-pill is-compact is-soft',
@@ -3854,6 +4480,7 @@
           return S.h('div', { class: 'bt-detail-kv' }, S.h('span', { text: kv[0] }), S.h('b', { text: kv[1] }));
         })
       ),
+      buildCvaDetailScorecard(r, hObjs),
       r.general_notes ? S.h('div', { class: 'bt-tc-well' },
         S.h('span', { class: 'bt-tc-kicker', text: 'Tasting Notes' }),
         S.h('div', { style: 'font-size:0.86rem', text: un(r.general_notes) })
@@ -4288,6 +4915,22 @@
       openDetail: openTastingDetailSheet,
       openEdit: openTastingEditSheet,
       openQrPassport: openQrPassportSheet,
+      openJournalFilter: function (filterKey, query) {
+        ui.seg = 'journal';
+        ui.journalFilter = filterKey || 'all';
+        if (typeof query === 'string') ui.journalQ = query;
+        ui.journalBreakdownOpen = true;
+        var a = S.getApp();
+        if (a) {
+          a.activeTab = 'cellar';
+          if (a.tabSegments) a.tabSegments.cellar = 'journal';
+        }
+        if (window.BTShell && typeof window.BTShell.switchTab === 'function') {
+          window.BTShell.switchTab('cellar', { segment: 'journal' });
+        } else {
+          S.rerenderSafe();
+        }
+      },
       hydrateAndBrewRow: function (r) {
         if (!r) return;
         hydrateBrewFromRowOrBag(r, null, null);

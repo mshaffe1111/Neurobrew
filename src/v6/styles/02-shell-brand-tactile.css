@@ -1417,13 +1417,17 @@ select.bt-input {
   color: var(--ink-muted);
 }
 .bt-passport-cell b {
-  display: block;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   font-size: 12px;
+  line-height: 1.28;
   color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-top: 1px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  margin-top: 2px;
 }
 
 /* ==================== 4. SPRING BOTTOM SHEET & DRAWER (#sheet) ==================== */
@@ -2907,10 +2911,10 @@ select.bt-input {
 .bt-ext-waves-live {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
   min-width: 0;
-  padding: 9px 11px;
+  padding: 11px 13px;
   border-radius: var(--r-lg);
   background: var(--card);
   border: 1px solid var(--line-soft);
@@ -2925,17 +2929,17 @@ select.bt-input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 6px 10px;
   flex-wrap: wrap;
   min-width: 0;
 }
 .bt-ext-waves-title {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
+  gap: 6px;
+  font-size: 12.5px;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.015em;
   color: var(--ink);
   white-space: nowrap;
 }
@@ -2943,15 +2947,15 @@ select.bt-input {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px 8px;
-  font-size: 10.5px;
+  gap: 5px 10px;
+  font-size: 11.2px;
   font-weight: 700;
   color: var(--ink-secondary);
 }
 .bt-ext-waves-leg-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   white-space: nowrap;
 }
 .bt-ext-waves-dot {
@@ -2964,22 +2968,123 @@ select.bt-input {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 92px;
+  min-height: 144px;
+  max-height: 195px;
   touch-action: pan-y;
   user-select: none;
   overflow: visible;
 }
+.bt-ext-sweet-band,
+.bt-ext-waves-sweet-band {
+  fill: var(--wave-sweet-band);
+  stroke: var(--wave-sweet-band-stroke);
+  stroke-width: 1;
+}
+.bt-ext-sweet-lbl,
+.bt-ext-waves-sweet-lbl {
+  fill: var(--wave-sweet-band-ink);
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+.bt-ext-waves-gridline {
+  stroke: var(--wave-gridline);
+  stroke-width: 1;
+}
+.bt-ext-waves-axis-lbl {
+  fill: var(--ink-secondary);
+}
+.bt-ext-phase-pin {
+  stroke: var(--edge, var(--line-strong));
+  stroke-width: 1.1;
+  stroke-dasharray: 2.5 2.5;
+  opacity: 0.75;
+}
+.bt-ext-phase-pin-lbl {
+  fill: var(--ink-secondary);
+  font-family: var(--font-sans);
+  font-size: 8px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--well);
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.bt-ext-scrub-pill {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--science-bg);
+  border: 1px solid var(--science-border);
+  color: var(--science);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11.2px;
+  font-weight: 800;
+  line-height: 1.3;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+}
+.bt-ext-scrub-pill.is-scrubbing {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.bt-ext-scrub-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  line-height: 1.32;
+}
+.bt-ext-waves-sub {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  line-height: 1.35;
+  margin: 0;
+}
+.bt-ext-waves-balance-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--well);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+  max-width: 100%;
+  white-space: nowrap;
+}
+.bt-ext-waves-balance-pill.is-sweet {
+  background: var(--good-bg);
+  border-color: var(--good-border, rgba(24, 96, 62, 0.28));
+  color: var(--good);
+}
+.bt-ext-waves-balance-pill.is-overtime {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+  color: var(--warn);
+}
 @media (max-width: 640px) {
   .bt-ext-waves-live {
-    padding: 7px 9px;
-    gap: 4px;
+    padding: 9px 11px;
+    gap: 7px;
   }
   .bt-ext-waves-svg {
-    max-height: 68px;
+    min-height: 122px;
+    max-height: 165px;
   }
   .bt-ext-waves-status {
-    padding: 5px 8px;
-    font-size: 11px;
+    padding: 6px 9px;
+    font-size: 11.6px;
   }
 }
 .bt-ext-waves-status {
@@ -2990,20 +3095,77 @@ select.bt-input {
   border-radius: var(--r-sm);
   background: var(--bg-subtle);
   border: 1px solid var(--line-soft);
-  font-size: 11.8px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--ink);
-  line-height: 1.35;
+  line-height: 1.38;
 }
 .bt-ext-waves-status.is-sweet {
   background: var(--good-bg);
-  border-color: rgba(24, 96, 62, 0.28);
+  border-color: var(--good-border, rgba(24, 96, 62, 0.28));
   color: var(--good);
 }
 .bt-ext-waves-status.is-overtime {
   background: var(--warn-bg);
   border-color: var(--warn);
   color: var(--warn);
+}
+
+/* Desktop Aside Last Cup Shortcut (#studio-aside) */
+.bt-aside-last-cup-btn,
+.bt-aside-last-cup-btn.bt-last-cup-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 9px 11px;
+  border-radius: var(--r-sm, 12px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+  box-sizing: border-box;
+}
+.bt-aside-last-cup-btn:hover {
+  border-color: var(--accent);
+  background: var(--bg-subtle);
+}
+.bt-aside-last-cup-btn:focus-visible {
+  outline: 2.5px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.bt-aside-last-cup-btn > span {
+  min-width: 0;
+  max-width: 100%;
+}
+.bt-aside-last-cup-btn .bt-last-cup-name {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal !important;
+  line-height: 1.28;
+}
+.bt-aside-last-cup-btn > svg,
+.bt-aside-last-cup-btn > .bt-ico {
+  flex: none;
+  color: var(--accent);
 }
 
 /* Beanjamin 2.0 Golden Celebration Seal */
@@ -3279,7 +3441,19 @@ textarea:focus-visible {
   .bt-golden-showcase,
   .bt-phase-progress,
   .bt-next-cue-banner,
-  .bt-bean-chem-strip {
+  .bt-bean-chem-strip,
+  .bt-lab-what-box,
+  .bt-lab-takeaway,
+  .bt-drill-drawer,
+  .bt-drill-panel,
+  .bt-drill-cup-card,
+  .bt-journal-breakdown-card,
+  .bt-cupping-history-card,
+  .bt-saved-cup-banner,
+  .bt-step5-saved-banner,
+  .bt-cupping-compare-table th,
+  .bt-cupping-compare-table td,
+  .bt-bean-scorecard-row {
     background: #FFFFFF !important;
     background-image: none !important;
     color: #111111 !important;

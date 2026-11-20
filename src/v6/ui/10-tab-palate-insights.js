@@ -493,6 +493,12 @@
     timelapsePct: 100,
     expandedBoard: 'origins', /* 'origins' | 'processes' | 'roasts' | 'varietals' | 'brewers' | 'flavors' | 'cafes' */
     drillPath: [],            /* 4-level drill-in: [ { level, key, label } ... ] */
+    selectedRoastZone: '',    /* interactive Roast Sweet Spot / Extraction preference drill-down */
+    selectedRatingTier: '',   /* interactive Rating Tier Breakdown drill-down */
+    selectedRadarAxis: '',    /* interactive 5-Axis taste drill-down */
+    selectedBeanCid: '',      /* interactive Per-Coffee Scorecard Leaderboard drill-down */
+    prefTargetDraft: null,    /* { brightness, strength, texture } interactive recipe bias targets */
+    wheelMatchScope: 'word',  /* 'word' | 'family' in Flavor Wheel drill-down */
     demoMode: false,
     seedAcidity: 3.8,
     seedSweetness: 4.5,
@@ -598,6 +604,33 @@
     const s = String(pk || '').toLowerCase();
     if (!s || isUnknownTrait(s)) return 'Don\'t Know';
     return s.split(/[\s-]+/).map(function (w) { return w ? (w.charAt(0).toUpperCase() + w.slice(1)) : ''; }).join(' ');
+  }
+
+  function formatMethodHuman(mk) {
+    const raw = String(mk || '').trim();
+    if (!raw || isUnknownTrait(raw)) return 'Brew';
+    const low = raw.toLowerCase();
+    const map = {
+      v60: 'V60 Pour-Over',
+      chemex: 'Chemex',
+      kalita: 'Kalita Wave',
+      origami: 'Origami',
+      orea: 'Orea V3',
+      switch: 'Hario Switch',
+      aeropress: 'AeroPress',
+      espresso: 'Espresso',
+      press: 'French Press',
+      frenchpress: 'French Press',
+      moka: 'Moka Pot',
+      cold: 'Cold Brew',
+      cupping: 'Cupping Table',
+      aiden: 'Fellow Aiden',
+      philips5500: 'Philips 5500',
+      drip: 'Auto Drip',
+      clever: 'Clever Dripper'
+    };
+    if (map[low]) return map[low];
+    return raw.replace(/[-_]+/g, ' ').replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); });
   }
 
   function getHistoryRows(slicePct) {
@@ -743,12 +776,23 @@
         if (!rec.elevationBand && elevBand) rec.elevationBand = elevBand;
       }
       rec.stars.push(st);
+      const tempCVal = +r.brew_temp_c > 0 ? Math.round(+r.brew_temp_c) : (+r.brew_temp_f > 0 ? Math.round((+r.brew_temp_f - 32) * 5 / 9) : 0);
+      const ratioVal = +r.brew_ratio > 0 ? +r.brew_ratio : ((+r.brew_dose_g > 0 && +r.brew_water_g > 0) ? Math.round((+r.brew_water_g / +r.brew_dose_g) * 10) / 10 : 0);
       rec.cups.push({
         coffee: r.coffee_name || 'Logged Brew',
+        roaster: r.roaster || '',
         method: r.brew_method || 'v60',
         date: r.cupping_date || r.brew_date || r.date || '',
         star: st,
-        notes: r.flavors_liked || r.words_flavor || r.bag_notes || ''
+        sca: parseFloat(r.total_score) || 0,
+        tds: parseFloat(r.brew_tds_pct) || 0,
+        ey: parseFloat(r.brew_ey_pct) || 0,
+        tempC: tempCVal,
+        ratio: ratioVal,
+        grind: r.brew_grind_setting || (r.brew_grind_target_um ? (r.brew_grind_target_um + ' \u00B5m') : ''),
+        locked: r.dial_locked === 'yes' || r.dial_locked === '1',
+        notes: r.flavors_liked || r.words_flavor || r.bag_notes || '',
+        rawRow: r
       });
       if (r.acidity_intensity) rec.ac.push(clamp(parseFloat(r.acidity_intensity), 1, 5, 3));
       if (r.sweetness_intensity) rec.sw.push(clamp(parseFloat(r.sweetness_intensity), 1, 5, 3.5));
@@ -771,9 +815,10 @@
       const lk = userLiked.length ? userLiked : bagNotesFallback;
 
       lk.forEach(function (w) {
-        const cur = likedNotes.get(w) || { word: w, n: 0, sumStar: 0 };
+        const cur = likedNotes.get(w) || { word: w, n: 0, sumStar: 0, rows: [] };
         cur.n++;
         cur.sumStar += st;
+        cur.rows.push(r);
         likedNotes.set(w, cur);
       });
       for (let i = 0; i < lk.length; i++) {
@@ -1013,7 +1058,7 @@
         domH('div', { class: 'bt-prefs-gear-tile' },
           domH('span', { class: 'bt-pref-tile-lbl', text: 'Kettle & Brew Water' }),
           domH('strong', { class: 'bt-pref-tile-val', text: waterLabel }),
-          domH('span', { class: 'bt-pref-tile-sub', text: bleLabels.indexOf('Kettle') >= 0 ? 'Stagg EKG BLE active' : 'Tap Edit to tune GH/KH' })
+          domH('span', { class: 'bt-pref-tile-sub', text: bleLabels.indexOf('Kettle') >= 0 ? 'Stagg EKG BLE active' : 'Tap Edit to tune water minerals' })
         ),
         domH('div', { class: 'bt-prefs-gear-tile' },
           domH('span', { class: 'bt-pref-tile-lbl', text: 'Bluetooth Hardware' }),
@@ -1041,9 +1086,210 @@
   /* ==========================================================================
    * SEGMENT 1: Coffee Belt World Map (52 Origins) + Radar + 4-Level EB Drill-In
    * ========================================================================== */
+  function unneutPalate(v) {
+    return typeof unneutralize === 'function' ? unneutralize(v || '') : String(v || '');
+  }
+
+  function quickBrewFromPalate(r) {
+    if (!r) return;
+    if (window.BTCellarTab && typeof window.BTCellarTab.hydrateAndBrewRow === 'function') {
+      window.BTCellarTab.hydrateAndBrewRow(r);
+      return;
+    }
+    const un = unneutPalate;
+    const applyFn = function (a) {
+      a.coffee = Object.assign(a.coffee || {}, {
+        coffee_id: r.coffee_id || (a.coffee && a.coffee.coffee_id) || '',
+        name: un(r.coffee_name) || 'Golden Brew',
+        roaster: un(r.roaster),
+        origin: un(r.origin),
+        process: un(r.process),
+        roast: un(r.roast_level) || 'light',
+        answered: 'yes'
+      });
+      a.brew = a.brew || {};
+      if (r.brew_method) a.brew.method = r.brew_method;
+      if (+r.brew_dose_g > 0) a.brew.dose = +r.brew_dose_g;
+      if (+r.brew_water_g > 0) a.brew.water = +r.brew_water_g;
+      if (+r.brew_ratio > 0) a.brew.ratio = +r.brew_ratio;
+      if (+r.brew_temp_c > 0) {
+        a.brew.tempC = +r.brew_temp_c;
+        a.brew.tempF = Math.round(+r.brew_temp_c * 9 / 5 + 32);
+      }
+      if (+r.brew_grind_target_um > 0) {
+        a.brew.grindUm = +r.brew_grind_target_um;
+        a.brew.grind_um = +r.brew_grind_target_um;
+      }
+      if (r.brew_grind_setting) a.brew.grind_setting = un(r.brew_grind_setting);
+      a.recipeLocked = (r.dial_locked === 'yes' || r.dial_locked === '1');
+    };
+    if (typeof window.__btApplyAndNavigateWithBack === 'function') {
+      window.__btApplyAndNavigateWithBack(applyFn, {
+        targetStep: 'brew',
+        returnRoute: 'palate',
+        toast: 'Loaded "' + (un(r.coffee_name) || 'Golden Recipe') + '" into Brew Studio!'
+      });
+    } else {
+      applyFn(getApp());
+      saveDraftSoon();
+      if (typeof sh().go === 'function') sh().go('recipe');
+    }
+  }
+
+  function inspectCupFromPalate(r) {
+    if (!r) return;
+    if (window.BTCellarTab && typeof window.BTCellarTab.openDetail === 'function') {
+      window.BTCellarTab.openDetail(r);
+      return;
+    }
+    if (typeof sh().go === 'function') sh().go('history');
+    notify('Opened Brew Journal for ' + (unneutPalate(r.coffee_name) || 'this cup'));
+  }
+
+  function jumpToJournalWithFilter(filterKey, query) {
+    if (window.BTCellarTab && typeof window.BTCellarTab.openJournalFilter === 'function') {
+      window.BTCellarTab.openJournalFilter(filterKey || 'all', query || '');
+      return;
+    }
+    if (typeof sh().go === 'function') sh().go('history');
+  }
+
+  function classifyRatingTier(r) {
+    if (!r) return '';
+    const st = parseFloat(r.my_rating_stars);
+    const val = (Number.isFinite(st) && st > 0) ? st : rowStar(r);
+    if (!Number.isFinite(val) || val <= 0) return '';
+    if (val >= 4.875) return 'tier5';
+    if (val >= 4.0) return 'tier4';
+    if (val >= 3.0) return 'tier3';
+    return 'tierLow';
+  }
+
+  function summarizeCupsStats(rows) {
+    const list = Array.isArray(rows) ? rows.filter(Boolean) : [];
+    let starSum = 0, starN = 0, scaSum = 0, scaN = 0;
+    let tdsSum = 0, tdsN = 0, eySum = 0, eyN = 0;
+    let tempSum = 0, tempN = 0, ratioSum = 0, ratioN = 0;
+    const noteFreq = new Map();
+    const methodFreq = new Map();
+    const originFreq = new Map();
+    let lockedN = 0;
+
+    list.forEach(function (r) {
+      const st = rowStar(r);
+      if (st > 0) { starSum += st; starN++; }
+      const sc = parseFloat(r.total_score);
+      if (Number.isFinite(sc) && sc > 0) { scaSum += sc; scaN++; }
+      const tds = parseFloat(r.brew_tds_pct);
+      if (Number.isFinite(tds) && tds > 0) { tdsSum += tds; tdsN++; }
+      const ey = parseFloat(r.brew_ey_pct);
+      if (Number.isFinite(ey) && ey > 0) { eySum += ey; eyN++; }
+      const tc = +r.brew_temp_c > 0 ? +r.brew_temp_c : (+r.brew_temp_f > 0 ? (+r.brew_temp_f - 32) * 5 / 9 : 0);
+      if (tc > 40 && tc <= 100) { tempSum += tc; tempN++; }
+      const rat = +r.brew_ratio > 0 ? +r.brew_ratio : ((+r.brew_dose_g > 0 && +r.brew_water_g > 0) ? (+r.brew_water_g / +r.brew_dose_g) : 0);
+      if (rat >= 1 && rat <= 30) { ratioSum += rat; ratioN++; }
+      if (r.dial_locked === 'yes' || r.dial_locked === '1') lockedN++;
+
+      const mk = String(r.brew_method || '').trim();
+      if (mk && !isUnknownTrait(mk)) methodFreq.set(mk, (methodFreq.get(mk) || 0) + 1);
+      const og = unneutPalate(r.origin || '').trim();
+      if (og && !isUnknownTrait(og)) originFreq.set(og, (originFreq.get(og) || 0) + 1);
+      String(unneutPalate(r.flavors_liked || r.words_flavor || r.bag_notes || ''))
+        .split(/[,;|/]+/).map(function (s) { return s.trim(); })
+        .filter(function (w) { return !!w && !isUnknownTrait(w); })
+        .forEach(function (w) { noteFreq.set(w, (noteFreq.get(w) || 0) + 1); });
+    });
+
+    const topOf = function (m) {
+      let best = '', bestN = 0;
+      m.forEach(function (cnt, k) { if (cnt > bestN) { best = k; bestN = cnt; } });
+      return best;
+    };
+    const topNotes = Array.from(noteFreq.entries())
+      .sort(function (a, b) { return b[1] - a[1]; })
+      .slice(0, 4).map(function (e) { return e[0]; });
+
+    return {
+      count: list.length,
+      lockedN: lockedN,
+      avgStar: starN ? +(starSum / starN).toFixed(2) : 0,
+      avgSca: scaN ? +(scaSum / scaN).toFixed(1) : 0,
+      avgTds: tdsN ? +(tdsSum / tdsN).toFixed(2) : 0,
+      tdsN: tdsN,
+      avgEy: eyN ? +(eySum / eyN).toFixed(1) : 0,
+      eyN: eyN,
+      avgTempC: tempN ? Math.round(tempSum / tempN) : 0,
+      avgRatio: ratioN ? +(ratioSum / ratioN).toFixed(1) : 0,
+      topMethod: topOf(methodFreq),
+      topOrigin: topOf(originFreq),
+      topNotes: topNotes
+    };
+  }
+
+  function buildDrillCupCard(r, opts) {
+    opts = opts || {};
+    const un = unneutPalate;
+    const cName = un(r.coffee_name) || 'Logged Brew';
+    const rName = un(r.roaster);
+    const isGold = r.dial_locked === 'yes' || r.dial_locked === '1';
+    const isCup = String(r.brew_method || '').toLowerCase() === 'cupping' || String(r.score_kind || '').toLowerCase() === 'cva_affective';
+    const st = parseFloat(r.my_rating_stars) || rowStar(r);
+    const sc = parseFloat(r.total_score) || 0;
+    const tempC = +r.brew_temp_c > 0 ? Math.round(+r.brew_temp_c) : (+r.brew_temp_f > 0 ? Math.round((+r.brew_temp_f - 32) * 5 / 9) : 0);
+    const ratioStr = +r.brew_ratio > 0 ? ('1:' + (+r.brew_ratio).toFixed(1).replace(/\.0$/, '')) : ((+r.brew_dose_g > 0 && +r.brew_water_g > 0) ? (r.brew_dose_g + 'g:' + r.brew_water_g + 'g') : '');
+    const grindStr = un(r.brew_grind_setting) || (+r.brew_grind_target_um > 0 ? (r.brew_grind_target_um + ' \u00B5m') : '');
+    const tdsEy = (+r.brew_tds_pct > 0)
+      ? (r.brew_tds_pct + '% TDS' + (+r.brew_ey_pct > 0 ? (' / ' + r.brew_ey_pct + '% EY') : ''))
+      : '';
+    const notesStr = un(r.flavors_liked || r.words_flavor || r.bag_notes || '').trim();
+    const specLine = [
+      String(r.brew_method || 'v60').toUpperCase(),
+      r.cupping_date || r.brew_date || '',
+      ratioStr,
+      grindStr,
+      tempC > 0 ? (tempC + '\u00B0C') : '',
+      tdsEy
+    ].filter(Boolean).join(' \u00B7 ');
+
+    return domH('article', { class: 'bt-drill-cup-card' },
+      domH('div', { class: 'bt-drill-cup-head' },
+        domH('div', { style: 'min-width:0;flex:1 1 170px' },
+          rName ? domH('div', { class: 'bt-drill-cup-sub', text: rName + (r.origin && !isUnknownTrait(r.origin) ? (' \u00B7 ' + un(r.origin)) : '') }) : null,
+          domH('strong', { class: 'bt-drill-cup-title', text: cName })
+        ),
+        domH('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+          isGold ? domH('span', { class: 'bt-tc-badge is-gold', text: 'Golden' }) : null,
+          isCup ? domH('span', { class: 'bt-tc-badge is-sci', text: 'Cupping' }) : null,
+          sc > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: sc.toFixed(1) + ' SCA' }) : null,
+          st > 0 ? domH('span', { class: 'bt-tc-badge num-tab ' + (st >= 4.5 ? 'is-gold' : 'is-good'), text: st.toFixed(2) + ' \u2605' }) : null
+        )
+      ),
+      specLine ? domH('div', { class: 'bt-drill-cup-meta num-tab', text: specLine }) : null,
+      notesStr ? domH('div', { class: 'bt-drill-cup-sub', text: 'Notes: ' + notesStr }) : null,
+      domH('div', { class: 'bt-drill-cup-actions' },
+        !palateState.demoMode ? domH('button', {
+          type: 'button',
+          class: 'bt-drill-action-pill bt-lab-btn is-sm',
+          onclick: function () {
+            CK.haptic('tick');
+            inspectCupFromPalate(r);
+          }
+        }, 'Inspect Cup \u2192') : null,
+        domH('button', {
+          type: 'button',
+          class: 'bt-drill-action-pill bt-lab-btn is-sm is-primary',
+          onclick: function () {
+            CK.haptic('snap');
+            quickBrewFromPalate(r);
+          }
+        }, 'Brew \u2192')
+      )
+    );
+  }
+
   function buildPalateGoldenShowcase(allRows) {
     if (!Array.isArray(allRows) || allRows.length === 0 || palateState.demoMode) return null;
-    const un = function (v) { return typeof unneutralize === 'function' ? unneutralize(v || '') : String(v || ''); };
+    const un = unneutPalate;
     const candidates = [];
     allRows.forEach(function (r, idx) {
       if (!r || !r.coffee_name) return;
@@ -1069,50 +1315,6 @@
       top3.push(r);
     }
     if (!top3.length) return null;
-
-    function quickBrewFromPalate(r) {
-      if (window.BTCellarTab && typeof window.BTCellarTab.hydrateAndBrewRow === 'function') {
-        window.BTCellarTab.hydrateAndBrewRow(r);
-        return;
-      }
-      const applyFn = function (a) {
-        a.coffee = Object.assign(a.coffee || {}, {
-          coffee_id: r.coffee_id || (a.coffee && a.coffee.coffee_id) || '',
-          name: un(r.coffee_name) || 'Golden Brew',
-          roaster: un(r.roaster),
-          origin: un(r.origin),
-          process: un(r.process),
-          roast: un(r.roast_level) || 'light',
-          answered: 'yes'
-        });
-        a.brew = a.brew || {};
-        if (r.brew_method) a.brew.method = r.brew_method;
-        if (+r.brew_dose_g > 0) a.brew.dose = +r.brew_dose_g;
-        if (+r.brew_water_g > 0) a.brew.water = +r.brew_water_g;
-        if (+r.brew_ratio > 0) a.brew.ratio = +r.brew_ratio;
-        if (+r.brew_temp_c > 0) {
-          a.brew.tempC = +r.brew_temp_c;
-          a.brew.tempF = Math.round(+r.brew_temp_c * 9 / 5 + 32);
-        }
-        if (+r.brew_grind_target_um > 0) {
-          a.brew.grindUm = +r.brew_grind_target_um;
-          a.brew.grind_um = +r.brew_grind_target_um;
-        }
-        if (r.brew_grind_setting) a.brew.grind_setting = un(r.brew_grind_setting);
-        a.recipeLocked = (r.dial_locked === 'yes' || r.dial_locked === '1');
-      };
-      if (typeof window.__btApplyAndNavigateWithBack === 'function') {
-        window.__btApplyAndNavigateWithBack(applyFn, {
-          targetStep: 'brew',
-          returnRoute: 'palate',
-          toast: 'Loaded "' + (un(r.coffee_name) || 'Golden Recipe') + '" into Brew Studio!'
-        });
-      } else {
-        applyFn(getApp());
-        saveDraftSoon();
-        if (typeof sh().go === 'function') sh().go('recipe');
-      }
-    }
 
     return domH('section', { class: 'bt-studio-card bt-golden-showcase', id: 'bt-palate-golden-showcase', 'aria-label': 'Best and Golden Recipes' },
       domH('div', { class: 'bt-lab-card-head' },
@@ -1156,16 +1358,594 @@
               })
             ),
             domH('span', { class: 'bt-lab-hint num-tab', text: specs }),
-            domH('button', {
-              type: 'button',
-              class: 'bt-lab-btn is-sm is-primary',
-              text: 'Brew \u2192',
-              onclick: function () { quickBrewFromPalate(r); }
-            })
+            domH('div', { class: 'bt-drill-cup-actions' },
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm is-primary',
+                text: 'Brew \u2192',
+                onclick: function () { quickBrewFromPalate(r); }
+              }),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm',
+                text: 'Inspect Cup \u2192',
+                onclick: function () { inspectCupFromPalate(r); }
+              })
+            )
           );
         })
       )
     );
+  }
+
+  function buildRoastExtractionDrillCard(rows, bayes) {
+    const list = Array.isArray(rows) ? rows.filter(Boolean) : [];
+    const roastTiers = [
+      { key: 'ultra-light', label: 'Ultra-Light', cue: 'Highest acidity, floral clarity & 95\u201399\u00B0C extraction' },
+      { key: 'light', label: 'Light', cue: 'Vibrant fruit, sweet tea-like body & 93\u201396\u00B0C water' },
+      { key: 'medium-light', label: 'Med-Light', cue: 'Balanced caramel sweetness with clean fruit lift (91\u201394\u00B0C)' },
+      { key: 'medium', label: 'Medium', cue: 'Round milk chocolate, praline & cozy 89\u201392\u00B0C balance' },
+      { key: 'dark', label: 'Dark', cue: 'Deep bittersweet cacao & low-temp 85\u201389\u00B0C extraction' }
+    ];
+
+    const roastBuckets = roastTiers.map(function (rt) {
+      const matched = list.filter(function (r) {
+        const rk = isUnknownTrait(r.roast_level || r.roast) ? '' : normKey(r.roast_level || r.roast);
+        return rk === rt.key || (rt.key === 'medium-light' && rk === 'med-light') || (rt.key === 'ultra-light' && rk === 'ultralight');
+      });
+      const stats = summarizeCupsStats(matched);
+      return Object.assign({}, rt, { rows: matched, stats: stats });
+    });
+
+    const extractionZones = [
+      {
+        key: 'zone_sweet',
+        label: 'Sweet Spot (18\u201322% EY)',
+        cue: 'Balanced sugars, ripe acidity & clean finish without harsh dryness.',
+        filter: function (r) { const ey = parseFloat(r.brew_ey_pct); return Number.isFinite(ey) && ey >= 18 && ey <= 22.2; }
+      },
+      {
+        key: 'zone_clarity',
+        label: 'Tea-Like Clarity (<1.35% TDS)',
+        cue: 'Lighter concentration that opens up delicate florals and aromatics.',
+        filter: function (r) { const tds = parseFloat(r.brew_tds_pct); return Number.isFinite(tds) && tds > 0 && tds < 1.35; }
+      },
+      {
+        key: 'zone_syrupy',
+        label: 'Rich & Full (>=1.45% TDS)',
+        cue: 'Higher dissolved solids for creamy body, chocolate & espresso richness.',
+        filter: function (r) { const tds = parseFloat(r.brew_tds_pct); return Number.isFinite(tds) && tds >= 1.45; }
+      },
+      {
+        key: 'zone_high_ey',
+        label: 'High Extraction (>21% EY)',
+        cue: 'High-solubility extraction — shines on clean Nordic/light lots.',
+        filter: function (r) { const ey = parseFloat(r.brew_ey_pct); return Number.isFinite(ey) && ey > 21.0; }
+      },
+      {
+        key: 'zone_hot_filter',
+        label: 'Hot Pour-Over (>=93\u00B0C)',
+        cue: 'High thermal energy brews suited to dense high-elevation beans.',
+        filter: function (r) {
+          const tc = +r.brew_temp_c > 0 ? +r.brew_temp_c : (+r.brew_temp_f > 0 ? (+r.brew_temp_f - 32) * 5 / 9 : 0);
+          return tc >= 93;
+        }
+      },
+      {
+        key: 'zone_cool_gentle',
+        label: 'Gentle Temp (<93\u00B0C)',
+        cue: 'Cooler water tames dark-roast bitterness and wild anaerobic funk.',
+        filter: function (r) {
+          const tc = +r.brew_temp_c > 0 ? +r.brew_temp_c : (+r.brew_temp_f > 0 ? (+r.brew_temp_f - 32) * 5 / 9 : 0);
+          return tc >= 70 && tc < 93;
+        }
+      }
+    ].map(function (ez) {
+      const matched = list.filter(ez.filter);
+      return Object.assign({}, ez, { rows: matched, stats: summarizeCupsStats(matched) });
+    });
+
+    const card = domH('section', { class: 'bt-studio-card', id: 'bt-palate-roast-extraction-card' });
+    const drawerHost = domH('div', { id: 'bt-roast-extraction-drawer-host' });
+
+    function findSelectedDef() {
+      const k = palateState.selectedRoastZone;
+      if (!k) return null;
+      return roastBuckets.find(function (b) { return b.key === k; }) || extractionZones.find(function (z) { return z.key === k; }) || null;
+    }
+
+    function paintDrawer() {
+      drawerHost.textContent = '';
+      const sel = findSelectedDef();
+      if (!sel) return;
+      const st = sel.stats;
+      const sortedRows = sel.rows.slice().sort(function (a, b) { return rowStar(b) - rowStar(a); });
+      const takeaway = !st.count
+        ? ('No logged cups in "' + sel.label + '" yet. ' + sel.cue)
+        : ('You average ' + st.avgStar.toFixed(2) + '/5.0 across ' + st.count + ' cup' + (st.count === 1 ? '' : 's') + ' here' +
+          (st.topOrigin ? (' — especially ' + st.topOrigin) : '') +
+          (st.topMethod ? (' on ' + st.topMethod.toUpperCase()) : '') +
+          (st.avgTempC ? (' around ' + st.avgTempC + '\u00B0C') : '') +
+          (st.avgRatio ? (' (1:' + st.avgRatio + ')') : '') +
+          (st.topNotes.length ? (', favoring ' + st.topNotes.slice(0, 3).join(', ') + '.') : '.'));
+
+      drawerHost.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-roast-extraction-drawer' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'ROAST & EXTRACTION DRILL-DOWN' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: sel.label + ' (' + st.count + ' cup' + (st.count === 1 ? '' : 's') + ')' })
+          ),
+          domH('button', {
+            type: 'button',
+            class: 'bt-drill-close-btn bt-lab-btn is-sm',
+            onclick: function () {
+              palateState.selectedRoastZone = '';
+              CK.haptic('tick');
+              rerenderPalateTab();
+            }
+          }, 'Close \u00D7')
+        ),
+        domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: takeaway }),
+        st.count > 0 ? domH('div', { class: 'bt-drill-meta-row' },
+          domH('span', { class: 'bt-tc-badge is-good num-tab', text: 'Avg ' + st.avgStar.toFixed(2) + ' \u2605' }),
+          st.avgSca > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgSca + ' SCA' }) : null,
+          st.tdsN > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgTds + '% TDS' }) : null,
+          st.eyN > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgEy + '% EY' }) : null,
+          st.avgTempC > 0 ? domH('span', { class: 'bt-tc-badge is-soft num-tab', text: 'Avg ' + st.avgTempC + '\u00B0C' }) : null,
+          st.avgRatio > 0 ? domH('span', { class: 'bt-tc-badge is-soft num-tab', text: 'Avg 1:' + st.avgRatio }) : null,
+          st.lockedN > 0 ? domH('span', { class: 'bt-tc-badge is-gold num-tab', text: st.lockedN + ' Golden' }) : null
+        ) : null,
+        sortedRows.length > 0 ? domH('div', { class: 'bt-drill-cup-list' },
+          sortedRows.slice(0, 8).map(function (r) { return buildDrillCupCard(r); })
+        ) : null
+      ));
+    }
+
+    const maxRoastN = Math.max(1, roastBuckets.reduce(function (mx, b) { return Math.max(mx, b.rows.length); }, 0));
+
+    card.appendChild(domH('div', { class: 'bt-lab-card-head' },
+      domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1' },
+        ic('flame-temp', { size: 22 }),
+        domH('div', { style: 'min-width:0;flex:1' },
+          domH('h3', { text: 'Roast Sweet Spot & Extraction Preferences' }),
+          domH('p', { class: 'bt-lab-sub', text: 'Tap any roast tier or extraction zone to inspect matching cups, %TDS/%EY, brew parameters & what you enjoy most.' })
+        )
+      )
+    ));
+
+    card.appendChild(domH('div', { class: 'bt-rating-dist-list', role: 'group', 'aria-label': 'Roast tier drill-down bars' },
+      roastBuckets.map(function (rb) {
+        const active = palateState.selectedRoastZone === rb.key;
+        const pct = rb.rows.length ? Math.max(8, Math.round((rb.rows.length / maxRoastN) * 100)) : 0;
+        return domH('button', {
+          type: 'button',
+          class: 'bt-rating-dist-row bt-drillable' + (active ? ' is-active' : ''),
+          'aria-pressed': String(active),
+          'data-roast-tier': rb.key,
+          onclick: function () {
+            palateState.selectedRoastZone = active ? '' : rb.key;
+            CK.haptic('tick');
+            rerenderPalateTab();
+          }
+        },
+          domH('span', { class: 'bt-rating-dist-label', text: rb.label }),
+          domH('div', { class: 'bt-rating-dist-track' },
+            domH('div', { class: 'bt-rating-dist-fill', style: 'width:' + pct + '%' })
+          ),
+          domH('span', {
+            class: 'bt-rating-dist-count num-tab',
+            text: rb.rows.length > 0 ? (rb.rows.length + ' \u00B7 ' + rb.stats.avgStar.toFixed(2) + '\u2605') : '0'
+          })
+        );
+      })
+    ));
+
+    card.appendChild(domH('div', { style: 'margin-top:10px' },
+      domH('span', { class: 'bt-lab-inline-lbl', style: 'display:block;margin-bottom:6px', text: 'Sweet Spot & Brew Parameter Zones (Tap to Inspect Cups):' }),
+      domH('div', { class: 'bt-rating-tier-bar', role: 'group', 'aria-label': 'Extraction sweet spot zones' },
+        extractionZones.map(function (ez) {
+          const active = palateState.selectedRoastZone === ez.key;
+          return domH('button', {
+            type: 'button',
+            class: 'bt-rating-tier-btn bt-lab-chip bt-drillable' + (active ? ' is-active' : ''),
+            'aria-pressed': String(active),
+            'data-ext-zone': ez.key,
+            onclick: function () {
+              palateState.selectedRoastZone = active ? '' : ez.key;
+              CK.haptic('tick');
+              rerenderPalateTab();
+            }
+          }, ez.label + ' (' + ez.rows.length + ')');
+        })
+      )
+    ));
+
+    paintDrawer();
+    card.appendChild(drawerHost);
+    return card;
+  }
+
+  function buildRatingTierBreakdownCard(rows) {
+    const list = Array.isArray(rows) ? rows.filter(Boolean) : [];
+    const totalN = list.length;
+    const tiers = [
+      { key: 'tier5', label: '5\u2605 Favorites', journalFilter: 'tier5', filter: function (r) { return classifyRatingTier(r) === 'tier5'; } },
+      { key: 'tier4', label: '4\u20134.75\u2605 Great Cups', journalFilter: 'tier4', filter: function (r) { return classifyRatingTier(r) === 'tier4'; } },
+      { key: 'tier3', label: '3\u20133.75\u2605 Dialing In', journalFilter: 'tier3', filter: function (r) { return classifyRatingTier(r) === 'tier3'; } },
+      { key: 'tierLow', label: '<3\u2605 Needs Fix', journalFilter: 'tierLow', filter: function (r) { return classifyRatingTier(r) === 'tierLow'; } },
+      { key: 'locked', label: 'Golden Locked', journalFilter: 'locked', filter: function (r) { return r.dial_locked === 'yes' || r.dial_locked === '1'; } }
+    ].map(function (t) {
+      const matched = list.filter(t.filter);
+      return Object.assign({}, t, { rows: matched, stats: summarizeCupsStats(matched) });
+    });
+
+    const card = domH('section', { class: 'bt-studio-card', id: 'bt-palate-rating-tiers' });
+    card.appendChild(domH('div', { class: 'bt-lab-card-head' },
+      domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1' },
+        ic('spark-star', { size: 22 }),
+        domH('div', { style: 'min-width:0;flex:1' },
+          domH('h3', { text: 'Rating Tier Breakdown (' + totalN + ' Rated Cup' + (totalN === 1 ? '' : 's') + ')' }),
+          domH('p', { class: 'bt-lab-sub', text: 'Tap any rating bucket or Golden Locked to inspect every cup that scored there.' })
+        )
+      ),
+      totalN > 0 ? domH('button', {
+        type: 'button',
+        class: 'bt-lab-btn is-sm',
+        onclick: function () { jumpToJournalWithFilter('all'); }
+      }, 'Open Journal \u2192') : null
+    ));
+
+    card.appendChild(domH('div', { class: 'bt-rating-dist-list', role: 'group', 'aria-label': 'Rating tier drill-down bars' },
+      tiers.map(function (t) {
+        const active = palateState.selectedRatingTier === t.key;
+        const pct = totalN > 0 ? Math.round((t.rows.length / totalN) * 100) : 0;
+        const barW = t.rows.length > 0 ? Math.max(8, pct) : 0;
+        return domH('button', {
+          type: 'button',
+          class: 'bt-rating-dist-row bt-drillable' + (active ? ' is-active' : ''),
+          'aria-pressed': String(active),
+          'data-rating-tier': t.key,
+          onclick: function () {
+            palateState.selectedRatingTier = active ? '' : t.key;
+            CK.haptic('tick');
+            rerenderPalateTab();
+          }
+        },
+          domH('span', { class: 'bt-rating-dist-label', text: t.label }),
+          domH('div', { class: 'bt-rating-dist-track' },
+            domH('div', { class: 'bt-rating-dist-fill', style: 'width:' + barW + '%' })
+          ),
+          domH('span', {
+            class: 'bt-rating-dist-count num-tab',
+            text: t.rows.length + (t.stats.avgSca > 0 ? (' \u00B7 ' + t.stats.avgSca + ' SCA') : (totalN > 0 ? (' (' + pct + '%)') : ''))
+          })
+        );
+      })
+    ));
+
+    const selTier = tiers.find(function (t) { return t.key === palateState.selectedRatingTier; }) || null;
+    if (selTier) {
+      const sorted = selTier.rows.slice().sort(function (a, b) { return rowStar(b) - rowStar(a); });
+      const st = selTier.stats;
+      card.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-rating-tier-drawer' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'RATING TIER INSPECTOR' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: selTier.label + ' \u2014 ' + sorted.length + ' Cup' + (sorted.length === 1 ? '' : 's') })
+          ),
+          domH('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;align-items:center' },
+            sorted.length > 0 && !palateState.demoMode ? domH('button', {
+              type: 'button',
+              class: 'bt-lab-btn is-sm is-primary',
+              onclick: function () { jumpToJournalWithFilter(selTier.journalFilter); }
+            }, 'Filter in Journal \u2192') : null,
+            domH('button', {
+              type: 'button',
+              class: 'bt-drill-close-btn bt-lab-btn is-sm',
+              onclick: function () {
+                palateState.selectedRatingTier = '';
+                CK.haptic('tick');
+                rerenderPalateTab();
+              }
+            }, 'Close \u00D7')
+          )
+        ),
+        st.count > 0 ? domH('div', { class: 'bt-drill-meta-row' },
+          domH('span', { class: 'bt-tc-badge is-good num-tab', text: 'Avg ' + st.avgStar.toFixed(2) + ' \u2605' }),
+          st.avgSca > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgSca + ' SCA' }) : null,
+          st.topOrigin ? domH('span', { class: 'bt-tc-badge is-soft', text: 'Top Origin: ' + st.topOrigin }) : null,
+          st.topMethod ? domH('span', { class: 'bt-tc-badge is-soft', text: 'Top Brewer: ' + st.topMethod.toUpperCase() }) : null
+        ) : domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: 'No logged cups in "' + selTier.label + '" yet.' }),
+        sorted.length > 0 ? domH('div', { class: 'bt-drill-cup-list' },
+          sorted.slice(0, 10).map(function (r) { return buildDrillCupCard(r); })
+        ) : null
+      ));
+    }
+
+    return card;
+  }
+
+  function buildPalatePreferenceTargetsCard(rows) {
+    const a = getApp();
+    a.prefs = a.prefs || {};
+    const saved = (a.prefs.palateTargets && typeof a.prefs.palateTargets === 'object') ? a.prefs.palateTargets : {};
+    if (!palateState.prefTargetDraft) {
+      palateState.prefTargetDraft = {
+        brightness: saved.brightness || 'balanced',
+        strength: saved.strength || 'balanced',
+        texture: saved.texture || 'balanced'
+      };
+    }
+    const tgt = palateState.prefTargetDraft;
+    const list = Array.isArray(rows) ? rows.filter(Boolean) : [];
+
+    const axesDefs = [
+      {
+        key: 'brightness',
+        title: 'Brightness vs Smoothness',
+        opts: [
+          { k: 'bright', lbl: 'Bright & Juicy', steer: '+1\u20132\u00B0C hotter water & lighter-roast extraction to highlight citrus/berry acidity' },
+          { k: 'balanced', lbl: 'Balanced Sweet', steer: 'Standard balanced temperature & ratio for clean caramel-fruit harmony' },
+          { k: 'smooth', lbl: 'Smooth & Cozy', steer: '\u22122\u00B0C cooler water & slightly coarser grind to round off sharp acidity' }
+        ]
+      },
+      {
+        key: 'strength',
+        title: 'Cup Strength (%TDS)',
+        opts: [
+          { k: 'light', lbl: 'Light / Tea-Like (~1.25%)', steer: 'Longer ratio (~1:17\u20131:18) for delicate aromatics and floral transparency' },
+          { k: 'balanced', lbl: 'Balanced (~1.35%)', steer: 'Classic specialty filter ratio (~1:16) with sweet, structured weight' },
+          { k: 'strong', lbl: 'Rich & Strong (1.48%+)', steer: 'Tighter ratio (~1:14.5\u20131:15) for dense concentration and chocolate depth' }
+        ]
+      },
+      {
+        key: 'texture',
+        title: 'Texture (Clarity vs Body)',
+        opts: [
+          { k: 'clarity', lbl: 'High Clarity', steer: 'Gentle laminar pours & clean paper filtration to separate crisp flavor layers' },
+          { k: 'balanced', lbl: 'Silky Balanced', steer: 'Controlled swirl & steady drawdown for sweet, velvety balance' },
+          { k: 'body', lbl: 'Syrupy Full Body', steer: 'Higher immersion/agitation or fuller-body brew style for creamy mouthfeel' }
+        ]
+      }
+    ];
+
+    const steerLines = axesDefs.map(function (ax) {
+      const hit = ax.opts.find(function (o) { return o.k === tgt[ax.key]; }) || ax.opts[1];
+      return ax.title.split(' ')[0] + ': ' + hit.steer;
+    });
+
+    /* Filter logged cups that match the active target bias (high-rated first) */
+    const matchedCups = list.filter(function (r) {
+      const st = rowStar(r);
+      if (st < 3.5) return false;
+      const rk = String(r.roast_level || r.roast || '').toLowerCase();
+      const pr = String(r.process || '').toLowerCase();
+      const tds = parseFloat(r.brew_tds_pct) || 0;
+      const rat = +r.brew_ratio > 0 ? +r.brew_ratio : ((+r.brew_dose_g > 0 && +r.brew_water_g > 0) ? (+r.brew_water_g / +r.brew_dose_g) : 0);
+      let ok = true;
+      if (tgt.brightness === 'bright') {
+        const ac = parseFloat(r.acidity_intensity) || parseFloat(r.acidity) || 0;
+        if (!(ac >= 3.5 || rk.indexOf('light') >= 0 || pr.indexOf('washed') >= 0)) ok = false;
+      } else if (tgt.brightness === 'smooth') {
+        const ac = parseFloat(r.acidity_intensity) || parseFloat(r.acidity) || 0;
+        if (!(rk === 'medium' || rk.indexOf('dark') >= 0 || (ac > 0 && ac <= 3) || pr.indexOf('natural') >= 0)) ok = false;
+      }
+      if (ok && tgt.strength === 'light') {
+        if (!((tds > 0 && tds <= 1.36) || rat >= 16.5)) ok = false;
+      } else if (ok && tgt.strength === 'strong') {
+        if (!((tds >= 1.42) || (rat > 0 && rat <= 15.5))) ok = false;
+      }
+      if (ok && tgt.texture === 'clarity') {
+        if (!(pr.indexOf('washed') >= 0 || /v60|chemex|orea|kalita|origami/.test(String(r.brew_method || '').toLowerCase()))) ok = false;
+      } else if (ok && tgt.texture === 'body') {
+        if (!(/natural|honey|anaerobic|wet/.test(pr) || /espresso|press|aeropress|switch|moka/.test(String(r.brew_method || '').toLowerCase()))) ok = false;
+      }
+      return ok;
+    }).sort(function (a, b) { return rowStar(b) - rowStar(a); });
+
+    const isDirty = (saved.brightness || 'balanced') !== tgt.brightness ||
+      (saved.strength || 'balanced') !== tgt.strength ||
+      (saved.texture || 'balanced') !== tgt.texture;
+
+    return domH('section', { class: 'bt-studio-card', id: 'bt-palate-pref-targets' },
+      domH('div', { class: 'bt-lab-card-head' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1 1 200px' },
+          ic('sliders', { size: 22 }),
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('h3', { text: 'Interactive Palate Targets & Recipe Bias' }),
+            domH('p', { class: 'bt-lab-sub', text: 'Dial in your ideal brightness, strength (%TDS), and texture — steers new recipes & filters your matching favorite cups below.' })
+          )
+        ),
+        domH('button', {
+          type: 'button',
+          id: 'bt-save-pref-bias-btn',
+          class: 'bt-lab-btn is-sm ' + (isDirty ? 'is-primary' : ''),
+          onclick: function () {
+            const appNow = getApp();
+            appNow.prefs = appNow.prefs || {};
+            appNow.prefs.palateTargets = {
+              brightness: tgt.brightness,
+              strength: tgt.strength,
+              texture: tgt.texture
+            };
+            appNow.prefs.flavorBias = tgt.brightness;
+            if (window.BTStorage && typeof window.BTStorage.savePrefs === 'function') {
+              try { window.BTStorage.savePrefs(appNow.prefs); } catch (_) {}
+            }
+            saveDraftSoon();
+            CK.haptic('celebrate');
+            notify('Saved Palate Target Bias (' + tgt.brightness + ' \u00B7 ' + tgt.strength + ' \u00B7 ' + tgt.texture + ')!');
+            rerenderPalateTab();
+          }
+        }, ic('check-seal', { size: 14 }), domH('span', { text: isDirty ? 'Save Preference Bias' : 'Preference Bias Saved' }))
+      ),
+      domH('div', { class: 'bt-pref-target-grid' },
+        axesDefs.map(function (ax) {
+          return domH('div', { class: 'bt-lab-subcard', style: 'display:flex;flex-direction:column;gap:7px;min-width:0' },
+            domH('span', { class: 'bt-pref-tile-lbl', text: ax.title }),
+            domH('div', { class: 'bt-rating-tier-bar', role: 'radiogroup', 'aria-label': ax.title },
+              ax.opts.map(function (opt) {
+                const on = tgt[ax.key] === opt.k;
+                return domH('button', {
+                  type: 'button',
+                  class: 'bt-pref-target-chip bt-lab-chip bt-drillable' + (on ? ' is-active' : ''),
+                  'aria-pressed': String(on),
+                  'data-pref-axis': ax.key,
+                  'data-pref-val': opt.k,
+                  onclick: function () {
+                    tgt[ax.key] = opt.k;
+                    CK.haptic('tick');
+                    rerenderPalateTab();
+                  }
+                }, opt.lbl);
+              })
+            )
+          );
+        })
+      ),
+      domH('div', { class: 'bt-drill-drawer', id: 'bt-pref-targets-drawer' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'HOW THIS STEERS NEW RECIPES & MATCHING CUPS' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: matchedCups.length + ' High-Rated Cup' + (matchedCups.length === 1 ? '' : 's') + ' Match Your Active Target' })
+          )
+        ),
+        domH('div', { style: 'display:flex;flex-direction:column;gap:4px' },
+          steerLines.map(function (sl) {
+            return domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: '\u2022 ' + sl });
+          })
+        ),
+        matchedCups.length > 0 ? domH('div', { class: 'bt-drill-cup-list' },
+          matchedCups.slice(0, 4).map(function (r) { return buildDrillCupCard(r); })
+        ) : domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: 'No logged 3.5+ cups match this exact target combo yet — save your bias and brew a new cup to test it!' })
+      )
+    );
+  }
+
+  function buildPerCoffeeScorecardLeaderboard(bayes) {
+    const beans = (bayes && Array.isArray(bayes.coffees)) ? bayes.coffees.slice() : [];
+    const scoredBeans = beans.map(function (c) {
+      const cups = (c.cups || []).filter(function (cp) { return !!cp && !!cp.rawRow; });
+      const bestCup = cups.slice().sort(function (a, b) { return b.star - a.star; })[0] || null;
+      const latestCup = cups.length ? cups[cups.length - 1] : null;
+      const isGold = cups.some(function (cp) { return cp.locked; });
+      const bestStar = bestCup ? bestCup.star : c.dialScore;
+      const stats = summarizeCupsStats(cups.map(function (cp) { return cp.rawRow; }));
+      return { c: c, cups: cups, bestCup: bestCup, latestCup: latestCup, isGold: isGold, bestStar: bestStar, stats: stats };
+    }).sort(function (a, b) {
+      if (a.isGold !== b.isGold) return a.isGold ? -1 : 1;
+      if (Math.abs(b.bestStar - a.bestStar) > 0.01) return b.bestStar - a.bestStar;
+      return b.cups.length - a.cups.length;
+    });
+
+    const card = domH('section', { class: 'bt-studio-card', id: 'bt-palate-bean-scorecards' },
+      domH('div', { class: 'bt-lab-card-head' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1' },
+          ic('fresh-bag', { size: 22 }),
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('h3', { text: 'Per-Coffee Scorecard Leaderboard (' + scoredBeans.length + ' Logged Bean' + (scoredBeans.length === 1 ? '' : 's') + ')' }),
+            domH('p', { class: 'bt-lab-sub', text: 'Sorted by Golden seal & best rating — tap any coffee to expand all tries #1..#N, %TDS/%EY progression & 1-tap Brew Next.' })
+          )
+        )
+      )
+    );
+
+    if (!scoredBeans.length) {
+      card.appendChild(domH('p', { class: 'bt-lab-hint', text: 'Log your first coffee in Brew Studio to build your Per-Coffee Scorecard Leaderboard!' }));
+      return card;
+    }
+
+    const listWrap = domH('div', { class: 'bt-drill-cup-list' });
+    scoredBeans.slice(0, 18).forEach(function (sb) {
+      const isOpen = palateState.selectedBeanCid === sb.c.cid;
+      const metaBits = [
+        sb.c.roaster || '',
+        sb.c.origin ? (sb.c.origin.charAt(0).toUpperCase() + sb.c.origin.slice(1)) : '',
+        sb.cups.length + (sb.cups.length === 1 ? ' try' : ' tries'),
+        sb.stats.tdsN > 0 ? ('Avg ' + sb.stats.avgTds + '% TDS') : '',
+        sb.stats.eyN > 0 ? (sb.stats.avgEy + '% EY') : ''
+      ].filter(Boolean).join(' \u00B7 ');
+
+      listWrap.appendChild(domH('button', {
+        type: 'button',
+        class: 'bt-bean-scorecard-row bt-drillable' + (isOpen ? ' is-active' : ''),
+        'aria-expanded': String(isOpen),
+        'data-bean-cid': sb.c.cid,
+        onclick: function () {
+          palateState.selectedBeanCid = isOpen ? '' : sb.c.cid;
+          CK.haptic('tick');
+          rerenderPalateTab();
+        }
+      },
+        domH('div', { style: 'min-width:0;flex:1;text-align:left' },
+          domH('strong', { class: 'bt-drill-cup-title', text: sb.c.name }),
+          domH('div', { class: 'bt-drill-cup-sub num-tab', text: metaBits })
+        ),
+        domH('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+          sb.isGold ? domH('span', { class: 'bt-tc-badge is-gold', text: 'Golden Locked' }) : null,
+          domH('span', { class: 'bt-tc-badge num-tab ' + (sb.bestStar >= 4.5 ? 'is-gold' : (sb.bestStar >= 3.5 ? 'is-good' : 'is-warn')), text: 'Best ' + sb.bestStar.toFixed(2) + ' \u2605' })
+        )
+      ));
+
+      if (isOpen) {
+        const chron = sb.cups.slice().sort(function (a, b) {
+          const da = String((a.rawRow && (a.rawRow.saved_at || a.rawRow.cupping_date)) || '');
+          const db = String((b.rawRow && (b.rawRow.saved_at || b.rawRow.cupping_date)) || '');
+          return da.localeCompare(db);
+        });
+        listWrap.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-bean-scorecard-drawer' },
+          domH('div', { class: 'bt-drill-drawer-head' },
+            domH('div', { style: 'min-width:0;flex:1' },
+              domH('div', { class: 'bt-pref-tile-lbl', text: 'TRY PROGRESSION (#1 \u2192 #' + chron.length + ')' }),
+              domH('strong', { class: 'bt-drill-drawer-title', text: sb.c.name + (sb.c.roaster ? (' \u00B7 ' + sb.c.roaster) : '') })
+            ),
+            domH('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' },
+              sb.bestCup && !palateState.demoMode ? domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm',
+                onclick: function () { inspectCupFromPalate(sb.bestCup.rawRow); }
+              }, 'Inspect Best \u2192') : null,
+              (sb.latestCup || sb.bestCup) ? domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm is-primary',
+                onclick: function () { quickBrewFromPalate((sb.bestCup && sb.bestCup.locked ? sb.bestCup : (sb.latestCup || sb.bestCup)).rawRow); }
+              }, 'Brew Next \u2192') : null
+            )
+          ),
+          domH('div', { class: 'bt-drill-cup-list' },
+            chron.map(function (cp, idx) {
+              const specs = [
+                'Try #' + (idx + 1),
+                formatMethodHuman(cp.method),
+                cp.grind || '',
+                cp.tempC > 0 ? (cp.tempC + '\u00B0C') : '',
+                cp.ratio > 0 ? ('1:' + cp.ratio) : '',
+                cp.tds > 0 ? (cp.tds + '% TDS' + (cp.ey > 0 ? (' / ' + cp.ey + '% EY') : '')) : ''
+              ].filter(Boolean).join(' \u00B7 ');
+              return domH('div', { class: 'bt-drill-cup-card' },
+                domH('div', { class: 'bt-drill-cup-head' },
+                  domH('div', { style: 'min-width:0;flex:1' },
+                    domH('strong', { class: 'bt-drill-cup-meta num-tab', text: specs }),
+                    cp.notes ? domH('div', { class: 'bt-drill-cup-sub', text: 'Notes: ' + cp.notes }) : null
+                  ),
+                  domH('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+                    cp.locked ? domH('span', { class: 'bt-tc-badge is-gold', text: 'Golden' }) : null,
+                    domH('span', { class: 'bt-tc-badge num-tab ' + (cp.star >= 4.5 ? 'is-gold' : (cp.star >= 3.5 ? 'is-good' : 'is-warn')), text: cp.star.toFixed(2) + ' \u2605' }),
+                    !palateState.demoMode ? domH('button', {
+                      type: 'button',
+                      class: 'bt-drill-action-pill bt-lab-btn is-sm',
+                      onclick: function () { inspectCupFromPalate(cp.rawRow); }
+                    }, 'Inspect') : null
+                  )
+                )
+              );
+            })
+          )
+        ));
+      }
+    });
+    card.appendChild(listWrap);
+    return card;
   }
 
   function renderPalateDnaSegment() {
@@ -1244,37 +2024,43 @@
         lbl: 'Favorite Roast',
         val: topRoastHit ? formatRoastHuman(topRoastHit.key) : 'Awaiting Known Roast',
         sub: topRoastHit ? (topRoastHit.mean.toFixed(2) + '/5.0 · ' + topRoastHit.n + ' bag' + (topRoastHit.n === 1 ? '' : 's')) : 'Pick roast on Step 1',
-        board: 'roasts'
+        board: 'roasts',
+        drillStep: topRoastHit ? { level: 'roast', key: topRoastHit.key, label: formatRoastHuman(topRoastHit.key) } : null
       },
       {
         lbl: 'Favorite Process',
         val: topProcHit ? formatProcessHuman(topProcHit.key) : 'Awaiting Known Process',
         sub: topProcHit ? (topProcHit.mean.toFixed(2) + '/5.0 · ' + topProcHit.n + ' bag' + (topProcHit.n === 1 ? '' : 's')) : 'Washed, Natural, Honey...',
-        board: 'processes'
+        board: 'processes',
+        drillStep: topProcHit ? { level: 'process', key: topProcHit.key, label: formatProcessHuman(topProcHit.key) } : null
       },
       {
         lbl: 'Top Origin',
         val: topOrigMeta ? topOrigMeta.name : 'Explore 52 Origins',
         sub: topOrigHit ? (topOrigHit.mean.toFixed(2) + '/5.0 · ' + topOrigHit.n + ' bag' + (topOrigHit.n === 1 ? '' : 's')) : 'Tap World Belt map below',
-        board: 'origins'
+        board: 'origins',
+        drillStep: topOrigHit ? { level: 'origin', key: topOrigHit.key, label: topOrigMeta ? topOrigMeta.name : topOrigHit.key } : null
       },
       {
         lbl: 'Sweet-Spot Elevation',
         val: topElevDef ? topElevDef.label : 'Awaiting Elevation',
         sub: topElevHit ? (topElevHit.mean.toFixed(2) + '/5.0 · ' + topElevHit.n + ' bag' + (topElevHit.n === 1 ? '' : 's')) : '<1,300m · 1,300\u20131,750m · 1,750m+',
-        board: 'elevations'
+        board: 'elevations',
+        drillStep: topElevHit ? { level: 'elevation', key: topElevHit.key, label: topElevDef ? topElevDef.label : topElevHit.key } : null
       },
       {
         lbl: 'Top Flavor Notes',
         val: topFlavors3.length ? topFlavors3.join(', ') : 'Awaiting Flavor Tags',
         sub: topFlavors3.length ? (bayes.topFlavorNotes[0].mean.toFixed(2) + '/5.0 top note match') : 'Tag notes on Step 1 or Step 5',
-        board: 'flavors'
+        board: 'flavors',
+        drillStep: topFlavors3.length ? { level: 'flavor', key: topFlavors3[0], label: topFlavors3[0] } : null
       },
       {
         lbl: 'Favorite Brewer',
-        val: topBrewerHit ? String(topBrewerHit.key).toUpperCase() : 'Ready on Counter',
+        val: topBrewerHit ? formatMethodHuman(topBrewerHit.key) : 'Ready on Counter',
         sub: topBrewerHit ? (topBrewerHit.mean.toFixed(2) + '/5.0 · ' + topBrewerHit.n + ' cup' + (topBrewerHit.n === 1 ? '' : 's')) : 'Log your first brew',
-        board: 'brewers'
+        board: 'brewers',
+        drillStep: topBrewerHit ? { level: 'brewer', key: topBrewerHit.key, label: formatMethodHuman(topBrewerHit.key) } : null
       }
     ];
 
@@ -1286,7 +2072,7 @@
             domH('h3', { text: 'Your Top Coffee Preferences' }),
             domH('p', {
               class: 'bt-lab-sub',
-              text: 'Learned from your rated cups — any field marked "Don\'t Know" is automatically filtered out so unknown bags never skew your scores.'
+              text: 'Tap any tile to drill straight into matching logged cups — "Don\'t Know" fields are filtered out automatically.'
             })
           )
         ),
@@ -1302,10 +2088,10 @@
         prefTiles.map(function (pt) {
           return domH('button', {
             type: 'button',
-            class: 'bt-pref-summary-tile',
+            class: 'bt-pref-summary-tile bt-drillable',
             onclick: function () {
               palateState.expandedBoard = pt.board;
-              palateState.drillPath = [];
+              palateState.drillPath = pt.drillStep ? [pt.drillStep] : [];
               CK.haptic('tick');
               rerenderPalateTab();
               setTimeout(function () {
@@ -1318,7 +2104,8 @@
           },
             domH('span', { class: 'bt-pref-tile-lbl', text: pt.lbl }),
             domH('strong', { class: 'bt-pref-tile-val', text: pt.val }),
-            domH('span', { class: 'bt-pref-tile-sub num-tab', text: pt.sub })
+            domH('span', { class: 'bt-pref-tile-sub num-tab', text: pt.sub }),
+            domH('span', { class: 'bt-drill-cue', text: 'Drill \u2192' })
           );
         })
       ),
@@ -1330,8 +2117,12 @@
       ) : null
     );
     wrap.appendChild(prefsCard);
+    wrap.appendChild(buildPalatePreferenceTargetsCard(slicedRows));
     const palateGolden = buildPalateGoldenShowcase(allRows);
     if (palateGolden) wrap.appendChild(palateGolden);
+    wrap.appendChild(buildRoastExtractionDrillCard(slicedRows, bayes));
+    wrap.appendChild(buildRatingTierBreakdownCard(slicedRows));
+    wrap.appendChild(buildPerCoffeeScorecardLeaderboard(bayes));
 
     /* 1. Real Cartographic Coffee Belt World Map (52 Origins + 4 Regional Zoom Pills) */
     const mapCard = domH('section', { class: 'bt-studio-card', id: 'bt-palate-world-map' });
@@ -1410,6 +2201,14 @@
       const personalTxt = eb
         ? (eb.rawMean.toFixed(2) + ' / 5.0 avg (' + eb.n + ' bag' + (eb.n === 1 ? '' : 's') + ' · Weighted ' + eb.mean.toFixed(2) + ')')
         : 'Unexplored — brew 1 bag to earn this stamp!';
+      const origRawRows = [];
+      if (eb && Array.isArray(eb.bags)) {
+        eb.bags.forEach(function (bg) {
+          (bg.cups || []).forEach(function (cp) { if (cp && cp.rawRow) origRawRows.push(cp.rawRow); });
+        });
+      }
+      origRawRows.sort(function (a, b) { return rowStar(b) - rowStar(a); });
+      const origStats = summarizeCupsStats(origRawRows);
 
       mapInfoBox.appendChild(domH('article', { class: 'bt-origin-passport-card', id: 'bt-origin-passport-card' },
         domH('div', { class: 'bt-passport-head' },
@@ -1444,6 +2243,21 @@
             domH('strong', { class: 'num-tab', text: personalTxt })
           )
         ),
+        origRawRows.length > 0 ? domH('div', { class: 'bt-drill-drawer' },
+          domH('div', { class: 'bt-drill-drawer-head' },
+            domH('strong', { class: 'bt-drill-drawer-title', text: 'Your ' + origObj.name + ' Tasting Breakdown (' + origRawRows.length + ' cup' + (origRawRows.length === 1 ? '' : 's') + ')' })
+          ),
+          domH('div', { class: 'bt-drill-meta-row' },
+            domH('span', { class: 'bt-tc-badge is-good num-tab', text: 'Avg ' + origStats.avgStar.toFixed(2) + ' \u2605' }),
+            origStats.avgSca > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + origStats.avgSca + ' SCA' }) : null,
+            origStats.tdsN > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + origStats.avgTds + '% TDS' }) : null,
+            origStats.eyN > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + origStats.avgEy + '% EY' }) : null,
+            origStats.topNotes.length ? domH('span', { class: 'bt-tc-badge is-soft', text: 'Top Notes: ' + origStats.topNotes.slice(0, 3).join(', ') }) : null
+          ),
+          domH('div', { class: 'bt-drill-cup-list' },
+            origRawRows.slice(0, 4).map(function (rr) { return buildDrillCupCard(rr); })
+          )
+        ) : null,
         domH('div', { class: 'bt-passport-actions' },
           domH('button', {
             type: 'button',
@@ -1623,7 +2437,7 @@
     wrap.appendChild(mapCard);
 
     /* 2. Confidence-Weighted Affinity & 4-Level Interactive Drill-In */
-    const boardsCard = domH('section', { class: 'bt-studio-card', id: 'bt-palate-eb-boards' });
+    const boardsCard = domH('section', { class: 'bt-studio-card', id: 'bt-palate-eb-boards', style: 'scroll-margin-top:76px' });
     const boardTabs = [
       { k: 'origins', lbl: 'Origin (' + atlas.length + ')' },
       { k: 'processes', lbl: 'Process' },
@@ -1669,10 +2483,52 @@
       });
     }
 
-    /* 4-Level Drill-In: Level 0 (Trait Board) -> Level 1 (Region/Sub-group) -> Level 2 (Process) -> Level 3 (Logged Cups) */
+    /* 4-Level Drill-In: Level 0 (Trait Board) -> Level 1 (Sub-group + Direct Cups) -> Level 2 (Process + Direct Cups) -> Level 3 (All Logged Cups) */
+    function appendConcreteCupsDrawer(hostEl, titleTxt, cupRows) {
+      const cleanRows = (cupRows || []).filter(Boolean).sort(function (a, b) { return rowStar(b) - rowStar(a); });
+      if (!cleanRows.length) return;
+      const st = summarizeCupsStats(cleanRows);
+      hostEl.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-board-drill-drawer' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'MATCHING LOGGED CUPS & TASTING BREAKDOWN' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: titleTxt + ' (' + cleanRows.length + ' cup' + (cleanRows.length === 1 ? '' : 's') + ')' })
+          )
+        ),
+        domH('div', { class: 'bt-drill-meta-row' },
+          domH('span', { class: 'bt-tc-badge is-good num-tab', text: 'Avg ' + st.avgStar.toFixed(2) + ' \u2605' }),
+          st.avgSca > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgSca + ' SCA' }) : null,
+          st.tdsN > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgTds + '% TDS' }) : null,
+          st.eyN > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgEy + '% EY' }) : null,
+          st.avgTempC > 0 ? domH('span', { class: 'bt-tc-badge is-soft num-tab', text: 'Avg ' + st.avgTempC + '\u00B0C' }) : null,
+          st.topNotes.length ? domH('span', { class: 'bt-tc-badge is-soft', text: 'Notes: ' + st.topNotes.slice(0, 3).join(', ') }) : null
+        ),
+        domH('div', { class: 'bt-drill-cup-list' },
+          cleanRows.slice(0, 12).map(function (rr) { return buildDrillCupCard(rr); })
+        )
+      ));
+    }
+
     function paintDrillDownView() {
       const path = palateState.drillPath;
       const rootType = palateState.expandedBoard;
+      const crumbTitle = path.map(function (p) { return p.label; }).join(' / ');
+
+      /* Special Flavor-Note Direct Drill-In */
+      if (path.length === 1 && path[0].level === 'flavor') {
+        const targetWord = String(path[0].key || '').toLowerCase();
+        const noteRows = slicedRows.filter(function (r) {
+          const hay = [r.flavors_liked, r.words_flavor, r.bag_notes, r.general_notes].map(unneutPalate).join(' ').toLowerCase();
+          return targetWord && hay.indexOf(targetWord) >= 0;
+        });
+        if (!noteRows.length) {
+          boardHost.appendChild(domH('p', { class: 'bt-lab-hint', text: 'No logged cups matched "' + path[0].label + '" in this history slice.' }));
+          return;
+        }
+        appendConcreteCupsDrawer(boardHost, 'Cups Tasting of "' + path[0].label + '"', noteRows);
+        return;
+      }
+
       let matchingBags = bayes.coffees.slice();
 
       /* Filter bags down the drill path */
@@ -1695,13 +2551,26 @@
         return;
       }
 
-      /* Level 1 -> Group by Sub-Region (if started from Origin) or Origin (if started from Process/Roast/Varietal/Brewer) */
+      /* Collect concrete logged raw rows for this exact slice (respecting brewer filter if present) */
+      const brewerStep = path.find(function (s) { return s.level === 'brewer'; });
+      const matchingRawRows = [];
+      matchingBags.forEach(function (bag) {
+        (bag.cups || []).forEach(function (cp) {
+          if (!cp || !cp.rawRow) return;
+          if (brewerStep && String(cp.method || '').toLowerCase() !== String(brewerStep.key || '').toLowerCase()) return;
+          matchingRawRows.push(cp.rawRow);
+        });
+      });
+
+      /* Level 1 -> Group by Sub-Region (if started from Origin) or Origin (if started from Process/Roast/Varietal/Brewer) + Concrete Cups Drawer */
       if (path.length === 1) {
         const nextField = rootType === 'origins' ? 'region' : 'origin';
         const groups = new Map();
         matchingBags.forEach(function (b) {
           const gk = b[nextField] || 'General';
-          const cur = groups.get(gk) || { key: gk, label: gk.charAt(0).toUpperCase() + gk.slice(1), vals: [] };
+          const origMeta = nextField === 'origin' ? atlas.find(function (o) { return o.key === gk; }) : null;
+          const lbl = origMeta ? origMeta.name : (gk.charAt(0).toUpperCase() + gk.slice(1));
+          const cur = groups.get(gk) || { key: gk, label: lbl, vals: [] };
           cur.vals.push(b.dialScore);
           groups.set(gk, cur);
         });
@@ -1711,7 +2580,7 @@
           const postM = (n * rawM + 2.0 * bayes.globalMean) / (n + 2.0);
           boardHost.appendChild(domH('button', {
             type: 'button',
-            class: 'bt-trait-row is-drillable',
+            class: 'bt-trait-row is-drillable bt-drillable',
             onclick: function () {
               palateState.drillPath.push({ level: nextField, key: g.key, label: g.label });
               CK.haptic('tick');
@@ -1722,15 +2591,16 @@
             domH('span', { class: 'bt-trait-stat num-tab', text: 'True ' + postM.toFixed(2) + ' · Raw ' + rawM.toFixed(2) + ' (n=' + n + ')' })
           ));
         });
+        appendConcreteCupsDrawer(boardHost, crumbTitle, matchingRawRows);
         return;
       }
 
-      /* Level 2 -> Group by Process */
+      /* Level 2 -> Group by Process + Concrete Cups Drawer */
       if (path.length === 2) {
         const pGroups = new Map();
         matchingBags.forEach(function (b) {
           const pk = b.process || 'washed';
-          const cur = pGroups.get(pk) || { key: pk, label: pk.charAt(0).toUpperCase() + pk.slice(1), vals: [] };
+          const cur = pGroups.get(pk) || { key: pk, label: formatProcessHuman(pk), vals: [] };
           cur.vals.push(b.dialScore);
           pGroups.set(pk, cur);
         });
@@ -1739,7 +2609,7 @@
           const rawM = pg.vals.reduce(function (a, v) { return a + v; }, 0) / n;
           boardHost.appendChild(domH('button', {
             type: 'button',
-            class: 'bt-trait-row is-drillable',
+            class: 'bt-trait-row is-drillable bt-drillable',
             onclick: function () {
               palateState.drillPath.push({ level: 'process', key: pg.key, label: pg.label });
               CK.haptic('tick');
@@ -1750,21 +2620,12 @@
             domH('span', { class: 'bt-trait-stat num-tab', text: rawM.toFixed(2) + '/5.0 (' + n + ' bag(s))' })
           ));
         });
+        appendConcreteCupsDrawer(boardHost, crumbTitle, matchingRawRows);
         return;
       }
 
-      /* Level 3 (4th Tier) -> Individual Logged Cups */
-      matchingBags.forEach(function (bag) {
-        bag.cups.forEach(function (cp) {
-          boardHost.appendChild(domH('div', { class: 'bt-trait-row' },
-            domH('div', null,
-              domH('strong', { text: bag.name + (bag.roaster ? (' · ' + bag.roaster) : '') }),
-              domH('p', { class: 'bt-lab-hint', text: (cp.method || 'Brew').toUpperCase() + (cp.date ? (' · ' + cp.date) : '') + (cp.notes ? (' · ' + cp.notes) : '') })
-            ),
-            domH('span', { class: 'bt-trait-stat num-tab', text: cp.star.toFixed(2) + ' / 5.0' })
-          ));
-        });
-      });
+      /* Level 3 (4th Tier) -> Full Concrete Logged Cups Drawer with 1-Tap Inspect & Brew */
+      appendConcreteCupsDrawer(boardHost, crumbTitle, matchingRawRows);
     }
 
     function paintActiveBoard() {
@@ -1787,8 +2648,16 @@
           const rawMean = item.sumStar / item.n;
           const conf = Math.round((item.n / (item.n + 2.5)) * 100);
           const shrMean = (item.n * rawMean + 2.5 * bayes.globalMean) / (item.n + 2.5);
-          boardHost.appendChild(domH('div', { class: 'bt-trait-row' },
-            domH('span', { class: 'bt-trait-name', text: item.word }),
+          boardHost.appendChild(domH('button', {
+            type: 'button',
+            class: 'bt-trait-row is-drillable bt-drillable',
+            onclick: function () {
+              palateState.drillPath = [{ level: 'flavor', key: item.word, label: item.word }];
+              CK.haptic('tick');
+              paintActiveBoard();
+            }
+          },
+            domH('span', { class: 'bt-trait-name', text: item.word + ' \u2192' }),
             domH('span', { class: 'bt-trait-stat num-tab', text: 'True ' + shrMean.toFixed(2) + ' (Raw ' + rawMean.toFixed(2) + ', +' + item.n + (dis ? '/-' + dis : '') + ', ' + conf + '% conf)' })
           ));
         });
@@ -1810,6 +2679,25 @@
             domH('strong', { class: 'num-tab', text: drinks.length + ' cafes · ' + shopMean + '/5.0' })
           )
         ));
+        if (drinks.length > 0) {
+          boardHost.appendChild(domH('div', { class: 'bt-drill-cup-list', style: 'margin-top:8px' },
+            drinks.slice(0, 6).map(function (dr) {
+              const stVal = parseFloat(dr.stars || dr.rating) || 0;
+              return domH('article', { class: 'bt-drill-cup-card' },
+                domH('div', { class: 'bt-drill-cup-head' },
+                  domH('div', { style: 'min-width:0;flex:1' },
+                    domH('div', { class: 'bt-drill-cup-sub', text: [dr.shopName || dr.shop || 'Coffee Shop', dr.date || ''].filter(Boolean).join(' \u00B7 ') }),
+                    domH('strong', { class: 'bt-drill-cup-title', text: dr.drinkLabel || dr.kind || 'Cafe Drink' })
+                  ),
+                  stVal > 0 ? domH('span', { class: 'bt-tc-badge is-good num-tab', text: stVal.toFixed(1) + ' \u2605' }) : null
+                ),
+                dr.notes ? domH('div', { class: 'bt-drill-cup-sub', text: dr.notes }) : null
+              );
+            })
+          ));
+        } else {
+          boardHost.appendChild(domH('p', { class: 'bt-lab-hint', style: 'margin-top:8px', text: 'Log cafe drinks in Cellar \u2192 Coffee Shop to compare your home brews side-by-side against local cafes!' }));
+        }
         return;
       }
 
@@ -2017,6 +2905,78 @@
       )
     ));
     radarCard.appendChild(domH('div', { class: 'bt-chart-stage' }, radarSvg));
+
+    const axisDrillHost = domH('div', { id: 'bt-radar-axis-drawer-host' });
+    const axisDescs = {
+      acidity: 'Top high-brightness & sparkling-acidity cups from your history:',
+      sweetness: 'Your sweetest, richest-finish cups across all brewers:',
+      body: 'Fullest-bodied, syrupy & creamy mouthfeel cups:',
+      roast: 'Cups aligned with your preferred roast depth:',
+      funk: 'Wild/fermented vs. clean washed clarity cups driving this axis:'
+    };
+    function getAxisTopRows(axKey) {
+      return slicedRows.slice().sort(function (a, b) {
+        const scoreFor = function (r) {
+          const base = rowStar(r);
+          if (axKey === 'acidity') return (parseFloat(r.acidity_intensity) || parseFloat(r.acidity) || (String(r.roast_level || '').indexOf('light') >= 0 ? 4 : 2.5)) * 2 + base;
+          if (axKey === 'sweetness') return (parseFloat(r.sweetness_intensity) || parseFloat(r.sweetness) || 3.5) * 2 + base;
+          if (axKey === 'body') return (parseFloat(r.body_intensity) || parseFloat(r.body) || (/natural|espresso|press/.test(String(r.process + ' ' + r.brew_method).toLowerCase()) ? 4 : 2.5)) * 2 + base;
+          if (axKey === 'roast') {
+            const rk = String(r.roast_level || r.roast || '').toLowerCase();
+            const rNum = rk.indexOf('dark') >= 0 ? 4.5 : (rk === 'medium' ? 3.3 : (rk.indexOf('ultra') >= 0 ? 1.4 : 2.1));
+            return (5 - Math.abs(rNum - bayes.axes[3].val)) * 2 + base;
+          }
+          const pr = String(r.process || '').toLowerCase();
+          const fNum = /anaerobic|carbonic|natural|ferment/.test(pr) ? 4.2 : 2.1;
+          return (5 - Math.abs(fNum - bayes.axes[4].val)) * 2 + base;
+        };
+        return scoreFor(b) - scoreFor(a);
+      });
+    }
+    function paintAxisDrawer() {
+      axisDrillHost.textContent = '';
+      const k = palateState.selectedRadarAxis;
+      if (!k) return;
+      const axObj = bayes.axes.find(function (x) { return x.key === k; });
+      if (!axObj) return;
+      const matched = getAxisTopRows(k).slice(0, 5);
+      axisDrillHost.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-radar-axis-drawer' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'TASTE AXIS DRILL-DOWN' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: axObj.label + ' (' + axObj.val.toFixed(1) + ' / 5.0)' })
+          ),
+          domH('button', {
+            type: 'button',
+            class: 'bt-drill-close-btn bt-lab-btn is-sm',
+            onclick: function () { palateState.selectedRadarAxis = ''; CK.haptic('tick'); rerenderPalateTab(); }
+          }, 'Close \u00D7')
+        ),
+        domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: axisDescs[k] || '' }),
+        matched.length > 0 ? domH('div', { class: 'bt-drill-cup-list' },
+          matched.map(function (r) { return buildDrillCupCard(r); })
+        ) : domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: 'Log cups with ratings to explore your top ' + axObj.label + ' matches.' })
+      ));
+    }
+
+    radarCard.appendChild(domH('div', { class: 'bt-rating-tier-bar', role: 'group', 'aria-label': 'Drill into any taste axis' },
+      bayes.axes.map(function (ax) {
+        const active = palateState.selectedRadarAxis === ax.key;
+        return domH('button', {
+          type: 'button',
+          class: 'bt-rating-tier-btn bt-lab-chip bt-drillable' + (active ? ' is-active' : ''),
+          'aria-pressed': String(active),
+          'data-radar-axis': ax.key,
+          onclick: function () {
+            palateState.selectedRadarAxis = active ? '' : ax.key;
+            CK.haptic('tick');
+            rerenderPalateTab();
+          }
+        }, ax.label + ' (' + ax.val.toFixed(1) + ')');
+      })
+    ));
+    paintAxisDrawer();
+    radarCard.appendChild(axisDrillHost);
     radarCard.appendChild(domH('div', { class: 'bt-lab-chip-row' },
       timelapsePill,
       isScienceXray() ? domH('span', {
@@ -2756,11 +3716,16 @@
       gcoCard.textContent = '';
       const word = ws.selectedWord || 'Jasmine';
       let wordFam = '';
+      let famObj = null;
       wheelData.fams.forEach(function (f) {
         f.groups.forEach(function (g) {
-          if (g.words.indexOf(word) >= 0) wordFam = f.name;
+          if (g.words.indexOf(word) >= 0) { wordFam = f.name; famObj = f; }
         });
       });
+      if (!famObj && ws.focusFam >= 0 && wheelData.fams[ws.focusFam]) {
+        famObj = wheelData.fams[ws.focusFam];
+        wordFam = famObj.name;
+      }
       const mol = lookupFlavorChemistry(word, wordFam);
       const picked = !!ws.pickedWords[word];
       const sci = isScienceXray();
@@ -2815,6 +3780,82 @@
             }
           }, 'Surprise My Nose')
         )
+      ));
+
+      /* Flavor Note & Aroma Family -> Logged Cups & Top Beans Drill-Down */
+      const histRows = getHistoryRows(100);
+      const wordLow = word.toLowerCase();
+      const famWords = [];
+      if (famObj) {
+        famObj.groups.forEach(function (gr) {
+          gr.words.forEach(function (w) { famWords.push(w.toLowerCase()); });
+        });
+      }
+      const rowHay = function (r) {
+        return [r.flavors_liked, r.words_flavor, r.bag_notes, r.general_notes].map(unneutPalate).join(' ').toLowerCase();
+      };
+      const exactRows = histRows.filter(function (r) { return rowHay(r).indexOf(wordLow) >= 0; });
+      const famRows = famWords.length ? histRows.filter(function (r) {
+        const h = rowHay(r);
+        return famWords.some(function (fw) { return h.indexOf(fw) >= 0; });
+      }) : [];
+
+      const activeScope = (palateState.wheelMatchScope === 'family' || (!exactRows.length && famRows.length > 0)) ? 'family' : 'word';
+      const shownRows = (activeScope === 'family' ? famRows : exactRows).slice().sort(function (a, b) { return rowStar(b) - rowStar(a); });
+
+      /* Aggregate Top Beans for this flavor/family */
+      const beanMap = new Map();
+      shownRows.forEach(function (r) {
+        const bk = (unneutPalate(r.coffee_name) || 'Coffee') + (r.roaster ? (' \u00B7 ' + unneutPalate(r.roaster)) : '');
+        const cur = beanMap.get(bk) || { label: bk, n: 0, sum: 0, bestRow: r };
+        const st = rowStar(r);
+        cur.n++;
+        cur.sum += st;
+        if (st > rowStar(cur.bestRow)) cur.bestRow = r;
+        beanMap.set(bk, cur);
+      });
+      const topBeans = Array.from(beanMap.values()).sort(function (a, b) { return (b.sum / b.n) - (a.sum / a.n) || b.n - a.n; }).slice(0, 4);
+
+      gcoCard.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-wheel-cup-drill' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'FLAVOR \u2192 LOGGED CUPS & TOP BEANS' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: activeScope === 'family' ? ((wordFam || 'Aroma') + ' Family Cups (' + famRows.length + ')') : ('Cups with "' + word + '" (' + exactRows.length + ')') })
+          ),
+          domH('div', { class: 'bt-rating-tier-bar' },
+            domH('button', {
+              type: 'button',
+              class: 'bt-rating-tier-btn bt-lab-chip' + (activeScope === 'word' ? ' is-active' : ''),
+              'aria-pressed': String(activeScope === 'word'),
+              onclick: function () { palateState.wheelMatchScope = 'word'; CK.haptic('tick'); paintGcoCard(); }
+            }, '"' + word + '" (' + exactRows.length + ')'),
+            wordFam ? domH('button', {
+              type: 'button',
+              class: 'bt-rating-tier-btn bt-lab-chip' + (activeScope === 'family' ? ' is-active' : ''),
+              'aria-pressed': String(activeScope === 'family'),
+              onclick: function () { palateState.wheelMatchScope = 'family'; CK.haptic('tick'); paintGcoCard(); }
+            }, wordFam + ' Family (' + famRows.length + ')') : null
+          )
+        ),
+        topBeans.length > 0 ? domH('div', { class: 'bt-drill-meta-row' },
+          domH('span', { class: 'bt-lab-inline-lbl', text: 'Top Beans:' }),
+          topBeans.map(function (tb) {
+            return domH('button', {
+              type: 'button',
+              class: 'bt-lab-chip bt-drillable',
+              onclick: function () { inspectCupFromPalate(tb.bestRow); }
+            }, tb.label + ' (' + (tb.sum / tb.n).toFixed(1) + '\u2605)');
+          })
+        ) : null,
+        shownRows.length > 0 ? domH('div', { class: 'bt-drill-cup-list' },
+          shownRows.slice(0, 5).map(function (r) { return buildDrillCupCard(r); })
+        ) : domH('p', {
+          class: 'bt-lab-hint',
+          style: 'margin:0',
+          text: histRows.length
+            ? ('No logged cups mention "' + word + '" yet — tap "Tag on Active Cup" above or explore another petal to inspect matching brews!')
+            : 'Log a tasting with flavor notes in Step 5 to link wheel descriptors directly to your favorite coffees & cups!'
+        })
       ));
     }
 
@@ -3105,8 +4146,30 @@
         }, 'Palate Constellation')
       )
     ));
+    const famQuickRow = domH('div', { class: 'bt-lab-chip-row', role: 'group', 'aria-label': 'Aroma family quick drill-down' },
+      wheelData.fams.map(function (fam, fi) {
+        return domH('button', {
+          type: 'button',
+          class: 'bt-lab-chip bt-drillable' + (ws.focusFam === fi ? ' is-active' : ''),
+          'aria-pressed': String(ws.focusFam === fi),
+          onclick: function () {
+            const firstWord = (fam.groups[0] && fam.groups[0].words[0]) || ws.selectedWord;
+            ws.selectedWord = firstWord;
+            palateState.wheelMatchScope = 'family';
+            setFocusFamily(fi);
+            paintGcoCard();
+            Array.prototype.forEach.call(famQuickRow.children, function (btn, bIdx) {
+              btn.classList.toggle('is-active', bIdx === fi);
+              btn.setAttribute('aria-pressed', String(bIdx === fi));
+            });
+          }
+        }, fam.name);
+      })
+    );
+
     card.appendChild(searchIn);
     card.appendChild(searchResultsRow);
+    card.appendChild(famQuickRow);
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, svg));
     card.appendChild(gcoCard);
     wrap.appendChild(card);

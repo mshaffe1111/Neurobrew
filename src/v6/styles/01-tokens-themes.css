@@ -12,6 +12,7 @@
   --bg: #FAF6F0;
   --bg-subtle: #F2EAE0;
   --surface: #FFFDF9;
+  --surface-2: #F2EAE0;
   --card: #FFFDF9;
   --surface-elevated: #FFFDF9;
   --bg-elevated: var(--surface-elevated);
@@ -82,6 +83,10 @@
   --wave-sweet: #B84A14;
   --wave-sweet-body: #1C4A36;
   --wave-bitter: #9E211D;
+  --wave-sweet-band: rgba(24, 96, 62, 0.09);
+  --wave-sweet-band-stroke: rgba(24, 96, 62, 0.28);
+  --wave-sweet-band-ink: #18603E;
+  --wave-gridline: rgba(31, 23, 18, 0.11);
   --chrono-time-a: #D67A38;
   --chrono-weight-a: #2A7B56;
   --chrono-overtime: #D98B26;
@@ -191,6 +196,7 @@
     --bg: #13100E;
     --bg-subtle: #171311;
     --surface: #1C1815;
+    --surface-2: #221D19;
     --card: #1C1815;
     --surface-elevated: #241F1B;
     --bg-elevated: var(--surface-elevated);
@@ -257,6 +263,10 @@
     --wave-sweet: #E08A54;
     --wave-sweet-body: #5CD49C;
     --wave-bitter: #F07167;
+    --wave-sweet-band: rgba(92, 212, 156, 0.13);
+    --wave-sweet-band-stroke: rgba(92, 212, 156, 0.34);
+    --wave-sweet-band-ink: #5CD49C;
+    --wave-gridline: rgba(245, 237, 228, 0.11);
     --chrono-time-a: #FAD398;
     --chrono-weight-a: #7CF2BE;
     --chrono-overtime: #F5B041;
@@ -308,6 +318,7 @@
   --bg: #13100E;
   --bg-subtle: #171311;
   --surface: #1C1815;
+  --surface-2: #221D19;
   --card: #1C1815;
   --surface-elevated: #241F1B;
   --bg-elevated: var(--surface-elevated);
@@ -374,6 +385,10 @@
   --wave-sweet: #E08A54;
   --wave-sweet-body: #5CD49C;
   --wave-bitter: #F07167;
+  --wave-sweet-band: rgba(92, 212, 156, 0.13);
+  --wave-sweet-band-stroke: rgba(92, 212, 156, 0.34);
+  --wave-sweet-band-ink: #5CD49C;
+  --wave-gridline: rgba(245, 237, 228, 0.11);
   --chrono-time-a: #FAD398;
   --chrono-weight-a: #7CF2BE;
   --chrono-overtime: #F5B041;

@@ -1615,7 +1615,7 @@ function newApp() {
     prefs: {
       waterUnit: 'g', coffeeUnit: 'g', tempUnit: 'F', elevUnit: 'm', theme: 'light',
       scienceLens: 'hybrid', experienceLens: 'comfy', immersionBasis: 'liang',
-      cupMode: '', coachTips: true, palateSeed: null, toolModes: _defaultToolModes(),
+      cupMode: '', coachTips: true, palateSeed: null, palateTargets: null, palateBias: null, toolModes: _defaultToolModes(),
       waterProfileKey: '', kettle: '', scale: '', ownedBrewers: ['v60', 'aeropress', 'switch', 'espresso'],
       seenCupHelp: false, seenTermHint: false, cupView: '', taste: '',
       timerAudioMode: 'voice', sound: 'voice', soundOff: false, coach: 'guide', level: 'comfortable',
@@ -1776,6 +1776,8 @@ function hydratePrefsInto(dst, sp) {
   if (['', 'quick', 'guided', 'cva'].indexOf(sp.cupMode) >= 0) dst.cupMode = sp.cupMode;
   if (typeof sp.coachTips === 'boolean') dst.coachTips = sp.coachTips;
   if (sp.palateSeed && typeof sp.palateSeed === 'object' && !Array.isArray(sp.palateSeed)) dst.palateSeed = sp.palateSeed;
+  if (sp.palateTargets && typeof sp.palateTargets === 'object' && !Array.isArray(sp.palateTargets)) dst.palateTargets = Object.assign({}, sp.palateTargets);
+  if (sp.palateBias && typeof sp.palateBias === 'object' && !Array.isArray(sp.palateBias)) dst.palateBias = Object.assign({}, sp.palateBias);
   if (typeof sp.waterProfileKey === 'string') dst.waterProfileKey = sp.waterProfileKey.slice(0, 40);
   if (typeof sp.kettle === 'string') dst.kettle = sp.kettle.slice(0, 80);
   if (typeof sp.scale === 'string') dst.scale = sp.scale.slice(0, 80);
@@ -2719,9 +2721,22 @@ function toast(message, opts) {
   const host = $('toast-host');
   if (!host) return null;
   const dur = typeof opts.duration === 'number' ? opts.duration : (typeof opts.durationMs === 'number' ? opts.durationMs : (opts.onAction ? 10000 : 4000));
+  const msgStr = String(message == null ? '' : message);
+  const dedupeKey = String(opts.key || msgStr).trim().toLowerCase();
 
-  const pill = h('div', { class: 'bt-toast' },
-    h('span', { class: 'bt-toast-msg', text: String(message == null ? '' : message) })
+  /* Deduplicate matching active toasts so rapid taps (e.g. +10s) update cleanly instead of stacking */
+  if (dedupeKey) {
+    for (let i = host.children.length - 1; i >= 0; i--) {
+      const existing = host.children[i];
+      if (existing && existing.getAttribute && existing.getAttribute('data-toast-key') === dedupeKey) {
+        if (typeof existing._btDismiss === 'function') existing._btDismiss();
+        else if (existing.parentNode) existing.parentNode.removeChild(existing);
+      }
+    }
+  }
+
+  const pill = h('div', { class: 'bt-toast', 'data-toast-key': dedupeKey || false },
+    h('span', { class: 'bt-toast-msg', text: msgStr })
   );
 
   let timer = null;
@@ -2729,6 +2744,7 @@ function toast(message, opts) {
     clearTimeout(timer);
     if (pill.parentNode) pill.parentNode.removeChild(pill);
   }
+  pill._btDismiss = dismiss;
 
   if (opts.actionLabel && typeof opts.onAction === 'function') {
     const actBtn = h('button', {
@@ -2744,7 +2760,9 @@ function toast(message, opts) {
   }
 
   while (host.children.length >= 2) {
-    host.removeChild(host.firstElementChild);
+    const oldest = host.firstElementChild;
+    if (oldest && typeof oldest._btDismiss === 'function') oldest._btDismiss();
+    else host.removeChild(oldest);
   }
   host.appendChild(pill);
   if (dur > 0) timer = setTimeout(dismiss, dur);
@@ -2754,25 +2772,199 @@ function toast(message, opts) {
 /* ==================== 3-DETENT SPRING BOTTOM SHEET (BTSheet) ==================== */
 const _sheetRegistry = new Map();
 const _sheetTitles = {
-  'workflow-tools':  'My Gear & Setup',
-  'bench-gear':      'My Gear & Setup',
-  'my-coffees':      'My Coffees Vault',
-  'bag-capture':     'Add or Scan Coffee Bag',
-  'capture-bag':     'Add or Scan Coffee Bag',
-  'ai-paste':        'Magic AI Reply Paste',
-  'coffee-facts':    'Coffee Facts in Four Parts',
-  'post-brew-taste': 'Post-Brew Sensory Studio',
-  'tasting-flow':    'Post-Brew Sensory Studio',
-  'brew-twin':       'Brew Twin Translator',
-  'live-cockpit':    'Live Brew Cockpit',
-  'ble-devices':     'Bluetooth Instruments',
-  'data-vault':         'Data Vault & Backup',
-  'onboarding-tour':    'Welcome to BeanTelligence',
-  'about-charter':      'Science & Epistemic Charter',
-  'share-qr-passport':  'Share QR Recipe Passport',
-  'recipe-science-why': 'Why These Numbers?',
-  'screen-detail':      'Tasting Passport'
+  'workflow-tools':      'My Gear & Setup',
+  'bench-gear':          'My Gear & Setup',
+  'my-coffees':          'My Coffees Vault',
+  'bag-capture':         'Add or Scan Coffee Bag',
+  'capture-bag':         'Add or Scan Coffee Bag',
+  'ai-paste':            'Magic AI Reply Paste',
+  'coffee-facts':        'Coffee Facts in Four Parts',
+  'post-brew-taste':     'Post-Brew Sensory Studio',
+  'tasting-flow':        'Post-Brew Sensory Studio',
+  'brew-twin':           'Brew Twin Translator',
+  'live-cockpit':        'Live Brew Cockpit',
+  'ble-devices':         'Bluetooth Instruments',
+  'data-vault':          'Data Vault & Backup',
+  'onboarding-tour':     'Welcome to BeanTelligence',
+  'about-charter':       'Science & Epistemic Charter',
+  'share-qr-passport':   'Share QR Recipe Passport',
+  'recipe-science-why':  'Why These Numbers?',
+  'screen-detail':       'Tasting Passport',
+  'screen-tasting-edit': 'Edit Tasting'
 };
+
+function formatPalateBiasSummary(prefsObj) {
+  const p = (prefsObj && typeof prefsObj === 'object') ? prefsObj : ((app && app.prefs) || {});
+  const src = (p.palateTargets && typeof p.palateTargets === 'object') ? p.palateTargets
+    : ((p.palateBias && typeof p.palateBias === 'object') ? p.palateBias
+    : ((p.palateSeed && typeof p.palateSeed === 'object') ? p.palateSeed : null));
+  if (!src) return '';
+  if (typeof src.summary === 'string' && src.summary.trim()) return src.summary.trim();
+  if (typeof src.label === 'string' && src.label.trim()) return src.label.trim();
+  const mapVal = function(v, dict) {
+    const k = String(v == null ? '' : v).trim().toLowerCase();
+    return dict[k] || '';
+  };
+  const parts = [];
+  const bright = mapVal(src.brightness || src.acidity || src.brightSmooth, {
+    bright: 'Bright', juicy: 'Bright & Juicy', crisp: 'Crisp Acidity',
+    balanced: 'Balanced', smooth: 'Smooth', low: 'Smooth & Low-Acid', mellow: 'Smooth'
+  });
+  if (bright) parts.push(bright);
+  const strength = mapVal(src.strength || src.tds || src.cupStrength, {
+    light: 'Light Strength', tea: 'Tea-Like', delicate: 'Delicate',
+    balanced: 'Medium Strength', medium: 'Medium Strength',
+    rich: 'Rich Strength', strong: 'Bold Strength', bold: 'Bold Strength'
+  });
+  if (strength) parts.push(strength);
+  const texture = mapVal(src.texture || src.body || src.clarityBody, {
+    clarity: 'High Clarity', clean: 'High Clarity', tea: 'Tea-Like Clarity',
+    silky: 'Silky Body', balanced: 'Balanced Body',
+    body: 'Full Body', full: 'Full Body', syrupy: 'Velvety Body', creamy: 'Creamy Body'
+  });
+  if (texture) parts.push(texture);
+  if (!parts.length && src.roast) {
+    const rClean = _cleanDisplayName(src.roast);
+    if (rClean) parts.push(rClean.replace(/-/g, ' ') + ' roast');
+  }
+  return parts.join(' \u00B7 ');
+}
+
+function _cleanDisplayName(v) {
+  if (v == null) return '';
+  let s = String(v).trim();
+  if (typeof unneutralize === 'function') {
+    try { s = String(unneutralize(s) || '').trim(); } catch (e) {}
+  }
+  if (!s) return '';
+  const low = s.toLowerCase();
+  if (low === '--' || low === '—' || low === '-' || low === 'undefined' || low === 'null' || low === 'nan' || low === 'unknown' || low === 'n/a') {
+    return '';
+  }
+  return s;
+}
+
+function _humanMethodShort(rawMethod) {
+  const clean = _cleanDisplayName(rawMethod);
+  if (!clean) return '';
+  const low = clean.toLowerCase();
+  const map = {
+    v60: 'Hario V60', origami: 'Origami', kalita: 'Kalita Wave', orea: 'Orea',
+    pulsar: 'Pulsar', chemex: 'Chemex', nel: 'Nel Drip', drip: 'Auto Drip',
+    aiden: 'Fellow Aiden', xbloom: 'xBloom', switch: 'Hario Switch', clever: 'Clever',
+    aeropress: 'AeroPress', siphon: 'Siphon', press: 'French Press', turkish: 'Turkish',
+    phin: 'Phin', cold: 'Cold Brew', cold_drip: 'Cold Drip', espresso: 'Espresso',
+    lever_espresso: 'Lever Espresso', moka: 'Moka Pot', philips5500: 'Philips 5500',
+    cupping: 'Cupping Table', sca_5cup: 'Cupping Table', cva_affective: 'Cupping Table', '5bowl': 'Cupping Table'
+  };
+  return map[low] || clean;
+}
+
+function _rowChronCmp(rowA, idxA, rowB, idxB) {
+  const dayOf = function(r) {
+    if (!r || typeof r !== 'object') return '';
+    const cd = String(r.cupping_date || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(cd)) return cd.slice(0, 10);
+    const sv = String(r.saved_at || r.updated_at || r.created_at || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(sv)) return sv.slice(0, 10);
+    return '';
+  };
+  const dA = dayOf(rowA);
+  const dB = dayOf(rowB);
+  if (dA !== dB) return dA > dB ? 1 : -1;
+  const tsOf = function(r) {
+    if (!r || typeof r !== 'object') return 0;
+    const sv = r.saved_at || r.updated_at || r.created_at || '';
+    const t = sv ? Date.parse(String(sv)) : NaN;
+    return isFinite(t) ? t : 0;
+  };
+  const tA = tsOf(rowA);
+  const tB = tsOf(rowB);
+  if (tA !== tB) return tA > tB ? 1 : -1;
+  return (idxA || 0) - (idxB || 0);
+}
+
+function _resolveLatestTastingRow() {
+  try {
+    const st = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
+    if (!st || typeof st.getHistory !== 'function') return null;
+    const raw = st.getHistory();
+    const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.objs) ? raw.objs : []);
+    if (!list.length) return null;
+    let bestIdx = -1;
+    for (let i = 0; i < list.length; i++) {
+      const row = list[i];
+      if (!row || typeof row !== 'object') continue;
+      if (bestIdx < 0 || _rowChronCmp(row, i, list[bestIdx], bestIdx) >= 0) {
+        bestIdx = i;
+      }
+    }
+    if (bestIdx < 0) return null;
+    const row = list[bestIdx];
+    const coffeeName = _cleanDisplayName(row.coffee_name || row.coffee || row.name);
+    const roaster = _cleanDisplayName(row.roaster);
+    const stars = parseFloat(row.my_rating_stars);
+    const score = parseFloat(row.total_score);
+    const method = _humanMethodShort(row.brew_method);
+    const date = _cleanDisplayName(row.cupping_date || (row.saved_at ? String(row.saved_at).slice(0, 10) : ''));
+    return {
+      row: row,
+      rowIdx: bestIdx,
+      coffeeName: coffeeName || roaster || 'Logged Cup',
+      roaster: roaster,
+      stars: isFinite(stars) && stars > 0 ? stars : null,
+      score: isFinite(score) && score > 0 ? score : null,
+      method: method,
+      date: date
+    };
+  } catch (e) {}
+  return null;
+}
+
+function _resolveSheetTitleWithCoffee(key, baseTitle, payload) {
+  const k = String(key || '').toLowerCase();
+  const raw = String(baseTitle || '').trim();
+  const pl = (payload && typeof payload === 'object') ? payload : {};
+
+  if (k === 'screen-detail' || k === 'screen-tasting-edit') {
+    const hasExplicitTarget = !!(payload && typeof payload === 'object' && (pl.row || pl.rowIdx != null || pl.coffeeName || pl.name));
+    const suffix = k === 'screen-tasting-edit' ? 'Edit Tasting' : 'Tasting Passport';
+    if (!hasExplicitTarget) {
+      return raw || suffix;
+    }
+    const row = (pl.row && typeof pl.row === 'object') ? pl.row : null;
+    let cName = _cleanDisplayName((row && (row.coffee_name || row.coffee || row.name)) || pl.coffeeName || pl.name);
+    if (!cName && pl.rowIdx != null) {
+      try {
+        const st = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
+        const hRaw = st && typeof st.getHistory === 'function' ? st.getHistory() : null;
+        const hArr = Array.isArray(hRaw) ? hRaw : (hRaw && Array.isArray(hRaw.objs) ? hRaw.objs : []);
+        const hit = hArr[+pl.rowIdx];
+        if (hit) cName = _cleanDisplayName(hit.coffee_name || hit.coffee || hit.name);
+      } catch (e) {}
+    }
+    if (cName && raw.toLowerCase().indexOf(cName.toLowerCase()) < 0) {
+      return cName + ' \u00B7 ' + suffix;
+    }
+    return raw || suffix;
+  }
+
+  if (k === 'coffee-facts') {
+    const cName = _cleanDisplayName(pl.name || (pl.coffee && pl.coffee.name) || (app && app.coffee && app.coffee.name));
+    if (cName && raw.toLowerCase().indexOf(cName.toLowerCase()) < 0) {
+      return cName + ' \u00B7 Coffee Facts';
+    }
+  }
+
+  if (k === 'post-brew-taste' || k === 'tasting-flow') {
+    const cName = _cleanDisplayName(pl.coffeeName || (app && app.coffee && app.coffee.name));
+    if (cName && raw.toLowerCase().indexOf(cName.toLowerCase()) < 0) {
+      return cName + ' \u00B7 Taste & Dial In';
+    }
+  }
+
+  return raw || 'Studio';
+}
 
 const BTSheet = (function() {
   let activeSheetKey = '';
@@ -2824,16 +3016,16 @@ const BTSheet = (function() {
     if (typeof keyOrCfg === 'string') {
       key = keyOrCfg.trim().toLowerCase();
       const reg = _sheetRegistry.get(key) || (key === 'capture-bag' ? _sheetRegistry.get('bag-capture') : null) || (key === 'tasting-flow' ? _sheetRegistry.get('post-brew-taste') : null);
-      title = opts.title || (reg && reg.title) || _sheetTitles[key] || 'Studio';
+      title = _resolveSheetTitleWithCoffee(key, opts.title || (reg && reg.title) || _sheetTitles[key] || 'Studio', payload);
       detent = opts.detent || (reg && reg.detent) || (key === 'live-cockpit' || key === 'tasting-flow' || key === 'post-brew-taste' ? 'cockpit' : 'half');
       renderFn = reg ? reg.render : null;
     } else if (keyOrCfg && typeof keyOrCfg === 'object') {
       key = String(keyOrCfg.id || keyOrCfg.key || 'custom');
-      title = keyOrCfg.title || _sheetTitles[key] || 'Studio';
+      if (payload === undefined) payload = keyOrCfg.payload;
+      title = _resolveSheetTitleWithCoffee(key, keyOrCfg.title || _sheetTitles[key] || 'Studio', payload);
       detent = keyOrCfg.detent || opts.detent || 'half';
       renderFn = keyOrCfg.render || null;
       onClose = keyOrCfg.onClose || onClose;
-      if (payload === undefined) payload = keyOrCfg.payload;
     }
 
     if (!isOpen() && typeof document !== 'undefined') {
@@ -2914,6 +3106,8 @@ const BTSheet = (function() {
     if (closeBtn) {
       closeBtn.textContent = '';
       closeBtn.appendChild(BTIcons.el('close-x', { size: 20 }));
+      closeBtn.setAttribute('aria-label', 'Close panel');
+      closeBtn.title = 'Close panel';
       closeBtn.onclick = close;
     }
     const backdropEl = $('sheet-backdrop');
@@ -4689,11 +4883,16 @@ function paintChrome() {
         type: 'button',
         class: 'bt-rail-tool-btn',
         'data-rail-gear': '1',
+        title: grinderShort ? ('My Gear & Setup · ' + grinderShort) : 'My Gear & Setup',
+        'aria-label': grinderShort ? ('My Gear & Setup: ' + grinderShort) : 'My Gear & Setup',
         onclick: function() { BTSheet.open('workflow-tools', {}, { detent: 'full', title: 'My Gear & Setup' }); }
       },
-        h('span', { style: 'display:inline-flex;align-items:center;gap:7px;min-width:0' },
+        h('span', { style: 'display:inline-flex;align-items:center;gap:7px;min-width:0;flex:1' },
           BTIcons.el('grinder-burr', { size: 15 }),
-          h('span', { style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap', text: grinderShort ? ('My Gear · ' + grinderShort) : 'My Gear' })
+          h('span', { style: 'display:flex;flex-direction:column;align-items:flex-start;min-width:0;line-height:1.2' },
+            h('span', { text: 'My Gear' }),
+            grinderShort ? h('span', { style: 'font-size:10.5px;color:var(--ink-muted);font-weight:500;white-space:normal;overflow-wrap:anywhere;text-align:left', text: grinderShort }) : null
+          )
         ),
         BTIcons.el('chevron-right', { size: 14 })
       ),
@@ -4800,23 +4999,28 @@ function paintStudioAside() {
   );
 
   /* Live Coffee Passport Card */
-  const cname = (c.name || '').trim();
-  const croaster = (c.roaster || '').trim();
+  const cname = _cleanDisplayName(c.name);
+  const croaster = _cleanDisplayName(c.roaster);
   const isUnkAside = function(v, flag) {
     if (flag === 'yes' || flag === true) return true;
     const s = String(v == null ? '' : v).trim().toLowerCase();
-    return s === 'unknown' || s === 'unsure' || s === 'not sure' || s === "don't know" || s === 'dont know';
+    return s === 'unknown' || s === 'unsure' || s === 'not sure' || s === "don't know" || s === 'dont know' || s === '--' || s === 'undefined' || s === 'null';
   };
-  const roastLbl = isUnkAside(c.roast, c.roastUnsure || c.roast_unknown) ? 'Don\'t Know' : (c.roast || 'Light-Medium').replace(/_/g, '-');
-  const procLbl = isUnkAside(c.process, c.processUnsure || c.process_unknown) ? 'Don\'t Know' : (c.process || 'Washed').replace(/_/g, ' ');
-  const origLbl = isUnkAside(c.origin, c.originUnsure || c.origin_unknown) ? 'Don\'t Know' : (c.origin || 'Not set');
-  const regionDisp = (c.region && origLbl !== 'Not set' && origLbl !== 'Don\'t Know' && String(origLbl).toLowerCase().indexOf(String(c.region).toLowerCase()) < 0)
-    ? (origLbl + ' · ' + c.region)
+  const roastRaw = _cleanDisplayName(c.roast);
+  const procRaw = _cleanDisplayName(c.process);
+  const origRaw = _cleanDisplayName(c.origin);
+  const regRaw = _cleanDisplayName(c.region);
+  const varietalRaw = _cleanDisplayName(c.varietal);
+  const roastLbl = isUnkAside(c.roast, c.roastUnsure || c.roast_unknown) ? 'Don\'t Know' : (roastRaw || 'Light-Medium').replace(/_/g, '-');
+  const procLbl = isUnkAside(c.process, c.processUnsure || c.process_unknown) ? 'Don\'t Know' : (procRaw || 'Washed').replace(/_/g, ' ');
+  const origLbl = isUnkAside(c.origin, c.originUnsure || c.origin_unknown) ? 'Don\'t Know' : (origRaw || 'Not set');
+  const regionDisp = (regRaw && origLbl !== 'Not set' && origLbl !== 'Don\'t Know' && String(origLbl).toLowerCase().indexOf(String(regRaw).toLowerCase()) < 0)
+    ? (origLbl + ' · ' + regRaw)
     : origLbl;
-    const asideNotes = String(c.bag_notes || c.notes || '').trim();
-    const asidePersonal = String(c.personal_note || '').trim();
+    const asideNotes = _cleanDisplayName(c.bag_notes || c.notes);
+    const asidePersonal = _cleanDisplayName(c.personal_note);
     const asideElev = (isFinite(+c.elevation_m) && +c.elevation_m > 0) ? (Math.round(+c.elevation_m) + ' masl') : '';
-    const asideProducer = String(c.producer || c.farm_or_station || '').trim();
+    const asideProducer = _cleanDisplayName(c.producer || c.farm_or_station);
     const hasNotesWell = (asideNotes && !isUnkAside(asideNotes, '')) || asidePersonal || asideElev || asideProducer;
     const notesWellEl = hasNotesWell ? h('div', {
       class: 'bt-aside-notes-well',
@@ -4836,12 +5040,12 @@ function paintStudioAside() {
     ) : null;
 
     const passportCard = h('div', { class: 'bt-passport-card' },
-      h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px' },
-        h('div', { style: 'min-width:0' },
+      h('div', { style: 'display:flex;flex-direction:column;gap:5px' },
+        h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
           h('div', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: croaster || 'Active Coffee Bag' }),
-          h('div', { class: 'bt-serif', style: 'font-size:16px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere', text: cname || 'Add a Coffee Bag' })
+          h('span', { class: 'bt-badge good', text: _formatFreshnessBadge(c) })
         ),
-        h('span', { class: 'bt-badge good', text: _formatFreshnessBadge(c) })
+        h('div', { id: 'bt-aside-coffee-name', class: 'bt-serif', style: 'font-size:16px;font-weight:700;line-height:1.28;overflow-wrap:anywhere;word-break:break-word', text: cname || 'No coffee loaded yet' })
       ),
       h('div', { class: 'bt-passport-grid' },
         h('div', { class: 'bt-passport-cell' },
@@ -4861,7 +5065,7 @@ function paintStudioAside() {
         ),
         h('div', { class: 'bt-passport-cell' },
           h('span', { text: 'Varietal' }),
-          h('b', { text: c.varietal || 'Specialty Lot' })
+          h('b', { text: varietalRaw || 'Specialty Lot' })
         )
       ),
       notesWellEl,
@@ -4869,15 +5073,17 @@ function paintStudioAside() {
         h('button', {
           type: 'button',
           class: 'bt-chip',
-          style: 'flex:1;min-height:34px;font-size:12px',
+          style: 'flex:1;min-height:44px;font-size:12px',
+          'aria-label': cname ? ('Edit ' + cname + ' coffee bag') : 'Enter coffee bag details',
           onclick: function() { go('coffee'); }
         }, BTIcons.el('edit-pen', { size: 13 }), h('span', { text: cname ? 'Edit Bag' : 'Enter Coffee' })),
         _sheetRegistry.has('my-coffees') ? h('button', {
           type: 'button',
           class: 'bt-chip',
-          style: 'min-height:34px;font-size:12px',
+          style: 'min-height:44px;font-size:12px',
+          'aria-label': 'Open Saved Coffee Vault',
           onclick: function() { BTSheet.open('my-coffees', null, { detent: 'full' }); }
-        }, BTIcons.el('cellar', { size: 13 }), h('span', { text: 'Vault' })) : null
+        }, BTIcons.el('cellar', { size: 13 }), h('span', { text: 'Saved Vault' })) : null
       )
     );
 
@@ -4913,8 +5119,13 @@ function paintStudioAside() {
       ? ('Gold Lock · Try #' + (+dialAd.fromTry || 1))
       : ('Try #' + dialTryNext + ' Fix Loaded'))
     : '';
-  const dialSummaryText = dialAd
+  const dialRawSummary = dialAd
     ? (dialAd.summaryBanner || (dialAd.prevClickDisplay && dialAd.nextClickDisplay ? (dialAd.prevClickDisplay + ' \u2192 ' + dialAd.nextClickDisplay) : (dialAd.reason || '')))
+    : '';
+  const dialSummaryText = dialRawSummary
+    ? (cname
+      ? ((dialAd && dialAd.locked ? 'Gold Recipe for ' : 'Saved Fix for ') + cname + ': ' + dialRawSummary)
+      : dialRawSummary)
     : '';
 
   const printIcon = h('span', { 'aria-hidden': 'true', style: 'display:inline-flex;align-items:center' });
@@ -4970,8 +5181,9 @@ function paintStudioAside() {
         type: 'button',
         id: 'bt-aside-print-btn',
         class: 'bt-chip',
+        'aria-label': 'Print or save recipe as PDF (Ctrl+P)',
         title: 'Print or Save Recipe PDF (Ctrl+P)',
-        style: 'flex:1;min-height:32px;font-size:11.5px;justify-content:space-between;padding:4px 9px',
+        style: 'flex:1;min-height:44px;font-size:11.5px;justify-content:space-between;padding:4px 10px',
         onclick: function() { if (typeof window !== 'undefined' && typeof window.print === 'function') window.print(); }
       },
         h('span', { style: 'display:inline-flex;align-items:center;gap:6px' }, printIcon, h('span', { text: 'Print Recipe' })),
@@ -4983,7 +5195,58 @@ function paintStudioAside() {
     ) : null
   );
 
-  aside.append(coachCard, passportCard, telemetryCard);
+  /* Latest Brewed Cup Card with Explicit Coffee Name */
+  const latestCup = _resolveLatestTastingRow();
+  let lastCupCard = null;
+  if (latestCup) {
+    const ratingTxt = latestCup.stars
+      ? (latestCup.stars.toFixed(1) + '\u2605')
+      : (latestCup.score ? (latestCup.score.toFixed(0) + ' pt') : 'Logged');
+    const metaSub = [latestCup.roaster, latestCup.method, latestCup.date].filter(Boolean).join(' \u00B7 ');
+    lastCupCard = h('div', { class: 'bt-passport-card', id: 'bt-aside-last-cup-card' },
+      h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px' },
+        h('span', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: 'Last Cup Logged' }),
+        h('span', { class: 'bt-badge good mono', text: ratingTxt })
+      ),
+      h('button', {
+        type: 'button',
+        id: 'bt-aside-last-cup-btn',
+        class: 'bt-aside-last-cup-btn',
+        style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:44px',
+        'aria-label': 'Inspect last cup tasting detail for ' + latestCup.coffeeName,
+        onclick: function() {
+          if (_sheetRegistry.has('screen-detail')) {
+            BTSheet.open('screen-detail', { row: latestCup.row, rowIdx: latestCup.rowIdx }, {
+              title: latestCup.coffeeName + ' \u00B7 Tasting Passport',
+              detent: 'full'
+            });
+          } else {
+            go('history');
+          }
+        }
+      },
+        h('span', { style: 'min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;flex:1 1 auto;max-width:100%' },
+          h('span', { class: 'bt-aside-last-cup-name', style: 'display:block;flex:0 0 auto;font-weight:700;font-size:13px;color:var(--ink);line-height:1.25;overflow-wrap:anywhere;word-break:break-word', text: 'Last Cup: ' + latestCup.coffeeName }),
+          metaSub ? h('span', { style: 'display:block;flex:0 0 auto;font-size:11px;color:var(--ink-muted);line-height:1.25;overflow-wrap:anywhere', text: metaSub }) : null
+        ),
+        h('span', { style: 'font-size:11.5px;font-weight:700;color:var(--accent);white-space:nowrap;flex:none', text: 'Inspect \u2192' })
+      )
+    );
+  } else {
+    lastCupCard = h('div', { class: 'bt-passport-card', id: 'bt-aside-last-cup-empty' },
+      h('span', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: 'Last Cup' }),
+      h('p', { style: 'margin:0;font-size:11.5px;color:var(--ink-secondary);line-height:1.4', text: '0 tastings saved yet \u2014 brew a cup and save your first rating in Step 5 to unlock Palate DNA & dial-in history.' }),
+      h('button', {
+        type: 'button',
+        class: 'bt-chip',
+        style: 'min-height:44px;font-size:12px;width:100%;justify-content:center',
+        'aria-label': 'Start your first brew',
+        onclick: function() { go('coffee'); }
+      }, h('span', { text: 'Start Your First Brew \u2192' }))
+    );
+  }
+
+  aside.append(coachCard, passportCard, telemetryCard, lastCupCard);
 }
 
 if (typeof window !== 'undefined' && !window._btPrintShortcutBound) {
@@ -5055,6 +5318,7 @@ const BTShell = {
   paintChrome: paintChrome,
   paintBlePill: paintBlePill,
   paintStudioAside: paintStudioAside,
+  formatPalateBiasSummary: formatPalateBiasSummary,
   BTSheet: BTSheet,
   BTScienceLens: BTScienceLens,
   BTTimerAudio: BTTimerAudio,
@@ -13744,8 +14008,8 @@ function _evalExtractionWaveProfile(tSec, targetSec, tempC, roastStr) {
 function BTExtractionWavesLive(cfg) {
   cfg = cfg || {};
   const uid = _tUid('bt_ewl');
-  const W = 380, H = 78;
-  const PAD_L = 8, PAD_R = 10, PAD_T = 7, PAD_B = 15;
+  const W = 420, H = 152;
+  const PAD_L = 10, PAD_R = 10, PAD_T = 14, PAD_B = 22;
   const PLOT_W = W - PAD_L - PAD_R;
   const PLOT_H = H - PAD_T - PAD_B;
 
@@ -13756,105 +14020,182 @@ function BTExtractionWavesLive(cfg) {
     roast: cfg.roast || 'light-medium',
     isPaused: !!cfg.isPaused,
     stopped: !!cfg.stopped,
-    cutoffS: cfg.cutoffS != null && +cfg.cutoffS > 0 ? +cfg.cutoffS : null
+    cutoffS: cfg.cutoffS != null && +cfg.cutoffS > 0 ? +cfg.cutoffS : null,
+    phases: Array.isArray(cfg.phases) ? cfg.phases.slice() : [],
+    scrubPreviewS: null
   };
 
   const COL_ACID   = 'var(--wave-acid, #D98B26)';
   const COL_SUGAR  = 'var(--wave-sweet, #B84A14)';
   const COL_BITTER = 'var(--wave-bitter, #9E211D)';
 
-  const clipRect = h('rect', { x: PAD_L, y: 0, width: 0, height: H });
+  const clipRect = h('rect', { x: PAD_L, y: PAD_T, width: 0, height: PLOT_H });
   const defs = h('defs', null,
+    h('clipPath', { id: uid + '_plot' },
+      h('rect', { x: PAD_L, y: PAD_T, width: PLOT_W, height: PLOT_H, rx: 10 })
+    ),
     h('clipPath', { id: uid + '_past' }, clipRect),
     h('linearGradient', { id: uid + '_ga', x1: '0', y1: '0', x2: '0', y2: '1' },
-      h('stop', { offset: '0%', 'stop-color': '#D98B26', 'stop-opacity': '0.26' }),
+      h('stop', { offset: '0%', 'stop-color': '#D98B26', 'stop-opacity': '0.34' }),
+      h('stop', { offset: '65%', 'stop-color': '#D98B26', 'stop-opacity': '0.10' }),
       h('stop', { offset: '100%', 'stop-color': '#D98B26', 'stop-opacity': '0.01' })
     ),
     h('linearGradient', { id: uid + '_gs', x1: '0', y1: '0', x2: '0', y2: '1' },
-      h('stop', { offset: '0%', 'stop-color': '#B84A14', 'stop-opacity': '0.24' }),
-      h('stop', { offset: '100%', 'stop-color': '#1C4A36', 'stop-opacity': '0.02' })
+      h('stop', { offset: '0%', 'stop-color': '#B84A14', 'stop-opacity': '0.32' }),
+      h('stop', { offset: '65%', 'stop-color': '#B84A14', 'stop-opacity': '0.10' }),
+      h('stop', { offset: '100%', 'stop-color': '#B84A14', 'stop-opacity': '0.02' })
     ),
     h('linearGradient', { id: uid + '_gb', x1: '0', y1: '0', x2: '0', y2: '1' },
-      h('stop', { offset: '0%', 'stop-color': '#9E211D', 'stop-opacity': '0.24' }),
+      h('stop', { offset: '0%', 'stop-color': '#9E211D', 'stop-opacity': '0.32' }),
+      h('stop', { offset: '65%', 'stop-color': '#9E211D', 'stop-opacity': '0.10' }),
       h('stop', { offset: '100%', 'stop-color': '#9E211D', 'stop-opacity': '0.01' })
     )
   );
 
-  /* Background grid & overtime zone */
+  /* Background plot, Sweet-Spot Window band (~27%-80%), crisp horizontal gridlines & overtime zone */
+  const sweetBand = h('rect', {
+    class: 'bt-ext-waves-sweet-band',
+    x: +(PAD_L + PLOT_W * 0.27).toFixed(1),
+    y: PAD_T,
+    width: +(PLOT_W * 0.53).toFixed(1),
+    height: PLOT_H,
+    fill: 'var(--wave-sweet-band, rgba(28, 74, 54, 0.11))',
+    stroke: 'var(--wave-sweet-band-stroke, rgba(28, 74, 54, 0.28))',
+    'stroke-width': 1,
+    'stroke-dasharray': '3 3'
+  });
+  const sweetBandLbl = h('text', {
+    class: 'bt-ext-waves-sweet-lbl',
+    x: +(PAD_L + PLOT_W * 0.535).toFixed(1),
+    y: PAD_T + 12,
+    'text-anchor': 'middle',
+    fill: 'var(--wave-sweet-band-ink, var(--good, #1C4A36))',
+    'font-size': 8.8,
+    'font-weight': 800,
+    'letter-spacing': '0.03em',
+    text: 'Sweet-Spot Window'
+  });
   const overtimeBand = h('rect', {
     x: PAD_L + PLOT_W, y: PAD_T, width: 0, height: PLOT_H,
-    fill: 'rgba(217, 139, 38, 0.11)',
+    fill: 'rgba(217, 139, 38, 0.15)',
     hidden: true
   });
+  const gridY25 = +(PAD_T + PLOT_H * 0.25).toFixed(1);
+  const gridY50 = +(PAD_T + PLOT_H * 0.50).toFixed(1);
+  const gridY75 = +(PAD_T + PLOT_H * 0.75).toFixed(1);
   const gridLayer = h('g', { 'aria-hidden': 'true' },
-    h('rect', { x: PAD_L, y: PAD_T, width: PLOT_W, height: PLOT_H, rx: 8, fill: 'var(--well)', stroke: 'var(--line-soft)', 'stroke-width': 1 }),
-    overtimeBand,
-    h('line', { x1: PAD_L, y1: +(PAD_T + PLOT_H * 0.5).toFixed(1), x2: PAD_L + PLOT_W, y2: +(PAD_T + PLOT_H * 0.5).toFixed(1), stroke: 'var(--line-hairline)', 'stroke-dasharray': '3 3' })
+    h('rect', { x: PAD_L, y: PAD_T, width: PLOT_W, height: PLOT_H, rx: 10, fill: 'var(--well)', stroke: 'var(--line-soft)', 'stroke-width': 1 }),
+    h('g', { 'clip-path': 'url(#' + uid + '_plot)' },
+      sweetBand,
+      overtimeBand,
+      h('line', { class: 'bt-ext-waves-gridline', x1: PAD_L, y1: gridY25, x2: PAD_L + PLOT_W, y2: gridY25, stroke: 'var(--wave-gridline, var(--line-hairline))', 'stroke-width': 0.9, 'stroke-dasharray': '3 3' }),
+      h('line', { class: 'bt-ext-waves-gridline', x1: PAD_L, y1: gridY50, x2: PAD_L + PLOT_W, y2: gridY50, stroke: 'var(--wave-gridline, var(--line-hairline))', 'stroke-width': 1, 'stroke-dasharray': '3 3' }),
+      h('line', { class: 'bt-ext-waves-gridline', x1: PAD_L, y1: gridY75, x2: PAD_L + PLOT_W, y2: gridY75, stroke: 'var(--wave-gridline, var(--line-hairline))', 'stroke-width': 0.9, 'stroke-dasharray': '3 3' }),
+      sweetBandLbl,
+      h('text', { class: 'bt-ext-waves-axis-lbl', x: PAD_L + 6, y: PAD_T + 11, fill: 'var(--ink-muted)', 'font-size': 7.6, 'font-weight': 700, opacity: '0.78', text: 'Peak' }),
+      h('text', { class: 'bt-ext-waves-axis-lbl', x: PAD_L + 6, y: PAD_T + PLOT_H - 4, fill: 'var(--ink-muted)', 'font-size': 7.6, 'font-weight': 700, opacity: '0.72', text: 'Low' })
+    )
   );
 
   /* Preview (ahead of playhead) dashed curves */
-  const prevAcidPath   = h('path', { d: '', fill: 'none', stroke: COL_ACID,   'stroke-width': 1.6, 'stroke-dasharray': '3 3', opacity: '0.42' });
-  const prevSugarPath  = h('path', { d: '', fill: 'none', stroke: COL_SUGAR,  'stroke-width': 1.6, 'stroke-dasharray': '3 3', opacity: '0.42' });
-  const prevBitterPath = h('path', { d: '', fill: 'none', stroke: COL_BITTER, 'stroke-width': 1.6, 'stroke-dasharray': '3 3', opacity: '0.42' });
+  const prevAcidPath   = h('path', { d: '', fill: 'none', stroke: COL_ACID,   'stroke-width': 1.75, 'stroke-dasharray': '4 3', opacity: '0.46' });
+  const prevSugarPath  = h('path', { d: '', fill: 'none', stroke: COL_SUGAR,  'stroke-width': 1.85, 'stroke-dasharray': '4 3', opacity: '0.46' });
+  const prevBitterPath = h('path', { d: '', fill: 'none', stroke: COL_BITTER, 'stroke-width': 1.75, 'stroke-dasharray': '4 3', opacity: '0.46' });
 
-  /* Active illuminated curves + soft area fills clipped up to live playhead */
+  /* Active illuminated curves + rich gradient area fills clipped up to live playhead */
   const areaAcidPath   = h('path', { d: '', fill: 'url(#' + uid + '_ga)' });
   const areaSugarPath  = h('path', { d: '', fill: 'url(#' + uid + '_gs)' });
   const areaBitterPath = h('path', { d: '', fill: 'url(#' + uid + '_gb)' });
 
-  const liveAcidPath   = h('path', { 'data-wave': 'acids',   d: '', fill: 'none', stroke: COL_ACID,   'stroke-width': 2.6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
-  const liveSugarPath  = h('path', { 'data-wave': 'sugars',  d: '', fill: 'none', stroke: COL_SUGAR,  'stroke-width': 2.8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
-  const liveBitterPath = h('path', { 'data-wave': 'bitters', d: '', fill: 'none', stroke: COL_BITTER, 'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+  const liveAcidPath   = h('path', { 'data-wave': 'acids',   d: '', fill: 'none', stroke: COL_ACID,   'stroke-width': 2.75, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+  const liveSugarPath  = h('path', { 'data-wave': 'sugars',  d: '', fill: 'none', stroke: COL_SUGAR,  'stroke-width': 3.0,  'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+  const liveBitterPath = h('path', { 'data-wave': 'bitters', d: '', fill: 'none', stroke: COL_BITTER, 'stroke-width': 2.65, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
 
-  const activeGroup = h('g', { 'clip-path': 'url(#' + uid + '_past)' },
-    areaAcidPath, areaSugarPath, areaBitterPath,
-    liveAcidPath, liveSugarPath, liveBitterPath
+  const activeGroup = h('g', { 'clip-path': 'url(#' + uid + '_plot)' },
+    h('g', { 'clip-path': 'url(#' + uid + '_past)' },
+      areaAcidPath, areaSugarPath, areaBitterPath,
+      liveAcidPath, liveSugarPath, liveBitterPath
+    )
   );
 
   /* Target time vertical reference line (visible especially in overtime!) */
+  const phasePinsLayer = h('g', { class: 'bt-ext-phase-pins', 'clip-path': 'url(#' + uid + '_plot)', 'aria-hidden': 'true' });
   const targetMarkerLine = h('line', {
     x1: PAD_L + PLOT_W, y1: PAD_T, x2: PAD_L + PLOT_W, y2: PAD_T + PLOT_H,
     stroke: 'var(--gold, #D98B26)',
-    'stroke-width': 1.3,
-    'stroke-dasharray': '3 2',
-    opacity: '0.75'
+    'stroke-width': 1.5,
+    'stroke-dasharray': '4 2.5',
+    opacity: '0.82'
   });
-  const axisStartTxt  = h('text', { x: PAD_L + 2, y: H - 5, fill: 'var(--ink-muted)', 'font-family': 'var(--font-mono)', 'font-size': 8.6, 'font-weight': 700, text: '00:00' });
-  const axisMidTxt    = h('text', { x: PAD_L + PLOT_W * 0.5, y: H - 5, 'text-anchor': 'middle', fill: 'var(--ink-muted)', 'font-family': 'var(--font-mono)', 'font-size': 8.6, 'font-weight': 600, text: '01:15' });
-  const axisTargetTxt = h('text', { x: PAD_L + PLOT_W - 2, y: H - 5, 'text-anchor': 'end', fill: 'var(--ink-secondary)', 'font-family': 'var(--font-mono)', 'font-size': 8.6, 'font-weight': 700, text: 'Target 02:30' });
+  const axisTickY0 = PAD_T + PLOT_H;
+  const axisTickY1 = PAD_T + PLOT_H + 4;
+  const axisTicks = h('g', { 'aria-hidden': 'true' },
+    h('line', { x1: PAD_L, y1: axisTickY0, x2: PAD_L, y2: axisTickY1, stroke: 'var(--line-soft)', 'stroke-width': 1 }),
+    h('line', { x1: +(PAD_L + PLOT_W * 0.5).toFixed(1), y1: axisTickY0, x2: +(PAD_L + PLOT_W * 0.5).toFixed(1), y2: axisTickY1, stroke: 'var(--line-soft)', 'stroke-width': 1 }),
+    h('line', { x1: PAD_L + PLOT_W, y1: axisTickY0, x2: PAD_L + PLOT_W, y2: axisTickY1, stroke: 'var(--line-soft)', 'stroke-width': 1 })
+  );
+  const axisStartTxt  = h('text', { class: 'bt-ext-waves-axis-lbl', x: PAD_L + 2, y: H - 5, fill: 'var(--ink-muted)', 'font-family': 'var(--font-mono)', 'font-size': 9.4, 'font-weight': 700, text: '00:00' });
+  const axisMidTxt    = h('text', { class: 'bt-ext-waves-axis-lbl', x: PAD_L + PLOT_W * 0.5, y: H - 5, 'text-anchor': 'middle', fill: 'var(--ink-muted)', 'font-family': 'var(--font-mono)', 'font-size': 9.4, 'font-weight': 600, text: '01:15' });
+  const axisTargetTxt = h('text', { class: 'bt-ext-waves-axis-lbl', x: PAD_L + PLOT_W - 2, y: H - 5, 'text-anchor': 'end', fill: 'var(--ink-secondary)', 'font-family': 'var(--font-mono)', 'font-size': 9.4, 'font-weight': 700, text: 'Target 02:30' });
 
   /* Moving Playhead Line + 3 Glowing Curve Dots */
   const playheadLine = h('line', {
     class: 'bt-ext-playhead',
     'data-wave-playhead': '1',
-    x1: PAD_L, y1: PAD_T - 2, x2: PAD_L, y2: PAD_T + PLOT_H + 2,
+    x1: PAD_L, y1: PAD_T - 3, x2: PAD_L, y2: PAD_T + PLOT_H + 3,
     stroke: 'var(--ink)',
-    'stroke-width': 1.7
+    'stroke-width': 1.9
   });
-  const dotAcidGlow   = h('circle', { cx: PAD_L, cy: PAD_T + PLOT_H, r: 6.5, fill: '#D98B26', opacity: '0.26' });
-  const dotAcid       = h('circle', { 'data-wave-dot': 'acids',   cx: PAD_L, cy: PAD_T + PLOT_H, r: 3.6, fill: '#D98B26', stroke: '#FFFDF9', 'stroke-width': 1.5 });
-  const dotSugarGlow  = h('circle', { cx: PAD_L, cy: PAD_T + PLOT_H, r: 7.0, fill: '#B84A14', opacity: '0.28' });
-  const dotSugar      = h('circle', { 'data-wave-dot': 'sugars',  cx: PAD_L, cy: PAD_T + PLOT_H, r: 3.8, fill: '#B84A14', stroke: '#FFFDF9', 'stroke-width': 1.5 });
-  const dotBitterGlow = h('circle', { cx: PAD_L, cy: PAD_T + PLOT_H, r: 6.5, fill: '#9E211D', opacity: '0.26' });
-  const dotBitter     = h('circle', { 'data-wave-dot': 'bitters', cx: PAD_L, cy: PAD_T + PLOT_H, r: 3.6, fill: '#9E211D', stroke: '#FFFDF9', 'stroke-width': 1.5 });
+  const dotAcidGlow   = h('circle', { cx: PAD_L, cy: PAD_T + PLOT_H, r: 7.5, fill: '#D98B26', opacity: '0.26' });
+  const dotAcid       = h('circle', { 'data-wave-dot': 'acids',   cx: PAD_L, cy: PAD_T + PLOT_H, r: 4.0, fill: '#D98B26', stroke: '#FFFDF9', 'stroke-width': 1.6 });
+  const dotSugarGlow  = h('circle', { cx: PAD_L, cy: PAD_T + PLOT_H, r: 8.0, fill: '#B84A14', opacity: '0.28' });
+  const dotSugar      = h('circle', { 'data-wave-dot': 'sugars',  cx: PAD_L, cy: PAD_T + PLOT_H, r: 4.2, fill: '#B84A14', stroke: '#FFFDF9', 'stroke-width': 1.6 });
+  const dotBitterGlow = h('circle', { cx: PAD_L, cy: PAD_T + PLOT_H, r: 7.5, fill: '#9E211D', opacity: '0.26' });
+  const dotBitter     = h('circle', { 'data-wave-dot': 'bitters', cx: PAD_L, cy: PAD_T + PLOT_H, r: 4.0, fill: '#9E211D', stroke: '#FFFDF9', 'stroke-width': 1.6 });
 
   const svgEl = h('svg', {
     class: 'bt-ext-waves-svg bt-chart-svg',
     style: { touchAction: 'pan-y' },
     viewBox: '0 0 ' + W + ' ' + H,
     role: 'img',
-    'aria-label': 'Live 3-Wave Extraction Kinetics: Bright Fruit Acids, Sweet Sugars & Body, and Late Dry Bitters'
+    'aria-label': 'Live 3-Wave Extraction Kinetics: Bright Fruit Acids, Sweet Sugars & Body, and Late Dry Bitters with shaded Sweet-Spot Window'
   },
     defs,
     gridLayer,
-    prevAcidPath, prevSugarPath, prevBitterPath,
+    h('g', { 'clip-path': 'url(#' + uid + '_plot)' }, prevAcidPath, prevSugarPath, prevBitterPath),
     activeGroup,
+    phasePinsLayer,
     targetMarkerLine,
+    axisTicks,
     axisStartTxt, axisMidTxt, axisTargetTxt,
     playheadLine,
     dotAcidGlow, dotSugarGlow, dotBitterGlow,
     dotAcid, dotSugar, dotBitter
   );
+
+  const scrubPillEl = cfg.scrubbable ? h('div', {
+    class: 'bt-ext-scrub-pill is-hint',
+    'data-wave-scrub-pill': '1',
+    'aria-live': 'polite',
+    text: 'Scrub curve when paused to preview any second'
+  }) : null;
+
+  const phaseBadgeEl = h('span', {
+    class: 'bt-ext-waves-phase-pill',
+    'data-wave-phase': '1',
+    style: 'display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;font-size:0.66rem;font-weight:800;letter-spacing:0.02em;background:var(--surface);border:1px solid var(--line-soft);color:var(--ink);white-space:nowrap',
+    text: 'Ready'
+  });
+  const balanceReadoutEl = h('span', {
+    class: 'bt-ext-waves-balance-pill bt-num',
+    'data-wave-balance': '1',
+    style: 'font-size:0.67rem;font-weight:700;color:var(--ink-secondary);line-height:1.25',
+    text: ''
+  });
+  const balanceRow = h('div', {
+    class: 'bt-ext-waves-balance-row',
+    style: 'display:flex;align-items:center;justify-content:space-between;gap:6px 10px;flex-wrap:wrap;min-width:0'
+  }, phaseBadgeEl, balanceReadoutEl);
 
   const statusTextEl = h('span', { text: '' });
   const statusPill = h('div', {
@@ -13867,19 +14208,28 @@ function BTExtractionWavesLive(cfg) {
   );
 
   const legendRow = h('div', { class: 'bt-ext-waves-legend' },
-    h('span', { class: 'bt-ext-waves-leg-pill' },
+    h('span', { class: 'bt-ext-waves-leg-pill', title: 'Fast-dissolving fruit & floral acids extract first during bloom and early pours' },
       h('i', { class: 'bt-ext-waves-dot', style: 'background:var(--wave-acid, #D98B26)' }),
-      h('span', { text: 'Bright Acids' })
+      h('span', { text: '1. Bright Acids' })
     ),
-    h('span', { class: 'bt-ext-waves-leg-pill' },
+    h('span', { class: 'bt-ext-waves-leg-pill', title: 'Caramel sugars & syrupy body build through the Sweet-Spot Window (27%-80% of brew)' },
       h('i', { class: 'bt-ext-waves-dot', style: 'background:var(--wave-sweet, #B84A14)' }),
-      h('span', { text: 'Sweet Sugars' })
+      h('span', { text: '2. Sweet Sugars & Body' })
     ),
-    h('span', { class: 'bt-ext-waves-leg-pill' },
+    h('span', { class: 'bt-ext-waves-leg-pill', title: 'Heavy bitter & drying compounds climb late in drawdown and during overtime' },
       h('i', { class: 'bt-ext-waves-dot', style: 'background:var(--wave-bitter, #9E211D)' }),
-      h('span', { text: 'Late Bitters' })
+      h('span', { text: '3. Late Bitters' })
     )
   );
+
+  const subCopy = (typeof cfg.subtitle === 'string')
+    ? cfg.subtitle
+    : 'Bright Acids dissolve first \u2192 Sweet Sugars peak in the shaded Sweet-Spot Window \u2192 Late Bitters rise if drawdown runs long.';
+  const subEl = subCopy ? h('div', {
+    class: 'bt-ext-waves-sub',
+    style: 'font-size:0.69rem;line-height:1.3;color:var(--ink-secondary);font-weight:600',
+    text: subCopy
+  }) : null;
 
   const root = h('div', {
     class: 'bt-ext-waves-live',
@@ -13888,26 +14238,32 @@ function BTExtractionWavesLive(cfg) {
     h('div', { class: 'bt-ext-waves-head' },
       h('span', { class: 'bt-ext-waves-title' },
         BTIcons.el('flame-wave', { size: 14 }),
-        h('span', { text: cfg.title || 'Live 3-Wave' })
+        h('span', { text: cfg.title || '3-Wave Live Extraction' })
       ),
       legendRow
     ),
+    subEl,
     svgEl,
+    scrubPillEl,
+    balanceRow,
     statusPill
   );
 
   let cachedHorizonKey = '';
   let cachedStatus = '';
+  let cachedBalanceKey = '';
+  let cachedScrubTxt = '';
 
   function xForTime(t, horizonS) {
     return +(PAD_L + _clamp(t / Math.max(1, horizonS), 0, 1) * PLOT_W).toFixed(1);
   }
   function yForVal(v) {
-    return +(PAD_T + (1 - _clamp(v, 0, 1)) * (PLOT_H - 4) + 2).toFixed(1);
+    /* Leave comfortable headroom (14px) for Sweet-Spot Window label & top peaks */
+    return +(PAD_T + 14 + (1 - _clamp(v, 0, 1)) * (PLOT_H - 18)).toFixed(1);
   }
 
   function rebuildCurves(horizonS) {
-    const N = 48;
+    const N = 64;
     const pA = [], pS = [], pB = [];
     for (let i = 0; i <= N; i++) {
       const t = (i / N) * horizonS;
@@ -13932,6 +14288,51 @@ function BTExtractionWavesLive(cfg) {
     areaAcidPath.setAttribute('d', dA + closeTail);
     areaSugarPath.setAttribute('d', dS + closeTail);
     areaBitterPath.setAttribute('d', dB + closeTail);
+
+    const swX0 = xForTime(st.totalTargetS * 0.27, horizonS);
+    const swX1 = xForTime(st.totalTargetS * 0.80, horizonS);
+    const swW = Math.max(12, +(swX1 - swX0).toFixed(1));
+    sweetBand.setAttribute('x', String(swX0));
+    sweetBand.setAttribute('width', String(swW));
+    sweetBandLbl.setAttribute('x', String(+(swX0 + swW * 0.5).toFixed(1)));
+    sweetBandLbl.textContent = swW < 88 ? 'Sweet Spot' : 'Sweet-Spot Window';
+
+    /* Render subtle vertical dashed pour-phase cue pins inside the plot */
+    phasePinsLayer.textContent = '';
+    if (Array.isArray(st.phases) && st.phases.length) {
+      let lastPinX = -99;
+      st.phases.forEach(function(ph) {
+        const tPin = ph && ph.t != null ? +ph.t : (ph && ph.startS != null ? +ph.startS : NaN);
+        if (!isFinite(tPin) || tPin <= 2 || tPin >= horizonS - 3) return;
+        const pinX = xForTime(tPin, horizonS);
+        if (pinX - lastPinX < 40) return;
+        lastPinX = pinX;
+        const rawLbl = String((ph && ph.label) || '').trim();
+        const shortLbl = rawLbl.length > 11 ? (rawLbl.slice(0, 10) + '\u2026') : rawLbl;
+        const nearRight = (PAD_L + PLOT_W - pinX) < 52;
+        phasePinsLayer.appendChild(h('line', {
+          class: 'bt-ext-phase-pin',
+          x1: String(pinX), y1: String(PAD_T + 15),
+          x2: String(pinX), y2: String(PAD_T + PLOT_H),
+          stroke: 'var(--ink-muted)',
+          'stroke-width': 1,
+          'stroke-dasharray': '2.5 3',
+          opacity: '0.58'
+        }));
+        if (shortLbl) {
+          phasePinsLayer.appendChild(h('text', {
+            class: 'bt-ext-phase-pin-lbl',
+            x: String(nearRight ? +(pinX - 3).toFixed(1) : +(pinX + 3).toFixed(1)),
+            y: String(PAD_T + PLOT_H - 13),
+            'text-anchor': nearRight ? 'end' : 'start',
+            fill: 'var(--ink-muted)',
+            'font-size': 7.6,
+            'font-weight': 700,
+            text: shortLbl
+          }));
+        }
+      });
+    }
 
     const tgtX = xForTime(st.totalTargetS, horizonS);
     targetMarkerLine.setAttribute('x1', String(tgtX));
@@ -13962,30 +14363,55 @@ function BTExtractionWavesLive(cfg) {
       return clockTxt + ' · Dissolving Now: Bright Fruit Acids & Lively Florals (Bloom / Early Pour)' + suffix;
     }
     if (evNow.u <= 0.80) {
-      return clockTxt + ' · Dissolving Now: Sweet Caramel Sugars & Body (Bitters Low)' + suffix;
+      return clockTxt + ' · Dissolving Now: Sweet Caramel Sugars & Body (Sweet-Spot Window)' + suffix;
     }
     return clockTxt + ' · Final Drawdown: Rounding Out Body — Stop Timer When Dripper Finishes!' + suffix;
   }
 
+  function canScrubNow() {
+    return !!cfg.scrubbable && (st.isPaused || st.stopped || st.elapsedS <= 0.05);
+  }
+
+  function scrubZoneShort(ev, isOver, tSec) {
+    if (tSec <= 0.05) return 'Bloom Start';
+    if (isOver) return 'Overtime · Bitters Rising';
+    if (ev.u < 0.27) return 'Bright Acids';
+    if (ev.u <= 0.80) return 'Sweet Core';
+    return 'Final Drawdown';
+  }
+
   function paint() {
-    const isOver = st.elapsedS > (st.totalTargetS + 0.2);
+    if (!canScrubNow() && st.scrubPreviewS != null) {
+      st.scrubPreviewS = null;
+    }
+    const isScrubbing = st.scrubPreviewS != null && isFinite(st.scrubPreviewS);
+    const activeS = isScrubbing ? st.scrubPreviewS : st.elapsedS;
+    const isOver = activeS > (st.totalTargetS + 0.2);
     /* Smoothly quantize overtime horizon in 5s steps so curves don't jitter every 100ms */
-    const horizonS = isOver
-      ? Math.max(st.totalTargetS + 5, Math.ceil(st.elapsedS / 5) * 5)
+    const maxS = Math.max(st.elapsedS, activeS);
+    const horizonS = maxS > (st.totalTargetS + 0.2)
+      ? Math.max(st.totalTargetS + 5, Math.ceil(maxS / 5) * 5)
       : st.totalTargetS;
-    const hKey = horizonS + ':' + st.totalTargetS + ':' + Math.round(st.tempC) + ':' + st.roast;
+    const phaseKey = Array.isArray(st.phases)
+      ? st.phases.map(function(p) { return Math.round((p && (p.t != null ? p.t : p.startS)) || 0) + String((p && p.label) || '').slice(0, 4); }).join(',')
+      : '';
+    const hKey = horizonS + ':' + st.totalTargetS + ':' + Math.round(st.tempC) + ':' + st.roast + ':' + phaseKey;
     if (hKey !== cachedHorizonKey) {
       cachedHorizonKey = hKey;
       rebuildCurves(horizonS);
     }
 
     root.classList.toggle('is-overtime', isOver);
-    const px = xForTime(st.elapsedS, horizonS);
+    root.classList.toggle('is-scrubbing', isScrubbing);
+    if (cfg.scrubbable) {
+      svgEl.style.cursor = canScrubNow() ? 'ew-resize' : 'default';
+    }
+    const px = xForTime(activeS, horizonS);
     clipRect.setAttribute('width', String(Math.max(2, px - PAD_L + 1)));
     playheadLine.setAttribute('x1', String(px));
     playheadLine.setAttribute('x2', String(px));
 
-    const evNow = _evalExtractionWaveProfile(st.elapsedS, st.totalTargetS, st.tempC, st.roast);
+    const evNow = _evalExtractionWaveProfile(activeS, st.totalTargetS, st.tempC, st.roast);
     const ya = yForVal(evNow.acid);
     const ys = yForVal(evNow.sugar);
     const yb = yForVal(evNow.bitter);
@@ -13997,36 +14423,111 @@ function BTExtractionWavesLive(cfg) {
     dotBitter.setAttribute('cx', String(px));     dotBitter.setAttribute('cy', String(yb));
     dotBitterGlow.setAttribute('cx', String(px)); dotBitterGlow.setAttribute('cy', String(yb));
 
-    const nextStatus = buildStatusString(evNow, isOver);
+    const sumWaves = Math.max(0.001, evNow.acid + evNow.sugar + evNow.bitter);
+    const pctA = Math.round((evNow.acid / sumWaves) * 100);
+    const pctS = Math.round((evNow.sugar / sumWaves) * 100);
+    const pctB = Math.max(0, 100 - pctA - pctS);
+    const phaseTxt = (activeS <= 0.05 && !st.stopped && !isScrubbing)
+      ? 'Ready · Bloom Next'
+      : isOver
+      ? 'Overtime · Bitters Rising'
+      : evNow.u < 0.27
+      ? 'Phase 1 · Bright Acids'
+      : evNow.u <= 0.80
+      ? 'Phase 2 · Sweet-Spot Window'
+      : 'Phase 3 · Final Drawdown';
+    const balTxt = (activeS <= 0.05 && !st.stopped && !isScrubbing)
+      ? ('Sweet Spot ' + _fmtMmSs(st.totalTargetS * 0.27) + '\u2013' + _fmtMmSs(st.totalTargetS * 0.80) + ' · Target ' + _fmtMmSs(st.totalTargetS))
+      : ((isScrubbing ? 'Preview Mix: ' : 'Live Mix: ') + 'Acids ' + pctA + '% · Sugars ' + pctS + '% · Bitters ' + pctB + '%');
+    const balKey = phaseTxt + '|' + balTxt + '|' + (isOver ? '1' : '0');
+    if (balKey !== cachedBalanceKey) {
+      cachedBalanceKey = balKey;
+      phaseBadgeEl.textContent = phaseTxt;
+      balanceReadoutEl.textContent = balTxt;
+      if (isOver) {
+        phaseBadgeEl.style.background = 'var(--warn-bg)';
+        phaseBadgeEl.style.borderColor = 'var(--warn)';
+        phaseBadgeEl.style.color = 'var(--warn)';
+      } else if (activeS > 0.05 && evNow.u >= 0.27 && evNow.u <= 0.80) {
+        phaseBadgeEl.style.background = 'var(--good-bg)';
+        phaseBadgeEl.style.borderColor = 'rgba(24, 96, 62, 0.34)';
+        phaseBadgeEl.style.color = 'var(--good)';
+      } else {
+        phaseBadgeEl.style.background = 'var(--surface)';
+        phaseBadgeEl.style.borderColor = 'var(--line-soft)';
+        phaseBadgeEl.style.color = 'var(--ink)';
+      }
+    }
+
+    if (scrubPillEl) {
+      let nextScrubTxt = '';
+      let nextScrubCls = 'bt-ext-scrub-pill is-hint';
+      if (isScrubbing) {
+        nextScrubTxt = 'Preview at ' + _fmtMmSs(activeS) + ' \u00B7 ' + scrubZoneShort(evNow, isOver, activeS) + ' (Acids ' + pctA + '% \u00B7 Sugars ' + pctS + '% \u00B7 Bitters ' + pctB + '%)';
+        nextScrubCls = 'bt-ext-scrub-pill is-active' + (isOver ? ' is-overtime' : '');
+      } else if (!canScrubNow()) {
+        nextScrubTxt = 'Live playback \u00B7 Pause timer to scrub & preview any second';
+        nextScrubCls = 'bt-ext-scrub-pill is-live';
+      } else {
+        nextScrubTxt = 'Scrub curve when paused to preview any second';
+        nextScrubCls = 'bt-ext-scrub-pill is-hint';
+      }
+      const sKey = nextScrubCls + '|' + nextScrubTxt;
+      if (sKey !== cachedScrubTxt) {
+        cachedScrubTxt = sKey;
+        scrubPillEl.className = nextScrubCls;
+        scrubPillEl.textContent = nextScrubTxt;
+      }
+    }
+
+    const evLive = isScrubbing ? _evalExtractionWaveProfile(st.elapsedS, st.totalTargetS, st.tempC, st.roast) : evNow;
+    const isLiveOver = st.elapsedS > (st.totalTargetS + 0.2);
+    const nextStatus = buildStatusString(evLive, isLiveOver);
     if (nextStatus !== cachedStatus) {
       cachedStatus = nextStatus;
       statusTextEl.textContent = nextStatus;
-      statusPill.classList.toggle('is-overtime', isOver);
-      statusPill.classList.toggle('is-sweet', !isOver && evNow.u >= 0.27 && evNow.u <= 0.82 && st.elapsedS > 0);
+      statusPill.classList.toggle('is-overtime', isLiveOver);
+      statusPill.classList.toggle('is-sweet', !isLiveOver && evLive.u >= 0.27 && evLive.u <= 0.82 && st.elapsedS > 0);
     }
   }
 
-  /* Optional interactive scrub if cfg.scrubbable === true */
+  /* Optional interactive scrub if cfg.scrubbable === true (active when paused/ready, guarded during live timer tick) */
   if (cfg.scrubbable) {
     let dragging = false;
-    function scrubClient(e) {
+    function scrubClient(e, persistPreview) {
+      if (!canScrubNow()) return;
       const rect = svgEl.getBoundingClientRect();
+      if (!rect || !rect.width) return;
       const frac = _clamp(((e.clientX - rect.left) / Math.max(1, rect.width) * W - PAD_L) / PLOT_W, 0, 1);
       const horizonS = Math.max(st.totalTargetS, st.elapsedS);
-      st.elapsedS = +(frac * horizonS).toFixed(1);
+      st.scrubPreviewS = +(frac * horizonS).toFixed(1);
       paint();
-      if (typeof cfg.onScrub === 'function') cfg.onScrub(st.elapsedS);
+      if (persistPreview && typeof cfg.onScrub === 'function') cfg.onScrub(st.scrubPreviewS);
     }
-    svgEl.style.cursor = 'ew-resize';
+    svgEl.style.cursor = canScrubNow() ? 'ew-resize' : 'default';
     svgEl.addEventListener('pointerdown', function(e) {
       if (e.button && e.button !== 0) return;
+      if (!canScrubNow()) return;
       dragging = true;
       try { svgEl.setPointerCapture(e.pointerId); } catch (err) {}
-      scrubClient(e);
+      scrubClient(e, true);
     });
-    svgEl.addEventListener('pointermove', function(e) { if (dragging) scrubClient(e); });
+    svgEl.addEventListener('pointermove', function(e) {
+      if (!canScrubNow()) return;
+      if (dragging) {
+        scrubClient(e, true);
+      } else if (e.pointerType === 'mouse') {
+        scrubClient(e, false);
+      }
+    });
     ['pointerup', 'pointercancel'].forEach(function(ev) {
       svgEl.addEventListener(ev, function() { dragging = false; });
+    });
+    svgEl.addEventListener('pointerleave', function(e) {
+      if (!dragging && e.pointerType === 'mouse' && st.scrubPreviewS != null) {
+        st.scrubPreviewS = null;
+        paint();
+      }
     });
   }
 
@@ -14037,23 +14538,29 @@ function BTExtractionWavesLive(cfg) {
     if (totNext != null && totNext > 0) st.totalTargetS = totNext;
     if (next.tempC != null && isFinite(+next.tempC)) st.tempC = +next.tempC;
     if (typeof next.roast === 'string' && next.roast) st.roast = next.roast;
-    if (typeof next.isPaused === 'boolean') st.isPaused = next.isPaused;
+    if (typeof next.isPaused === 'boolean') {
+      st.isPaused = next.isPaused;
+      if (!next.isPaused && !st.stopped && st.elapsedS > 0.05) st.scrubPreviewS = null;
+    }
     if (typeof next.stopped === 'boolean') st.stopped = next.stopped;
     if (next.cutoffS !== undefined) st.cutoffS = next.cutoffS != null ? +next.cutoffS : null;
+    if (Array.isArray(next.phases)) st.phases = next.phases.slice();
     paint();
   };
 
   root.getState = function() {
-    const ev = _evalExtractionWaveProfile(st.elapsedS, st.totalTargetS, st.tempC, st.roast);
+    const activeS = st.scrubPreviewS != null ? st.scrubPreviewS : st.elapsedS;
+    const ev = _evalExtractionWaveProfile(activeS, st.totalTargetS, st.tempC, st.roast);
     const dom = ev.acid >= ev.sugar && ev.acid >= ev.bitter ? 'acids' : (ev.sugar >= ev.bitter ? 'sugars' : 'bitters');
     return {
       elapsedS: st.elapsedS,
+      scrubPreviewS: st.scrubPreviewS,
       totalTargetS: st.totalTargetS,
       acidVal: +ev.acid.toFixed(3),
       sugarVal: +ev.sugar.toFixed(3),
       bitterVal: +ev.bitter.toFixed(3),
       dominantWave: dom,
-      isOvertime: st.elapsedS > (st.totalTargetS + 0.2),
+      isOvertime: activeS > (st.totalTargetS + 0.2),
       statusText: cachedStatus
     };
   };
@@ -15578,6 +16085,7 @@ const BTChartKit = (function () {
     const root = document.createElement('div');
     root.className = 'bt-vernier-pill' + (c.compact ? ' is-compact' : '') + (c.cls ? ' ' + c.cls : '');
     if (c.id) root.id = c.id;
+    if (c.title || c.hint) root.setAttribute('title', String(c.title || c.hint));
 
     const decBtn = document.createElement('button');
     decBtn.type = 'button';
@@ -15590,6 +16098,7 @@ const BTChartKit = (function () {
     track.setAttribute('tabindex', '0');
     track.setAttribute('role', 'slider');
     track.setAttribute('aria-label', c.label || 'Value');
+    if (c.title || c.hint) track.setAttribute('title', String(c.title || c.hint));
     track.setAttribute('aria-valuemin', String(min));
     track.setAttribute('aria-valuemax', String(max));
 
@@ -15832,7 +16341,10 @@ const BTChartKit = (function () {
     svg += '<text x="' + sweetBadgeX + '" y="' + (parseFloat(sweetTop) + 11.5).toFixed(1) +
       '" text-anchor="end" class="bt-spark-zone-lbl">' + esc(sweetBadge) + '</text>';
 
-    /* Y Axis Labels */
+    /* Y Axis Labels & Unit Caption */
+    const yUnitLbl = cfg.yAxisLabel || (isPts ? 'Score' : 'Stars');
+    svg += '<text x="' + (L - 6) + '" y="' + (T - 5) + '" text-anchor="end" class="bt-spark-axis">' +
+      esc(yUnitLbl) + '</text>';
     svg += '<text x="' + (L - 6) + '" y="' + (T + 5) + '" text-anchor="end" class="bt-spark-axis">' +
       (isPts ? '95' : '5.0') + '</text>';
     svg += '<text x="' + (L - 6) + '" y="' + B + '" text-anchor="end" class="bt-spark-axis">' +
@@ -16057,6 +16569,52 @@ const BTChartKit = (function () {
     };
   }
 
+  /* --------------------------------------------------------------------------
+   * 9. Compact Responsive Chart Axis Caption Strip (375px-Safe)
+   *    Explains chart X/Y directions & units in plain English right under SVGs.
+   * -------------------------------------------------------------------------- */
+  function createAxisCaptionBar(items, opts) {
+    const c = opts || {};
+    const bar = document.createElement('div');
+    bar.className = 'bt-axis-caption' + (c.cls ? ' ' + c.cls : '');
+    if (c.id) bar.id = c.id;
+    if (c.ariaLabel) bar.setAttribute('aria-label', String(c.ariaLabel));
+    const list = Array.isArray(items) ? items : [];
+    for (let i = 0; i < list.length; i++) {
+      const it = list[i];
+      if (!it) continue;
+      const itemEl = document.createElement('span');
+      itemEl.className = 'bt-axis-caption-item';
+      if (typeof it === 'string') {
+        itemEl.textContent = it;
+      } else {
+        if (it.title) itemEl.setAttribute('title', String(it.title));
+        if (it.kicker) {
+          const k = document.createElement('strong');
+          k.textContent = String(it.kicker) + ': ';
+          itemEl.appendChild(k);
+        }
+        itemEl.appendChild(document.createTextNode(String(it.text || '')));
+      }
+      bar.appendChild(itemEl);
+    }
+    return bar;
+  }
+
+  function svgZoneLabel(x, y, text, opts) {
+    const o = opts || {};
+    const cls = 'bt-chart-zone-lbl' + (o.cls ? ' ' + o.cls : '');
+    const attrs = {
+      x: typeof x === 'number' ? x.toFixed(1) : String(x),
+      y: typeof y === 'number' ? y.toFixed(1) : String(y),
+      class: cls
+    };
+    if (o.anchor) attrs['text-anchor'] = o.anchor;
+    const t = svgEl('text', attrs);
+    t.textContent = String(text || '');
+    return t;
+  }
+
   return {
     numOr: numOr,
     clamp: clamp,
@@ -16065,10 +16623,12 @@ const BTChartKit = (function () {
     prefersReducedMotion: prefersReducedMotion,
     haptic: haptic,
     svgEl: svgEl,
+    svgZoneLabel: svgZoneLabel,
     pinShapeSvg: pinShapeSvg,
     pinShapeEl: pinShapeEl,
     createHitHalo: createHitHalo,
     createCrosshair: createCrosshair,
+    createAxisCaptionBar: createAxisCaptionBar,
     mapClientToSurface: mapClientToSurface,
     bindChartSurface: bindChartSurface,
     stepSpring: stepSpring,
@@ -17526,25 +18086,45 @@ if (typeof window !== 'undefined') {
 (function () {
   var S = BTBrewCellarShared;
 
+  function cleanCoffeeMetaStr(v) {
+    if (v == null) return '';
+    var s = String(v).trim();
+    if (!s) return '';
+    var low = s.toLowerCase();
+    if (low === '--' || low === '\u2014' || low === '-' || low === 'undefined' || low === 'null' || low === 'nan' || low === 'unknown' || low === 'n/a') {
+      return '';
+    }
+    return s;
+  }
+
   function computeCoffeeCupsLeftMeta(rec, fallbackDoseG) {
     if (!rec || typeof rec !== 'object') return null;
     var bag = rec.openBag;
     var rawRem = null;
+    var isTrackedRemaining = true;
     if (bag && bag.rem_g != null && bag.rem_g !== '' && isFinite(+bag.rem_g)) {
       rawRem = +bag.rem_g;
     } else if (rec.remaining_g != null && rec.remaining_g !== '' && isFinite(+rec.remaining_g)) {
       rawRem = +rec.remaining_g;
     } else if (bag && bag.grams != null && +bag.grams > 0 && isFinite(+bag.grams)) {
       rawRem = +bag.grams;
+    } else if (rec.bag_weight_g != null && +rec.bag_weight_g > 0 && isFinite(+rec.bag_weight_g)) {
+      rawRem = +rec.bag_weight_g;
+      isTrackedRemaining = false;
+    } else if (bag && bag.size != null && +bag.size > 0 && (!bag.unit || bag.unit === 'g') && isFinite(+bag.size)) {
+      rawRem = +bag.size;
+      isTrackedRemaining = false;
     }
     if (rawRem == null || !isFinite(rawRem) || rawRem < 0) return null;
     var remG = Math.max(0, Math.round(rawRem * 10) / 10);
     var doseRef = Math.max(1, +(fallbackDoseG || (rec.lastBrew && rec.lastBrew.brew_dose_g) || 15));
-    var isEmpty = remG <= 0.4;
+    var isEmpty = isTrackedRemaining && remG <= 0.4;
     var cupsLeft = isEmpty ? 0 : Math.floor(remG / doseRef);
-    var isLow = !isEmpty && remG < doseRef * 2;
+    var isLow = isTrackedRemaining && !isEmpty && remG < doseRef * 2;
     var remDisp = Math.round(remG);
-    var cupsTxt = '~' + cupsLeft + (cupsLeft === 1 ? ' cup left' : ' cups left');
+    var cupsTxt = isTrackedRemaining
+      ? ('~' + cupsLeft + (cupsLeft === 1 ? ' cup left' : ' cups left'))
+      : ('~' + cupsLeft + (cupsLeft === 1 ? ' cup' : ' cups'));
     return {
       remG: remG,
       doseRef: doseRef,
@@ -17824,6 +18404,8 @@ if (typeof window !== 'undefined') {
     var txt = String(rawText || '').trim();
     if (!txt) return null;
     if (isPromptEchoText(txt)) return { _isPromptEcho: true };
+    /* Guard bare URLs so user gets clear guidance instead of regex noise */
+    if (/^https?:\/\/\S+$/i.test(txt)) return null;
 
     /* 1. Handle BT6: / #bt6= / BT-code: / bt1: shared recipe/coffee codes */
     if (/^(?:BT-code:|bt1:|BT6:|#?bt6=)/i.test(txt)) {
@@ -17881,6 +18463,9 @@ if (typeof window !== 'undefined') {
     if (jsonObj && typeof jsonObj === 'object') {
       return Object.assign({ _sourceKind: 'ai_json' }, jsonObj);
     }
+    /* Guard truncated/malformed JSON so user gets a clear JSON error instead of broken prose guesses */
+    var strippedFence = txt.replace(/^```(?:json)?\s*/i, '').trim();
+    if (strippedFence.charAt(0) === '{') return null;
 
     /* 4. Multi-line prose / bag label OCR fallback */
     if (typeof parseCoffeeTextV3 === 'function') {
@@ -18593,15 +19178,24 @@ if (typeof window !== 'undefined') {
   }
 
   /* -------------------- 5. Saved Coffee & Fresh Bag Selection Engine -------------------- */
-  function formatProvenanceBadge(anchorRow) {
-    if (!anchorRow) return 'Loaded saved bean profile';
-    var mk = (typeof resolveMethod === 'function' ? resolveMethod(anchorRow.brew_method) : '') || anchorRow.brew_method || 'V60';
+  function formatProvenanceBadge(anchorRow, opts) {
+    opts = opts || {};
+    if (!anchorRow) return opts.preview ? 'Saved bean profile' : 'Loaded saved bean profile';
+    var mk = (typeof resolveMethod === 'function' ? resolveMethod(anchorRow.brew_method) : '') || cleanCoffeeMetaStr(anchorRow.brew_method) || 'v60';
     var mObj = S.getMethods23().find(function (x) { return x.key === mk; });
-    var mName = mObj ? mObj.label : String(anchorRow.brew_method || 'V60');
+    var mName = (mObj && mObj.label) || cleanCoffeeMetaStr(anchorRow.brew_method) || 'Hario V60';
     var stars = parseFloat(anchorRow.my_rating_stars);
     var total = parseFloat(anchorRow.total_score);
     var locked = anchorRow.dial_locked === 'yes' || anchorRow.dial_locked === '1';
-    var scoreTxt = stars > 0 ? ((Math.round(stars * 10) / 10) + '/5 ') : (total > 0 ? ((Math.round(total * 10) / 10) + ' pt ') : '');
+    if (opts.preview) {
+      var parts = [];
+      if (locked) parts.push('Gold Locked');
+      if (isFinite(stars) && stars > 0) parts.push((Math.round(stars * 10) / 10).toFixed(1) + '\u2605');
+      else if (isFinite(total) && total > 0) parts.push(Math.round(total) + ' pt');
+      parts.push(mName);
+      return parts.join(' \u00B7 ');
+    }
+    var scoreTxt = (isFinite(stars) && stars > 0) ? ((Math.round(stars * 10) / 10) + '/5 ') : ((isFinite(total) && total > 0) ? ((Math.round(total * 10) / 10) + ' pt ') : '');
     return 'Loaded your ' + (locked ? 'locked ' : '') + scoreTxt + mName + ' recipe';
   }
 
@@ -19103,13 +19697,15 @@ if (typeof window !== 'undefined') {
     rawText: '',
     prefillQuery: '',
     reviewModel: null,
-    promptEchoNotice: false
+    promptEchoNotice: false,
+    clipErrorNotice: ''
   };
 
   function buildAiPasteSheet(payload) {
     payload = payload || {};
     var a = S.getApp();
     a.coffee = a.coffee || {};
+    pasteUi.clipErrorNotice = '';
     if (payload.prefillQuery != null) pasteUi.prefillQuery = String(payload.prefillQuery);
     if (payload.initialClipText != null) {
       var clipStr = String(payload.initialClipText).trim();
@@ -19130,6 +19726,7 @@ if (typeof window !== 'undefined') {
 
     function runParseOnRaw(txt) {
       pasteUi.rawText = txt;
+      pasteUi.clipErrorNotice = '';
       var trimmed = String(txt || '').trim();
       if (!trimmed) {
         pasteUi.promptEchoNotice = false;
@@ -19161,11 +19758,11 @@ if (typeof window !== 'undefined') {
     });
 
     function provBadgeEl(prov) {
-      if (prov === 'photo') return S.h('span', { class: 'bt-ce-badge is-good', text: '[Bag Photo]' });
-      if (prov === 'web') return S.h('span', { class: 'bt-ce-badge is-sci', text: '[Official Roaster Web]' });
-      if (prov === 'code') return S.h('span', { class: 'bt-ce-badge is-gold', text: '[Shared Code]' });
-      if (prov === 'text') return S.h('span', { class: 'bt-ce-badge', text: '[Parsed Label]' });
-      return S.h('span', { class: 'bt-ce-badge is-sci', text: '[AI Verified]' });
+      if (prov === 'photo') return S.h('span', { class: 'bt-ce-badge is-good', text: 'Bag Photo' });
+      if (prov === 'web') return S.h('span', { class: 'bt-ce-badge is-sci', text: 'Official Roaster Web' });
+      if (prov === 'code') return S.h('span', { class: 'bt-ce-badge is-gold', text: 'Shared Code' });
+      if (prov === 'text') return S.h('span', { class: 'bt-ce-badge', text: 'Parsed Label' });
+      return S.h('span', { class: 'bt-ce-badge is-sci', text: 'AI Verified' });
     }
 
     function applyCheckedFields() {
@@ -19283,8 +19880,15 @@ if (typeof window !== 'undefined') {
     function paintReviewOnly() {
       reviewHost.textContent = '';
 
+      if (pasteUi.clipErrorNotice) {
+        reviewHost.appendChild(S.h('div', { class: 'bt-ce-unclear-box', role: 'alert' },
+          S.h('b', { text: 'Clipboard Not Ready' }),
+          S.h('span', { text: pasteUi.clipErrorNotice })
+        ));
+      }
+
       if (pasteUi.promptEchoNotice) {
-        reviewHost.appendChild(S.h('div', { class: 'bt-ce-unclear-box' },
+        reviewHost.appendChild(S.h('div', { class: 'bt-ce-unclear-box', role: 'status' },
           S.h('b', { text: 'Lookup Prompt Ready on Your Clipboard!' }),
           S.h('span', { text: 'Paste that prompt into ChatGPT, Claude, or Gemini (with a bag photo or coffee name), copy the JSON reply it gives you, and paste that reply above.' })
         ));
@@ -19301,9 +19905,34 @@ if (typeof window !== 'undefined') {
       }
 
       if (rm.unparsed || !rm.items.length) {
-        reviewHost.appendChild(S.h('div', { class: 'bt-ce-unclear-box' },
-          S.h('b', { text: 'No structured coffee fields detected yet' }),
-          S.h('span', { text: 'Paste the full JSON block from ChatGPT / Claude / Gemini (starting with "{" and ending with "}"), or include origin, roast, or process words.' })
+        var rawTrim = String(pasteUi.rawText || '').trim();
+        var isUrlOnly = /^https?:\/\/\S+$/i.test(rawTrim);
+        var looksLikeJson = rawTrim.indexOf('{') >= 0 || /"(roaster|coffee_name|origin|process)"/i.test(rawTrim);
+        var errTitle = isUrlOnly
+          ? 'Paste the bag text or AI reply instead of a bare link'
+          : (looksLikeJson ? 'Incomplete or malformed JSON reply detected' : 'No structured coffee fields detected yet');
+        var errBody = isUrlOnly
+          ? 'Browsers cannot fetch external roaster websites directly. Tap "Copy Prompt" above, paste that link + prompt into ChatGPT/Claude/Gemini, then paste the JSON reply back here.'
+          : (looksLikeJson
+            ? 'It looks like part of the JSON reply was cut off. Make sure you copied everything from the opening "{" through the closing "}", then try pasting again.'
+            : 'Paste the full JSON block from ChatGPT / Claude / Gemini (starting with "{" and ending with "}"), or include coffee details like origin, roast level, or process.');
+        reviewHost.appendChild(S.h('div', { class: 'bt-ce-unclear-box', role: 'alert', id: 'bt-ai-scan-error-box' },
+          S.h('b', { text: errTitle }),
+          S.h('span', { text: errBody }),
+          S.h('button', {
+            type: 'button',
+            class: 'bt-ce-chip is-compact',
+            style: 'align-self:flex-start;min-height:40px;margin-top:4px',
+            text: 'Clear Box & Try Again',
+            onclick: function () {
+              pasteUi.rawText = '';
+              pasteUi.reviewModel = null;
+              pasteUi.clipErrorNotice = '';
+              taEl.value = '';
+              paintReviewOnly();
+              try { taEl.focus(); } catch (_) {}
+            }
+          })
         ));
         return;
       }
@@ -19423,7 +20052,8 @@ if (typeof window !== 'undefined') {
           onclick: function () {
             if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
               navigator.clipboard.readText().then(function (clip) {
-                if (clip) {
+                if (clip && String(clip).trim()) {
+                  pasteUi.clipErrorNotice = '';
                   if (isPromptEchoText(clip)) {
                     pasteUi.promptEchoNotice = true;
                     paintReviewOnly();
@@ -19432,13 +20062,20 @@ if (typeof window !== 'undefined') {
                     runParseOnRaw(clip);
                   }
                 } else {
+                  pasteUi.clipErrorNotice = 'Your clipboard is empty. Copy the AI JSON reply or bag text first, then tap Read Clipboard or paste directly into the box above.';
+                  paintReviewOnly();
                   taEl.focus();
+                  S.toastSafe('Clipboard is empty — copy your AI reply or bag text first.');
                 }
               }).catch(function () {
+                pasteUi.clipErrorNotice = 'Clipboard permission was blocked by the browser. Tap inside the text box above and press Ctrl+V (or long-press -> Paste).';
+                paintReviewOnly();
                 taEl.focus();
                 S.toastSafe('Tap inside the box and choose Paste.');
               });
             } else {
+              pasteUi.clipErrorNotice = 'Tap inside the text box above and paste your AI JSON reply or bag text directly.';
+              paintReviewOnly();
               taEl.focus();
             }
           }
@@ -20945,8 +21582,25 @@ if (typeof window !== 'undefined') {
       var dA = S.daysSinceIso(c.roast_date);
       if (dA != null) parts.push(dA === 0 ? 'Today' : (dA + 'd ago'));
     }
-    if (!parts.length) return 'Ready — skipped fields use balanced defaults';
-    return parts.join(' · ');
+    if (!parts.length) return 'No coffee loaded yet \u00B7 Skipped fields use balanced defaults';
+    return parts.join(' \u00B7 ');
+  }
+
+  function resolveActivePalateBiasText(aObj) {
+    try {
+      var sh = S.getShell();
+      var p = (aObj && aObj.prefs) || (S.getApp() && S.getApp().prefs) || {};
+      if (sh && typeof sh.formatPalateBiasSummary === 'function') {
+        var s = sh.formatPalateBiasSummary(p);
+        if (s) return s;
+      }
+      var src = p.palateTargets || p.palateBias || p.palateSeed || null;
+      if (src && typeof src === 'object') {
+        if (src.summary) return String(src.summary);
+        if (src.label) return String(src.label);
+      }
+    } catch (_) {}
+    return '';
   }
 
   function buildTopCoffeeGuideCard(c, handlers) {
@@ -21777,6 +22431,7 @@ if (typeof window !== 'undefined') {
       }
 
       /* ==================== CALM HEADER ==================== */
+      var activePalateBiasTxt = resolveActivePalateBiasText(a);
       root.appendChild(S.h('div', { class: 'bt-ce-head' },
         S.h('div', { style: 'min-width:0;flex:1' },
           S.h('h1', { class: 'bt-ce-title', text: 'What are we brewing?' })
@@ -21786,11 +22441,12 @@ if (typeof window !== 'undefined') {
             type: 'button',
             id: 'bt-step1-new-blank-btn',
             class: 'bt-ce-vault-pill',
+            'aria-label': 'Clear fields and start a new coffee bag',
             title: 'Clear fields and start a new coffee',
             onclick: function () { resetToFreshBlankCoffee(); }
           },
             S.iconEl('fresh-bag', { size: 14 }),
-            S.h('span', { text: 'New' })
+            S.h('span', { text: 'New Bag' })
           ) : null,
           S.h('div', { class: 'bt-ce-mode-pill', role: 'tablist', 'aria-label': 'Coffee Entry Mode' },
             S.h('button', {
@@ -21812,6 +22468,24 @@ if (typeof window !== 'undefined') {
           )
         )
       ));
+
+      if (activePalateBiasTxt) {
+        root.appendChild(S.h('button', {
+          type: 'button',
+          id: 'bt-step1-palate-bias-pill',
+          class: 'bt-step1-pref-pill',
+          'aria-label': 'Active Palate Bias: ' + activePalateBiasTxt + '. Tap to edit in Preferences.',
+          onclick: function () {
+            flushPendingStep1Drafts(c);
+            if (a && a.tabSegments) a.tabSegments.palate = 'dna';
+            S.navGo('palate');
+          }
+        },
+          S.iconEl('palate', { size: 14 }),
+          S.h('span', { style: 'min-width:0;overflow-wrap:anywhere', text: 'Palate Bias: ' + activePalateBiasTxt }),
+          S.h('span', { style: 'font-weight:700;white-space:nowrap;flex:none', text: 'Edit \u2192' })
+        ));
+      }
 
       /* ==================== ZONE 1: BAG SOURCE STRIP ==================== */
       var sourceStrip = S.h('section', { class: 'bt-ce-source-strip', 'aria-label': 'Bag Source Actions' },
@@ -22147,6 +22821,7 @@ if (typeof window !== 'undefined') {
         S.h('h2', { class: 'bt-ce-zone-title', text: 'Process' }),
         procExtraBadge.length ? S.h('span', { class: 'bt-ce-badge is-good', text: procExtraBadge.join(' · ') }) : null
       ),
+      S.h('p', { class: 'bt-ce-field-hint', id: 'bt-hint-process', text: 'Washed (clean), Natural (fruity), Honey (sweet)' }),
       S.h('div', { class: 'bt-ce-proc-grid', role: 'group', 'aria-label': 'Processing Method' },
         [
           { k: 'washed',     ico: 'cherry-washed',  lbl: 'Washed',                   on: !isProcUnsure && curProc === 'washed' },
@@ -22241,6 +22916,13 @@ if (typeof window !== 'undefined') {
         S.h('h2', { class: 'bt-ce-zone-title', text: 'Roast Date' }),
         hasDateOrFreeze ? S.h('span', { class: 'bt-ce-badge ' + freshInfo.tone, text: freshInfo.label }) : null
       ),
+      S.h('p', {
+        class: 'bt-ce-field-hint',
+        id: 'bt-hint-roast-date',
+        text: (isFinite(+c.recommended_rest_days) && +c.recommended_rest_days > 0)
+          ? ('Peak degassing sweet spot before brewing \u00B7 Recommended rest: ' + Math.round(+c.recommended_rest_days) + 'd')
+          : 'Peak degassing sweet spot before brewing (skip safely if unstamped)'
+      }),
       buildRoastCalendarControl({
         coffee: c,
         uiState: ceUi,
@@ -22261,6 +22943,7 @@ if (typeof window !== 'undefined') {
       String(c.roaster_location || '').trim() ||
       String(c.varietal || '').trim() ||
       (isFinite(+c.elevation_m) && +c.elevation_m > 0) ||
+      (isFinite(+c.recommended_rest_days) && +c.recommended_rest_days > 0) ||
       (['low', 'mid', 'high', 'very-high'].indexOf(c.density) >= 0) ||
       String(c.harvest_year || '').trim() ||
       (isFinite(+c.bag_weight_g) && +c.bag_weight_g > 0) ||
@@ -22277,12 +22960,13 @@ if (typeof window !== 'undefined') {
     if (String(c.origin || '').trim()) moreSummaryParts.push(String(c.origin).trim());
     if (String(c.varietal || '').trim()) moreSummaryParts.push(String(c.varietal).trim());
     if (isFinite(+c.elevation_m) && +c.elevation_m > 0) moreSummaryParts.push(Math.round(+c.elevation_m) + 'm');
+    if (isFinite(+c.recommended_rest_days) && +c.recommended_rest_days > 0) moreSummaryParts.push('Rest ' + Math.round(+c.recommended_rest_days) + 'd');
     if (String(c.harvest_year || '').trim()) moreSummaryParts.push(String(c.harvest_year).trim());
     if (isFinite(+c.bag_weight_g) && +c.bag_weight_g > 0) moreSummaryParts.push(Math.round(+c.bag_weight_g) + 'g');
     if (isFinite(+c.price) && +c.price > 0) moreSummaryParts.push(currencySymbol(c.currency) + (+c.price).toFixed(0));
     var moreSubTxt = moreSummaryParts.length
       ? moreSummaryParts.slice(0, 4).join(' · ')
-      : 'Origin, varietal, elevation, harvest, weight & price';
+      : 'Optional (safe to skip) · Origin, elevation, Agtron, rest days & price';
 
     var moreWrap = S.h('section', { class: 'bt-ce-disclosure', id: 'bt-step1-more-details', 'aria-label': 'More Bean Details' });
     var moreToggleBtn = S.h('button', {
@@ -22575,8 +23259,9 @@ if (typeof window !== 'undefined') {
       var manualAgtronSection = null;
       if (!omniConnectedNow && agMode !== 'off') {
         var curScale = c.agtron_scale || 'gourmet';
-        manualAgtronSection = S.h('div', { class: 'bt-ce-detail-grp' },
-          S.h('div', { class: 'bt-ce-detail-lbl', text: 'Manual Agtron / Roast Color' }),
+        manualAgtronSection = S.h('div', { class: 'bt-ce-detail-grp', id: 'bt-field-agtron' },
+          S.h('div', { class: 'bt-ce-detail-lbl', text: 'Agtron # / Roast Color' }),
+          S.h('p', { class: 'bt-ce-field-hint', id: 'bt-hint-agtron', text: 'Roast color score (45 dark .. 85 light)' }),
           S.h('div', { class: 'bt-ce-chips' },
             [
               ['gourmet', 'Agtron Gourmet'],
@@ -22601,6 +23286,8 @@ if (typeof window !== 'undefined') {
                 inputmode: 'decimal',
                 class: 'bt-ce-num-input',
                 placeholder: '72',
+                'aria-label': 'Whole bean Agtron score',
+                'aria-describedby': 'bt-hint-agtron',
                 value: c.bean_agtron || '',
                 oninput: function (e) {
                   c._v64Touched = 'yes';
@@ -22618,6 +23305,8 @@ if (typeof window !== 'undefined') {
                 inputmode: 'decimal',
                 class: 'bt-ce-num-input',
                 placeholder: '80',
+                'aria-label': 'Ground coffee Agtron score',
+                'aria-describedby': 'bt-hint-agtron',
                 value: c.ground_agtron || '',
                 oninput: function (e) {
                   c._v64Touched = 'yes';
@@ -22741,6 +23430,7 @@ if (typeof window !== 'undefined') {
         /* Elevation (masl) */
         S.h('div', { class: 'bt-ce-detail-grp', id: 'bt-field-elevation' },
           S.h('div', { class: 'bt-ce-detail-lbl', text: 'Elevation (masl)' }),
+          S.h('p', { class: 'bt-ce-field-hint', id: 'bt-hint-elevation', text: 'Higher = brighter berry/floral acidity' }),
           S.h('div', { class: 'bt-ce-chips', role: 'group', 'aria-label': 'Growing Elevation Presets' },
             ELEV_PRESETS_4.map(function (elOpt) {
               var curM = isFinite(+c.elevation_m) && +c.elevation_m > 0 ? +c.elevation_m : -1;
@@ -22767,6 +23457,51 @@ if (typeof window !== 'undefined') {
             S.h('label', { class: 'bt-ce-num-lbl' },
               elevMetersInp,
               S.h('span', { text: 'masl' })
+            )
+          )
+        ),
+
+        /* Recommended Rest (days) */
+        S.h('div', { class: 'bt-ce-detail-grp', id: 'bt-field-rest' },
+          S.h('div', { class: 'bt-ce-detail-lbl', text: 'Recommended Rest' }),
+          S.h('p', { class: 'bt-ce-field-hint', id: 'bt-hint-rest', text: 'Peak degassing sweet spot before brewing' }),
+          S.h('div', { class: 'bt-ce-chips', role: 'group', 'aria-label': 'Recommended Rest Days' },
+            [3, 7, 14, 21].map(function (rd) {
+              var isRdOn = isFinite(+c.recommended_rest_days) && Math.round(+c.recommended_rest_days) === rd;
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-ce-chip is-compact',
+                'aria-pressed': String(isRdOn),
+                text: rd + 'd',
+                onclick: function () {
+                  c._v64Touched = 'yes';
+                  c.recommended_rest_days = isRdOn ? '' : rd;
+                  S.haptic('tick');
+                  S.saveDraftSafe();
+                  S.notifyChromeSafe();
+                  repaintAll();
+                }
+              });
+            }),
+            S.h('label', { class: 'bt-ce-num-lbl' },
+              S.h('input', {
+                type: 'text',
+                inputmode: 'numeric',
+                id: 'bt-step1-rest-days-input',
+                class: 'bt-ce-num-input',
+                placeholder: '7',
+                'aria-label': 'Recommended rest days after roast',
+                'aria-describedby': 'bt-hint-rest',
+                value: c.recommended_rest_days || '',
+                oninput: function (e) {
+                  c._v64Touched = 'yes';
+                  var rawRd = String(e.target.value || '').replace(/[^\d]/g, '');
+                  var rdVal = parseInt(rawRd, 10);
+                  c.recommended_rest_days = (isFinite(rdVal) && rdVal > 0 && rdVal <= 90) ? rdVal : '';
+                  syncLiveSummariesOnly();
+                }
+              }),
+              S.h('span', { text: 'days' })
             )
           )
         ),
@@ -23021,6 +23756,7 @@ if (typeof window !== 'undefined') {
       );
     } else if (curIdx === 2) {
       bodySlot.append(
+        S.h('p', { class: 'bt-ce-field-hint', text: 'Washed (clean), Natural (fruity), Honey (sweet)' }),
         S.h('div', { class: 'bt-ce-proc-grid' },
           [
             ['washed', 'Washed'],
@@ -23072,6 +23808,7 @@ if (typeof window !== 'undefined') {
             });
           })
         ),
+        S.h('p', { class: 'bt-ce-field-hint', text: 'Elevation: Higher = brighter berry/floral acidity' }),
         S.h('div', { class: 'bt-ce-chips' },
           [
             { k: 'low',       m: 1050, lbl: '<1,200m' },
@@ -23097,6 +23834,7 @@ if (typeof window !== 'undefined') {
       );
     } else {
       bodySlot.append(
+        S.h('p', { class: 'bt-ce-field-hint', text: 'Peak degassing sweet spot before brewing (skip safely if unstamped)' }),
         buildRoastCalendarControl({
           coffee: c,
           uiState: ceUi,
@@ -23122,6 +23860,7 @@ if (typeof window !== 'undefined') {
         S.h('button', {
           type: 'button',
           class: 'bt-ce-chip is-compact',
+          style: 'min-height:44px',
           disabled: curIdx === 0,
           text: '← Back',
           onclick: function () { if (curIdx > 0) { flushPendingStep1Drafts(c); ceUi.guidedIdx = curIdx - 1; S.haptic('tick'); repaintAll(); } }
@@ -23129,7 +23868,9 @@ if (typeof window !== 'undefined') {
         S.h('button', {
           type: 'button',
           class: 'bt-ce-link-btn',
-          text: 'Skip →',
+          style: 'min-height:44px',
+          'aria-label': 'Skip this field and use safe balanced defaults',
+          text: 'Skip (Use Default) →',
           onclick: function () {
             flushPendingStep1Drafts(c);
             if (curIdx === 0 && !isFieldAnswered(c, 'name')) setFieldDontKnow(c, 'name', true);
@@ -23229,7 +23970,12 @@ if (typeof window !== 'undefined') {
 
       root.appendChild(S.h('div', null,
         S.h('div', { class: 'bt-ce-kicker', text: 'Living Bean Vault' }),
-        S.h('p', { class: 'bt-ce-sub', text: allRecs.length + ' saved coffee(s) \u00B7 1 tap restores bean & winning recipe.' })
+        S.h('p', {
+          class: 'bt-ce-sub',
+          text: allRecs.length
+            ? (allRecs.length + ' saved ' + (allRecs.length === 1 ? 'coffee' : 'coffees') + ' \u00B7 1 tap restores bean & winning recipe.')
+            : '0 saved coffees yet \u2014 capture a bag on Step 1 or import your CSV backup.'
+        })
       ));
 
       var clearBtn = S.h('button', {
@@ -23445,8 +24191,14 @@ if (typeof window !== 'undefined') {
             );
           }
 
-          var rowNotesStr = String(rec.bag_notes || rec.notes || rec.flavors || (anchor && anchor.bag_notes) || '').trim();
-          var rowNotesList = parseBagNotesList(rowNotesStr);
+          var cleanName = cleanCoffeeMetaStr(rec.name) || 'Unnamed Coffee';
+          var cleanRoaster = cleanCoffeeMetaStr(rec.roaster) || 'Saved Coffee';
+          var cleanOrig = cleanCoffeeMetaStr(rec.origin);
+          var cleanReg = cleanCoffeeMetaStr(rec.region);
+          var cleanProc = cleanCoffeeMetaStr(rec.process);
+          var cleanVar = cleanCoffeeMetaStr(rec.varietal);
+          var rowNotesStr = cleanCoffeeMetaStr(rec.bag_notes || rec.notes || rec.flavors || (anchor && anchor.bag_notes));
+          var rowNotesList = parseBagNotesList(rowNotesStr).filter(function (fl) { return !!cleanCoffeeMetaStr(fl); });
           var rowRoastStop = S.ROAST_STOPS.find(function (rs) { return rs.key === normRoastKey(rec.roast, rec.ground_agtron || rec.agtron); });
           var rowChips = [];
           if (rowRoastStop) {
@@ -23455,17 +24207,23 @@ if (typeof window !== 'undefined') {
               S.h('span', { text: rowRoastStop.label })
             ));
           }
-          if (rec.origin && String(rec.origin).toLowerCase() !== 'unknown') {
-            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: rec.region ? (rec.origin + ' \u00B7 ' + rec.region) : rec.origin }));
+          if (cleanOrig) {
+            var origDisp = (cleanReg && cleanOrig.toLowerCase().indexOf(cleanReg.toLowerCase()) < 0)
+              ? (cleanOrig + ' \u00B7 ' + cleanReg)
+              : cleanOrig;
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: origDisp }));
           }
-          if (rec.process && String(rec.process).toLowerCase() !== 'unknown') {
-            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: formatProcessDisplay(rec.process) }));
+          if (cleanProc) {
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: formatProcessDisplay(cleanProc) }));
           }
-          if (rec.varietal) {
-            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: rec.varietal }));
+          if (cleanVar) {
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: cleanVar }));
           }
           if (isFinite(+rec.elevation_m) && +rec.elevation_m > 0) {
-            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: Math.round(+rec.elevation_m) + 'm' }));
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: Math.round(+rec.elevation_m) + ' masl' }));
+          }
+          if (isFinite(+rec.recommended_rest_days) && +rec.recommended_rest_days > 0) {
+            rowChips.push(S.h('span', { class: 'bt-ce-badge', text: 'Rest ' + Math.round(+rec.recommended_rest_days) + 'd' }));
           }
           if (isVaultRecFrozen(rec)) {
             rowChips.push(S.h('span', { class: 'bt-ce-badge', text: 'Frozen -18 \u00B0C' }));
@@ -23473,6 +24231,9 @@ if (typeof window !== 'undefined') {
           if (isVaultRecLocked(rec)) {
             rowChips.push(S.h('span', { class: 'bt-ce-badge is-good', text: 'Golden Locked' }));
           }
+          var vaultSubTxt = anchor
+            ? formatProvenanceBadge(anchor, { preview: true })
+            : (rec.lastBrew ? 'Saved bean \u00B7 Ready to brew' : 'Saved bean profile');
 
           listHost.appendChild(S.h('div', {
             class: 'bt-vault-row-v62',
@@ -23480,8 +24241,8 @@ if (typeof window !== 'undefined') {
           },
             S.h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap' },
               S.h('div', { style: 'min-width:0;flex:1 1 220px' },
-                S.h('div', { class: 'bt-ce-bag-roaster', text: rec.roaster || 'Saved Coffee' }),
-                S.h('div', { class: 'bt-ce-bag-name', style: 'font-size:15px', text: rec.name || 'Unnamed Coffee' }),
+                S.h('div', { class: 'bt-ce-bag-roaster', text: cleanRoaster }),
+                S.h('div', { class: 'bt-ce-bag-name', style: 'font-size:15px;overflow-wrap:anywhere;word-break:break-word', text: cleanName }),
                 rowChips.length ? S.h('div', { style: 'display:flex;flex-wrap:wrap;gap:4px;margin-top:4px' }, rowChips) : null,
                 rowNotesList.length ? S.h('div', { style: 'display:flex;flex-wrap:wrap;gap:4px;margin-top:4px' },
                   rowNotesList.slice(0, 6).map(function (fl) {
@@ -23489,7 +24250,7 @@ if (typeof window !== 'undefined') {
                   })
                 ) : null,
                 S.h('div', { style: 'display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:5px' },
-                  S.h('span', { style: 'font-size:12px;color:var(--ink-secondary)', text: anchor ? formatProvenanceBadge(anchor) : (rec.lastBrew ? 'Saved bean + last recipe' : 'Saved bean profile') }),
+                  S.h('span', { style: 'font-size:12px;color:var(--ink-secondary)', text: vaultSubTxt }),
                   cupsMeta ? S.h('span', {
                     class: 'bt-low-bag-pill' + ((cupsMeta.isLow || cupsMeta.isEmpty) ? ' is-warn' : ''),
                     text: cupsMeta.longLabel
@@ -23500,19 +24261,24 @@ if (typeof window !== 'undefined') {
                 S.h('button', {
                   type: 'button',
                   class: 'bt-ce-bag-fresh',
+                  style: 'min-height:44px',
+                  'aria-label': 'Edit coffee details for ' + cleanName,
                   text: 'Edit Bean',
                   onclick: function () { applySavedCoffeeSelection(rec, { targetRoute: 'coffee' }); }
                 }),
                 S.h('button', {
                   type: 'button',
                   class: 'bt-ce-bag-brew',
-                  style: 'padding:0 12px',
+                  style: 'padding:0 12px;min-height:44px',
+                  'aria-label': 'Brew ' + cleanName,
                   text: 'Brew \u2192',
                   onclick: function () { applySavedCoffeeSelection(rec, { targetRoute: 'method' }); }
                 }),
                 S.h('button', {
                   type: 'button',
                   class: 'bt-ce-bag-fresh',
+                  style: 'min-height:44px',
+                  'aria-label': 'Log a fresh bag of ' + cleanName,
                   'aria-expanded': String(vaultUi.freshOpenKey === rKey),
                   text: 'Fresh Bag',
                   onclick: function () {
@@ -24328,6 +25094,7 @@ if (typeof window !== 'undefined') {
     var targetEl = dom('strong', {
       id: pillId,
       class: 'bt-kettle-warm-target bt-num',
+      title: 'Total water to heat in your kettle (includes filter rinse/pre-warm & safe kettle heel — pour only the recipe brew water onto the coffee)',
       text: plan.headline
     });
     var subEl = dom('span', {
@@ -25339,8 +26106,17 @@ if (typeof window !== 'undefined') {
       dom('div', { class: 'bt-water-chem-note' },
         dom('div', { style: 'min-width:0' },
           dom('b', { style: 'color:var(--ink)', text: (curWater.label || curCfg.label) + ' — ' }),
-          dom('span', { class: 'bt-num bt-water-chem-summary', text: formatWaterChemPlain(curCfg.gh, curCfg.kh) }),
-          dom('div', { style: 'font-size:0.72rem;color:var(--ink-secondary);margin-top:2px', text: noteTxt })
+          dom('span', {
+            class: 'bt-num bt-water-chem-summary',
+            title: 'GH (Total Hardness) binds sweet & fruity coffee flavors; KH (Carbonate Buffer) softens sharp sourness — too much KH makes coffee taste flat or chalky.',
+            text: formatWaterChemPlain(curCfg.gh, curCfg.kh)
+          }),
+          dom('div', { style: 'font-size:0.72rem;color:var(--ink-secondary);margin-top:2px', text: noteTxt }),
+          dom('div', {
+            class: 'bt-barista-hint',
+            style: 'font-size:0.69rem;color:var(--ink-muted);margin-top:3px;line-height:1.32',
+            text: 'Tip: GH (hardness) pulls out sweet fruit flavors · KH (buffer) smooths sharp acidity (too high = flat cup).'
+          })
         )
       )
     );
@@ -26132,15 +26908,23 @@ if (typeof window !== 'undefined') {
     var eyValEl = dom('b', { class: 'bt-num' });
     var flowValEl = dom('b', { class: 'bt-num' });
     var zoneValEl = dom('b');
-    var zoneCell = dom('div', null, dom('span', { style: 'font-size:0.67rem;font-weight:700;opacity:0.82', text: 'Flavor Balance Zone' }), zoneValEl);
+    var zoneCell = dom('div', {
+      title: 'Predicted taste balance: Sweet Spot (~18.5-21.5% EY) balances bright fruit, caramel sweetness, and low bitterness'
+    }, dom('span', { style: 'font-size:0.67rem;font-weight:700;opacity:0.82', text: 'Flavor Balance Zone' }), zoneValEl);
     var bar = dom('div', {
       id: id,
       class: cls,
       'aria-live': 'polite'
     },
-      dom('div', null, dom('span', { style: 'font-size:0.67rem;font-weight:700;color:var(--ink-muted)', text: 'Est. %TDS' }), tdsValEl),
-      dom('div', null, dom('span', { style: 'font-size:0.67rem;font-weight:700;color:var(--ink-muted)', text: 'Extraction (%EY)' }), eyValEl),
-      dom('div', null, dom('span', { style: 'font-size:0.67rem;font-weight:700;color:var(--ink-muted)', text: 'Flow Rate' }), flowValEl),
+      dom('div', {
+        title: 'Total Dissolved Solids (%TDS): how strong or concentrated your cup feels (1.25-1.55% is classic filter strength; 8-12% for espresso)'
+      }, dom('span', { style: 'font-size:0.67rem;font-weight:700;color:var(--ink-muted)', text: 'Strength (%TDS)' }), tdsValEl),
+      dom('div', {
+        title: 'Extraction Yield (%EY): percentage of dry coffee dissolved into water (18.5-21.5% is the sweet spot; lower tastes sour, higher tastes bitter)'
+      }, dom('span', { style: 'font-size:0.67rem;font-weight:700;color:var(--ink-muted)', text: 'Extraction (%EY)' }), eyValEl),
+      dom('div', {
+        title: 'Average water pour and drawdown pace in grams per second'
+      }, dom('span', { style: 'font-size:0.67rem;font-weight:700;color:var(--ink-muted)', text: 'Avg Flow Rate' }), flowValEl),
       zoneCell
     );
     bar.updateSim = function (nextA, nextRec) {
@@ -26534,6 +27318,24 @@ if (typeof window !== 'undefined') {
     }
   }
 
+  function _parseTastingRowEpoch(r) {
+    if (!r || typeof r !== 'object') return 0;
+    var candidates = [r.saved_at, r.ts, r.timestamp, r.updated_at, r.cupping_date, r.date];
+    for (var i = 0; i < candidates.length; i++) {
+      var v = candidates[i];
+      if (v == null || v === '') continue;
+      if (typeof v === 'number' && isFinite(v)) return v > 1e11 ? v : v * 1000;
+      var s = String(v).trim();
+      if (/^\d{10,13}$/.test(s)) {
+        var n = +s;
+        return n > 1e11 ? n : n * 1000;
+      }
+      var p = Date.parse(s);
+      if (isFinite(p)) return p;
+    }
+    return 0;
+  }
+
   function findLatestTastingForCoffee(coffee) {
     if (!coffee || typeof coffee !== 'object') return null;
     var hist = getHistoryObjsSafe();
@@ -26541,18 +27343,78 @@ if (typeof window !== 'undefined') {
     var cid = String(coffee.coffee_id || coffee.id || '').trim();
     var cname = _normVaultKeyPart(coffee.name || coffee.coffee_name || coffee.coffee || '');
     var croast = _normVaultKeyPart(coffee.roaster || '');
-    for (var i = hist.length - 1; i >= 0; i--) {
+    var bestRow = null;
+    var bestTs = -1;
+    var bestIdx = -1;
+    for (var i = 0; i < hist.length; i++) {
       var r = hist[i];
       if (!r || typeof r !== 'object') continue;
       var rCid = String(r.coffee_id || '').trim();
-      if (cid && rCid && cid === rCid) return r;
-      var rName = _normVaultKeyPart(r.coffee_name || r.coffee || r.name || '');
-      var rRoast = _normVaultKeyPart(r.roaster || '');
-      if (cname && rName === cname && (!croast || !rRoast || rRoast === croast)) {
-        return r;
+      var matched = !!(cid && rCid && cid === rCid);
+      if (!matched) {
+        var rName = _normVaultKeyPart(r.coffee_name || r.coffee || r.name || '');
+        var rRoast = _normVaultKeyPart(r.roaster || '');
+        matched = !!(cname && rName === cname && (!croast || !rRoast || rRoast === croast));
+      }
+      if (!matched) continue;
+      var rTs = _parseTastingRowEpoch(r);
+      if (!bestRow || rTs > bestTs || (rTs === bestTs && i > bestIdx)) {
+        bestRow = r;
+        bestTs = rTs;
+        bestIdx = i;
       }
     }
-    return null;
+    return bestRow;
+  }
+
+  function resolveLastCupCoffeeName(lastTastingRow, fallbackCoffeeName) {
+    var raw = (lastTastingRow && (lastTastingRow.coffee_name || lastTastingRow.coffee || lastTastingRow.name)) || fallbackCoffeeName || '';
+    var clean = String(raw).trim();
+    return clean || 'This Coffee';
+  }
+
+  function openLastCupTastingDetail(lastTastingRow) {
+    haptic('tick');
+    var cj = (typeof window !== 'undefined')
+      ? (window.BTCellarJournal && typeof window.BTCellarJournal.openDetail === 'function'
+          ? window.BTCellarJournal
+          : (window.BTCellarTab && typeof window.BTCellarTab.openDetail === 'function' ? window.BTCellarTab : null))
+      : null;
+    if (cj && lastTastingRow) {
+      cj.openDetail(lastTastingRow);
+    } else {
+      navGoRoute('cellar');
+    }
+  }
+
+  function buildLastCupNavBtn(lastTastingRow, fallbackCoffeeName, opts) {
+    if (!lastTastingRow) return null;
+    opts = opts || {};
+    var cLabel = resolveLastCupCoffeeName(lastTastingRow, fallbackCoffeeName);
+    var rNum = parseFloat(lastTastingRow.my_rating_stars);
+    var metaTxt = (rNum > 0) ? (' (' + rNum.toFixed(1) + '\u2605) \u2192') : ' \u2192';
+    var fullTitle = 'Open most recent tasting passport for ' + cLabel + (rNum > 0 ? (' (' + rNum.toFixed(1) + ' stars)') : '');
+    var cls = opts.className || 'bt-secondary-cta bt-last-cup-btn';
+    var styleStr = opts.style != null ? opts.style : 'min-height:46px;padding:8px 13px;max-width:100%;min-width:0;overflow:hidden';
+    return dom('button', {
+      type: 'button',
+      id: opts.id || undefined,
+      class: cls,
+      style: styleStr,
+      title: fullTitle,
+      'aria-label': 'Last Cup: ' + cLabel + (rNum > 0 ? (' rated ' + rNum.toFixed(1) + ' stars') : ''),
+      onclick: function () { openLastCupTastingDetail(lastTastingRow); }
+    },
+      opts.hideIcon ? null : ico('spark-star', opts.iconSize || 15),
+      dom('span', {
+        class: 'bt-last-cup-label',
+        style: 'min-width:0;flex:1 1 auto;text-align:left;line-height:1.3;overflow-wrap:anywhere'
+      },
+        dom('span', { class: 'bt-last-cup-prefix', text: 'Last Cup: ' }),
+        dom('span', { class: 'bt-last-cup-name', text: cLabel }),
+        dom('span', { class: 'bt-last-cup-meta', style: 'white-space:nowrap', text: metaTxt })
+      )
+    );
   }
 
   function renderDoorScreen(stageEl, a) {
@@ -26660,7 +27522,11 @@ if (typeof window !== 'undefined') {
         a.recipeLocked ||
         (heroCoffee.lockedBrew && (String(heroCoffee.lockedBrew.dial_locked || '').toLowerCase() === 'yes' || heroCoffee.lockedBrew.dial_locked === '1'))
       );
-      var lockedTag = heroLockedExplicit ? dom('span', { class: 'bt-badge-v62 is-gold', text: 'Gold-Seal Locked' }) : null;
+      var lockedTag = heroLockedExplicit ? dom('span', {
+        class: 'bt-badge-v62 is-gold',
+        title: 'This dialed-in recipe is locked so automatic updates will not overwrite it — unlock anytime on Step 3',
+        text: 'Gold-Seal Locked'
+      }) : null;
       var heroDialAdapt = !heroLockedExplicit
         ? (rec.dialAdaptation || (a.brew && a.brew.dialAdaptation) || (heroCoffee && heroCoffee.dialAdaptation) || null)
         : null;
@@ -26707,10 +27573,11 @@ if (typeof window !== 'undefined') {
         heroStatusText = 'Next Fix Ready: ' + (heroPendingNr.headline || (nrParts.length ? nrParts.join(' \u00B7 ') : 'Tuned Recipe Loaded'));
         heroStatusCls = 'bt-badge-v62 is-sci';
       }
-      var lastRatingNum = lastTastingRow && parseFloat(lastTastingRow.my_rating_stars);
-      var lastTastingBtnText = (lastRatingNum > 0)
-        ? ('Last Tasting (' + lastRatingNum.toFixed(1) + '\u2605) \u2192')
-        : 'Last Tasting \u2192';
+      var doorLastCupBtn = buildLastCupNavBtn(lastTastingRow, bagName, {
+        id: 'bt-door-last-tasting-btn',
+        className: 'bt-secondary-cta bt-last-cup-btn',
+        style: 'min-height:46px;padding:8px 13px;max-width:100%'
+      });
 
       stageEl.appendChild(dom('section', {
         class: 'bt-hero-bag-card',
@@ -26719,7 +27586,11 @@ if (typeof window !== 'undefined') {
         dom('div', { class: 'bt-card-hd' },
           dom('div', { class: 'bt-pill-wrap' },
             dom('span', { class: 'bt-badge-v62 is-good', text: hasLiveCoffee ? ('Active Home Bag · Try #' + tryNum) : 'Recent Open Bag' }),
-            dom('span', { class: 'bt-badge-v62 ' + degas.cls, text: degas.text }),
+            dom('span', {
+              class: 'bt-badge-v62 ' + degas.cls,
+              title: 'Freshly roasted beans release CO2 gas — peak balanced flavor window is typically 4 to 21 days off roast',
+              text: degas.text
+            }),
             cupsLeftBadge,
             lockedTag
           ),
@@ -26743,6 +27614,9 @@ if (typeof window !== 'undefined') {
               id: 'bt-door-adaptation-pill',
               class: heroStatusCls,
               style: 'max-width:100%;white-space:normal;text-align:left;line-height:1.3;padding:4px 10px',
+              title: heroLockedExplicit
+                ? 'Gold-Seal Locked: your favorite dialed-in recipe stays pinned until you unlock it on Step 3'
+                : 'Auto-tuned from your previous tasting feedback for ' + bagName,
               text: heroStatusText
             })
           ) : null
@@ -26763,26 +27637,7 @@ if (typeof window !== 'undefined') {
               else goBrewStep('brew');
             }
           }, dom('span', { text: primaryBtnText }), ico('chevron-right', 17)),
-          lastTastingRow ? dom('button', {
-            type: 'button',
-            id: 'bt-door-last-tasting-btn',
-            class: 'bt-secondary-cta',
-            style: 'min-height:46px;padding:8px 13px',
-            title: 'Inspect your most recent tasting passport for this coffee',
-            onclick: function () {
-              haptic('tick');
-              var cj = (typeof window !== 'undefined')
-                ? (window.BTCellarJournal && typeof window.BTCellarJournal.openDetail === 'function'
-                    ? window.BTCellarJournal
-                    : (window.BTCellarTab && typeof window.BTCellarTab.openDetail === 'function' ? window.BTCellarTab : null))
-                : null;
-              if (cj) {
-                cj.openDetail(lastTastingRow);
-              } else {
-                navGoRoute('cellar');
-              }
-            }
-          }, ico('spark-star', 15), dom('span', { text: lastTastingBtnText })) : null,
+          doorLastCupBtn,
           dom('button', {
             type: 'button',
             class: 'bt-secondary-cta',
@@ -26834,7 +27689,11 @@ if (typeof window !== 'undefined') {
           ico('sliders', 17),
           dom('div', null,
             dom('span', { class: 'bt-kicker', text: 'My Gear & Active Counter' }),
-            dom('div', { class: 'bt-my-gear-sub', text: 'Your grinder, saved brewers, water & Bluetooth hardware' })
+            dom('div', {
+              class: 'bt-my-gear-sub',
+              style: 'white-space:normal;overflow:visible;text-overflow:clip;line-height:1.3',
+              text: 'Grinder, brewers, water & Bluetooth gear'
+            })
           )
         ),
         dom('div', { class: 'bt-my-gear-actions' },
@@ -26867,7 +27726,12 @@ if (typeof window !== 'undefined') {
           onclick: function () { haptic('tick'); goBrewStep('method'); }
         },
           dom('span', { class: 'bt-my-gear-stat-lbl', text: 'Grinder' }),
-          dom('strong', { class: 'bt-my-gear-stat-val', text: rec.grinder.short || rec.grinder.name })
+          dom('strong', {
+            class: 'bt-my-gear-stat-val',
+            style: 'white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25',
+            title: rec.grinder.name || rec.grinder.short,
+            text: rec.grinder.short || rec.grinder.name
+          })
         ),
         dom('button', {
           type: 'button',
@@ -26910,8 +27774,9 @@ if (typeof window !== 'undefined') {
         dom('div', { style: 'width:100%;min-width:0' },
           dom('b', { style: 'font-size:0.95rem;display:block;color:var(--ink)', text: 'Open Cupping Table' }),
           dom('span', {
-            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px'
-          }, 'Side-by-side 5-bowl blind tasting, reveal cards & CVA 100-pt ', dom('span', { style: 'white-space:nowrap', text: 'scoring \u2192' }))
+            style: 'font-size:0.76rem;color:var(--ink-secondary);line-height:1.38;display:block;margin-top:3px',
+            title: 'Specialty Coffee Association (SCA) Coffee Value Assessment 100-point sensory tasting protocol'
+          }, 'Side-by-side 5-bowl blind tasting, reveal cards & SCA / CVA 100-pt ', dom('span', { style: 'white-space:nowrap', text: 'scoring \u2192' }))
         )
       ),
       dom('button', {
@@ -27117,16 +27982,26 @@ if (typeof window !== 'undefined') {
       )
     ));
     if (a.coffee && String(a.coffee.name || '').trim()) {
+      var step2LastTasting = findLatestTastingForCoffee(a.coffee);
+      var step2LastCupBtn = buildLastCupNavBtn(step2LastTasting, a.coffee.name, {
+        id: 'bt-step2-last-tasting-btn',
+        className: 'bt-step-context-link bt-last-cup-btn',
+        style: 'max-width:100%;font-size:0.74rem;padding:4px 9px',
+        hideIcon: true
+      });
       stageEl.appendChild(dom('div', { class: 'bt-step-context-strip', id: 'bt-step2-coffee-summary' },
         dom('span', {
           class: 'bt-step-context-copy',
           text: cName + (step2CoffeeSummary ? (' \u00B7 ' + step2CoffeeSummary) : '')
         }),
-        dom('button', {
-          type: 'button',
-          class: 'bt-step-context-link',
-          onclick: function () { haptic('tick'); goBrewStep('coffee'); }
-        }, dom('span', { text: 'Edit Bag \u2192' }))
+        dom('div', { style: 'display:flex;flex-wrap:wrap;gap:6px;align-items:center;max-width:100%' },
+          step2LastCupBtn,
+          dom('button', {
+            type: 'button',
+            class: 'bt-step-context-link',
+            onclick: function () { haptic('tick'); goBrewStep('coffee'); }
+          }, dom('span', { text: 'Edit Bag \u2192' }))
+        )
       ));
     }
 
@@ -27207,7 +28082,12 @@ if (typeof window !== 'undefined') {
           style: 'font-size:0.74rem;font-weight:700;color:var(--ink-secondary)',
           text: 'Active Grinder (' + allGrinders.length + ' models + Pre-Ground Rescue)'
         }),
-        grinderSelect
+        grinderSelect,
+        dom('span', {
+          class: 'bt-barista-hint',
+          style: 'font-size:0.70rem;color:var(--ink-muted);line-height:1.3',
+          text: 'Translates target particle size (µm) into exact dial numbers or clicks for your burr set.'
+        })
       ),
 
       recPreview.pregroundInfo ? dom('div', {
@@ -27462,7 +28342,12 @@ if (typeof window !== 'undefined') {
       ),
       dom('div', { style: 'display:flex;flex-direction:column;gap:5px;min-width:0;max-width:100%;width:100%' },
         dom('label', { style: 'font-size:0.74rem;font-weight:700;color:var(--ink-secondary)', text: 'Filter Medium' }),
-        filterSelect
+        filterSelect,
+        dom('span', {
+          class: 'bt-barista-hint',
+          style: 'font-size:0.70rem;color:var(--ink-muted);line-height:1.3',
+          text: 'Paper filters trap oils for a clean, crisp cup · metal mesh lets oils through for heavier body.'
+        })
       ),
       buildEverydayWaterPicker(a)
     ));
@@ -28109,14 +28994,24 @@ if (typeof window !== 'undefined') {
         );
       });
 
+      var yGridNodes = [96, 80, 62].map(function (tRef) {
+        var yr = yTemp(tRef);
+        return dom('g', { 'aria-hidden': 'true' },
+          dom('line', { x1: String(L), y1: yr.toFixed(1), x2: String(R), y2: yr.toFixed(1), stroke: 'rgba(246,239,230,0.16)', 'stroke-dasharray': '3 3', 'stroke-width': '1' }),
+          dom('text', { x: String(L - 4), y: (yr + 3).toFixed(1), 'text-anchor': 'end', 'font-size': '8.5', 'font-weight': '700', fill: 'rgba(246,239,230,0.72)', text: tRef + '°' })
+        );
+      });
+
       var svgEl = dom('svg', {
         class: 'bt-staircase-svg',
         viewBox: '0 0 ' + W + ' ' + H,
         role: 'img',
-        'aria-label': 'Fellow Aiden Per-Pulse Temperature Staircase'
+        'aria-label': 'Fellow Aiden Per-Pulse Temperature Staircase — tap any pulse column to adjust water temperature'
       },
+        yGridNodes,
         dom('path', { d: pathD, fill: 'none', stroke: '#F0A35E', 'stroke-width': '3', 'stroke-linecap': 'round' }),
-        circleNodes
+        circleNodes,
+        dom('text', { x: String((L + R) * 0.5), y: String(H - 6), 'text-anchor': 'middle', 'font-size': '8.6', 'font-weight': '700', fill: 'rgba(246,239,230,0.78)', text: 'Tap any pulse bar up/down to set water temp (58\u201399 \u00B0C)' })
       );
 
       svgEl.addEventListener('pointerdown', function (ev) {
@@ -28503,6 +29398,13 @@ if (typeof window !== 'undefined') {
     var step3CupsTxt = (step3RemInfo && step3RemInfo.remG != null)
       ? (' \u00B7 ' + (step3RemInfo.isEmpty ? 'Bag Empty (0g)' : (Math.round(step3RemInfo.remG) + 'g (~' + step3RemInfo.cups + (step3RemInfo.cups === 1 ? ' cup left' : ' cups left') + ')')))
       : '';
+    var step3LastTasting = findLatestTastingForCoffee(a.coffee);
+    var step3LastCupBtn = buildLastCupNavBtn(step3LastTasting, a.coffee && a.coffee.name, {
+      id: 'bt-step3-last-tasting-btn',
+      className: 'bt-step-context-link bt-last-cup-btn no-print',
+      style: 'align-self:flex-start;margin-top:1px;max-width:100%;font-size:0.74rem;padding:4px 9px',
+      hideIcon: true
+    });
     stageEl.appendChild(dom('div', { class: 'bt-step-context-strip', style: 'align-items:flex-start' },
       dom('div', { style: 'min-width:0;display:flex;flex-direction:column;gap:4px;flex:1 1 180px' },
         dom('span', {
@@ -28524,12 +29426,15 @@ if (typeof window !== 'undefined') {
             : ('Low Bag · ~' + step3RemInfo.cups + (step3RemInfo.cups === 1 ? ' brew left' : ' brews left'))
         }) : null
       ),
-      dom('button', {
-        type: 'button',
-        class: 'bt-step-context-link no-print',
-        style: 'align-self:flex-start;margin-top:1px;white-space:nowrap',
-        onclick: function () { haptic('tick'); goBrewStep('method'); }
-      }, dom('span', { text: 'Change Gear \u2192' }))
+      dom('div', { class: 'no-print', style: 'display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end;max-width:100%' },
+        step3LastCupBtn,
+        dom('button', {
+          type: 'button',
+          class: 'bt-step-context-link no-print',
+          style: 'align-self:flex-start;margin-top:1px;white-space:nowrap',
+          onclick: function () { haptic('tick'); goBrewStep('method'); }
+        }, dom('span', { text: 'Change Gear \u2192' }))
+      )
     ));
 
     /* Closed-Loop Dial Adaptation Banner (when unlocked brew adapted from prior rating/TDS/sensory feedback) */
@@ -28658,7 +29563,7 @@ if (typeof window !== 'undefined') {
       }));
     }
 
-    function makeHeroRecipeTile(lbl, whyKey, primaryNode, subTxt, onTune, hideTuneBadge) {
+    function makeHeroRecipeTile(lbl, whyKey, primaryNode, subTxt, onTune, hideTuneBadge, tileHint) {
       function fireTune(ev) {
         if (ev && ev.target && ev.target.closest && ev.target.closest('[data-science-why]')) return;
         onTune();
@@ -28667,6 +29572,7 @@ if (typeof window !== 'undefined') {
         class: 'bt-spec-tile-v62 bt-recipe-tile',
         role: 'button',
         tabindex: '0',
+        title: tileHint || undefined,
         onclick: fireTune,
         onkeydown: function (ev) {
           if (ev && (ev.key === 'Enter' || ev.key === ' ')) {
@@ -28695,7 +29601,9 @@ if (typeof window !== 'undefined') {
         'dose',
         dom('b', { class: 'bt-spec-primary' }, doseDisp[0], dom('small', { text: doseDisp[1] })),
         doseDisp[2],
-        function () { openSheet('tune-recipe', { tab: 'batch' }, { title: 'Tune Dose, Water, Ratio & Units', detent: 'full' }); }
+        function () { openSheet('tune-recipe', { tab: 'batch' }, { title: 'Tune Dose, Water, Ratio & Units', detent: 'full' }); },
+        false,
+        'Dry coffee weight — tap to scale batch size or switch between grams, oz, and scoops'
       ),
 
       /* Tile 2: BREW WATER */
@@ -28704,7 +29612,9 @@ if (typeof window !== 'undefined') {
         'water',
         dom('b', { class: 'bt-spec-primary' }, waterDisp[0], dom('small', { text: waterDisp[1] })),
         waterDisp[2],
-        function () { openSheet('tune-recipe', { tab: 'batch' }, { title: 'Tune Dose, Water, Ratio & Units', detent: 'full' }); }
+        function () { openSheet('tune-recipe', { tab: 'batch' }, { title: 'Tune Dose, Water, Ratio & Units', detent: 'full' }); },
+        false,
+        'Total water poured onto the grounds (your kettle asks for extra water to pre-warm and rinse the filter)'
       ),
 
       /* Tile 3: BREW RATIO */
@@ -28712,8 +29622,10 @@ if (typeof window !== 'undefined') {
         'Brew Ratio',
         'ratio',
         dom('b', { class: 'bt-spec-primary', text: '1:' + rec.ratio }),
-        rec.method.outRatio ? 'Espresso yield ratio' : (strengthGl + ' g/L strength'),
-        function () { openSheet('tune-recipe', { tab: 'batch' }, { title: 'Tune Dose, Water, Ratio & Units', detent: 'full' }); }
+        rec.method.outRatio ? 'Espresso yield ratio' : (strengthGl + ' g/L · ' + (rec.ratio <= 15.2 ? 'richer' : (rec.ratio >= 17.0 ? 'lighter' : 'balanced'))),
+        function () { openSheet('tune-recipe', { tab: 'batch' }, { title: 'Tune Dose, Water, Ratio & Units', detent: 'full' }); },
+        false,
+        'Lower ratio (e.g. 1:15) tastes stronger & bolder · higher ratio (e.g. 1:17) tastes lighter & more tea-like'
       ),
 
       /* Tile 4: GRIND */
@@ -28722,7 +29634,9 @@ if (typeof window !== 'undefined') {
         'grind',
         dom('b', { class: 'bt-spec-primary is-compact', text: grindPrimary }),
         grindSecondary,
-        function () { openSheet('tune-recipe', { tab: 'grind' }, { title: 'Tune Grinder Clicks & 2-Pt Calibration', detent: 'full' }); }
+        function () { openSheet('tune-recipe', { tab: 'grind' }, { title: 'Tune Grinder Clicks & 2-Pt Calibration', detent: 'full' }); },
+        false,
+        'Finer grind (smaller µm) slows flow & pulls more sweetness · Coarser grind speeds flow & reduces bitterness'
       ),
 
       /* Tile 5: WATER TEMP */
@@ -28731,7 +29645,9 @@ if (typeof window !== 'undefined') {
         'temp',
         dom('b', { class: 'bt-spec-primary' }, String(tempValShown), dom('small', { text: ' °' + tempUnit })),
         isPhilips && phSnap.drink.iced ? (tempAltShown + ' · Auto Cool Pulse') : (tempAltShown + (a.brew.tempComp ? ' · Keep Extraction Steady' : '')),
-        function () { openSheet('tune-recipe', { tab: 'temp' }, { title: 'Water Temp & Keep Extraction Steady', detent: 'half' }); }
+        function () { openSheet('tune-recipe', { tab: 'temp' }, { title: 'Water Temp & Keep Extraction Steady', detent: 'half' }); },
+        false,
+        'Hotter water extracts faster for light roasts · cooler water tames bitterness in medium/dark & decaf roasts'
       ),
 
       /* Tile 6: TARGET TIME */
@@ -28741,7 +29657,8 @@ if (typeof window !== 'undefined') {
         dom('b', { class: 'bt-spec-primary', text: timePrimary }),
         timeSecondary,
         function () { openScienceWhySheet('time'); },
-        true
+        true,
+        'Target total brew time including drawdown — %TDS = cup strength, %EY = extraction yield (18.5-21.5% sweet spot)'
       )
     );
 
@@ -28802,6 +29719,7 @@ if (typeof window !== 'undefined') {
         type: 'button',
         class: 'bt-chip-v6 bt-chip-soft',
         'data-bt-step3-water-btn': '1',
+        title: 'GH = mineral hardness (pulls sweet fruit flavors) · KH = acid buffer (softens sharp sourness). Tap to switch water profile.',
         onclick: function () { openSheet('water-quick-pick', {}, { title: 'Select Brew Water Profile', detent: 'full' }); }
       }, ico('droplet', 15), dom('span', {
         text: (function () {
@@ -30007,9 +30925,26 @@ if (typeof window !== 'undefined') {
     }, chronoNode);
 
     /* 2B. Collapsible Live 3-Line Extraction Wave Graph (#bt-timer-waves-card) */
+    var wavePhasePins = [];
+    for (var wpi = 1; wpi < steps.length; wpi++) {
+      var ws = steps[wpi];
+      if (!ws || !(ws.t > 2)) continue;
+      var wRaw = String(ws.title || '');
+      var wLbl = wpi === 1 && /bloom|wet/i.test(String((steps[0] && steps[0].title) || ''))
+        ? 'Bloom End'
+        : (/drain|drawdown|flat|finish/i.test(wRaw)
+            ? 'Drawdown'
+            : (/main|spiral|core|pour/i.test(wRaw)
+                ? ('Pour ' + wpi)
+                : shortPhaseLabel(wRaw, wpi, steps.length)));
+      wavePhasePins.push({ t: ws.t, startS: ws.t, label: wLbl });
+    }
     var wavesNode = (tac && typeof tac.BTExtractionWavesLive === 'function')
       ? tac.BTExtractionWavesLive({
           title: '3-Wave Live Extraction',
+          subtitle: 'Bright Acids dissolve first \u2192 Sweet Sugars peak in the shaded Sweet-Spot Window \u2192 Late Bitters climb in overtime.',
+          scrubbable: true,
+          phases: wavePhasePins,
           elapsedS: initElapsedS,
           totalTargetS: totalTargetS,
           tempC: rec.tempC,
@@ -30029,8 +30964,11 @@ if (typeof window !== 'undefined') {
       : null;
     if (wavesNode && wavesCard) {
       var waveHeadEl = wavesNode.querySelector ? wavesNode.querySelector('.bt-ext-waves-head') : null;
+      var waveSubNode = wavesNode.querySelector ? wavesNode.querySelector('.bt-ext-waves-sub') : null;
       var waveSvgNode = wavesNode.querySelector ? wavesNode.querySelector('.bt-ext-waves-svg') : null;
       var waveLegNode = wavesNode.querySelector ? wavesNode.querySelector('.bt-ext-waves-legend') : null;
+      var waveScrubNode = wavesNode.querySelector ? wavesNode.querySelector('.bt-ext-scrub-pill') : null;
+      var waveBalNode = wavesNode.querySelector ? wavesNode.querySelector('.bt-ext-waves-balance-row') : null;
       var wavesToggleBtn = dom('button', {
         type: 'button',
         class: 'bt-card-collapse-btn',
@@ -30047,8 +30985,11 @@ if (typeof window !== 'undefined') {
         wavesCard.classList.toggle('is-collapsed', isWavesCollapsed);
         wavesToggleBtn.setAttribute('aria-expanded', String(!isWavesCollapsed));
         wavesToggleBtn.textContent = isWavesCollapsed ? '\u25B8 Show' : '\u25BE Hide';
+        if (waveSubNode) waveSubNode.hidden = isWavesCollapsed;
         if (waveSvgNode && waveSvgNode.style) waveSvgNode.style.display = isWavesCollapsed ? 'none' : '';
         if (waveLegNode) waveLegNode.hidden = isWavesCollapsed;
+        if (waveScrubNode) waveScrubNode.hidden = isWavesCollapsed;
+        if (waveBalNode) waveBalNode.hidden = isWavesCollapsed;
       }
       function toggleWavesCard() {
         isWavesCollapsed = !isWavesCollapsed;
@@ -30059,7 +31000,13 @@ if (typeof window !== 'undefined') {
       if (waveHeadEl) {
         waveHeadEl.style.cursor = 'pointer';
         waveHeadEl.addEventListener('click', function () { toggleWavesCard(); });
-        waveHeadEl.appendChild(wavesToggleBtn);
+        if (waveLegNode && waveLegNode.parentNode === waveHeadEl) {
+          waveHeadEl.insertBefore(wavesToggleBtn, waveLegNode);
+          waveLegNode.style.flexBasis = '100%';
+          waveLegNode.style.marginTop = '2px';
+        } else {
+          waveHeadEl.appendChild(wavesToggleBtn);
+        }
       }
       syncWavesCollapseUi();
     }
@@ -30229,7 +31176,8 @@ if (typeof window !== 'undefined') {
             AudioCoach.unlock();
             totalTargetS += 10;
             if (steps.length) steps[steps.length - 1].endS = totalTargetS;
-            showToast('+10s added to drawdown target');
+            var plusMsg = 'Drawdown target +10s \u2192 ' + fmtClock(totalTargetS, false);
+            showToast(plusMsg, { key: 'drawdown-target', duration: 1600 });
             syncTimerDom();
           }
         }, dom('span', { text: '+10s' })),
@@ -30606,6 +31554,10 @@ if (typeof window !== 'undefined') {
       setGiantClockText(elS, !_timerSession.stopped);
       giantClockEl.classList.toggle('is-overtime', isOvertime && !_timerSession.stopped);
       giantClockEl.classList.toggle('is-stopped', !!_timerSession.stopped);
+      giantPhaseEl.style.whiteSpace = 'normal';
+      giantPhaseEl.style.overflow = 'visible';
+      giantPhaseEl.style.textOverflow = 'clip';
+      giantPhaseEl.style.lineHeight = '1.25';
       giantPhaseEl.textContent = _timerSession.stopped
         ? ('Brew Stopped · Target ' + fmtClock(totalTargetS, false))
         : (isOvertime ? ('Overtime +' + fmtClock(overSec, false) + ' · Tap Stop When Drained') : ('Step ' + (curIdx + 1) + '/' + Math.max(1, steps.length) + ' · ' + curSt.title));
@@ -31308,6 +32260,7 @@ if (typeof window !== 'undefined') {
               ),
               dom('button', {
                 type: 'button', class: 'bt-nudge-btn', text: '+',
+                title: 'Higher ratio = lighter, brighter cup',
                 onclick: function () {
                   var step = isEsp ? 0.1 : 0.5;
                   var prevW = +a.brew.water || 0;
@@ -31320,7 +32273,14 @@ if (typeof window !== 'undefined') {
                   haptic('tick'); saveDraft(); rerender(); paintSheet();
                 }
               })
-            )
+            ),
+            dom('div', {
+              class: 'bt-barista-hint',
+              style: 'font-size:0.74rem;color:var(--ink-secondary);line-height:1.38;text-align:center',
+              text: isEsp
+                ? 'Lower ratio (1:1.5) = syrupy & intense · Higher ratio (1:2.5+) = brighter, juicier clarity.'
+                : 'Lower ratio (1:15) = stronger & bolder cup · Higher ratio (1:17) = lighter, more tea-like clarity.'
+            })
           ));
         } else if (activeTab === 'grind') {
           var stepUm = Math.max(8, rec.grindMap.stepUm || 24);
@@ -31332,8 +32292,9 @@ if (typeof window !== 'undefined') {
           host.appendChild(dom('div', { style: 'display:flex;flex-direction:column;gap:12px' },
             dom('div', { class: 'bt-tune-stepper-row' },
               dom('button', {
-                type: 'button', class: 'bt-nudge-btn', text: '-1',
-                title: '1 click finer',
+                type: 'button', class: 'bt-nudge-btn', text: '-1 Finer',
+                style: 'font-size:0.78rem;padding:0 10px',
+                title: '1 click finer — slows flow & pulls more sweetness (fixes sour/thin cups)',
                 onclick: function () {
                   a.brew.grindUm = Math.max(80, Math.round(rec.d50Um - stepUm));
                   a.brew.grind_um = a.brew.grindUm;
@@ -31347,8 +32308,9 @@ if (typeof window !== 'undefined') {
                 dom('span', { style: 'font-size:0.75rem;color:var(--ink-secondary)', text: rec.plainGrind })
               ),
               dom('button', {
-                type: 'button', class: 'bt-nudge-btn', text: '+1',
-                title: '1 click coarser',
+                type: 'button', class: 'bt-nudge-btn', text: '+1 Coarser',
+                style: 'font-size:0.78rem;padding:0 10px',
+                title: '1 click coarser — speeds flow & cuts bitterness (fixes dry/bitter cups)',
                 onclick: function () {
                   a.brew.grindUm = Math.min(1250, Math.round(rec.d50Um + stepUm));
                   a.brew.grind_um = a.brew.grindUm;
@@ -31357,6 +32319,11 @@ if (typeof window !== 'undefined') {
                 }
               })
             ),
+            dom('div', {
+              class: 'bt-barista-hint',
+              style: 'font-size:0.74rem;color:var(--ink-secondary);line-height:1.38;text-align:center',
+              text: 'Finer (lower µm) pulls more sweetness & fixes sour/thin cups · Coarser (higher µm) speeds drawdown & fixes bitter/dry cups.'
+            }),
             /* Cross-Grinder Quick Equivalents */
             dom('div', { class: 'bt-card-v6 bt-card-well', style: 'padding:11px 13px;gap:5px' },
               dom('span', { class: 'bt-kicker', text: 'Cross-Grinder Equivalents (~' + rec.d50Um + ' µm)' }),
@@ -31471,10 +32438,16 @@ if (typeof window !== 'undefined') {
                 }
               })
             ),
+            dom('div', {
+              class: 'bt-barista-hint',
+              style: 'font-size:0.74rem;color:var(--ink-secondary);line-height:1.38;text-align:center',
+              text: 'Hotter water pulls more fruit & sweetness from light roasts · Cooler water tames bitterness in medium, dark & decaf roasts.'
+            }),
             dom('button', {
               type: 'button',
               class: 'bt-chip-v6' + (a.brew.tempComp ? ' is-active' : ''),
               style: 'justify-content:space-between;width:100%',
+              title: 'Automatically nudges grind finer when you lower temp (or coarser when you raise temp) so total extraction stays balanced',
               onclick: function () {
                 a.brew.tempComp = !a.brew.tempComp;
                 haptic('snap'); saveDraft(); rerender(); paintSheet();
@@ -35094,18 +36067,32 @@ if (typeof window !== 'undefined') {
         ? 'Bag empty (0 g left)'
         : ('Bag: ' + Math.round(bagStatus.remainingG) + 'g \u00B7 ~' + bagStatus.cupsLeft + (bagStatus.cupsLeft === 1 ? ' cup left' : ' cups left'));
     }
+    var savedCoffeeName = String((a.coffee && a.coffee.name) || '').trim();
+    if (!savedCoffeeName || /^(undefined|null|--|—|unknown)$/i.test(savedCoffeeName)) {
+      savedCoffeeName = String((a.coffee && a.coffee.roaster) || '').trim() || 'Your Cup';
+    }
+    var savedBannerTitle = (tSt.excludeLearning || tSt.notMyStyle)
+      ? ('Saved Tasting for ' + savedCoffeeName + ' (Off-Day Shield)')
+      : (lockGold
+        ? ('Saved Gold Recipe for ' + savedCoffeeName)
+        : ('Saved Next-Brew Fix for ' + savedCoffeeName));
     var baseRxHeadline = (tSt.excludeLearning || tSt.notMyStyle)
       ? 'Off-Day Shield active \u2014 recipe kept unchanged'
-      : (lockGold ? 'Locked as your 1-tap Gold Recipe!' : rx.headline);
+      : (lockGold ? ('Locked Gold Recipe for ' + savedCoffeeName + '!') : (rx.headline));
+    var savedHistAfter = S.getHistoryObjs();
+    var savedRowIdx = Math.max(0, savedHistAfter.length - 1);
 
     a.justSavedTasting = {
-      coffeeName: (a.coffee && a.coffee.name) || 'Your Cup',
+      coffeeName: savedCoffeeName,
       roaster: (a.coffee && a.coffee.roaster) || '',
       stars: effStars,
+      savedBannerTitle: savedBannerTitle,
       rxHeadline: bagBurnSummary ? (baseRxHeadline + ' \u00B7 ' + bagBurnSummary) : baseRxHeadline,
       goldLocked: lockGold,
       tryNum: rx.tryNum,
       nextTryNum: rx.nextTryNum,
+      rowId: built && built.id ? String(built.id) : '',
+      rowIdx: savedRowIdx,
       shielded: !!(tSt.excludeLearning || tSt.notMyStyle),
       bag_tracked: !!(bagStatus && bagStatus.tracked),
       bag_empty: !!(bagStatus && bagStatus.empty),
@@ -35128,41 +36115,45 @@ if (typeof window !== 'undefined') {
       : rawDest;
     var toastBagSuffix = bagBurnSummary ? (' \u00B7 ' + bagBurnSummary) : '';
 
-    if (dest === 'cellar') {
+    if (dest === 'journal' || dest === 'ratings') {
+      a.brewStep = 'door';
+      if (a.tabSegments) a.tabSegments.cellar = 'journal';
+      S.saveDraftSafe();
+      S.navGo('history');
+      S.toastSafe(savedBannerTitle + ' \u2014 comparing in Ratings!' + toastBagSuffix);
+    } else if (dest === 'cellar') {
       a.brewStep = 'door';
       if (a.tabSegments) a.tabSegments.cellar = 'shelf';
       S.saveDraftSafe();
       S.navGo('cellar');
-      S.toastSafe((lockGold
-        ? ('Gold Recipe & Tasting saved to Cellar for ' + ((a.coffee && a.coffee.name) || 'this bag') + '!')
-        : 'Saved tasting to your Cellar Journal!') + toastBagSuffix);
+      S.toastSafe(savedBannerTitle + ' \u2014 saved to Cellar!' + toastBagSuffix);
     } else if (dest === 'brew') {
       S.saveDraftSafe();
       S.navGo('recipe');
       S.toastSafe((tSt.excludeLearning
-        ? 'Saved tasting with Off-Day Shield (Recipe Protected)!'
+        ? ('Saved Tasting for ' + savedCoffeeName + ' (Off-Day Shield active)!')
         : lockGold
-        ? ('Gold Recipe Locked & Saved for ' + ((a.coffee && a.coffee.name) || 'this bag') + '!')
-        : ('Saved Try #' + rx.tryNum + ' & loaded #1 fix for Try #' + rx.nextTryNum + '!')) + toastBagSuffix);
+        ? ('Saved Gold Recipe for ' + savedCoffeeName + '!')
+        : ('Saved Next-Brew Fix for ' + savedCoffeeName + ' (Try #' + rx.nextTryNum + ' loaded)!')) + toastBagSuffix);
     } else if (dest === 'door') {
       a.brewStep = 'door';
       S.saveDraftSafe();
       S.navGo('door');
       S.toastSafe((tSt.excludeLearning
-        ? 'Cup saved with Off-Day Shield \u2014 back on Home!'
+        ? ('Saved Tasting for ' + savedCoffeeName + ' (Off-Day Shield) \u2014 back on Home!')
         : lockGold
-        ? ('Gold Recipe locked & saved for ' + ((a.coffee && a.coffee.name) || 'this bag') + '!')
-        : ('Saved Try #' + rx.tryNum + ' (+ Try #' + rx.nextTryNum + ' fix ready on your bag)!')) + toastBagSuffix);
+        ? ('Saved Gold Recipe for ' + savedCoffeeName + '!')
+        : ('Saved Next-Brew Fix for ' + savedCoffeeName + ' (Try #' + rx.nextTryNum + ' ready)!')) + toastBagSuffix);
     } else {
       a.brewStep = 'door';
       if (a.tabSegments) a.tabSegments.palate = 'dna';
       S.saveDraftSafe();
       S.navGo('palate');
       S.toastSafe((tSt.excludeLearning
-        ? 'Cup saved with Off-Day Shield \u2014 Preferences & recipe protected!'
+        ? ('Saved Tasting for ' + savedCoffeeName + ' (Off-Day Shield) \u2014 Preferences protected!')
         : lockGold
-        ? ('Gold Recipe locked & Preferences updated for ' + ((a.coffee && a.coffee.name) || 'this bag') + '!')
-        : ('Cup saved & Taste Preferences updated (+ Try #' + rx.nextTryNum + ' fix saved)!')) + toastBagSuffix);
+        ? ('Saved Gold Recipe for ' + savedCoffeeName + ' & updated Palate DNA!')
+        : ('Saved Next-Brew Fix for ' + savedCoffeeName + ' & updated Palate DNA!')) + toastBagSuffix);
     }
     return built;
   }
@@ -35834,10 +36825,97 @@ if (typeof window !== 'undefined') {
     var sweepWidgetRef = null;
     var padWidgetRef = null;
 
+    function resolveStep5CoffeeLabel() {
+      var nm = String((a.coffee && a.coffee.name) || '').trim();
+      var ro = String((a.coffee && a.coffee.roaster) || '').trim();
+      if (/^(undefined|null|--|—|unknown)$/i.test(nm)) nm = '';
+      if (/^(undefined|null|--|—|unknown)$/i.test(ro)) ro = '';
+      var shortName = nm || ro || 'Current Brew';
+      var fullTitle = (ro && nm) ? (ro + ' \u2014 ' + nm) : shortName;
+      return { name: shortName, roaster: ro, full: fullTitle };
+    }
+
+    function resolveLatestLoggedCupForStep5() {
+      var hist = S.getHistoryObjs();
+      if (!Array.isArray(hist) || !hist.length) return null;
+      var dayOf = function (r) {
+        if (!r || typeof r !== 'object') return '';
+        var cd = String(r.cupping_date || '').trim();
+        if (/^\d{4}-\d{2}-\d{2}/.test(cd)) return cd.slice(0, 10);
+        var sv = String(r.saved_at || r.updated_at || r.created_at || '').trim();
+        if (/^\d{4}-\d{2}-\d{2}/.test(sv)) return sv.slice(0, 10);
+        return '';
+      };
+      var tsOf = function (r) {
+        if (!r || typeof r !== 'object') return 0;
+        var sv = r.saved_at || r.updated_at || r.created_at || '';
+        var t = sv ? Date.parse(String(sv)) : NaN;
+        return isFinite(t) ? t : 0;
+      };
+      var bestIdx = -1;
+      for (var i = 0; i < hist.length; i++) {
+        var row = hist[i];
+        if (!row || typeof row !== 'object') continue;
+        if (bestIdx < 0) {
+          bestIdx = i;
+        } else {
+          var prev = hist[bestIdx];
+          var dCur = dayOf(row);
+          var dPrev = dayOf(prev);
+          if (dCur !== dPrev) {
+            if (dCur > dPrev) bestIdx = i;
+          } else {
+            var tCur = tsOf(row);
+            var tPrev = tsOf(prev);
+            if (tCur !== tPrev) {
+              if (tCur > tPrev) bestIdx = i;
+            } else if (i >= bestIdx) {
+              bestIdx = i;
+            }
+          }
+        }
+      }
+      if (bestIdx < 0) return null;
+      var r = hist[bestIdx];
+      var rawNm = typeof unneutralize === 'function' ? unneutralize(r.coffee_name || r.coffee || '') : String(r.coffee_name || r.coffee || '');
+      var cleanNm = String(rawNm || '').trim();
+      if (/^(undefined|null|--|—|unknown)$/i.test(cleanNm)) cleanNm = '';
+      var rawRo = typeof unneutralize === 'function' ? unneutralize(r.roaster || '') : String(r.roaster || '');
+      var cleanRo = String(rawRo || '').trim();
+      if (/^(undefined|null|--|—|unknown)$/i.test(cleanRo)) cleanRo = '';
+      var stNum = parseFloat(r.my_rating_stars);
+      return {
+        row: r,
+        rowIdx: bestIdx,
+        coffeeName: cleanNm || cleanRo || 'Logged Cup',
+        stars: isFinite(stNum) && stNum > 0 ? stNum : null
+      };
+    }
+
+    function resolveStep5PalateBiasText() {
+      try {
+        var sh = S.getShell();
+        var p = (a && a.prefs) || {};
+        if (sh && typeof sh.formatPalateBiasSummary === 'function') {
+          var s = sh.formatPalateBiasSummary(p);
+          if (s) return s;
+        }
+        var src = p.palateTargets || p.palateBias || p.palateSeed || null;
+        if (src && typeof src === 'object') {
+          if (src.summary) return String(src.summary);
+          if (src.label) return String(src.label);
+        }
+      } catch (_) {}
+      return '';
+    }
+
     function paintFixAndCtaOnly() {
       var rx = computeStatefulPrescription(tSt);
       var lens = S.experienceLensSafe();
-      var cTitle = ((a.coffee && a.coffee.roaster) ? a.coffee.roaster + ' \u2014 ' : '') + ((a.coffee && a.coffee.name) || 'Current Brew');
+      var cInfo = resolveStep5CoffeeLabel();
+      var cTitle = cInfo.full;
+      var cName = cInfo.name;
+      var latestCup = resolveLatestLoggedCupForStep5();
 
       fixBannerMount.textContent = '';
 
@@ -35847,8 +36925,8 @@ if (typeof window !== 'undefined') {
          ===================================================================== */
       if (!tSt.hasUserRated) {
         fixBannerMount.className = 'bt-tc-hero-fix is-awaiting';
-        fixBannerMount.appendChild(S.h('div', { class: 'bt-tc-kicker', text: 'Step 2 of 2 \u00B7 Dial-In Verdict & Next Recipe' }));
-        fixBannerMount.appendChild(S.h('h2', { class: 'bt-tc-fix-headline', text: '2. Your Dial-In Verdict & Next-Brew Recipe' }));
+        fixBannerMount.appendChild(S.h('div', { class: 'bt-tc-kicker', text: 'Step 2 of 2 \u00B7 Dial-In Verdict \u00B7 ' + cName }));
+        fixBannerMount.appendChild(S.h('h2', { class: 'bt-tc-fix-headline', text: '2. Next-Brew Fix for ' + cName }));
 
         var coachAvatar = null;
         if (!tSt.foilRevealed && typeof Beanjamin !== 'undefined' && Beanjamin && typeof Beanjamin.el === 'function') {
@@ -35860,10 +36938,48 @@ if (typeof window !== 'undefined') {
         fixBannerMount.appendChild(S.h('div', { class: 'bt-tc-coach-row' },
           coachAvatar,
           S.h('div', { style: 'display:flex;flex-direction:column;gap:4px' },
-            S.h('b', { style: 'font-size:0.92rem;color:var(--ink)', text: 'Rate your cup & tap where it landed on the Balance Bullseye above' }),
+            S.h('b', { style: 'font-size:0.92rem;color:var(--ink)', text: 'Rate your ' + cName + ' cup & tap where it landed on the Balance Bullseye above' }),
             S.h('span', { class: 'bt-tc-sub', style: 'margin:0', text: 'As soon as you rate your sip, BeanTelligence will calculate your exact #1 single-lever tweak for Try #' + rx.nextTryNum + ' (or unlock your Gold Recipe if you nailed the Sweet Spot!).' }),
             rx.flowDiagnosticClue ? S.h('span', { style: 'font-size:0.78rem;color:var(--warn);font-weight:600', text: 'Timer clue ready: ' + rx.flowDiagnosticClue }) : null
           )
+        ));
+
+        /* Calm 1-tap Drill-Down Links even before rating (if user wants to inspect last cup or ratings) */
+        fixBannerMount.appendChild(S.h('div', { class: 'bt-step5-drill-bar bt-step5-drill-row', id: 'bt-step5-drill-bar' },
+          S.h('button', {
+            type: 'button',
+            id: 'bt-step5-drill-ratings-btn',
+            class: 'bt-step5-drill-pill',
+            'aria-label': 'Compare ' + cName + ' in Ratings Journal',
+            onclick: function () {
+              if (a.tabSegments) a.tabSegments.cellar = 'journal';
+              S.navGo('history');
+            }
+          }, S.h('span', { text: 'Compare in Ratings \u2192' })),
+          S.h('button', {
+            type: 'button',
+            id: 'bt-step5-drill-palate-btn',
+            class: 'bt-step5-drill-pill',
+            'aria-label': 'Inspect your taste profile in Palate DNA',
+            onclick: function () {
+              if (a.tabSegments) a.tabSegments.palate = 'dna';
+              S.navGo('palate');
+            }
+          }, S.h('span', { text: 'Inspect in Palate DNA \u2192' })),
+          latestCup ? S.h('button', {
+            type: 'button',
+            id: 'bt-step5-open-last-cup-btn',
+            class: 'bt-step5-drill-pill bt-last-cup-btn',
+            'aria-label': 'Open last cup tasting detail for ' + latestCup.coffeeName,
+            onclick: function () {
+              S.openSheetSafe('screen-detail', { row: latestCup.row, rowIdx: latestCup.rowIdx }, {
+                title: latestCup.coffeeName + ' \u00B7 Tasting Passport',
+                detent: 'full'
+              });
+            }
+          },
+            S.h('span', { class: 'bt-last-cup-name', text: 'Open Last Cup: ' + latestCup.coffeeName + (latestCup.stars ? (' (' + latestCup.stars.toFixed(1) + '\u2605)') : '') + ' \u2192' })
+          ) : null
         ));
 
         /* Unrated Sticky CTA: scrolls smoothly to Card 2 Ratings (plus optional quick log) */
@@ -35877,12 +36993,12 @@ if (typeof window !== 'undefined') {
               if (rateCardRef && typeof rateCardRef.scrollIntoView === 'function') {
                 try { rateCardRef.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
               }
-              S.toastSafe('Tap the beans or Balance Bullseye in Card 1 to rate your cup!');
+              S.toastSafe('Tap the beans or Balance Bullseye in Card 1 to rate ' + cName + '!');
             }
           },
             S.h('span', { style: 'text-align:left;min-width:0;overflow:hidden' },
               S.h('span', { style: 'display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap', text: 'Rate Your Cup Above First \u2191' }),
-              S.h('span', { class: 'bt-tc-primary-sub', text: 'Tap beans or Bullseye for Try #' + rx.nextTryNum + ' fix' })
+              S.h('span', { class: 'bt-tc-primary-sub', text: 'Tap beans or Bullseye for ' + cName + ' Try #' + rx.nextTryNum + ' fix' })
             ),
             S.iconEl('spark-star', { size: 20 })
           ),
@@ -35890,6 +37006,7 @@ if (typeof window !== 'undefined') {
             type: 'button',
             class: 'bt-tc-pill is-soft',
             style: 'min-height:54px;padding:7px 11px',
+            'aria-label': 'Back to Brew Timer',
             text: '\u2190 Timer',
             onclick: function () { S.navGo('timer'); }
           })
@@ -35909,10 +37026,11 @@ if (typeof window !== 'undefined') {
 
       heroBox.appendChild(S.h('div', { class: 'bt-tc-row-between' },
         S.h('span', {
+          id: 'bt-step5-fix-coffee-badge',
           class: 'bt-tc-badge ' + (rx.inGoldZone ? 'is-good' : 'is-gold'),
           text: rx.inGoldZone
-            ? (tSt.goldLocked ? 'Gold Recipe Locked In!' : 'Sweet Bullseye Nailed!')
-            : ('#1 Next-Brew Fix \u00B7 ' + rx.ringInfo.name)
+            ? (tSt.goldLocked ? ('Gold Recipe Locked \u00B7 ' + cName) : ('Sweet Bullseye \u00B7 ' + cName))
+            : ('Next-Brew Fix for ' + cName + ' \u00B7 ' + rx.ringInfo.name)
         }),
         S.h('span', {
           class: 'mono',
@@ -35931,7 +37049,7 @@ if (typeof window !== 'undefined') {
         heroBox.appendChild(S.h('div', { class: 'bt-tc-coach-row' },
           bjGoldEl,
           S.h('div', null,
-            S.h('h2', { class: 'bt-tc-fix-headline', text: '2. Sweet Spot Nailed \u2014 Keep This Exact Recipe!' }),
+            S.h('h2', { class: 'bt-tc-fix-headline', text: '2. Sweet Spot Nailed for ' + cName + ' \u2014 Keep This Recipe!' }),
             S.h('p', { class: 'bt-tc-sub', style: 'margin:3px 0 0', text: rx.counterfactualLine })
           )
         ));
@@ -36038,6 +37156,7 @@ if (typeof window !== 'undefined') {
           type: 'button',
           id: 'bt-step5-save-brew-next-btn',
           class: 'bt-tc-pill is-compact is-copper',
+          style: 'min-height:44px',
           text: rx.inGoldZone ? 'Save & Brew Another Cup Now \u2192' : ('Save & Brew Try #' + rx.nextTryNum + ' Now \u2192'),
           onclick: function () {
             saveStep5TastingAndApply(tSt, rx, {
@@ -36050,6 +37169,7 @@ if (typeof window !== 'undefined') {
           type: 'button',
           id: 'bt-step5-save-cellar-btn',
           class: 'bt-tc-pill is-compact is-soft',
+          style: 'min-height:44px',
           text: 'Save \u2192 Cellar',
           onclick: function () {
             saveStep5TastingAndApply(tSt, rx, {
@@ -36060,24 +37180,67 @@ if (typeof window !== 'undefined') {
         })
       ));
 
+      /* 1-Tap Drill-Down Links right from Step 5 Verdict Summary */
+      heroBox.appendChild(S.h('div', { class: 'bt-step5-drill-bar bt-step5-drill-row', id: 'bt-step5-drill-bar' },
+        S.h('button', {
+          type: 'button',
+          id: 'bt-step5-drill-ratings-btn',
+          class: 'bt-step5-drill-pill',
+          'aria-label': 'Save ' + cName + ' and compare in Ratings',
+          onclick: function () {
+            saveStep5TastingAndApply(tSt, rx, {
+              lockGold: shouldSaveGold,
+              destination: 'journal'
+            });
+          }
+        }, S.h('span', { text: 'Compare in Ratings \u2192' })),
+        S.h('button', {
+          type: 'button',
+          id: 'bt-step5-drill-palate-btn',
+          class: 'bt-step5-drill-pill',
+          'aria-label': 'Save ' + cName + ' and inspect in Palate DNA',
+          onclick: function () {
+            saveStep5TastingAndApply(tSt, rx, {
+              lockGold: shouldSaveGold,
+              destination: 'palate'
+            });
+          }
+        }, S.h('span', { text: 'Inspect in Palate DNA \u2192' })),
+        latestCup ? S.h('button', {
+          type: 'button',
+          id: 'bt-step5-open-last-cup-btn',
+          class: 'bt-step5-drill-pill bt-last-cup-btn',
+          'aria-label': 'Open last cup tasting detail for ' + latestCup.coffeeName,
+          onclick: function () {
+            S.openSheetSafe('screen-detail', { row: latestCup.row, rowIdx: latestCup.rowIdx }, {
+              title: latestCup.coffeeName + ' \u00B7 Tasting Detail',
+              detent: 'full'
+            });
+          }
+        },
+          S.h('span', { class: 'bt-last-cup-name', text: 'Open Last Cup: ' + latestCup.coffeeName + (latestCup.stars ? (' (' + latestCup.stars.toFixed(1) + '\u2605)') : '') + ' \u2192' })
+        ) : null
+      ));
+
       /* Sticky Bottom CTA when Rated: Primary "Save -> My Preferences" + Companion "Save -> Home" */
       ctaMount.textContent = '';
 
       var ctaLabel = shouldSaveGold
         ? 'Save Gold \u2192 Preferences'
-        : 'Save \u2192 My Preferences';
+        : 'Save & View Insights';
 
       var ctaSub = (tSt.excludeLearning || tSt.notMyStyle)
-        ? 'Off-Day Shield: logs cup without shifting preferences'
+        ? ('Off-Day Shield: logs ' + cName + ' without shifting preferences')
         : shouldSaveGold
-        ? ('Locks Gold Recipe & updates your Taste Preferences')
-        : 'Saves cup & updates your Taste Preferences (+ next-cup fix saved)';
+        ? ('Locks Gold Recipe for ' + cName + ' & updates Palate DNA')
+        : ('Saves Next-Brew Fix for ' + cName + ' & updates Palate DNA');
 
       ctaMount.appendChild(S.h('div', { class: 'bt-tc-sticky-cta' },
         S.h('button', {
           type: 'button',
           id: 'bt-step5-save-prefs-btn',
           class: 'bt-tc-primary-btn',
+          'aria-label': ctaLabel + ' for ' + cName,
           onclick: function () {
             saveStep5TastingAndApply(tSt, rx, {
               lockGold: shouldSaveGold,
@@ -36095,7 +37258,9 @@ if (typeof window !== 'undefined') {
           type: 'button',
           id: 'bt-step5-save-home-btn',
           class: 'bt-tc-pill is-soft bt-tc-save-home-btn',
-          title: 'Save tasting (+ next-cup fix) and return to Home Page',
+          style: 'min-height:48px',
+          'aria-label': 'Save tasting for ' + cName + ' and return to Home',
+          title: 'Save tasting (+ next-cup fix) for ' + cName + ' and return to Home Page',
           text: 'Save \u2192 Home',
           onclick: function () {
             saveStep5TastingAndApply(tSt, rx, {
@@ -36119,30 +37284,147 @@ if (typeof window !== 'undefined') {
       var flowInfo = evaluateBrewFlowTiming(a);
 
       /* =====================================================================
-         SECTION 0: Top Context Strip (<- Back to Timer + Live Brew Summary +
-         Flow Diagnostic Clue) + Scannable "How to Taste This Cup" Guide
+         SECTION 0: Top Context Strip (<- Back to Timer + Active Coffee Name +
+         Live Brew Summary + Flow Diagnostic Clue) + Saved Completion Banner
          ===================================================================== */
+      var cHeadInfo = resolveStep5CoffeeLabel();
       root.appendChild(S.h('div', { class: 'bt-tc-top-strip', id: 'bt-step5-context-strip' },
         S.h('button', {
           type: 'button',
           class: 'bt-tc-back-pill',
-          style: 'min-height:38px;padding:5px 11px;font-size:0.78rem',
+          style: 'min-height:44px;padding:6px 12px;font-size:0.78rem',
+          'aria-label': 'Back to Brew Timer',
           onclick: function () {
             S.closeSheetSafe();
             S.navGo('timer');
           }
         }, S.h('span', { text: '\u2190 Timer' })),
-        S.h('div', { class: 'bt-tc-brew-summary', style: 'min-height:38px;padding:5px 10px;font-size:0.75rem' },
-          S.h('span', { class: 'mono', style: 'font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap', text: flowInfo.summaryBadge }),
+        S.h('div', { class: 'bt-tc-brew-summary', style: 'min-height:44px;padding:5px 10px;font-size:0.75rem' },
+          S.h('span', { style: 'min-width:0;display:flex;flex-direction:column;gap:1px;overflow:hidden' },
+            S.h('span', { class: 'bt-step5-coffee-tag', style: 'font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap', text: cHeadInfo.name }),
+            S.h('span', { class: 'mono', style: 'font-weight:600;color:var(--ink-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap', text: flowInfo.summaryBadge })
+          ),
           S.h('button', {
             type: 'button',
+            id: 'bt-step5-tips-toggle-btn',
             class: 'bt-tc-pill is-compact is-soft',
-            style: 'min-height:28px;padding:2px 8px;font-size:0.72rem',
-            text: tSt.guideCollapsed ? 'Tips ?' : 'Hide Tips',
+            style: 'min-height:44px;padding:4px 10px;font-size:0.75rem;flex:none',
+            'aria-expanded': String(!tSt.guideCollapsed),
+            text: tSt.guideCollapsed ? 'Tasting Tips' : 'Hide Tips',
             onclick: function () { tSt.guideCollapsed = !tSt.guideCollapsed; paintAll(); }
           })
         )
       ));
+
+      /* Session Recap Chip (Try #N · Last Cup: <Coffee> · <Rating>/5) + Active Palate Bias Pill */
+      var methodKeyHead = (a.brew && a.brew.method) || 'v60';
+      var activeTrailHead = getTrailRowsForActiveCoffee(a, methodKeyHead);
+      var currentTryHead = activeTrailHead.length + 1;
+      var latestHeadCup = resolveLatestLoggedCupForStep5();
+      var step5BiasTxt = resolveStep5PalateBiasText();
+      var recapRowKids = [];
+
+      if (latestHeadCup) {
+        var recapRatingTxt = latestHeadCup.stars ? (' \u00B7 ' + latestHeadCup.stars.toFixed(1) + '\u2605') : '';
+        recapRowKids.push(S.h('button', {
+          type: 'button',
+          id: 'bt-step5-session-recap',
+          class: 'bt-step5-recap-chip',
+          'aria-label': 'Try ' + currentTryHead + '. Open last cup tasting passport for ' + latestHeadCup.coffeeName,
+          onclick: function () {
+            S.openSheetSafe('screen-detail', { row: latestHeadCup.row, rowIdx: latestHeadCup.rowIdx }, {
+              title: latestHeadCup.coffeeName + ' \u00B7 Tasting Passport',
+              detent: 'full'
+            });
+          }
+        },
+          S.h('span', { style: 'min-width:0;overflow-wrap:anywhere;word-break:break-word;text-align:left', text: 'Try #' + currentTryHead + ' \u00B7 Last Cup: ' + latestHeadCup.coffeeName + recapRatingTxt }),
+          S.h('span', { style: 'white-space:nowrap;flex:none;font-weight:700', text: '\u2192' })
+        ));
+      } else {
+        recapRowKids.push(S.h('div', {
+          id: 'bt-step5-session-recap',
+          class: 'bt-step5-recap-chip is-empty'
+        }, S.h('span', { style: 'min-width:0;overflow-wrap:anywhere;word-break:break-word', text: 'Try #1 \u00B7 0 tastings saved yet \u00B7 First cup for ' + cHeadInfo.name })));
+      }
+
+      if (step5BiasTxt) {
+        recapRowKids.push(S.h('button', {
+          type: 'button',
+          id: 'bt-step5-palate-bias-pill',
+          class: 'bt-step1-pref-pill',
+          'aria-label': 'Active Palate Bias: ' + step5BiasTxt + '. Tap to inspect in Preferences.',
+          onclick: function () {
+            if (a.tabSegments) a.tabSegments.palate = 'dna';
+            S.navGo('palate');
+          }
+        },
+          S.iconEl('palate', { size: 13 }),
+          S.h('span', { style: 'min-width:0;overflow-wrap:anywhere', text: 'Palate Bias: ' + step5BiasTxt })
+        ));
+      }
+
+      root.appendChild(S.h('div', {
+        id: 'bt-step5-recap-row',
+        style: 'display:flex;flex-wrap:wrap;gap:6px;align-items:center;max-width:100%'
+      }, recapRowKids));
+
+      /* Saved Completion Banner if a tasting was just saved (explicit Coffee Name + 1-tap drill-downs) */
+      var jstBanner = a && a.justSavedTasting;
+      if (jstBanner && !jstBanner.dismissed && (Date.now() - (+jstBanner.at || 0)) < 60000) {
+        var jstCoffee = String(jstBanner.coffeeName || cHeadInfo.name || 'Your Cup').trim();
+        var jstTitle = jstBanner.savedBannerTitle || (jstBanner.goldLocked
+          ? ('Saved Gold Recipe for ' + jstCoffee)
+          : ('Saved Next-Brew Fix for ' + jstCoffee));
+        var histNowForJst = S.getHistoryObjs();
+        var jstIdx = (jstBanner.rowIdx != null && histNowForJst[jstBanner.rowIdx])
+          ? jstBanner.rowIdx
+          : Math.max(0, histNowForJst.length - 1);
+        var jstRow = histNowForJst[jstIdx] || null;
+
+        root.appendChild(S.h('section', {
+          id: 'bt-step5-saved-banner',
+          class: 'bt-saved-cup-banner bt-step5-saved-banner',
+          role: 'status',
+          'aria-live': 'polite'
+        },
+          S.h('div', { class: 'bt-tc-row-between', style: 'gap:8px;flex-wrap:wrap' },
+            S.h('div', { style: 'min-width:0;flex:1' },
+              S.h('div', { class: 'bt-tc-kicker', text: jstTitle }),
+              S.h('div', { style: 'font-size:0.82rem;color:var(--ink-secondary);line-height:1.35', text: jstBanner.rxHeadline || '' })
+            ),
+            jstBanner.stars ? S.h('span', { class: 'bt-tc-badge is-good mono', text: (+jstBanner.stars).toFixed(2) + '/5\u2605' }) : null
+          ),
+          S.h('div', { class: 'bt-step5-drill-bar bt-step5-drill-row' },
+            jstRow ? S.h('button', {
+              type: 'button',
+              class: 'bt-step5-drill-pill bt-last-cup-btn',
+              onclick: function () {
+                S.openSheetSafe('screen-detail', { row: jstRow, rowIdx: jstIdx }, {
+                  title: jstCoffee + ' \u00B7 Tasting Passport',
+                  detent: 'full'
+                });
+              }
+            }, S.h('span', { class: 'bt-last-cup-name', text: 'Open Last Cup: ' + jstCoffee + ' \u2192' })) : null,
+            S.h('button', {
+              type: 'button',
+              class: 'bt-step5-drill-pill',
+              onclick: function () {
+                if (a.tabSegments) a.tabSegments.cellar = 'journal';
+                S.navGo('cellar');
+              }
+            }, S.h('span', { text: 'Compare in Ratings \u2192' })),
+            S.h('button', {
+              type: 'button',
+              class: 'bt-step5-drill-pill',
+              onclick: function () {
+                if (a.tabSegments) a.tabSegments.palate = 'dna';
+                S.navGo('palate');
+              }
+            }, S.h('span', { text: 'Inspect in Palate DNA \u2192' }))
+          )
+        ));
+      }
 
       if (flowInfo.flowClue) {
         root.appendChild(S.h('div', {
@@ -37682,6 +38964,11 @@ if (typeof window !== 'undefined') {
     journalQ: '',
     journalFilter: 'all',
     journalSort: 'newest',
+    journalBreakdownOpen: true,
+    selectedCvaTrait: '',
+    cuppingCompareOpen: true,
+    cuppingCmpA: 0,
+    cuppingCmpB: 1,
     compareIdxs: [],
     compareOnlyVaried: true,
     passportCodeInput: '',
@@ -37742,9 +39029,11 @@ if (typeof window !== 'undefined') {
   function homeDraftReturnLabel() {
     var a = S.getApp();
     var step = String((a && a.brewStep) || 'door');
-    if (step === 'taste') return '\u2190 Back to Tasting';
-    if (step === 'timer') return '\u2190 Back to Brew Timer';
-    if (step === 'brew' || step === 'method') return '\u2190 Back to Home Brew';
+    var cName = (a && a.coffee && a.coffee.name) ? unneutCellar(a.coffee.name) : '';
+    var shortName = cName ? (' \u00B7 ' + (cName.length > 26 ? (cName.slice(0, 25) + '\u2026') : cName)) : '';
+    if (step === 'taste') return '\u2190 Back to Tasting' + shortName;
+    if (step === 'timer') return '\u2190 Back to Brew Timer' + shortName;
+    if (step === 'brew' || step === 'method') return '\u2190 Back to Home Brew' + shortName;
     return '\u2190 Home Brew';
   }
 
@@ -37907,16 +39196,213 @@ if (typeof window !== 'undefined') {
     };
   }
 
+  var CVA_8_TRAITS = [
+    { key: 'fragrance', label: 'Fragrance', hint: 'Dry ground aroma before pouring hot water' },
+    { key: 'aroma', label: 'Aroma', hint: 'Wet aroma on pour & breaking the 4:00 crust' },
+    { key: 'flavor', label: 'Flavor', hint: 'Combined taste & retronasal flavor when slurping' },
+    { key: 'aftertaste', label: 'Aftertaste', hint: 'Sweetness, cleanliness & linger of the finish' },
+    { key: 'acidity', label: 'Acidity', hint: 'Bright, juicy fruit liveliness (apple, berry, citrus)' },
+    { key: 'sweetness', altKey: 'q_sweetness', label: 'Sweetness', hint: 'Ripe fruit, honey or caramel roundness' },
+    { key: 'body', label: 'Body', hint: 'Mouthfeel weight, silkiness & tactile texture' },
+    { key: 'overall', label: 'Overall', hint: 'Holistic harmony & personal enjoyment' }
+  ];
+
+  function isCuppingRow(r) {
+    if (!r || typeof r !== 'object') return false;
+    var mk = String(r.brew_method || '').toLowerCase();
+    var sk = String(r.score_kind || '').toLowerCase();
+    if (mk === 'cupping' || sk === 'cva_affective') return true;
+    var filled = 0;
+    CVA_8_TRAITS.forEach(function (tr) {
+      var v = parseFloat(r[tr.key] != null && r[tr.key] !== '' ? r[tr.key] : (tr.altKey ? r[tr.altKey] : ''));
+      if (isFinite(v) && v > 0) filled++;
+    });
+    return filled >= 4;
+  }
+
+  function extractRowCvaTraits(r) {
+    if (!r || typeof r !== 'object') return { hasAny: false, maxScale: 9, items: [] };
+    var items = [];
+    var maxVal = 0;
+    CVA_8_TRAITS.forEach(function (tr) {
+      var raw = (r[tr.key] != null && r[tr.key] !== '') ? r[tr.key] : (tr.altKey ? r[tr.altKey] : '');
+      var num = parseFloat(raw);
+      var valid = isFinite(num) && num > 0;
+      if (valid && num > maxVal) maxVal = num;
+      items.push({ key: tr.key, label: tr.label, hint: tr.hint, val: valid ? num : null });
+    });
+    var filledItems = items.filter(function (it) { return it.val != null; });
+    if (!filledItems.length) return { hasAny: false, maxScale: 9, items: items };
+    var maxScale = maxVal > 9.05 ? 10 : 9;
+    var hi = Math.max.apply(null, filledItems.map(function (it) { return it.val; }));
+    var lo = Math.min.apply(null, filledItems.map(function (it) { return it.val; }));
+    items.forEach(function (it) {
+      it.pct = it.val != null ? Math.max(6, Math.min(100, Math.round((it.val / maxScale) * 100))) : 0;
+      it.isHigh = it.val != null && filledItems.length >= 2 && hi - lo >= 0.25 && Math.abs(it.val - hi) < 0.01;
+      it.isLow = it.val != null && filledItems.length >= 2 && hi - lo >= 0.25 && Math.abs(it.val - lo) < 0.01;
+    });
+    return { hasAny: true, maxScale: maxScale, items: items, hi: hi, lo: lo };
+  }
+
+  function classifyJournalRatingTier(r) {
+    if (!r) return '';
+    var st = parseFloat(r.my_rating_stars) || 0;
+    if (st <= 0) {
+      var sc = parseFloat(r.total_score) || 0;
+      if (sc >= 60) st = Math.max(1, Math.min(5, 1 + ((sc - 58) / 34) * 4));
+    }
+    if (st <= 0) return '';
+    if (st >= 4.875) return 'tier5';
+    if (st >= 4.0) return 'tier4';
+    if (st >= 3.0) return 'tier3';
+    return 'tierLow';
+  }
+
+  function buildCvaDetailScorecard(r, hObjs) {
+    var parsed = extractRowCvaTraits(r);
+    if (!parsed.hasAny) return null;
+    var activeKey = '';
+    var host = S.h('section', { class: 'bt-tc-well bt-cva-detail-card', id: 'bt-detail-cva-grid', style: 'gap:8px' });
+    var noteEl = S.h('p', { class: 'bt-tc-sub', style: 'margin:0', text: 'Tap any attribute pill to inspect what it measures & compare against your cupping average.' });
+
+    /* Compute personal averages across logged cupping rows for comparison */
+    var cupRows = (Array.isArray(hObjs) ? hObjs : []).filter(isCuppingRow);
+    var avgByTrait = Object.create(null);
+    CVA_8_TRAITS.forEach(function (tr) {
+      var sum = 0, n = 0;
+      cupRows.forEach(function (cr) {
+        var v = parseFloat(cr[tr.key] != null && cr[tr.key] !== '' ? cr[tr.key] : (tr.altKey ? cr[tr.altKey] : ''));
+        if (isFinite(v) && v > 0) { sum += v; n++; }
+      });
+      if (n > 0) avgByTrait[tr.key] = +(sum / n).toFixed(2);
+    });
+
+    var gridEl = S.h('div', { class: 'bt-sca-attr-grid' });
+    var pillRefs = [];
+
+    function paintPills() {
+      gridEl.textContent = '';
+      pillRefs.length = 0;
+      parsed.items.forEach(function (it) {
+        if (it.val == null) return;
+        var isAct = activeKey === it.key;
+        var btn = S.h('button', {
+          type: 'button',
+          class: 'bt-sca-attr-pill bt-drillable' + (isAct ? ' is-active' : '') + (it.isHigh ? ' is-high' : '') + (it.isLow ? ' is-low' : ''),
+          'aria-pressed': String(isAct),
+          onclick: function () {
+            activeKey = (activeKey === it.key) ? '' : it.key;
+            var myAvg = avgByTrait[it.key];
+            if (activeKey) {
+              var deltaTxt = (myAvg != null && cupRows.length >= 2)
+                ? (' (Your cupping avg: ' + myAvg.toFixed(1) + '/' + parsed.maxScale + ', ' + (it.val >= myAvg ? '+' : '') + (it.val - myAvg).toFixed(1) + ')')
+                : '';
+              noteEl.textContent = it.label + ' (' + it.val.toFixed(1).replace(/\.0$/, '') + '/' + parsed.maxScale + '): ' + it.hint + '.' + deltaTxt;
+            } else {
+              noteEl.textContent = 'Tap any attribute pill to inspect what it measures & compare against your cupping average.';
+            }
+            S.haptic('tick');
+            paintPills();
+          }
+        },
+          S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%' },
+            S.h('span', { class: 'bt-sca-attr-name', text: it.label }),
+            S.h('strong', { class: 'bt-sca-attr-val mono', text: it.val.toFixed(1).replace(/\.0$/, '') + '/' + parsed.maxScale })
+          ),
+          S.h('div', { class: 'bt-rating-dist-track', style: 'width:100%' },
+            S.h('div', { class: 'bt-rating-dist-fill', style: 'width:' + it.pct + '%' })
+          )
+        );
+        pillRefs.push(btn);
+        gridEl.appendChild(btn);
+      });
+    }
+    paintPills();
+
+    var taintN = parseInt(r.taint_cups, 10) || 0;
+    var faultN = parseInt(r.fault_cups, 10) || 0;
+    var totalSca = parseFloat(r.total_score) || 0;
+
+    host.appendChild(S.h('div', { class: 'bt-tc-row-between' },
+      S.h('span', { class: 'bt-tc-kicker', text: 'SCA / CVA 8-Trait Cupping Scorecard' }),
+      S.h('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+        totalSca > 0 ? S.h('span', { class: 'bt-tc-badge is-good mono', text: totalSca.toFixed(2) + ' / 100 SCA' }) : null,
+        (taintN > 0 || faultN > 0) ? S.h('span', { class: 'bt-tc-badge is-warn mono', text: 'Taints: ' + taintN + ' \u00B7 Faults: ' + faultN }) : S.h('span', { class: 'bt-tc-badge is-sci', text: 'Clean Cup (0 Defects)' })
+      )
+    ));
+    host.appendChild(gridEl);
+    host.appendChild(noteEl);
+    return host;
+  }
+
+  function findNewestHistoryEntry(hObjs) {
+    if (!Array.isArray(hObjs) || !hObjs.length) return null;
+    var bestIdx = -1;
+    var bestRow = null;
+    var bestKey = '';
+    var normTs = function (r) {
+      if (!r || typeof r !== 'object') return '';
+      var sa = String(r.saved_at || '').trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(sa)) return sa;
+      var cd = String(r.cupping_date || r.brew_date || r.date || '').trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(cd)) return cd + 'T00:00:00Z';
+      return sa || cd || '';
+    };
+    for (var i = 0; i < hObjs.length; i++) {
+      var r = hObjs[i];
+      if (!r || typeof r !== 'object') continue;
+      var k = normTs(r);
+      if (!bestRow || (k && (!bestKey || k > bestKey)) || (k === bestKey && i > bestIdx)) {
+        bestRow = r;
+        bestIdx = i;
+        bestKey = k;
+      }
+    }
+    return bestRow ? { r: bestRow, idx: bestIdx } : null;
+  }
+
+  function buildLastCupJumpBar(hObjs) {
+    var newest = findNewestHistoryEntry(hObjs);
+    if (!newest || !newest.r) return null;
+    var lastIdx = newest.idx;
+    var lastRow = newest.r;
+    var cName = unneutCellar(lastRow.coffee_name || '') || 'Latest Brew';
+    var rName = unneutCellar(lastRow.roaster || '');
+    var st = parseFloat(lastRow.my_rating_stars) || 0;
+    var sc = parseFloat(lastRow.total_score) || 0;
+    var metaTxt = st > 0 ? (st.toFixed(2) + '\u2605') : (sc > 0 ? (sc.toFixed(1) + ' SCA') : 'Logged');
+    return S.h('div', { class: 'bt-tc-well', id: 'bt-cellar-last-cup-card', style: 'flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:10px 12px' },
+      S.h('div', { style: 'min-width:0;flex:1 1 180px' },
+        S.h('span', { class: 'bt-tc-kicker', text: 'Last Cup Logged' + (lastRow.cupping_date ? (' \u00B7 ' + lastRow.cupping_date) : '') }),
+        S.h('div', { style: 'font-weight:800;font-size:0.92rem;color:var(--ink);overflow-wrap:anywhere' },
+          cName + (rName ? (' \u00B7 ' + rName) : '')
+        )
+      ),
+      S.h('button', {
+        type: 'button',
+        class: 'bt-tc-pill is-compact is-copper bt-last-cup-btn',
+        onclick: function () { openTastingDetailSheet(lastIdx); }
+      },
+        S.h('span', { class: 'bt-last-cup-name', text: 'Inspect ' + cName }),
+        S.h('span', { class: 'bt-last-cup-meta mono', text: '(' + metaTxt + ') \u2192' })
+      )
+    );
+  }
+
   function buildSavedNextBrewCallout(r, compact) {
     var info = extractRowRecommendation(r);
     if (!info.hasRec || info.isLocked) return null;
     var symTxt = formatDialSymLabel(info.dialSym);
+    var cName = unneutCellar(r.coffee_name || '').trim();
+    var headerLbl = cName
+      ? ('Saved Next-Brew Recommendation for ' + cName)
+      : 'Saved Next-Brew Recommendation (Toward Golden Recipe)';
     return S.h('div', {
       class: 'bt-tc-well bt-journal-next-rec',
       style: 'border-left:3px solid var(--accent-copper, #B86B35);padding:' + (compact ? '8px 10px' : '10px 12px') + ';gap:4px'
     },
       S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
-        S.h('span', { class: 'bt-tc-kicker', style: 'color:var(--accent-copper, #B86B35)', text: 'Saved Next-Brew Recommendation (Toward Golden Recipe)' }),
+        S.h('span', { class: 'bt-tc-kicker', style: 'color:var(--accent-copper, #B86B35)', text: headerLbl }),
         symTxt ? S.h('span', { class: 'bt-tc-badge is-copper', text: symTxt }) : null
       ),
       info.dialChange ? S.h('div', { style: 'font-size:0.84rem;font-weight:700;color:var(--ink)', text: info.dialChange }) : null,
@@ -38936,7 +40422,9 @@ if (typeof window !== 'undefined') {
 
     var wrap = S.h('div', { style: 'display:flex;flex-direction:column;gap:14px' });
 
-    /* 0. Best & Golden Recipes Hall-of-Fame Strip (only when >=1 qualifying brew exists) */
+    /* 0. Last Cup Quick-Jump & Best/Golden Recipes Hall-of-Fame Strip */
+    var shelfLastCup = buildLastCupJumpBar(hObjs);
+    if (shelfLastCup) wrap.appendChild(shelfLastCup);
     var goldenShowcase = buildGoldenShowcaseSection(hObjs);
     if (goldenShowcase) wrap.appendChild(goldenShowcase);
 
@@ -39687,9 +41175,9 @@ if (typeof window !== 'undefined') {
     var storage = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
     var wrap = S.h('div', { style: 'display:flex;flex-direction:column;gap:14px' });
 
-    /* 5-Tile KPI Strip */
+    /* 6-Tile Symmetric KPI Strip (3x2 on mobile) */
     var distinctSet = Object.create(null);
-    var gemsCount = 0, lockedCount = 0, starSum = 0, starN = 0;
+    var gemsCount = 0, lockedCount = 0, cuppingsCount = 0, starSum = 0, starN = 0;
     hObjs.forEach(function (r) {
       if (!r) return;
       distinctSet[(r.coffee_id || r.coffee_name || '').toLowerCase()] = 1;
@@ -39697,22 +41185,420 @@ if (typeof window !== 'undefined') {
       if (st >= 4.5) gemsCount++;
       if (st > 0) { starSum += st; starN++; }
       if (r.dial_locked === 'yes' || r.dial_locked === '1') lockedCount++;
+      if (isCuppingRow(r)) cuppingsCount++;
     });
 
     wrap.appendChild(S.h('div', { class: 'bt-tc-kpi-grid' },
       [
-        ['Logged Cups', String(hObjs.length)],
-        ['Coffees', String(Object.keys(distinctSet).length)],
-        ['4.5+ Gems', String(gemsCount)],
-        ['Gold Locked', String(lockedCount)],
-        ['Avg Rating', starN ? (starSum / starN).toFixed(2) : '\u2014']
+        ['Logged Cups', String(hObjs.length), 'all'],
+        ['Coffees', String(Object.keys(distinctSet).length), 'all'],
+        ['4.5+ Gems', String(gemsCount), 'gems'],
+        ['Gold Locked', String(lockedCount), 'locked'],
+        ['Cuppings', String(cuppingsCount), 'cupping'],
+        ['Avg Rating', starN ? (starSum / starN).toFixed(2) : '\u2014', 'all']
       ].map(function (kp) {
-        return S.h('div', { class: 'bt-tc-kpi-tile' },
+        return S.h('button', {
+          type: 'button',
+          class: 'bt-tc-kpi-tile bt-drillable' + (ui.journalFilter === kp[2] && kp[2] !== 'all' ? ' is-active' : ''),
+          style: 'text-align:center;cursor:pointer',
+          onclick: function () {
+            ui.journalFilter = kp[2];
+            S.haptic('tick');
+            repaint();
+          }
+        },
           S.h('span', { class: 'bt-tc-kpi-val', text: kp[1] }),
           S.h('span', { class: 'bt-tc-kpi-lbl', text: kp[0] })
         );
       })
     ));
+
+    var lastCupBar = buildLastCupJumpBar(hObjs);
+    if (lastCupBar) wrap.appendChild(lastCupBar);
+
+    /* Interactive Ratings & Cuppings Drill-Down Strip + Expandable Rating & CVA Breakdown */
+    var tierBuckets = {
+      all: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 },
+      tier5: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 },
+      tier4: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 },
+      tier3: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 },
+      tierLow: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 },
+      locked: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 },
+      cupping: { rows: [], starSum: 0, starN: 0, scaSum: 0, scaN: 0 }
+    };
+    var originAgg = Object.create(null);
+    var methodAgg = Object.create(null);
+    var pushBucket = function (bk, r, idx) {
+      var b = tierBuckets[bk];
+      if (!b) return;
+      b.rows.push({ r: r, idx: idx });
+      var st = parseFloat(r.my_rating_stars) || 0;
+      var sc = parseFloat(r.total_score) || 0;
+      if (st > 0) { b.starSum += st; b.starN++; }
+      if (sc > 0) { b.scaSum += sc; b.scaN++; }
+    };
+    hObjs.forEach(function (r, idx) {
+      if (!r) return;
+      pushBucket('all', r, idx);
+      var tk = classifyJournalRatingTier(r);
+      if (tk && tierBuckets[tk]) pushBucket(tk, r, idx);
+      if (r.dial_locked === 'yes' || r.dial_locked === '1') pushBucket('locked', r, idx);
+      if (isCuppingRow(r)) pushBucket('cupping', r, idx);
+
+      var stVal = parseFloat(r.my_rating_stars) || 0;
+      var orig = unneutCellar(r.origin || '');
+      if (orig && !isUnkCoffeeVal(orig) && stVal > 0) {
+        if (!originAgg[orig]) originAgg[orig] = { label: orig, sum: 0, n: 0 };
+        originAgg[orig].sum += stVal; originAgg[orig].n++;
+      }
+      var isCupMeth = String(r.brew_method || '').toLowerCase() === 'cupping';
+      var meth = isCupMeth ? 'Cupping Table' : S.humanMethodName(r.brew_method);
+      if (meth && stVal > 0) {
+        if (!methodAgg[meth]) methodAgg[meth] = { label: meth, isCupping: isCupMeth, sum: 0, n: 0 };
+        methodAgg[meth].sum += stVal; methodAgg[meth].n++;
+      }
+    });
+
+    var ratingPillDefs = [
+      { k: 'all', lbl: 'All', showSca: false },
+      { k: 'tier5', lbl: '5\u2605 Favorites', showSca: false },
+      { k: 'tier4', lbl: '4\u20134.75\u2605', showSca: false },
+      { k: 'tier3', lbl: '3\u20133.75\u2605', showSca: false },
+      { k: 'tierLow', lbl: '<3\u2605', showSca: false },
+      { k: 'locked', lbl: 'Golden Locked', showSca: false },
+      { k: 'cupping', lbl: '5-Bowl Cuppings', showSca: true }
+    ];
+
+    var ratingStripCard = S.h('section', { class: 'bt-tc-card bt-journal-breakdown-card', id: 'bt-journal-rating-strip' },
+      S.h('div', { class: 'bt-tc-row-between' },
+        S.h('div', { style: 'min-width:0;flex:1 1 180px' },
+          S.h('div', { class: 'bt-tc-kicker', text: 'Ratings & 5-Bowl Cuppings Drill-Down' }),
+          S.h('b', { style: 'font-size:0.96rem', text: 'Filter by Rating Tier or Inspect Cupping Attributes' })
+        ),
+        S.h('button', {
+          type: 'button',
+          id: 'bt-journal-breakdown-toggle',
+          class: 'bt-tc-pill is-compact is-soft',
+          'aria-expanded': String(!!ui.journalBreakdownOpen),
+          text: ui.journalBreakdownOpen ? 'Hide Breakdown \u25B2' : 'Show Breakdown \u25BC',
+          onclick: function () { ui.journalBreakdownOpen = !ui.journalBreakdownOpen; S.haptic('tick'); repaint(); }
+        })
+      ),
+      S.h('div', { class: 'bt-rating-tier-bar', role: 'group', 'aria-label': 'Ratings and cuppings quick drill-down strip' },
+        ratingPillDefs.map(function (pd) {
+          var b = tierBuckets[pd.k];
+          var on = ui.journalFilter === pd.k;
+          var avgStr = '';
+          if (pd.showSca && b.scaN > 0) avgStr = ' \u00B7 ' + (b.scaSum / b.scaN).toFixed(1) + ' SCA';
+          else if (b.starN > 0) avgStr = ' \u00B7 ' + (b.starSum / b.starN).toFixed(1) + '\u2605';
+          return S.h('button', {
+            type: 'button',
+            class: 'bt-rating-tier-btn bt-tc-pill is-compact bt-drillable' + (on ? ' is-active' : ' is-soft'),
+            'aria-pressed': String(on),
+            'data-journal-tier': pd.k,
+            onclick: function () {
+              ui.journalFilter = (on && pd.k !== 'all') ? 'all' : pd.k;
+              S.haptic('tick');
+              repaint();
+            }
+          }, pd.lbl + ' (' + b.rows.length + avgStr + ')');
+        })
+      )
+    );
+
+    if (ui.journalBreakdownOpen) {
+      var drawer = S.h('div', { class: 'bt-drill-drawer', id: 'bt-journal-breakdown-drawer' });
+      var distTiers = [
+        { k: 'tier5', lbl: '5\u2605 Favorites' },
+        { k: 'tier4', lbl: '4\u20134.75\u2605 Great' },
+        { k: 'tier3', lbl: '3\u20133.75\u2605 Dialing' },
+        { k: 'tierLow', lbl: '<3\u2605 Needs Fix' }
+      ];
+      var totalStarRows = hObjs.length || 1;
+      drawer.appendChild(S.h('div', { class: 'bt-drill-drawer-head' },
+        S.h('strong', { class: 'bt-drill-drawer-title', text: 'Star Distribution (Tap any bar to filter)' })
+      ));
+      drawer.appendChild(S.h('div', { class: 'bt-rating-dist-list' },
+        distTiers.map(function (dt) {
+          var b = tierBuckets[dt.k];
+          var cnt = b.rows.length;
+          var pct = hObjs.length ? Math.round((cnt / totalStarRows) * 100) : 0;
+          var barW = cnt > 0 ? Math.max(8, pct) : 0;
+          var active = ui.journalFilter === dt.k;
+          return S.h('button', {
+            type: 'button',
+            class: 'bt-rating-dist-row bt-drillable' + (active ? ' is-active' : ''),
+            'aria-pressed': String(active),
+            onclick: function () {
+              ui.journalFilter = active ? 'all' : dt.k;
+              S.haptic('tick');
+              repaint();
+            }
+          },
+            S.h('span', { class: 'bt-rating-dist-label', text: dt.lbl }),
+            S.h('div', { class: 'bt-rating-dist-track' },
+              S.h('div', { class: 'bt-rating-dist-fill', style: 'width:' + barW + '%' })
+            ),
+            S.h('span', { class: 'bt-rating-dist-count mono', text: cnt + ' (' + pct + '%)' })
+          );
+        })
+      ));
+
+      var topOrigs = Object.keys(originAgg).map(function (k) { return originAgg[k]; })
+        .sort(function (a, b) { return (b.sum / b.n) - (a.sum / a.n) || b.n - a.n; }).slice(0, 4);
+      var topMeths = Object.keys(methodAgg).map(function (k) { return methodAgg[k]; })
+        .sort(function (a, b) { return (b.sum / b.n) - (a.sum / a.n) || b.n - a.n; }).slice(0, 4);
+
+      if (topOrigs.length || topMeths.length) {
+        drawer.appendChild(S.h('div', { class: 'bt-drill-meta-row' },
+          topOrigs.length ? S.h('span', { class: 'bt-tc-kicker', text: 'Top Origins:' }) : null,
+          topOrigs.map(function (og) {
+            return S.h('button', {
+              type: 'button',
+              class: 'bt-tc-pill is-compact is-soft bt-drillable',
+              text: og.label + ' (' + (og.sum / og.n).toFixed(1) + '\u2605)',
+              onclick: function () { ui.journalQ = og.label; S.haptic('tick'); repaint(); }
+            });
+          }),
+          topMeths.length ? S.h('span', { class: 'bt-tc-kicker', style: 'margin-left:4px', text: 'Top Methods:' }) : null,
+          topMeths.map(function (mt) {
+            return S.h('button', {
+              type: 'button',
+              class: 'bt-tc-pill is-compact is-soft bt-drillable',
+              text: mt.label + ' (' + (mt.sum / mt.n).toFixed(1) + '\u2605)',
+              onclick: function () {
+                if (mt.isCupping) { ui.journalFilter = 'cupping'; ui.journalQ = ''; }
+                else { ui.journalQ = mt.label; }
+                S.haptic('tick');
+                repaint();
+              }
+            });
+          })
+        ));
+      }
+
+      /* 5-Bowl / SCA Cupping 8-Trait Average & Min-Max Spread Breakdown */
+      var cupList = tierBuckets.cupping.rows;
+      if (cupList.length > 0) {
+        var traitStats = CVA_8_TRAITS.map(function (tr) {
+          var vals = [];
+          cupList.forEach(function (it) {
+            var raw = (it.r[tr.key] != null && it.r[tr.key] !== '') ? it.r[tr.key] : (tr.altKey ? it.r[tr.altKey] : '');
+            var v = parseFloat(raw);
+            if (isFinite(v) && v > 0) vals.push({ v: v, item: it });
+          });
+          if (!vals.length) return { key: tr.key, label: tr.label, hint: tr.hint, n: 0, avg: 0, min: 0, max: 0, vals: [] };
+          var sum = vals.reduce(function (a, x) { return a + x.v; }, 0);
+          var mn = Math.min.apply(null, vals.map(function (x) { return x.v; }));
+          var mx = Math.max.apply(null, vals.map(function (x) { return x.v; }));
+          return { key: tr.key, label: tr.label, hint: tr.hint, n: vals.length, avg: +(sum / vals.length).toFixed(2), min: mn, max: mx, vals: vals };
+        });
+        var scoredTraits = traitStats.filter(function (t) { return t.n > 0; });
+        var hiAvg = scoredTraits.length ? Math.max.apply(null, scoredTraits.map(function (t) { return t.avg; })) : 0;
+        var loAvg = scoredTraits.length ? Math.min.apply(null, scoredTraits.map(function (t) { return t.avg; })) : 0;
+        var maxScaleAll = scoredTraits.some(function (t) { return t.max > 9.05; }) ? 10 : 9;
+
+        drawer.appendChild(S.h('div', { class: 'bt-drill-drawer-head', style: 'margin-top:4px' },
+          S.h('div', { style: 'min-width:0;flex:1' },
+            S.h('div', { class: 'bt-tc-kicker', text: '5-Bowl / SCA Cupping 8-Trait Spread (' + cupList.length + ' Round' + (cupList.length === 1 ? '' : 's') + ')' }),
+            S.h('strong', { class: 'bt-drill-drawer-title', text: scoredTraits.length > 0 ? 'Average & Min\u2013Max Across All 8 Attributes (Tap any trait to drill)' : '5-Bowl / SCA Cupping Summary' })
+          ),
+          ui.selectedCvaTrait ? S.h('button', {
+            type: 'button',
+            class: 'bt-tc-pill is-compact is-soft',
+            text: 'Clear Trait',
+            onclick: function () { ui.selectedCvaTrait = ''; repaint(); }
+          }) : null
+        ));
+
+        if (scoredTraits.length > 0) {
+          drawer.appendChild(S.h('div', { class: 'bt-sca-attr-grid', id: 'bt-journal-cva-spread-grid' },
+            traitStats.map(function (ts) {
+              var active = ui.selectedCvaTrait === ts.key;
+              var isHi = ts.n > 0 && hiAvg - loAvg >= 0.2 && Math.abs(ts.avg - hiAvg) < 0.01;
+              var isLo = ts.n > 0 && hiAvg - loAvg >= 0.2 && Math.abs(ts.avg - loAvg) < 0.01;
+              var pct = ts.n > 0 ? Math.max(8, Math.min(100, Math.round((ts.avg / maxScaleAll) * 100))) : 0;
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-sca-attr-pill bt-drillable' + (active ? ' is-active' : '') + (isHi ? ' is-high' : '') + (isLo ? ' is-low' : ''),
+                'aria-pressed': String(active),
+                'data-cva-trait': ts.key,
+                onclick: function () {
+                  ui.selectedCvaTrait = active ? '' : ts.key;
+                  if (!active) ui.journalFilter = 'cupping';
+                  S.haptic('tick');
+                  repaint();
+                }
+              },
+                S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:5px;width:100%' },
+                  S.h('span', { class: 'bt-sca-attr-name', text: ts.label }),
+                  S.h('strong', { class: 'bt-sca-attr-val mono', text: ts.n > 0 ? (ts.avg.toFixed(1) + '/' + maxScaleAll) : '\u2014' })
+                ),
+                S.h('div', { class: 'bt-rating-dist-track', style: 'width:100%' },
+                  S.h('div', { class: 'bt-rating-dist-fill', style: 'width:' + pct + '%' })
+                ),
+                S.h('span', { class: 'bt-drill-cup-sub mono', text: ts.n > 0 ? ('Range ' + ts.min.toFixed(1).replace(/\.0$/, '') + '\u2013' + ts.max.toFixed(1).replace(/\.0$/, '')) : 'No scores' })
+              );
+            })
+          ));
+        } else {
+          drawer.appendChild(S.h('p', {
+            class: 'bt-tc-sub',
+            id: 'bt-journal-cva-empty-note',
+            style: 'margin:0',
+            text: 'Log 0\u201310 attribute scores in the 5-Bowl Cupping Table to unlock trait-by-trait spreads here.'
+          }));
+        }
+
+        /* Matching Cupping Rounds List (sorted by selected trait when one is clicked!) */
+        var selTraitObj = traitStats.find(function (t) { return t.key === ui.selectedCvaTrait; }) || null;
+        var cupPreview = selTraitObj
+          ? selTraitObj.vals.slice().sort(function (a, b) { return b.v - a.v; }).map(function (x) { return { r: x.item.r, idx: x.item.idx, traitVal: x.v }; })
+          : cupList.slice().sort(function (a, b) { return (parseFloat(b.r.total_score) || 0) - (parseFloat(a.r.total_score) || 0); }).map(function (x) { return { r: x.r, idx: x.idx, traitVal: null }; });
+
+        if (cupPreview.length > 0) {
+          drawer.appendChild(S.h('div', { class: 'bt-drill-cup-list', style: 'margin-top:4px' },
+            S.h('span', {
+              class: 'bt-tc-kicker',
+              text: selTraitObj
+                ? ('Cupping Rounds Ranked by ' + selTraitObj.label + ' (' + selTraitObj.hint + ')')
+                : 'Recent & Top Cupping Rounds (Tap any row to open full Scorecard):'
+            }),
+            cupPreview.slice(0, 5).map(function (cp) {
+              var cName = unneutCellar(cp.r.coffee_name || '') || 'Cupped Sample';
+              var scVal = parseFloat(cp.r.total_score) || 0;
+              return S.h('button', {
+                type: 'button',
+                class: 'bt-drill-cup-card bt-drillable',
+                style: 'text-align:left;width:100%',
+                onclick: function () { openTastingDetailSheet(cp.idx); }
+              },
+                S.h('div', { class: 'bt-drill-cup-head' },
+                  S.h('div', { style: 'min-width:0;flex:1' },
+                    S.h('strong', { class: 'bt-drill-cup-title', text: cName }),
+                    S.h('div', { class: 'bt-drill-cup-sub', text: [unneutCellar(cp.r.roaster || ''), cp.r.cupping_date || '', unneutCellar(cp.r.flavors_liked || '')].filter(Boolean).join(' \u00B7 ') })
+                  ),
+                  S.h('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+                    cp.traitVal != null ? S.h('span', { class: 'bt-tc-badge is-gold mono', text: selTraitObj.label + ' ' + cp.traitVal.toFixed(1).replace(/\.0$/, '') + '/' + maxScaleAll }) : null,
+                    scVal > 0 ? S.h('span', { class: 'bt-tc-badge is-sci mono', text: scVal.toFixed(1) + ' SCA' }) : null
+                  )
+                )
+              );
+            })
+          ));
+        }
+
+        /* Side-by-Side 2-Round 8-Trait CVA Cupping Comparison (when >=2 cupping rounds exist) */
+        if (cupList.length >= 2) {
+          var cmpList = cupList.slice().sort(function (a, b) {
+            return (parseFloat(b.r.total_score) || 0) - (parseFloat(a.r.total_score) || 0) || (b.idx - a.idx);
+          });
+          var idxA = (ui.cuppingCmpA >= 0 && ui.cuppingCmpA < cmpList.length) ? ui.cuppingCmpA : 0;
+          var idxB = (ui.cuppingCmpB >= 0 && ui.cuppingCmpB < cmpList.length && ui.cuppingCmpB !== idxA) ? ui.cuppingCmpB : (idxA === 0 ? 1 : 0);
+          ui.cuppingCmpA = idxA;
+          ui.cuppingCmpB = idxB;
+          var rowA = cmpList[idxA].r;
+          var rowB = cmpList[idxB].r;
+          var nameA = unneutCellar(rowA.coffee_name || '') || 'Round A';
+          var nameB = unneutCellar(rowB.coffee_name || '') || 'Round B';
+
+          var cmpWrap = S.h('div', { id: 'bt-journal-cupping-compare', style: 'margin-top:8px;display:flex;flex-direction:column;gap:8px' },
+            S.h('div', { class: 'bt-drill-drawer-head' },
+              S.h('div', { style: 'min-width:0;flex:1' },
+                S.h('div', { class: 'bt-tc-kicker', text: 'Side-by-Side 8-Trait CVA Comparison' }),
+                S.h('strong', { class: 'bt-drill-drawer-title', text: 'Compare 2 Cupping Rounds (Delta Grid)' })
+              ),
+              S.h('button', {
+                type: 'button',
+                class: 'bt-tc-pill is-compact is-soft',
+                'aria-expanded': String(!!ui.cuppingCompareOpen),
+                text: ui.cuppingCompareOpen ? 'Hide Compare \u25B2' : 'Compare 2 Rounds \u25BC',
+                onclick: function () { ui.cuppingCompareOpen = !ui.cuppingCompareOpen; S.haptic('tick'); repaint(); }
+              })
+            )
+          );
+
+          if (ui.cuppingCompareOpen) {
+            var mkRoundSelect = function (curIdx, labelTxt, onPick) {
+              var sel = S.h('select', {
+                class: 'bt-tc-input',
+                'aria-label': labelTxt,
+                style: 'min-height:40px;flex:1 1 140px;min-width:0',
+                onchange: function (e) { onPick(parseInt(e.target.value, 10) || 0); }
+              },
+                cmpList.map(function (it, ci) {
+                  var lbl = (unneutCellar(it.r.coffee_name || '') || 'Sample') + (it.r.total_score ? (' (' + (+it.r.total_score).toFixed(1) + ')') : '');
+                  var opt = S.h('option', { value: String(ci), text: lbl });
+                  if (ci === curIdx) opt.selected = true;
+                  return opt;
+                })
+              );
+              return sel;
+            };
+
+            cmpWrap.appendChild(S.h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' },
+              mkRoundSelect(idxA, 'Select Cupping Round A', function (v) { ui.cuppingCmpA = v; repaint(); }),
+              S.h('span', { class: 'bt-tc-kicker', text: 'vs' }),
+              mkRoundSelect(idxB, 'Select Cupping Round B', function (v) { ui.cuppingCmpB = v; repaint(); })
+            ));
+
+            var cmpBody = S.h('tbody');
+            CVA_8_TRAITS.forEach(function (tr) {
+              var vA = parseFloat(rowA[tr.key] != null && rowA[tr.key] !== '' ? rowA[tr.key] : (tr.altKey ? rowA[tr.altKey] : ''));
+              var vB = parseFloat(rowB[tr.key] != null && rowB[tr.key] !== '' ? rowB[tr.key] : (tr.altKey ? rowB[tr.altKey] : ''));
+              var okA = isFinite(vA) && vA > 0;
+              var okB = isFinite(vB) && vB > 0;
+              var diff = (okA && okB) ? +(vA - vB).toFixed(2) : null;
+              var diffTxt = diff == null ? '\u2014' : (Math.abs(diff) < 0.01 ? '0.0' : ((diff > 0 ? '+' : '') + diff.toFixed(1).replace(/\.0$/, '')));
+              var diffCls = 'mono' + (diff != null && diff > 0.05 ? ' is-pos' : (diff != null && diff < -0.05 ? ' is-neg' : ''));
+              cmpBody.appendChild(S.h('tr', { class: diff != null && Math.abs(diff) >= 0.25 ? 'is-diff' : '' },
+                S.h('td', null, S.h('b', { text: tr.label })),
+                S.h('td', { class: 'mono' + (diff != null && diff > 0.05 ? ' bt-compare-winner-col' : ''), text: okA ? vA.toFixed(1).replace(/\.0$/, '') : '\u2014' }),
+                S.h('td', { class: 'mono' + (diff != null && diff < -0.05 ? ' bt-compare-winner-col' : ''), text: okB ? vB.toFixed(1).replace(/\.0$/, '') : '\u2014' }),
+                S.h('td', { class: diffCls, text: diffTxt })
+              ));
+            });
+            var scaA = parseFloat(rowA.total_score) || 0;
+            var scaB = parseFloat(rowB.total_score) || 0;
+            var scaDiff = (scaA > 0 && scaB > 0) ? +(scaA - scaB).toFixed(2) : null;
+            cmpBody.appendChild(S.h('tr', { class: 'is-total-row' },
+              S.h('td', null, S.h('b', { text: 'Total SCA' })),
+              S.h('td', { class: 'mono' + (scaDiff > 0 ? ' bt-compare-winner-col' : ''), text: scaA > 0 ? scaA.toFixed(2) : '\u2014' }),
+              S.h('td', { class: 'mono' + (scaDiff < 0 ? ' bt-compare-winner-col' : ''), text: scaB > 0 ? scaB.toFixed(2) : '\u2014' }),
+              S.h('td', { class: 'mono', text: scaDiff == null ? '\u2014' : ((scaDiff > 0 ? '+' : '') + scaDiff.toFixed(2)) })
+            ));
+
+            cmpWrap.appendChild(S.h('div', { class: 'bt-compare-scroll' },
+              S.h('table', { class: 'bt-cupping-compare-table' },
+                S.h('thead', null,
+                  S.h('tr', null,
+                    S.h('th', { text: 'Trait' }),
+                    S.h('th', { text: 'A: ' + (nameA.length > 18 ? (nameA.slice(0, 17) + '\u2026') : nameA) }),
+                    S.h('th', { text: 'B: ' + (nameB.length > 18 ? (nameB.slice(0, 17) + '\u2026') : nameB) }),
+                    S.h('th', { text: 'Delta' })
+                  )
+                ),
+                cmpBody
+              )
+            ));
+          }
+          drawer.appendChild(cmpWrap);
+        }
+      } else {
+        drawer.appendChild(S.h('div', { class: 'bt-tc-row-between', style: 'padding-top:4px' },
+          S.h('span', { class: 'bt-tc-sub', text: 'No 5-Bowl SCA/CVA cuppings logged yet — cup coffees side-by-side to unlock your 8-trait spread!' }),
+          S.h('button', {
+            type: 'button',
+            class: 'bt-tc-pill is-compact is-copper',
+            text: 'Open 5-Bowl Cupping \u2192',
+            onclick: function () { S.navGo('sca'); }
+          })
+        ));
+      }
+
+      ratingStripCard.appendChild(drawer);
+    }
+    wrap.appendChild(ratingStripCard);
 
     /* Import Shared Brew Recipe Bar (Plain-English Header!) */
     wrap.appendChild(S.h('div', { class: 'bt-tc-card' },
@@ -39798,9 +41684,7 @@ if (typeof window !== 'undefined') {
       [
         ['all',     'All Logs'],
         ['dialed',  'Dialed'],
-        ['cupping', 'Cupping Table'],
         ['gems',    '4.5+ Gems'],
-        ['locked',  'Locked Gold'],
         ['dialing', 'Needs Dial-In'],
         ['filter',  'Pour-Over / Drip'],
         ['espresso','Espresso'],
@@ -39959,8 +41843,13 @@ if (typeof window !== 'undefined') {
       var st = parseFloat(r.my_rating_stars) || 0;
       var mk = String(r.brew_method || '').toLowerCase();
       var sk = String(r.score_kind || '').toLowerCase();
+      var tierKey = classifyJournalRatingTier(r);
+      if (ui.journalFilter === 'tier5' && tierKey !== 'tier5') return false;
+      if (ui.journalFilter === 'tier4' && tierKey !== 'tier4') return false;
+      if (ui.journalFilter === 'tier3' && tierKey !== 'tier3') return false;
+      if (ui.journalFilter === 'tierLow' && tierKey !== 'tierLow') return false;
       if (ui.journalFilter === 'dialed' && !(r.dial_locked === 'yes' || r.dial_locked === '1' || st >= 4.25)) return false;
-      if (ui.journalFilter === 'cupping' && mk !== 'cupping' && sk !== 'cva_affective') return false;
+      if (ui.journalFilter === 'cupping' && !isCuppingRow(r)) return false;
       if (ui.journalFilter === 'gems' && st < 4.5) return false;
       if (ui.journalFilter === 'locked' && r.dial_locked !== 'yes' && r.dial_locked !== '1') return false;
       if (ui.journalFilter === 'dialing' && (st >= 4.25 || r.dial_locked === 'yes')) return false;
@@ -39968,7 +41857,7 @@ if (typeof window !== 'undefined') {
       if (ui.journalFilter === 'espresso' && mk.indexOf('espresso') < 0 && mk.indexOf('moka') < 0) return false;
       if (ui.journalFilter === 'r2' && !(parseFloat(r.brew_tds_pct) > 0)) return false;
       if (!q) return true;
-      return [r.coffee_name, r.roaster, r.brew_method, r.flavors_liked, r.general_notes].join(' ').toLowerCase().indexOf(q) >= 0;
+      return [r.coffee_name, r.roaster, r.origin, r.brew_method, S.humanMethodName(r.brew_method), r.flavors_liked, r.general_notes].join(' ').toLowerCase().indexOf(q) >= 0;
     });
 
     filtered.sort(function (a, b) {
@@ -40001,7 +41890,8 @@ if (typeof window !== 'undefined') {
       var scaNum = (isFinite(rawSca) && rawSca > 0)
         ? rawSca
         : (starsNum > 0 ? Math.round((58.0 + ((starsNum - 1.0) / 4.0) * 34.0) * 4) / 4 : 0);
-      var isCupping = String(r.brew_method || '').toLowerCase() === 'cupping' || String(r.score_kind || '').toLowerCase() === 'cva_affective';
+      var isCupping = isCuppingRow(r);
+      var cvaCardTraits = extractRowCvaTraits(r);
       var flavorTags = String((typeof unneutralize === 'function' ? unneutralize(r.flavors_liked || '') : r.flavors_liked) || '')
         .split(/[;,|]/).map(function (s) {
           return s.trim().replace(/\b[a-z]/g, function (ch) { return ch.toUpperCase(); });
@@ -40028,7 +41918,7 @@ if (typeof window !== 'undefined') {
               text: scaNum.toFixed(1) + ' SCA'
             }) : null,
             starsNum > 0 ? S.h('span', {
-              class: 'bt-tc-badge mono ' + (starsNum >= 4.5 ? 'is-gold' : 'is-good')
+              class: 'bt-tc-badge mono ' + (starsNum >= 4.5 ? 'is-gold' : (starsNum >= 3.5 ? 'is-good' : 'is-warn'))
             }, S.iconEl('spark-star', { size: 12 }), S.h('span', { text: starsNum.toFixed(1) + ' / 5' })) : null,
             (scaNum <= 0 && starsNum <= 0) ? S.h('span', { class: 'bt-tc-badge is-soft', text: 'Logged' }) : null
           )
@@ -40039,8 +41929,26 @@ if (typeof window !== 'undefined') {
             return S.h('span', { class: 'bt-tc-badge is-soft', style: 'font-weight:700', text: ft });
           })
         ) : null,
+        cvaCardTraits.hasAny ? S.h('div', { class: 'bt-sca-attr-grid bt-journal-cva-mini', 'aria-label': 'Cupping attribute scores' },
+          cvaCardTraits.items.filter(function (it) { return it.val != null; }).map(function (it) {
+            var isSel = ui.selectedCvaTrait === it.key;
+            return S.h('button', {
+              type: 'button',
+              class: 'bt-sca-attr-pill bt-drillable' + (isSel ? ' is-active' : '') + (it.isHigh ? ' is-high' : '') + (it.isLow ? ' is-low' : ''),
+              onclick: function () { openTastingDetailSheet(rIdx); }
+            },
+              S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:4px;width:100%' },
+                S.h('span', { class: 'bt-sca-attr-name', text: it.label }),
+                S.h('strong', { class: 'bt-sca-attr-val mono', text: it.val.toFixed(1).replace(/\.0$/, '') })
+              ),
+              S.h('div', { class: 'bt-rating-dist-track', style: 'width:100%' },
+                S.h('div', { class: 'bt-rating-dist-fill', style: 'width:' + it.pct + '%' })
+              )
+            );
+          })
+        ) : null,
         nextRecCallout,
-        S.h('div', { class: 'bt-tc-pill-scroll' },
+        S.h('div', { class: 'bt-tc-pill-wrap', style: 'flex-wrap:wrap;gap:6px' },
           S.h('button', {
             type: 'button',
             class: 'bt-tc-pill is-compact is-soft',
@@ -41432,6 +43340,7 @@ if (typeof window !== 'undefined') {
           return S.h('div', { class: 'bt-detail-kv' }, S.h('span', { text: kv[0] }), S.h('b', { text: kv[1] }));
         })
       ),
+      buildCvaDetailScorecard(r, hObjs),
       r.general_notes ? S.h('div', { class: 'bt-tc-well' },
         S.h('span', { class: 'bt-tc-kicker', text: 'Tasting Notes' }),
         S.h('div', { style: 'font-size:0.86rem', text: un(r.general_notes) })
@@ -41866,6 +43775,22 @@ if (typeof window !== 'undefined') {
       openDetail: openTastingDetailSheet,
       openEdit: openTastingEditSheet,
       openQrPassport: openQrPassportSheet,
+      openJournalFilter: function (filterKey, query) {
+        ui.seg = 'journal';
+        ui.journalFilter = filterKey || 'all';
+        if (typeof query === 'string') ui.journalQ = query;
+        ui.journalBreakdownOpen = true;
+        var a = S.getApp();
+        if (a) {
+          a.activeTab = 'cellar';
+          if (a.tabSegments) a.tabSegments.cellar = 'journal';
+        }
+        if (window.BTShell && typeof window.BTShell.switchTab === 'function') {
+          window.BTShell.switchTab('cellar', { segment: 'journal' });
+        } else {
+          S.rerenderSafe();
+        }
+      },
       hydrateAndBrewRow: function (r) {
         if (!r) return;
         hydrateBrewFromRowOrBag(r, null, null);
@@ -42224,6 +44149,70 @@ if (typeof window !== 'undefined') {
       ic(meta.icon, { size: 14 }),
       domH('span', { text: cleanTxt })
     );
+  }
+
+  /* ---- v7.3 Plain-English Clarity Helpers (What Box, Dynamic Takeaway, Axis Caption, Acronym Hints) ---- */
+  function labAbbr(term, meaning) {
+    return domH('abbr', { class: 'bt-lab-abbr', title: String(meaning || term) }, String(term || ''));
+  }
+
+  function buildWhatBox(kickerText, children) {
+    const bodyNodes = Array.isArray(children) ? children : [children];
+    return domH('div', { class: 'bt-lab-what-box', role: 'note' },
+      domH('span', { class: 'bt-lab-what-kicker', text: kickerText || 'What this tool does' }),
+      domH('p', { class: 'bt-lab-what-body' }, bodyNodes)
+    );
+  }
+
+  function createTakeawayBox(id, kickerText) {
+    const bodyEl = domH('span', { class: 'bt-lab-takeaway-body', text: '' });
+    const box = domH('div', {
+      class: 'bt-lab-takeaway',
+      id: id || undefined,
+      role: 'status',
+      'aria-live': 'polite'
+    },
+      domH('span', { class: 'bt-lab-takeaway-kicker', text: kickerText || 'What this result means \u2192 ' }),
+      bodyEl
+    );
+    return {
+      el: box,
+      set: function (text, tone) {
+        bodyEl.textContent = String(text || '');
+        const cls = 'bt-lab-takeaway' + (tone ? (' is-' + tone) : '');
+        if (box.className !== cls) box.className = cls;
+      }
+    };
+  }
+
+  function buildAxisCaption(items, opts) {
+    if (CK && typeof CK.createAxisCaptionBar === 'function') {
+      return CK.createAxisCaptionBar(items, opts);
+    }
+    const bar = domH('div', { class: 'bt-axis-caption' });
+    (Array.isArray(items) ? items : []).forEach(function (it) {
+      if (!it) return;
+      if (typeof it === 'string') {
+        bar.appendChild(domH('span', { class: 'bt-axis-caption-item', text: it }));
+      } else {
+        bar.appendChild(domH('span', { class: 'bt-axis-caption-item', title: it.title || undefined },
+          it.kicker ? domH('strong', { text: it.kicker + ': ' }) : null,
+          String(it.text || '')
+        ));
+      }
+    });
+    return bar;
+  }
+
+  function buildStepRibbon(steps) {
+    const row = domH('div', { class: 'bt-lab-step-strip', role: 'list', 'aria-label': 'Quick workflow steps' });
+    (Array.isArray(steps) ? steps : []).forEach(function (st, idx) {
+      const lbl = typeof st === 'string' ? st : (st.text || st.label || '');
+      const tip = (st && typeof st === 'object' && st.title) ? st.title : lbl;
+      const cls = 'bt-lab-step-badge' + ((st && st.cls) ? (' ' + st.cls) : '');
+      row.appendChild(domH('span', { class: cls, role: 'listitem', title: tip }, 'Step ' + (idx + 1) + ': ' + lbl));
+    });
+    return row;
   }
 
   function getToolModeSafe(key) {
@@ -43230,6 +45219,7 @@ if (typeof window !== 'undefined') {
       bagPrice: 20.0,
       bagGrams: 250,
       doseG: 18.0,
+      dialInWasteG: 18.0,
       filterCost: 0.08,
       waterCostPerL: 0.35,
       milkCostPerCup: 0.00,
@@ -43748,6 +45738,7 @@ if (typeof window !== 'undefined') {
       'aria-label': 'Pocket Micron Lens optical particle distribution viewport'
     });
     const readoutBox = domH('div', { class: 'bt-micron-readout' });
+    const micronTakeaway = createTakeawayBox('bt-micron-takeaway');
 
     function drawMicronCanvas(res) {
       const ctx = canvas.getContext && canvas.getContext('2d');
@@ -43837,20 +45828,27 @@ if (typeof window !== 'undefined') {
           class: 'bt-lab-hint',
           text: 'Place scattered grounds on white paper next to any wallet card (85.60 x 53.98 mm) or coin. Sauvola local thresholding + ellipsoidal volume weighting calibrates your burr zero-point.'
         }));
+        micronTakeaway.set(
+          'Pick your Reference Card/Coin size, set your grinder Dial Step (' + labState.micron.clickVal + ' clicks), then snap a grounds photo or run a test scan to see your median grind size (D50 in microns) and brew-method band.',
+          'info'
+        );
         return;
       }
+      const d50Val = Math.round(r.d50MainUm);
+      const d90Val = Math.round(r.d90BoulderUm || r.d50MainUm * 1.46);
+      const bandName = d50Val < 350 ? 'Fine (Espresso / Moka)' : (d50Val < 500 ? 'Medium-Fine (AeroPress / Fine Filter)' : (d50Val <= 760 ? 'Medium (V60 / Pour-Over)' : 'Medium-Coarse to Coarse (Chemex / French Press)'));
       readoutBox.appendChild(domH('div', { class: 'bt-lab-metric-strip' },
-        domH('div', { class: 'bt-lab-kpi' },
-          domH('span', { text: 'Coarse D50' }),
-          domH('strong', { class: 'num-tab', text: Math.round(r.d50MainUm) + ' um' })
+        domH('div', { class: 'bt-lab-kpi', title: 'Median particle width — half of your grounds are finer and half are coarser than this micron size' },
+          domH('span', null, 'Median ', labAbbr('D50', 'Particle size median in microns (µm) — the middle grind size')),
+          domH('strong', { class: 'num-tab', text: d50Val + ' \u00B5m' })
         ),
-        domH('div', { class: 'bt-lab-kpi' },
-          domH('span', { text: 'Boulder D90' }),
-          domH('strong', { class: 'num-tab', text: Math.round(r.d90BoulderUm || r.d50MainUm * 1.46) + ' um' })
+        domH('div', { class: 'bt-lab-kpi', title: 'Largest 10% of coffee chunks — high boulders can leave cups sour or hollow' },
+          domH('span', null, 'Boulders ', labAbbr('D90', '90th-percentile particle width — the coarsest 10% of grounds')),
+          domH('strong', { class: 'num-tab', text: d90Val + ' \u00B5m' })
         ),
-        domH('div', { class: 'bt-lab-kpi' },
-          domH('span', { text: 'Nyquist 3x3 Floor' }),
-          domH('strong', { class: 'num-tab', text: '>=' + Math.round(r.nyquistFloorUm || 79) + ' um' })
+        domH('div', { class: 'bt-lab-kpi', title: 'Smallest particle width a phone camera can honestly resolve without guessing' },
+          domH('span', { text: 'Camera Detail Floor' }),
+          domH('strong', { class: 'num-tab', text: '>=' + Math.round(r.nyquistFloorUm || 79) + ' \u00B5m' })
         )
       ));
       readoutBox.appendChild(domH('p', {
@@ -43858,6 +45856,11 @@ if (typeof window !== 'undefined') {
         text: r.subFloorNote || 'Sub-pixel <85 um espresso fines are never faked optically; use 2 filter-range snaps to lock burr offset & slope.'
       }));
       const hasRealPhoto = !!(r.particleCount && r.particleCount > 0);
+      micronTakeaway.set(
+        'Step ' + labState.micron.clickVal + ' reads ~' + d50Val + ' \u00B5m D50 (' + bandName + ') with boulders up to ' + d90Val + ' \u00B5m. ' +
+        (hasRealPhoto ? 'Real photo verified — tap Save Anchor to lock this exact size onto your grinder!' : 'Reference preview active — upload a real photo on white paper next to your card/coin to lock your grinder calibration.'),
+        hasRealPhoto ? 'good' : 'info'
+      );
       readoutBox.appendChild(domH('button', {
         type: 'button',
         class: 'bt-lab-btn is-primary',
@@ -43913,13 +45916,14 @@ if (typeof window !== 'undefined') {
     });
 
     const refPills = [
-      { k: 'card', lbl: 'ISO Card (85.6mm)' },
-      { k: 'quarter', lbl: 'US Quarter (24.3mm)' },
-      { k: 'euro', lbl: '1 Euro (23.3mm)' }
+      { k: 'card', lbl: 'ISO Card (85.6mm)', tip: 'Use any standard credit/debit/ID card (85.6 mm wide) next to your grounds for millimeter calibration' },
+      { k: 'quarter', lbl: 'US Quarter (24.3mm)', tip: 'Use a US Quarter coin (24.26 mm diameter) beside your coffee grounds as the size reference' },
+      { k: 'euro', lbl: '1 Euro (23.3mm)', tip: 'Use a 1 Euro coin (23.25 mm diameter) beside your coffee grounds as the size reference' }
     ].map(function (it) {
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (labState.micron.refType === it.k ? ' is-active' : ''),
+        title: it.tip,
         'aria-pressed': String(labState.micron.refType === it.k),
         onclick: function () {
           labState.micron.refType = it.k;
@@ -43935,6 +45939,7 @@ if (typeof window !== 'undefined') {
 
     const clickVernier = CK.vernierPill({
       label: 'Dial Step',
+      title: 'The click or dial number you ground this coffee sample at',
       value: labState.micron.clickVal,
       min: 1,
       max: 90,
@@ -43944,6 +45949,7 @@ if (typeof window !== 'undefined') {
       onChange: function (v) {
         labState.micron.clickVal = v;
         if (labState.micron.result) runSyntheticOrRealAnalysis(null);
+        else paintMicronReadout();
       }
     });
 
@@ -43964,23 +45970,48 @@ if (typeof window !== 'undefined') {
       ),
       domH('div', { class: 'bt-head-actions' }, micronHow.trigger, epistemicBadge('verified_physics'))
     ));
+    wrap.appendChild(buildWhatBox('What this tool does', [
+      'No laser grind analyzer? Scatter a pinch of dry grounds on white paper next to a standard wallet card or coin (',
+      labAbbr('Reference Card', 'Known physical size — ISO ID-1 card 85.6 mm or coin — so the camera converts pixels into real microns'),
+      ' calibration) to measure your ',
+      labAbbr('D50', 'Median particle width in microns (µm) — half of grounds are finer, half are coarser'),
+      ' grind size and ',
+      labAbbr('PSD', 'Particle Size Distribution — the spread between fine dust and coarse boulders'),
+      ' for your grinder.'
+    ]));
+    wrap.appendChild(buildStepRibbon([
+      { text: 'Scatter grounds beside a card or coin', title: 'Spread a single non-overlapping layer of dry coffee on white paper next to your chosen reference object' },
+      { text: 'Set Dial Step & snap photo', title: 'Match the click number you ground at, then tap Snap / Upload Grounds Photo' },
+      { text: 'Save Anchor to your grinder', title: 'Lock the optical micron anchor into your personal grinder calibration curve' }
+    ]));
     wrap.appendChild(micronHow.panel);
-    wrap.appendChild(domH('div', { class: 'bt-lab-chip-row' }, refPills, clickVernier));
+    wrap.appendChild(domH('div', { class: 'bt-lab-chip-row' },
+      domH('span', { class: 'bt-lab-inline-lbl', text: 'Reference Object:' }),
+      refPills,
+      clickVernier
+    ));
     wrap.appendChild(canvas);
+    wrap.appendChild(buildAxisCaption([
+      { kicker: 'Left Box', text: 'Known card/coin scale reference' },
+      { kicker: 'Right Field', text: 'Segmented coffee particles (µm width)' }
+    ]));
     wrap.appendChild(domH('div', { class: 'bt-lab-btn-row' },
       fileIn,
       domH('button', {
         type: 'button',
         class: 'bt-lab-btn is-primary',
+        title: 'Take or upload a top-down photo of dry coffee grounds beside your card or coin to measure real micron size',
         onclick: function () { fileIn.click(); }
       }, ic('scan-lens', { size: 16 }), domH('span', { text: 'Snap / Upload Grounds Photo' })),
       domH('button', {
         type: 'button',
         class: 'bt-lab-btn',
+        title: 'Preview how the optical particle analyzer segments grounds at your selected Dial Step (demo only; real photo required to save anchor)',
         onclick: function () { runSyntheticOrRealAnalysis(null); }
       }, ic('spark-star', { size: 16 }), domH('span', { text: 'Run Reference Calibration Scan' }))
     ));
     wrap.appendChild(readoutBox);
+    wrap.appendChild(micronTakeaway.el);
 
     drawMicronCanvas(labState.micron.result);
     paintMicronReadout();
@@ -44096,6 +46127,22 @@ if (typeof window !== 'undefined') {
       )
     );
     root.appendChild(banner);
+    root.appendChild(buildWhatBox('What these 5 Bluetooth slots do', [
+      'Connect real coffee sensors directly over ',
+      labAbbr('BLE', 'Bluetooth Low Energy — connects straight from Chrome, Edge, or Bluefy on iOS with zero cloud login'),
+      ': Slot 1 streams live pour weight & flow rate, Slot 2 logs espresso puck bar pressure, Slot 3 reads cup strength (',
+      labAbbr('%TDS', 'Total Dissolved Solids — optical cup strength'),
+      '), Slot 4 scans roast color (',
+      labAbbr('Agtron #', 'Roast lightness number: higher = lighter roast, lower = darker'),
+      ') & grind spread (',
+      labAbbr('D50 / PSD', 'Median particle size in microns and Particle Size Distribution'),
+      '), and Slot 5 sends target brew temps or recipes to your kettle/xBloom.'
+    ]));
+    root.appendChild(buildStepRibbon([
+      { text: 'Turn on Bluetooth gear', title: 'Close vendor phone apps first so your scale, R2, Omni, or kettle advertises over BLE' },
+      { text: 'Tap Pair on its slot', title: 'Pick your device slot below (or tap Scan Any BLE if your gear was renamed)' },
+      { text: 'Live data streams to Timer & Lab', title: 'Weight, flow rate, %TDS, Agtron, and D50 auto-sync across every tab' }
+    ]));
 
     /* Helper to construct a slot header with live dot, icon, title, device name & battery % */
     function createSlotHeader(iconName, titleText) {
@@ -44297,6 +46344,7 @@ if (typeof window !== 'undefined') {
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
       scaleHead.el,
+      domH('p', { class: 'bt-lab-sub', style: 'margin:0;font-size:0.78rem;', text: 'Streams live pour weight (g) & flow rate (g/s) straight into Step 4 Brew Timer.' }),
       scaleReadout.el,
       domH('p', {
         class: 'bt-ble-slot-fams',
@@ -44375,6 +46423,7 @@ if (typeof window !== 'undefined') {
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
       pressureHead.el,
+      domH('p', { class: 'bt-lab-sub', style: 'margin:0;font-size:0.78rem;', text: 'Tracks live espresso grouphead pressure (bar) during pre-infusion & pull.' }),
       pressureReadout.el,
       domH('p', {
         class: 'bt-ble-slot-fams',
@@ -44477,6 +46526,15 @@ if (typeof window !== 'undefined') {
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
       r2Head.el,
+      domH('p', { class: 'bt-lab-sub', style: 'margin:0;font-size:0.78rem;' },
+        'Reads optical cup strength (',
+        labAbbr('%TDS', 'Total Dissolved Solids — percentage of dissolved coffee in your cup'),
+        '), ',
+        labAbbr('Brix', 'Sugar-scale optical reading from the prism'),
+        ' & ',
+        labAbbr('nD20', 'Refractive Index at 20 °C — raw light bending reading'),
+        ' and auto-fills Studio 1 & Step 5.'
+      ),
       r2Readout.el,
       domH('p', {
         class: 'bt-ble-slot-fams',
@@ -44581,6 +46639,13 @@ if (typeof window !== 'undefined') {
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
       omniHead.el,
+      domH('p', { class: 'bt-lab-sub', style: 'margin:0;font-size:0.78rem;' },
+        'Scans whole-bean & ground roast color (',
+        labAbbr('Agtron #', 'Higher = lighter roast, lower = darker roast'),
+        ') plus grind spread (',
+        labAbbr('D50 / PSD', 'Median particle microns & Particle Size Distribution'),
+        ').'
+      ),
       omniReadout.el,
       domH('p', {
         class: 'bt-ble-slot-fams',
@@ -44760,6 +46825,7 @@ if (typeof window !== 'undefined') {
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
       machineHead.el,
+      domH('p', { class: 'bt-lab-sub', style: 'margin:0;font-size:0.78rem;', text: 'Pushes your active recipe target water temp to Fellow Stagg EKG+ or sends the full pour profile to xBloom.' }),
       machineReadout.el,
       domH('div', {
         style: 'display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:10px;background:var(--bg-subtle, #F2EAE0);min-width:0;max-width:100%;box-sizing:border-box;'
@@ -44968,14 +47034,29 @@ if (typeof window !== 'undefined') {
             domH('strong', { text: 'DiFluid Cafe & CoffeeOS Zero-CORS Drop / Paste (No API Key)' })
           )
         ),
+        buildWhatBox('What this importer does', [
+          'Paste or drop a DiFluid Cafe CSV, JSON, or share note to auto-fill your measured ',
+          labAbbr('%TDS', 'Total Dissolved Solids — cup strength'),
+          ', ',
+          labAbbr('Agtron #', 'Roast lightness score (higher = lighter)'),
+          ', and ',
+          labAbbr('D50', 'Median coffee grind size in microns'),
+          ' across every Lab studio — no cloud login required.'
+        ]),
+        buildStepRibbon([
+          { text: 'Copy note or export CSV from DiFluid', title: 'Export a CSV/JSON or share summary from the DiFluid Cafe app' },
+          { text: 'Paste text or choose file', title: 'Paste into the box below or tap Choose CSV / JSON' },
+          { text: 'Auto-fills %TDS, Agtron & D50', title: 'Measured values immediately populate Studio 1, Grinder Lab, and Agtron' }
+        ]),
         pasteArea,
         domH('div', { class: 'bt-lab-btn-row' },
           dfFile,
-          domH('button', { type: 'button', class: 'bt-lab-btn is-sm is-primary', onclick: function () { importDiFluidPayload(pasteArea.value); } }, 'Apply Pasted Data'),
-          domH('button', { type: 'button', class: 'bt-lab-btn is-sm', onclick: function () { dfFile.click(); } }, 'Choose CSV / JSON'),
+          domH('button', { type: 'button', class: 'bt-lab-btn is-sm is-primary', title: 'Parse pasted CSV, JSON, or share text and load %TDS / Agtron / D50 into Lab', onclick: function () { importDiFluidPayload(pasteArea.value); } }, 'Apply Pasted Data'),
+          domH('button', { type: 'button', class: 'bt-lab-btn is-sm', title: 'Pick a local DiFluid CSV or JSON export file from your device', onclick: function () { dfFile.click(); } }, 'Choose CSV / JSON'),
           domH('button', {
             type: 'button',
             class: 'bt-lab-btn is-sm',
+            title: 'Load a sample DiFluid R2 + Omni reading so you can preview how optical readings populate the Lab',
             onclick: function () {
               if (typeof dfApi.getDemoDataset === 'function') {
                 const demo = dfApi.getDemoDataset();
@@ -45357,6 +47438,7 @@ if (typeof window !== 'undefined') {
 
     const forecastBadgeEl = domH('div', { class: 'bt-flavor-forecast-badge', id: 'bt-bc-flavor-forecast' });
     const summaryEl = domH('div', { class: 'bt-studio-readout-banner' });
+    const bcTakeaway = createTakeawayBox('bt-bc-takeaway');
     const sweetSnapRow = domH('div', { class: 'bt-lab-chip-row' });
     const immersionBasisRow = domH('div', { class: 'bt-lab-chip-row bt-immersion-basis-row' });
     const r2ReconcileBox = domH('div', { class: 'bt-r2-reconcile-card', hidden: true });
@@ -45438,8 +47520,12 @@ if (typeof window !== 'undefined') {
         gridG.appendChild(tl);
       }
 
+      const yAxisLbl = CK.svgEl('text', { x: '10', y: '16', 'text-anchor': 'start', class: 'bt-chart-axis-title' });
+      yAxisLbl.textContent = 'Strength (%TDS) \u2191';
+      gridG.appendChild(yAxisLbl);
+
       const xAxisLbl = CK.svgEl('text', { x: (P.L + P.PW * 0.5).toFixed(1), y: 378, 'text-anchor': 'middle', class: 'bt-chart-axis-title' });
-      xAxisLbl.textContent = 'Extraction Yield (% EY)';
+      xAxisLbl.textContent = 'Extraction Yield (%EY) \u00B7 Sour \u2190 \u2192 Bitter';
       gridG.appendChild(xAxisLbl);
 
       /* Iso-Ratio Curves */
@@ -45475,8 +47561,8 @@ if (typeof window !== 'undefined') {
         rx: '8',
         class: 'bt-bc-zone-sca'
       }));
-      const zl = CK.svgEl('text', { x: (mapX(18) + 6).toFixed(1), y: (mapY(scaLoTds) - 6).toFixed(1), class: 'bt-bc-zone-lbl' });
-      zl.textContent = d.isEsp ? 'Classic 9-Bar Sweet Zone' : 'SCA Classic (18-22%)';
+      const zl = CK.svgEl('text', { x: (mapX(18) + 6).toFixed(1), y: (mapY(scaLoTds) - 6).toFixed(1), class: 'bt-bc-zone-lbl bt-chart-zone-lbl' });
+      zl.textContent = d.isEsp ? 'Espresso Gold Zone (18\u201322% EY \u00B7 8.5\u201311.5% TDS)' : 'SCA Gold Zone (18\u201322% EY \u00B7 1.15\u20131.45% TDS)';
       zonesG.appendChild(zl);
 
       if (!d.isEsp) {
@@ -45488,6 +47574,9 @@ if (typeof window !== 'undefined') {
           rx: '8',
           class: 'bt-bc-zone-nordic'
         }));
+        const nl = CK.svgEl('text', { x: (mapX(19.6) + 6).toFixed(1), y: (mapY(1.50) + 12).toFixed(1), class: 'bt-bc-zone-lbl bt-chart-zone-lbl' });
+        nl.textContent = 'Nordic / High-Clarity Zone';
+        zonesG.appendChild(nl);
       }
 
       /* Channeling / Harsh Over-Extraction Danger Zone */
@@ -45916,6 +48005,30 @@ if (typeof window !== 'undefined') {
       if (eyTdsInput && (typeof document === 'undefined' || document.activeElement !== eyTdsInput)) {
         eyTdsInput.value = s.measTds > 0 ? s.measTds.toFixed(2) : '';
       }
+
+      const dNow = getDomains();
+      let bcMsg = '';
+      let bcTone = 'good';
+      if (s.targetEy < 18.0) {
+        bcTone = 'warn';
+        bcMsg = 'At ' + s.targetEy.toFixed(1) + '% EY, water only pulls fast fruit acids — expect a sharp, sour, short-finish cup. Slide the dot right toward 19–21% EY (or grind finer) to unlock caramel sweetness.';
+      } else if (s.targetEy > 22.8) {
+        bcTone = 'bad';
+        bcMsg = 'Past 22.8% EY (' + s.targetEy.toFixed(1) + '%), late-extracting bitter & drying compounds take over. Slide left into the green Balanced Zone (18–22% EY) or grind coarser for a sweeter finish.';
+      } else if (s.targetTds < (dNow.isEsp ? 8.4 : 1.29)) {
+        bcTone = 'good';
+        bcMsg = 'Delicate & Tea-Like (' + s.targetTds.toFixed(2) + '% TDS · 1:' + rec.ratio.toFixed(1) + '): lighter body lets floral & citrus aromatics shine. Weigh ' + rec.doseG.toFixed(1) + ' g coffee and ' + (s.mode === 'espresso' ? ('pull ' + rec.bevG.toFixed(1) + ' g shot.') : ('pour ' + rec.pourG.toFixed(0) + ' g water.'));
+      } else if (s.targetTds > (dNow.isEsp ? 10.9 : 1.46)) {
+        bcTone = 'good';
+        bcMsg = 'Rich & Syrupy (' + s.targetTds.toFixed(2) + '% TDS · 1:' + rec.ratio.toFixed(1) + '): concentrated, velvety mouthfeel while staying cleanly extracted (' + s.targetEy.toFixed(1) + '% EY). Weigh ' + rec.doseG.toFixed(1) + ' g coffee and ' + (s.mode === 'espresso' ? ('pull ' + rec.bevG.toFixed(1) + ' g shot.') : ('pour ' + rec.pourG.toFixed(0) + ' g water.'));
+      } else {
+        bcTone = 'good';
+        bcMsg = 'Right inside the Sweet Spot (' + s.targetEy.toFixed(1) + '% EY · ' + s.targetTds.toFixed(2) + '% TDS · 1:' + rec.ratio.toFixed(1) + '): balanced sweetness, acidity, and body. Weigh ' + rec.doseG.toFixed(1) + ' g coffee and ' + (s.mode === 'espresso' ? ('pull ' + rec.bevG.toFixed(1) + ' g shot.') : ('pour ' + rec.pourG.toFixed(0) + ' g water for ~' + rec.bevG.toFixed(0) + ' g in mug.'));
+      }
+      if (s.measTds > 0) {
+        bcMsg += ' Your measured cup (' + s.measTds.toFixed(2) + '% TDS -> ' + mEyCalc.toFixed(1) + '% EY) is plotted as the diamond pin.';
+      }
+      bcTakeaway.set(bcMsg, bcTone);
     }
 
     let aimCtaSpan = domH('span', { text: 'Brew Aiming Here \u2192' });
@@ -45986,14 +48099,15 @@ if (typeof window !== 'undefined') {
 
     /* 1-Tap Style Target Presets */
     const STYLE_PRESETS = [
-      { k: 'floral', lbl: 'Tea-Like & Floral', ey: 19.6, tds: 1.24, espEy: 20.8, espTds: 8.0 },
-      { k: 'juicy', lbl: 'Juicy & Sweet', ey: 20.4, tds: 1.38, espEy: 20.2, espTds: 9.6 },
-      { k: 'syrupy', lbl: 'Rich & Syrupy', ey: 21.0, tds: 1.52, espEy: 19.4, espTds: 11.6 }
+      { k: 'floral', lbl: 'Tea-Like & Floral', ey: 19.6, tds: 1.24, espEy: 20.8, espTds: 8.0, tip: 'Lighter, delicate body with high aroma clarity (1.24% TDS filter / 8.0% TDS turbo espresso)' },
+      { k: 'juicy', lbl: 'Juicy & Sweet', ey: 20.4, tds: 1.38, espEy: 20.2, espTds: 9.6, tip: 'Balanced everyday sweet spot inside the SCA Gold Zone (1.38% TDS filter / 9.6% TDS espresso)' },
+      { k: 'syrupy', lbl: 'Rich & Syrupy', ey: 21.0, tds: 1.52, espEy: 19.4, espTds: 11.6, tip: 'Stronger, fuller-bodied cup with heavy cocoa/toffee texture (1.52% TDS filter / 11.6% TDS ristretto)' }
     ];
     const styleBtns = STYLE_PRESETS.map(function (sp) {
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (s.stylePreset === sp.k ? ' is-active' : ''),
+        title: sp.tip,
         'aria-pressed': String(s.stylePreset === sp.k),
         onclick: function () {
           s.stylePreset = sp.k;
@@ -46013,13 +48127,14 @@ if (typeof window !== 'undefined') {
 
     /* Mode Selector Pills */
     const modeBtns = [
-      { k: 'percolation', lbl: 'Filter Percolation' },
-      { k: 'immersion', lbl: 'Steeped / Immersion' },
-      { k: 'espresso', lbl: 'Espresso & Moka' }
+      { k: 'percolation', lbl: 'Filter Percolation', tip: 'Pour-over & drip brewers where hot water flows through a coffee bed (V60, Kalita, Chemex, batch drip)' },
+      { k: 'immersion', lbl: 'Steeped / Immersion', tip: 'Full-steep brewers where grounds sit in water before filtering (French Press, AeroPress, Clever, Switch)' },
+      { k: 'espresso', lbl: 'Espresso & Moka', tip: 'Concentrated high-strength shots (8–12% TDS) brewed under pressure' }
     ].map(function (m) {
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (s.mode === m.k ? ' is-active' : ''),
+        title: m.tip,
         'aria-pressed': String(s.mode === m.k),
         onclick: function () {
           const prevEsp = s.mode === 'espresso';
@@ -46061,12 +48176,13 @@ if (typeof window !== 'undefined') {
       const curBasis = (a.prefs && a.prefs.immersionBasis) || 'liang';
       immersionBasisRow.appendChild(domH('span', { class: 'bt-lab-inline-lbl', text: 'Immersion Basis:' }));
       [
-        { k: 'liang', lbl: 'Liang f_abs = 0.00', badge: 'Verified Science', badgeCls: 'is-verified' },
-        { k: 'gagne', lbl: 'Gagne f_abs = 1.00', badge: 'Active Research', badgeCls: 'is-research' }
+        { k: 'liang', lbl: 'Liang f_abs = 0.00', badge: 'Verified Science', badgeCls: 'is-verified', tip: 'Standard immersion math: assumes liquid trapped in grounds has the same strength as your cup' },
+        { k: 'gagne', lbl: 'Gagne f_abs = 1.00', badge: 'Active Research', badgeCls: 'is-research', tip: 'Slurry-absorption model: accounts for slightly stronger liquid trapped inside coffee cells' }
       ].forEach(function (opt) {
         immersionBasisRow.appendChild(domH('button', {
           type: 'button',
           class: 'bt-lab-chip' + (curBasis === opt.k ? ' is-active' : ''),
+          title: opt.tip,
           'aria-pressed': String(curBasis === opt.k),
           onclick: function () {
             a.prefs = a.prefs || {};
@@ -46087,6 +48203,7 @@ if (typeof window !== 'undefined') {
     /* ICUMSA nD20 / Brix / %TDS Scrubbable Vernier Row */
     const dosePill = CK.vernierPill({
       label: 'Dose',
+      title: 'Dry coffee beans weighed in grams before grinding',
       value: s.doseG,
       min: 5,
       max: 120,
@@ -46099,6 +48216,7 @@ if (typeof window !== 'undefined') {
 
     const tdsPill = CK.vernierPill({
       label: 'Meas %TDS',
+      title: 'Total Dissolved Solids (%) — optical cup strength (higher = heavier/stronger)',
       value: s.measTds || s.targetTds,
       min: 0.50,
       max: 18.0,
@@ -46117,6 +48235,7 @@ if (typeof window !== 'undefined') {
 
     const brixPill = CK.vernierPill({
       label: 'ICUMSA Brix',
+      title: 'Refractometer sugar scale (°Bx) — coffee %TDS is ~0.85 × Brix',
       value: brixFromTds(s.targetTds),
       min: 0.50,
       max: 22.0,
@@ -46136,6 +48255,7 @@ if (typeof window !== 'undefined') {
 
     const ndPill = CK.vernierPill({
       label: 'nD20',
+      title: 'Refractive Index at 20 °C — raw optical light-bending reading (pure water = 1.3330)',
       value: s.measNd,
       min: 1.3330,
       max: 1.3680,
@@ -46184,6 +48304,7 @@ if (typeof window !== 'undefined') {
 
     tempSamplePill = CK.vernierPill({
       label: 'R2 Temp',
+      title: 'Coffee drop temperature on your refractometer prism — cool to 20–25 °C (68–77 °F) before reading',
       value: s.measTempC,
       min: 10.0,
       max: 65.0,
@@ -46392,9 +48513,18 @@ if (typeof window !== 'undefined') {
         r2LiveStatusBadge,
         r2ActionBtnsWrap
       ),
+      buildWhatBox('What this refractometer converter does', [
+        'Optional optical check: enter a ',
+        labAbbr('%TDS', 'Total Dissolved Solids — coffee strength measured by a refractometer'),
+        ', ',
+        labAbbr('Brix', 'Sugar-scale reading (°Bx) from standard handheld refractometers; coffee %TDS ≈ 0.85 × Brix'),
+        ', or raw ',
+        labAbbr('nD20', 'Refractive Index at 20 °C — exact light-bending value on the prism'),
+        ' reading to plot your actual cup on the chart and diagnose channeling if the number disagrees with taste.'
+      ]),
       domH('div', { class: 'bt-lab-inline-inputs' },
-        domH('label', { class: 'bt-lab-field-lbl' },
-          domH('span', { text: 'Measured %TDS' }),
+        domH('label', { class: 'bt-lab-field-lbl', title: 'Measured Total Dissolved Solids (%) from your refractometer' },
+          domH('span', null, 'Measured ', labAbbr('%TDS', 'Total Dissolved Solids — coffee strength')),
           eyTdsInput
         ),
         eyLiveReadoutEl
@@ -46460,6 +48590,13 @@ if (typeof window !== 'undefined') {
       ),
       domH('div', { class: 'bt-head-actions' }, bcHow.trigger, epistemicBadge('verified_physics'))
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Drag the target dot to balance ',
+      labAbbr('Strength (%TDS)', 'Total Dissolved Solids — how light/tea-like or heavy/syrupy the coffee feels in your mouth'),
+      ' vs ',
+      labAbbr('Extraction (%EY)', 'Extraction Yield — what percent of dry coffee grounds dissolved into the cup'),
+      ' — find why your cup tastes sour, hollow, rich, or bitter, and compute the exact coffee & water weights to hit it.'
+    ]));
     card.appendChild(bcHow.panel);
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' }, modeBtns));
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
@@ -46471,8 +48608,13 @@ if (typeof window !== 'undefined') {
     card.appendChild(sweetSnapRow);
     card.appendChild(pinLegendRow);
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, svg));
+    card.appendChild(buildAxisCaption([
+      { kicker: 'X-Axis (%EY)', text: 'Left: Under-Extracted / Sour \u2194 Right: Over-Extracted / Bitter', title: 'Extraction Yield (%EY): how much flavor was pulled from the coffee grounds' },
+      { kicker: 'Y-Axis (%TDS)', text: 'Down: Lighter / Tea-Like \u2194 Up: Stronger / Syrupy', title: 'Total Dissolved Solids (%TDS): cup concentration / body' }
+    ], { ariaLabel: 'Brew Control Chart Axis Guide' }));
     card.appendChild(forecastBadgeEl);
     card.appendChild(summaryEl);
+    card.appendChild(bcTakeaway.el);
     card.appendChild(domH('div', { class: 'bt-chart-cta-bar' }, aimBtn, aimSubSpan));
     if (r2ToggleHint) card.appendChild(r2ToggleHint);
     card.appendChild(r2Section);
@@ -46526,6 +48668,7 @@ if (typeof window !== 'undefined') {
     );
 
     const readoutBar = domH('div', { class: 'bt-studio-readout-banner' });
+    const waveTakeaway = createTakeawayBox('bt-wave-takeaway');
 
     const L = 42, R = 426, PW = 384;
     const T1 = 16, B1 = 162, PH1 = 146;
@@ -46779,13 +48922,20 @@ if (typeof window !== 'undefined') {
         ctx.lineWidth = 1.8;
         ctx.stroke();
 
-        /* Axis Captions */
+        /* Axis Captions & Time X-Axis Ticks */
         ctx.fillStyle = isDark ? '#CEBDA1' : '#534034';
         ctx.font = '600 9.5px ui-monospace, monospace';
         ctx.fillText(Math.round(sim.maxM) + 'g', 4, T1 + 9);
         ctx.fillText('0g', 16, B1);
-        ctx.fillText('98C', R - 24, T1 + 9);
+        ctx.fillText('98\u00B0C', R - 28, T1 + 9);
         ctx.fillText('g/s', 12, T2 + 11);
+        const tickStep = sim.maxT > 200 ? 60 : 45;
+        ctx.textAlign = 'center';
+        for (let tTick = 0; tTick <= sim.maxT; tTick += tickStep) {
+          const tickX = clamp(tx(tTick), L + 12, R - 12, tx(tTick));
+          ctx.fillText(fmtMmSs(tTick), tickX, B2 + 14);
+        }
+        ctx.textAlign = 'left';
         ctx.restore();
       }
 
@@ -46818,6 +48968,15 @@ if (typeof window !== 'undefined') {
       const earlyDeltaSec = Math.max(0, Math.round(endDrainSec - cutSec));
 
       /* Tactile Draggable Emerald Cutoff Gate Handle right on the chart (shifted 14px lower & clamped clear of axis labels) */
+      const sweetZoneLbl = CK.svgEl('text', {
+        x: (L + PW * 0.48).toFixed(1),
+        y: (T1 + 14).toFixed(1),
+        'text-anchor': 'middle',
+        class: 'bt-chart-zone-lbl is-good'
+      });
+      sweetZoneLbl.textContent = 'Sweet Spot Band (Wave 2 Sugars)';
+      cutoffHandleG.appendChild(sweetZoneLbl);
+
       const cutHandleX = txSvg(cutSec);
       const cutPillX = clamp(cutHandleX, L + 46, R - 48, cutHandleX);
       const cutKnob = CK.svgEl('g', { transform: 'translate(' + cutPillX.toFixed(1) + ',' + (T1 + 42).toFixed(1) + ')' });
@@ -46857,6 +49016,18 @@ if (typeof window !== 'undefined') {
           class: 'bt-studio-xray-line',
           text: 'Polarity Kinetics & First-Law Open-CV Calorimetry \u00B7 Wave 1 Bright Acids ' + Math.round(sp.yA * 100) + '% · Wave 2 Sweet Sugars ' + Math.round(sp.yS * 100) + '% · Wave 3 Dry Bitters ' + Math.round(sp.yB * 100) + '% — drag Cutoff Gate pill or diamond pour knots.'
         }));
+      }
+      if (earlyDeltaSec > 0) {
+        waveTakeaway.set(
+          'Lifting the dripper ' + earlyDeltaSec + 's early at ' + fmtMmSs(cutSec) + ' (~' + pullCarafeG + ' g in carafe) skips the bitter late tail — blocking ' +
+          bittersBlockedPct + '% of Wave 3 dry bitters while preserving ' + sugarsKeptPct + '% of sweet sugars (slurry ' + fmtTempPref(sp.tempC, 1) + ').',
+          bittersBlockedPct >= 15 ? 'good' : 'info'
+        );
+      } else {
+        waveTakeaway.set(
+          'Full drain to ' + fmtMmSs(cutSec) + ' (~' + pullCarafeG + ' g in carafe) extracts maximum strength, including late Wave 3 bitters — slide the green Cutoff Gate 10–20s left if your cup finishes dry or astringent.',
+          'warn'
+        );
       }
     }
 
@@ -46963,14 +49134,15 @@ if (typeof window !== 'undefined') {
     });
 
     const matPills = [
-      { k: 'plastic', lbl: 'Plastic V60 (51 J/K)' },
-      { k: 'glass', lbl: 'Glass (100 J/K)' },
-      { k: 'ceramic', lbl: 'Ceramic (177 J/K)' },
-      { k: 'vacuum', lbl: 'Vacuum SS (14 J/K)' }
+      { k: 'plastic', lbl: 'Plastic V60 (51 J/K)', tip: 'Low thermal mass — absorbs very little heat from your brew slurry' },
+      { k: 'glass', lbl: 'Glass (100 J/K)', tip: 'Medium thermal mass — give a quick hot rinse before brewing' },
+      { k: 'ceramic', lbl: 'Ceramic (177 J/K)', tip: 'High thermal mass — steals 4–6 °C if not preheated with hot water' },
+      { k: 'vacuum', lbl: 'Vacuum SS (14 J/K)', tip: 'Insulated steel — holds slurry heat steady throughout drawdown' }
     ].map(function (m) {
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (w.material === m.k ? ' is-active' : ''),
+        title: m.tip,
         'aria-pressed': String(w.material === m.k),
         onclick: function () {
           w.material = m.k;
@@ -46986,13 +49158,14 @@ if (typeof window !== 'undefined') {
     });
 
     const prePills = [
-      { k: 'cold', lbl: 'Cold Dripper' },
-      { k: 'warm', lbl: 'Tap Warm' },
-      { k: 'boiling', lbl: 'Boiling Rinse' }
+      { k: 'cold', lbl: 'Cold Dripper', tip: 'Room-temp unheated dripper — steals heat from the bloom' },
+      { k: 'warm', lbl: 'Tap Warm', tip: 'Rinsed with warm tap water (~35 °C) — halves heat loss' },
+      { k: 'boiling', lbl: 'Boiling Rinse', tip: 'Preheated with boiling kettle water — preserves maximum slurry heat' }
     ].map(function (pr) {
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (w.preheat === pr.k ? ' is-active' : ''),
+        title: pr.tip,
         'aria-pressed': String(w.preheat === pr.k),
         onclick: function () {
           w.preheat = pr.k;
@@ -47024,11 +49197,28 @@ if (typeof window !== 'undefined') {
       ),
       domH('div', { class: 'bt-head-actions' }, waveHow.trigger, epistemicBadge('calibrated_biophysics'))
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Coffee compounds dissolve in 3 waves: ',
+      domH('strong', { text: '1. Bright Acids' }),
+      ' extract first, ',
+      domH('strong', { text: '2. Sweet Sugars' }),
+      ' peak in the middle, and ',
+      domH('strong', { text: '3. Dry Bitters' }),
+      ' creep in during the final seconds of drawdown. Adjust kettle temp, ',
+      labAbbr('Grind D50', 'Median particle size in microns (µm) — finer slows drawdown and extracts faster'),
+      ', or drag the green Cutoff Gate to stop the brew before bitters take over.'
+    ]));
     card.appendChild(waveHow.panel);
-    card.appendChild(domH('div', { class: 'bt-lab-chip-row' }, matPills));
-    card.appendChild(domH('div', { class: 'bt-lab-chip-row' }, prePills,
+    card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
+      domH('span', { class: 'bt-lab-inline-lbl', text: 'Dripper Body:' }),
+      matPills
+    ));
+    card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
+      domH('span', { class: 'bt-lab-inline-lbl', text: 'Preheat:' }),
+      prePills,
       CK.vernierPill({
         label: 'Kettle',
+        title: 'Water temperature leaving your kettle — hotter water extracts faster and pulls late bitters sooner',
         value: w.kettleC,
         min: 80,
         max: 100,
@@ -47041,6 +49231,7 @@ if (typeof window !== 'undefined') {
       }),
       CK.vernierPill({
         label: 'Grind D50',
+        title: 'Median coffee particle width in microns (µm) — finer (<500 µm) slows flow and boosts extraction; coarser (>700 µm) drains faster',
         value: w.d50Um,
         min: 200,
         max: 1100,
@@ -47052,6 +49243,10 @@ if (typeof window !== 'undefined') {
     ));
     card.appendChild(waveLegendBar);
     card.appendChild(stage);
+    card.appendChild(buildAxisCaption([
+      { kicker: 'X-Axis (Brew Time)', text: 'Left: 0:00 Bloom (Acids) \u2192 Mid: Main Pour (Sugars) \u2192 Right: Final Drain (Bitters)' },
+      { kicker: 'Y-Axis', text: 'Top: Pour Weight (g) & Slurry Temp (°C) · Bottom Band: Pour Flow Rate (g/s)' }
+    ], { ariaLabel: '3-Wave Chart Axis Guide' }));
     card.appendChild(domH('div', { class: 'bt-cutoff-scrubber-box' },
       domH('div', { class: 'bt-cutoff-head' },
         cutoffLblEl,
@@ -47059,6 +49254,7 @@ if (typeof window !== 'undefined') {
           domH('button', {
             type: 'button',
             class: 'bt-lab-chip',
+            title: 'Lift the dripper 15 seconds before the final drain to skip Wave 3 bitter/astringent tail',
             onclick: function () {
               w.cutoffSec = Math.max(75, w.knots[w.knots.length - 1].t - 15);
               w.scrubT = w.cutoffSec;
@@ -47069,6 +49265,7 @@ if (typeof window !== 'undefined') {
           domH('button', {
             type: 'button',
             class: 'bt-lab-chip',
+            title: 'Let every drop finish draining into the carafe for maximum body and strength',
             onclick: function () {
               w.cutoffSec = w.knots[w.knots.length - 1].t;
               w.scrubT = w.cutoffSec;
@@ -47081,6 +49278,7 @@ if (typeof window !== 'undefined') {
       cutoffRangeEl
     ));
     card.appendChild(readoutBar);
+    card.appendChild(waveTakeaway.el);
     function resolveWaveTargetGrindUm(a, waveUm) {
       const mLow = String((a && a.brew && a.brew.method) || '').toLowerCase();
       const isEspLike = mLow === 'espresso' || mLow === 'lever_espresso' || mLow === 'turkish';
@@ -47172,6 +49370,7 @@ if (typeof window !== 'undefined') {
     const mr = labState.mugRescue;
     const card = domH('section', { class: 'bt-studio-card', id: 'bt-studio-mug-rescue' });
     const verdictBox = domH('div', { class: 'bt-mug-rescue-verdict' });
+    const mugTakeaway = createTakeawayBox('bt-mug-takeaway');
     const mugSvg = CK.svgEl('svg', {
       viewBox: '0 0 460 148',
       class: 'bt-chart-svg bt-mug-rescue-svg',
@@ -47181,11 +49380,11 @@ if (typeof window !== 'undefined') {
     mugSvg.appendChild(mugG);
 
     const symptoms = [
-      { k: 'bitter', lbl: 'Too Bitter / Harsh' },
-      { k: 'sour', lbl: 'Too Sour / Sharp' },
-      { k: 'strong', lbl: 'Too Strong / Heavy' },
-      { k: 'sour_bitter', lbl: 'Sour + Bitter (Channeled)' },
-      { k: 'weak', lbl: 'Too Weak / Watery' }
+      { k: 'bitter', lbl: 'Too Bitter / Harsh', tip: 'Cup tastes dry, roasty, or harsh — calculates exact hot bypass water & saline drops to calm bitterness' },
+      { k: 'sour', lbl: 'Too Sour / Sharp', tip: 'Cup tastes sharp, lemony, or under-extracted — calculates gentle cooling/saline & next-brew finer grind' },
+      { k: 'strong', lbl: 'Too Strong / Heavy', tip: 'Cup tastes syrupy or overly intense — calculates exact 80 °C hot water dilution to hit balanced %TDS' },
+      { k: 'sour_bitter', lbl: 'Sour + Bitter (Channeled)', tip: 'Both sharp and drying at once from uneven water channeling — balances the mug now and fixes pour agitation' },
+      { k: 'weak', lbl: 'Too Weak / Watery', tip: 'Cup tastes thin or hollow — avoids adding water and guides cooling + tighter ratio next brew' }
     ];
 
     let tdsRescuePill = null;
@@ -47193,6 +49392,7 @@ if (typeof window !== 'undefined') {
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (mr.symptom === sy.k ? ' is-active' : ''),
+        title: sy.tip,
         'aria-pressed': String(mr.symptom === sy.k),
         onclick: function () {
           mr.symptom = sy.k;
@@ -47235,6 +49435,7 @@ if (typeof window !== 'undefined') {
     const milkToggle = domH('button', {
       type: 'button',
       class: 'bt-lab-chip' + (mr.milkAllowed ? ' is-active' : ''),
+      title: 'Include a splash of warm milk or oat milk to bind bitter tannins and soften sharp acidity',
       'aria-pressed': String(mr.milkAllowed),
       onclick: function () {
         mr.milkAllowed = !mr.milkAllowed;
@@ -47292,6 +49493,15 @@ if (typeof window !== 'undefined') {
       mugG.appendChild(c3);
 
       verdictBox.textContent = '';
+      const rescueSteps = [];
+      if (res.bypass80CG > 0) rescueSteps.push('stir in +' + res.bypass80CG + ' g hot water (~80 °C) to soften concentration');
+      if (res.saline20Drops > 0) rescueSteps.push('add ' + res.saline20Drops + ' drops 20% saline (or a tiny pinch of salt) to mute bitter receptors');
+      if (mr.milkAllowed && res.warmMilk60CG > 0) rescueSteps.push('fold in +' + res.warmMilk60CG + ' g warm milk/oat to bind harsh tannins');
+      if (!rescueSteps.length) rescueSteps.push('let the mug cool 2–3 minutes toward 55–58 °C (131–136 °F) so your tongue tastes sweetness instead of heat');
+      mugTakeaway.set(
+        'Right now in your ' + Math.round(res.mugG) + ' g mug: ' + rescueSteps.join(', then ') + '. Next brew: ' + res.nextBrewFix,
+        mr.symptom === 'weak' ? 'info' : 'good'
+      );
       verdictBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
         domH('div', { class: 'bt-studio-human-line' }, domH('strong', { text: res.headline })),
         domH('p', { class: 'bt-lab-hint', text: res.why }),
@@ -47361,9 +49571,18 @@ if (typeof window !== 'undefined') {
       ),
       epistemicBadge('verified_physics')
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Already poured a sour, weak, or bitter mug? Pick what it tastes like below for an instant at-table fix (hot bypass water, a drop of saline to quiet bitterness, warm milk, or cooling time) — without tossing the cup.'
+    ]));
+    card.appendChild(buildStepRibbon([
+      { text: 'Pick how your mug tastes', title: 'Tap the taste symptom that matches your cup right now' },
+      { text: 'Enter mug weight (g)', title: 'Estimate or weigh the coffee currently sitting in your mug' },
+      { text: 'Follow the instant fix', title: 'Apply hot bypass water, saline drops, or save the next-brew adjustment' }
+    ]));
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' }, symBtns));
     tdsRescuePill = CK.vernierPill({
       label: 'Est. %TDS',
+      title: 'Estimated coffee strength (% Total Dissolved Solids) — auto-adjusted for your chosen taste symptom',
       value: mr.tdsPct,
       min: 0.70,
       max: 12.0,
@@ -47374,7 +49593,7 @@ if (typeof window !== 'undefined') {
       onChange: function (v) { mr.tdsPct = v; paintMugRescue(); }
     });
     card.appendChild(domH('div', { class: 'bt-lab-inline-inputs' },
-      domH('label', { class: 'bt-lab-field-lbl' },
+      domH('label', { class: 'bt-lab-field-lbl', title: 'How much brewed coffee is currently sitting in your mug (typical mug ≈ 220–250 g)' },
         domH('span', { text: 'Cup in Mug (g)' }),
         mugWeightIn
       ),
@@ -47383,6 +49602,7 @@ if (typeof window !== 'undefined') {
     ));
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, mugSvg));
     card.appendChild(verdictBox);
+    card.appendChild(mugTakeaway.el);
     paintMugRescue();
     return card;
   }
@@ -47423,6 +49643,7 @@ if (typeof window !== 'undefined') {
     svg.appendChild(tokensG);
 
     const readoutBanner = domH('div', { class: 'bt-studio-readout-banner' });
+    const pkTakeaway = createTakeawayBox('bt-pk-takeaway');
     const safeSipHero = domH('div', { class: 'bt-pk-safesip-hero', id: 'bt-pk-safesip-hero' });
       const scheduleSummaryPill = domH('div', {
         class: 'bt-pk-daily-schedule-pill num-tab',
@@ -47571,6 +49792,15 @@ if (typeof window !== 'undefined') {
       };
 
       bgG.appendChild(CK.svgEl('rect', { x: P.L, y: P.T, width: P.PW, height: P.PH, rx: '12', class: 'bt-chart-plot-bg' }));
+      const pkYLbl = CK.svgEl('text', { x: '6', y: (P.T + 8).toFixed(1), 'text-anchor': 'start', class: 'bt-chart-tick' });
+      pkYLbl.textContent = 'mg \u2191';
+      bgG.appendChild(pkYLbl);
+      const pkYMaxLbl = CK.svgEl('text', { x: (P.L - 5).toFixed(1), y: (P.T + 18).toFixed(1), 'text-anchor': 'end', class: 'bt-chart-tick' });
+      pkYMaxLbl.textContent = Math.round(maxMgY);
+      bgG.appendChild(pkYMaxLbl);
+      const pkYZeroLbl = CK.svgEl('text', { x: (P.L - 5).toFixed(1), y: P.B.toFixed(1), 'text-anchor': 'end', class: 'bt-chart-tick' });
+      pkYZeroLbl.textContent = '0';
+      bgG.appendChild(pkYZeroLbl);
 
       /* GMT Day / Night Horological 24-Tick Solar-Lunar Bezel Strip */
       const wakeX = P.L + clamp((pk.wakeHour - t0) / 24, 0, 1, 0.05) * P.PW;
@@ -47693,9 +49923,9 @@ if (typeof window !== 'undefined') {
       const threshLbl = CK.svgEl('text', {
         x: (P.L + 6).toFixed(1),
         y: Math.max(P.T + 12, gateY - 4).toFixed(1),
-        class: 'bt-pk-thresh-lbl num-tab'
+        class: 'bt-pk-thresh-lbl bt-chart-zone-lbl num-tab'
       });
-      threshLbl.textContent = 'Bedtime Threshold (' + pk.swsGateMg + ' mg)';
+      threshLbl.textContent = 'Peak Daily Tolerance \u00B7 Bedtime Gate (' + pk.swsGateMg + ' mg)';
       gateG.appendChild(threshLbl);
 
       /* Last Safe Sip Flagpole */
@@ -47825,7 +50055,7 @@ if (typeof window !== 'undefined') {
         class: 'bt-pk-sched-item',
         style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
       },
-        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Bed Gate (' + fmtClock(bed) + ')' }),
+        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Bedtime Gate (' + fmtClock(bed) + ')' }),
         domH('strong', {
           style: 'font-size:0.84rem;line-height:1.25;color:' + (gatePass ? 'var(--good, #1B6341)' : 'var(--bad, #A1231F)') + ';',
           text: gateRemainingText
@@ -47849,6 +50079,21 @@ if (typeof window !== 'undefined') {
             (pk.steadyState ? 'Infinite 24h Periodic Steady-State' : 'Single-Day Impulse') +
             '  ·  Midday Cp = ' + midDayBorb.cpMgL.toFixed(2) + ' mg/L (~' + midDayBorb.a1OccupancyPct.toFixed(1) + '% A1AR occupancy, Elmenhorst 2012)'
         }));
+      }
+      if (gatePass) {
+        pkTakeaway.set(
+          'At your ' + cyp.label + ' metabolism speed (' + cyp.halfLifeH.toFixed(1) + 'h half-life), only ~' + Math.round(bedMg) +
+          ' mg remains at ' + fmtClock(bed) + ' bedtime (under your ' + pk.swsGateMg + ' mg deep-sleep gate). Finish any extra full cup by ' +
+          fmtSafeSip(cutoffRefFlag) + ' (or half-caf by ' + fmtSafeSip(cutoffEspFlag) + ').',
+          'good'
+        );
+      } else {
+        pkTakeaway.set(
+          'Sleep Alert: ~' + Math.round(bedMg) + ' mg caffeine will still be active at ' + fmtClock(bed) +
+          ' (' + Math.abs(gateHeadroomMg) + ' mg above your ' + pk.swsGateMg + ' mg deep-sleep limit with a ' + cyp.halfLifeH.toFixed(1) +
+          'h half-life). Tap Auto-Slide below to move cups earlier, or switch your afternoon cup to Half-Caf / Decaf.',
+          'warn'
+        );
       }
       paintCupInspector();
     }
@@ -48000,9 +50245,11 @@ if (typeof window !== 'undefined') {
         ? 'Slow Metabolizer'
         : (cp.key === 'pregnancy' ? 'Pregnancy' : cp.label);
       const dispLbl = (isScienceXray() ? cp.label : comfyLbl) + ' (' + cp.halfLifeH + 'h)';
+      const tipTxt = cp.label + ': caffeine half-life ~' + cp.halfLifeH + ' hours (time for your liver to clear half of a dose; daily cap ' + cp.dailyCapMg + ' mg)';
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (pk.cypKey === cp.key ? ' is-active' : ''),
+        title: tipTxt,
         'aria-pressed': String(pk.cypKey === cp.key),
         onclick: function () {
           pk.cypKey = cp.key;
@@ -48177,6 +50424,11 @@ if (typeof window !== 'undefined') {
         domH('strong', { text: 'CafCup Planner — 16 Cafe & Home Drinks + Scoop-vs-Scale Trap' })
       )
     ));
+    cafCupCard.appendChild(buildWhatBox('What this lookup does', [
+      'Pick any cafe or home drink to see its caffeine mg and exact cutoff time, or toggle ',
+      domH('strong', { text: 'Scoop vs Scale Trap' }),
+      ' to see why 2 scoops of dense light-roast beans pack +41% more caffeine than dark roast.'
+    ]));
     cafCupCard.appendChild(domH('div', { class: 'bt-lab-inline-inputs' }, drinkSel, scoopToggle));
     cafCupCard.appendChild(domH('div', { class: 'bt-lab-chip-row' }, roastDensityBtns));
     cafCupCard.appendChild(cafCupOut);
@@ -48197,16 +50449,28 @@ if (typeof window !== 'undefined') {
       ),
       domH('div', { class: 'bt-head-actions' }, pkHow.trigger, epistemicBadge('verified_physics'))
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Models how long caffeine stays active in your bloodstream to find your exact ',
+      domH('strong', { text: 'Last Safe Sip' }),
+      ' cutoff before bed. Choose your ',
+      labAbbr('CYP1A2', 'The liver enzyme gene that sets your caffeine half-life: Fast ~3h, Normal/Typical ~5h, Slow ~6.8h, Oral Contraceptives ~9h, Pregnancy ~13h'),
+      ' metabolism speed (how many hours it takes to clear half a dose), then drag cup pills left/right along the bottom track.'
+    ]));
     card.appendChild(pkHow.panel);
     card.appendChild(safeSipHero);
     card.appendChild(scheduleSummaryPill);
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
-      domH('span', { class: 'bt-lab-inline-lbl', text: 'Caffeine Metabolism Speed:' }),
+      domH('span', { class: 'bt-lab-inline-lbl', title: 'CYP1A2 liver gene speed — sets your caffeine half-life (hours to drop by 50%)' }, 'Metabolism Speed (', labAbbr('CYP1A2', 'Fast / Normal / Slow caffeine gene metabolism'), '):'),
       cypBtns,
       steadyBtn
     ));
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, svg));
+    card.appendChild(buildAxisCaption([
+      { kicker: 'X-Axis (24h Clock)', text: 'Wake \u2192 Daytime Peak Focus \u2192 Shaded Sleep Curtain (drag cup pills on bottom bar)' },
+      { kicker: 'Curves', text: 'Green = Alertness · Amber = Active Caffeine (mg) · Dashed Line = Deep-Sleep Bedtime Limit' }
+    ], { ariaLabel: 'Caffeine Timeline Axis Guide' }));
     card.appendChild(readoutBanner);
+    card.appendChild(pkTakeaway.el);
     card.appendChild(domH('div', { class: 'bt-lab-chip-row bt-pk-drink-adder-row' },
       domH('span', { class: 'bt-lab-inline-lbl', text: 'Add Drink:' }),
       quickDrops
@@ -48263,6 +50527,7 @@ if (typeof window !== 'undefined') {
     svg.appendChild(dropG);
 
     const readoutBanner = domH('div', { class: 'bt-studio-readout-banner' });
+    const waterTakeaway = createTakeawayBox('bt-water-takeaway');
     const recipeDeck = domH('div', { class: 'bt-wt-recipe-deck' });
 
     function redrawWater() {
@@ -48285,12 +50550,14 @@ if (typeof window !== 'undefined') {
         width: (mapX(40) - mapX(15)).toFixed(1), height: (mapY(45) - mapY(100)).toFixed(1),
         rx: '8', class: 'bt-wt-zone-nordic'
       }));
+      zonesG.appendChild(CK.svgZoneLabel(mapX(15) + 4, mapY(100) + 12, 'Ideal 40\u201380 GH \u00B7 20\u201340 KH', { cls: 'is-good' }));
       /* 3. SCA 102-2024 Sweet Spot (KH 40-75, GH 50-175) */
       zonesG.appendChild(CK.svgEl('rect', {
         x: mapX(40).toFixed(1), y: mapY(175).toFixed(1),
         width: (mapX(75) - mapX(40)).toFixed(1), height: (mapY(50) - mapY(175)).toFixed(1),
         rx: '8', class: 'bt-wt-zone-sca'
       }));
+      zonesG.appendChild(CK.svgZoneLabel((mapX(40) + mapX(75)) * 0.5, mapY(175) + 13, 'SCA Sweet Spot', { anchor: 'middle' }));
       /* 4. RPavlis Zero-Scale Strip (KH 35-65, GH 0-10) */
       zonesG.appendChild(CK.svgEl('rect', {
         x: mapX(35).toFixed(1), y: mapY(10).toFixed(1),
@@ -48315,8 +50582,12 @@ if (typeof window !== 'undefined') {
         tl.textContent = wt.unitDh ? (g / 17.848).toFixed(1) : String(g);
         zonesG.appendChild(tl);
       }
+      const yl = CK.svgEl('text', { x: '10', y: '16', 'text-anchor': 'start', class: 'bt-chart-axis-title' });
+      yl.textContent = wt.unitDh ? 'Hardness (dGH) \u2191' : 'Total Hardness GH (ppm) \u2191';
+      zonesG.appendChild(yl);
+
       const xl = CK.svgEl('text', { x: (P.L + P.PW * 0.5).toFixed(1), y: 300, 'text-anchor': 'middle', class: 'bt-chart-axis-title' });
-      xl.textContent = wt.unitDh ? 'Alkalinity Buffer (dKH)' : 'Alkalinity Buffer KH (ppm as CaCO3)';
+      xl.textContent = wt.unitDh ? 'Alkalinity Buffer (dKH) \u00B7 Bright \u2190 \u2192 Flat' : 'Alkalinity Buffer KH (ppm) \u00B7 Bright \u2190 \u2192 Flat';
       zonesG.appendChild(xl);
 
       /* Dynamic Temperature- & Calcium-Coupled Limescale Hyperbola
@@ -48379,6 +50650,28 @@ if (typeof window !== 'undefined') {
             spec.clMgL + ' mg/L ' + (spec.pittingRisk ? '(>35 mg/L SS Pitting Alert!)' : '(<35 safe)') +
             '  ·  Ca*KH_carb = ' + spec.caCarbProduct
         }));
+      }
+      const tapPct = Math.round(spec.fTap * 100);
+      const roPct = Math.max(0, 100 - tapPct);
+      if (wt.tapBlendOn) {
+        waterTakeaway.set(
+          spec.tapExceedsTarget
+            ? ('Tap water (' + Math.round(wt.ghTap) + ' GH / ' + Math.round(wt.khTap) + ' KH) cannot reach your target by dilution alone — blending ' + tapPct + '% Tap (' + spec.tapMl + ' mL) + ' + roPct + '% RO (' + spec.roMl + ' mL) lands at ' + Math.round(spec.blendedGh) + ' GH / ' + Math.round(spec.blendedKh) + ' KH.')
+            : ('Mix ' + tapPct + '% Tap (' + spec.tapMl + ' mL) + ' + roPct + '% RO/ZeroWater (' + spec.roMl + ' mL) to hit ' + Math.round(wt.kh) + ' ppm KH buffer' + (spec.epsomBoostPpm > 2 ? (' and add +' + spec.epsomBoostPpm + ' ppm Epsom Mg²⁺ for fruit sweetness') : '') + ' — boiler scale risk: ' + spec.scaleRisk.toUpperCase() + '.'),
+          spec.tapExceedsTarget || spec.scaleRisk === 'severe' ? 'warn' : 'good'
+        );
+      } else if (wt.gh === 0 && wt.kh === 0) {
+        waterTakeaway.set(
+          'Pure 0 ppm RO/Distilled water has no flavor-binding minerals (GH) or acid buffer (KH) — use the mineral drops/salts below or blend 30–50% tap water so your cup does not taste sharp and hollow.',
+          'warn'
+        );
+      } else {
+        const khTone = wt.kh > 75 ? 'high KH will flatten bright fruit notes into a chalky finish' : (wt.kh < 20 ? 'low KH lets bright, sparkling fruit acidity shine' : 'balanced KH smooths sharp sourness without muting flavor');
+        const ghTone = wt.gh < 30 ? 'very soft GH produces a light, delicate cup' : (wt.gh > 150 ? 'heavy GH risks chalkiness & kettle scale' : ('moderate GH (' + Math.round(wt.mgShare * 100) + '% Mg²⁺) grips sweet & fruity aromatics'));
+        waterTakeaway.set(
+          'At ' + Math.round(wt.gh) + ' ppm GH and ' + Math.round(wt.kh) + ' ppm KH: ' + ghTone + '; ' + khTone + '. Kettle scale risk: ' + spec.scaleRisk.toUpperCase() + '.',
+          spec.scaleRisk === 'severe' || wt.kh > 85 ? 'warn' : 'good'
+        );
       }
 
       recipeDeck.textContent = '';
@@ -48480,15 +50773,16 @@ if (typeof window !== 'undefined') {
 
       /* 1-Tap WaterQuickFixer Presets */
       const vibePresets = [
-        { lbl: 'Nordic Clarity (55/20)', gh: 55, kh: 20, mg: 0.75, khSalt: 'khco3' },
-        { lbl: 'SCA Sweet Spot (70/35)', gh: 70, kh: 35, mg: 0.65, khSalt: 'khco3' },
-        { lbl: 'RPavlis Boiler-Safe (0/45)', gh: 0, kh: 45, mg: 1.0, khSalt: 'khco3' },
-        { lbl: 'Citrate Clarity (65/45 Cit)', gh: 65, kh: 45, mg: 0.70, khSalt: 'k3cit' },
-        { lbl: 'Evian 2-Bottle Mix', gh: 307, kh: 295, tap: true }
+        { lbl: 'Nordic Clarity (55/20)', gh: 55, kh: 20, mg: 0.75, khSalt: 'khco3', tip: 'Light-roast pour-over favorite: low 20 ppm buffer preserves sparkling fruit acidity with 75% Magnesium' },
+        { lbl: 'SCA Sweet Spot (70/35)', gh: 70, kh: 35, mg: 0.65, khSalt: 'khco3', tip: 'Official Specialty Coffee Association balanced all-rounder for pour-over & espresso' },
+        { lbl: 'RPavlis Boiler-Safe (0/45)', gh: 0, kh: 45, mg: 1.0, khSalt: 'khco3', tip: 'Zero-calcium espresso machine water — 100% scale-free protection for home boilers' },
+        { lbl: 'Citrate Clarity (65/45 Cit)', gh: 65, kh: 45, mg: 0.70, khSalt: 'k3cit', tip: 'Scale-free Potassium Citrate buffer that softens sharp acids without chalky flatness' },
+        { lbl: 'Evian 2-Bottle Mix', gh: 307, kh: 295, tap: true, tip: 'Simulates blending mineral-rich Evian (307 GH / 295 KH) with Distilled/RO water for instant travel brew water' }
       ].map(function (vp) {
         return domH('button', {
           type: 'button',
           class: 'bt-lab-chip',
+          title: vp.tip,
           onclick: function () {
             if (vp.tap) {
               wt.tapBlendOn = true;
@@ -48516,14 +50810,15 @@ if (typeof window !== 'undefined') {
       });
 
       const khSaltPills = [
-        { k: 'khco3', lbl: 'KHCO3' },
-        { k: 'nahco3', lbl: 'NaHCO3' },
-        { k: 'k3cit', lbl: 'K3Citrate (pH 5.0 0.45x)' },
-        { k: 'na3cit', lbl: 'Na3Citrate' }
+        { k: 'khco3', lbl: 'KHCO3', tip: 'Potassium Bicarbonate — clean acid buffer with zero salty sodium' },
+        { k: 'nahco3', lbl: 'NaHCO3', tip: 'Baking Soda (Sodium Bicarbonate) — easy kitchen buffer; adds trace sodium' },
+        { k: 'k3cit', lbl: 'K3Citrate (pH 5.0 0.45x)', tip: 'Potassium Citrate — buffers acid gently without causing boiler limescale' },
+        { k: 'na3cit', lbl: 'Na3Citrate', tip: 'Sodium Citrate — scale-free gentle buffer for espresso & filter water' }
       ].map(function (sp) {
         return domH('button', {
           type: 'button',
           class: 'bt-lab-chip' + (wt.khSaltKey === sp.k ? ' is-active' : ''),
+          title: sp.tip,
           onclick: function () {
             wt.khSaltKey = sp.k;
             wt.isDiyRecipe = true;
@@ -48538,6 +50833,7 @@ if (typeof window !== 'undefined') {
       const tapToggle = domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (wt.tapBlendOn ? ' is-active' : ''),
+        title: 'Show Tap vs RO/ZeroWater dilution ray to calculate exact % Tap + % RO water mix',
         onclick: function () {
           wt.tapBlendOn = !wt.tapBlendOn;
           tapToggle.classList.toggle('is-active', wt.tapBlendOn);
@@ -48966,11 +51262,21 @@ if (typeof window !== 'undefined') {
       ),
       domH('div', { class: 'bt-head-actions' }, waterHow.trigger, epistemicBadge('verified_physics'))
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Coffee is 98.5% water. ',
+      labAbbr('GH', 'Total Hardness (Ca²⁺ + Mg²⁺ in ppm) — minerals that grip and pull sweet, fruity flavor compounds out of coffee'),
+      ' (Total Hardness — Ca²⁺ / Mg²⁺) pulls sweet, fruity flavor, while ',
+      labAbbr('KH', 'Carbonate Hardness / Alkalinity Buffer (ppm) — neutralizes sharp acids; too much makes coffee flat and chalky'),
+      ' (Carbonate Buffer) tames sharp sourness. Pick your home water, blend ',
+      labAbbr('Tap vs RO %', 'Diluting hard tap water with 0-ppm Reverse Osmosis / ZeroWater to hit the sweet spot'),
+      ', or drag the droplet on the 2D pad for exact drop/salt recipes.'
+    ]));
     card.appendChild(waterHow.panel);
     card.appendChild(selector4WayCard);
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' }, vibePresets, tapToggle));
     mgSharePill = CK.vernierPill({
       label: 'Mg2+ Share',
+      title: 'Percent of Total Hardness coming from Magnesium (Mg²⁺ highlights bright fruit/berries; Calcium Ca²⁺ adds creamy body)',
       value: Math.round(wt.mgShare * 100),
       min: 0,
       max: 100,
@@ -48983,6 +51289,7 @@ if (typeof window !== 'undefined') {
       mgSharePill,
       CK.vernierPill({
         label: 'Batch Vol',
+        title: 'Total liters of brewing water you want to blend or mineralize (1.0 L ≈ 3–4 pour-overs)',
         value: wt.batchL,
         min: 0.25,
         max: 5.0,
@@ -48994,6 +51301,7 @@ if (typeof window !== 'undefined') {
       }),
       CK.vernierPill({
         label: 'Boiler Temp',
+        title: 'Kettle or espresso boiler temperature — hotter boilers scale faster when Calcium & KH are high',
         value: wt.brewTempC,
         min: 80,
         max: 100,
@@ -49008,7 +51316,12 @@ if (typeof window !== 'undefined') {
       khSaltPills
     ));
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, svg));
+    card.appendChild(buildAxisCaption([
+      { kicker: 'X-Axis (KH Buffer)', text: 'Left: Bright & Tart (Low Buffer) \u2194 Right: Smooth \u2192 Flat/Chalky (High Buffer)' },
+      { kicker: 'Y-Axis (GH Hardness)', text: 'Down: Soft / Light \u2194 Up: Sweet & Fruity Grip (Red Curve = Kettle Scale Risk)' }
+    ], { ariaLabel: 'Water Pad Axis Guide' }));
     card.appendChild(readoutBanner);
+    card.appendChild(waterTakeaway.el);
     card.appendChild(recipeDeck);
     card.appendChild(domH('div', { class: 'bt-lab-btn-row' },
       domH('button', {
@@ -49044,6 +51357,7 @@ if (typeof window !== 'undefined') {
     svg.appendChild(vesselG);
 
     const readoutBanner = domH('div', { class: 'bt-studio-readout-banner' });
+    const vesselTakeaway = createTakeawayBox('bt-vessel-takeaway');
     const milkBanner = domH('div', { class: 'bt-lab-subcard bt-milk-lab-card' });
 
     const V_TOP = 36, V_BOT = 256, V_H = 220;
@@ -49156,6 +51470,21 @@ if (typeof window !== 'undefined') {
             'Darcy Bed-Depth Factor = ' + darcyScale.toFixed(2) + 'x'
         }));
       }
+      if (vs.flashOn) {
+        const meltPct = fl.iceG > 0 ? Math.round((fl.meltedIceG / fl.iceG) * 100) : 0;
+        vesselTakeaway.set(
+          'Flash-Iced (' + Math.round(vs.iceShare * 100) + '% ice share = ' + fl.iceG + ' g ice + ' + fl.hotPourG + ' g hot pour): ' +
+          meltPct + '% of ice melts (' + fl.meltedIceG + ' g) leaving ' + fl.remIceG + ' g solid cubes at ' + fmtTempPref(fl.finalTempC, 1) +
+          ' and ' + fl.tdsCupPct + '% TDS. ' + (fl.remIceG < 5 ? 'All ice melted — serve over fresh cubes so the drink stays cold.' : 'Crisp 0 °C chill achieved without watering down flavor!'),
+          fl.remIceG < 5 ? 'warn' : 'good'
+        );
+      } else {
+        vesselTakeaway.set(
+          'Hot pour of ' + Math.round(totalW) + ' g water over ' + vs.doseG.toFixed(1) + ' g dry coffee yields ' + Math.round(fl.liquidBeverageG) + ' g liquid in your mug (~' + fl.retainedG + ' g stays trapped in the wet grounds) at ~' + fl.tdsCupPct + '% TDS.' +
+          (vs.paragonOn ? ' Paragon frozen sphere locks in +' + fl.esterBoostPct + '% delicate floral aromatics with zero ice dilution.' : ''),
+          'good'
+        );
+      }
       if (typeof vesselDosePill !== 'undefined' && vesselDosePill && Math.abs(vesselDosePill.getValue() - vs.doseG) > 0.05) {
         vesselDosePill.setValue(vs.doseG, true);
       }
@@ -49177,18 +51506,54 @@ if (typeof window !== 'undefined') {
       });
 
       const milkTypes = [
-        { k: 'dairy', lbl: 'Whole Dairy (55-65C)' },
-        { k: 'lactose_free', lbl: 'Lactose-Free (3.1x Sweet)' },
-        { k: 'eisbock', lbl: 'Freeze-Distilled Eisbock' },
-        { k: 'oat', lbl: 'Barista Oat' },
-        { k: 'almond', lbl: 'Almond' },
-        { k: 'soy', lbl: 'Soy' }
+        { k: 'dairy', lbl: 'Whole Dairy (55-65C)', tip: 'Peak natural lactose sweetness at 55–65 °C; proteins scald and taste cooked above 68 °C' },
+        { k: 'lactose_free', lbl: 'Lactose-Free (3.1x Sweet)', tip: 'Enzymatically split into glucose + galactose — tastes ~3× sweeter with zero added sugar' },
+        { k: 'eisbock', lbl: 'Freeze-Distilled Eisbock', tip: 'Freeze milk and thaw half to concentrate natural fats, protein, and lactose for competition lattes' },
+        { k: 'oat', lbl: 'Barista Oat', tip: 'Creamy maltose sweetness; keep <=56 °C with bright light-roast espresso to avoid curdling' },
+        { k: 'almond', lbl: 'Almond', tip: 'Nutty & light-bodied; steam gently <=56 °C and temper into espresso to prevent splitting' },
+        { k: 'soy', lbl: 'Soy', tip: 'Rich plant protein foam; sensitive to high acidity above 58 °C' }
       ].map(function (m) {
         return domH('button', {
           type: 'button',
           class: 'bt-lab-chip' + (vs.milkType === m.k ? ' is-active' : ''),
+          title: m.tip,
           onclick: function () { vs.milkType = m.k; CK.haptic('tick'); redrawMilkLab(); }
         }, m.lbl);
+      });
+
+      /* Compact Milk Steaming Thermal Threshold SVG (55-65C Sweet Spot vs 68C+ Protein Scald) */
+      const mkSvg = CK.svgEl('svg', {
+        viewBox: '0 0 420 62',
+        class: 'bt-chart-svg bt-milk-thermal-svg',
+        'aria-label': 'Milk Steaming Temperature Threshold Bar (45 to 78 degrees Celsius)'
+      });
+      const mkX = function (tC) { return 18 + (clamp((tC - 45) / (78 - 45), 0, 1, 0.5)) * 384; };
+      mkSvg.appendChild(CK.svgEl('rect', { x: '18', y: '24', width: '384', height: '14', rx: '7', class: 'bt-chart-plot-bg' }));
+      mkSvg.appendChild(CK.svgEl('rect', {
+        x: mkX(55).toFixed(1), y: '24', width: (mkX(65) - mkX(55)).toFixed(1), height: '14', rx: '4',
+        fill: 'var(--good, #1B6341)', opacity: '0.28'
+      }));
+      mkSvg.appendChild(CK.svgEl('rect', {
+        x: mkX(68).toFixed(1), y: '24', width: (mkX(78) - mkX(68)).toFixed(1), height: '14', rx: '4',
+        fill: 'var(--bad, #A1231F)', opacity: '0.24'
+      }));
+      const scaldX = mkX(68);
+      mkSvg.appendChild(CK.svgEl('line', {
+        x1: scaldX.toFixed(1), y1: '16', x2: scaldX.toFixed(1), y2: '44',
+        stroke: 'var(--bad, #A1231F)', 'stroke-width': '2', 'stroke-dasharray': '3,2'
+      }));
+      mkSvg.appendChild(CK.svgZoneLabel(mkX(60), 15, '55\u201365 \u00B0C Sweet Spot', { anchor: 'middle', cls: 'is-good' }));
+      mkSvg.appendChild(CK.svgZoneLabel(scaldX + 4, 15, '68 \u00B0C+ Protein Scald', { anchor: 'start', cls: 'is-bad' }));
+      const curMkX = mkX(vs.steamTempC);
+      mkSvg.appendChild(CK.svgEl('circle', {
+        cx: curMkX.toFixed(1), cy: '31', r: '6.5',
+        fill: vs.steamTempC >= 68 ? 'var(--bad, #A1231F)' : (vs.steamTempC >= 55 && vs.steamTempC <= 65 ? 'var(--good, #1B6341)' : 'var(--accent, #9A4212)'),
+        stroke: 'var(--surface, #FFFFFF)', 'stroke-width': '2'
+      }));
+      [45, 55, 65, 68, 78].forEach(function (tc) {
+        const tk = CK.svgEl('text', { x: mkX(tc).toFixed(1), y: '54', 'text-anchor': 'middle', class: 'bt-chart-tick' });
+        tk.textContent = tc + '\u00B0C';
+        mkSvg.appendChild(tk);
       });
 
       milkBanner.appendChild(domH('div', { class: 'bt-lab-card-head' },
@@ -49198,10 +51563,19 @@ if (typeof window !== 'undefined') {
         ),
         epistemicBadge('verified_physics')
       ));
+      milkBanner.appendChild(buildWhatBox('What this milk lab does', [
+        'Compare dairy vs plant milk sweetness & foaming heat. Dairy tastes sweetest at ',
+        domH('strong', { text: '55–65 °C (131–149 °F)' }),
+        '; steaming past ',
+        labAbbr('68 °C+ Denaturation', 'Above 68 °C / 154 °F, milk whey proteins irreversibly unfold, releasing cooked/egg-like sulfur notes and collapsing silky microfoam'),
+        ' scalds milk flat (and curdles oat/almond/soy in bright light-roast coffee above 58 °C).'
+      ]));
       milkBanner.appendChild(domH('div', { class: 'bt-lab-chip-row' }, milkTypes));
+      milkBanner.appendChild(domH('div', { class: 'bt-chart-stage' }, mkSvg));
       milkBanner.appendChild(domH('div', { class: 'bt-vernier-row' },
         CK.vernierPill({
           label: 'Milk Mass',
+          title: 'Cold milk weight poured into your steaming pitcher before steaming',
           value: vs.milkG,
           min: 40,
           max: 360,
@@ -49212,6 +51586,7 @@ if (typeof window !== 'undefined') {
         }),
         CK.vernierPill({
           label: 'Steam Temp',
+          title: 'Stop-steaming pitcher temperature — 55–65 °C is peak sweetness; 68 °C+ denatures whey protein and scalds milk',
           value: vs.steamTempC,
           min: 45,
           max: 78,
@@ -49222,6 +51597,7 @@ if (typeof window !== 'undefined') {
         }),
         vs.milkType === 'eisbock' ? CK.vernierPill({
           label: 'Thaw Draw',
+          title: 'Percent of frozen milk thawed and collected — lower draw % concentrates lactose & fat even more',
           value: Math.round(vs.thawFrac * 100),
           min: 35,
           max: 80,
@@ -49233,6 +51609,23 @@ if (typeof window !== 'undefined') {
       ));
 
       const alertCls = mk.curdleDanger || mk.scaldDanger ? ' is-warn' : (mk.inBetaLgWindow ? ' is-good' : '');
+      const milkTakeaway = createTakeawayBox('bt-milk-takeaway');
+      if (mk.scaldDanger) {
+        milkTakeaway.set(
+          'Denaturation Warning (' + fmtTempPref(vs.steamTempC, 0) + ' >= 68 °C): whey proteins are unfolding — expect flat sweetness, cooked sulfur notes, and coarse bubbles. Cut steam at 60–64 °C (140–147 °F).',
+          'bad'
+        );
+      } else if (mk.curdleDanger) {
+        milkTakeaway.set(
+          'Plant-Milk Curdle Risk at ' + fmtTempPref(vs.steamTempC, 0) + ' in acidic coffee (pH ~' + mk.estCupPh.toFixed(2) + '): steam cooler (<=56 °C / 133 °F) and swirl 15 g milk into the espresso first to temper.',
+          'warn'
+        );
+      } else {
+        milkTakeaway.set(
+          'At ' + fmtTempPref(vs.steamTempC, 0) + ', ' + vs.milkG + ' g milk steams to ' + mk.finalMilkG + ' g (+' + mk.steamDilutionG + ' g steam water) with ' + mk.sweetnessMult + '× natural sweetness — safe from 68 °C+ protein denaturation.',
+          mk.inBetaLgWindow ? 'good' : 'info'
+        );
+      }
       milkBanner.appendChild(domH('div', { class: 'bt-milk-verdict' + alertCls },
         domH('strong', {
           class: 'num-tab',
@@ -49272,6 +51665,7 @@ if (typeof window !== 'undefined') {
           }, ic('milk-pitcher', { size: 14 }), domH('span', { text: 'Apply Milk Plan to My Drink \u2192' }))
         )
       ));
+      milkBanner.appendChild(milkTakeaway.el);
     }
 
     CK.bindChartSurface(svg, {
@@ -49312,12 +51706,14 @@ if (typeof window !== 'undefined') {
     const flashBtn = domH('button', {
       type: 'button',
       class: 'bt-lab-chip' + (vs.flashOn ? ' is-active' : ''),
+      title: 'Japanese Flash-Iced: brew hot coffee directly over a weighed share of ice cubes so the cup chills instantly without diluting',
       onclick: function () { vs.flashOn = !vs.flashOn; flashBtn.classList.toggle('is-active', vs.flashOn); redrawVessel(); }
     }, ic('ice-cube', { size: 14 }), domH('span', { text: '3-Regime Flash-Iced' }));
 
     const paragonBtn = domH('button', {
       type: 'button',
       class: 'bt-lab-chip' + (vs.paragonOn ? ' is-active' : ''),
+      title: 'Extract chilling over a frozen 48 g steel sphere to trap volatile floral aromatics before they evaporate',
       onclick: function () { vs.paragonOn = !vs.paragonOn; paragonBtn.classList.toggle('is-active', vs.paragonOn); redrawVessel(); }
     }, ic('cryo-snowflake', { size: 14 }), domH('span', { text: '48g Paragon Chilling Sphere' }));
 
@@ -49338,9 +51734,19 @@ if (typeof window !== 'undefined') {
       ),
       domH('div', { class: 'bt-head-actions' }, vesselHow.trigger, epistemicBadge('verified_physics'))
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Drag the coffee line up/down on the carafe to see exact ',
+      domH('strong', { text: 'mug yield vs water trapped in wet grounds' }),
+      '. Toggle ',
+      domH('strong', { text: 'Flash-Iced' }),
+      ' to split total brew water into hot pour + ice cubes (',
+      labAbbr('% Ice Share', 'Percent of total brew water placed as solid ice in the carafe — ~35–42% chills coffee to 0 °C without watering it down'),
+      ') and check how much ice melts.'
+    ]));
     card.appendChild(vesselHow.panel);
     const vesselDosePill = CK.vernierPill({
       label: 'Dose',
+      title: 'Dry coffee beans weighed in grams before brewing',
       value: vs.doseG,
       min: 6,
       max: 90,
@@ -49352,6 +51758,7 @@ if (typeof window !== 'undefined') {
     });
     const vesselRatioPill = CK.vernierPill({
       label: 'Ratio 1:',
+      title: 'Total water (hot pour + ice) per 1 g dry coffee',
       value: vs.ratio,
       min: 2.0,
       max: 22.0,
@@ -49368,6 +51775,7 @@ if (typeof window !== 'undefined') {
       vesselRatioPill,
       CK.vernierPill({
         label: 'Ice Share',
+        title: 'Percent of total water placed as solid ice in the carafe — only melted ice dilutes cup strength',
         value: Math.round(vs.iceShare * 100),
         min: 15,
         max: 55,
@@ -49409,7 +51817,12 @@ if (typeof window !== 'undefined') {
     }, ic('brew', { size: 16 }), domH('span', { text: 'Apply Carafe / Flash-Iced Recipe to My Brew \u2192' }));
 
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, svg));
+    card.appendChild(buildAxisCaption([
+      { kicker: 'Left Carafe', text: 'Drag liquid line up/down to scale drink volume' },
+      { kicker: 'Right Column', text: 'Bed = water retained in grounds · Cup = drinkable liquid' }
+    ], { ariaLabel: 'Carafe Visualizer Guide' }));
     card.appendChild(readoutBanner);
+    card.appendChild(vesselTakeaway.el);
     card.appendChild(domH('div', { class: 'bt-chart-cta-bar' }, applyVesselBtn));
     card.appendChild(milkBanner);
 
@@ -49423,6 +51836,7 @@ if (typeof window !== 'undefined') {
     const r4 = labState.ratio4;
     const card = domH('section', { class: 'bt-studio-card', id: 'bt-studio-ratio-yield' });
     const outBox = domH('div', { class: 'bt-ratio4-out' });
+    const r4Takeaway = createTakeawayBox('bt-ratio4-takeaway');
 
     function solveFromAnchor(changedKey, val) {
       const eyFrac = clamp(r4.eyPct, 2, 36, 20.4) / 100;
@@ -49495,6 +51909,9 @@ if (typeof window !== 'undefined') {
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (r4.cupsBatch === nCups ? ' is-active' : ''),
+        title: nCups === 1
+          ? 'Scale recipe for 1 single mug'
+          : ('Scale coffee & water for ' + nCups + ' cups and coarsen grind ~' + Math.round((Math.pow(nCups, 0.2) - 1) * 100) + '% to keep drawdown time balanced'),
         onclick: function () {
           const factor = nCups / Math.max(1, r4.cupsBatch);
           r4.cupsBatch = nCups;
@@ -49619,6 +52036,13 @@ if (typeof window !== 'undefined') {
           }, 'Save Sponge Retention (' + r4.rw.toFixed(2) + ' g/g)')
         )
       ));
+      const r4StrengthWord = r4.ratio <= 4 ? 'concentrated espresso-style' : (r4.ratio < 15 ? 'rich & strong' : (r4.ratio <= 17 ? 'balanced filter' : 'light & tea-like'));
+      r4Takeaway.set(
+        'Using ' + r4.doseG.toFixed(1) + ' g dry coffee and pouring ' + r4.waterG + ' g water (1:' + r4.ratio.toFixed(1) + ', ' + r4StrengthWord + ') puts ' +
+        r4.mugG + ' g drinkable coffee in your mug while ' + (r4.rw * r4.doseG).toFixed(1) + ' g stays soaked in the wet bed. For Cold Brew (1:' +
+        r4.coldBrewDiluteRatio + '), pour ' + cbConcMl + ' g concentrate + ' + cbWaterOrMilkMl + ' g water/milk per ' + r4.coldBrewServeG + ' g glass.',
+        'good'
+      );
     }
 
     card.appendChild(domH('div', { class: 'bt-lab-card-head' },
@@ -49631,27 +52055,46 @@ if (typeof window !== 'undefined') {
       ),
       epistemicBadge('verified_physics')
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Type any one number — ',
+      domH('strong', { text: 'Dry Dose' }),
+      ', ',
+      domH('strong', { text: 'Pour Water' }),
+      ', ',
+      labAbbr('Mug Yield', 'Actual drinkable coffee in your mug = Pour Water minus water absorbed by the wet coffee grounds (~2.1 g per 1 g coffee)'),
+      ', or ',
+      labAbbr('Brew Ratio (1:X)', 'Grams of brew water per 1 g of dry coffee — 1:15 is stronger, 1:17 is lighter'),
+      ' — and the other 3 solve automatically. Also calculates exact ',
+      domH('strong', { text: 'Cold Brew Concentrate' }),
+      ' dilution per glass.'
+    ]));
+    card.appendChild(buildStepRibbon([
+      { text: 'Pick Batch Scale (1\u20134 cups)', title: 'Choose how many mugs you are brewing so dose & water scale together' },
+      { text: 'Type any 1 of the 4 anchors', title: 'Edit Dose, Pour Water, Mug Yield, or Ratio — whichever number you know' },
+      { text: 'Other 3 solve automatically', title: 'Apply the solved weights straight to your recipe or calibrate wet-grounds retention' }
+    ]));
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
       domH('span', { class: 'bt-lab-inline-lbl', text: 'Batch Scale:' }),
       batchBtns
     ));
     card.appendChild(domH('div', { class: 'bt-ratio4-grid' },
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: '1. Dose (g)' }), doseIn),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: '2. Pour Water (g)' }), waterIn),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: '3. Mug Yield (g)' }), mugIn),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: '4. Ratio (1:X)' }), ratioIn)
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Dry whole-bean coffee weighed in grams before grinding' }, domH('span', { text: '1. Dry Dose (g)' }), doseIn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Total hot water poured from your kettle into the brewer' }, domH('span', { text: '2. Pour Water (g)' }), waterIn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Drinkable liquid coffee in your mug after wet grounds absorb ~2× their weight' }, domH('span', { text: '3. Beverage Mug Yield (g)' }), mugIn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Water-to-coffee ratio (e.g. 1:16 means 16 g water per 1 g coffee)' }, domH('span', { text: '4. Ratio (1:X)' }), ratioIn)
     ));
     card.appendChild(domH('div', { class: 'bt-lab-inline-inputs' },
-      domH('label', { class: 'bt-lab-field-lbl' },
-        domH('span', { text: '5. Measured %TDS' }),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Optional refractometer strength reading to back-calculate Extraction Yield (%EY)' },
+        domH('span', null, '5. Measured ', labAbbr('%TDS', 'Total Dissolved Solids — cup strength')),
         tdsIn
       ),
-      domH('label', { class: 'bt-lab-field-lbl' },
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Weigh your drained wet coffee bed once after brewing to measure exact water absorption (g/g)' },
         domH('span', { text: '1-Brew Sponge Check: Wet Grounds Wt (g)' }),
         wetBedIn
       ),
       CK.vernierPill({
         label: 'Cold Brew Cut 1:',
+        title: 'Parts water or milk added per 1 part cold brew concentrate (e.g. 1:2.5 = 1 part concentrate + 2.5 parts water/milk)',
         value: r4.coldBrewDiluteRatio,
         min: 1.5,
         max: 4.0,
@@ -49663,6 +52106,7 @@ if (typeof window !== 'undefined') {
       })
     ));
     card.appendChild(outBox);
+    card.appendChild(r4Takeaway.el);
     syncInputs('');
     _labLiveHooks.ratioYield = function (opts) {
       if (!card.isConnected) return false;
@@ -49717,6 +52161,7 @@ if (typeof window !== 'undefined') {
     const stageG = CK.svgEl('g');
     agSvg.appendChild(stageG);
     const agReadout = domH('div', { class: 'bt-studio-readout-banner' });
+    const agtronTakeaway = createTakeawayBox('bt-agtron-takeaway', 'What this result means \u2192');
 
     const AX_L = 44, AX_R = 428, AX_W = 384;
     function mapG(g) { return AX_L + ((clamp(g, 25, 105, 65) - 25) / 80) * AX_W; }
@@ -49750,6 +52195,7 @@ if (typeof window !== 'undefined') {
       stageG.appendChild(l2);
 
       /* Multi-Stop Spectrum Bar */
+      stageG.appendChild(CK.svgZoneLabel((AX_L + AX_R) * 0.5, 150, 'Roast Color Map (25 Dark \u2194 65 Medium \u2194 105 Nordic)', { anchor: 'middle' }));
       for (let i = 0; i < 24; i++) {
         const g0 = 25 + (i / 24) * 80;
         stageG.appendChild(CK.svgEl('rect', {
@@ -49813,6 +52259,28 @@ if (typeof window !== 'undefined') {
         })
       ));
       agReadout.appendChild(domH('p', { class: 'bt-studio-xray-line', text: scorchMsg }));
+
+      const roastBandName = rf.groundG >= 80
+        ? 'Nordic / Ultra-Light Roast'
+        : (rf.groundG >= 65 ? 'Light-Medium Filter Roast' : (rf.groundG >= 52 ? 'Medium Omni / Espresso Roast' : 'Dark / Classic Roast'));
+      const recBrewTemp = rf.groundG >= 80 ? 95 : (rf.groundG >= 65 ? 93 : (rf.groundG >= 52 ? 90 : 87));
+      if (delta >= 12) {
+        agtronTakeaway.set(
+          roastBandName + ' (Ground ' + rf.groundG.toFixed(1) + ') with a large +' + delta + ' shell-to-core gap: the bean exterior roasted much darker than the inside. Brew gentler (~' + (recBrewTemp - 2) + ' \u00B0C) to keep roasty bitterness out of your cup.',
+          'warn'
+        );
+      } else if (delta < 0) {
+        agtronTakeaway.set(
+          roastBandName + ' (Ground ' + rf.groundG.toFixed(1) + ') reads darker inside than outside (Delta ' + deltaStr + ') — re-check your whole-bean vs ground scan or start around ' + recBrewTemp + ' \u00B0C kettle temp.',
+          'warn'
+        );
+      } else {
+        agtronTakeaway.set(
+          roastBandName + ' (Ground ' + rf.groundG.toFixed(1) + ', even Delta ' + deltaStr + '): start your kettle near ' + recBrewTemp + ' \u00B0C' +
+            (rf.groundG >= 75 ? ' and grind slightly finer for full sweetness.' : (rf.groundG <= 52 ? ' and coarsen a touch so it stays chocolaty, not ashy.' : ' for balanced sweetness and clarity.')),
+          'good'
+        );
+      }
     }
 
     CK.bindChartSurface(agSvg, {
@@ -49858,15 +52326,16 @@ if (typeof window !== 'undefined') {
 
     /* ---- Part B: FreshnessFreezerCurve (-18C 12.3x Arrhenius) & 2-Bag Bulk-Trap Silos ---- */
     const frSvg = CK.svgEl('svg', {
-      viewBox: '0 0 440 246',
+      viewBox: '0 0 440 258',
       class: 'bt-chart-svg bt-fresh-svg',
       'aria-label': 'Arrhenius -18C Cryo-Vault Freshness Curve and Freeze Split'
     });
     const frG = CK.svgEl('g');
     frSvg.appendChild(frG);
     const siloBox = domH('div', { class: 'bt-silo-race-box' });
+    const freshTakeaway = createTakeawayBox('bt-freshness-takeaway', 'What this result means \u2192');
 
-    const FP = { L: 42, T: 20, PW: 380, PH: 184, R: 422, B: 204 };
+    const FP = { L: 44, T: 20, PW: 378, PH: 184, R: 422, B: 204 };
     const MAX_DAYS = 60;
 
     function vitalityAt(effDay, groundG) {
@@ -49884,6 +52353,27 @@ if (typeof window !== 'undefined') {
 
       const fx = function (d) { return FP.L + (clamp(d, 0, MAX_DAYS, 0) / MAX_DAYS) * FP.PW; };
       const fy = function (v) { return FP.B - (clamp(v, 0, 100, 50) / 100) * FP.PH; };
+
+      /* Y-Axis (Freshness %) & X-Axis (Days Off Roast) Ticks */
+      [100, 50, 0].forEach(function (pct) {
+        const yt = CK.svgEl('text', { x: (FP.L - 6).toFixed(1), y: (fy(pct) + 3.5).toFixed(1), 'text-anchor': 'end', class: 'bt-chart-tick' });
+        yt.textContent = pct + '%';
+        frG.appendChild(yt);
+      });
+      const yUnitLbl = CK.svgEl('text', { x: (FP.L + 4).toFixed(1), y: (FP.T - 6).toFixed(1), class: 'bt-chart-tick' });
+      yUnitLbl.textContent = 'Aroma Freshness (%) \u2191';
+      frG.appendChild(yUnitLbl);
+
+      [0, 15, 30, 45, 60].forEach(function (dayTick) {
+        const xt = CK.svgEl('text', {
+          x: fx(dayTick).toFixed(1),
+          y: (FP.B + 13).toFixed(1),
+          'text-anchor': dayTick === 0 ? 'start' : (dayTick === 60 ? 'end' : 'middle'),
+          class: 'bt-chart-tick'
+        });
+        xt.textContent = dayTick + 'd';
+        frG.appendChild(xt);
+      });
 
       const ambPts = [];
       const cryoPts = [];
@@ -49926,7 +52416,7 @@ if (typeof window !== 'undefined') {
       tPin.appendChild(CK.svgEl('circle', { r: '7.5', class: 'bt-fr-today-pin' }));
       frG.appendChild(tPin);
 
-      const flbl = CK.svgEl('text', { x: (FP.L + 8).toFixed(1), y: (FP.B + 16).toFixed(1), class: 'bt-chart-tick' });
+      const flbl = CK.svgEl('text', { x: (FP.L + 2).toFixed(1), y: (FP.B + 32).toFixed(1), class: 'bt-chart-tick' });
       flbl.textContent = isScienceXray()
         ? ('Day ' + Math.round(rf.daysToday) + ' (Eff. Biological Age: ' + tEffToday.toFixed(1) + 'd @ 12.3x -18 °C Arrhenius  ·  +12 um coarser frozen grind)')
         : ('Day ' + Math.round(rf.daysToday) + ' off roast (Freezer Age: ' + tEffToday.toFixed(1) + 'd @ -18 °C · 12× slower aging)');
@@ -49961,6 +52451,7 @@ if (typeof window !== 'undefined') {
         domH('button', {
           type: 'button',
           class: 'bt-lab-chip' + (rf.freezeBulk ? ' is-active' : ''),
+          title: 'Toggle whether you freeze the extra portion of a 1 kg bulk bag airtight at -18 °C',
           onclick: function () { rf.freezeBulk = !rf.freezeBulk; CK.haptic('tick'); redrawFreshness(); }
         }, ic('cryo-snowflake', { size: 14 }), domH('span', { text: rf.freezeBulk ? 'Freeze Bulk Excess ON (-18C)' : 'Countertop Only (No Freezer)' }))
       ));
@@ -49985,6 +52476,18 @@ if (typeof window !== 'undefined') {
         ));
       });
       siloBox.appendChild(silosRow);
+
+      const curVitality = Math.round(vitalityAt(tEffToday, rf.groundG));
+      const bulkWins = bagB.costPerPeakCup < bagA.costPerPeakCup;
+      const bulkMsg = bulkWins
+        ? ('Bulk bag wins at $' + bagB.costPerPeakCup.toFixed(2) + '/peak cup vs $' + bagA.costPerPeakCup.toFixed(2) + ' retail' + (rf.freezeBulk ? ' (with freezer protection ON).' : '.'))
+        : ('Bulk trap alert: without freezing, ' + bagB.staleCups + ' cups go stale so the 1 kg bag costs $' + bagB.costPerPeakCup.toFixed(2) + '/peak cup vs $' + bagA.costPerPeakCup.toFixed(2) + ' retail — toggle Freeze Bulk Excess ON to save.');
+      freshTakeaway.set(
+        'On Day ' + Math.round(rf.daysToday) + ', your beans are at ~' + curVitality + '% peak aroma' +
+          (rf.freezeOn && rf.daysToday > rf.freezeDay ? (' (frozen since Day ' + rf.freezeDay + ', aging 12\u00D7 slower)') : '') +
+          '. ' + bulkMsg,
+        (curVitality >= 80 && bulkWins) ? 'good' : (curVitality < 60 || !bulkWins ? 'warn' : 'info')
+      );
     }
 
     CK.bindChartSurface(frSvg, {
@@ -50125,13 +52628,30 @@ if (typeof window !== 'undefined') {
       domH('div', { class: 'bt-head-actions' }, agtronHow.trigger, epistemicBadge('verified_physics'))
     ));
     card.appendChild(agtronHow.panel);
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Converts ',
+      labAbbr('Agtron #', 'Infrared roast color score from 25 to 105 — higher numbers mean lighter roasts, lower numbers mean darker roasts'),
+      ' across 5 meters, compares ',
+      domH('strong', { text: 'Whole Bean (B)' }),
+      ' vs ',
+      domH('strong', { text: 'Ground Core (G)' }),
+      ' roast evenness, and models ',
+      domH('strong', { text: '-18 \u00B0C freezer storage (~12\u00D7 slower staling)' }),
+      ' against buying a 1 kg bulk bag.'
+    ]));
     card.appendChild(omniAgBar);
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, agSvg));
+    card.appendChild(buildAxisCaption([
+      { label: 'Color Bar (Agtron #)', text: 'Left (25): Very Dark / French \u2194 Center (65): Medium \u2194 Right (105): Nordic Ultra-Light' },
+      { label: 'Draggers', text: '(B) = Whole Bean exterior \u00B7 (G) = Ground interior core' }
+    ]));
     card.appendChild(agReadout);
+    card.appendChild(agtronTakeaway.el);
     const freezeCurveBtn = domH('button', {
       type: 'button',
       class: 'bt-lab-chip' + (rf.freezeOn ? ' is-active' : ''),
       'aria-pressed': String(!!rf.freezeOn),
+      title: 'Show or hide the -18 °C airtight freezer curve (12× slower staling)',
       onclick: function () {
         rf.freezeOn = !rf.freezeOn;
         freezeCurveBtn.classList.toggle('is-active', !!rf.freezeOn);
@@ -50180,6 +52700,7 @@ if (typeof window !== 'undefined') {
       }, 'Save to Active Bag Only'),
       CK.vernierPill({
         label: 'Daily Pace',
+        title: 'Grams of whole beans you brew per day (e.g. 18 g = 1 cup/day, 36 g = 2 cups/day)',
         value: rf.paceGPerDay,
         min: 7,
         max: 60,
@@ -50190,6 +52711,7 @@ if (typeof window !== 'undefined') {
       }),
       CK.vernierPill({
         label: 'Bulk Price',
+        title: 'Price of a 1 kg bulk bag to compare fresh cups per dollar against a 250 g retail bag',
         value: rf.bagBPrice,
         min: 18,
         max: 120,
@@ -50201,7 +52723,13 @@ if (typeof window !== 'undefined') {
       })
     ));
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, frSvg));
+    card.appendChild(buildAxisCaption([
+      { label: 'X-Axis', text: 'Days Off Roast (0d = roast day \u2192 60d)' },
+      { label: 'Y-Axis', text: 'Peak Aroma Vitality (0\u2013100%)' },
+      { label: 'Pins', text: 'Drag Freeze Day & Today pins to simulate -18 \u00B0C storage' }
+    ]));
     card.appendChild(siloBox);
+    card.appendChild(freshTakeaway.el);
 
     redrawAgtron();
     redrawFreshness();
@@ -50226,6 +52754,7 @@ if (typeof window !== 'undefined') {
     /* 1. Compare 2 Bags Head-to-Head */
     const cmpCard = domH('section', { class: 'bt-studio-card', id: 'bt-studio-bagcmp' });
     const cmpOut = domH('div', { class: 'bt-bagcmp-out' });
+    const cmpTakeaway = createTakeawayBox('bt-bagcmp-takeaway');
 
     const aNameIn = domH('input', { type: 'text', class: 'bt-lab-text-in', value: bc.aName, 'aria-label': 'Bag A name', oninput: function () { bc.aName = aNameIn.value; paintCmp(); } });
     const aPriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: String(bc.aPrice), 'aria-label': 'Bag A price', oninput: function () { const v = parseFloat(aPriceIn.value); if (Number.isFinite(v)) { bc.aPrice = Math.max(0, v); paintCmp(); } } });
@@ -50264,6 +52793,14 @@ if (typeof window !== 'undefined') {
           domH('strong', { text: winner })
         )
       ));
+      const diffPeak = Math.abs(effPeakA - effPeakB);
+      const staleNoteA = bc.aGrams > freshWinG ? (' (' + Math.round(bc.aGrams - freshWinG) + ' g risks staling past 26d unless frozen)') : '';
+      const staleNoteB = bc.bGrams > freshWinG ? (' (' + Math.round(bc.bGrams - freshWinG) + ' g risks staling past 26d unless frozen)') : '';
+      cmpTakeaway.set(
+        winner + ' is the better fresh-cup value by $' + diffPeak.toFixed(2) + '/cup at ' + pace + ' g/day (' + dose + ' g dose)' +
+        (effPeakA <= effPeakB ? staleNoteA : staleNoteB) + '.',
+        'good'
+      );
     }
 
     cmpCard.appendChild(domH('div', { class: 'bt-lab-card-head' },
@@ -50275,6 +52812,13 @@ if (typeof window !== 'undefined') {
         )
       )
     ));
+    cmpCard.appendChild(buildWhatBox('What this tool does', [
+      'Roasters sell different bag weights (200 g, 250 g, 12 oz / 340 g, 1 kg). Enter two bags to compare both raw ',
+      domH('strong', { text: '$/cup' }),
+      ' and ',
+      domH('strong', { text: 'fresh $/cup' }),
+      ' — catching when a big bulk bag goes stale before you can finish it.'
+    ]));
     cmpCard.appendChild(domH('div', { class: 'bt-bagcmp-grid' },
       domH('div', { class: 'bt-lab-subcard' },
         domH('strong', { text: 'Bag A' }),
@@ -50294,18 +52838,24 @@ if (typeof window !== 'undefined') {
       )
     ));
     cmpCard.appendChild(cmpOut);
+    cmpCard.appendChild(cmpTakeaway.el);
     paintCmp();
 
     /* 2. True Cup Cost, Cafe Savings & Gear Break-Even ROI */
     const roiCard = domH('section', { class: 'bt-studio-card', id: 'bt-studio-cost-roi' });
     const roiOut = domH('div', { class: 'bt-roi-out' });
+    const roiTakeaway = createTakeawayBox('bt-roi-takeaway');
 
     const rBagPriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: String(roi.bagPrice), 'aria-label': 'Bag price USD', oninput: function () { const v = parseFloat(rBagPriceIn.value); if (Number.isFinite(v)) { roi.bagPrice = Math.max(0, v); paintRoi(); } } });
     const rCafePriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.25', value: String(roi.cafeDrinkPrice), 'aria-label': 'Cafe drink price USD', oninput: function () { const v = parseFloat(rCafePriceIn.value); if (Number.isFinite(v)) { roi.cafeDrinkPrice = Math.max(0, v); paintRoi(); } } });
     const rGearIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '10', value: String(roi.gearInvestment), 'aria-label': 'Gear investment USD', oninput: function () { const v = parseFloat(rGearIn.value); if (Number.isFinite(v)) { roi.gearInvestment = Math.max(0, v); paintRoi(); } } });
 
     function paintRoi() {
-      const beanCost = (roi.bagPrice / Math.max(50, roi.bagGrams)) * roi.doseG;
+      const wasteG = clamp(roi.dialInWasteG != null ? roi.dialInWasteG : 18, 0, Math.max(0, roi.bagGrams - roi.doseG), 18);
+      const usableBagG = Math.max(roi.doseG, roi.bagGrams - wasteG);
+      const rawBeanCost = (roi.bagPrice / Math.max(50, roi.bagGrams)) * roi.doseG;
+      const beanCost = (roi.bagPrice / usableBagG) * roi.doseG;
+      const wastePerCup = Math.max(0, beanCost - rawBeanCost);
       const waterCost = (roi.doseG * 16 / 1000) * roi.waterCostPerL;
       const trueCup = beanCost + roi.filterCost + waterCost + roi.milkCostPerCup;
       const netPerCup = roi.cafeDrinkPrice - trueCup;
@@ -50337,8 +52887,22 @@ if (typeof window !== 'undefined') {
       ));
       roiOut.appendChild(domH('p', {
         class: 'bt-lab-hint num-tab',
-        text: 'Breakdown: $' + beanCost.toFixed(2) + ' beans (' + roi.doseG + 'g) + $' + roi.filterCost.toFixed(2) + ' paper filter + $' + waterCost.toFixed(2) + ' remineralized water' + (roi.milkCostPerCup > 0 ? (' + $' + roi.milkCostPerCup.toFixed(2) + ' milk') : '') + '.'
+        text: 'Breakdown: $' + rawBeanCost.toFixed(2) + ' beans (' + roi.doseG + 'g) + $' + wastePerCup.toFixed(2) + ' dial-in waste (' + Math.round(wasteG) + 'g/bag) + $' + roi.filterCost.toFixed(2) + ' filter + $' + waterCost.toFixed(2) + ' water' + (roi.milkCostPerCup > 0 ? (' + $' + roi.milkCostPerCup.toFixed(2) + ' milk') : '') + '.'
       }));
+      if (isSaving) {
+        roiTakeaway.set(
+          'Even after accounting for ' + Math.round(wasteG) + ' g of wasted dial-in/purge beans per bag (+$' + wastePerCup.toFixed(2) + '/cup), brewing at home costs $' +
+          trueCup.toFixed(2) + '/cup — saving $' + netPerCup.toFixed(2) + ' every cup (' + annualText + ') and paying off $' + Math.round(roi.gearInvestment) +
+          ' of gear in ' + (roi.gearInvestment <= 0 ? '0 days' : (breakEvenCups + ' cups / ~' + breakEvenDays + ' days')) + '.',
+          'good'
+        );
+      } else {
+        roiTakeaway.set(
+          'Your home cup ($' + trueCup.toFixed(2) + ' incl. ' + Math.round(wasteG) + ' g dial-in waste) currently exceeds your $' +
+          roi.cafeDrinkPrice.toFixed(2) + ' cafe price — cutting dial-in waste or choosing a better-value bag lowers $/cup immediately.',
+          'warn'
+        );
+      }
     }
 
     roiCard.appendChild(domH('div', { class: 'bt-lab-card-head' },
@@ -50346,16 +52910,26 @@ if (typeof window !== 'undefined') {
         ic('spark-star', { size: 20 }),
         domH('div', null,
           domH('h3', { text: 'True Cup Cost, Cafe Savings & Gear Break-Even ROI' }),
-          domH('p', { class: 'bt-lab-sub', text: 'Exact beans + filter + water + milk cost per cup vs cafe spend & grinder/brewer payback' })
+          domH('p', { class: 'bt-lab-sub', text: 'Exact beans + dial-in waste + filter + water + milk cost per cup vs cafe spend & grinder/brewer payback' })
         )
       )
     ));
+    roiCard.appendChild(buildWhatBox('What this tool does', [
+      'Calculates your honest home ',
+      domH('strong', { text: '$/cup' }),
+      ' — including beans, ',
+      domH('strong', { text: 'wasted dial-in/purge grams' }),
+      ' per bag, filters, and water — then solves your gear ',
+      labAbbr('ROI', 'Return on Investment — how many home cups until your grinder/brewer savings pay back what you spent on gear'),
+      ' break-even against cafe coffee.'
+    ]));
     roiCard.appendChild(domH('div', { class: 'bt-ratio4-grid' },
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: '250g Bag ($)' }), rBagPriceIn),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Cafe Cup ($)' }), rCafePriceIn),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Gear Spend ($)' }), rGearIn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Retail price of your 250 g coffee bag' }, domH('span', { text: '250g Bag ($)' }), rBagPriceIn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'What you would otherwise pay at a coffee shop for one drink' }, domH('span', { text: 'Cafe Cup ($)' }), rCafePriceIn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Total spent on your grinder, kettle, scale, and brewer' }, domH('span', { text: 'Gear Spend ($)' }), rGearIn),
       CK.vernierPill({
         label: 'Cups / Day',
+        title: 'How many cups you brew at home on an average day',
         value: roi.cupsPerDay,
         min: 0.5,
         max: 6.0,
@@ -50364,9 +52938,22 @@ if (typeof window !== 'undefined') {
         unit: '',
         compact: true,
         onChange: function (v) { roi.cupsPerDay = v; paintRoi(); }
+      }),
+      CK.vernierPill({
+        label: 'Dial-In Waste',
+        title: 'Grams of coffee lost per bag to grinder purging or sink-shot dial-in tries (e.g. 18 g = 1 wasted cup per bag)',
+        value: roi.dialInWasteG != null ? roi.dialInWasteG : 18,
+        min: 0,
+        max: 100,
+        step: 2,
+        decimals: 0,
+        unit: 'g/bag',
+        compact: true,
+        onChange: function (v) { roi.dialInWasteG = v; paintRoi(); }
       })
     ));
     roiCard.appendChild(roiOut);
+    roiCard.appendChild(roiTakeaway.el);
     paintRoi();
 
     wrap.appendChild(cmpCard);
@@ -50379,6 +52966,7 @@ if (typeof window !== 'undefined') {
     const gl = labState.grinderLab;
     const card = domH('section', { class: 'bt-studio-card', id: 'bt-studio-grinder-lab' });
     const outBox = domH('div', { class: 'bt-grinder-lab-out' });
+    const grinderTakeaway = createTakeawayBox('bt-grinder-takeaway', 'What this result means \u2192');
 
     const fallbackGrinders = [
       { key: 'comandante-c40', name: 'Comandante C40 MK4 (Std Axle)', unit: 'clicks', min: 5, max: 45, umZero: 40, umPerStep: 25.5 },
@@ -50691,13 +53279,24 @@ if (typeof window !== 'undefined') {
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
       domH('div', { class: 'bt-lab-card-head' }, omniPsdBadge, omniPsdPairRow, omniPsdConnRow),
+      buildWhatBox('What this chart shows', [
+        'Plots your grinder\u2019s ',
+        labAbbr('PSD', 'Particle Size Distribution — how evenly your grinder chops coffee into dust (fines), target grounds, and large chunks (boulders)'),
+        '. Narrower ',
+        labAbbr('Span', '(D90 minus D10) / D50 — lower Span means cleaner, sweeter cups with fewer muddy fines'),
+        ' means higher clarity. Lock 2 points on your grinder to calibrate its exact \u00B5m/click slope.'
+      ]),
       domH('div', { class: 'bt-lab-metric-strip' },
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Fines D10' }), kpiD10El),
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Median D50' }), kpiD50El),
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Boulders D90' }), kpiD90El),
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'PSD Span' }), kpiSpanEl)
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', null, labAbbr('Fines D10', 'Smallest 10% of coffee dust — too many fines clog filters and add bitterness')), kpiD10El),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', null, labAbbr('Median D50', 'Middle particle size — the main number used to match grind settings across grinders')), kpiD50El),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', null, labAbbr('Boulders D90', 'Largest 10% of chunks — too many boulders under-extract and taste thin or sour')), kpiD90El),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', null, labAbbr('PSD Span', 'Spread width (D90 - D10) / D50 — lower is more uniform')), kpiSpanEl)
       ),
       domH('div', { class: 'bt-chart-stage' }, psdSvg),
+      buildAxisCaption([
+        { label: 'X-Axis (Microns \u00B5m)', text: 'Left: Fines (<200 \u00B5m) \u2194 Center: Median D50 \u2194 Right: Boulders (>900 \u00B5m)' },
+        { label: 'Y-Axis', text: 'Share of Grounds (%) in each size bin' }
+      ]),
       domH('div', { class: 'bt-lab-btn-row' },
         domH('button', {
           type: 'button',
@@ -50786,6 +53385,7 @@ if (typeof window !== 'undefined') {
       id: 'bt-grinder-swap-btn',
       class: 'bt-lab-btn is-sm bt-grinder-swap-btn',
       style: 'min-height:44px;width:100%;justify-content:center;',
+      title: 'Flip From and To grinders and automatically convert the current grind size into the new source grinder’s setting',
       'aria-label': 'Swap From and To grinders',
       onclick: function () {
         if (gl.fromKey === gl.toKey) {
@@ -50857,6 +53457,12 @@ if (typeof window !== 'undefined') {
           ),
           domH('p', { class: 'bt-lab-hint num-tab', text: calHintText })
         ));
+        grinderTakeaway.set(
+          sameGrinder
+            ? ('Both dropdowns are set to ' + gFrom.name + '. Pick a different grinder in "Translate To" to convert clicks across burrs.')
+            : ('Type a click/dial number for ' + gFrom.name + ' above to calculate its median particle size (D50 in \u00B5m) and matching setting on ' + gTo.name + '.'),
+          'info'
+        );
         renderOmniPsdHistogram();
         return;
       }
@@ -50865,6 +53471,23 @@ if (typeof window !== 'undefined') {
       const bandMeta = describeGrindReferenceBand(d50Um);
       const targetInfo = umToSettingInfo(gTo, d50Um);
       const targetDisp = targetInfo.display || (targetInfo.num + ' ' + fmtGrinderUnit(gTo.unit, targetInfo.num));
+
+      if (sameGrinder) {
+        grinderTakeaway.set(
+          gFrom.name + ' at this setting produces ~' + d50Um + ' \u00B5m (' + bandMeta.band + '). Choose a different "Translate To" grinder to find its equivalent setting.',
+          'warn'
+        );
+      } else if (targetInfo.incompatible) {
+        grinderTakeaway.set(
+          '~' + d50Um + ' \u00B5m (' + bandMeta.band + ') is outside ' + gTo.name + '\u2019s safe burr range (' + targetDisp + '). Try a slightly coarser or finer grind band for this grinder.',
+          'warn'
+        );
+      } else {
+        grinderTakeaway.set(
+          'Set ' + gTo.name + ' to ' + targetDisp + ' to match ~' + d50Um + ' \u00B5m (' + bandMeta.band + '). Because burr geometry differs, dial \u00B11\u20132 clicks by taste on your first cup.',
+          'good'
+        );
+      }
 
       outBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
         domH('div', { class: 'bt-lab-chip-row', style: 'margin-bottom:6px' },
@@ -50934,16 +53557,24 @@ if (typeof window !== 'undefined') {
       ),
       epistemicBadge('calibrated_biophysics')
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Converts a grind setting from one grinder into the matching ',
+      labAbbr('D50 (\u00B5m)', 'Median coffee particle diameter in microns — 250 \u00B5m is espresso-fine, 600 \u00B5m is pour-over, 1000 \u00B5m is French Press'),
+      ' on another grinder. Click ',
+      domH('strong', { text: 'Swap Grinders (<->)' }),
+      ' to reverse the direction and carry the converted grind size over automatically.'
+    ]));
     card.appendChild(domH('div', {
       class: 'bt-lab-inline-inputs bt-grinder-translator-grid',
       style: 'grid-template-columns:repeat(auto-fit,minmax(160px,1fr));align-items:end;'
     },
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'From Grinder' }), fromSel),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Setting' }), fromSetIn),
-      domH('div', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Direction' }), swapGrindersBtn),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Translate To' }), toSel)
+      domH('label', { class: 'bt-lab-field-lbl', title: 'The grinder that your recipe or current click number came from' }, domH('span', { text: 'From Grinder' }), fromSel),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Current click, dial, or step number on the From Grinder' }, domH('span', { text: 'Setting' }), fromSetIn),
+      domH('div', { class: 'bt-lab-field-lbl', title: 'Flip source and target grinders while preserving particle size' }, domH('span', { text: 'Direction' }), swapGrindersBtn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'The grinder on your counter that you want the equivalent setting for' }, domH('span', { text: 'Translate To' }), toSel)
     ));
     card.appendChild(outBox);
+    card.appendChild(grinderTakeaway.el);
     card.appendChild(omniPsdCard);
     paintGrinder();
 
@@ -51085,8 +53716,10 @@ if (typeof window !== 'undefined') {
       }
       if (ktOn) parts.push('Kettle ' + (st.kettleTempC != null ? (Math.round(+st.kettleTempC) + ' \u00B0C') : 'On'));
       if (xbOn) parts.push('xBloom ' + (st.xbloomStage || 'Ready'));
-      const isNarrowViewport = (typeof window !== 'undefined' && window.innerWidth > 0 && window.innerWidth < 480);
-      const idleStatusTxt = isNarrowViewport ? 'Scale / R2 Standby' : 'Scale / Pressure / R2 / Omni / Kettle Standby';
+      const vwNow = (typeof window !== 'undefined' && window.innerWidth > 0) ? window.innerWidth : 1024;
+      const idleStatusTxt = vwNow < 580
+        ? 'BLE Standby'
+        : (vwNow < 780 ? 'Scale / R2 / Omni Standby' : 'Scale / Pressure / R2 / Omni / Kettle Standby');
       setTextIfChanged(statusTxt, parts.length ? ('Live: ' + parts.join(' \u00B7 ')) : idleStatusTxt);
       quickReadR2Btn.hidden = !(r2On || simOn);
       return barRoot && barRoot.isConnected;
@@ -51892,6 +54525,12 @@ if (typeof window !== 'undefined') {
     timelapsePct: 100,
     expandedBoard: 'origins', /* 'origins' | 'processes' | 'roasts' | 'varietals' | 'brewers' | 'flavors' | 'cafes' */
     drillPath: [],            /* 4-level drill-in: [ { level, key, label } ... ] */
+    selectedRoastZone: '',    /* interactive Roast Sweet Spot / Extraction preference drill-down */
+    selectedRatingTier: '',   /* interactive Rating Tier Breakdown drill-down */
+    selectedRadarAxis: '',    /* interactive 5-Axis taste drill-down */
+    selectedBeanCid: '',      /* interactive Per-Coffee Scorecard Leaderboard drill-down */
+    prefTargetDraft: null,    /* { brightness, strength, texture } interactive recipe bias targets */
+    wheelMatchScope: 'word',  /* 'word' | 'family' in Flavor Wheel drill-down */
     demoMode: false,
     seedAcidity: 3.8,
     seedSweetness: 4.5,
@@ -51997,6 +54636,33 @@ if (typeof window !== 'undefined') {
     const s = String(pk || '').toLowerCase();
     if (!s || isUnknownTrait(s)) return 'Don\'t Know';
     return s.split(/[\s-]+/).map(function (w) { return w ? (w.charAt(0).toUpperCase() + w.slice(1)) : ''; }).join(' ');
+  }
+
+  function formatMethodHuman(mk) {
+    const raw = String(mk || '').trim();
+    if (!raw || isUnknownTrait(raw)) return 'Brew';
+    const low = raw.toLowerCase();
+    const map = {
+      v60: 'V60 Pour-Over',
+      chemex: 'Chemex',
+      kalita: 'Kalita Wave',
+      origami: 'Origami',
+      orea: 'Orea V3',
+      switch: 'Hario Switch',
+      aeropress: 'AeroPress',
+      espresso: 'Espresso',
+      press: 'French Press',
+      frenchpress: 'French Press',
+      moka: 'Moka Pot',
+      cold: 'Cold Brew',
+      cupping: 'Cupping Table',
+      aiden: 'Fellow Aiden',
+      philips5500: 'Philips 5500',
+      drip: 'Auto Drip',
+      clever: 'Clever Dripper'
+    };
+    if (map[low]) return map[low];
+    return raw.replace(/[-_]+/g, ' ').replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); });
   }
 
   function getHistoryRows(slicePct) {
@@ -52142,12 +54808,23 @@ if (typeof window !== 'undefined') {
         if (!rec.elevationBand && elevBand) rec.elevationBand = elevBand;
       }
       rec.stars.push(st);
+      const tempCVal = +r.brew_temp_c > 0 ? Math.round(+r.brew_temp_c) : (+r.brew_temp_f > 0 ? Math.round((+r.brew_temp_f - 32) * 5 / 9) : 0);
+      const ratioVal = +r.brew_ratio > 0 ? +r.brew_ratio : ((+r.brew_dose_g > 0 && +r.brew_water_g > 0) ? Math.round((+r.brew_water_g / +r.brew_dose_g) * 10) / 10 : 0);
       rec.cups.push({
         coffee: r.coffee_name || 'Logged Brew',
+        roaster: r.roaster || '',
         method: r.brew_method || 'v60',
         date: r.cupping_date || r.brew_date || r.date || '',
         star: st,
-        notes: r.flavors_liked || r.words_flavor || r.bag_notes || ''
+        sca: parseFloat(r.total_score) || 0,
+        tds: parseFloat(r.brew_tds_pct) || 0,
+        ey: parseFloat(r.brew_ey_pct) || 0,
+        tempC: tempCVal,
+        ratio: ratioVal,
+        grind: r.brew_grind_setting || (r.brew_grind_target_um ? (r.brew_grind_target_um + ' \u00B5m') : ''),
+        locked: r.dial_locked === 'yes' || r.dial_locked === '1',
+        notes: r.flavors_liked || r.words_flavor || r.bag_notes || '',
+        rawRow: r
       });
       if (r.acidity_intensity) rec.ac.push(clamp(parseFloat(r.acidity_intensity), 1, 5, 3));
       if (r.sweetness_intensity) rec.sw.push(clamp(parseFloat(r.sweetness_intensity), 1, 5, 3.5));
@@ -52170,9 +54847,10 @@ if (typeof window !== 'undefined') {
       const lk = userLiked.length ? userLiked : bagNotesFallback;
 
       lk.forEach(function (w) {
-        const cur = likedNotes.get(w) || { word: w, n: 0, sumStar: 0 };
+        const cur = likedNotes.get(w) || { word: w, n: 0, sumStar: 0, rows: [] };
         cur.n++;
         cur.sumStar += st;
+        cur.rows.push(r);
         likedNotes.set(w, cur);
       });
       for (let i = 0; i < lk.length; i++) {
@@ -52412,7 +55090,7 @@ if (typeof window !== 'undefined') {
         domH('div', { class: 'bt-prefs-gear-tile' },
           domH('span', { class: 'bt-pref-tile-lbl', text: 'Kettle & Brew Water' }),
           domH('strong', { class: 'bt-pref-tile-val', text: waterLabel }),
-          domH('span', { class: 'bt-pref-tile-sub', text: bleLabels.indexOf('Kettle') >= 0 ? 'Stagg EKG BLE active' : 'Tap Edit to tune GH/KH' })
+          domH('span', { class: 'bt-pref-tile-sub', text: bleLabels.indexOf('Kettle') >= 0 ? 'Stagg EKG BLE active' : 'Tap Edit to tune water minerals' })
         ),
         domH('div', { class: 'bt-prefs-gear-tile' },
           domH('span', { class: 'bt-pref-tile-lbl', text: 'Bluetooth Hardware' }),
@@ -52440,9 +55118,210 @@ if (typeof window !== 'undefined') {
   /* ==========================================================================
    * SEGMENT 1: Coffee Belt World Map (52 Origins) + Radar + 4-Level EB Drill-In
    * ========================================================================== */
+  function unneutPalate(v) {
+    return typeof unneutralize === 'function' ? unneutralize(v || '') : String(v || '');
+  }
+
+  function quickBrewFromPalate(r) {
+    if (!r) return;
+    if (window.BTCellarTab && typeof window.BTCellarTab.hydrateAndBrewRow === 'function') {
+      window.BTCellarTab.hydrateAndBrewRow(r);
+      return;
+    }
+    const un = unneutPalate;
+    const applyFn = function (a) {
+      a.coffee = Object.assign(a.coffee || {}, {
+        coffee_id: r.coffee_id || (a.coffee && a.coffee.coffee_id) || '',
+        name: un(r.coffee_name) || 'Golden Brew',
+        roaster: un(r.roaster),
+        origin: un(r.origin),
+        process: un(r.process),
+        roast: un(r.roast_level) || 'light',
+        answered: 'yes'
+      });
+      a.brew = a.brew || {};
+      if (r.brew_method) a.brew.method = r.brew_method;
+      if (+r.brew_dose_g > 0) a.brew.dose = +r.brew_dose_g;
+      if (+r.brew_water_g > 0) a.brew.water = +r.brew_water_g;
+      if (+r.brew_ratio > 0) a.brew.ratio = +r.brew_ratio;
+      if (+r.brew_temp_c > 0) {
+        a.brew.tempC = +r.brew_temp_c;
+        a.brew.tempF = Math.round(+r.brew_temp_c * 9 / 5 + 32);
+      }
+      if (+r.brew_grind_target_um > 0) {
+        a.brew.grindUm = +r.brew_grind_target_um;
+        a.brew.grind_um = +r.brew_grind_target_um;
+      }
+      if (r.brew_grind_setting) a.brew.grind_setting = un(r.brew_grind_setting);
+      a.recipeLocked = (r.dial_locked === 'yes' || r.dial_locked === '1');
+    };
+    if (typeof window.__btApplyAndNavigateWithBack === 'function') {
+      window.__btApplyAndNavigateWithBack(applyFn, {
+        targetStep: 'brew',
+        returnRoute: 'palate',
+        toast: 'Loaded "' + (un(r.coffee_name) || 'Golden Recipe') + '" into Brew Studio!'
+      });
+    } else {
+      applyFn(getApp());
+      saveDraftSoon();
+      if (typeof sh().go === 'function') sh().go('recipe');
+    }
+  }
+
+  function inspectCupFromPalate(r) {
+    if (!r) return;
+    if (window.BTCellarTab && typeof window.BTCellarTab.openDetail === 'function') {
+      window.BTCellarTab.openDetail(r);
+      return;
+    }
+    if (typeof sh().go === 'function') sh().go('history');
+    notify('Opened Brew Journal for ' + (unneutPalate(r.coffee_name) || 'this cup'));
+  }
+
+  function jumpToJournalWithFilter(filterKey, query) {
+    if (window.BTCellarTab && typeof window.BTCellarTab.openJournalFilter === 'function') {
+      window.BTCellarTab.openJournalFilter(filterKey || 'all', query || '');
+      return;
+    }
+    if (typeof sh().go === 'function') sh().go('history');
+  }
+
+  function classifyRatingTier(r) {
+    if (!r) return '';
+    const st = parseFloat(r.my_rating_stars);
+    const val = (Number.isFinite(st) && st > 0) ? st : rowStar(r);
+    if (!Number.isFinite(val) || val <= 0) return '';
+    if (val >= 4.875) return 'tier5';
+    if (val >= 4.0) return 'tier4';
+    if (val >= 3.0) return 'tier3';
+    return 'tierLow';
+  }
+
+  function summarizeCupsStats(rows) {
+    const list = Array.isArray(rows) ? rows.filter(Boolean) : [];
+    let starSum = 0, starN = 0, scaSum = 0, scaN = 0;
+    let tdsSum = 0, tdsN = 0, eySum = 0, eyN = 0;
+    let tempSum = 0, tempN = 0, ratioSum = 0, ratioN = 0;
+    const noteFreq = new Map();
+    const methodFreq = new Map();
+    const originFreq = new Map();
+    let lockedN = 0;
+
+    list.forEach(function (r) {
+      const st = rowStar(r);
+      if (st > 0) { starSum += st; starN++; }
+      const sc = parseFloat(r.total_score);
+      if (Number.isFinite(sc) && sc > 0) { scaSum += sc; scaN++; }
+      const tds = parseFloat(r.brew_tds_pct);
+      if (Number.isFinite(tds) && tds > 0) { tdsSum += tds; tdsN++; }
+      const ey = parseFloat(r.brew_ey_pct);
+      if (Number.isFinite(ey) && ey > 0) { eySum += ey; eyN++; }
+      const tc = +r.brew_temp_c > 0 ? +r.brew_temp_c : (+r.brew_temp_f > 0 ? (+r.brew_temp_f - 32) * 5 / 9 : 0);
+      if (tc > 40 && tc <= 100) { tempSum += tc; tempN++; }
+      const rat = +r.brew_ratio > 0 ? +r.brew_ratio : ((+r.brew_dose_g > 0 && +r.brew_water_g > 0) ? (+r.brew_water_g / +r.brew_dose_g) : 0);
+      if (rat >= 1 && rat <= 30) { ratioSum += rat; ratioN++; }
+      if (r.dial_locked === 'yes' || r.dial_locked === '1') lockedN++;
+
+      const mk = String(r.brew_method || '').trim();
+      if (mk && !isUnknownTrait(mk)) methodFreq.set(mk, (methodFreq.get(mk) || 0) + 1);
+      const og = unneutPalate(r.origin || '').trim();
+      if (og && !isUnknownTrait(og)) originFreq.set(og, (originFreq.get(og) || 0) + 1);
+      String(unneutPalate(r.flavors_liked || r.words_flavor || r.bag_notes || ''))
+        .split(/[,;|/]+/).map(function (s) { return s.trim(); })
+        .filter(function (w) { return !!w && !isUnknownTrait(w); })
+        .forEach(function (w) { noteFreq.set(w, (noteFreq.get(w) || 0) + 1); });
+    });
+
+    const topOf = function (m) {
+      let best = '', bestN = 0;
+      m.forEach(function (cnt, k) { if (cnt > bestN) { best = k; bestN = cnt; } });
+      return best;
+    };
+    const topNotes = Array.from(noteFreq.entries())
+      .sort(function (a, b) { return b[1] - a[1]; })
+      .slice(0, 4).map(function (e) { return e[0]; });
+
+    return {
+      count: list.length,
+      lockedN: lockedN,
+      avgStar: starN ? +(starSum / starN).toFixed(2) : 0,
+      avgSca: scaN ? +(scaSum / scaN).toFixed(1) : 0,
+      avgTds: tdsN ? +(tdsSum / tdsN).toFixed(2) : 0,
+      tdsN: tdsN,
+      avgEy: eyN ? +(eySum / eyN).toFixed(1) : 0,
+      eyN: eyN,
+      avgTempC: tempN ? Math.round(tempSum / tempN) : 0,
+      avgRatio: ratioN ? +(ratioSum / ratioN).toFixed(1) : 0,
+      topMethod: topOf(methodFreq),
+      topOrigin: topOf(originFreq),
+      topNotes: topNotes
+    };
+  }
+
+  function buildDrillCupCard(r, opts) {
+    opts = opts || {};
+    const un = unneutPalate;
+    const cName = un(r.coffee_name) || 'Logged Brew';
+    const rName = un(r.roaster);
+    const isGold = r.dial_locked === 'yes' || r.dial_locked === '1';
+    const isCup = String(r.brew_method || '').toLowerCase() === 'cupping' || String(r.score_kind || '').toLowerCase() === 'cva_affective';
+    const st = parseFloat(r.my_rating_stars) || rowStar(r);
+    const sc = parseFloat(r.total_score) || 0;
+    const tempC = +r.brew_temp_c > 0 ? Math.round(+r.brew_temp_c) : (+r.brew_temp_f > 0 ? Math.round((+r.brew_temp_f - 32) * 5 / 9) : 0);
+    const ratioStr = +r.brew_ratio > 0 ? ('1:' + (+r.brew_ratio).toFixed(1).replace(/\.0$/, '')) : ((+r.brew_dose_g > 0 && +r.brew_water_g > 0) ? (r.brew_dose_g + 'g:' + r.brew_water_g + 'g') : '');
+    const grindStr = un(r.brew_grind_setting) || (+r.brew_grind_target_um > 0 ? (r.brew_grind_target_um + ' \u00B5m') : '');
+    const tdsEy = (+r.brew_tds_pct > 0)
+      ? (r.brew_tds_pct + '% TDS' + (+r.brew_ey_pct > 0 ? (' / ' + r.brew_ey_pct + '% EY') : ''))
+      : '';
+    const notesStr = un(r.flavors_liked || r.words_flavor || r.bag_notes || '').trim();
+    const specLine = [
+      String(r.brew_method || 'v60').toUpperCase(),
+      r.cupping_date || r.brew_date || '',
+      ratioStr,
+      grindStr,
+      tempC > 0 ? (tempC + '\u00B0C') : '',
+      tdsEy
+    ].filter(Boolean).join(' \u00B7 ');
+
+    return domH('article', { class: 'bt-drill-cup-card' },
+      domH('div', { class: 'bt-drill-cup-head' },
+        domH('div', { style: 'min-width:0;flex:1 1 170px' },
+          rName ? domH('div', { class: 'bt-drill-cup-sub', text: rName + (r.origin && !isUnknownTrait(r.origin) ? (' \u00B7 ' + un(r.origin)) : '') }) : null,
+          domH('strong', { class: 'bt-drill-cup-title', text: cName })
+        ),
+        domH('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+          isGold ? domH('span', { class: 'bt-tc-badge is-gold', text: 'Golden' }) : null,
+          isCup ? domH('span', { class: 'bt-tc-badge is-sci', text: 'Cupping' }) : null,
+          sc > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: sc.toFixed(1) + ' SCA' }) : null,
+          st > 0 ? domH('span', { class: 'bt-tc-badge num-tab ' + (st >= 4.5 ? 'is-gold' : 'is-good'), text: st.toFixed(2) + ' \u2605' }) : null
+        )
+      ),
+      specLine ? domH('div', { class: 'bt-drill-cup-meta num-tab', text: specLine }) : null,
+      notesStr ? domH('div', { class: 'bt-drill-cup-sub', text: 'Notes: ' + notesStr }) : null,
+      domH('div', { class: 'bt-drill-cup-actions' },
+        !palateState.demoMode ? domH('button', {
+          type: 'button',
+          class: 'bt-drill-action-pill bt-lab-btn is-sm',
+          onclick: function () {
+            CK.haptic('tick');
+            inspectCupFromPalate(r);
+          }
+        }, 'Inspect Cup \u2192') : null,
+        domH('button', {
+          type: 'button',
+          class: 'bt-drill-action-pill bt-lab-btn is-sm is-primary',
+          onclick: function () {
+            CK.haptic('snap');
+            quickBrewFromPalate(r);
+          }
+        }, 'Brew \u2192')
+      )
+    );
+  }
+
   function buildPalateGoldenShowcase(allRows) {
     if (!Array.isArray(allRows) || allRows.length === 0 || palateState.demoMode) return null;
-    const un = function (v) { return typeof unneutralize === 'function' ? unneutralize(v || '') : String(v || ''); };
+    const un = unneutPalate;
     const candidates = [];
     allRows.forEach(function (r, idx) {
       if (!r || !r.coffee_name) return;
@@ -52468,50 +55347,6 @@ if (typeof window !== 'undefined') {
       top3.push(r);
     }
     if (!top3.length) return null;
-
-    function quickBrewFromPalate(r) {
-      if (window.BTCellarTab && typeof window.BTCellarTab.hydrateAndBrewRow === 'function') {
-        window.BTCellarTab.hydrateAndBrewRow(r);
-        return;
-      }
-      const applyFn = function (a) {
-        a.coffee = Object.assign(a.coffee || {}, {
-          coffee_id: r.coffee_id || (a.coffee && a.coffee.coffee_id) || '',
-          name: un(r.coffee_name) || 'Golden Brew',
-          roaster: un(r.roaster),
-          origin: un(r.origin),
-          process: un(r.process),
-          roast: un(r.roast_level) || 'light',
-          answered: 'yes'
-        });
-        a.brew = a.brew || {};
-        if (r.brew_method) a.brew.method = r.brew_method;
-        if (+r.brew_dose_g > 0) a.brew.dose = +r.brew_dose_g;
-        if (+r.brew_water_g > 0) a.brew.water = +r.brew_water_g;
-        if (+r.brew_ratio > 0) a.brew.ratio = +r.brew_ratio;
-        if (+r.brew_temp_c > 0) {
-          a.brew.tempC = +r.brew_temp_c;
-          a.brew.tempF = Math.round(+r.brew_temp_c * 9 / 5 + 32);
-        }
-        if (+r.brew_grind_target_um > 0) {
-          a.brew.grindUm = +r.brew_grind_target_um;
-          a.brew.grind_um = +r.brew_grind_target_um;
-        }
-        if (r.brew_grind_setting) a.brew.grind_setting = un(r.brew_grind_setting);
-        a.recipeLocked = (r.dial_locked === 'yes' || r.dial_locked === '1');
-      };
-      if (typeof window.__btApplyAndNavigateWithBack === 'function') {
-        window.__btApplyAndNavigateWithBack(applyFn, {
-          targetStep: 'brew',
-          returnRoute: 'palate',
-          toast: 'Loaded "' + (un(r.coffee_name) || 'Golden Recipe') + '" into Brew Studio!'
-        });
-      } else {
-        applyFn(getApp());
-        saveDraftSoon();
-        if (typeof sh().go === 'function') sh().go('recipe');
-      }
-    }
 
     return domH('section', { class: 'bt-studio-card bt-golden-showcase', id: 'bt-palate-golden-showcase', 'aria-label': 'Best and Golden Recipes' },
       domH('div', { class: 'bt-lab-card-head' },
@@ -52555,16 +55390,594 @@ if (typeof window !== 'undefined') {
               })
             ),
             domH('span', { class: 'bt-lab-hint num-tab', text: specs }),
-            domH('button', {
-              type: 'button',
-              class: 'bt-lab-btn is-sm is-primary',
-              text: 'Brew \u2192',
-              onclick: function () { quickBrewFromPalate(r); }
-            })
+            domH('div', { class: 'bt-drill-cup-actions' },
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm is-primary',
+                text: 'Brew \u2192',
+                onclick: function () { quickBrewFromPalate(r); }
+              }),
+              domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm',
+                text: 'Inspect Cup \u2192',
+                onclick: function () { inspectCupFromPalate(r); }
+              })
+            )
           );
         })
       )
     );
+  }
+
+  function buildRoastExtractionDrillCard(rows, bayes) {
+    const list = Array.isArray(rows) ? rows.filter(Boolean) : [];
+    const roastTiers = [
+      { key: 'ultra-light', label: 'Ultra-Light', cue: 'Highest acidity, floral clarity & 95\u201399\u00B0C extraction' },
+      { key: 'light', label: 'Light', cue: 'Vibrant fruit, sweet tea-like body & 93\u201396\u00B0C water' },
+      { key: 'medium-light', label: 'Med-Light', cue: 'Balanced caramel sweetness with clean fruit lift (91\u201394\u00B0C)' },
+      { key: 'medium', label: 'Medium', cue: 'Round milk chocolate, praline & cozy 89\u201392\u00B0C balance' },
+      { key: 'dark', label: 'Dark', cue: 'Deep bittersweet cacao & low-temp 85\u201389\u00B0C extraction' }
+    ];
+
+    const roastBuckets = roastTiers.map(function (rt) {
+      const matched = list.filter(function (r) {
+        const rk = isUnknownTrait(r.roast_level || r.roast) ? '' : normKey(r.roast_level || r.roast);
+        return rk === rt.key || (rt.key === 'medium-light' && rk === 'med-light') || (rt.key === 'ultra-light' && rk === 'ultralight');
+      });
+      const stats = summarizeCupsStats(matched);
+      return Object.assign({}, rt, { rows: matched, stats: stats });
+    });
+
+    const extractionZones = [
+      {
+        key: 'zone_sweet',
+        label: 'Sweet Spot (18\u201322% EY)',
+        cue: 'Balanced sugars, ripe acidity & clean finish without harsh dryness.',
+        filter: function (r) { const ey = parseFloat(r.brew_ey_pct); return Number.isFinite(ey) && ey >= 18 && ey <= 22.2; }
+      },
+      {
+        key: 'zone_clarity',
+        label: 'Tea-Like Clarity (<1.35% TDS)',
+        cue: 'Lighter concentration that opens up delicate florals and aromatics.',
+        filter: function (r) { const tds = parseFloat(r.brew_tds_pct); return Number.isFinite(tds) && tds > 0 && tds < 1.35; }
+      },
+      {
+        key: 'zone_syrupy',
+        label: 'Rich & Full (>=1.45% TDS)',
+        cue: 'Higher dissolved solids for creamy body, chocolate & espresso richness.',
+        filter: function (r) { const tds = parseFloat(r.brew_tds_pct); return Number.isFinite(tds) && tds >= 1.45; }
+      },
+      {
+        key: 'zone_high_ey',
+        label: 'High Extraction (>21% EY)',
+        cue: 'High-solubility extraction — shines on clean Nordic/light lots.',
+        filter: function (r) { const ey = parseFloat(r.brew_ey_pct); return Number.isFinite(ey) && ey > 21.0; }
+      },
+      {
+        key: 'zone_hot_filter',
+        label: 'Hot Pour-Over (>=93\u00B0C)',
+        cue: 'High thermal energy brews suited to dense high-elevation beans.',
+        filter: function (r) {
+          const tc = +r.brew_temp_c > 0 ? +r.brew_temp_c : (+r.brew_temp_f > 0 ? (+r.brew_temp_f - 32) * 5 / 9 : 0);
+          return tc >= 93;
+        }
+      },
+      {
+        key: 'zone_cool_gentle',
+        label: 'Gentle Temp (<93\u00B0C)',
+        cue: 'Cooler water tames dark-roast bitterness and wild anaerobic funk.',
+        filter: function (r) {
+          const tc = +r.brew_temp_c > 0 ? +r.brew_temp_c : (+r.brew_temp_f > 0 ? (+r.brew_temp_f - 32) * 5 / 9 : 0);
+          return tc >= 70 && tc < 93;
+        }
+      }
+    ].map(function (ez) {
+      const matched = list.filter(ez.filter);
+      return Object.assign({}, ez, { rows: matched, stats: summarizeCupsStats(matched) });
+    });
+
+    const card = domH('section', { class: 'bt-studio-card', id: 'bt-palate-roast-extraction-card' });
+    const drawerHost = domH('div', { id: 'bt-roast-extraction-drawer-host' });
+
+    function findSelectedDef() {
+      const k = palateState.selectedRoastZone;
+      if (!k) return null;
+      return roastBuckets.find(function (b) { return b.key === k; }) || extractionZones.find(function (z) { return z.key === k; }) || null;
+    }
+
+    function paintDrawer() {
+      drawerHost.textContent = '';
+      const sel = findSelectedDef();
+      if (!sel) return;
+      const st = sel.stats;
+      const sortedRows = sel.rows.slice().sort(function (a, b) { return rowStar(b) - rowStar(a); });
+      const takeaway = !st.count
+        ? ('No logged cups in "' + sel.label + '" yet. ' + sel.cue)
+        : ('You average ' + st.avgStar.toFixed(2) + '/5.0 across ' + st.count + ' cup' + (st.count === 1 ? '' : 's') + ' here' +
+          (st.topOrigin ? (' — especially ' + st.topOrigin) : '') +
+          (st.topMethod ? (' on ' + st.topMethod.toUpperCase()) : '') +
+          (st.avgTempC ? (' around ' + st.avgTempC + '\u00B0C') : '') +
+          (st.avgRatio ? (' (1:' + st.avgRatio + ')') : '') +
+          (st.topNotes.length ? (', favoring ' + st.topNotes.slice(0, 3).join(', ') + '.') : '.'));
+
+      drawerHost.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-roast-extraction-drawer' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'ROAST & EXTRACTION DRILL-DOWN' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: sel.label + ' (' + st.count + ' cup' + (st.count === 1 ? '' : 's') + ')' })
+          ),
+          domH('button', {
+            type: 'button',
+            class: 'bt-drill-close-btn bt-lab-btn is-sm',
+            onclick: function () {
+              palateState.selectedRoastZone = '';
+              CK.haptic('tick');
+              rerenderPalateTab();
+            }
+          }, 'Close \u00D7')
+        ),
+        domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: takeaway }),
+        st.count > 0 ? domH('div', { class: 'bt-drill-meta-row' },
+          domH('span', { class: 'bt-tc-badge is-good num-tab', text: 'Avg ' + st.avgStar.toFixed(2) + ' \u2605' }),
+          st.avgSca > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgSca + ' SCA' }) : null,
+          st.tdsN > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgTds + '% TDS' }) : null,
+          st.eyN > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgEy + '% EY' }) : null,
+          st.avgTempC > 0 ? domH('span', { class: 'bt-tc-badge is-soft num-tab', text: 'Avg ' + st.avgTempC + '\u00B0C' }) : null,
+          st.avgRatio > 0 ? domH('span', { class: 'bt-tc-badge is-soft num-tab', text: 'Avg 1:' + st.avgRatio }) : null,
+          st.lockedN > 0 ? domH('span', { class: 'bt-tc-badge is-gold num-tab', text: st.lockedN + ' Golden' }) : null
+        ) : null,
+        sortedRows.length > 0 ? domH('div', { class: 'bt-drill-cup-list' },
+          sortedRows.slice(0, 8).map(function (r) { return buildDrillCupCard(r); })
+        ) : null
+      ));
+    }
+
+    const maxRoastN = Math.max(1, roastBuckets.reduce(function (mx, b) { return Math.max(mx, b.rows.length); }, 0));
+
+    card.appendChild(domH('div', { class: 'bt-lab-card-head' },
+      domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1' },
+        ic('flame-temp', { size: 22 }),
+        domH('div', { style: 'min-width:0;flex:1' },
+          domH('h3', { text: 'Roast Sweet Spot & Extraction Preferences' }),
+          domH('p', { class: 'bt-lab-sub', text: 'Tap any roast tier or extraction zone to inspect matching cups, %TDS/%EY, brew parameters & what you enjoy most.' })
+        )
+      )
+    ));
+
+    card.appendChild(domH('div', { class: 'bt-rating-dist-list', role: 'group', 'aria-label': 'Roast tier drill-down bars' },
+      roastBuckets.map(function (rb) {
+        const active = palateState.selectedRoastZone === rb.key;
+        const pct = rb.rows.length ? Math.max(8, Math.round((rb.rows.length / maxRoastN) * 100)) : 0;
+        return domH('button', {
+          type: 'button',
+          class: 'bt-rating-dist-row bt-drillable' + (active ? ' is-active' : ''),
+          'aria-pressed': String(active),
+          'data-roast-tier': rb.key,
+          onclick: function () {
+            palateState.selectedRoastZone = active ? '' : rb.key;
+            CK.haptic('tick');
+            rerenderPalateTab();
+          }
+        },
+          domH('span', { class: 'bt-rating-dist-label', text: rb.label }),
+          domH('div', { class: 'bt-rating-dist-track' },
+            domH('div', { class: 'bt-rating-dist-fill', style: 'width:' + pct + '%' })
+          ),
+          domH('span', {
+            class: 'bt-rating-dist-count num-tab',
+            text: rb.rows.length > 0 ? (rb.rows.length + ' \u00B7 ' + rb.stats.avgStar.toFixed(2) + '\u2605') : '0'
+          })
+        );
+      })
+    ));
+
+    card.appendChild(domH('div', { style: 'margin-top:10px' },
+      domH('span', { class: 'bt-lab-inline-lbl', style: 'display:block;margin-bottom:6px', text: 'Sweet Spot & Brew Parameter Zones (Tap to Inspect Cups):' }),
+      domH('div', { class: 'bt-rating-tier-bar', role: 'group', 'aria-label': 'Extraction sweet spot zones' },
+        extractionZones.map(function (ez) {
+          const active = palateState.selectedRoastZone === ez.key;
+          return domH('button', {
+            type: 'button',
+            class: 'bt-rating-tier-btn bt-lab-chip bt-drillable' + (active ? ' is-active' : ''),
+            'aria-pressed': String(active),
+            'data-ext-zone': ez.key,
+            onclick: function () {
+              palateState.selectedRoastZone = active ? '' : ez.key;
+              CK.haptic('tick');
+              rerenderPalateTab();
+            }
+          }, ez.label + ' (' + ez.rows.length + ')');
+        })
+      )
+    ));
+
+    paintDrawer();
+    card.appendChild(drawerHost);
+    return card;
+  }
+
+  function buildRatingTierBreakdownCard(rows) {
+    const list = Array.isArray(rows) ? rows.filter(Boolean) : [];
+    const totalN = list.length;
+    const tiers = [
+      { key: 'tier5', label: '5\u2605 Favorites', journalFilter: 'tier5', filter: function (r) { return classifyRatingTier(r) === 'tier5'; } },
+      { key: 'tier4', label: '4\u20134.75\u2605 Great Cups', journalFilter: 'tier4', filter: function (r) { return classifyRatingTier(r) === 'tier4'; } },
+      { key: 'tier3', label: '3\u20133.75\u2605 Dialing In', journalFilter: 'tier3', filter: function (r) { return classifyRatingTier(r) === 'tier3'; } },
+      { key: 'tierLow', label: '<3\u2605 Needs Fix', journalFilter: 'tierLow', filter: function (r) { return classifyRatingTier(r) === 'tierLow'; } },
+      { key: 'locked', label: 'Golden Locked', journalFilter: 'locked', filter: function (r) { return r.dial_locked === 'yes' || r.dial_locked === '1'; } }
+    ].map(function (t) {
+      const matched = list.filter(t.filter);
+      return Object.assign({}, t, { rows: matched, stats: summarizeCupsStats(matched) });
+    });
+
+    const card = domH('section', { class: 'bt-studio-card', id: 'bt-palate-rating-tiers' });
+    card.appendChild(domH('div', { class: 'bt-lab-card-head' },
+      domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1' },
+        ic('spark-star', { size: 22 }),
+        domH('div', { style: 'min-width:0;flex:1' },
+          domH('h3', { text: 'Rating Tier Breakdown (' + totalN + ' Rated Cup' + (totalN === 1 ? '' : 's') + ')' }),
+          domH('p', { class: 'bt-lab-sub', text: 'Tap any rating bucket or Golden Locked to inspect every cup that scored there.' })
+        )
+      ),
+      totalN > 0 ? domH('button', {
+        type: 'button',
+        class: 'bt-lab-btn is-sm',
+        onclick: function () { jumpToJournalWithFilter('all'); }
+      }, 'Open Journal \u2192') : null
+    ));
+
+    card.appendChild(domH('div', { class: 'bt-rating-dist-list', role: 'group', 'aria-label': 'Rating tier drill-down bars' },
+      tiers.map(function (t) {
+        const active = palateState.selectedRatingTier === t.key;
+        const pct = totalN > 0 ? Math.round((t.rows.length / totalN) * 100) : 0;
+        const barW = t.rows.length > 0 ? Math.max(8, pct) : 0;
+        return domH('button', {
+          type: 'button',
+          class: 'bt-rating-dist-row bt-drillable' + (active ? ' is-active' : ''),
+          'aria-pressed': String(active),
+          'data-rating-tier': t.key,
+          onclick: function () {
+            palateState.selectedRatingTier = active ? '' : t.key;
+            CK.haptic('tick');
+            rerenderPalateTab();
+          }
+        },
+          domH('span', { class: 'bt-rating-dist-label', text: t.label }),
+          domH('div', { class: 'bt-rating-dist-track' },
+            domH('div', { class: 'bt-rating-dist-fill', style: 'width:' + barW + '%' })
+          ),
+          domH('span', {
+            class: 'bt-rating-dist-count num-tab',
+            text: t.rows.length + (t.stats.avgSca > 0 ? (' \u00B7 ' + t.stats.avgSca + ' SCA') : (totalN > 0 ? (' (' + pct + '%)') : ''))
+          })
+        );
+      })
+    ));
+
+    const selTier = tiers.find(function (t) { return t.key === palateState.selectedRatingTier; }) || null;
+    if (selTier) {
+      const sorted = selTier.rows.slice().sort(function (a, b) { return rowStar(b) - rowStar(a); });
+      const st = selTier.stats;
+      card.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-rating-tier-drawer' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'RATING TIER INSPECTOR' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: selTier.label + ' \u2014 ' + sorted.length + ' Cup' + (sorted.length === 1 ? '' : 's') })
+          ),
+          domH('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;align-items:center' },
+            sorted.length > 0 && !palateState.demoMode ? domH('button', {
+              type: 'button',
+              class: 'bt-lab-btn is-sm is-primary',
+              onclick: function () { jumpToJournalWithFilter(selTier.journalFilter); }
+            }, 'Filter in Journal \u2192') : null,
+            domH('button', {
+              type: 'button',
+              class: 'bt-drill-close-btn bt-lab-btn is-sm',
+              onclick: function () {
+                palateState.selectedRatingTier = '';
+                CK.haptic('tick');
+                rerenderPalateTab();
+              }
+            }, 'Close \u00D7')
+          )
+        ),
+        st.count > 0 ? domH('div', { class: 'bt-drill-meta-row' },
+          domH('span', { class: 'bt-tc-badge is-good num-tab', text: 'Avg ' + st.avgStar.toFixed(2) + ' \u2605' }),
+          st.avgSca > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgSca + ' SCA' }) : null,
+          st.topOrigin ? domH('span', { class: 'bt-tc-badge is-soft', text: 'Top Origin: ' + st.topOrigin }) : null,
+          st.topMethod ? domH('span', { class: 'bt-tc-badge is-soft', text: 'Top Brewer: ' + st.topMethod.toUpperCase() }) : null
+        ) : domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: 'No logged cups in "' + selTier.label + '" yet.' }),
+        sorted.length > 0 ? domH('div', { class: 'bt-drill-cup-list' },
+          sorted.slice(0, 10).map(function (r) { return buildDrillCupCard(r); })
+        ) : null
+      ));
+    }
+
+    return card;
+  }
+
+  function buildPalatePreferenceTargetsCard(rows) {
+    const a = getApp();
+    a.prefs = a.prefs || {};
+    const saved = (a.prefs.palateTargets && typeof a.prefs.palateTargets === 'object') ? a.prefs.palateTargets : {};
+    if (!palateState.prefTargetDraft) {
+      palateState.prefTargetDraft = {
+        brightness: saved.brightness || 'balanced',
+        strength: saved.strength || 'balanced',
+        texture: saved.texture || 'balanced'
+      };
+    }
+    const tgt = palateState.prefTargetDraft;
+    const list = Array.isArray(rows) ? rows.filter(Boolean) : [];
+
+    const axesDefs = [
+      {
+        key: 'brightness',
+        title: 'Brightness vs Smoothness',
+        opts: [
+          { k: 'bright', lbl: 'Bright & Juicy', steer: '+1\u20132\u00B0C hotter water & lighter-roast extraction to highlight citrus/berry acidity' },
+          { k: 'balanced', lbl: 'Balanced Sweet', steer: 'Standard balanced temperature & ratio for clean caramel-fruit harmony' },
+          { k: 'smooth', lbl: 'Smooth & Cozy', steer: '\u22122\u00B0C cooler water & slightly coarser grind to round off sharp acidity' }
+        ]
+      },
+      {
+        key: 'strength',
+        title: 'Cup Strength (%TDS)',
+        opts: [
+          { k: 'light', lbl: 'Light / Tea-Like (~1.25%)', steer: 'Longer ratio (~1:17\u20131:18) for delicate aromatics and floral transparency' },
+          { k: 'balanced', lbl: 'Balanced (~1.35%)', steer: 'Classic specialty filter ratio (~1:16) with sweet, structured weight' },
+          { k: 'strong', lbl: 'Rich & Strong (1.48%+)', steer: 'Tighter ratio (~1:14.5\u20131:15) for dense concentration and chocolate depth' }
+        ]
+      },
+      {
+        key: 'texture',
+        title: 'Texture (Clarity vs Body)',
+        opts: [
+          { k: 'clarity', lbl: 'High Clarity', steer: 'Gentle laminar pours & clean paper filtration to separate crisp flavor layers' },
+          { k: 'balanced', lbl: 'Silky Balanced', steer: 'Controlled swirl & steady drawdown for sweet, velvety balance' },
+          { k: 'body', lbl: 'Syrupy Full Body', steer: 'Higher immersion/agitation or fuller-body brew style for creamy mouthfeel' }
+        ]
+      }
+    ];
+
+    const steerLines = axesDefs.map(function (ax) {
+      const hit = ax.opts.find(function (o) { return o.k === tgt[ax.key]; }) || ax.opts[1];
+      return ax.title.split(' ')[0] + ': ' + hit.steer;
+    });
+
+    /* Filter logged cups that match the active target bias (high-rated first) */
+    const matchedCups = list.filter(function (r) {
+      const st = rowStar(r);
+      if (st < 3.5) return false;
+      const rk = String(r.roast_level || r.roast || '').toLowerCase();
+      const pr = String(r.process || '').toLowerCase();
+      const tds = parseFloat(r.brew_tds_pct) || 0;
+      const rat = +r.brew_ratio > 0 ? +r.brew_ratio : ((+r.brew_dose_g > 0 && +r.brew_water_g > 0) ? (+r.brew_water_g / +r.brew_dose_g) : 0);
+      let ok = true;
+      if (tgt.brightness === 'bright') {
+        const ac = parseFloat(r.acidity_intensity) || parseFloat(r.acidity) || 0;
+        if (!(ac >= 3.5 || rk.indexOf('light') >= 0 || pr.indexOf('washed') >= 0)) ok = false;
+      } else if (tgt.brightness === 'smooth') {
+        const ac = parseFloat(r.acidity_intensity) || parseFloat(r.acidity) || 0;
+        if (!(rk === 'medium' || rk.indexOf('dark') >= 0 || (ac > 0 && ac <= 3) || pr.indexOf('natural') >= 0)) ok = false;
+      }
+      if (ok && tgt.strength === 'light') {
+        if (!((tds > 0 && tds <= 1.36) || rat >= 16.5)) ok = false;
+      } else if (ok && tgt.strength === 'strong') {
+        if (!((tds >= 1.42) || (rat > 0 && rat <= 15.5))) ok = false;
+      }
+      if (ok && tgt.texture === 'clarity') {
+        if (!(pr.indexOf('washed') >= 0 || /v60|chemex|orea|kalita|origami/.test(String(r.brew_method || '').toLowerCase()))) ok = false;
+      } else if (ok && tgt.texture === 'body') {
+        if (!(/natural|honey|anaerobic|wet/.test(pr) || /espresso|press|aeropress|switch|moka/.test(String(r.brew_method || '').toLowerCase()))) ok = false;
+      }
+      return ok;
+    }).sort(function (a, b) { return rowStar(b) - rowStar(a); });
+
+    const isDirty = (saved.brightness || 'balanced') !== tgt.brightness ||
+      (saved.strength || 'balanced') !== tgt.strength ||
+      (saved.texture || 'balanced') !== tgt.texture;
+
+    return domH('section', { class: 'bt-studio-card', id: 'bt-palate-pref-targets' },
+      domH('div', { class: 'bt-lab-card-head' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1 1 200px' },
+          ic('sliders', { size: 22 }),
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('h3', { text: 'Interactive Palate Targets & Recipe Bias' }),
+            domH('p', { class: 'bt-lab-sub', text: 'Dial in your ideal brightness, strength (%TDS), and texture — steers new recipes & filters your matching favorite cups below.' })
+          )
+        ),
+        domH('button', {
+          type: 'button',
+          id: 'bt-save-pref-bias-btn',
+          class: 'bt-lab-btn is-sm ' + (isDirty ? 'is-primary' : ''),
+          onclick: function () {
+            const appNow = getApp();
+            appNow.prefs = appNow.prefs || {};
+            appNow.prefs.palateTargets = {
+              brightness: tgt.brightness,
+              strength: tgt.strength,
+              texture: tgt.texture
+            };
+            appNow.prefs.flavorBias = tgt.brightness;
+            if (window.BTStorage && typeof window.BTStorage.savePrefs === 'function') {
+              try { window.BTStorage.savePrefs(appNow.prefs); } catch (_) {}
+            }
+            saveDraftSoon();
+            CK.haptic('celebrate');
+            notify('Saved Palate Target Bias (' + tgt.brightness + ' \u00B7 ' + tgt.strength + ' \u00B7 ' + tgt.texture + ')!');
+            rerenderPalateTab();
+          }
+        }, ic('check-seal', { size: 14 }), domH('span', { text: isDirty ? 'Save Preference Bias' : 'Preference Bias Saved' }))
+      ),
+      domH('div', { class: 'bt-pref-target-grid' },
+        axesDefs.map(function (ax) {
+          return domH('div', { class: 'bt-lab-subcard', style: 'display:flex;flex-direction:column;gap:7px;min-width:0' },
+            domH('span', { class: 'bt-pref-tile-lbl', text: ax.title }),
+            domH('div', { class: 'bt-rating-tier-bar', role: 'radiogroup', 'aria-label': ax.title },
+              ax.opts.map(function (opt) {
+                const on = tgt[ax.key] === opt.k;
+                return domH('button', {
+                  type: 'button',
+                  class: 'bt-pref-target-chip bt-lab-chip bt-drillable' + (on ? ' is-active' : ''),
+                  'aria-pressed': String(on),
+                  'data-pref-axis': ax.key,
+                  'data-pref-val': opt.k,
+                  onclick: function () {
+                    tgt[ax.key] = opt.k;
+                    CK.haptic('tick');
+                    rerenderPalateTab();
+                  }
+                }, opt.lbl);
+              })
+            )
+          );
+        })
+      ),
+      domH('div', { class: 'bt-drill-drawer', id: 'bt-pref-targets-drawer' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'HOW THIS STEERS NEW RECIPES & MATCHING CUPS' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: matchedCups.length + ' High-Rated Cup' + (matchedCups.length === 1 ? '' : 's') + ' Match Your Active Target' })
+          )
+        ),
+        domH('div', { style: 'display:flex;flex-direction:column;gap:4px' },
+          steerLines.map(function (sl) {
+            return domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: '\u2022 ' + sl });
+          })
+        ),
+        matchedCups.length > 0 ? domH('div', { class: 'bt-drill-cup-list' },
+          matchedCups.slice(0, 4).map(function (r) { return buildDrillCupCard(r); })
+        ) : domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: 'No logged 3.5+ cups match this exact target combo yet — save your bias and brew a new cup to test it!' })
+      )
+    );
+  }
+
+  function buildPerCoffeeScorecardLeaderboard(bayes) {
+    const beans = (bayes && Array.isArray(bayes.coffees)) ? bayes.coffees.slice() : [];
+    const scoredBeans = beans.map(function (c) {
+      const cups = (c.cups || []).filter(function (cp) { return !!cp && !!cp.rawRow; });
+      const bestCup = cups.slice().sort(function (a, b) { return b.star - a.star; })[0] || null;
+      const latestCup = cups.length ? cups[cups.length - 1] : null;
+      const isGold = cups.some(function (cp) { return cp.locked; });
+      const bestStar = bestCup ? bestCup.star : c.dialScore;
+      const stats = summarizeCupsStats(cups.map(function (cp) { return cp.rawRow; }));
+      return { c: c, cups: cups, bestCup: bestCup, latestCup: latestCup, isGold: isGold, bestStar: bestStar, stats: stats };
+    }).sort(function (a, b) {
+      if (a.isGold !== b.isGold) return a.isGold ? -1 : 1;
+      if (Math.abs(b.bestStar - a.bestStar) > 0.01) return b.bestStar - a.bestStar;
+      return b.cups.length - a.cups.length;
+    });
+
+    const card = domH('section', { class: 'bt-studio-card', id: 'bt-palate-bean-scorecards' },
+      domH('div', { class: 'bt-lab-card-head' },
+        domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1' },
+          ic('fresh-bag', { size: 22 }),
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('h3', { text: 'Per-Coffee Scorecard Leaderboard (' + scoredBeans.length + ' Logged Bean' + (scoredBeans.length === 1 ? '' : 's') + ')' }),
+            domH('p', { class: 'bt-lab-sub', text: 'Sorted by Golden seal & best rating — tap any coffee to expand all tries #1..#N, %TDS/%EY progression & 1-tap Brew Next.' })
+          )
+        )
+      )
+    );
+
+    if (!scoredBeans.length) {
+      card.appendChild(domH('p', { class: 'bt-lab-hint', text: 'Log your first coffee in Brew Studio to build your Per-Coffee Scorecard Leaderboard!' }));
+      return card;
+    }
+
+    const listWrap = domH('div', { class: 'bt-drill-cup-list' });
+    scoredBeans.slice(0, 18).forEach(function (sb) {
+      const isOpen = palateState.selectedBeanCid === sb.c.cid;
+      const metaBits = [
+        sb.c.roaster || '',
+        sb.c.origin ? (sb.c.origin.charAt(0).toUpperCase() + sb.c.origin.slice(1)) : '',
+        sb.cups.length + (sb.cups.length === 1 ? ' try' : ' tries'),
+        sb.stats.tdsN > 0 ? ('Avg ' + sb.stats.avgTds + '% TDS') : '',
+        sb.stats.eyN > 0 ? (sb.stats.avgEy + '% EY') : ''
+      ].filter(Boolean).join(' \u00B7 ');
+
+      listWrap.appendChild(domH('button', {
+        type: 'button',
+        class: 'bt-bean-scorecard-row bt-drillable' + (isOpen ? ' is-active' : ''),
+        'aria-expanded': String(isOpen),
+        'data-bean-cid': sb.c.cid,
+        onclick: function () {
+          palateState.selectedBeanCid = isOpen ? '' : sb.c.cid;
+          CK.haptic('tick');
+          rerenderPalateTab();
+        }
+      },
+        domH('div', { style: 'min-width:0;flex:1;text-align:left' },
+          domH('strong', { class: 'bt-drill-cup-title', text: sb.c.name }),
+          domH('div', { class: 'bt-drill-cup-sub num-tab', text: metaBits })
+        ),
+        domH('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+          sb.isGold ? domH('span', { class: 'bt-tc-badge is-gold', text: 'Golden Locked' }) : null,
+          domH('span', { class: 'bt-tc-badge num-tab ' + (sb.bestStar >= 4.5 ? 'is-gold' : (sb.bestStar >= 3.5 ? 'is-good' : 'is-warn')), text: 'Best ' + sb.bestStar.toFixed(2) + ' \u2605' })
+        )
+      ));
+
+      if (isOpen) {
+        const chron = sb.cups.slice().sort(function (a, b) {
+          const da = String((a.rawRow && (a.rawRow.saved_at || a.rawRow.cupping_date)) || '');
+          const db = String((b.rawRow && (b.rawRow.saved_at || b.rawRow.cupping_date)) || '');
+          return da.localeCompare(db);
+        });
+        listWrap.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-bean-scorecard-drawer' },
+          domH('div', { class: 'bt-drill-drawer-head' },
+            domH('div', { style: 'min-width:0;flex:1' },
+              domH('div', { class: 'bt-pref-tile-lbl', text: 'TRY PROGRESSION (#1 \u2192 #' + chron.length + ')' }),
+              domH('strong', { class: 'bt-drill-drawer-title', text: sb.c.name + (sb.c.roaster ? (' \u00B7 ' + sb.c.roaster) : '') })
+            ),
+            domH('div', { style: 'display:flex;gap:6px;flex-wrap:wrap' },
+              sb.bestCup && !palateState.demoMode ? domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm',
+                onclick: function () { inspectCupFromPalate(sb.bestCup.rawRow); }
+              }, 'Inspect Best \u2192') : null,
+              (sb.latestCup || sb.bestCup) ? domH('button', {
+                type: 'button',
+                class: 'bt-lab-btn is-sm is-primary',
+                onclick: function () { quickBrewFromPalate((sb.bestCup && sb.bestCup.locked ? sb.bestCup : (sb.latestCup || sb.bestCup)).rawRow); }
+              }, 'Brew Next \u2192') : null
+            )
+          ),
+          domH('div', { class: 'bt-drill-cup-list' },
+            chron.map(function (cp, idx) {
+              const specs = [
+                'Try #' + (idx + 1),
+                formatMethodHuman(cp.method),
+                cp.grind || '',
+                cp.tempC > 0 ? (cp.tempC + '\u00B0C') : '',
+                cp.ratio > 0 ? ('1:' + cp.ratio) : '',
+                cp.tds > 0 ? (cp.tds + '% TDS' + (cp.ey > 0 ? (' / ' + cp.ey + '% EY') : '')) : ''
+              ].filter(Boolean).join(' \u00B7 ');
+              return domH('div', { class: 'bt-drill-cup-card' },
+                domH('div', { class: 'bt-drill-cup-head' },
+                  domH('div', { style: 'min-width:0;flex:1' },
+                    domH('strong', { class: 'bt-drill-cup-meta num-tab', text: specs }),
+                    cp.notes ? domH('div', { class: 'bt-drill-cup-sub', text: 'Notes: ' + cp.notes }) : null
+                  ),
+                  domH('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+                    cp.locked ? domH('span', { class: 'bt-tc-badge is-gold', text: 'Golden' }) : null,
+                    domH('span', { class: 'bt-tc-badge num-tab ' + (cp.star >= 4.5 ? 'is-gold' : (cp.star >= 3.5 ? 'is-good' : 'is-warn')), text: cp.star.toFixed(2) + ' \u2605' }),
+                    !palateState.demoMode ? domH('button', {
+                      type: 'button',
+                      class: 'bt-drill-action-pill bt-lab-btn is-sm',
+                      onclick: function () { inspectCupFromPalate(cp.rawRow); }
+                    }, 'Inspect') : null
+                  )
+                )
+              );
+            })
+          )
+        ));
+      }
+    });
+    card.appendChild(listWrap);
+    return card;
   }
 
   function renderPalateDnaSegment() {
@@ -52643,37 +56056,43 @@ if (typeof window !== 'undefined') {
         lbl: 'Favorite Roast',
         val: topRoastHit ? formatRoastHuman(topRoastHit.key) : 'Awaiting Known Roast',
         sub: topRoastHit ? (topRoastHit.mean.toFixed(2) + '/5.0 · ' + topRoastHit.n + ' bag' + (topRoastHit.n === 1 ? '' : 's')) : 'Pick roast on Step 1',
-        board: 'roasts'
+        board: 'roasts',
+        drillStep: topRoastHit ? { level: 'roast', key: topRoastHit.key, label: formatRoastHuman(topRoastHit.key) } : null
       },
       {
         lbl: 'Favorite Process',
         val: topProcHit ? formatProcessHuman(topProcHit.key) : 'Awaiting Known Process',
         sub: topProcHit ? (topProcHit.mean.toFixed(2) + '/5.0 · ' + topProcHit.n + ' bag' + (topProcHit.n === 1 ? '' : 's')) : 'Washed, Natural, Honey...',
-        board: 'processes'
+        board: 'processes',
+        drillStep: topProcHit ? { level: 'process', key: topProcHit.key, label: formatProcessHuman(topProcHit.key) } : null
       },
       {
         lbl: 'Top Origin',
         val: topOrigMeta ? topOrigMeta.name : 'Explore 52 Origins',
         sub: topOrigHit ? (topOrigHit.mean.toFixed(2) + '/5.0 · ' + topOrigHit.n + ' bag' + (topOrigHit.n === 1 ? '' : 's')) : 'Tap World Belt map below',
-        board: 'origins'
+        board: 'origins',
+        drillStep: topOrigHit ? { level: 'origin', key: topOrigHit.key, label: topOrigMeta ? topOrigMeta.name : topOrigHit.key } : null
       },
       {
         lbl: 'Sweet-Spot Elevation',
         val: topElevDef ? topElevDef.label : 'Awaiting Elevation',
         sub: topElevHit ? (topElevHit.mean.toFixed(2) + '/5.0 · ' + topElevHit.n + ' bag' + (topElevHit.n === 1 ? '' : 's')) : '<1,300m · 1,300\u20131,750m · 1,750m+',
-        board: 'elevations'
+        board: 'elevations',
+        drillStep: topElevHit ? { level: 'elevation', key: topElevHit.key, label: topElevDef ? topElevDef.label : topElevHit.key } : null
       },
       {
         lbl: 'Top Flavor Notes',
         val: topFlavors3.length ? topFlavors3.join(', ') : 'Awaiting Flavor Tags',
         sub: topFlavors3.length ? (bayes.topFlavorNotes[0].mean.toFixed(2) + '/5.0 top note match') : 'Tag notes on Step 1 or Step 5',
-        board: 'flavors'
+        board: 'flavors',
+        drillStep: topFlavors3.length ? { level: 'flavor', key: topFlavors3[0], label: topFlavors3[0] } : null
       },
       {
         lbl: 'Favorite Brewer',
-        val: topBrewerHit ? String(topBrewerHit.key).toUpperCase() : 'Ready on Counter',
+        val: topBrewerHit ? formatMethodHuman(topBrewerHit.key) : 'Ready on Counter',
         sub: topBrewerHit ? (topBrewerHit.mean.toFixed(2) + '/5.0 · ' + topBrewerHit.n + ' cup' + (topBrewerHit.n === 1 ? '' : 's')) : 'Log your first brew',
-        board: 'brewers'
+        board: 'brewers',
+        drillStep: topBrewerHit ? { level: 'brewer', key: topBrewerHit.key, label: formatMethodHuman(topBrewerHit.key) } : null
       }
     ];
 
@@ -52685,7 +56104,7 @@ if (typeof window !== 'undefined') {
             domH('h3', { text: 'Your Top Coffee Preferences' }),
             domH('p', {
               class: 'bt-lab-sub',
-              text: 'Learned from your rated cups — any field marked "Don\'t Know" is automatically filtered out so unknown bags never skew your scores.'
+              text: 'Tap any tile to drill straight into matching logged cups — "Don\'t Know" fields are filtered out automatically.'
             })
           )
         ),
@@ -52701,10 +56120,10 @@ if (typeof window !== 'undefined') {
         prefTiles.map(function (pt) {
           return domH('button', {
             type: 'button',
-            class: 'bt-pref-summary-tile',
+            class: 'bt-pref-summary-tile bt-drillable',
             onclick: function () {
               palateState.expandedBoard = pt.board;
-              palateState.drillPath = [];
+              palateState.drillPath = pt.drillStep ? [pt.drillStep] : [];
               CK.haptic('tick');
               rerenderPalateTab();
               setTimeout(function () {
@@ -52717,7 +56136,8 @@ if (typeof window !== 'undefined') {
           },
             domH('span', { class: 'bt-pref-tile-lbl', text: pt.lbl }),
             domH('strong', { class: 'bt-pref-tile-val', text: pt.val }),
-            domH('span', { class: 'bt-pref-tile-sub num-tab', text: pt.sub })
+            domH('span', { class: 'bt-pref-tile-sub num-tab', text: pt.sub }),
+            domH('span', { class: 'bt-drill-cue', text: 'Drill \u2192' })
           );
         })
       ),
@@ -52729,8 +56149,12 @@ if (typeof window !== 'undefined') {
       ) : null
     );
     wrap.appendChild(prefsCard);
+    wrap.appendChild(buildPalatePreferenceTargetsCard(slicedRows));
     const palateGolden = buildPalateGoldenShowcase(allRows);
     if (palateGolden) wrap.appendChild(palateGolden);
+    wrap.appendChild(buildRoastExtractionDrillCard(slicedRows, bayes));
+    wrap.appendChild(buildRatingTierBreakdownCard(slicedRows));
+    wrap.appendChild(buildPerCoffeeScorecardLeaderboard(bayes));
 
     /* 1. Real Cartographic Coffee Belt World Map (52 Origins + 4 Regional Zoom Pills) */
     const mapCard = domH('section', { class: 'bt-studio-card', id: 'bt-palate-world-map' });
@@ -52809,6 +56233,14 @@ if (typeof window !== 'undefined') {
       const personalTxt = eb
         ? (eb.rawMean.toFixed(2) + ' / 5.0 avg (' + eb.n + ' bag' + (eb.n === 1 ? '' : 's') + ' · Weighted ' + eb.mean.toFixed(2) + ')')
         : 'Unexplored — brew 1 bag to earn this stamp!';
+      const origRawRows = [];
+      if (eb && Array.isArray(eb.bags)) {
+        eb.bags.forEach(function (bg) {
+          (bg.cups || []).forEach(function (cp) { if (cp && cp.rawRow) origRawRows.push(cp.rawRow); });
+        });
+      }
+      origRawRows.sort(function (a, b) { return rowStar(b) - rowStar(a); });
+      const origStats = summarizeCupsStats(origRawRows);
 
       mapInfoBox.appendChild(domH('article', { class: 'bt-origin-passport-card', id: 'bt-origin-passport-card' },
         domH('div', { class: 'bt-passport-head' },
@@ -52843,6 +56275,21 @@ if (typeof window !== 'undefined') {
             domH('strong', { class: 'num-tab', text: personalTxt })
           )
         ),
+        origRawRows.length > 0 ? domH('div', { class: 'bt-drill-drawer' },
+          domH('div', { class: 'bt-drill-drawer-head' },
+            domH('strong', { class: 'bt-drill-drawer-title', text: 'Your ' + origObj.name + ' Tasting Breakdown (' + origRawRows.length + ' cup' + (origRawRows.length === 1 ? '' : 's') + ')' })
+          ),
+          domH('div', { class: 'bt-drill-meta-row' },
+            domH('span', { class: 'bt-tc-badge is-good num-tab', text: 'Avg ' + origStats.avgStar.toFixed(2) + ' \u2605' }),
+            origStats.avgSca > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + origStats.avgSca + ' SCA' }) : null,
+            origStats.tdsN > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + origStats.avgTds + '% TDS' }) : null,
+            origStats.eyN > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + origStats.avgEy + '% EY' }) : null,
+            origStats.topNotes.length ? domH('span', { class: 'bt-tc-badge is-soft', text: 'Top Notes: ' + origStats.topNotes.slice(0, 3).join(', ') }) : null
+          ),
+          domH('div', { class: 'bt-drill-cup-list' },
+            origRawRows.slice(0, 4).map(function (rr) { return buildDrillCupCard(rr); })
+          )
+        ) : null,
         domH('div', { class: 'bt-passport-actions' },
           domH('button', {
             type: 'button',
@@ -53022,7 +56469,7 @@ if (typeof window !== 'undefined') {
     wrap.appendChild(mapCard);
 
     /* 2. Confidence-Weighted Affinity & 4-Level Interactive Drill-In */
-    const boardsCard = domH('section', { class: 'bt-studio-card', id: 'bt-palate-eb-boards' });
+    const boardsCard = domH('section', { class: 'bt-studio-card', id: 'bt-palate-eb-boards', style: 'scroll-margin-top:76px' });
     const boardTabs = [
       { k: 'origins', lbl: 'Origin (' + atlas.length + ')' },
       { k: 'processes', lbl: 'Process' },
@@ -53068,10 +56515,52 @@ if (typeof window !== 'undefined') {
       });
     }
 
-    /* 4-Level Drill-In: Level 0 (Trait Board) -> Level 1 (Region/Sub-group) -> Level 2 (Process) -> Level 3 (Logged Cups) */
+    /* 4-Level Drill-In: Level 0 (Trait Board) -> Level 1 (Sub-group + Direct Cups) -> Level 2 (Process + Direct Cups) -> Level 3 (All Logged Cups) */
+    function appendConcreteCupsDrawer(hostEl, titleTxt, cupRows) {
+      const cleanRows = (cupRows || []).filter(Boolean).sort(function (a, b) { return rowStar(b) - rowStar(a); });
+      if (!cleanRows.length) return;
+      const st = summarizeCupsStats(cleanRows);
+      hostEl.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-board-drill-drawer' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'MATCHING LOGGED CUPS & TASTING BREAKDOWN' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: titleTxt + ' (' + cleanRows.length + ' cup' + (cleanRows.length === 1 ? '' : 's') + ')' })
+          )
+        ),
+        domH('div', { class: 'bt-drill-meta-row' },
+          domH('span', { class: 'bt-tc-badge is-good num-tab', text: 'Avg ' + st.avgStar.toFixed(2) + ' \u2605' }),
+          st.avgSca > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgSca + ' SCA' }) : null,
+          st.tdsN > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgTds + '% TDS' }) : null,
+          st.eyN > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: 'Avg ' + st.avgEy + '% EY' }) : null,
+          st.avgTempC > 0 ? domH('span', { class: 'bt-tc-badge is-soft num-tab', text: 'Avg ' + st.avgTempC + '\u00B0C' }) : null,
+          st.topNotes.length ? domH('span', { class: 'bt-tc-badge is-soft', text: 'Notes: ' + st.topNotes.slice(0, 3).join(', ') }) : null
+        ),
+        domH('div', { class: 'bt-drill-cup-list' },
+          cleanRows.slice(0, 12).map(function (rr) { return buildDrillCupCard(rr); })
+        )
+      ));
+    }
+
     function paintDrillDownView() {
       const path = palateState.drillPath;
       const rootType = palateState.expandedBoard;
+      const crumbTitle = path.map(function (p) { return p.label; }).join(' / ');
+
+      /* Special Flavor-Note Direct Drill-In */
+      if (path.length === 1 && path[0].level === 'flavor') {
+        const targetWord = String(path[0].key || '').toLowerCase();
+        const noteRows = slicedRows.filter(function (r) {
+          const hay = [r.flavors_liked, r.words_flavor, r.bag_notes, r.general_notes].map(unneutPalate).join(' ').toLowerCase();
+          return targetWord && hay.indexOf(targetWord) >= 0;
+        });
+        if (!noteRows.length) {
+          boardHost.appendChild(domH('p', { class: 'bt-lab-hint', text: 'No logged cups matched "' + path[0].label + '" in this history slice.' }));
+          return;
+        }
+        appendConcreteCupsDrawer(boardHost, 'Cups Tasting of "' + path[0].label + '"', noteRows);
+        return;
+      }
+
       let matchingBags = bayes.coffees.slice();
 
       /* Filter bags down the drill path */
@@ -53094,13 +56583,26 @@ if (typeof window !== 'undefined') {
         return;
       }
 
-      /* Level 1 -> Group by Sub-Region (if started from Origin) or Origin (if started from Process/Roast/Varietal/Brewer) */
+      /* Collect concrete logged raw rows for this exact slice (respecting brewer filter if present) */
+      const brewerStep = path.find(function (s) { return s.level === 'brewer'; });
+      const matchingRawRows = [];
+      matchingBags.forEach(function (bag) {
+        (bag.cups || []).forEach(function (cp) {
+          if (!cp || !cp.rawRow) return;
+          if (brewerStep && String(cp.method || '').toLowerCase() !== String(brewerStep.key || '').toLowerCase()) return;
+          matchingRawRows.push(cp.rawRow);
+        });
+      });
+
+      /* Level 1 -> Group by Sub-Region (if started from Origin) or Origin (if started from Process/Roast/Varietal/Brewer) + Concrete Cups Drawer */
       if (path.length === 1) {
         const nextField = rootType === 'origins' ? 'region' : 'origin';
         const groups = new Map();
         matchingBags.forEach(function (b) {
           const gk = b[nextField] || 'General';
-          const cur = groups.get(gk) || { key: gk, label: gk.charAt(0).toUpperCase() + gk.slice(1), vals: [] };
+          const origMeta = nextField === 'origin' ? atlas.find(function (o) { return o.key === gk; }) : null;
+          const lbl = origMeta ? origMeta.name : (gk.charAt(0).toUpperCase() + gk.slice(1));
+          const cur = groups.get(gk) || { key: gk, label: lbl, vals: [] };
           cur.vals.push(b.dialScore);
           groups.set(gk, cur);
         });
@@ -53110,7 +56612,7 @@ if (typeof window !== 'undefined') {
           const postM = (n * rawM + 2.0 * bayes.globalMean) / (n + 2.0);
           boardHost.appendChild(domH('button', {
             type: 'button',
-            class: 'bt-trait-row is-drillable',
+            class: 'bt-trait-row is-drillable bt-drillable',
             onclick: function () {
               palateState.drillPath.push({ level: nextField, key: g.key, label: g.label });
               CK.haptic('tick');
@@ -53121,15 +56623,16 @@ if (typeof window !== 'undefined') {
             domH('span', { class: 'bt-trait-stat num-tab', text: 'True ' + postM.toFixed(2) + ' · Raw ' + rawM.toFixed(2) + ' (n=' + n + ')' })
           ));
         });
+        appendConcreteCupsDrawer(boardHost, crumbTitle, matchingRawRows);
         return;
       }
 
-      /* Level 2 -> Group by Process */
+      /* Level 2 -> Group by Process + Concrete Cups Drawer */
       if (path.length === 2) {
         const pGroups = new Map();
         matchingBags.forEach(function (b) {
           const pk = b.process || 'washed';
-          const cur = pGroups.get(pk) || { key: pk, label: pk.charAt(0).toUpperCase() + pk.slice(1), vals: [] };
+          const cur = pGroups.get(pk) || { key: pk, label: formatProcessHuman(pk), vals: [] };
           cur.vals.push(b.dialScore);
           pGroups.set(pk, cur);
         });
@@ -53138,7 +56641,7 @@ if (typeof window !== 'undefined') {
           const rawM = pg.vals.reduce(function (a, v) { return a + v; }, 0) / n;
           boardHost.appendChild(domH('button', {
             type: 'button',
-            class: 'bt-trait-row is-drillable',
+            class: 'bt-trait-row is-drillable bt-drillable',
             onclick: function () {
               palateState.drillPath.push({ level: 'process', key: pg.key, label: pg.label });
               CK.haptic('tick');
@@ -53149,21 +56652,12 @@ if (typeof window !== 'undefined') {
             domH('span', { class: 'bt-trait-stat num-tab', text: rawM.toFixed(2) + '/5.0 (' + n + ' bag(s))' })
           ));
         });
+        appendConcreteCupsDrawer(boardHost, crumbTitle, matchingRawRows);
         return;
       }
 
-      /* Level 3 (4th Tier) -> Individual Logged Cups */
-      matchingBags.forEach(function (bag) {
-        bag.cups.forEach(function (cp) {
-          boardHost.appendChild(domH('div', { class: 'bt-trait-row' },
-            domH('div', null,
-              domH('strong', { text: bag.name + (bag.roaster ? (' · ' + bag.roaster) : '') }),
-              domH('p', { class: 'bt-lab-hint', text: (cp.method || 'Brew').toUpperCase() + (cp.date ? (' · ' + cp.date) : '') + (cp.notes ? (' · ' + cp.notes) : '') })
-            ),
-            domH('span', { class: 'bt-trait-stat num-tab', text: cp.star.toFixed(2) + ' / 5.0' })
-          ));
-        });
-      });
+      /* Level 3 (4th Tier) -> Full Concrete Logged Cups Drawer with 1-Tap Inspect & Brew */
+      appendConcreteCupsDrawer(boardHost, crumbTitle, matchingRawRows);
     }
 
     function paintActiveBoard() {
@@ -53186,8 +56680,16 @@ if (typeof window !== 'undefined') {
           const rawMean = item.sumStar / item.n;
           const conf = Math.round((item.n / (item.n + 2.5)) * 100);
           const shrMean = (item.n * rawMean + 2.5 * bayes.globalMean) / (item.n + 2.5);
-          boardHost.appendChild(domH('div', { class: 'bt-trait-row' },
-            domH('span', { class: 'bt-trait-name', text: item.word }),
+          boardHost.appendChild(domH('button', {
+            type: 'button',
+            class: 'bt-trait-row is-drillable bt-drillable',
+            onclick: function () {
+              palateState.drillPath = [{ level: 'flavor', key: item.word, label: item.word }];
+              CK.haptic('tick');
+              paintActiveBoard();
+            }
+          },
+            domH('span', { class: 'bt-trait-name', text: item.word + ' \u2192' }),
             domH('span', { class: 'bt-trait-stat num-tab', text: 'True ' + shrMean.toFixed(2) + ' (Raw ' + rawMean.toFixed(2) + ', +' + item.n + (dis ? '/-' + dis : '') + ', ' + conf + '% conf)' })
           ));
         });
@@ -53209,6 +56711,25 @@ if (typeof window !== 'undefined') {
             domH('strong', { class: 'num-tab', text: drinks.length + ' cafes · ' + shopMean + '/5.0' })
           )
         ));
+        if (drinks.length > 0) {
+          boardHost.appendChild(domH('div', { class: 'bt-drill-cup-list', style: 'margin-top:8px' },
+            drinks.slice(0, 6).map(function (dr) {
+              const stVal = parseFloat(dr.stars || dr.rating) || 0;
+              return domH('article', { class: 'bt-drill-cup-card' },
+                domH('div', { class: 'bt-drill-cup-head' },
+                  domH('div', { style: 'min-width:0;flex:1' },
+                    domH('div', { class: 'bt-drill-cup-sub', text: [dr.shopName || dr.shop || 'Coffee Shop', dr.date || ''].filter(Boolean).join(' \u00B7 ') }),
+                    domH('strong', { class: 'bt-drill-cup-title', text: dr.drinkLabel || dr.kind || 'Cafe Drink' })
+                  ),
+                  stVal > 0 ? domH('span', { class: 'bt-tc-badge is-good num-tab', text: stVal.toFixed(1) + ' \u2605' }) : null
+                ),
+                dr.notes ? domH('div', { class: 'bt-drill-cup-sub', text: dr.notes }) : null
+              );
+            })
+          ));
+        } else {
+          boardHost.appendChild(domH('p', { class: 'bt-lab-hint', style: 'margin-top:8px', text: 'Log cafe drinks in Cellar \u2192 Coffee Shop to compare your home brews side-by-side against local cafes!' }));
+        }
         return;
       }
 
@@ -53416,6 +56937,78 @@ if (typeof window !== 'undefined') {
       )
     ));
     radarCard.appendChild(domH('div', { class: 'bt-chart-stage' }, radarSvg));
+
+    const axisDrillHost = domH('div', { id: 'bt-radar-axis-drawer-host' });
+    const axisDescs = {
+      acidity: 'Top high-brightness & sparkling-acidity cups from your history:',
+      sweetness: 'Your sweetest, richest-finish cups across all brewers:',
+      body: 'Fullest-bodied, syrupy & creamy mouthfeel cups:',
+      roast: 'Cups aligned with your preferred roast depth:',
+      funk: 'Wild/fermented vs. clean washed clarity cups driving this axis:'
+    };
+    function getAxisTopRows(axKey) {
+      return slicedRows.slice().sort(function (a, b) {
+        const scoreFor = function (r) {
+          const base = rowStar(r);
+          if (axKey === 'acidity') return (parseFloat(r.acidity_intensity) || parseFloat(r.acidity) || (String(r.roast_level || '').indexOf('light') >= 0 ? 4 : 2.5)) * 2 + base;
+          if (axKey === 'sweetness') return (parseFloat(r.sweetness_intensity) || parseFloat(r.sweetness) || 3.5) * 2 + base;
+          if (axKey === 'body') return (parseFloat(r.body_intensity) || parseFloat(r.body) || (/natural|espresso|press/.test(String(r.process + ' ' + r.brew_method).toLowerCase()) ? 4 : 2.5)) * 2 + base;
+          if (axKey === 'roast') {
+            const rk = String(r.roast_level || r.roast || '').toLowerCase();
+            const rNum = rk.indexOf('dark') >= 0 ? 4.5 : (rk === 'medium' ? 3.3 : (rk.indexOf('ultra') >= 0 ? 1.4 : 2.1));
+            return (5 - Math.abs(rNum - bayes.axes[3].val)) * 2 + base;
+          }
+          const pr = String(r.process || '').toLowerCase();
+          const fNum = /anaerobic|carbonic|natural|ferment/.test(pr) ? 4.2 : 2.1;
+          return (5 - Math.abs(fNum - bayes.axes[4].val)) * 2 + base;
+        };
+        return scoreFor(b) - scoreFor(a);
+      });
+    }
+    function paintAxisDrawer() {
+      axisDrillHost.textContent = '';
+      const k = palateState.selectedRadarAxis;
+      if (!k) return;
+      const axObj = bayes.axes.find(function (x) { return x.key === k; });
+      if (!axObj) return;
+      const matched = getAxisTopRows(k).slice(0, 5);
+      axisDrillHost.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-radar-axis-drawer' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'TASTE AXIS DRILL-DOWN' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: axObj.label + ' (' + axObj.val.toFixed(1) + ' / 5.0)' })
+          ),
+          domH('button', {
+            type: 'button',
+            class: 'bt-drill-close-btn bt-lab-btn is-sm',
+            onclick: function () { palateState.selectedRadarAxis = ''; CK.haptic('tick'); rerenderPalateTab(); }
+          }, 'Close \u00D7')
+        ),
+        domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: axisDescs[k] || '' }),
+        matched.length > 0 ? domH('div', { class: 'bt-drill-cup-list' },
+          matched.map(function (r) { return buildDrillCupCard(r); })
+        ) : domH('p', { class: 'bt-lab-hint', style: 'margin:0', text: 'Log cups with ratings to explore your top ' + axObj.label + ' matches.' })
+      ));
+    }
+
+    radarCard.appendChild(domH('div', { class: 'bt-rating-tier-bar', role: 'group', 'aria-label': 'Drill into any taste axis' },
+      bayes.axes.map(function (ax) {
+        const active = palateState.selectedRadarAxis === ax.key;
+        return domH('button', {
+          type: 'button',
+          class: 'bt-rating-tier-btn bt-lab-chip bt-drillable' + (active ? ' is-active' : ''),
+          'aria-pressed': String(active),
+          'data-radar-axis': ax.key,
+          onclick: function () {
+            palateState.selectedRadarAxis = active ? '' : ax.key;
+            CK.haptic('tick');
+            rerenderPalateTab();
+          }
+        }, ax.label + ' (' + ax.val.toFixed(1) + ')');
+      })
+    ));
+    paintAxisDrawer();
+    radarCard.appendChild(axisDrillHost);
     radarCard.appendChild(domH('div', { class: 'bt-lab-chip-row' },
       timelapsePill,
       isScienceXray() ? domH('span', {
@@ -54155,11 +57748,16 @@ if (typeof window !== 'undefined') {
       gcoCard.textContent = '';
       const word = ws.selectedWord || 'Jasmine';
       let wordFam = '';
+      let famObj = null;
       wheelData.fams.forEach(function (f) {
         f.groups.forEach(function (g) {
-          if (g.words.indexOf(word) >= 0) wordFam = f.name;
+          if (g.words.indexOf(word) >= 0) { wordFam = f.name; famObj = f; }
         });
       });
+      if (!famObj && ws.focusFam >= 0 && wheelData.fams[ws.focusFam]) {
+        famObj = wheelData.fams[ws.focusFam];
+        wordFam = famObj.name;
+      }
       const mol = lookupFlavorChemistry(word, wordFam);
       const picked = !!ws.pickedWords[word];
       const sci = isScienceXray();
@@ -54214,6 +57812,82 @@ if (typeof window !== 'undefined') {
             }
           }, 'Surprise My Nose')
         )
+      ));
+
+      /* Flavor Note & Aroma Family -> Logged Cups & Top Beans Drill-Down */
+      const histRows = getHistoryRows(100);
+      const wordLow = word.toLowerCase();
+      const famWords = [];
+      if (famObj) {
+        famObj.groups.forEach(function (gr) {
+          gr.words.forEach(function (w) { famWords.push(w.toLowerCase()); });
+        });
+      }
+      const rowHay = function (r) {
+        return [r.flavors_liked, r.words_flavor, r.bag_notes, r.general_notes].map(unneutPalate).join(' ').toLowerCase();
+      };
+      const exactRows = histRows.filter(function (r) { return rowHay(r).indexOf(wordLow) >= 0; });
+      const famRows = famWords.length ? histRows.filter(function (r) {
+        const h = rowHay(r);
+        return famWords.some(function (fw) { return h.indexOf(fw) >= 0; });
+      }) : [];
+
+      const activeScope = (palateState.wheelMatchScope === 'family' || (!exactRows.length && famRows.length > 0)) ? 'family' : 'word';
+      const shownRows = (activeScope === 'family' ? famRows : exactRows).slice().sort(function (a, b) { return rowStar(b) - rowStar(a); });
+
+      /* Aggregate Top Beans for this flavor/family */
+      const beanMap = new Map();
+      shownRows.forEach(function (r) {
+        const bk = (unneutPalate(r.coffee_name) || 'Coffee') + (r.roaster ? (' \u00B7 ' + unneutPalate(r.roaster)) : '');
+        const cur = beanMap.get(bk) || { label: bk, n: 0, sum: 0, bestRow: r };
+        const st = rowStar(r);
+        cur.n++;
+        cur.sum += st;
+        if (st > rowStar(cur.bestRow)) cur.bestRow = r;
+        beanMap.set(bk, cur);
+      });
+      const topBeans = Array.from(beanMap.values()).sort(function (a, b) { return (b.sum / b.n) - (a.sum / a.n) || b.n - a.n; }).slice(0, 4);
+
+      gcoCard.appendChild(domH('div', { class: 'bt-drill-drawer', id: 'bt-wheel-cup-drill' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'FLAVOR \u2192 LOGGED CUPS & TOP BEANS' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: activeScope === 'family' ? ((wordFam || 'Aroma') + ' Family Cups (' + famRows.length + ')') : ('Cups with "' + word + '" (' + exactRows.length + ')') })
+          ),
+          domH('div', { class: 'bt-rating-tier-bar' },
+            domH('button', {
+              type: 'button',
+              class: 'bt-rating-tier-btn bt-lab-chip' + (activeScope === 'word' ? ' is-active' : ''),
+              'aria-pressed': String(activeScope === 'word'),
+              onclick: function () { palateState.wheelMatchScope = 'word'; CK.haptic('tick'); paintGcoCard(); }
+            }, '"' + word + '" (' + exactRows.length + ')'),
+            wordFam ? domH('button', {
+              type: 'button',
+              class: 'bt-rating-tier-btn bt-lab-chip' + (activeScope === 'family' ? ' is-active' : ''),
+              'aria-pressed': String(activeScope === 'family'),
+              onclick: function () { palateState.wheelMatchScope = 'family'; CK.haptic('tick'); paintGcoCard(); }
+            }, wordFam + ' Family (' + famRows.length + ')') : null
+          )
+        ),
+        topBeans.length > 0 ? domH('div', { class: 'bt-drill-meta-row' },
+          domH('span', { class: 'bt-lab-inline-lbl', text: 'Top Beans:' }),
+          topBeans.map(function (tb) {
+            return domH('button', {
+              type: 'button',
+              class: 'bt-lab-chip bt-drillable',
+              onclick: function () { inspectCupFromPalate(tb.bestRow); }
+            }, tb.label + ' (' + (tb.sum / tb.n).toFixed(1) + '\u2605)');
+          })
+        ) : null,
+        shownRows.length > 0 ? domH('div', { class: 'bt-drill-cup-list' },
+          shownRows.slice(0, 5).map(function (r) { return buildDrillCupCard(r); })
+        ) : domH('p', {
+          class: 'bt-lab-hint',
+          style: 'margin:0',
+          text: histRows.length
+            ? ('No logged cups mention "' + word + '" yet — tap "Tag on Active Cup" above or explore another petal to inspect matching brews!')
+            : 'Log a tasting with flavor notes in Step 5 to link wheel descriptors directly to your favorite coffees & cups!'
+        })
       ));
     }
 
@@ -54504,8 +58178,30 @@ if (typeof window !== 'undefined') {
         }, 'Palate Constellation')
       )
     ));
+    const famQuickRow = domH('div', { class: 'bt-lab-chip-row', role: 'group', 'aria-label': 'Aroma family quick drill-down' },
+      wheelData.fams.map(function (fam, fi) {
+        return domH('button', {
+          type: 'button',
+          class: 'bt-lab-chip bt-drillable' + (ws.focusFam === fi ? ' is-active' : ''),
+          'aria-pressed': String(ws.focusFam === fi),
+          onclick: function () {
+            const firstWord = (fam.groups[0] && fam.groups[0].words[0]) || ws.selectedWord;
+            ws.selectedWord = firstWord;
+            palateState.wheelMatchScope = 'family';
+            setFocusFamily(fi);
+            paintGcoCard();
+            Array.prototype.forEach.call(famQuickRow.children, function (btn, bIdx) {
+              btn.classList.toggle('is-active', bIdx === fi);
+              btn.setAttribute('aria-pressed', String(bIdx === fi));
+            });
+          }
+        }, fam.name);
+      })
+    );
+
     card.appendChild(searchIn);
     card.appendChild(searchResultsRow);
+    card.appendChild(famQuickRow);
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, svg));
     card.appendChild(gcoCard);
     wrap.appendChild(card);
@@ -55276,6 +58972,11 @@ if (typeof window !== 'undefined') {
       spoken4m: false,
       spoken8m: false,
       spoken12m: false,
+      historyCoffeeFilter: '',
+      historyTraitFilter: '',
+      historyCompareOpen: true,
+      historyCmpA: 0,
+      historyCmpB: 1,
       bowls: [
         makeDefaultScaBowl(0, 'Ethiopia Washed', 85.0),
         makeDefaultScaBowl(1, 'Colombia Pink Bourbon', 86.5),
@@ -55712,14 +59413,14 @@ if (typeof window !== 'undefined') {
 
   /* ---- 1. Editable 1-5 Bowl Multi-Coffee Cupping Table ---- */
   const CUPPING_TRAIT_GUIDES = [
-    { name: 'Fragrance', hint: 'Smell of freshly ground dry coffee before pouring hot water' },
-    { name: 'Aroma', hint: 'Wet smell rising from the bowl on pour & when breaking the 4:00 crust' },
-    { name: 'Flavor', hint: 'Combined taste + aroma notes in your mouth when you slurp' },
-    { name: 'Aftertaste', hint: 'How sweet, clean, or lingering the finish stays after swallowing' },
-    { name: 'Acidity', hint: 'Bright, juicy fruit liveliness (like crisp apple or peach — NOT stomach acid!)' },
-    { name: 'Sweetness', hint: 'Smooth ripe-fruit, honey, or caramel roundness on your tongue' },
-    { name: 'Mouthfeel', hint: 'Weight & texture in your mouth (delicate tea-light vs. creamy/syrupy)' },
-    { name: 'Overall', hint: 'Your complete personal enjoyment & harmony of the cup' }
+    { key: 'fragrance', name: 'Fragrance', hint: 'Smell of freshly ground dry coffee before pouring hot water' },
+    { key: 'aroma', name: 'Aroma', hint: 'Wet smell rising from the bowl on pour & when breaking the 4:00 crust' },
+    { key: 'flavor', name: 'Flavor', hint: 'Combined taste + aroma notes in your mouth when you slurp' },
+    { key: 'aftertaste', name: 'Aftertaste', hint: 'How sweet, clean, or lingering the finish stays after swallowing' },
+    { key: 'acidity', name: 'Acidity', hint: 'Bright, juicy fruit liveliness (like crisp apple or peach — NOT stomach acid!)' },
+    { key: 'sweetness', altKey: 'q_sweetness', name: 'Sweetness', hint: 'Smooth ripe-fruit, honey, or caramel roundness on your tongue' },
+    { key: 'body', name: 'Body (Mouthfeel)', hint: 'Weight & texture in your mouth (delicate tea-light vs. creamy/syrupy)' },
+    { key: 'overall', name: 'Overall', hint: 'Your complete personal enjoyment & harmony of the cup' }
   ];
 
   function fmtMmSs(secFloat) {
@@ -55902,7 +59603,7 @@ if (typeof window !== 'undefined') {
         if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
         else rerenderAcademyTab();
       }
-    }, sca.revealed ? 'Blind Mode: Hide Coffees' : 'Show Blinds / Reveal Coffees');
+    }, sca.revealed ? 'Blind Mode: Hide Coffees' : 'Reveal Blind Coffees');
 
     const voiceToggleBtn = domH('button', {
       type: 'button',
@@ -56428,7 +60129,7 @@ if (typeof window !== 'undefined') {
       voiceToggleBtn,
       domH('div', { style: 'max-width:100%;min-width:0' },
         CK.vernierPill({
-          label: 'Bowl Vol',
+          label: 'Bowl Size',
           value: sca.bowlMl,
           min: 120,
           max: 300,
@@ -56697,6 +60398,362 @@ if (typeof window !== 'undefined') {
     );
   }
 
+  function buildLoggedCuppingsDrillDownCard() {
+    const st = window.BTStorage || {};
+    const histObj = typeof st.getHistory === 'function' ? st.getHistory() : null;
+    const allRows = histObj && Array.isArray(histObj.objs) ? histObj.objs : [];
+    const un = function (v) { return typeof unneutralize === 'function' ? unneutralize(v || '') : String(v || ''); };
+
+    const getTraitVal = function (r, tg) {
+      const raw = (r[tg.key] != null && r[tg.key] !== '') ? r[tg.key] : (tg.altKey ? r[tg.altKey] : '');
+      const n = parseFloat(raw);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+
+    const cuppingEntries = [];
+    allRows.forEach(function (r, idx) {
+      if (!r || typeof r !== 'object') return;
+      const mk = String(r.brew_method || '').toLowerCase();
+      const sk = String(r.score_kind || '').toLowerCase();
+      let traitCount = 0;
+      CUPPING_TRAIT_GUIDES.forEach(function (tg) { if (getTraitVal(r, tg) != null) traitCount++; });
+      if (mk === 'cupping' || sk === 'cva_affective' || traitCount >= 4) {
+        cuppingEntries.push({
+          r: r,
+          idx: idx,
+          coffee: un(r.coffee_name) || 'Cupped Sample',
+          roaster: un(r.roaster),
+          date: r.cupping_date || r.brew_date || '',
+          sca: parseFloat(r.total_score) || 0,
+          stars: parseFloat(r.my_rating_stars) || 0,
+          notes: un(r.flavors_liked || r.bag_notes || '')
+        });
+      }
+    });
+
+    const card = domH('section', {
+      class: 'bt-studio-card bt-cupping-history-card',
+      id: 'bt-academy-cupping-history',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box'
+    });
+
+    const openJournalCuppings = function () {
+      CK.haptic('tick');
+      if (window.BTCellarTab && typeof window.BTCellarTab.openJournalFilter === 'function') {
+        window.BTCellarTab.openJournalFilter('cupping', '');
+        return;
+      }
+      if (typeof sh().go === 'function') sh().go('history');
+    };
+
+    card.appendChild(domH('div', { class: 'bt-lab-card-head' },
+      domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1 1 200px' },
+        ic('spark-star', { size: 22 }),
+        domH('div', { style: 'min-width:0;flex:1' },
+          domH('h3', { text: 'Logged Cuppings & 8-Trait Attribute Drill-Down (' + cuppingEntries.length + ')' }),
+          domH('p', { class: 'bt-lab-sub', text: 'Inspect past cupping rounds by coffee name, compare Fragrance\u2013Overall strengths & weaknesses, and jump to full scorecards.' })
+        )
+      ),
+      domH('button', {
+        type: 'button',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: openJournalCuppings
+      }, 'Journal Cuppings \u2192')
+    ));
+
+    if (!cuppingEntries.length) {
+      card.appendChild(domH('div', { class: 'bt-drill-drawer' },
+        domH('p', {
+          class: 'bt-lab-hint',
+          style: 'margin:0',
+          text: 'No cupping rounds logged yet. Score 1\u20135 bowls in the table above and tap "Save All Cupping Bowls to Journal" to unlock your 8-trait strengths, min\u2013max spread & side-by-side history!'
+        })
+      ));
+      return card;
+    }
+
+    const sca = acadUi.sca;
+    const coffeeMap = new Map();
+    cuppingEntries.forEach(function (ce) {
+      const k = ce.coffee.toLowerCase();
+      const cur = coffeeMap.get(k) || { key: k, label: ce.coffee, n: 0, maxSca: 0 };
+      cur.n++;
+      if (ce.sca > cur.maxSca) cur.maxSca = ce.sca;
+      coffeeMap.set(k, cur);
+    });
+    const coffeePills = Array.from(coffeeMap.values()).sort(function (a, b) { return b.maxSca - a.maxSca || b.n - a.n; });
+
+    if (sca.historyCoffeeFilter && !coffeeMap.has(sca.historyCoffeeFilter)) {
+      sca.historyCoffeeFilter = '';
+    }
+
+    const visibleEntries = sca.historyCoffeeFilter
+      ? cuppingEntries.filter(function (ce) { return ce.coffee.toLowerCase() === sca.historyCoffeeFilter; })
+      : cuppingEntries.slice();
+
+    /* Coffee Name Filter Bar */
+    card.appendChild(domH('div', { class: 'bt-rating-tier-bar', role: 'group', 'aria-label': 'Filter logged cuppings by coffee name' },
+      domH('button', {
+        type: 'button',
+        class: 'bt-rating-tier-btn bt-lab-chip bt-drillable' + (!sca.historyCoffeeFilter ? ' is-active' : ''),
+        'aria-pressed': String(!sca.historyCoffeeFilter),
+        onclick: function () { sca.historyCoffeeFilter = ''; CK.haptic('tick'); rerenderAcademyTab(); }
+      }, 'All Cupped Coffees (' + cuppingEntries.length + ')'),
+      coffeePills.slice(0, 10).map(function (cp) {
+        const on = sca.historyCoffeeFilter === cp.key;
+        return domH('button', {
+          type: 'button',
+          class: 'bt-rating-tier-btn bt-lab-chip bt-drillable' + (on ? ' is-active' : ''),
+          'aria-pressed': String(on),
+          onclick: function () {
+            sca.historyCoffeeFilter = on ? '' : cp.key;
+            CK.haptic('tick');
+            rerenderAcademyTab();
+          }
+        }, cp.label + ' (' + cp.n + ')');
+      })
+    ));
+
+    /* 8-Trait Strengths & Weaknesses Grid (Fragrance..Overall) */
+    const traitAgg = CUPPING_TRAIT_GUIDES.map(function (tg) {
+      const vals = [];
+      visibleEntries.forEach(function (ce) {
+        const v = getTraitVal(ce.r, tg);
+        if (v != null) vals.push({ v: v, ce: ce });
+      });
+      if (!vals.length) return { tg: tg, n: 0, avg: 0, min: 0, max: 0, vals: [] };
+      const sum = vals.reduce(function (a, x) { return a + x.v; }, 0);
+      const mn = Math.min.apply(null, vals.map(function (x) { return x.v; }));
+      const mx = Math.max.apply(null, vals.map(function (x) { return x.v; }));
+      return { tg: tg, n: vals.length, avg: +(sum / vals.length).toFixed(2), min: mn, max: mx, vals: vals };
+    });
+    const scoredTraits = traitAgg.filter(function (t) { return t.n > 0; });
+    const maxScale = scoredTraits.some(function (t) { return t.max > 9.05; }) ? 10 : 9;
+    const hiAvg = scoredTraits.length ? Math.max.apply(null, scoredTraits.map(function (t) { return t.avg; })) : 0;
+    const loAvg = scoredTraits.length ? Math.min.apply(null, scoredTraits.map(function (t) { return t.avg; })) : 0;
+    const topTrait = scoredTraits.find(function (t) { return Math.abs(t.avg - hiAvg) < 0.01; }) || null;
+    const lowTrait = scoredTraits.find(function (t) { return Math.abs(t.avg - loAvg) < 0.01; }) || null;
+
+    const drillBox = domH('div', { class: 'bt-drill-drawer' },
+      domH('div', { class: 'bt-drill-drawer-head' },
+        domH('div', { style: 'min-width:0;flex:1' },
+          domH('div', { class: 'bt-pref-tile-lbl', text: '8-TRAIT ATTRIBUTE COMPARISON (TAP TO RANK ROUNDS)' }),
+          domH('strong', {
+            class: 'bt-drill-drawer-title',
+            text: (topTrait && lowTrait && hiAvg - loAvg >= 0.15)
+              ? ('Strongest: ' + topTrait.tg.name + ' (' + topTrait.avg.toFixed(1) + ') \u00B7 Opportunity: ' + lowTrait.tg.name + ' (' + lowTrait.avg.toFixed(1) + ')')
+              : ('Balanced Profile Across ' + visibleEntries.length + ' Logged Round' + (visibleEntries.length === 1 ? '' : 's'))
+          })
+        ),
+        sca.historyTraitFilter ? domH('button', {
+          type: 'button',
+          class: 'bt-drill-close-btn bt-lab-btn is-sm',
+          onclick: function () { sca.historyTraitFilter = ''; CK.haptic('tick'); rerenderAcademyTab(); }
+        }, 'Clear Trait \u00D7') : null
+      ),
+      domH('div', { class: 'bt-sca-attr-grid', id: 'bt-academy-cva-attr-grid' },
+        traitAgg.map(function (ta) {
+          const active = sca.historyTraitFilter === ta.tg.key;
+          const isHi = ta.n > 0 && hiAvg - loAvg >= 0.2 && Math.abs(ta.avg - hiAvg) < 0.01;
+          const isLo = ta.n > 0 && hiAvg - loAvg >= 0.2 && Math.abs(ta.avg - loAvg) < 0.01;
+          const pct = ta.n > 0 ? Math.max(8, Math.min(100, Math.round((ta.avg / maxScale) * 100))) : 0;
+          return domH('button', {
+            type: 'button',
+            class: 'bt-sca-attr-pill bt-drillable' + (active ? ' is-active' : '') + (isHi ? ' is-high' : '') + (isLo ? ' is-low' : ''),
+            'aria-pressed': String(active),
+            'data-academy-trait': ta.tg.key,
+            onclick: function () {
+              sca.historyTraitFilter = active ? '' : ta.tg.key;
+              CK.haptic('tick');
+              rerenderAcademyTab();
+            }
+          },
+            domH('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:5px;width:100%' },
+              domH('span', { class: 'bt-sca-attr-name', text: ta.tg.name.replace(' (Mouthfeel)', '') }),
+              domH('strong', { class: 'bt-sca-attr-val num-tab', text: ta.n > 0 ? (ta.avg.toFixed(1) + '/' + maxScale) : '\u2014' })
+            ),
+            domH('div', { class: 'bt-rating-dist-track', style: 'width:100%' },
+              domH('div', { class: 'bt-rating-dist-fill', style: 'width:' + pct + '%' })
+            ),
+            domH('span', { class: 'bt-drill-cup-sub num-tab', text: ta.n > 0 ? (ta.min.toFixed(1).replace(/\.0$/, '') + '\u2013' + ta.max.toFixed(1).replace(/\.0$/, '')) : 'No data' })
+          );
+        })
+      )
+    );
+
+    const activeTraitObj = traitAgg.find(function (ta) { return ta.tg.key === sca.historyTraitFilter; }) || null;
+    if (activeTraitObj) {
+      drillBox.appendChild(domH('p', {
+        class: 'bt-lab-hint',
+        style: 'margin:0',
+        text: activeTraitObj.tg.name + ': ' + activeTraitObj.tg.hint + ' \u2014 rounds below are ranked highest to lowest on ' + activeTraitObj.tg.name + '.'
+      }));
+    }
+
+    const sortedRounds = visibleEntries.slice().sort(function (a, b) {
+      if (activeTraitObj) {
+        const va = getTraitVal(a.r, activeTraitObj.tg) || 0;
+        const vb = getTraitVal(b.r, activeTraitObj.tg) || 0;
+        if (Math.abs(vb - va) > 0.01) return vb - va;
+      }
+      if (Math.abs(b.sca - a.sca) > 0.05) return b.sca - a.sca;
+      return b.idx - a.idx;
+    });
+
+    drillBox.appendChild(domH('div', { class: 'bt-drill-cup-list' },
+      sortedRounds.slice(0, 8).map(function (ce) {
+        const selVal = activeTraitObj ? getTraitVal(ce.r, activeTraitObj.tg) : null;
+        /* Find this round's strongest & lowest trait */
+        let bestT = null, lowT = null;
+        CUPPING_TRAIT_GUIDES.forEach(function (tg) {
+          const v = getTraitVal(ce.r, tg);
+          if (v == null) return;
+          if (!bestT || v > bestT.v) bestT = { name: tg.name.replace(' (Mouthfeel)', ''), v: v };
+          if (!lowT || v < lowT.v) lowT = { name: tg.name.replace(' (Mouthfeel)', ''), v: v };
+        });
+        const traitSummary = (bestT && lowT && bestT.v - lowT.v >= 0.25)
+          ? ('Top: ' + bestT.name + ' (' + bestT.v.toFixed(1).replace(/\.0$/, '') + ') \u00B7 Low: ' + lowT.name + ' (' + lowT.v.toFixed(1).replace(/\.0$/, '') + ')')
+          : (bestT ? ('Uniform ~' + bestT.v.toFixed(1).replace(/\.0$/, '') + '/' + maxScale + ' across traits') : '');
+
+        return domH('article', { class: 'bt-drill-cup-card' },
+          domH('div', { class: 'bt-drill-cup-head' },
+            domH('div', { style: 'min-width:0;flex:1 1 170px' },
+              domH('div', { class: 'bt-drill-cup-sub', text: [ce.roaster, ce.date].filter(Boolean).join(' \u00B7 ') || 'Cupping Table Round' }),
+              domH('strong', { class: 'bt-drill-cup-title', text: ce.coffee })
+            ),
+            domH('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+              selVal != null ? domH('span', { class: 'bt-tc-badge is-gold num-tab', text: activeTraitObj.tg.name.replace(' (Mouthfeel)', '') + ' ' + selVal.toFixed(1).replace(/\.0$/, '') + '/' + maxScale }) : null,
+              ce.sca > 0 ? domH('span', { class: 'bt-tc-badge is-good num-tab', text: ce.sca.toFixed(1) + ' SCA' }) : null,
+              ce.stars > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: ce.stars.toFixed(2) + ' \u2605' }) : null
+            )
+          ),
+          traitSummary ? domH('div', { class: 'bt-drill-cup-meta num-tab', text: traitSummary }) : null,
+          ce.notes ? domH('div', { class: 'bt-drill-cup-sub', text: 'Notes: ' + ce.notes }) : null,
+          domH('div', { class: 'bt-drill-cup-actions' },
+            domH('button', {
+              type: 'button',
+              class: 'bt-drill-action-pill bt-lab-btn is-sm is-primary',
+              onclick: function () {
+                CK.haptic('tick');
+                if (window.BTCellarTab && typeof window.BTCellarTab.openDetail === 'function') {
+                  window.BTCellarTab.openDetail(ce.r);
+                } else {
+                  openJournalCuppings();
+                }
+              }
+            }, 'Inspect Scorecard \u2192'),
+            domH('button', {
+              type: 'button',
+              class: 'bt-drill-action-pill bt-lab-btn is-sm',
+              onclick: function () {
+                sca.bowls[0].coffee_id = ce.r.coffee_id || '';
+                sca.bowls[0].name = ce.coffee;
+                sca.bowls[0].roaster = ce.roaster || '';
+                sca.bowls[0].origin = un(ce.r.origin);
+                sca.bowls[0].process = un(ce.r.process);
+                sca.bowls[0].notes = ce.notes || '';
+                sca._lastSavedSig = '';
+                CK.haptic('snap');
+                notify('Loaded "' + ce.coffee + '" into Bowl A for re-cupping!');
+                rerenderAcademyTab();
+              }
+            }, 'Re-Cup in Bowl A')
+          )
+        );
+      })
+    ));
+
+    /* Side-by-Side 2-Round 8-Trait CVA Comparison (Academy 5-Bowl History) */
+    if (cuppingEntries.length >= 2) {
+      const cmpPool = cuppingEntries.slice().sort(function (a, b) {
+        return (b.sca - a.sca) || (b.idx - a.idx);
+      });
+      const idxA = (sca.historyCmpA >= 0 && sca.historyCmpA < cmpPool.length) ? sca.historyCmpA : 0;
+      const idxB = (sca.historyCmpB >= 0 && sca.historyCmpB < cmpPool.length && sca.historyCmpB !== idxA) ? sca.historyCmpB : (idxA === 0 ? 1 : 0);
+      sca.historyCmpA = idxA;
+      sca.historyCmpB = idxB;
+      const eA = cmpPool[idxA];
+      const eB = cmpPool[idxB];
+
+      const cmpBox = domH('div', { id: 'bt-academy-cupping-compare', style: 'margin-top:10px;display:flex;flex-direction:column;gap:8px' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'SIDE-BY-SIDE 8-TRAIT CVA DELTA GRID' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: 'Compare 2 Cupping Rounds (A vs B)' })
+          ),
+          domH('button', {
+            type: 'button',
+            class: 'bt-lab-btn is-sm',
+            'aria-expanded': String(!!sca.historyCompareOpen),
+            onclick: function () { sca.historyCompareOpen = !sca.historyCompareOpen; CK.haptic('tick'); rerenderAcademyTab(); }
+          }, sca.historyCompareOpen ? 'Hide Compare \u25B2' : 'Compare 2 Rounds \u25BC')
+        )
+      );
+
+      if (sca.historyCompareOpen) {
+        const mkSel = function (curIdx, ariaLbl, onSet) {
+          return domH('select', {
+            class: 'bt-lab-select',
+            'aria-label': ariaLbl,
+            style: 'flex:1 1 140px;min-width:0',
+            onchange: function (ev) { onSet(parseInt(ev.target.value, 10) || 0); }
+          },
+            cmpPool.map(function (ce, ci) {
+              const opt = domH('option', { value: String(ci), text: ce.coffee + (ce.sca > 0 ? (' (' + ce.sca.toFixed(1) + ')') : '') });
+              if (ci === curIdx) opt.selected = true;
+              return opt;
+            })
+          );
+        };
+
+        cmpBox.appendChild(domH('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' },
+          mkSel(idxA, 'Select Cupping Round A', function (v) { sca.historyCmpA = v; rerenderAcademyTab(); }),
+          domH('span', { class: 'bt-pref-tile-lbl', text: 'vs' }),
+          mkSel(idxB, 'Select Cupping Round B', function (v) { sca.historyCmpB = v; rerenderAcademyTab(); })
+        ));
+
+        const tbody = domH('tbody');
+        CUPPING_TRAIT_GUIDES.forEach(function (tg) {
+          const vA = getTraitVal(eA.r, tg);
+          const vB = getTraitVal(eB.r, tg);
+          const diff = (vA != null && vB != null) ? +(vA - vB).toFixed(2) : null;
+          const diffTxt = diff == null ? '\u2014' : (Math.abs(diff) < 0.01 ? '0.0' : ((diff > 0 ? '+' : '') + diff.toFixed(1).replace(/\.0$/, '')));
+          tbody.appendChild(domH('tr', { class: diff != null && Math.abs(diff) >= 0.25 ? 'is-diff' : '' },
+            domH('td', null, domH('strong', { text: tg.name.replace(' (Mouthfeel)', '') })),
+            domH('td', { class: 'num-tab' + (diff != null && diff > 0.05 ? ' bt-compare-winner-col' : ''), text: vA != null ? vA.toFixed(1).replace(/\.0$/, '') : '\u2014' }),
+            domH('td', { class: 'num-tab' + (diff != null && diff < -0.05 ? ' bt-compare-winner-col' : ''), text: vB != null ? vB.toFixed(1).replace(/\.0$/, '') : '\u2014' }),
+            domH('td', { class: 'num-tab' + (diff != null && diff > 0.05 ? ' is-pos' : (diff != null && diff < -0.05 ? ' is-neg' : '')), text: diffTxt })
+          ));
+        });
+        const sDiff = (eA.sca > 0 && eB.sca > 0) ? +(eA.sca - eB.sca).toFixed(2) : null;
+        tbody.appendChild(domH('tr', { class: 'is-total-row' },
+          domH('td', null, domH('strong', { text: 'Total SCA' })),
+          domH('td', { class: 'num-tab' + (sDiff > 0 ? ' bt-compare-winner-col' : ''), text: eA.sca > 0 ? eA.sca.toFixed(2) : '\u2014' }),
+          domH('td', { class: 'num-tab' + (sDiff < 0 ? ' bt-compare-winner-col' : ''), text: eB.sca > 0 ? eB.sca.toFixed(2) : '\u2014' }),
+          domH('td', { class: 'num-tab', text: sDiff == null ? '\u2014' : ((sDiff > 0 ? '+' : '') + sDiff.toFixed(2)) })
+        ));
+
+        cmpBox.appendChild(domH('div', { class: 'bt-compare-scroll' },
+          domH('table', { class: 'bt-cupping-compare-table' },
+            domH('thead', null,
+              domH('tr', null,
+                domH('th', { text: 'Trait' }),
+                domH('th', { text: 'A: ' + (eA.coffee.length > 18 ? (eA.coffee.slice(0, 17) + '\u2026') : eA.coffee) }),
+                domH('th', { text: 'B: ' + (eB.coffee.length > 18 ? (eB.coffee.slice(0, 17) + '\u2026') : eB.coffee) }),
+                domH('th', { text: 'Delta' })
+              )
+            ),
+            tbody
+          )
+        ));
+      }
+      drillBox.appendChild(cmpBox);
+    }
+
+    card.appendChild(drillBox);
+    return card;
+  }
+
   function renderPalateGymView() {
     const wrap = domH('div', { class: 'bt-academy-seg' });
     const acState = readAcademyState();
@@ -56708,6 +60765,9 @@ if (typeof window !== 'undefined') {
 
     /* 1. Editable 1-5 Bowl Multi-Coffee Cupping */
     wrap.appendChild(buildScaCockpitWidget());
+
+    /* 1b. Logged Cuppings & 8-Trait Attribute Drill-Down Summary */
+    wrap.appendChild(buildLoggedCuppingsDrillDownCard());
 
     /* 2. 6-Cup Kitchen Taste Calibrator */
     wrap.appendChild(buildKitchenTasteCalibratorCard());

@@ -1459,6 +1459,7 @@ const BTChartKit = (function () {
     const root = document.createElement('div');
     root.className = 'bt-vernier-pill' + (c.compact ? ' is-compact' : '') + (c.cls ? ' ' + c.cls : '');
     if (c.id) root.id = c.id;
+    if (c.title || c.hint) root.setAttribute('title', String(c.title || c.hint));
 
     const decBtn = document.createElement('button');
     decBtn.type = 'button';
@@ -1471,6 +1472,7 @@ const BTChartKit = (function () {
     track.setAttribute('tabindex', '0');
     track.setAttribute('role', 'slider');
     track.setAttribute('aria-label', c.label || 'Value');
+    if (c.title || c.hint) track.setAttribute('title', String(c.title || c.hint));
     track.setAttribute('aria-valuemin', String(min));
     track.setAttribute('aria-valuemax', String(max));
 
@@ -1713,7 +1715,10 @@ const BTChartKit = (function () {
     svg += '<text x="' + sweetBadgeX + '" y="' + (parseFloat(sweetTop) + 11.5).toFixed(1) +
       '" text-anchor="end" class="bt-spark-zone-lbl">' + esc(sweetBadge) + '</text>';
 
-    /* Y Axis Labels */
+    /* Y Axis Labels & Unit Caption */
+    const yUnitLbl = cfg.yAxisLabel || (isPts ? 'Score' : 'Stars');
+    svg += '<text x="' + (L - 6) + '" y="' + (T - 5) + '" text-anchor="end" class="bt-spark-axis">' +
+      esc(yUnitLbl) + '</text>';
     svg += '<text x="' + (L - 6) + '" y="' + (T + 5) + '" text-anchor="end" class="bt-spark-axis">' +
       (isPts ? '95' : '5.0') + '</text>';
     svg += '<text x="' + (L - 6) + '" y="' + B + '" text-anchor="end" class="bt-spark-axis">' +
@@ -1938,6 +1943,52 @@ const BTChartKit = (function () {
     };
   }
 
+  /* --------------------------------------------------------------------------
+   * 9. Compact Responsive Chart Axis Caption Strip (375px-Safe)
+   *    Explains chart X/Y directions & units in plain English right under SVGs.
+   * -------------------------------------------------------------------------- */
+  function createAxisCaptionBar(items, opts) {
+    const c = opts || {};
+    const bar = document.createElement('div');
+    bar.className = 'bt-axis-caption' + (c.cls ? ' ' + c.cls : '');
+    if (c.id) bar.id = c.id;
+    if (c.ariaLabel) bar.setAttribute('aria-label', String(c.ariaLabel));
+    const list = Array.isArray(items) ? items : [];
+    for (let i = 0; i < list.length; i++) {
+      const it = list[i];
+      if (!it) continue;
+      const itemEl = document.createElement('span');
+      itemEl.className = 'bt-axis-caption-item';
+      if (typeof it === 'string') {
+        itemEl.textContent = it;
+      } else {
+        if (it.title) itemEl.setAttribute('title', String(it.title));
+        if (it.kicker) {
+          const k = document.createElement('strong');
+          k.textContent = String(it.kicker) + ': ';
+          itemEl.appendChild(k);
+        }
+        itemEl.appendChild(document.createTextNode(String(it.text || '')));
+      }
+      bar.appendChild(itemEl);
+    }
+    return bar;
+  }
+
+  function svgZoneLabel(x, y, text, opts) {
+    const o = opts || {};
+    const cls = 'bt-chart-zone-lbl' + (o.cls ? ' ' + o.cls : '');
+    const attrs = {
+      x: typeof x === 'number' ? x.toFixed(1) : String(x),
+      y: typeof y === 'number' ? y.toFixed(1) : String(y),
+      class: cls
+    };
+    if (o.anchor) attrs['text-anchor'] = o.anchor;
+    const t = svgEl('text', attrs);
+    t.textContent = String(text || '');
+    return t;
+  }
+
   return {
     numOr: numOr,
     clamp: clamp,
@@ -1946,10 +1997,12 @@ const BTChartKit = (function () {
     prefersReducedMotion: prefersReducedMotion,
     haptic: haptic,
     svgEl: svgEl,
+    svgZoneLabel: svgZoneLabel,
     pinShapeSvg: pinShapeSvg,
     pinShapeEl: pinShapeEl,
     createHitHalo: createHitHalo,
     createCrosshair: createCrosshair,
+    createAxisCaptionBar: createAxisCaptionBar,
     mapClientToSurface: mapClientToSurface,
     bindChartSurface: bindChartSurface,
     stepSpring: stepSpring,

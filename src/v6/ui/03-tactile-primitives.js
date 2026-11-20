@@ -3562,8 +3562,8 @@ function _evalExtractionWaveProfile(tSec, targetSec, tempC, roastStr) {
 function BTExtractionWavesLive(cfg) {
   cfg = cfg || {};
   const uid = _tUid('bt_ewl');
-  const W = 380, H = 78;
-  const PAD_L = 8, PAD_R = 10, PAD_T = 7, PAD_B = 15;
+  const W = 420, H = 152;
+  const PAD_L = 10, PAD_R = 10, PAD_T = 14, PAD_B = 22;
   const PLOT_W = W - PAD_L - PAD_R;
   const PLOT_H = H - PAD_T - PAD_B;
 
@@ -3574,105 +3574,182 @@ function BTExtractionWavesLive(cfg) {
     roast: cfg.roast || 'light-medium',
     isPaused: !!cfg.isPaused,
     stopped: !!cfg.stopped,
-    cutoffS: cfg.cutoffS != null && +cfg.cutoffS > 0 ? +cfg.cutoffS : null
+    cutoffS: cfg.cutoffS != null && +cfg.cutoffS > 0 ? +cfg.cutoffS : null,
+    phases: Array.isArray(cfg.phases) ? cfg.phases.slice() : [],
+    scrubPreviewS: null
   };
 
   const COL_ACID   = 'var(--wave-acid, #D98B26)';
   const COL_SUGAR  = 'var(--wave-sweet, #B84A14)';
   const COL_BITTER = 'var(--wave-bitter, #9E211D)';
 
-  const clipRect = h('rect', { x: PAD_L, y: 0, width: 0, height: H });
+  const clipRect = h('rect', { x: PAD_L, y: PAD_T, width: 0, height: PLOT_H });
   const defs = h('defs', null,
+    h('clipPath', { id: uid + '_plot' },
+      h('rect', { x: PAD_L, y: PAD_T, width: PLOT_W, height: PLOT_H, rx: 10 })
+    ),
     h('clipPath', { id: uid + '_past' }, clipRect),
     h('linearGradient', { id: uid + '_ga', x1: '0', y1: '0', x2: '0', y2: '1' },
-      h('stop', { offset: '0%', 'stop-color': '#D98B26', 'stop-opacity': '0.26' }),
+      h('stop', { offset: '0%', 'stop-color': '#D98B26', 'stop-opacity': '0.34' }),
+      h('stop', { offset: '65%', 'stop-color': '#D98B26', 'stop-opacity': '0.10' }),
       h('stop', { offset: '100%', 'stop-color': '#D98B26', 'stop-opacity': '0.01' })
     ),
     h('linearGradient', { id: uid + '_gs', x1: '0', y1: '0', x2: '0', y2: '1' },
-      h('stop', { offset: '0%', 'stop-color': '#B84A14', 'stop-opacity': '0.24' }),
-      h('stop', { offset: '100%', 'stop-color': '#1C4A36', 'stop-opacity': '0.02' })
+      h('stop', { offset: '0%', 'stop-color': '#B84A14', 'stop-opacity': '0.32' }),
+      h('stop', { offset: '65%', 'stop-color': '#B84A14', 'stop-opacity': '0.10' }),
+      h('stop', { offset: '100%', 'stop-color': '#B84A14', 'stop-opacity': '0.02' })
     ),
     h('linearGradient', { id: uid + '_gb', x1: '0', y1: '0', x2: '0', y2: '1' },
-      h('stop', { offset: '0%', 'stop-color': '#9E211D', 'stop-opacity': '0.24' }),
+      h('stop', { offset: '0%', 'stop-color': '#9E211D', 'stop-opacity': '0.32' }),
+      h('stop', { offset: '65%', 'stop-color': '#9E211D', 'stop-opacity': '0.10' }),
       h('stop', { offset: '100%', 'stop-color': '#9E211D', 'stop-opacity': '0.01' })
     )
   );
 
-  /* Background grid & overtime zone */
+  /* Background plot, Sweet-Spot Window band (~27%-80%), crisp horizontal gridlines & overtime zone */
+  const sweetBand = h('rect', {
+    class: 'bt-ext-waves-sweet-band',
+    x: +(PAD_L + PLOT_W * 0.27).toFixed(1),
+    y: PAD_T,
+    width: +(PLOT_W * 0.53).toFixed(1),
+    height: PLOT_H,
+    fill: 'var(--wave-sweet-band, rgba(28, 74, 54, 0.11))',
+    stroke: 'var(--wave-sweet-band-stroke, rgba(28, 74, 54, 0.28))',
+    'stroke-width': 1,
+    'stroke-dasharray': '3 3'
+  });
+  const sweetBandLbl = h('text', {
+    class: 'bt-ext-waves-sweet-lbl',
+    x: +(PAD_L + PLOT_W * 0.535).toFixed(1),
+    y: PAD_T + 12,
+    'text-anchor': 'middle',
+    fill: 'var(--wave-sweet-band-ink, var(--good, #1C4A36))',
+    'font-size': 8.8,
+    'font-weight': 800,
+    'letter-spacing': '0.03em',
+    text: 'Sweet-Spot Window'
+  });
   const overtimeBand = h('rect', {
     x: PAD_L + PLOT_W, y: PAD_T, width: 0, height: PLOT_H,
-    fill: 'rgba(217, 139, 38, 0.11)',
+    fill: 'rgba(217, 139, 38, 0.15)',
     hidden: true
   });
+  const gridY25 = +(PAD_T + PLOT_H * 0.25).toFixed(1);
+  const gridY50 = +(PAD_T + PLOT_H * 0.50).toFixed(1);
+  const gridY75 = +(PAD_T + PLOT_H * 0.75).toFixed(1);
   const gridLayer = h('g', { 'aria-hidden': 'true' },
-    h('rect', { x: PAD_L, y: PAD_T, width: PLOT_W, height: PLOT_H, rx: 8, fill: 'var(--well)', stroke: 'var(--line-soft)', 'stroke-width': 1 }),
-    overtimeBand,
-    h('line', { x1: PAD_L, y1: +(PAD_T + PLOT_H * 0.5).toFixed(1), x2: PAD_L + PLOT_W, y2: +(PAD_T + PLOT_H * 0.5).toFixed(1), stroke: 'var(--line-hairline)', 'stroke-dasharray': '3 3' })
+    h('rect', { x: PAD_L, y: PAD_T, width: PLOT_W, height: PLOT_H, rx: 10, fill: 'var(--well)', stroke: 'var(--line-soft)', 'stroke-width': 1 }),
+    h('g', { 'clip-path': 'url(#' + uid + '_plot)' },
+      sweetBand,
+      overtimeBand,
+      h('line', { class: 'bt-ext-waves-gridline', x1: PAD_L, y1: gridY25, x2: PAD_L + PLOT_W, y2: gridY25, stroke: 'var(--wave-gridline, var(--line-hairline))', 'stroke-width': 0.9, 'stroke-dasharray': '3 3' }),
+      h('line', { class: 'bt-ext-waves-gridline', x1: PAD_L, y1: gridY50, x2: PAD_L + PLOT_W, y2: gridY50, stroke: 'var(--wave-gridline, var(--line-hairline))', 'stroke-width': 1, 'stroke-dasharray': '3 3' }),
+      h('line', { class: 'bt-ext-waves-gridline', x1: PAD_L, y1: gridY75, x2: PAD_L + PLOT_W, y2: gridY75, stroke: 'var(--wave-gridline, var(--line-hairline))', 'stroke-width': 0.9, 'stroke-dasharray': '3 3' }),
+      sweetBandLbl,
+      h('text', { class: 'bt-ext-waves-axis-lbl', x: PAD_L + 6, y: PAD_T + 11, fill: 'var(--ink-muted)', 'font-size': 7.6, 'font-weight': 700, opacity: '0.78', text: 'Peak' }),
+      h('text', { class: 'bt-ext-waves-axis-lbl', x: PAD_L + 6, y: PAD_T + PLOT_H - 4, fill: 'var(--ink-muted)', 'font-size': 7.6, 'font-weight': 700, opacity: '0.72', text: 'Low' })
+    )
   );
 
   /* Preview (ahead of playhead) dashed curves */
-  const prevAcidPath   = h('path', { d: '', fill: 'none', stroke: COL_ACID,   'stroke-width': 1.6, 'stroke-dasharray': '3 3', opacity: '0.42' });
-  const prevSugarPath  = h('path', { d: '', fill: 'none', stroke: COL_SUGAR,  'stroke-width': 1.6, 'stroke-dasharray': '3 3', opacity: '0.42' });
-  const prevBitterPath = h('path', { d: '', fill: 'none', stroke: COL_BITTER, 'stroke-width': 1.6, 'stroke-dasharray': '3 3', opacity: '0.42' });
+  const prevAcidPath   = h('path', { d: '', fill: 'none', stroke: COL_ACID,   'stroke-width': 1.75, 'stroke-dasharray': '4 3', opacity: '0.46' });
+  const prevSugarPath  = h('path', { d: '', fill: 'none', stroke: COL_SUGAR,  'stroke-width': 1.85, 'stroke-dasharray': '4 3', opacity: '0.46' });
+  const prevBitterPath = h('path', { d: '', fill: 'none', stroke: COL_BITTER, 'stroke-width': 1.75, 'stroke-dasharray': '4 3', opacity: '0.46' });
 
-  /* Active illuminated curves + soft area fills clipped up to live playhead */
+  /* Active illuminated curves + rich gradient area fills clipped up to live playhead */
   const areaAcidPath   = h('path', { d: '', fill: 'url(#' + uid + '_ga)' });
   const areaSugarPath  = h('path', { d: '', fill: 'url(#' + uid + '_gs)' });
   const areaBitterPath = h('path', { d: '', fill: 'url(#' + uid + '_gb)' });
 
-  const liveAcidPath   = h('path', { 'data-wave': 'acids',   d: '', fill: 'none', stroke: COL_ACID,   'stroke-width': 2.6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
-  const liveSugarPath  = h('path', { 'data-wave': 'sugars',  d: '', fill: 'none', stroke: COL_SUGAR,  'stroke-width': 2.8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
-  const liveBitterPath = h('path', { 'data-wave': 'bitters', d: '', fill: 'none', stroke: COL_BITTER, 'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+  const liveAcidPath   = h('path', { 'data-wave': 'acids',   d: '', fill: 'none', stroke: COL_ACID,   'stroke-width': 2.75, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+  const liveSugarPath  = h('path', { 'data-wave': 'sugars',  d: '', fill: 'none', stroke: COL_SUGAR,  'stroke-width': 3.0,  'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+  const liveBitterPath = h('path', { 'data-wave': 'bitters', d: '', fill: 'none', stroke: COL_BITTER, 'stroke-width': 2.65, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
 
-  const activeGroup = h('g', { 'clip-path': 'url(#' + uid + '_past)' },
-    areaAcidPath, areaSugarPath, areaBitterPath,
-    liveAcidPath, liveSugarPath, liveBitterPath
+  const activeGroup = h('g', { 'clip-path': 'url(#' + uid + '_plot)' },
+    h('g', { 'clip-path': 'url(#' + uid + '_past)' },
+      areaAcidPath, areaSugarPath, areaBitterPath,
+      liveAcidPath, liveSugarPath, liveBitterPath
+    )
   );
 
   /* Target time vertical reference line (visible especially in overtime!) */
+  const phasePinsLayer = h('g', { class: 'bt-ext-phase-pins', 'clip-path': 'url(#' + uid + '_plot)', 'aria-hidden': 'true' });
   const targetMarkerLine = h('line', {
     x1: PAD_L + PLOT_W, y1: PAD_T, x2: PAD_L + PLOT_W, y2: PAD_T + PLOT_H,
     stroke: 'var(--gold, #D98B26)',
-    'stroke-width': 1.3,
-    'stroke-dasharray': '3 2',
-    opacity: '0.75'
+    'stroke-width': 1.5,
+    'stroke-dasharray': '4 2.5',
+    opacity: '0.82'
   });
-  const axisStartTxt  = h('text', { x: PAD_L + 2, y: H - 5, fill: 'var(--ink-muted)', 'font-family': 'var(--font-mono)', 'font-size': 8.6, 'font-weight': 700, text: '00:00' });
-  const axisMidTxt    = h('text', { x: PAD_L + PLOT_W * 0.5, y: H - 5, 'text-anchor': 'middle', fill: 'var(--ink-muted)', 'font-family': 'var(--font-mono)', 'font-size': 8.6, 'font-weight': 600, text: '01:15' });
-  const axisTargetTxt = h('text', { x: PAD_L + PLOT_W - 2, y: H - 5, 'text-anchor': 'end', fill: 'var(--ink-secondary)', 'font-family': 'var(--font-mono)', 'font-size': 8.6, 'font-weight': 700, text: 'Target 02:30' });
+  const axisTickY0 = PAD_T + PLOT_H;
+  const axisTickY1 = PAD_T + PLOT_H + 4;
+  const axisTicks = h('g', { 'aria-hidden': 'true' },
+    h('line', { x1: PAD_L, y1: axisTickY0, x2: PAD_L, y2: axisTickY1, stroke: 'var(--line-soft)', 'stroke-width': 1 }),
+    h('line', { x1: +(PAD_L + PLOT_W * 0.5).toFixed(1), y1: axisTickY0, x2: +(PAD_L + PLOT_W * 0.5).toFixed(1), y2: axisTickY1, stroke: 'var(--line-soft)', 'stroke-width': 1 }),
+    h('line', { x1: PAD_L + PLOT_W, y1: axisTickY0, x2: PAD_L + PLOT_W, y2: axisTickY1, stroke: 'var(--line-soft)', 'stroke-width': 1 })
+  );
+  const axisStartTxt  = h('text', { class: 'bt-ext-waves-axis-lbl', x: PAD_L + 2, y: H - 5, fill: 'var(--ink-muted)', 'font-family': 'var(--font-mono)', 'font-size': 9.4, 'font-weight': 700, text: '00:00' });
+  const axisMidTxt    = h('text', { class: 'bt-ext-waves-axis-lbl', x: PAD_L + PLOT_W * 0.5, y: H - 5, 'text-anchor': 'middle', fill: 'var(--ink-muted)', 'font-family': 'var(--font-mono)', 'font-size': 9.4, 'font-weight': 600, text: '01:15' });
+  const axisTargetTxt = h('text', { class: 'bt-ext-waves-axis-lbl', x: PAD_L + PLOT_W - 2, y: H - 5, 'text-anchor': 'end', fill: 'var(--ink-secondary)', 'font-family': 'var(--font-mono)', 'font-size': 9.4, 'font-weight': 700, text: 'Target 02:30' });
 
   /* Moving Playhead Line + 3 Glowing Curve Dots */
   const playheadLine = h('line', {
     class: 'bt-ext-playhead',
     'data-wave-playhead': '1',
-    x1: PAD_L, y1: PAD_T - 2, x2: PAD_L, y2: PAD_T + PLOT_H + 2,
+    x1: PAD_L, y1: PAD_T - 3, x2: PAD_L, y2: PAD_T + PLOT_H + 3,
     stroke: 'var(--ink)',
-    'stroke-width': 1.7
+    'stroke-width': 1.9
   });
-  const dotAcidGlow   = h('circle', { cx: PAD_L, cy: PAD_T + PLOT_H, r: 6.5, fill: '#D98B26', opacity: '0.26' });
-  const dotAcid       = h('circle', { 'data-wave-dot': 'acids',   cx: PAD_L, cy: PAD_T + PLOT_H, r: 3.6, fill: '#D98B26', stroke: '#FFFDF9', 'stroke-width': 1.5 });
-  const dotSugarGlow  = h('circle', { cx: PAD_L, cy: PAD_T + PLOT_H, r: 7.0, fill: '#B84A14', opacity: '0.28' });
-  const dotSugar      = h('circle', { 'data-wave-dot': 'sugars',  cx: PAD_L, cy: PAD_T + PLOT_H, r: 3.8, fill: '#B84A14', stroke: '#FFFDF9', 'stroke-width': 1.5 });
-  const dotBitterGlow = h('circle', { cx: PAD_L, cy: PAD_T + PLOT_H, r: 6.5, fill: '#9E211D', opacity: '0.26' });
-  const dotBitter     = h('circle', { 'data-wave-dot': 'bitters', cx: PAD_L, cy: PAD_T + PLOT_H, r: 3.6, fill: '#9E211D', stroke: '#FFFDF9', 'stroke-width': 1.5 });
+  const dotAcidGlow   = h('circle', { cx: PAD_L, cy: PAD_T + PLOT_H, r: 7.5, fill: '#D98B26', opacity: '0.26' });
+  const dotAcid       = h('circle', { 'data-wave-dot': 'acids',   cx: PAD_L, cy: PAD_T + PLOT_H, r: 4.0, fill: '#D98B26', stroke: '#FFFDF9', 'stroke-width': 1.6 });
+  const dotSugarGlow  = h('circle', { cx: PAD_L, cy: PAD_T + PLOT_H, r: 8.0, fill: '#B84A14', opacity: '0.28' });
+  const dotSugar      = h('circle', { 'data-wave-dot': 'sugars',  cx: PAD_L, cy: PAD_T + PLOT_H, r: 4.2, fill: '#B84A14', stroke: '#FFFDF9', 'stroke-width': 1.6 });
+  const dotBitterGlow = h('circle', { cx: PAD_L, cy: PAD_T + PLOT_H, r: 7.5, fill: '#9E211D', opacity: '0.26' });
+  const dotBitter     = h('circle', { 'data-wave-dot': 'bitters', cx: PAD_L, cy: PAD_T + PLOT_H, r: 4.0, fill: '#9E211D', stroke: '#FFFDF9', 'stroke-width': 1.6 });
 
   const svgEl = h('svg', {
     class: 'bt-ext-waves-svg bt-chart-svg',
     style: { touchAction: 'pan-y' },
     viewBox: '0 0 ' + W + ' ' + H,
     role: 'img',
-    'aria-label': 'Live 3-Wave Extraction Kinetics: Bright Fruit Acids, Sweet Sugars & Body, and Late Dry Bitters'
+    'aria-label': 'Live 3-Wave Extraction Kinetics: Bright Fruit Acids, Sweet Sugars & Body, and Late Dry Bitters with shaded Sweet-Spot Window'
   },
     defs,
     gridLayer,
-    prevAcidPath, prevSugarPath, prevBitterPath,
+    h('g', { 'clip-path': 'url(#' + uid + '_plot)' }, prevAcidPath, prevSugarPath, prevBitterPath),
     activeGroup,
+    phasePinsLayer,
     targetMarkerLine,
+    axisTicks,
     axisStartTxt, axisMidTxt, axisTargetTxt,
     playheadLine,
     dotAcidGlow, dotSugarGlow, dotBitterGlow,
     dotAcid, dotSugar, dotBitter
   );
+
+  const scrubPillEl = cfg.scrubbable ? h('div', {
+    class: 'bt-ext-scrub-pill is-hint',
+    'data-wave-scrub-pill': '1',
+    'aria-live': 'polite',
+    text: 'Scrub curve when paused to preview any second'
+  }) : null;
+
+  const phaseBadgeEl = h('span', {
+    class: 'bt-ext-waves-phase-pill',
+    'data-wave-phase': '1',
+    style: 'display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;font-size:0.66rem;font-weight:800;letter-spacing:0.02em;background:var(--surface);border:1px solid var(--line-soft);color:var(--ink);white-space:nowrap',
+    text: 'Ready'
+  });
+  const balanceReadoutEl = h('span', {
+    class: 'bt-ext-waves-balance-pill bt-num',
+    'data-wave-balance': '1',
+    style: 'font-size:0.67rem;font-weight:700;color:var(--ink-secondary);line-height:1.25',
+    text: ''
+  });
+  const balanceRow = h('div', {
+    class: 'bt-ext-waves-balance-row',
+    style: 'display:flex;align-items:center;justify-content:space-between;gap:6px 10px;flex-wrap:wrap;min-width:0'
+  }, phaseBadgeEl, balanceReadoutEl);
 
   const statusTextEl = h('span', { text: '' });
   const statusPill = h('div', {
@@ -3685,19 +3762,28 @@ function BTExtractionWavesLive(cfg) {
   );
 
   const legendRow = h('div', { class: 'bt-ext-waves-legend' },
-    h('span', { class: 'bt-ext-waves-leg-pill' },
+    h('span', { class: 'bt-ext-waves-leg-pill', title: 'Fast-dissolving fruit & floral acids extract first during bloom and early pours' },
       h('i', { class: 'bt-ext-waves-dot', style: 'background:var(--wave-acid, #D98B26)' }),
-      h('span', { text: 'Bright Acids' })
+      h('span', { text: '1. Bright Acids' })
     ),
-    h('span', { class: 'bt-ext-waves-leg-pill' },
+    h('span', { class: 'bt-ext-waves-leg-pill', title: 'Caramel sugars & syrupy body build through the Sweet-Spot Window (27%-80% of brew)' },
       h('i', { class: 'bt-ext-waves-dot', style: 'background:var(--wave-sweet, #B84A14)' }),
-      h('span', { text: 'Sweet Sugars' })
+      h('span', { text: '2. Sweet Sugars & Body' })
     ),
-    h('span', { class: 'bt-ext-waves-leg-pill' },
+    h('span', { class: 'bt-ext-waves-leg-pill', title: 'Heavy bitter & drying compounds climb late in drawdown and during overtime' },
       h('i', { class: 'bt-ext-waves-dot', style: 'background:var(--wave-bitter, #9E211D)' }),
-      h('span', { text: 'Late Bitters' })
+      h('span', { text: '3. Late Bitters' })
     )
   );
+
+  const subCopy = (typeof cfg.subtitle === 'string')
+    ? cfg.subtitle
+    : 'Bright Acids dissolve first \u2192 Sweet Sugars peak in the shaded Sweet-Spot Window \u2192 Late Bitters rise if drawdown runs long.';
+  const subEl = subCopy ? h('div', {
+    class: 'bt-ext-waves-sub',
+    style: 'font-size:0.69rem;line-height:1.3;color:var(--ink-secondary);font-weight:600',
+    text: subCopy
+  }) : null;
 
   const root = h('div', {
     class: 'bt-ext-waves-live',
@@ -3706,26 +3792,32 @@ function BTExtractionWavesLive(cfg) {
     h('div', { class: 'bt-ext-waves-head' },
       h('span', { class: 'bt-ext-waves-title' },
         BTIcons.el('flame-wave', { size: 14 }),
-        h('span', { text: cfg.title || 'Live 3-Wave' })
+        h('span', { text: cfg.title || '3-Wave Live Extraction' })
       ),
       legendRow
     ),
+    subEl,
     svgEl,
+    scrubPillEl,
+    balanceRow,
     statusPill
   );
 
   let cachedHorizonKey = '';
   let cachedStatus = '';
+  let cachedBalanceKey = '';
+  let cachedScrubTxt = '';
 
   function xForTime(t, horizonS) {
     return +(PAD_L + _clamp(t / Math.max(1, horizonS), 0, 1) * PLOT_W).toFixed(1);
   }
   function yForVal(v) {
-    return +(PAD_T + (1 - _clamp(v, 0, 1)) * (PLOT_H - 4) + 2).toFixed(1);
+    /* Leave comfortable headroom (14px) for Sweet-Spot Window label & top peaks */
+    return +(PAD_T + 14 + (1 - _clamp(v, 0, 1)) * (PLOT_H - 18)).toFixed(1);
   }
 
   function rebuildCurves(horizonS) {
-    const N = 48;
+    const N = 64;
     const pA = [], pS = [], pB = [];
     for (let i = 0; i <= N; i++) {
       const t = (i / N) * horizonS;
@@ -3750,6 +3842,51 @@ function BTExtractionWavesLive(cfg) {
     areaAcidPath.setAttribute('d', dA + closeTail);
     areaSugarPath.setAttribute('d', dS + closeTail);
     areaBitterPath.setAttribute('d', dB + closeTail);
+
+    const swX0 = xForTime(st.totalTargetS * 0.27, horizonS);
+    const swX1 = xForTime(st.totalTargetS * 0.80, horizonS);
+    const swW = Math.max(12, +(swX1 - swX0).toFixed(1));
+    sweetBand.setAttribute('x', String(swX0));
+    sweetBand.setAttribute('width', String(swW));
+    sweetBandLbl.setAttribute('x', String(+(swX0 + swW * 0.5).toFixed(1)));
+    sweetBandLbl.textContent = swW < 88 ? 'Sweet Spot' : 'Sweet-Spot Window';
+
+    /* Render subtle vertical dashed pour-phase cue pins inside the plot */
+    phasePinsLayer.textContent = '';
+    if (Array.isArray(st.phases) && st.phases.length) {
+      let lastPinX = -99;
+      st.phases.forEach(function(ph) {
+        const tPin = ph && ph.t != null ? +ph.t : (ph && ph.startS != null ? +ph.startS : NaN);
+        if (!isFinite(tPin) || tPin <= 2 || tPin >= horizonS - 3) return;
+        const pinX = xForTime(tPin, horizonS);
+        if (pinX - lastPinX < 40) return;
+        lastPinX = pinX;
+        const rawLbl = String((ph && ph.label) || '').trim();
+        const shortLbl = rawLbl.length > 11 ? (rawLbl.slice(0, 10) + '\u2026') : rawLbl;
+        const nearRight = (PAD_L + PLOT_W - pinX) < 52;
+        phasePinsLayer.appendChild(h('line', {
+          class: 'bt-ext-phase-pin',
+          x1: String(pinX), y1: String(PAD_T + 15),
+          x2: String(pinX), y2: String(PAD_T + PLOT_H),
+          stroke: 'var(--ink-muted)',
+          'stroke-width': 1,
+          'stroke-dasharray': '2.5 3',
+          opacity: '0.58'
+        }));
+        if (shortLbl) {
+          phasePinsLayer.appendChild(h('text', {
+            class: 'bt-ext-phase-pin-lbl',
+            x: String(nearRight ? +(pinX - 3).toFixed(1) : +(pinX + 3).toFixed(1)),
+            y: String(PAD_T + PLOT_H - 13),
+            'text-anchor': nearRight ? 'end' : 'start',
+            fill: 'var(--ink-muted)',
+            'font-size': 7.6,
+            'font-weight': 700,
+            text: shortLbl
+          }));
+        }
+      });
+    }
 
     const tgtX = xForTime(st.totalTargetS, horizonS);
     targetMarkerLine.setAttribute('x1', String(tgtX));
@@ -3780,30 +3917,55 @@ function BTExtractionWavesLive(cfg) {
       return clockTxt + ' · Dissolving Now: Bright Fruit Acids & Lively Florals (Bloom / Early Pour)' + suffix;
     }
     if (evNow.u <= 0.80) {
-      return clockTxt + ' · Dissolving Now: Sweet Caramel Sugars & Body (Bitters Low)' + suffix;
+      return clockTxt + ' · Dissolving Now: Sweet Caramel Sugars & Body (Sweet-Spot Window)' + suffix;
     }
     return clockTxt + ' · Final Drawdown: Rounding Out Body — Stop Timer When Dripper Finishes!' + suffix;
   }
 
+  function canScrubNow() {
+    return !!cfg.scrubbable && (st.isPaused || st.stopped || st.elapsedS <= 0.05);
+  }
+
+  function scrubZoneShort(ev, isOver, tSec) {
+    if (tSec <= 0.05) return 'Bloom Start';
+    if (isOver) return 'Overtime · Bitters Rising';
+    if (ev.u < 0.27) return 'Bright Acids';
+    if (ev.u <= 0.80) return 'Sweet Core';
+    return 'Final Drawdown';
+  }
+
   function paint() {
-    const isOver = st.elapsedS > (st.totalTargetS + 0.2);
+    if (!canScrubNow() && st.scrubPreviewS != null) {
+      st.scrubPreviewS = null;
+    }
+    const isScrubbing = st.scrubPreviewS != null && isFinite(st.scrubPreviewS);
+    const activeS = isScrubbing ? st.scrubPreviewS : st.elapsedS;
+    const isOver = activeS > (st.totalTargetS + 0.2);
     /* Smoothly quantize overtime horizon in 5s steps so curves don't jitter every 100ms */
-    const horizonS = isOver
-      ? Math.max(st.totalTargetS + 5, Math.ceil(st.elapsedS / 5) * 5)
+    const maxS = Math.max(st.elapsedS, activeS);
+    const horizonS = maxS > (st.totalTargetS + 0.2)
+      ? Math.max(st.totalTargetS + 5, Math.ceil(maxS / 5) * 5)
       : st.totalTargetS;
-    const hKey = horizonS + ':' + st.totalTargetS + ':' + Math.round(st.tempC) + ':' + st.roast;
+    const phaseKey = Array.isArray(st.phases)
+      ? st.phases.map(function(p) { return Math.round((p && (p.t != null ? p.t : p.startS)) || 0) + String((p && p.label) || '').slice(0, 4); }).join(',')
+      : '';
+    const hKey = horizonS + ':' + st.totalTargetS + ':' + Math.round(st.tempC) + ':' + st.roast + ':' + phaseKey;
     if (hKey !== cachedHorizonKey) {
       cachedHorizonKey = hKey;
       rebuildCurves(horizonS);
     }
 
     root.classList.toggle('is-overtime', isOver);
-    const px = xForTime(st.elapsedS, horizonS);
+    root.classList.toggle('is-scrubbing', isScrubbing);
+    if (cfg.scrubbable) {
+      svgEl.style.cursor = canScrubNow() ? 'ew-resize' : 'default';
+    }
+    const px = xForTime(activeS, horizonS);
     clipRect.setAttribute('width', String(Math.max(2, px - PAD_L + 1)));
     playheadLine.setAttribute('x1', String(px));
     playheadLine.setAttribute('x2', String(px));
 
-    const evNow = _evalExtractionWaveProfile(st.elapsedS, st.totalTargetS, st.tempC, st.roast);
+    const evNow = _evalExtractionWaveProfile(activeS, st.totalTargetS, st.tempC, st.roast);
     const ya = yForVal(evNow.acid);
     const ys = yForVal(evNow.sugar);
     const yb = yForVal(evNow.bitter);
@@ -3815,36 +3977,111 @@ function BTExtractionWavesLive(cfg) {
     dotBitter.setAttribute('cx', String(px));     dotBitter.setAttribute('cy', String(yb));
     dotBitterGlow.setAttribute('cx', String(px)); dotBitterGlow.setAttribute('cy', String(yb));
 
-    const nextStatus = buildStatusString(evNow, isOver);
+    const sumWaves = Math.max(0.001, evNow.acid + evNow.sugar + evNow.bitter);
+    const pctA = Math.round((evNow.acid / sumWaves) * 100);
+    const pctS = Math.round((evNow.sugar / sumWaves) * 100);
+    const pctB = Math.max(0, 100 - pctA - pctS);
+    const phaseTxt = (activeS <= 0.05 && !st.stopped && !isScrubbing)
+      ? 'Ready · Bloom Next'
+      : isOver
+      ? 'Overtime · Bitters Rising'
+      : evNow.u < 0.27
+      ? 'Phase 1 · Bright Acids'
+      : evNow.u <= 0.80
+      ? 'Phase 2 · Sweet-Spot Window'
+      : 'Phase 3 · Final Drawdown';
+    const balTxt = (activeS <= 0.05 && !st.stopped && !isScrubbing)
+      ? ('Sweet Spot ' + _fmtMmSs(st.totalTargetS * 0.27) + '\u2013' + _fmtMmSs(st.totalTargetS * 0.80) + ' · Target ' + _fmtMmSs(st.totalTargetS))
+      : ((isScrubbing ? 'Preview Mix: ' : 'Live Mix: ') + 'Acids ' + pctA + '% · Sugars ' + pctS + '% · Bitters ' + pctB + '%');
+    const balKey = phaseTxt + '|' + balTxt + '|' + (isOver ? '1' : '0');
+    if (balKey !== cachedBalanceKey) {
+      cachedBalanceKey = balKey;
+      phaseBadgeEl.textContent = phaseTxt;
+      balanceReadoutEl.textContent = balTxt;
+      if (isOver) {
+        phaseBadgeEl.style.background = 'var(--warn-bg)';
+        phaseBadgeEl.style.borderColor = 'var(--warn)';
+        phaseBadgeEl.style.color = 'var(--warn)';
+      } else if (activeS > 0.05 && evNow.u >= 0.27 && evNow.u <= 0.80) {
+        phaseBadgeEl.style.background = 'var(--good-bg)';
+        phaseBadgeEl.style.borderColor = 'rgba(24, 96, 62, 0.34)';
+        phaseBadgeEl.style.color = 'var(--good)';
+      } else {
+        phaseBadgeEl.style.background = 'var(--surface)';
+        phaseBadgeEl.style.borderColor = 'var(--line-soft)';
+        phaseBadgeEl.style.color = 'var(--ink)';
+      }
+    }
+
+    if (scrubPillEl) {
+      let nextScrubTxt = '';
+      let nextScrubCls = 'bt-ext-scrub-pill is-hint';
+      if (isScrubbing) {
+        nextScrubTxt = 'Preview at ' + _fmtMmSs(activeS) + ' \u00B7 ' + scrubZoneShort(evNow, isOver, activeS) + ' (Acids ' + pctA + '% \u00B7 Sugars ' + pctS + '% \u00B7 Bitters ' + pctB + '%)';
+        nextScrubCls = 'bt-ext-scrub-pill is-active' + (isOver ? ' is-overtime' : '');
+      } else if (!canScrubNow()) {
+        nextScrubTxt = 'Live playback \u00B7 Pause timer to scrub & preview any second';
+        nextScrubCls = 'bt-ext-scrub-pill is-live';
+      } else {
+        nextScrubTxt = 'Scrub curve when paused to preview any second';
+        nextScrubCls = 'bt-ext-scrub-pill is-hint';
+      }
+      const sKey = nextScrubCls + '|' + nextScrubTxt;
+      if (sKey !== cachedScrubTxt) {
+        cachedScrubTxt = sKey;
+        scrubPillEl.className = nextScrubCls;
+        scrubPillEl.textContent = nextScrubTxt;
+      }
+    }
+
+    const evLive = isScrubbing ? _evalExtractionWaveProfile(st.elapsedS, st.totalTargetS, st.tempC, st.roast) : evNow;
+    const isLiveOver = st.elapsedS > (st.totalTargetS + 0.2);
+    const nextStatus = buildStatusString(evLive, isLiveOver);
     if (nextStatus !== cachedStatus) {
       cachedStatus = nextStatus;
       statusTextEl.textContent = nextStatus;
-      statusPill.classList.toggle('is-overtime', isOver);
-      statusPill.classList.toggle('is-sweet', !isOver && evNow.u >= 0.27 && evNow.u <= 0.82 && st.elapsedS > 0);
+      statusPill.classList.toggle('is-overtime', isLiveOver);
+      statusPill.classList.toggle('is-sweet', !isLiveOver && evLive.u >= 0.27 && evLive.u <= 0.82 && st.elapsedS > 0);
     }
   }
 
-  /* Optional interactive scrub if cfg.scrubbable === true */
+  /* Optional interactive scrub if cfg.scrubbable === true (active when paused/ready, guarded during live timer tick) */
   if (cfg.scrubbable) {
     let dragging = false;
-    function scrubClient(e) {
+    function scrubClient(e, persistPreview) {
+      if (!canScrubNow()) return;
       const rect = svgEl.getBoundingClientRect();
+      if (!rect || !rect.width) return;
       const frac = _clamp(((e.clientX - rect.left) / Math.max(1, rect.width) * W - PAD_L) / PLOT_W, 0, 1);
       const horizonS = Math.max(st.totalTargetS, st.elapsedS);
-      st.elapsedS = +(frac * horizonS).toFixed(1);
+      st.scrubPreviewS = +(frac * horizonS).toFixed(1);
       paint();
-      if (typeof cfg.onScrub === 'function') cfg.onScrub(st.elapsedS);
+      if (persistPreview && typeof cfg.onScrub === 'function') cfg.onScrub(st.scrubPreviewS);
     }
-    svgEl.style.cursor = 'ew-resize';
+    svgEl.style.cursor = canScrubNow() ? 'ew-resize' : 'default';
     svgEl.addEventListener('pointerdown', function(e) {
       if (e.button && e.button !== 0) return;
+      if (!canScrubNow()) return;
       dragging = true;
       try { svgEl.setPointerCapture(e.pointerId); } catch (err) {}
-      scrubClient(e);
+      scrubClient(e, true);
     });
-    svgEl.addEventListener('pointermove', function(e) { if (dragging) scrubClient(e); });
+    svgEl.addEventListener('pointermove', function(e) {
+      if (!canScrubNow()) return;
+      if (dragging) {
+        scrubClient(e, true);
+      } else if (e.pointerType === 'mouse') {
+        scrubClient(e, false);
+      }
+    });
     ['pointerup', 'pointercancel'].forEach(function(ev) {
       svgEl.addEventListener(ev, function() { dragging = false; });
+    });
+    svgEl.addEventListener('pointerleave', function(e) {
+      if (!dragging && e.pointerType === 'mouse' && st.scrubPreviewS != null) {
+        st.scrubPreviewS = null;
+        paint();
+      }
     });
   }
 
@@ -3855,23 +4092,29 @@ function BTExtractionWavesLive(cfg) {
     if (totNext != null && totNext > 0) st.totalTargetS = totNext;
     if (next.tempC != null && isFinite(+next.tempC)) st.tempC = +next.tempC;
     if (typeof next.roast === 'string' && next.roast) st.roast = next.roast;
-    if (typeof next.isPaused === 'boolean') st.isPaused = next.isPaused;
+    if (typeof next.isPaused === 'boolean') {
+      st.isPaused = next.isPaused;
+      if (!next.isPaused && !st.stopped && st.elapsedS > 0.05) st.scrubPreviewS = null;
+    }
     if (typeof next.stopped === 'boolean') st.stopped = next.stopped;
     if (next.cutoffS !== undefined) st.cutoffS = next.cutoffS != null ? +next.cutoffS : null;
+    if (Array.isArray(next.phases)) st.phases = next.phases.slice();
     paint();
   };
 
   root.getState = function() {
-    const ev = _evalExtractionWaveProfile(st.elapsedS, st.totalTargetS, st.tempC, st.roast);
+    const activeS = st.scrubPreviewS != null ? st.scrubPreviewS : st.elapsedS;
+    const ev = _evalExtractionWaveProfile(activeS, st.totalTargetS, st.tempC, st.roast);
     const dom = ev.acid >= ev.sugar && ev.acid >= ev.bitter ? 'acids' : (ev.sugar >= ev.bitter ? 'sugars' : 'bitters');
     return {
       elapsedS: st.elapsedS,
+      scrubPreviewS: st.scrubPreviewS,
       totalTargetS: st.totalTargetS,
       acidVal: +ev.acid.toFixed(3),
       sugarVal: +ev.sugar.toFixed(3),
       bitterVal: +ev.bitter.toFixed(3),
       dominantWave: dom,
-      isOvertime: st.elapsedS > (st.totalTargetS + 0.2),
+      isOvertime: activeS > (st.totalTargetS + 0.2),
       statusText: cachedStatus
     };
   };

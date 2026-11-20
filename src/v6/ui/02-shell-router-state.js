@@ -290,7 +290,7 @@ function newApp() {
     prefs: {
       waterUnit: 'g', coffeeUnit: 'g', tempUnit: 'F', elevUnit: 'm', theme: 'light',
       scienceLens: 'hybrid', experienceLens: 'comfy', immersionBasis: 'liang',
-      cupMode: '', coachTips: true, palateSeed: null, toolModes: _defaultToolModes(),
+      cupMode: '', coachTips: true, palateSeed: null, palateTargets: null, palateBias: null, toolModes: _defaultToolModes(),
       waterProfileKey: '', kettle: '', scale: '', ownedBrewers: ['v60', 'aeropress', 'switch', 'espresso'],
       seenCupHelp: false, seenTermHint: false, cupView: '', taste: '',
       timerAudioMode: 'voice', sound: 'voice', soundOff: false, coach: 'guide', level: 'comfortable',
@@ -451,6 +451,8 @@ function hydratePrefsInto(dst, sp) {
   if (['', 'quick', 'guided', 'cva'].indexOf(sp.cupMode) >= 0) dst.cupMode = sp.cupMode;
   if (typeof sp.coachTips === 'boolean') dst.coachTips = sp.coachTips;
   if (sp.palateSeed && typeof sp.palateSeed === 'object' && !Array.isArray(sp.palateSeed)) dst.palateSeed = sp.palateSeed;
+  if (sp.palateTargets && typeof sp.palateTargets === 'object' && !Array.isArray(sp.palateTargets)) dst.palateTargets = Object.assign({}, sp.palateTargets);
+  if (sp.palateBias && typeof sp.palateBias === 'object' && !Array.isArray(sp.palateBias)) dst.palateBias = Object.assign({}, sp.palateBias);
   if (typeof sp.waterProfileKey === 'string') dst.waterProfileKey = sp.waterProfileKey.slice(0, 40);
   if (typeof sp.kettle === 'string') dst.kettle = sp.kettle.slice(0, 80);
   if (typeof sp.scale === 'string') dst.scale = sp.scale.slice(0, 80);
@@ -1394,9 +1396,22 @@ function toast(message, opts) {
   const host = $('toast-host');
   if (!host) return null;
   const dur = typeof opts.duration === 'number' ? opts.duration : (typeof opts.durationMs === 'number' ? opts.durationMs : (opts.onAction ? 10000 : 4000));
+  const msgStr = String(message == null ? '' : message);
+  const dedupeKey = String(opts.key || msgStr).trim().toLowerCase();
 
-  const pill = h('div', { class: 'bt-toast' },
-    h('span', { class: 'bt-toast-msg', text: String(message == null ? '' : message) })
+  /* Deduplicate matching active toasts so rapid taps (e.g. +10s) update cleanly instead of stacking */
+  if (dedupeKey) {
+    for (let i = host.children.length - 1; i >= 0; i--) {
+      const existing = host.children[i];
+      if (existing && existing.getAttribute && existing.getAttribute('data-toast-key') === dedupeKey) {
+        if (typeof existing._btDismiss === 'function') existing._btDismiss();
+        else if (existing.parentNode) existing.parentNode.removeChild(existing);
+      }
+    }
+  }
+
+  const pill = h('div', { class: 'bt-toast', 'data-toast-key': dedupeKey || false },
+    h('span', { class: 'bt-toast-msg', text: msgStr })
   );
 
   let timer = null;
@@ -1404,6 +1419,7 @@ function toast(message, opts) {
     clearTimeout(timer);
     if (pill.parentNode) pill.parentNode.removeChild(pill);
   }
+  pill._btDismiss = dismiss;
 
   if (opts.actionLabel && typeof opts.onAction === 'function') {
     const actBtn = h('button', {
@@ -1419,7 +1435,9 @@ function toast(message, opts) {
   }
 
   while (host.children.length >= 2) {
-    host.removeChild(host.firstElementChild);
+    const oldest = host.firstElementChild;
+    if (oldest && typeof oldest._btDismiss === 'function') oldest._btDismiss();
+    else host.removeChild(oldest);
   }
   host.appendChild(pill);
   if (dur > 0) timer = setTimeout(dismiss, dur);
@@ -1429,25 +1447,199 @@ function toast(message, opts) {
 /* ==================== 3-DETENT SPRING BOTTOM SHEET (BTSheet) ==================== */
 const _sheetRegistry = new Map();
 const _sheetTitles = {
-  'workflow-tools':  'My Gear & Setup',
-  'bench-gear':      'My Gear & Setup',
-  'my-coffees':      'My Coffees Vault',
-  'bag-capture':     'Add or Scan Coffee Bag',
-  'capture-bag':     'Add or Scan Coffee Bag',
-  'ai-paste':        'Magic AI Reply Paste',
-  'coffee-facts':    'Coffee Facts in Four Parts',
-  'post-brew-taste': 'Post-Brew Sensory Studio',
-  'tasting-flow':    'Post-Brew Sensory Studio',
-  'brew-twin':       'Brew Twin Translator',
-  'live-cockpit':    'Live Brew Cockpit',
-  'ble-devices':     'Bluetooth Instruments',
-  'data-vault':         'Data Vault & Backup',
-  'onboarding-tour':    'Welcome to BeanTelligence',
-  'about-charter':      'Science & Epistemic Charter',
-  'share-qr-passport':  'Share QR Recipe Passport',
-  'recipe-science-why': 'Why These Numbers?',
-  'screen-detail':      'Tasting Passport'
+  'workflow-tools':      'My Gear & Setup',
+  'bench-gear':          'My Gear & Setup',
+  'my-coffees':          'My Coffees Vault',
+  'bag-capture':         'Add or Scan Coffee Bag',
+  'capture-bag':         'Add or Scan Coffee Bag',
+  'ai-paste':            'Magic AI Reply Paste',
+  'coffee-facts':        'Coffee Facts in Four Parts',
+  'post-brew-taste':     'Post-Brew Sensory Studio',
+  'tasting-flow':        'Post-Brew Sensory Studio',
+  'brew-twin':           'Brew Twin Translator',
+  'live-cockpit':        'Live Brew Cockpit',
+  'ble-devices':         'Bluetooth Instruments',
+  'data-vault':          'Data Vault & Backup',
+  'onboarding-tour':     'Welcome to BeanTelligence',
+  'about-charter':       'Science & Epistemic Charter',
+  'share-qr-passport':   'Share QR Recipe Passport',
+  'recipe-science-why':  'Why These Numbers?',
+  'screen-detail':       'Tasting Passport',
+  'screen-tasting-edit': 'Edit Tasting'
 };
+
+function formatPalateBiasSummary(prefsObj) {
+  const p = (prefsObj && typeof prefsObj === 'object') ? prefsObj : ((app && app.prefs) || {});
+  const src = (p.palateTargets && typeof p.palateTargets === 'object') ? p.palateTargets
+    : ((p.palateBias && typeof p.palateBias === 'object') ? p.palateBias
+    : ((p.palateSeed && typeof p.palateSeed === 'object') ? p.palateSeed : null));
+  if (!src) return '';
+  if (typeof src.summary === 'string' && src.summary.trim()) return src.summary.trim();
+  if (typeof src.label === 'string' && src.label.trim()) return src.label.trim();
+  const mapVal = function(v, dict) {
+    const k = String(v == null ? '' : v).trim().toLowerCase();
+    return dict[k] || '';
+  };
+  const parts = [];
+  const bright = mapVal(src.brightness || src.acidity || src.brightSmooth, {
+    bright: 'Bright', juicy: 'Bright & Juicy', crisp: 'Crisp Acidity',
+    balanced: 'Balanced', smooth: 'Smooth', low: 'Smooth & Low-Acid', mellow: 'Smooth'
+  });
+  if (bright) parts.push(bright);
+  const strength = mapVal(src.strength || src.tds || src.cupStrength, {
+    light: 'Light Strength', tea: 'Tea-Like', delicate: 'Delicate',
+    balanced: 'Medium Strength', medium: 'Medium Strength',
+    rich: 'Rich Strength', strong: 'Bold Strength', bold: 'Bold Strength'
+  });
+  if (strength) parts.push(strength);
+  const texture = mapVal(src.texture || src.body || src.clarityBody, {
+    clarity: 'High Clarity', clean: 'High Clarity', tea: 'Tea-Like Clarity',
+    silky: 'Silky Body', balanced: 'Balanced Body',
+    body: 'Full Body', full: 'Full Body', syrupy: 'Velvety Body', creamy: 'Creamy Body'
+  });
+  if (texture) parts.push(texture);
+  if (!parts.length && src.roast) {
+    const rClean = _cleanDisplayName(src.roast);
+    if (rClean) parts.push(rClean.replace(/-/g, ' ') + ' roast');
+  }
+  return parts.join(' \u00B7 ');
+}
+
+function _cleanDisplayName(v) {
+  if (v == null) return '';
+  let s = String(v).trim();
+  if (typeof unneutralize === 'function') {
+    try { s = String(unneutralize(s) || '').trim(); } catch (e) {}
+  }
+  if (!s) return '';
+  const low = s.toLowerCase();
+  if (low === '--' || low === '—' || low === '-' || low === 'undefined' || low === 'null' || low === 'nan' || low === 'unknown' || low === 'n/a') {
+    return '';
+  }
+  return s;
+}
+
+function _humanMethodShort(rawMethod) {
+  const clean = _cleanDisplayName(rawMethod);
+  if (!clean) return '';
+  const low = clean.toLowerCase();
+  const map = {
+    v60: 'Hario V60', origami: 'Origami', kalita: 'Kalita Wave', orea: 'Orea',
+    pulsar: 'Pulsar', chemex: 'Chemex', nel: 'Nel Drip', drip: 'Auto Drip',
+    aiden: 'Fellow Aiden', xbloom: 'xBloom', switch: 'Hario Switch', clever: 'Clever',
+    aeropress: 'AeroPress', siphon: 'Siphon', press: 'French Press', turkish: 'Turkish',
+    phin: 'Phin', cold: 'Cold Brew', cold_drip: 'Cold Drip', espresso: 'Espresso',
+    lever_espresso: 'Lever Espresso', moka: 'Moka Pot', philips5500: 'Philips 5500',
+    cupping: 'Cupping Table', sca_5cup: 'Cupping Table', cva_affective: 'Cupping Table', '5bowl': 'Cupping Table'
+  };
+  return map[low] || clean;
+}
+
+function _rowChronCmp(rowA, idxA, rowB, idxB) {
+  const dayOf = function(r) {
+    if (!r || typeof r !== 'object') return '';
+    const cd = String(r.cupping_date || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(cd)) return cd.slice(0, 10);
+    const sv = String(r.saved_at || r.updated_at || r.created_at || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(sv)) return sv.slice(0, 10);
+    return '';
+  };
+  const dA = dayOf(rowA);
+  const dB = dayOf(rowB);
+  if (dA !== dB) return dA > dB ? 1 : -1;
+  const tsOf = function(r) {
+    if (!r || typeof r !== 'object') return 0;
+    const sv = r.saved_at || r.updated_at || r.created_at || '';
+    const t = sv ? Date.parse(String(sv)) : NaN;
+    return isFinite(t) ? t : 0;
+  };
+  const tA = tsOf(rowA);
+  const tB = tsOf(rowB);
+  if (tA !== tB) return tA > tB ? 1 : -1;
+  return (idxA || 0) - (idxB || 0);
+}
+
+function _resolveLatestTastingRow() {
+  try {
+    const st = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
+    if (!st || typeof st.getHistory !== 'function') return null;
+    const raw = st.getHistory();
+    const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.objs) ? raw.objs : []);
+    if (!list.length) return null;
+    let bestIdx = -1;
+    for (let i = 0; i < list.length; i++) {
+      const row = list[i];
+      if (!row || typeof row !== 'object') continue;
+      if (bestIdx < 0 || _rowChronCmp(row, i, list[bestIdx], bestIdx) >= 0) {
+        bestIdx = i;
+      }
+    }
+    if (bestIdx < 0) return null;
+    const row = list[bestIdx];
+    const coffeeName = _cleanDisplayName(row.coffee_name || row.coffee || row.name);
+    const roaster = _cleanDisplayName(row.roaster);
+    const stars = parseFloat(row.my_rating_stars);
+    const score = parseFloat(row.total_score);
+    const method = _humanMethodShort(row.brew_method);
+    const date = _cleanDisplayName(row.cupping_date || (row.saved_at ? String(row.saved_at).slice(0, 10) : ''));
+    return {
+      row: row,
+      rowIdx: bestIdx,
+      coffeeName: coffeeName || roaster || 'Logged Cup',
+      roaster: roaster,
+      stars: isFinite(stars) && stars > 0 ? stars : null,
+      score: isFinite(score) && score > 0 ? score : null,
+      method: method,
+      date: date
+    };
+  } catch (e) {}
+  return null;
+}
+
+function _resolveSheetTitleWithCoffee(key, baseTitle, payload) {
+  const k = String(key || '').toLowerCase();
+  const raw = String(baseTitle || '').trim();
+  const pl = (payload && typeof payload === 'object') ? payload : {};
+
+  if (k === 'screen-detail' || k === 'screen-tasting-edit') {
+    const hasExplicitTarget = !!(payload && typeof payload === 'object' && (pl.row || pl.rowIdx != null || pl.coffeeName || pl.name));
+    const suffix = k === 'screen-tasting-edit' ? 'Edit Tasting' : 'Tasting Passport';
+    if (!hasExplicitTarget) {
+      return raw || suffix;
+    }
+    const row = (pl.row && typeof pl.row === 'object') ? pl.row : null;
+    let cName = _cleanDisplayName((row && (row.coffee_name || row.coffee || row.name)) || pl.coffeeName || pl.name);
+    if (!cName && pl.rowIdx != null) {
+      try {
+        const st = (typeof window !== 'undefined' && window.BTStorage) ? window.BTStorage : null;
+        const hRaw = st && typeof st.getHistory === 'function' ? st.getHistory() : null;
+        const hArr = Array.isArray(hRaw) ? hRaw : (hRaw && Array.isArray(hRaw.objs) ? hRaw.objs : []);
+        const hit = hArr[+pl.rowIdx];
+        if (hit) cName = _cleanDisplayName(hit.coffee_name || hit.coffee || hit.name);
+      } catch (e) {}
+    }
+    if (cName && raw.toLowerCase().indexOf(cName.toLowerCase()) < 0) {
+      return cName + ' \u00B7 ' + suffix;
+    }
+    return raw || suffix;
+  }
+
+  if (k === 'coffee-facts') {
+    const cName = _cleanDisplayName(pl.name || (pl.coffee && pl.coffee.name) || (app && app.coffee && app.coffee.name));
+    if (cName && raw.toLowerCase().indexOf(cName.toLowerCase()) < 0) {
+      return cName + ' \u00B7 Coffee Facts';
+    }
+  }
+
+  if (k === 'post-brew-taste' || k === 'tasting-flow') {
+    const cName = _cleanDisplayName(pl.coffeeName || (app && app.coffee && app.coffee.name));
+    if (cName && raw.toLowerCase().indexOf(cName.toLowerCase()) < 0) {
+      return cName + ' \u00B7 Taste & Dial In';
+    }
+  }
+
+  return raw || 'Studio';
+}
 
 const BTSheet = (function() {
   let activeSheetKey = '';
@@ -1499,16 +1691,16 @@ const BTSheet = (function() {
     if (typeof keyOrCfg === 'string') {
       key = keyOrCfg.trim().toLowerCase();
       const reg = _sheetRegistry.get(key) || (key === 'capture-bag' ? _sheetRegistry.get('bag-capture') : null) || (key === 'tasting-flow' ? _sheetRegistry.get('post-brew-taste') : null);
-      title = opts.title || (reg && reg.title) || _sheetTitles[key] || 'Studio';
+      title = _resolveSheetTitleWithCoffee(key, opts.title || (reg && reg.title) || _sheetTitles[key] || 'Studio', payload);
       detent = opts.detent || (reg && reg.detent) || (key === 'live-cockpit' || key === 'tasting-flow' || key === 'post-brew-taste' ? 'cockpit' : 'half');
       renderFn = reg ? reg.render : null;
     } else if (keyOrCfg && typeof keyOrCfg === 'object') {
       key = String(keyOrCfg.id || keyOrCfg.key || 'custom');
-      title = keyOrCfg.title || _sheetTitles[key] || 'Studio';
+      if (payload === undefined) payload = keyOrCfg.payload;
+      title = _resolveSheetTitleWithCoffee(key, keyOrCfg.title || _sheetTitles[key] || 'Studio', payload);
       detent = keyOrCfg.detent || opts.detent || 'half';
       renderFn = keyOrCfg.render || null;
       onClose = keyOrCfg.onClose || onClose;
-      if (payload === undefined) payload = keyOrCfg.payload;
     }
 
     if (!isOpen() && typeof document !== 'undefined') {
@@ -1589,6 +1781,8 @@ const BTSheet = (function() {
     if (closeBtn) {
       closeBtn.textContent = '';
       closeBtn.appendChild(BTIcons.el('close-x', { size: 20 }));
+      closeBtn.setAttribute('aria-label', 'Close panel');
+      closeBtn.title = 'Close panel';
       closeBtn.onclick = close;
     }
     const backdropEl = $('sheet-backdrop');
@@ -3364,11 +3558,16 @@ function paintChrome() {
         type: 'button',
         class: 'bt-rail-tool-btn',
         'data-rail-gear': '1',
+        title: grinderShort ? ('My Gear & Setup · ' + grinderShort) : 'My Gear & Setup',
+        'aria-label': grinderShort ? ('My Gear & Setup: ' + grinderShort) : 'My Gear & Setup',
         onclick: function() { BTSheet.open('workflow-tools', {}, { detent: 'full', title: 'My Gear & Setup' }); }
       },
-        h('span', { style: 'display:inline-flex;align-items:center;gap:7px;min-width:0' },
+        h('span', { style: 'display:inline-flex;align-items:center;gap:7px;min-width:0;flex:1' },
           BTIcons.el('grinder-burr', { size: 15 }),
-          h('span', { style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap', text: grinderShort ? ('My Gear · ' + grinderShort) : 'My Gear' })
+          h('span', { style: 'display:flex;flex-direction:column;align-items:flex-start;min-width:0;line-height:1.2' },
+            h('span', { text: 'My Gear' }),
+            grinderShort ? h('span', { style: 'font-size:10.5px;color:var(--ink-muted);font-weight:500;white-space:normal;overflow-wrap:anywhere;text-align:left', text: grinderShort }) : null
+          )
         ),
         BTIcons.el('chevron-right', { size: 14 })
       ),
@@ -3475,23 +3674,28 @@ function paintStudioAside() {
   );
 
   /* Live Coffee Passport Card */
-  const cname = (c.name || '').trim();
-  const croaster = (c.roaster || '').trim();
+  const cname = _cleanDisplayName(c.name);
+  const croaster = _cleanDisplayName(c.roaster);
   const isUnkAside = function(v, flag) {
     if (flag === 'yes' || flag === true) return true;
     const s = String(v == null ? '' : v).trim().toLowerCase();
-    return s === 'unknown' || s === 'unsure' || s === 'not sure' || s === "don't know" || s === 'dont know';
+    return s === 'unknown' || s === 'unsure' || s === 'not sure' || s === "don't know" || s === 'dont know' || s === '--' || s === 'undefined' || s === 'null';
   };
-  const roastLbl = isUnkAside(c.roast, c.roastUnsure || c.roast_unknown) ? 'Don\'t Know' : (c.roast || 'Light-Medium').replace(/_/g, '-');
-  const procLbl = isUnkAside(c.process, c.processUnsure || c.process_unknown) ? 'Don\'t Know' : (c.process || 'Washed').replace(/_/g, ' ');
-  const origLbl = isUnkAside(c.origin, c.originUnsure || c.origin_unknown) ? 'Don\'t Know' : (c.origin || 'Not set');
-  const regionDisp = (c.region && origLbl !== 'Not set' && origLbl !== 'Don\'t Know' && String(origLbl).toLowerCase().indexOf(String(c.region).toLowerCase()) < 0)
-    ? (origLbl + ' · ' + c.region)
+  const roastRaw = _cleanDisplayName(c.roast);
+  const procRaw = _cleanDisplayName(c.process);
+  const origRaw = _cleanDisplayName(c.origin);
+  const regRaw = _cleanDisplayName(c.region);
+  const varietalRaw = _cleanDisplayName(c.varietal);
+  const roastLbl = isUnkAside(c.roast, c.roastUnsure || c.roast_unknown) ? 'Don\'t Know' : (roastRaw || 'Light-Medium').replace(/_/g, '-');
+  const procLbl = isUnkAside(c.process, c.processUnsure || c.process_unknown) ? 'Don\'t Know' : (procRaw || 'Washed').replace(/_/g, ' ');
+  const origLbl = isUnkAside(c.origin, c.originUnsure || c.origin_unknown) ? 'Don\'t Know' : (origRaw || 'Not set');
+  const regionDisp = (regRaw && origLbl !== 'Not set' && origLbl !== 'Don\'t Know' && String(origLbl).toLowerCase().indexOf(String(regRaw).toLowerCase()) < 0)
+    ? (origLbl + ' · ' + regRaw)
     : origLbl;
-    const asideNotes = String(c.bag_notes || c.notes || '').trim();
-    const asidePersonal = String(c.personal_note || '').trim();
+    const asideNotes = _cleanDisplayName(c.bag_notes || c.notes);
+    const asidePersonal = _cleanDisplayName(c.personal_note);
     const asideElev = (isFinite(+c.elevation_m) && +c.elevation_m > 0) ? (Math.round(+c.elevation_m) + ' masl') : '';
-    const asideProducer = String(c.producer || c.farm_or_station || '').trim();
+    const asideProducer = _cleanDisplayName(c.producer || c.farm_or_station);
     const hasNotesWell = (asideNotes && !isUnkAside(asideNotes, '')) || asidePersonal || asideElev || asideProducer;
     const notesWellEl = hasNotesWell ? h('div', {
       class: 'bt-aside-notes-well',
@@ -3511,12 +3715,12 @@ function paintStudioAside() {
     ) : null;
 
     const passportCard = h('div', { class: 'bt-passport-card' },
-      h('div', { style: 'display:flex;align-items:flex-start;justify-content:space-between;gap:8px' },
-        h('div', { style: 'min-width:0' },
+      h('div', { style: 'display:flex;flex-direction:column;gap:5px' },
+        h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
           h('div', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: croaster || 'Active Coffee Bag' }),
-          h('div', { class: 'bt-serif', style: 'font-size:16px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere', text: cname || 'Add a Coffee Bag' })
+          h('span', { class: 'bt-badge good', text: _formatFreshnessBadge(c) })
         ),
-        h('span', { class: 'bt-badge good', text: _formatFreshnessBadge(c) })
+        h('div', { id: 'bt-aside-coffee-name', class: 'bt-serif', style: 'font-size:16px;font-weight:700;line-height:1.28;overflow-wrap:anywhere;word-break:break-word', text: cname || 'No coffee loaded yet' })
       ),
       h('div', { class: 'bt-passport-grid' },
         h('div', { class: 'bt-passport-cell' },
@@ -3536,7 +3740,7 @@ function paintStudioAside() {
         ),
         h('div', { class: 'bt-passport-cell' },
           h('span', { text: 'Varietal' }),
-          h('b', { text: c.varietal || 'Specialty Lot' })
+          h('b', { text: varietalRaw || 'Specialty Lot' })
         )
       ),
       notesWellEl,
@@ -3544,15 +3748,17 @@ function paintStudioAside() {
         h('button', {
           type: 'button',
           class: 'bt-chip',
-          style: 'flex:1;min-height:34px;font-size:12px',
+          style: 'flex:1;min-height:44px;font-size:12px',
+          'aria-label': cname ? ('Edit ' + cname + ' coffee bag') : 'Enter coffee bag details',
           onclick: function() { go('coffee'); }
         }, BTIcons.el('edit-pen', { size: 13 }), h('span', { text: cname ? 'Edit Bag' : 'Enter Coffee' })),
         _sheetRegistry.has('my-coffees') ? h('button', {
           type: 'button',
           class: 'bt-chip',
-          style: 'min-height:34px;font-size:12px',
+          style: 'min-height:44px;font-size:12px',
+          'aria-label': 'Open Saved Coffee Vault',
           onclick: function() { BTSheet.open('my-coffees', null, { detent: 'full' }); }
-        }, BTIcons.el('cellar', { size: 13 }), h('span', { text: 'Vault' })) : null
+        }, BTIcons.el('cellar', { size: 13 }), h('span', { text: 'Saved Vault' })) : null
       )
     );
 
@@ -3588,8 +3794,13 @@ function paintStudioAside() {
       ? ('Gold Lock · Try #' + (+dialAd.fromTry || 1))
       : ('Try #' + dialTryNext + ' Fix Loaded'))
     : '';
-  const dialSummaryText = dialAd
+  const dialRawSummary = dialAd
     ? (dialAd.summaryBanner || (dialAd.prevClickDisplay && dialAd.nextClickDisplay ? (dialAd.prevClickDisplay + ' \u2192 ' + dialAd.nextClickDisplay) : (dialAd.reason || '')))
+    : '';
+  const dialSummaryText = dialRawSummary
+    ? (cname
+      ? ((dialAd && dialAd.locked ? 'Gold Recipe for ' : 'Saved Fix for ') + cname + ': ' + dialRawSummary)
+      : dialRawSummary)
     : '';
 
   const printIcon = h('span', { 'aria-hidden': 'true', style: 'display:inline-flex;align-items:center' });
@@ -3645,8 +3856,9 @@ function paintStudioAside() {
         type: 'button',
         id: 'bt-aside-print-btn',
         class: 'bt-chip',
+        'aria-label': 'Print or save recipe as PDF (Ctrl+P)',
         title: 'Print or Save Recipe PDF (Ctrl+P)',
-        style: 'flex:1;min-height:32px;font-size:11.5px;justify-content:space-between;padding:4px 9px',
+        style: 'flex:1;min-height:44px;font-size:11.5px;justify-content:space-between;padding:4px 10px',
         onclick: function() { if (typeof window !== 'undefined' && typeof window.print === 'function') window.print(); }
       },
         h('span', { style: 'display:inline-flex;align-items:center;gap:6px' }, printIcon, h('span', { text: 'Print Recipe' })),
@@ -3658,7 +3870,58 @@ function paintStudioAside() {
     ) : null
   );
 
-  aside.append(coachCard, passportCard, telemetryCard);
+  /* Latest Brewed Cup Card with Explicit Coffee Name */
+  const latestCup = _resolveLatestTastingRow();
+  let lastCupCard = null;
+  if (latestCup) {
+    const ratingTxt = latestCup.stars
+      ? (latestCup.stars.toFixed(1) + '\u2605')
+      : (latestCup.score ? (latestCup.score.toFixed(0) + ' pt') : 'Logged');
+    const metaSub = [latestCup.roaster, latestCup.method, latestCup.date].filter(Boolean).join(' \u00B7 ');
+    lastCupCard = h('div', { class: 'bt-passport-card', id: 'bt-aside-last-cup-card' },
+      h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px' },
+        h('span', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: 'Last Cup Logged' }),
+        h('span', { class: 'bt-badge good mono', text: ratingTxt })
+      ),
+      h('button', {
+        type: 'button',
+        id: 'bt-aside-last-cup-btn',
+        class: 'bt-aside-last-cup-btn',
+        style: 'display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:44px',
+        'aria-label': 'Inspect last cup tasting detail for ' + latestCup.coffeeName,
+        onclick: function() {
+          if (_sheetRegistry.has('screen-detail')) {
+            BTSheet.open('screen-detail', { row: latestCup.row, rowIdx: latestCup.rowIdx }, {
+              title: latestCup.coffeeName + ' \u00B7 Tasting Passport',
+              detent: 'full'
+            });
+          } else {
+            go('history');
+          }
+        }
+      },
+        h('span', { style: 'min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;flex:1 1 auto;max-width:100%' },
+          h('span', { class: 'bt-aside-last-cup-name', style: 'display:block;flex:0 0 auto;font-weight:700;font-size:13px;color:var(--ink);line-height:1.25;overflow-wrap:anywhere;word-break:break-word', text: 'Last Cup: ' + latestCup.coffeeName }),
+          metaSub ? h('span', { style: 'display:block;flex:0 0 auto;font-size:11px;color:var(--ink-muted);line-height:1.25;overflow-wrap:anywhere', text: metaSub }) : null
+        ),
+        h('span', { style: 'font-size:11.5px;font-weight:700;color:var(--accent);white-space:nowrap;flex:none', text: 'Inspect \u2192' })
+      )
+    );
+  } else {
+    lastCupCard = h('div', { class: 'bt-passport-card', id: 'bt-aside-last-cup-empty' },
+      h('span', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: 'Last Cup' }),
+      h('p', { style: 'margin:0;font-size:11.5px;color:var(--ink-secondary);line-height:1.4', text: '0 tastings saved yet \u2014 brew a cup and save your first rating in Step 5 to unlock Palate DNA & dial-in history.' }),
+      h('button', {
+        type: 'button',
+        class: 'bt-chip',
+        style: 'min-height:44px;font-size:12px;width:100%;justify-content:center',
+        'aria-label': 'Start your first brew',
+        onclick: function() { go('coffee'); }
+      }, h('span', { text: 'Start Your First Brew \u2192' }))
+    );
+  }
+
+  aside.append(coachCard, passportCard, telemetryCard, lastCupCard);
 }
 
 if (typeof window !== 'undefined' && !window._btPrintShortcutBound) {
@@ -3730,6 +3993,7 @@ const BTShell = {
   paintChrome: paintChrome,
   paintBlePill: paintBlePill,
   paintStudioAside: paintStudioAside,
+  formatPalateBiasSummary: formatPalateBiasSummary,
   BTSheet: BTSheet,
   BTScienceLens: BTScienceLens,
   BTTimerAudio: BTTimerAudio,

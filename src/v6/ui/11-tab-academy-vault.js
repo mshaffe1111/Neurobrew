@@ -459,6 +459,11 @@
       spoken4m: false,
       spoken8m: false,
       spoken12m: false,
+      historyCoffeeFilter: '',
+      historyTraitFilter: '',
+      historyCompareOpen: true,
+      historyCmpA: 0,
+      historyCmpB: 1,
       bowls: [
         makeDefaultScaBowl(0, 'Ethiopia Washed', 85.0),
         makeDefaultScaBowl(1, 'Colombia Pink Bourbon', 86.5),
@@ -895,14 +900,14 @@
 
   /* ---- 1. Editable 1-5 Bowl Multi-Coffee Cupping Table ---- */
   const CUPPING_TRAIT_GUIDES = [
-    { name: 'Fragrance', hint: 'Smell of freshly ground dry coffee before pouring hot water' },
-    { name: 'Aroma', hint: 'Wet smell rising from the bowl on pour & when breaking the 4:00 crust' },
-    { name: 'Flavor', hint: 'Combined taste + aroma notes in your mouth when you slurp' },
-    { name: 'Aftertaste', hint: 'How sweet, clean, or lingering the finish stays after swallowing' },
-    { name: 'Acidity', hint: 'Bright, juicy fruit liveliness (like crisp apple or peach — NOT stomach acid!)' },
-    { name: 'Sweetness', hint: 'Smooth ripe-fruit, honey, or caramel roundness on your tongue' },
-    { name: 'Mouthfeel', hint: 'Weight & texture in your mouth (delicate tea-light vs. creamy/syrupy)' },
-    { name: 'Overall', hint: 'Your complete personal enjoyment & harmony of the cup' }
+    { key: 'fragrance', name: 'Fragrance', hint: 'Smell of freshly ground dry coffee before pouring hot water' },
+    { key: 'aroma', name: 'Aroma', hint: 'Wet smell rising from the bowl on pour & when breaking the 4:00 crust' },
+    { key: 'flavor', name: 'Flavor', hint: 'Combined taste + aroma notes in your mouth when you slurp' },
+    { key: 'aftertaste', name: 'Aftertaste', hint: 'How sweet, clean, or lingering the finish stays after swallowing' },
+    { key: 'acidity', name: 'Acidity', hint: 'Bright, juicy fruit liveliness (like crisp apple or peach — NOT stomach acid!)' },
+    { key: 'sweetness', altKey: 'q_sweetness', name: 'Sweetness', hint: 'Smooth ripe-fruit, honey, or caramel roundness on your tongue' },
+    { key: 'body', name: 'Body (Mouthfeel)', hint: 'Weight & texture in your mouth (delicate tea-light vs. creamy/syrupy)' },
+    { key: 'overall', name: 'Overall', hint: 'Your complete personal enjoyment & harmony of the cup' }
   ];
 
   function fmtMmSs(secFloat) {
@@ -1085,7 +1090,7 @@
         if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
         else rerenderAcademyTab();
       }
-    }, sca.revealed ? 'Blind Mode: Hide Coffees' : 'Show Blinds / Reveal Coffees');
+    }, sca.revealed ? 'Blind Mode: Hide Coffees' : 'Reveal Blind Coffees');
 
     const voiceToggleBtn = domH('button', {
       type: 'button',
@@ -1611,7 +1616,7 @@
       voiceToggleBtn,
       domH('div', { style: 'max-width:100%;min-width:0' },
         CK.vernierPill({
-          label: 'Bowl Vol',
+          label: 'Bowl Size',
           value: sca.bowlMl,
           min: 120,
           max: 300,
@@ -1880,6 +1885,362 @@
     );
   }
 
+  function buildLoggedCuppingsDrillDownCard() {
+    const st = window.BTStorage || {};
+    const histObj = typeof st.getHistory === 'function' ? st.getHistory() : null;
+    const allRows = histObj && Array.isArray(histObj.objs) ? histObj.objs : [];
+    const un = function (v) { return typeof unneutralize === 'function' ? unneutralize(v || '') : String(v || ''); };
+
+    const getTraitVal = function (r, tg) {
+      const raw = (r[tg.key] != null && r[tg.key] !== '') ? r[tg.key] : (tg.altKey ? r[tg.altKey] : '');
+      const n = parseFloat(raw);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+
+    const cuppingEntries = [];
+    allRows.forEach(function (r, idx) {
+      if (!r || typeof r !== 'object') return;
+      const mk = String(r.brew_method || '').toLowerCase();
+      const sk = String(r.score_kind || '').toLowerCase();
+      let traitCount = 0;
+      CUPPING_TRAIT_GUIDES.forEach(function (tg) { if (getTraitVal(r, tg) != null) traitCount++; });
+      if (mk === 'cupping' || sk === 'cva_affective' || traitCount >= 4) {
+        cuppingEntries.push({
+          r: r,
+          idx: idx,
+          coffee: un(r.coffee_name) || 'Cupped Sample',
+          roaster: un(r.roaster),
+          date: r.cupping_date || r.brew_date || '',
+          sca: parseFloat(r.total_score) || 0,
+          stars: parseFloat(r.my_rating_stars) || 0,
+          notes: un(r.flavors_liked || r.bag_notes || '')
+        });
+      }
+    });
+
+    const card = domH('section', {
+      class: 'bt-studio-card bt-cupping-history-card',
+      id: 'bt-academy-cupping-history',
+      style: 'min-width:0;max-width:100%;box-sizing:border-box'
+    });
+
+    const openJournalCuppings = function () {
+      CK.haptic('tick');
+      if (window.BTCellarTab && typeof window.BTCellarTab.openJournalFilter === 'function') {
+        window.BTCellarTab.openJournalFilter('cupping', '');
+        return;
+      }
+      if (typeof sh().go === 'function') sh().go('history');
+    };
+
+    card.appendChild(domH('div', { class: 'bt-lab-card-head' },
+      domH('div', { class: 'bt-lab-title-group', style: 'min-width:0;flex:1 1 200px' },
+        ic('spark-star', { size: 22 }),
+        domH('div', { style: 'min-width:0;flex:1' },
+          domH('h3', { text: 'Logged Cuppings & 8-Trait Attribute Drill-Down (' + cuppingEntries.length + ')' }),
+          domH('p', { class: 'bt-lab-sub', text: 'Inspect past cupping rounds by coffee name, compare Fragrance\u2013Overall strengths & weaknesses, and jump to full scorecards.' })
+        )
+      ),
+      domH('button', {
+        type: 'button',
+        class: 'bt-lab-btn is-sm is-primary',
+        onclick: openJournalCuppings
+      }, 'Journal Cuppings \u2192')
+    ));
+
+    if (!cuppingEntries.length) {
+      card.appendChild(domH('div', { class: 'bt-drill-drawer' },
+        domH('p', {
+          class: 'bt-lab-hint',
+          style: 'margin:0',
+          text: 'No cupping rounds logged yet. Score 1\u20135 bowls in the table above and tap "Save All Cupping Bowls to Journal" to unlock your 8-trait strengths, min\u2013max spread & side-by-side history!'
+        })
+      ));
+      return card;
+    }
+
+    const sca = acadUi.sca;
+    const coffeeMap = new Map();
+    cuppingEntries.forEach(function (ce) {
+      const k = ce.coffee.toLowerCase();
+      const cur = coffeeMap.get(k) || { key: k, label: ce.coffee, n: 0, maxSca: 0 };
+      cur.n++;
+      if (ce.sca > cur.maxSca) cur.maxSca = ce.sca;
+      coffeeMap.set(k, cur);
+    });
+    const coffeePills = Array.from(coffeeMap.values()).sort(function (a, b) { return b.maxSca - a.maxSca || b.n - a.n; });
+
+    if (sca.historyCoffeeFilter && !coffeeMap.has(sca.historyCoffeeFilter)) {
+      sca.historyCoffeeFilter = '';
+    }
+
+    const visibleEntries = sca.historyCoffeeFilter
+      ? cuppingEntries.filter(function (ce) { return ce.coffee.toLowerCase() === sca.historyCoffeeFilter; })
+      : cuppingEntries.slice();
+
+    /* Coffee Name Filter Bar */
+    card.appendChild(domH('div', { class: 'bt-rating-tier-bar', role: 'group', 'aria-label': 'Filter logged cuppings by coffee name' },
+      domH('button', {
+        type: 'button',
+        class: 'bt-rating-tier-btn bt-lab-chip bt-drillable' + (!sca.historyCoffeeFilter ? ' is-active' : ''),
+        'aria-pressed': String(!sca.historyCoffeeFilter),
+        onclick: function () { sca.historyCoffeeFilter = ''; CK.haptic('tick'); rerenderAcademyTab(); }
+      }, 'All Cupped Coffees (' + cuppingEntries.length + ')'),
+      coffeePills.slice(0, 10).map(function (cp) {
+        const on = sca.historyCoffeeFilter === cp.key;
+        return domH('button', {
+          type: 'button',
+          class: 'bt-rating-tier-btn bt-lab-chip bt-drillable' + (on ? ' is-active' : ''),
+          'aria-pressed': String(on),
+          onclick: function () {
+            sca.historyCoffeeFilter = on ? '' : cp.key;
+            CK.haptic('tick');
+            rerenderAcademyTab();
+          }
+        }, cp.label + ' (' + cp.n + ')');
+      })
+    ));
+
+    /* 8-Trait Strengths & Weaknesses Grid (Fragrance..Overall) */
+    const traitAgg = CUPPING_TRAIT_GUIDES.map(function (tg) {
+      const vals = [];
+      visibleEntries.forEach(function (ce) {
+        const v = getTraitVal(ce.r, tg);
+        if (v != null) vals.push({ v: v, ce: ce });
+      });
+      if (!vals.length) return { tg: tg, n: 0, avg: 0, min: 0, max: 0, vals: [] };
+      const sum = vals.reduce(function (a, x) { return a + x.v; }, 0);
+      const mn = Math.min.apply(null, vals.map(function (x) { return x.v; }));
+      const mx = Math.max.apply(null, vals.map(function (x) { return x.v; }));
+      return { tg: tg, n: vals.length, avg: +(sum / vals.length).toFixed(2), min: mn, max: mx, vals: vals };
+    });
+    const scoredTraits = traitAgg.filter(function (t) { return t.n > 0; });
+    const maxScale = scoredTraits.some(function (t) { return t.max > 9.05; }) ? 10 : 9;
+    const hiAvg = scoredTraits.length ? Math.max.apply(null, scoredTraits.map(function (t) { return t.avg; })) : 0;
+    const loAvg = scoredTraits.length ? Math.min.apply(null, scoredTraits.map(function (t) { return t.avg; })) : 0;
+    const topTrait = scoredTraits.find(function (t) { return Math.abs(t.avg - hiAvg) < 0.01; }) || null;
+    const lowTrait = scoredTraits.find(function (t) { return Math.abs(t.avg - loAvg) < 0.01; }) || null;
+
+    const drillBox = domH('div', { class: 'bt-drill-drawer' },
+      domH('div', { class: 'bt-drill-drawer-head' },
+        domH('div', { style: 'min-width:0;flex:1' },
+          domH('div', { class: 'bt-pref-tile-lbl', text: '8-TRAIT ATTRIBUTE COMPARISON (TAP TO RANK ROUNDS)' }),
+          domH('strong', {
+            class: 'bt-drill-drawer-title',
+            text: (topTrait && lowTrait && hiAvg - loAvg >= 0.15)
+              ? ('Strongest: ' + topTrait.tg.name + ' (' + topTrait.avg.toFixed(1) + ') \u00B7 Opportunity: ' + lowTrait.tg.name + ' (' + lowTrait.avg.toFixed(1) + ')')
+              : ('Balanced Profile Across ' + visibleEntries.length + ' Logged Round' + (visibleEntries.length === 1 ? '' : 's'))
+          })
+        ),
+        sca.historyTraitFilter ? domH('button', {
+          type: 'button',
+          class: 'bt-drill-close-btn bt-lab-btn is-sm',
+          onclick: function () { sca.historyTraitFilter = ''; CK.haptic('tick'); rerenderAcademyTab(); }
+        }, 'Clear Trait \u00D7') : null
+      ),
+      domH('div', { class: 'bt-sca-attr-grid', id: 'bt-academy-cva-attr-grid' },
+        traitAgg.map(function (ta) {
+          const active = sca.historyTraitFilter === ta.tg.key;
+          const isHi = ta.n > 0 && hiAvg - loAvg >= 0.2 && Math.abs(ta.avg - hiAvg) < 0.01;
+          const isLo = ta.n > 0 && hiAvg - loAvg >= 0.2 && Math.abs(ta.avg - loAvg) < 0.01;
+          const pct = ta.n > 0 ? Math.max(8, Math.min(100, Math.round((ta.avg / maxScale) * 100))) : 0;
+          return domH('button', {
+            type: 'button',
+            class: 'bt-sca-attr-pill bt-drillable' + (active ? ' is-active' : '') + (isHi ? ' is-high' : '') + (isLo ? ' is-low' : ''),
+            'aria-pressed': String(active),
+            'data-academy-trait': ta.tg.key,
+            onclick: function () {
+              sca.historyTraitFilter = active ? '' : ta.tg.key;
+              CK.haptic('tick');
+              rerenderAcademyTab();
+            }
+          },
+            domH('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:5px;width:100%' },
+              domH('span', { class: 'bt-sca-attr-name', text: ta.tg.name.replace(' (Mouthfeel)', '') }),
+              domH('strong', { class: 'bt-sca-attr-val num-tab', text: ta.n > 0 ? (ta.avg.toFixed(1) + '/' + maxScale) : '\u2014' })
+            ),
+            domH('div', { class: 'bt-rating-dist-track', style: 'width:100%' },
+              domH('div', { class: 'bt-rating-dist-fill', style: 'width:' + pct + '%' })
+            ),
+            domH('span', { class: 'bt-drill-cup-sub num-tab', text: ta.n > 0 ? (ta.min.toFixed(1).replace(/\.0$/, '') + '\u2013' + ta.max.toFixed(1).replace(/\.0$/, '')) : 'No data' })
+          );
+        })
+      )
+    );
+
+    const activeTraitObj = traitAgg.find(function (ta) { return ta.tg.key === sca.historyTraitFilter; }) || null;
+    if (activeTraitObj) {
+      drillBox.appendChild(domH('p', {
+        class: 'bt-lab-hint',
+        style: 'margin:0',
+        text: activeTraitObj.tg.name + ': ' + activeTraitObj.tg.hint + ' \u2014 rounds below are ranked highest to lowest on ' + activeTraitObj.tg.name + '.'
+      }));
+    }
+
+    const sortedRounds = visibleEntries.slice().sort(function (a, b) {
+      if (activeTraitObj) {
+        const va = getTraitVal(a.r, activeTraitObj.tg) || 0;
+        const vb = getTraitVal(b.r, activeTraitObj.tg) || 0;
+        if (Math.abs(vb - va) > 0.01) return vb - va;
+      }
+      if (Math.abs(b.sca - a.sca) > 0.05) return b.sca - a.sca;
+      return b.idx - a.idx;
+    });
+
+    drillBox.appendChild(domH('div', { class: 'bt-drill-cup-list' },
+      sortedRounds.slice(0, 8).map(function (ce) {
+        const selVal = activeTraitObj ? getTraitVal(ce.r, activeTraitObj.tg) : null;
+        /* Find this round's strongest & lowest trait */
+        let bestT = null, lowT = null;
+        CUPPING_TRAIT_GUIDES.forEach(function (tg) {
+          const v = getTraitVal(ce.r, tg);
+          if (v == null) return;
+          if (!bestT || v > bestT.v) bestT = { name: tg.name.replace(' (Mouthfeel)', ''), v: v };
+          if (!lowT || v < lowT.v) lowT = { name: tg.name.replace(' (Mouthfeel)', ''), v: v };
+        });
+        const traitSummary = (bestT && lowT && bestT.v - lowT.v >= 0.25)
+          ? ('Top: ' + bestT.name + ' (' + bestT.v.toFixed(1).replace(/\.0$/, '') + ') \u00B7 Low: ' + lowT.name + ' (' + lowT.v.toFixed(1).replace(/\.0$/, '') + ')')
+          : (bestT ? ('Uniform ~' + bestT.v.toFixed(1).replace(/\.0$/, '') + '/' + maxScale + ' across traits') : '');
+
+        return domH('article', { class: 'bt-drill-cup-card' },
+          domH('div', { class: 'bt-drill-cup-head' },
+            domH('div', { style: 'min-width:0;flex:1 1 170px' },
+              domH('div', { class: 'bt-drill-cup-sub', text: [ce.roaster, ce.date].filter(Boolean).join(' \u00B7 ') || 'Cupping Table Round' }),
+              domH('strong', { class: 'bt-drill-cup-title', text: ce.coffee })
+            ),
+            domH('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
+              selVal != null ? domH('span', { class: 'bt-tc-badge is-gold num-tab', text: activeTraitObj.tg.name.replace(' (Mouthfeel)', '') + ' ' + selVal.toFixed(1).replace(/\.0$/, '') + '/' + maxScale }) : null,
+              ce.sca > 0 ? domH('span', { class: 'bt-tc-badge is-good num-tab', text: ce.sca.toFixed(1) + ' SCA' }) : null,
+              ce.stars > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: ce.stars.toFixed(2) + ' \u2605' }) : null
+            )
+          ),
+          traitSummary ? domH('div', { class: 'bt-drill-cup-meta num-tab', text: traitSummary }) : null,
+          ce.notes ? domH('div', { class: 'bt-drill-cup-sub', text: 'Notes: ' + ce.notes }) : null,
+          domH('div', { class: 'bt-drill-cup-actions' },
+            domH('button', {
+              type: 'button',
+              class: 'bt-drill-action-pill bt-lab-btn is-sm is-primary',
+              onclick: function () {
+                CK.haptic('tick');
+                if (window.BTCellarTab && typeof window.BTCellarTab.openDetail === 'function') {
+                  window.BTCellarTab.openDetail(ce.r);
+                } else {
+                  openJournalCuppings();
+                }
+              }
+            }, 'Inspect Scorecard \u2192'),
+            domH('button', {
+              type: 'button',
+              class: 'bt-drill-action-pill bt-lab-btn is-sm',
+              onclick: function () {
+                sca.bowls[0].coffee_id = ce.r.coffee_id || '';
+                sca.bowls[0].name = ce.coffee;
+                sca.bowls[0].roaster = ce.roaster || '';
+                sca.bowls[0].origin = un(ce.r.origin);
+                sca.bowls[0].process = un(ce.r.process);
+                sca.bowls[0].notes = ce.notes || '';
+                sca._lastSavedSig = '';
+                CK.haptic('snap');
+                notify('Loaded "' + ce.coffee + '" into Bowl A for re-cupping!');
+                rerenderAcademyTab();
+              }
+            }, 'Re-Cup in Bowl A')
+          )
+        );
+      })
+    ));
+
+    /* Side-by-Side 2-Round 8-Trait CVA Comparison (Academy 5-Bowl History) */
+    if (cuppingEntries.length >= 2) {
+      const cmpPool = cuppingEntries.slice().sort(function (a, b) {
+        return (b.sca - a.sca) || (b.idx - a.idx);
+      });
+      const idxA = (sca.historyCmpA >= 0 && sca.historyCmpA < cmpPool.length) ? sca.historyCmpA : 0;
+      const idxB = (sca.historyCmpB >= 0 && sca.historyCmpB < cmpPool.length && sca.historyCmpB !== idxA) ? sca.historyCmpB : (idxA === 0 ? 1 : 0);
+      sca.historyCmpA = idxA;
+      sca.historyCmpB = idxB;
+      const eA = cmpPool[idxA];
+      const eB = cmpPool[idxB];
+
+      const cmpBox = domH('div', { id: 'bt-academy-cupping-compare', style: 'margin-top:10px;display:flex;flex-direction:column;gap:8px' },
+        domH('div', { class: 'bt-drill-drawer-head' },
+          domH('div', { style: 'min-width:0;flex:1' },
+            domH('div', { class: 'bt-pref-tile-lbl', text: 'SIDE-BY-SIDE 8-TRAIT CVA DELTA GRID' }),
+            domH('strong', { class: 'bt-drill-drawer-title', text: 'Compare 2 Cupping Rounds (A vs B)' })
+          ),
+          domH('button', {
+            type: 'button',
+            class: 'bt-lab-btn is-sm',
+            'aria-expanded': String(!!sca.historyCompareOpen),
+            onclick: function () { sca.historyCompareOpen = !sca.historyCompareOpen; CK.haptic('tick'); rerenderAcademyTab(); }
+          }, sca.historyCompareOpen ? 'Hide Compare \u25B2' : 'Compare 2 Rounds \u25BC')
+        )
+      );
+
+      if (sca.historyCompareOpen) {
+        const mkSel = function (curIdx, ariaLbl, onSet) {
+          return domH('select', {
+            class: 'bt-lab-select',
+            'aria-label': ariaLbl,
+            style: 'flex:1 1 140px;min-width:0',
+            onchange: function (ev) { onSet(parseInt(ev.target.value, 10) || 0); }
+          },
+            cmpPool.map(function (ce, ci) {
+              const opt = domH('option', { value: String(ci), text: ce.coffee + (ce.sca > 0 ? (' (' + ce.sca.toFixed(1) + ')') : '') });
+              if (ci === curIdx) opt.selected = true;
+              return opt;
+            })
+          );
+        };
+
+        cmpBox.appendChild(domH('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' },
+          mkSel(idxA, 'Select Cupping Round A', function (v) { sca.historyCmpA = v; rerenderAcademyTab(); }),
+          domH('span', { class: 'bt-pref-tile-lbl', text: 'vs' }),
+          mkSel(idxB, 'Select Cupping Round B', function (v) { sca.historyCmpB = v; rerenderAcademyTab(); })
+        ));
+
+        const tbody = domH('tbody');
+        CUPPING_TRAIT_GUIDES.forEach(function (tg) {
+          const vA = getTraitVal(eA.r, tg);
+          const vB = getTraitVal(eB.r, tg);
+          const diff = (vA != null && vB != null) ? +(vA - vB).toFixed(2) : null;
+          const diffTxt = diff == null ? '\u2014' : (Math.abs(diff) < 0.01 ? '0.0' : ((diff > 0 ? '+' : '') + diff.toFixed(1).replace(/\.0$/, '')));
+          tbody.appendChild(domH('tr', { class: diff != null && Math.abs(diff) >= 0.25 ? 'is-diff' : '' },
+            domH('td', null, domH('strong', { text: tg.name.replace(' (Mouthfeel)', '') })),
+            domH('td', { class: 'num-tab' + (diff != null && diff > 0.05 ? ' bt-compare-winner-col' : ''), text: vA != null ? vA.toFixed(1).replace(/\.0$/, '') : '\u2014' }),
+            domH('td', { class: 'num-tab' + (diff != null && diff < -0.05 ? ' bt-compare-winner-col' : ''), text: vB != null ? vB.toFixed(1).replace(/\.0$/, '') : '\u2014' }),
+            domH('td', { class: 'num-tab' + (diff != null && diff > 0.05 ? ' is-pos' : (diff != null && diff < -0.05 ? ' is-neg' : '')), text: diffTxt })
+          ));
+        });
+        const sDiff = (eA.sca > 0 && eB.sca > 0) ? +(eA.sca - eB.sca).toFixed(2) : null;
+        tbody.appendChild(domH('tr', { class: 'is-total-row' },
+          domH('td', null, domH('strong', { text: 'Total SCA' })),
+          domH('td', { class: 'num-tab' + (sDiff > 0 ? ' bt-compare-winner-col' : ''), text: eA.sca > 0 ? eA.sca.toFixed(2) : '\u2014' }),
+          domH('td', { class: 'num-tab' + (sDiff < 0 ? ' bt-compare-winner-col' : ''), text: eB.sca > 0 ? eB.sca.toFixed(2) : '\u2014' }),
+          domH('td', { class: 'num-tab', text: sDiff == null ? '\u2014' : ((sDiff > 0 ? '+' : '') + sDiff.toFixed(2)) })
+        ));
+
+        cmpBox.appendChild(domH('div', { class: 'bt-compare-scroll' },
+          domH('table', { class: 'bt-cupping-compare-table' },
+            domH('thead', null,
+              domH('tr', null,
+                domH('th', { text: 'Trait' }),
+                domH('th', { text: 'A: ' + (eA.coffee.length > 18 ? (eA.coffee.slice(0, 17) + '\u2026') : eA.coffee) }),
+                domH('th', { text: 'B: ' + (eB.coffee.length > 18 ? (eB.coffee.slice(0, 17) + '\u2026') : eB.coffee) }),
+                domH('th', { text: 'Delta' })
+              )
+            ),
+            tbody
+          )
+        ));
+      }
+      drillBox.appendChild(cmpBox);
+    }
+
+    card.appendChild(drillBox);
+    return card;
+  }
+
   function renderPalateGymView() {
     const wrap = domH('div', { class: 'bt-academy-seg' });
     const acState = readAcademyState();
@@ -1891,6 +2252,9 @@
 
     /* 1. Editable 1-5 Bowl Multi-Coffee Cupping */
     wrap.appendChild(buildScaCockpitWidget());
+
+    /* 1b. Logged Cuppings & 8-Trait Attribute Drill-Down Summary */
+    wrap.appendChild(buildLoggedCuppingsDrillDownCard());
 
     /* 2. 6-Cup Kitchen Taste Calibrator */
     wrap.appendChild(buildKitchenTasteCalibratorCard());

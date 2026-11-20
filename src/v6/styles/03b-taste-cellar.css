@@ -63,6 +63,17 @@
   color: var(--ink-muted);
 }
 
+.bt-tc-card .bt-tc-kicker,
+.bt-journal-breakdown-card .bt-tc-kicker,
+.bt-drill-drawer .bt-tc-kicker,
+.bt-drill-panel .bt-tc-kicker,
+.bt-drill-drawer-head .bt-tc-kicker,
+.bt-drill-header .bt-tc-kicker {
+  display: block;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+
 .bt-tc-title {
   margin: 2px 0 0;
   font-family: var(--font-display);
@@ -239,6 +250,20 @@
 
 .bt-tc-pill-scroll::-webkit-scrollbar {
   display: none;
+}
+
+/* Action button strips inside Journal & Shelf cards wrap cleanly on 375px mobile (zero right-edge clipping) */
+.bt-tc-card > .bt-tc-pill-scroll:not([role]),
+.bt-journal-card-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  overflow-x: visible;
+  overflow-y: visible;
+  padding: 2px 0;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .bt-tc-pill-wrap {
@@ -2280,6 +2305,190 @@
 .bt-golden-card:hover,
 .bt-golden-showcase-item:hover {
   border-color: var(--gold);
+}
+
+/* ==================== v7.3 STEP 5 DRILL-DOWNS, SAVED BANNER & JOURNAL RATING STRIP ==================== */
+.bt-step5-coffee-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 3px 9px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border, rgba(154, 74, 30, 0.30));
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+}
+
+.bt-step5-recap-chip {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 5px 11px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--well);
+  border: 1px solid var(--line);
+  color: var(--ink-secondary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.32;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+}
+
+.bt-step5-recap-chip b,
+.bt-step5-recap-chip strong {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+button.bt-step5-recap-chip {
+  min-height: 40px;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background-color 0.14s ease;
+}
+
+button.bt-step5-recap-chip:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+button.bt-step5-recap-chip:focus-visible {
+  outline: 2.5px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.bt-step5-saved-banner,
+.bt-saved-cup-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 11px 13px;
+  border-radius: 15px;
+  background: var(--good-bg);
+  border: 1.5px solid var(--good-border, rgba(24, 96, 62, 0.30));
+  color: var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+
+.bt-step5-saved-banner strong,
+.bt-saved-cup-banner strong {
+  color: var(--good);
+  font-weight: 800;
+}
+
+.bt-step5-drill-row,
+.bt-step5-drill-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.bt-step5-drill-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 8px 13px;
+  border-radius: var(--r-pill, 9999px);
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, transform 0.12s var(--spring-snappy);
+  box-sizing: border-box;
+}
+
+.bt-step5-drill-pill:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.bt-step5-drill-pill:active {
+  transform: scale(0.97);
+}
+
+.bt-step5-drill-pill:focus-visible {
+  outline: 2.5px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.bt-step5-drill-pill.is-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+}
+
+.bt-step5-drill-pill.is-primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: var(--primary-ink);
+}
+
+/* Journal Rating Tier Filter Strip & Expandable Breakdown Card */
+.bt-journal-rating-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-top: 4px;
+}
+
+.bt-journal-breakdown-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 15px;
+  background: var(--surface-2, var(--bg-subtle));
+  border: 1px solid var(--line);
+  color: var(--ink);
+  box-sizing: border-box;
+}
+
+@media (max-width: 420px) {
+  .bt-step5-drill-pill {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
 }
 
 @media (max-width: 420px) {

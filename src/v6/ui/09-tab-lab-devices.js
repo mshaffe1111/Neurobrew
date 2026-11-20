@@ -281,6 +281,70 @@
     );
   }
 
+  /* ---- v7.3 Plain-English Clarity Helpers (What Box, Dynamic Takeaway, Axis Caption, Acronym Hints) ---- */
+  function labAbbr(term, meaning) {
+    return domH('abbr', { class: 'bt-lab-abbr', title: String(meaning || term) }, String(term || ''));
+  }
+
+  function buildWhatBox(kickerText, children) {
+    const bodyNodes = Array.isArray(children) ? children : [children];
+    return domH('div', { class: 'bt-lab-what-box', role: 'note' },
+      domH('span', { class: 'bt-lab-what-kicker', text: kickerText || 'What this tool does' }),
+      domH('p', { class: 'bt-lab-what-body' }, bodyNodes)
+    );
+  }
+
+  function createTakeawayBox(id, kickerText) {
+    const bodyEl = domH('span', { class: 'bt-lab-takeaway-body', text: '' });
+    const box = domH('div', {
+      class: 'bt-lab-takeaway',
+      id: id || undefined,
+      role: 'status',
+      'aria-live': 'polite'
+    },
+      domH('span', { class: 'bt-lab-takeaway-kicker', text: kickerText || 'What this result means \u2192 ' }),
+      bodyEl
+    );
+    return {
+      el: box,
+      set: function (text, tone) {
+        bodyEl.textContent = String(text || '');
+        const cls = 'bt-lab-takeaway' + (tone ? (' is-' + tone) : '');
+        if (box.className !== cls) box.className = cls;
+      }
+    };
+  }
+
+  function buildAxisCaption(items, opts) {
+    if (CK && typeof CK.createAxisCaptionBar === 'function') {
+      return CK.createAxisCaptionBar(items, opts);
+    }
+    const bar = domH('div', { class: 'bt-axis-caption' });
+    (Array.isArray(items) ? items : []).forEach(function (it) {
+      if (!it) return;
+      if (typeof it === 'string') {
+        bar.appendChild(domH('span', { class: 'bt-axis-caption-item', text: it }));
+      } else {
+        bar.appendChild(domH('span', { class: 'bt-axis-caption-item', title: it.title || undefined },
+          it.kicker ? domH('strong', { text: it.kicker + ': ' }) : null,
+          String(it.text || '')
+        ));
+      }
+    });
+    return bar;
+  }
+
+  function buildStepRibbon(steps) {
+    const row = domH('div', { class: 'bt-lab-step-strip', role: 'list', 'aria-label': 'Quick workflow steps' });
+    (Array.isArray(steps) ? steps : []).forEach(function (st, idx) {
+      const lbl = typeof st === 'string' ? st : (st.text || st.label || '');
+      const tip = (st && typeof st === 'object' && st.title) ? st.title : lbl;
+      const cls = 'bt-lab-step-badge' + ((st && st.cls) ? (' ' + st.cls) : '');
+      row.appendChild(domH('span', { class: cls, role: 'listitem', title: tip }, 'Step ' + (idx + 1) + ': ' + lbl));
+    });
+    return row;
+  }
+
   function getToolModeSafe(key) {
     if (typeof btToolMode === 'function') return btToolMode(key);
     if (sh().btToolMode) return sh().btToolMode(key);
@@ -1285,6 +1349,7 @@
       bagPrice: 20.0,
       bagGrams: 250,
       doseG: 18.0,
+      dialInWasteG: 18.0,
       filterCost: 0.08,
       waterCostPerL: 0.35,
       milkCostPerCup: 0.00,
@@ -1803,6 +1868,7 @@
       'aria-label': 'Pocket Micron Lens optical particle distribution viewport'
     });
     const readoutBox = domH('div', { class: 'bt-micron-readout' });
+    const micronTakeaway = createTakeawayBox('bt-micron-takeaway');
 
     function drawMicronCanvas(res) {
       const ctx = canvas.getContext && canvas.getContext('2d');
@@ -1892,20 +1958,27 @@
           class: 'bt-lab-hint',
           text: 'Place scattered grounds on white paper next to any wallet card (85.60 x 53.98 mm) or coin. Sauvola local thresholding + ellipsoidal volume weighting calibrates your burr zero-point.'
         }));
+        micronTakeaway.set(
+          'Pick your Reference Card/Coin size, set your grinder Dial Step (' + labState.micron.clickVal + ' clicks), then snap a grounds photo or run a test scan to see your median grind size (D50 in microns) and brew-method band.',
+          'info'
+        );
         return;
       }
+      const d50Val = Math.round(r.d50MainUm);
+      const d90Val = Math.round(r.d90BoulderUm || r.d50MainUm * 1.46);
+      const bandName = d50Val < 350 ? 'Fine (Espresso / Moka)' : (d50Val < 500 ? 'Medium-Fine (AeroPress / Fine Filter)' : (d50Val <= 760 ? 'Medium (V60 / Pour-Over)' : 'Medium-Coarse to Coarse (Chemex / French Press)'));
       readoutBox.appendChild(domH('div', { class: 'bt-lab-metric-strip' },
-        domH('div', { class: 'bt-lab-kpi' },
-          domH('span', { text: 'Coarse D50' }),
-          domH('strong', { class: 'num-tab', text: Math.round(r.d50MainUm) + ' um' })
+        domH('div', { class: 'bt-lab-kpi', title: 'Median particle width — half of your grounds are finer and half are coarser than this micron size' },
+          domH('span', null, 'Median ', labAbbr('D50', 'Particle size median in microns (µm) — the middle grind size')),
+          domH('strong', { class: 'num-tab', text: d50Val + ' \u00B5m' })
         ),
-        domH('div', { class: 'bt-lab-kpi' },
-          domH('span', { text: 'Boulder D90' }),
-          domH('strong', { class: 'num-tab', text: Math.round(r.d90BoulderUm || r.d50MainUm * 1.46) + ' um' })
+        domH('div', { class: 'bt-lab-kpi', title: 'Largest 10% of coffee chunks — high boulders can leave cups sour or hollow' },
+          domH('span', null, 'Boulders ', labAbbr('D90', '90th-percentile particle width — the coarsest 10% of grounds')),
+          domH('strong', { class: 'num-tab', text: d90Val + ' \u00B5m' })
         ),
-        domH('div', { class: 'bt-lab-kpi' },
-          domH('span', { text: 'Nyquist 3x3 Floor' }),
-          domH('strong', { class: 'num-tab', text: '>=' + Math.round(r.nyquistFloorUm || 79) + ' um' })
+        domH('div', { class: 'bt-lab-kpi', title: 'Smallest particle width a phone camera can honestly resolve without guessing' },
+          domH('span', { text: 'Camera Detail Floor' }),
+          domH('strong', { class: 'num-tab', text: '>=' + Math.round(r.nyquistFloorUm || 79) + ' \u00B5m' })
         )
       ));
       readoutBox.appendChild(domH('p', {
@@ -1913,6 +1986,11 @@
         text: r.subFloorNote || 'Sub-pixel <85 um espresso fines are never faked optically; use 2 filter-range snaps to lock burr offset & slope.'
       }));
       const hasRealPhoto = !!(r.particleCount && r.particleCount > 0);
+      micronTakeaway.set(
+        'Step ' + labState.micron.clickVal + ' reads ~' + d50Val + ' \u00B5m D50 (' + bandName + ') with boulders up to ' + d90Val + ' \u00B5m. ' +
+        (hasRealPhoto ? 'Real photo verified — tap Save Anchor to lock this exact size onto your grinder!' : 'Reference preview active — upload a real photo on white paper next to your card/coin to lock your grinder calibration.'),
+        hasRealPhoto ? 'good' : 'info'
+      );
       readoutBox.appendChild(domH('button', {
         type: 'button',
         class: 'bt-lab-btn is-primary',
@@ -1968,13 +2046,14 @@
     });
 
     const refPills = [
-      { k: 'card', lbl: 'ISO Card (85.6mm)' },
-      { k: 'quarter', lbl: 'US Quarter (24.3mm)' },
-      { k: 'euro', lbl: '1 Euro (23.3mm)' }
+      { k: 'card', lbl: 'ISO Card (85.6mm)', tip: 'Use any standard credit/debit/ID card (85.6 mm wide) next to your grounds for millimeter calibration' },
+      { k: 'quarter', lbl: 'US Quarter (24.3mm)', tip: 'Use a US Quarter coin (24.26 mm diameter) beside your coffee grounds as the size reference' },
+      { k: 'euro', lbl: '1 Euro (23.3mm)', tip: 'Use a 1 Euro coin (23.25 mm diameter) beside your coffee grounds as the size reference' }
     ].map(function (it) {
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (labState.micron.refType === it.k ? ' is-active' : ''),
+        title: it.tip,
         'aria-pressed': String(labState.micron.refType === it.k),
         onclick: function () {
           labState.micron.refType = it.k;
@@ -1990,6 +2069,7 @@
 
     const clickVernier = CK.vernierPill({
       label: 'Dial Step',
+      title: 'The click or dial number you ground this coffee sample at',
       value: labState.micron.clickVal,
       min: 1,
       max: 90,
@@ -1999,6 +2079,7 @@
       onChange: function (v) {
         labState.micron.clickVal = v;
         if (labState.micron.result) runSyntheticOrRealAnalysis(null);
+        else paintMicronReadout();
       }
     });
 
@@ -2019,23 +2100,48 @@
       ),
       domH('div', { class: 'bt-head-actions' }, micronHow.trigger, epistemicBadge('verified_physics'))
     ));
+    wrap.appendChild(buildWhatBox('What this tool does', [
+      'No laser grind analyzer? Scatter a pinch of dry grounds on white paper next to a standard wallet card or coin (',
+      labAbbr('Reference Card', 'Known physical size — ISO ID-1 card 85.6 mm or coin — so the camera converts pixels into real microns'),
+      ' calibration) to measure your ',
+      labAbbr('D50', 'Median particle width in microns (µm) — half of grounds are finer, half are coarser'),
+      ' grind size and ',
+      labAbbr('PSD', 'Particle Size Distribution — the spread between fine dust and coarse boulders'),
+      ' for your grinder.'
+    ]));
+    wrap.appendChild(buildStepRibbon([
+      { text: 'Scatter grounds beside a card or coin', title: 'Spread a single non-overlapping layer of dry coffee on white paper next to your chosen reference object' },
+      { text: 'Set Dial Step & snap photo', title: 'Match the click number you ground at, then tap Snap / Upload Grounds Photo' },
+      { text: 'Save Anchor to your grinder', title: 'Lock the optical micron anchor into your personal grinder calibration curve' }
+    ]));
     wrap.appendChild(micronHow.panel);
-    wrap.appendChild(domH('div', { class: 'bt-lab-chip-row' }, refPills, clickVernier));
+    wrap.appendChild(domH('div', { class: 'bt-lab-chip-row' },
+      domH('span', { class: 'bt-lab-inline-lbl', text: 'Reference Object:' }),
+      refPills,
+      clickVernier
+    ));
     wrap.appendChild(canvas);
+    wrap.appendChild(buildAxisCaption([
+      { kicker: 'Left Box', text: 'Known card/coin scale reference' },
+      { kicker: 'Right Field', text: 'Segmented coffee particles (µm width)' }
+    ]));
     wrap.appendChild(domH('div', { class: 'bt-lab-btn-row' },
       fileIn,
       domH('button', {
         type: 'button',
         class: 'bt-lab-btn is-primary',
+        title: 'Take or upload a top-down photo of dry coffee grounds beside your card or coin to measure real micron size',
         onclick: function () { fileIn.click(); }
       }, ic('scan-lens', { size: 16 }), domH('span', { text: 'Snap / Upload Grounds Photo' })),
       domH('button', {
         type: 'button',
         class: 'bt-lab-btn',
+        title: 'Preview how the optical particle analyzer segments grounds at your selected Dial Step (demo only; real photo required to save anchor)',
         onclick: function () { runSyntheticOrRealAnalysis(null); }
       }, ic('spark-star', { size: 16 }), domH('span', { text: 'Run Reference Calibration Scan' }))
     ));
     wrap.appendChild(readoutBox);
+    wrap.appendChild(micronTakeaway.el);
 
     drawMicronCanvas(labState.micron.result);
     paintMicronReadout();
@@ -2151,6 +2257,22 @@
       )
     );
     root.appendChild(banner);
+    root.appendChild(buildWhatBox('What these 5 Bluetooth slots do', [
+      'Connect real coffee sensors directly over ',
+      labAbbr('BLE', 'Bluetooth Low Energy — connects straight from Chrome, Edge, or Bluefy on iOS with zero cloud login'),
+      ': Slot 1 streams live pour weight & flow rate, Slot 2 logs espresso puck bar pressure, Slot 3 reads cup strength (',
+      labAbbr('%TDS', 'Total Dissolved Solids — optical cup strength'),
+      '), Slot 4 scans roast color (',
+      labAbbr('Agtron #', 'Roast lightness number: higher = lighter roast, lower = darker'),
+      ') & grind spread (',
+      labAbbr('D50 / PSD', 'Median particle size in microns and Particle Size Distribution'),
+      '), and Slot 5 sends target brew temps or recipes to your kettle/xBloom.'
+    ]));
+    root.appendChild(buildStepRibbon([
+      { text: 'Turn on Bluetooth gear', title: 'Close vendor phone apps first so your scale, R2, Omni, or kettle advertises over BLE' },
+      { text: 'Tap Pair on its slot', title: 'Pick your device slot below (or tap Scan Any BLE if your gear was renamed)' },
+      { text: 'Live data streams to Timer & Lab', title: 'Weight, flow rate, %TDS, Agtron, and D50 auto-sync across every tab' }
+    ]));
 
     /* Helper to construct a slot header with live dot, icon, title, device name & battery % */
     function createSlotHeader(iconName, titleText) {
@@ -2352,6 +2474,7 @@
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
       scaleHead.el,
+      domH('p', { class: 'bt-lab-sub', style: 'margin:0;font-size:0.78rem;', text: 'Streams live pour weight (g) & flow rate (g/s) straight into Step 4 Brew Timer.' }),
       scaleReadout.el,
       domH('p', {
         class: 'bt-ble-slot-fams',
@@ -2430,6 +2553,7 @@
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
       pressureHead.el,
+      domH('p', { class: 'bt-lab-sub', style: 'margin:0;font-size:0.78rem;', text: 'Tracks live espresso grouphead pressure (bar) during pre-infusion & pull.' }),
       pressureReadout.el,
       domH('p', {
         class: 'bt-ble-slot-fams',
@@ -2532,6 +2656,15 @@
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
       r2Head.el,
+      domH('p', { class: 'bt-lab-sub', style: 'margin:0;font-size:0.78rem;' },
+        'Reads optical cup strength (',
+        labAbbr('%TDS', 'Total Dissolved Solids — percentage of dissolved coffee in your cup'),
+        '), ',
+        labAbbr('Brix', 'Sugar-scale optical reading from the prism'),
+        ' & ',
+        labAbbr('nD20', 'Refractive Index at 20 °C — raw light bending reading'),
+        ' and auto-fills Studio 1 & Step 5.'
+      ),
       r2Readout.el,
       domH('p', {
         class: 'bt-ble-slot-fams',
@@ -2636,6 +2769,13 @@
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
       omniHead.el,
+      domH('p', { class: 'bt-lab-sub', style: 'margin:0;font-size:0.78rem;' },
+        'Scans whole-bean & ground roast color (',
+        labAbbr('Agtron #', 'Higher = lighter roast, lower = darker roast'),
+        ') plus grind spread (',
+        labAbbr('D50 / PSD', 'Median particle microns & Particle Size Distribution'),
+        ').'
+      ),
       omniReadout.el,
       domH('p', {
         class: 'bt-ble-slot-fams',
@@ -2815,6 +2955,7 @@
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
       machineHead.el,
+      domH('p', { class: 'bt-lab-sub', style: 'margin:0;font-size:0.78rem;', text: 'Pushes your active recipe target water temp to Fellow Stagg EKG+ or sends the full pour profile to xBloom.' }),
       machineReadout.el,
       domH('div', {
         style: 'display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:10px;background:var(--bg-subtle, #F2EAE0);min-width:0;max-width:100%;box-sizing:border-box;'
@@ -3023,14 +3164,29 @@
             domH('strong', { text: 'DiFluid Cafe & CoffeeOS Zero-CORS Drop / Paste (No API Key)' })
           )
         ),
+        buildWhatBox('What this importer does', [
+          'Paste or drop a DiFluid Cafe CSV, JSON, or share note to auto-fill your measured ',
+          labAbbr('%TDS', 'Total Dissolved Solids — cup strength'),
+          ', ',
+          labAbbr('Agtron #', 'Roast lightness score (higher = lighter)'),
+          ', and ',
+          labAbbr('D50', 'Median coffee grind size in microns'),
+          ' across every Lab studio — no cloud login required.'
+        ]),
+        buildStepRibbon([
+          { text: 'Copy note or export CSV from DiFluid', title: 'Export a CSV/JSON or share summary from the DiFluid Cafe app' },
+          { text: 'Paste text or choose file', title: 'Paste into the box below or tap Choose CSV / JSON' },
+          { text: 'Auto-fills %TDS, Agtron & D50', title: 'Measured values immediately populate Studio 1, Grinder Lab, and Agtron' }
+        ]),
         pasteArea,
         domH('div', { class: 'bt-lab-btn-row' },
           dfFile,
-          domH('button', { type: 'button', class: 'bt-lab-btn is-sm is-primary', onclick: function () { importDiFluidPayload(pasteArea.value); } }, 'Apply Pasted Data'),
-          domH('button', { type: 'button', class: 'bt-lab-btn is-sm', onclick: function () { dfFile.click(); } }, 'Choose CSV / JSON'),
+          domH('button', { type: 'button', class: 'bt-lab-btn is-sm is-primary', title: 'Parse pasted CSV, JSON, or share text and load %TDS / Agtron / D50 into Lab', onclick: function () { importDiFluidPayload(pasteArea.value); } }, 'Apply Pasted Data'),
+          domH('button', { type: 'button', class: 'bt-lab-btn is-sm', title: 'Pick a local DiFluid CSV or JSON export file from your device', onclick: function () { dfFile.click(); } }, 'Choose CSV / JSON'),
           domH('button', {
             type: 'button',
             class: 'bt-lab-btn is-sm',
+            title: 'Load a sample DiFluid R2 + Omni reading so you can preview how optical readings populate the Lab',
             onclick: function () {
               if (typeof dfApi.getDemoDataset === 'function') {
                 const demo = dfApi.getDemoDataset();
@@ -3412,6 +3568,7 @@
 
     const forecastBadgeEl = domH('div', { class: 'bt-flavor-forecast-badge', id: 'bt-bc-flavor-forecast' });
     const summaryEl = domH('div', { class: 'bt-studio-readout-banner' });
+    const bcTakeaway = createTakeawayBox('bt-bc-takeaway');
     const sweetSnapRow = domH('div', { class: 'bt-lab-chip-row' });
     const immersionBasisRow = domH('div', { class: 'bt-lab-chip-row bt-immersion-basis-row' });
     const r2ReconcileBox = domH('div', { class: 'bt-r2-reconcile-card', hidden: true });
@@ -3493,8 +3650,12 @@
         gridG.appendChild(tl);
       }
 
+      const yAxisLbl = CK.svgEl('text', { x: '10', y: '16', 'text-anchor': 'start', class: 'bt-chart-axis-title' });
+      yAxisLbl.textContent = 'Strength (%TDS) \u2191';
+      gridG.appendChild(yAxisLbl);
+
       const xAxisLbl = CK.svgEl('text', { x: (P.L + P.PW * 0.5).toFixed(1), y: 378, 'text-anchor': 'middle', class: 'bt-chart-axis-title' });
-      xAxisLbl.textContent = 'Extraction Yield (% EY)';
+      xAxisLbl.textContent = 'Extraction Yield (%EY) \u00B7 Sour \u2190 \u2192 Bitter';
       gridG.appendChild(xAxisLbl);
 
       /* Iso-Ratio Curves */
@@ -3530,8 +3691,8 @@
         rx: '8',
         class: 'bt-bc-zone-sca'
       }));
-      const zl = CK.svgEl('text', { x: (mapX(18) + 6).toFixed(1), y: (mapY(scaLoTds) - 6).toFixed(1), class: 'bt-bc-zone-lbl' });
-      zl.textContent = d.isEsp ? 'Classic 9-Bar Sweet Zone' : 'SCA Classic (18-22%)';
+      const zl = CK.svgEl('text', { x: (mapX(18) + 6).toFixed(1), y: (mapY(scaLoTds) - 6).toFixed(1), class: 'bt-bc-zone-lbl bt-chart-zone-lbl' });
+      zl.textContent = d.isEsp ? 'Espresso Gold Zone (18\u201322% EY \u00B7 8.5\u201311.5% TDS)' : 'SCA Gold Zone (18\u201322% EY \u00B7 1.15\u20131.45% TDS)';
       zonesG.appendChild(zl);
 
       if (!d.isEsp) {
@@ -3543,6 +3704,9 @@
           rx: '8',
           class: 'bt-bc-zone-nordic'
         }));
+        const nl = CK.svgEl('text', { x: (mapX(19.6) + 6).toFixed(1), y: (mapY(1.50) + 12).toFixed(1), class: 'bt-bc-zone-lbl bt-chart-zone-lbl' });
+        nl.textContent = 'Nordic / High-Clarity Zone';
+        zonesG.appendChild(nl);
       }
 
       /* Channeling / Harsh Over-Extraction Danger Zone */
@@ -3971,6 +4135,30 @@
       if (eyTdsInput && (typeof document === 'undefined' || document.activeElement !== eyTdsInput)) {
         eyTdsInput.value = s.measTds > 0 ? s.measTds.toFixed(2) : '';
       }
+
+      const dNow = getDomains();
+      let bcMsg = '';
+      let bcTone = 'good';
+      if (s.targetEy < 18.0) {
+        bcTone = 'warn';
+        bcMsg = 'At ' + s.targetEy.toFixed(1) + '% EY, water only pulls fast fruit acids — expect a sharp, sour, short-finish cup. Slide the dot right toward 19–21% EY (or grind finer) to unlock caramel sweetness.';
+      } else if (s.targetEy > 22.8) {
+        bcTone = 'bad';
+        bcMsg = 'Past 22.8% EY (' + s.targetEy.toFixed(1) + '%), late-extracting bitter & drying compounds take over. Slide left into the green Balanced Zone (18–22% EY) or grind coarser for a sweeter finish.';
+      } else if (s.targetTds < (dNow.isEsp ? 8.4 : 1.29)) {
+        bcTone = 'good';
+        bcMsg = 'Delicate & Tea-Like (' + s.targetTds.toFixed(2) + '% TDS · 1:' + rec.ratio.toFixed(1) + '): lighter body lets floral & citrus aromatics shine. Weigh ' + rec.doseG.toFixed(1) + ' g coffee and ' + (s.mode === 'espresso' ? ('pull ' + rec.bevG.toFixed(1) + ' g shot.') : ('pour ' + rec.pourG.toFixed(0) + ' g water.'));
+      } else if (s.targetTds > (dNow.isEsp ? 10.9 : 1.46)) {
+        bcTone = 'good';
+        bcMsg = 'Rich & Syrupy (' + s.targetTds.toFixed(2) + '% TDS · 1:' + rec.ratio.toFixed(1) + '): concentrated, velvety mouthfeel while staying cleanly extracted (' + s.targetEy.toFixed(1) + '% EY). Weigh ' + rec.doseG.toFixed(1) + ' g coffee and ' + (s.mode === 'espresso' ? ('pull ' + rec.bevG.toFixed(1) + ' g shot.') : ('pour ' + rec.pourG.toFixed(0) + ' g water.'));
+      } else {
+        bcTone = 'good';
+        bcMsg = 'Right inside the Sweet Spot (' + s.targetEy.toFixed(1) + '% EY · ' + s.targetTds.toFixed(2) + '% TDS · 1:' + rec.ratio.toFixed(1) + '): balanced sweetness, acidity, and body. Weigh ' + rec.doseG.toFixed(1) + ' g coffee and ' + (s.mode === 'espresso' ? ('pull ' + rec.bevG.toFixed(1) + ' g shot.') : ('pour ' + rec.pourG.toFixed(0) + ' g water for ~' + rec.bevG.toFixed(0) + ' g in mug.'));
+      }
+      if (s.measTds > 0) {
+        bcMsg += ' Your measured cup (' + s.measTds.toFixed(2) + '% TDS -> ' + mEyCalc.toFixed(1) + '% EY) is plotted as the diamond pin.';
+      }
+      bcTakeaway.set(bcMsg, bcTone);
     }
 
     let aimCtaSpan = domH('span', { text: 'Brew Aiming Here \u2192' });
@@ -4041,14 +4229,15 @@
 
     /* 1-Tap Style Target Presets */
     const STYLE_PRESETS = [
-      { k: 'floral', lbl: 'Tea-Like & Floral', ey: 19.6, tds: 1.24, espEy: 20.8, espTds: 8.0 },
-      { k: 'juicy', lbl: 'Juicy & Sweet', ey: 20.4, tds: 1.38, espEy: 20.2, espTds: 9.6 },
-      { k: 'syrupy', lbl: 'Rich & Syrupy', ey: 21.0, tds: 1.52, espEy: 19.4, espTds: 11.6 }
+      { k: 'floral', lbl: 'Tea-Like & Floral', ey: 19.6, tds: 1.24, espEy: 20.8, espTds: 8.0, tip: 'Lighter, delicate body with high aroma clarity (1.24% TDS filter / 8.0% TDS turbo espresso)' },
+      { k: 'juicy', lbl: 'Juicy & Sweet', ey: 20.4, tds: 1.38, espEy: 20.2, espTds: 9.6, tip: 'Balanced everyday sweet spot inside the SCA Gold Zone (1.38% TDS filter / 9.6% TDS espresso)' },
+      { k: 'syrupy', lbl: 'Rich & Syrupy', ey: 21.0, tds: 1.52, espEy: 19.4, espTds: 11.6, tip: 'Stronger, fuller-bodied cup with heavy cocoa/toffee texture (1.52% TDS filter / 11.6% TDS ristretto)' }
     ];
     const styleBtns = STYLE_PRESETS.map(function (sp) {
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (s.stylePreset === sp.k ? ' is-active' : ''),
+        title: sp.tip,
         'aria-pressed': String(s.stylePreset === sp.k),
         onclick: function () {
           s.stylePreset = sp.k;
@@ -4068,13 +4257,14 @@
 
     /* Mode Selector Pills */
     const modeBtns = [
-      { k: 'percolation', lbl: 'Filter Percolation' },
-      { k: 'immersion', lbl: 'Steeped / Immersion' },
-      { k: 'espresso', lbl: 'Espresso & Moka' }
+      { k: 'percolation', lbl: 'Filter Percolation', tip: 'Pour-over & drip brewers where hot water flows through a coffee bed (V60, Kalita, Chemex, batch drip)' },
+      { k: 'immersion', lbl: 'Steeped / Immersion', tip: 'Full-steep brewers where grounds sit in water before filtering (French Press, AeroPress, Clever, Switch)' },
+      { k: 'espresso', lbl: 'Espresso & Moka', tip: 'Concentrated high-strength shots (8–12% TDS) brewed under pressure' }
     ].map(function (m) {
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (s.mode === m.k ? ' is-active' : ''),
+        title: m.tip,
         'aria-pressed': String(s.mode === m.k),
         onclick: function () {
           const prevEsp = s.mode === 'espresso';
@@ -4116,12 +4306,13 @@
       const curBasis = (a.prefs && a.prefs.immersionBasis) || 'liang';
       immersionBasisRow.appendChild(domH('span', { class: 'bt-lab-inline-lbl', text: 'Immersion Basis:' }));
       [
-        { k: 'liang', lbl: 'Liang f_abs = 0.00', badge: 'Verified Science', badgeCls: 'is-verified' },
-        { k: 'gagne', lbl: 'Gagne f_abs = 1.00', badge: 'Active Research', badgeCls: 'is-research' }
+        { k: 'liang', lbl: 'Liang f_abs = 0.00', badge: 'Verified Science', badgeCls: 'is-verified', tip: 'Standard immersion math: assumes liquid trapped in grounds has the same strength as your cup' },
+        { k: 'gagne', lbl: 'Gagne f_abs = 1.00', badge: 'Active Research', badgeCls: 'is-research', tip: 'Slurry-absorption model: accounts for slightly stronger liquid trapped inside coffee cells' }
       ].forEach(function (opt) {
         immersionBasisRow.appendChild(domH('button', {
           type: 'button',
           class: 'bt-lab-chip' + (curBasis === opt.k ? ' is-active' : ''),
+          title: opt.tip,
           'aria-pressed': String(curBasis === opt.k),
           onclick: function () {
             a.prefs = a.prefs || {};
@@ -4142,6 +4333,7 @@
     /* ICUMSA nD20 / Brix / %TDS Scrubbable Vernier Row */
     const dosePill = CK.vernierPill({
       label: 'Dose',
+      title: 'Dry coffee beans weighed in grams before grinding',
       value: s.doseG,
       min: 5,
       max: 120,
@@ -4154,6 +4346,7 @@
 
     const tdsPill = CK.vernierPill({
       label: 'Meas %TDS',
+      title: 'Total Dissolved Solids (%) — optical cup strength (higher = heavier/stronger)',
       value: s.measTds || s.targetTds,
       min: 0.50,
       max: 18.0,
@@ -4172,6 +4365,7 @@
 
     const brixPill = CK.vernierPill({
       label: 'ICUMSA Brix',
+      title: 'Refractometer sugar scale (°Bx) — coffee %TDS is ~0.85 × Brix',
       value: brixFromTds(s.targetTds),
       min: 0.50,
       max: 22.0,
@@ -4191,6 +4385,7 @@
 
     const ndPill = CK.vernierPill({
       label: 'nD20',
+      title: 'Refractive Index at 20 °C — raw optical light-bending reading (pure water = 1.3330)',
       value: s.measNd,
       min: 1.3330,
       max: 1.3680,
@@ -4239,6 +4434,7 @@
 
     tempSamplePill = CK.vernierPill({
       label: 'R2 Temp',
+      title: 'Coffee drop temperature on your refractometer prism — cool to 20–25 °C (68–77 °F) before reading',
       value: s.measTempC,
       min: 10.0,
       max: 65.0,
@@ -4447,9 +4643,18 @@
         r2LiveStatusBadge,
         r2ActionBtnsWrap
       ),
+      buildWhatBox('What this refractometer converter does', [
+        'Optional optical check: enter a ',
+        labAbbr('%TDS', 'Total Dissolved Solids — coffee strength measured by a refractometer'),
+        ', ',
+        labAbbr('Brix', 'Sugar-scale reading (°Bx) from standard handheld refractometers; coffee %TDS ≈ 0.85 × Brix'),
+        ', or raw ',
+        labAbbr('nD20', 'Refractive Index at 20 °C — exact light-bending value on the prism'),
+        ' reading to plot your actual cup on the chart and diagnose channeling if the number disagrees with taste.'
+      ]),
       domH('div', { class: 'bt-lab-inline-inputs' },
-        domH('label', { class: 'bt-lab-field-lbl' },
-          domH('span', { text: 'Measured %TDS' }),
+        domH('label', { class: 'bt-lab-field-lbl', title: 'Measured Total Dissolved Solids (%) from your refractometer' },
+          domH('span', null, 'Measured ', labAbbr('%TDS', 'Total Dissolved Solids — coffee strength')),
           eyTdsInput
         ),
         eyLiveReadoutEl
@@ -4515,6 +4720,13 @@
       ),
       domH('div', { class: 'bt-head-actions' }, bcHow.trigger, epistemicBadge('verified_physics'))
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Drag the target dot to balance ',
+      labAbbr('Strength (%TDS)', 'Total Dissolved Solids — how light/tea-like or heavy/syrupy the coffee feels in your mouth'),
+      ' vs ',
+      labAbbr('Extraction (%EY)', 'Extraction Yield — what percent of dry coffee grounds dissolved into the cup'),
+      ' — find why your cup tastes sour, hollow, rich, or bitter, and compute the exact coffee & water weights to hit it.'
+    ]));
     card.appendChild(bcHow.panel);
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' }, modeBtns));
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
@@ -4526,8 +4738,13 @@
     card.appendChild(sweetSnapRow);
     card.appendChild(pinLegendRow);
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, svg));
+    card.appendChild(buildAxisCaption([
+      { kicker: 'X-Axis (%EY)', text: 'Left: Under-Extracted / Sour \u2194 Right: Over-Extracted / Bitter', title: 'Extraction Yield (%EY): how much flavor was pulled from the coffee grounds' },
+      { kicker: 'Y-Axis (%TDS)', text: 'Down: Lighter / Tea-Like \u2194 Up: Stronger / Syrupy', title: 'Total Dissolved Solids (%TDS): cup concentration / body' }
+    ], { ariaLabel: 'Brew Control Chart Axis Guide' }));
     card.appendChild(forecastBadgeEl);
     card.appendChild(summaryEl);
+    card.appendChild(bcTakeaway.el);
     card.appendChild(domH('div', { class: 'bt-chart-cta-bar' }, aimBtn, aimSubSpan));
     if (r2ToggleHint) card.appendChild(r2ToggleHint);
     card.appendChild(r2Section);
@@ -4581,6 +4798,7 @@
     );
 
     const readoutBar = domH('div', { class: 'bt-studio-readout-banner' });
+    const waveTakeaway = createTakeawayBox('bt-wave-takeaway');
 
     const L = 42, R = 426, PW = 384;
     const T1 = 16, B1 = 162, PH1 = 146;
@@ -4834,13 +5052,20 @@
         ctx.lineWidth = 1.8;
         ctx.stroke();
 
-        /* Axis Captions */
+        /* Axis Captions & Time X-Axis Ticks */
         ctx.fillStyle = isDark ? '#CEBDA1' : '#534034';
         ctx.font = '600 9.5px ui-monospace, monospace';
         ctx.fillText(Math.round(sim.maxM) + 'g', 4, T1 + 9);
         ctx.fillText('0g', 16, B1);
-        ctx.fillText('98C', R - 24, T1 + 9);
+        ctx.fillText('98\u00B0C', R - 28, T1 + 9);
         ctx.fillText('g/s', 12, T2 + 11);
+        const tickStep = sim.maxT > 200 ? 60 : 45;
+        ctx.textAlign = 'center';
+        for (let tTick = 0; tTick <= sim.maxT; tTick += tickStep) {
+          const tickX = clamp(tx(tTick), L + 12, R - 12, tx(tTick));
+          ctx.fillText(fmtMmSs(tTick), tickX, B2 + 14);
+        }
+        ctx.textAlign = 'left';
         ctx.restore();
       }
 
@@ -4873,6 +5098,15 @@
       const earlyDeltaSec = Math.max(0, Math.round(endDrainSec - cutSec));
 
       /* Tactile Draggable Emerald Cutoff Gate Handle right on the chart (shifted 14px lower & clamped clear of axis labels) */
+      const sweetZoneLbl = CK.svgEl('text', {
+        x: (L + PW * 0.48).toFixed(1),
+        y: (T1 + 14).toFixed(1),
+        'text-anchor': 'middle',
+        class: 'bt-chart-zone-lbl is-good'
+      });
+      sweetZoneLbl.textContent = 'Sweet Spot Band (Wave 2 Sugars)';
+      cutoffHandleG.appendChild(sweetZoneLbl);
+
       const cutHandleX = txSvg(cutSec);
       const cutPillX = clamp(cutHandleX, L + 46, R - 48, cutHandleX);
       const cutKnob = CK.svgEl('g', { transform: 'translate(' + cutPillX.toFixed(1) + ',' + (T1 + 42).toFixed(1) + ')' });
@@ -4912,6 +5146,18 @@
           class: 'bt-studio-xray-line',
           text: 'Polarity Kinetics & First-Law Open-CV Calorimetry \u00B7 Wave 1 Bright Acids ' + Math.round(sp.yA * 100) + '% · Wave 2 Sweet Sugars ' + Math.round(sp.yS * 100) + '% · Wave 3 Dry Bitters ' + Math.round(sp.yB * 100) + '% — drag Cutoff Gate pill or diamond pour knots.'
         }));
+      }
+      if (earlyDeltaSec > 0) {
+        waveTakeaway.set(
+          'Lifting the dripper ' + earlyDeltaSec + 's early at ' + fmtMmSs(cutSec) + ' (~' + pullCarafeG + ' g in carafe) skips the bitter late tail — blocking ' +
+          bittersBlockedPct + '% of Wave 3 dry bitters while preserving ' + sugarsKeptPct + '% of sweet sugars (slurry ' + fmtTempPref(sp.tempC, 1) + ').',
+          bittersBlockedPct >= 15 ? 'good' : 'info'
+        );
+      } else {
+        waveTakeaway.set(
+          'Full drain to ' + fmtMmSs(cutSec) + ' (~' + pullCarafeG + ' g in carafe) extracts maximum strength, including late Wave 3 bitters — slide the green Cutoff Gate 10–20s left if your cup finishes dry or astringent.',
+          'warn'
+        );
       }
     }
 
@@ -5018,14 +5264,15 @@
     });
 
     const matPills = [
-      { k: 'plastic', lbl: 'Plastic V60 (51 J/K)' },
-      { k: 'glass', lbl: 'Glass (100 J/K)' },
-      { k: 'ceramic', lbl: 'Ceramic (177 J/K)' },
-      { k: 'vacuum', lbl: 'Vacuum SS (14 J/K)' }
+      { k: 'plastic', lbl: 'Plastic V60 (51 J/K)', tip: 'Low thermal mass — absorbs very little heat from your brew slurry' },
+      { k: 'glass', lbl: 'Glass (100 J/K)', tip: 'Medium thermal mass — give a quick hot rinse before brewing' },
+      { k: 'ceramic', lbl: 'Ceramic (177 J/K)', tip: 'High thermal mass — steals 4–6 °C if not preheated with hot water' },
+      { k: 'vacuum', lbl: 'Vacuum SS (14 J/K)', tip: 'Insulated steel — holds slurry heat steady throughout drawdown' }
     ].map(function (m) {
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (w.material === m.k ? ' is-active' : ''),
+        title: m.tip,
         'aria-pressed': String(w.material === m.k),
         onclick: function () {
           w.material = m.k;
@@ -5041,13 +5288,14 @@
     });
 
     const prePills = [
-      { k: 'cold', lbl: 'Cold Dripper' },
-      { k: 'warm', lbl: 'Tap Warm' },
-      { k: 'boiling', lbl: 'Boiling Rinse' }
+      { k: 'cold', lbl: 'Cold Dripper', tip: 'Room-temp unheated dripper — steals heat from the bloom' },
+      { k: 'warm', lbl: 'Tap Warm', tip: 'Rinsed with warm tap water (~35 °C) — halves heat loss' },
+      { k: 'boiling', lbl: 'Boiling Rinse', tip: 'Preheated with boiling kettle water — preserves maximum slurry heat' }
     ].map(function (pr) {
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (w.preheat === pr.k ? ' is-active' : ''),
+        title: pr.tip,
         'aria-pressed': String(w.preheat === pr.k),
         onclick: function () {
           w.preheat = pr.k;
@@ -5079,11 +5327,28 @@
       ),
       domH('div', { class: 'bt-head-actions' }, waveHow.trigger, epistemicBadge('calibrated_biophysics'))
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Coffee compounds dissolve in 3 waves: ',
+      domH('strong', { text: '1. Bright Acids' }),
+      ' extract first, ',
+      domH('strong', { text: '2. Sweet Sugars' }),
+      ' peak in the middle, and ',
+      domH('strong', { text: '3. Dry Bitters' }),
+      ' creep in during the final seconds of drawdown. Adjust kettle temp, ',
+      labAbbr('Grind D50', 'Median particle size in microns (µm) — finer slows drawdown and extracts faster'),
+      ', or drag the green Cutoff Gate to stop the brew before bitters take over.'
+    ]));
     card.appendChild(waveHow.panel);
-    card.appendChild(domH('div', { class: 'bt-lab-chip-row' }, matPills));
-    card.appendChild(domH('div', { class: 'bt-lab-chip-row' }, prePills,
+    card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
+      domH('span', { class: 'bt-lab-inline-lbl', text: 'Dripper Body:' }),
+      matPills
+    ));
+    card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
+      domH('span', { class: 'bt-lab-inline-lbl', text: 'Preheat:' }),
+      prePills,
       CK.vernierPill({
         label: 'Kettle',
+        title: 'Water temperature leaving your kettle — hotter water extracts faster and pulls late bitters sooner',
         value: w.kettleC,
         min: 80,
         max: 100,
@@ -5096,6 +5361,7 @@
       }),
       CK.vernierPill({
         label: 'Grind D50',
+        title: 'Median coffee particle width in microns (µm) — finer (<500 µm) slows flow and boosts extraction; coarser (>700 µm) drains faster',
         value: w.d50Um,
         min: 200,
         max: 1100,
@@ -5107,6 +5373,10 @@
     ));
     card.appendChild(waveLegendBar);
     card.appendChild(stage);
+    card.appendChild(buildAxisCaption([
+      { kicker: 'X-Axis (Brew Time)', text: 'Left: 0:00 Bloom (Acids) \u2192 Mid: Main Pour (Sugars) \u2192 Right: Final Drain (Bitters)' },
+      { kicker: 'Y-Axis', text: 'Top: Pour Weight (g) & Slurry Temp (°C) · Bottom Band: Pour Flow Rate (g/s)' }
+    ], { ariaLabel: '3-Wave Chart Axis Guide' }));
     card.appendChild(domH('div', { class: 'bt-cutoff-scrubber-box' },
       domH('div', { class: 'bt-cutoff-head' },
         cutoffLblEl,
@@ -5114,6 +5384,7 @@
           domH('button', {
             type: 'button',
             class: 'bt-lab-chip',
+            title: 'Lift the dripper 15 seconds before the final drain to skip Wave 3 bitter/astringent tail',
             onclick: function () {
               w.cutoffSec = Math.max(75, w.knots[w.knots.length - 1].t - 15);
               w.scrubT = w.cutoffSec;
@@ -5124,6 +5395,7 @@
           domH('button', {
             type: 'button',
             class: 'bt-lab-chip',
+            title: 'Let every drop finish draining into the carafe for maximum body and strength',
             onclick: function () {
               w.cutoffSec = w.knots[w.knots.length - 1].t;
               w.scrubT = w.cutoffSec;
@@ -5136,6 +5408,7 @@
       cutoffRangeEl
     ));
     card.appendChild(readoutBar);
+    card.appendChild(waveTakeaway.el);
     function resolveWaveTargetGrindUm(a, waveUm) {
       const mLow = String((a && a.brew && a.brew.method) || '').toLowerCase();
       const isEspLike = mLow === 'espresso' || mLow === 'lever_espresso' || mLow === 'turkish';
@@ -5227,6 +5500,7 @@
     const mr = labState.mugRescue;
     const card = domH('section', { class: 'bt-studio-card', id: 'bt-studio-mug-rescue' });
     const verdictBox = domH('div', { class: 'bt-mug-rescue-verdict' });
+    const mugTakeaway = createTakeawayBox('bt-mug-takeaway');
     const mugSvg = CK.svgEl('svg', {
       viewBox: '0 0 460 148',
       class: 'bt-chart-svg bt-mug-rescue-svg',
@@ -5236,11 +5510,11 @@
     mugSvg.appendChild(mugG);
 
     const symptoms = [
-      { k: 'bitter', lbl: 'Too Bitter / Harsh' },
-      { k: 'sour', lbl: 'Too Sour / Sharp' },
-      { k: 'strong', lbl: 'Too Strong / Heavy' },
-      { k: 'sour_bitter', lbl: 'Sour + Bitter (Channeled)' },
-      { k: 'weak', lbl: 'Too Weak / Watery' }
+      { k: 'bitter', lbl: 'Too Bitter / Harsh', tip: 'Cup tastes dry, roasty, or harsh — calculates exact hot bypass water & saline drops to calm bitterness' },
+      { k: 'sour', lbl: 'Too Sour / Sharp', tip: 'Cup tastes sharp, lemony, or under-extracted — calculates gentle cooling/saline & next-brew finer grind' },
+      { k: 'strong', lbl: 'Too Strong / Heavy', tip: 'Cup tastes syrupy or overly intense — calculates exact 80 °C hot water dilution to hit balanced %TDS' },
+      { k: 'sour_bitter', lbl: 'Sour + Bitter (Channeled)', tip: 'Both sharp and drying at once from uneven water channeling — balances the mug now and fixes pour agitation' },
+      { k: 'weak', lbl: 'Too Weak / Watery', tip: 'Cup tastes thin or hollow — avoids adding water and guides cooling + tighter ratio next brew' }
     ];
 
     let tdsRescuePill = null;
@@ -5248,6 +5522,7 @@
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (mr.symptom === sy.k ? ' is-active' : ''),
+        title: sy.tip,
         'aria-pressed': String(mr.symptom === sy.k),
         onclick: function () {
           mr.symptom = sy.k;
@@ -5290,6 +5565,7 @@
     const milkToggle = domH('button', {
       type: 'button',
       class: 'bt-lab-chip' + (mr.milkAllowed ? ' is-active' : ''),
+      title: 'Include a splash of warm milk or oat milk to bind bitter tannins and soften sharp acidity',
       'aria-pressed': String(mr.milkAllowed),
       onclick: function () {
         mr.milkAllowed = !mr.milkAllowed;
@@ -5347,6 +5623,15 @@
       mugG.appendChild(c3);
 
       verdictBox.textContent = '';
+      const rescueSteps = [];
+      if (res.bypass80CG > 0) rescueSteps.push('stir in +' + res.bypass80CG + ' g hot water (~80 °C) to soften concentration');
+      if (res.saline20Drops > 0) rescueSteps.push('add ' + res.saline20Drops + ' drops 20% saline (or a tiny pinch of salt) to mute bitter receptors');
+      if (mr.milkAllowed && res.warmMilk60CG > 0) rescueSteps.push('fold in +' + res.warmMilk60CG + ' g warm milk/oat to bind harsh tannins');
+      if (!rescueSteps.length) rescueSteps.push('let the mug cool 2–3 minutes toward 55–58 °C (131–136 °F) so your tongue tastes sweetness instead of heat');
+      mugTakeaway.set(
+        'Right now in your ' + Math.round(res.mugG) + ' g mug: ' + rescueSteps.join(', then ') + '. Next brew: ' + res.nextBrewFix,
+        mr.symptom === 'weak' ? 'info' : 'good'
+      );
       verdictBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
         domH('div', { class: 'bt-studio-human-line' }, domH('strong', { text: res.headline })),
         domH('p', { class: 'bt-lab-hint', text: res.why }),
@@ -5416,9 +5701,18 @@
       ),
       epistemicBadge('verified_physics')
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Already poured a sour, weak, or bitter mug? Pick what it tastes like below for an instant at-table fix (hot bypass water, a drop of saline to quiet bitterness, warm milk, or cooling time) — without tossing the cup.'
+    ]));
+    card.appendChild(buildStepRibbon([
+      { text: 'Pick how your mug tastes', title: 'Tap the taste symptom that matches your cup right now' },
+      { text: 'Enter mug weight (g)', title: 'Estimate or weigh the coffee currently sitting in your mug' },
+      { text: 'Follow the instant fix', title: 'Apply hot bypass water, saline drops, or save the next-brew adjustment' }
+    ]));
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' }, symBtns));
     tdsRescuePill = CK.vernierPill({
       label: 'Est. %TDS',
+      title: 'Estimated coffee strength (% Total Dissolved Solids) — auto-adjusted for your chosen taste symptom',
       value: mr.tdsPct,
       min: 0.70,
       max: 12.0,
@@ -5429,7 +5723,7 @@
       onChange: function (v) { mr.tdsPct = v; paintMugRescue(); }
     });
     card.appendChild(domH('div', { class: 'bt-lab-inline-inputs' },
-      domH('label', { class: 'bt-lab-field-lbl' },
+      domH('label', { class: 'bt-lab-field-lbl', title: 'How much brewed coffee is currently sitting in your mug (typical mug ≈ 220–250 g)' },
         domH('span', { text: 'Cup in Mug (g)' }),
         mugWeightIn
       ),
@@ -5438,6 +5732,7 @@
     ));
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, mugSvg));
     card.appendChild(verdictBox);
+    card.appendChild(mugTakeaway.el);
     paintMugRescue();
     return card;
   }
@@ -5478,6 +5773,7 @@
     svg.appendChild(tokensG);
 
     const readoutBanner = domH('div', { class: 'bt-studio-readout-banner' });
+    const pkTakeaway = createTakeawayBox('bt-pk-takeaway');
     const safeSipHero = domH('div', { class: 'bt-pk-safesip-hero', id: 'bt-pk-safesip-hero' });
       const scheduleSummaryPill = domH('div', {
         class: 'bt-pk-daily-schedule-pill num-tab',
@@ -5626,6 +5922,15 @@
       };
 
       bgG.appendChild(CK.svgEl('rect', { x: P.L, y: P.T, width: P.PW, height: P.PH, rx: '12', class: 'bt-chart-plot-bg' }));
+      const pkYLbl = CK.svgEl('text', { x: '6', y: (P.T + 8).toFixed(1), 'text-anchor': 'start', class: 'bt-chart-tick' });
+      pkYLbl.textContent = 'mg \u2191';
+      bgG.appendChild(pkYLbl);
+      const pkYMaxLbl = CK.svgEl('text', { x: (P.L - 5).toFixed(1), y: (P.T + 18).toFixed(1), 'text-anchor': 'end', class: 'bt-chart-tick' });
+      pkYMaxLbl.textContent = Math.round(maxMgY);
+      bgG.appendChild(pkYMaxLbl);
+      const pkYZeroLbl = CK.svgEl('text', { x: (P.L - 5).toFixed(1), y: P.B.toFixed(1), 'text-anchor': 'end', class: 'bt-chart-tick' });
+      pkYZeroLbl.textContent = '0';
+      bgG.appendChild(pkYZeroLbl);
 
       /* GMT Day / Night Horological 24-Tick Solar-Lunar Bezel Strip */
       const wakeX = P.L + clamp((pk.wakeHour - t0) / 24, 0, 1, 0.05) * P.PW;
@@ -5748,9 +6053,9 @@
       const threshLbl = CK.svgEl('text', {
         x: (P.L + 6).toFixed(1),
         y: Math.max(P.T + 12, gateY - 4).toFixed(1),
-        class: 'bt-pk-thresh-lbl num-tab'
+        class: 'bt-pk-thresh-lbl bt-chart-zone-lbl num-tab'
       });
-      threshLbl.textContent = 'Bedtime Threshold (' + pk.swsGateMg + ' mg)';
+      threshLbl.textContent = 'Peak Daily Tolerance \u00B7 Bedtime Gate (' + pk.swsGateMg + ' mg)';
       gateG.appendChild(threshLbl);
 
       /* Last Safe Sip Flagpole */
@@ -5880,7 +6185,7 @@
         class: 'bt-pk-sched-item',
         style: 'display:flex;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;background:var(--surface, #FFFFFF);border:1px solid var(--line-hairline, rgba(28,19,14,0.09));min-width:0;'
       },
-        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Bed Gate (' + fmtClock(bed) + ')' }),
+        domH('span', { style: 'font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted, #6E5849);', text: 'Bedtime Gate (' + fmtClock(bed) + ')' }),
         domH('strong', {
           style: 'font-size:0.84rem;line-height:1.25;color:' + (gatePass ? 'var(--good, #1B6341)' : 'var(--bad, #A1231F)') + ';',
           text: gateRemainingText
@@ -5904,6 +6209,21 @@
             (pk.steadyState ? 'Infinite 24h Periodic Steady-State' : 'Single-Day Impulse') +
             '  ·  Midday Cp = ' + midDayBorb.cpMgL.toFixed(2) + ' mg/L (~' + midDayBorb.a1OccupancyPct.toFixed(1) + '% A1AR occupancy, Elmenhorst 2012)'
         }));
+      }
+      if (gatePass) {
+        pkTakeaway.set(
+          'At your ' + cyp.label + ' metabolism speed (' + cyp.halfLifeH.toFixed(1) + 'h half-life), only ~' + Math.round(bedMg) +
+          ' mg remains at ' + fmtClock(bed) + ' bedtime (under your ' + pk.swsGateMg + ' mg deep-sleep gate). Finish any extra full cup by ' +
+          fmtSafeSip(cutoffRefFlag) + ' (or half-caf by ' + fmtSafeSip(cutoffEspFlag) + ').',
+          'good'
+        );
+      } else {
+        pkTakeaway.set(
+          'Sleep Alert: ~' + Math.round(bedMg) + ' mg caffeine will still be active at ' + fmtClock(bed) +
+          ' (' + Math.abs(gateHeadroomMg) + ' mg above your ' + pk.swsGateMg + ' mg deep-sleep limit with a ' + cyp.halfLifeH.toFixed(1) +
+          'h half-life). Tap Auto-Slide below to move cups earlier, or switch your afternoon cup to Half-Caf / Decaf.',
+          'warn'
+        );
       }
       paintCupInspector();
     }
@@ -6055,9 +6375,11 @@
         ? 'Slow Metabolizer'
         : (cp.key === 'pregnancy' ? 'Pregnancy' : cp.label);
       const dispLbl = (isScienceXray() ? cp.label : comfyLbl) + ' (' + cp.halfLifeH + 'h)';
+      const tipTxt = cp.label + ': caffeine half-life ~' + cp.halfLifeH + ' hours (time for your liver to clear half of a dose; daily cap ' + cp.dailyCapMg + ' mg)';
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (pk.cypKey === cp.key ? ' is-active' : ''),
+        title: tipTxt,
         'aria-pressed': String(pk.cypKey === cp.key),
         onclick: function () {
           pk.cypKey = cp.key;
@@ -6232,6 +6554,11 @@
         domH('strong', { text: 'CafCup Planner — 16 Cafe & Home Drinks + Scoop-vs-Scale Trap' })
       )
     ));
+    cafCupCard.appendChild(buildWhatBox('What this lookup does', [
+      'Pick any cafe or home drink to see its caffeine mg and exact cutoff time, or toggle ',
+      domH('strong', { text: 'Scoop vs Scale Trap' }),
+      ' to see why 2 scoops of dense light-roast beans pack +41% more caffeine than dark roast.'
+    ]));
     cafCupCard.appendChild(domH('div', { class: 'bt-lab-inline-inputs' }, drinkSel, scoopToggle));
     cafCupCard.appendChild(domH('div', { class: 'bt-lab-chip-row' }, roastDensityBtns));
     cafCupCard.appendChild(cafCupOut);
@@ -6252,16 +6579,28 @@
       ),
       domH('div', { class: 'bt-head-actions' }, pkHow.trigger, epistemicBadge('verified_physics'))
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Models how long caffeine stays active in your bloodstream to find your exact ',
+      domH('strong', { text: 'Last Safe Sip' }),
+      ' cutoff before bed. Choose your ',
+      labAbbr('CYP1A2', 'The liver enzyme gene that sets your caffeine half-life: Fast ~3h, Normal/Typical ~5h, Slow ~6.8h, Oral Contraceptives ~9h, Pregnancy ~13h'),
+      ' metabolism speed (how many hours it takes to clear half a dose), then drag cup pills left/right along the bottom track.'
+    ]));
     card.appendChild(pkHow.panel);
     card.appendChild(safeSipHero);
     card.appendChild(scheduleSummaryPill);
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
-      domH('span', { class: 'bt-lab-inline-lbl', text: 'Caffeine Metabolism Speed:' }),
+      domH('span', { class: 'bt-lab-inline-lbl', title: 'CYP1A2 liver gene speed — sets your caffeine half-life (hours to drop by 50%)' }, 'Metabolism Speed (', labAbbr('CYP1A2', 'Fast / Normal / Slow caffeine gene metabolism'), '):'),
       cypBtns,
       steadyBtn
     ));
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, svg));
+    card.appendChild(buildAxisCaption([
+      { kicker: 'X-Axis (24h Clock)', text: 'Wake \u2192 Daytime Peak Focus \u2192 Shaded Sleep Curtain (drag cup pills on bottom bar)' },
+      { kicker: 'Curves', text: 'Green = Alertness · Amber = Active Caffeine (mg) · Dashed Line = Deep-Sleep Bedtime Limit' }
+    ], { ariaLabel: 'Caffeine Timeline Axis Guide' }));
     card.appendChild(readoutBanner);
+    card.appendChild(pkTakeaway.el);
     card.appendChild(domH('div', { class: 'bt-lab-chip-row bt-pk-drink-adder-row' },
       domH('span', { class: 'bt-lab-inline-lbl', text: 'Add Drink:' }),
       quickDrops
@@ -6318,6 +6657,7 @@
     svg.appendChild(dropG);
 
     const readoutBanner = domH('div', { class: 'bt-studio-readout-banner' });
+    const waterTakeaway = createTakeawayBox('bt-water-takeaway');
     const recipeDeck = domH('div', { class: 'bt-wt-recipe-deck' });
 
     function redrawWater() {
@@ -6340,12 +6680,14 @@
         width: (mapX(40) - mapX(15)).toFixed(1), height: (mapY(45) - mapY(100)).toFixed(1),
         rx: '8', class: 'bt-wt-zone-nordic'
       }));
+      zonesG.appendChild(CK.svgZoneLabel(mapX(15) + 4, mapY(100) + 12, 'Ideal 40\u201380 GH \u00B7 20\u201340 KH', { cls: 'is-good' }));
       /* 3. SCA 102-2024 Sweet Spot (KH 40-75, GH 50-175) */
       zonesG.appendChild(CK.svgEl('rect', {
         x: mapX(40).toFixed(1), y: mapY(175).toFixed(1),
         width: (mapX(75) - mapX(40)).toFixed(1), height: (mapY(50) - mapY(175)).toFixed(1),
         rx: '8', class: 'bt-wt-zone-sca'
       }));
+      zonesG.appendChild(CK.svgZoneLabel((mapX(40) + mapX(75)) * 0.5, mapY(175) + 13, 'SCA Sweet Spot', { anchor: 'middle' }));
       /* 4. RPavlis Zero-Scale Strip (KH 35-65, GH 0-10) */
       zonesG.appendChild(CK.svgEl('rect', {
         x: mapX(35).toFixed(1), y: mapY(10).toFixed(1),
@@ -6370,8 +6712,12 @@
         tl.textContent = wt.unitDh ? (g / 17.848).toFixed(1) : String(g);
         zonesG.appendChild(tl);
       }
+      const yl = CK.svgEl('text', { x: '10', y: '16', 'text-anchor': 'start', class: 'bt-chart-axis-title' });
+      yl.textContent = wt.unitDh ? 'Hardness (dGH) \u2191' : 'Total Hardness GH (ppm) \u2191';
+      zonesG.appendChild(yl);
+
       const xl = CK.svgEl('text', { x: (P.L + P.PW * 0.5).toFixed(1), y: 300, 'text-anchor': 'middle', class: 'bt-chart-axis-title' });
-      xl.textContent = wt.unitDh ? 'Alkalinity Buffer (dKH)' : 'Alkalinity Buffer KH (ppm as CaCO3)';
+      xl.textContent = wt.unitDh ? 'Alkalinity Buffer (dKH) \u00B7 Bright \u2190 \u2192 Flat' : 'Alkalinity Buffer KH (ppm) \u00B7 Bright \u2190 \u2192 Flat';
       zonesG.appendChild(xl);
 
       /* Dynamic Temperature- & Calcium-Coupled Limescale Hyperbola
@@ -6434,6 +6780,28 @@
             spec.clMgL + ' mg/L ' + (spec.pittingRisk ? '(>35 mg/L SS Pitting Alert!)' : '(<35 safe)') +
             '  ·  Ca*KH_carb = ' + spec.caCarbProduct
         }));
+      }
+      const tapPct = Math.round(spec.fTap * 100);
+      const roPct = Math.max(0, 100 - tapPct);
+      if (wt.tapBlendOn) {
+        waterTakeaway.set(
+          spec.tapExceedsTarget
+            ? ('Tap water (' + Math.round(wt.ghTap) + ' GH / ' + Math.round(wt.khTap) + ' KH) cannot reach your target by dilution alone — blending ' + tapPct + '% Tap (' + spec.tapMl + ' mL) + ' + roPct + '% RO (' + spec.roMl + ' mL) lands at ' + Math.round(spec.blendedGh) + ' GH / ' + Math.round(spec.blendedKh) + ' KH.')
+            : ('Mix ' + tapPct + '% Tap (' + spec.tapMl + ' mL) + ' + roPct + '% RO/ZeroWater (' + spec.roMl + ' mL) to hit ' + Math.round(wt.kh) + ' ppm KH buffer' + (spec.epsomBoostPpm > 2 ? (' and add +' + spec.epsomBoostPpm + ' ppm Epsom Mg²⁺ for fruit sweetness') : '') + ' — boiler scale risk: ' + spec.scaleRisk.toUpperCase() + '.'),
+          spec.tapExceedsTarget || spec.scaleRisk === 'severe' ? 'warn' : 'good'
+        );
+      } else if (wt.gh === 0 && wt.kh === 0) {
+        waterTakeaway.set(
+          'Pure 0 ppm RO/Distilled water has no flavor-binding minerals (GH) or acid buffer (KH) — use the mineral drops/salts below or blend 30–50% tap water so your cup does not taste sharp and hollow.',
+          'warn'
+        );
+      } else {
+        const khTone = wt.kh > 75 ? 'high KH will flatten bright fruit notes into a chalky finish' : (wt.kh < 20 ? 'low KH lets bright, sparkling fruit acidity shine' : 'balanced KH smooths sharp sourness without muting flavor');
+        const ghTone = wt.gh < 30 ? 'very soft GH produces a light, delicate cup' : (wt.gh > 150 ? 'heavy GH risks chalkiness & kettle scale' : ('moderate GH (' + Math.round(wt.mgShare * 100) + '% Mg²⁺) grips sweet & fruity aromatics'));
+        waterTakeaway.set(
+          'At ' + Math.round(wt.gh) + ' ppm GH and ' + Math.round(wt.kh) + ' ppm KH: ' + ghTone + '; ' + khTone + '. Kettle scale risk: ' + spec.scaleRisk.toUpperCase() + '.',
+          spec.scaleRisk === 'severe' || wt.kh > 85 ? 'warn' : 'good'
+        );
       }
 
       recipeDeck.textContent = '';
@@ -6535,15 +6903,16 @@
 
       /* 1-Tap WaterQuickFixer Presets */
       const vibePresets = [
-        { lbl: 'Nordic Clarity (55/20)', gh: 55, kh: 20, mg: 0.75, khSalt: 'khco3' },
-        { lbl: 'SCA Sweet Spot (70/35)', gh: 70, kh: 35, mg: 0.65, khSalt: 'khco3' },
-        { lbl: 'RPavlis Boiler-Safe (0/45)', gh: 0, kh: 45, mg: 1.0, khSalt: 'khco3' },
-        { lbl: 'Citrate Clarity (65/45 Cit)', gh: 65, kh: 45, mg: 0.70, khSalt: 'k3cit' },
-        { lbl: 'Evian 2-Bottle Mix', gh: 307, kh: 295, tap: true }
+        { lbl: 'Nordic Clarity (55/20)', gh: 55, kh: 20, mg: 0.75, khSalt: 'khco3', tip: 'Light-roast pour-over favorite: low 20 ppm buffer preserves sparkling fruit acidity with 75% Magnesium' },
+        { lbl: 'SCA Sweet Spot (70/35)', gh: 70, kh: 35, mg: 0.65, khSalt: 'khco3', tip: 'Official Specialty Coffee Association balanced all-rounder for pour-over & espresso' },
+        { lbl: 'RPavlis Boiler-Safe (0/45)', gh: 0, kh: 45, mg: 1.0, khSalt: 'khco3', tip: 'Zero-calcium espresso machine water — 100% scale-free protection for home boilers' },
+        { lbl: 'Citrate Clarity (65/45 Cit)', gh: 65, kh: 45, mg: 0.70, khSalt: 'k3cit', tip: 'Scale-free Potassium Citrate buffer that softens sharp acids without chalky flatness' },
+        { lbl: 'Evian 2-Bottle Mix', gh: 307, kh: 295, tap: true, tip: 'Simulates blending mineral-rich Evian (307 GH / 295 KH) with Distilled/RO water for instant travel brew water' }
       ].map(function (vp) {
         return domH('button', {
           type: 'button',
           class: 'bt-lab-chip',
+          title: vp.tip,
           onclick: function () {
             if (vp.tap) {
               wt.tapBlendOn = true;
@@ -6571,14 +6940,15 @@
       });
 
       const khSaltPills = [
-        { k: 'khco3', lbl: 'KHCO3' },
-        { k: 'nahco3', lbl: 'NaHCO3' },
-        { k: 'k3cit', lbl: 'K3Citrate (pH 5.0 0.45x)' },
-        { k: 'na3cit', lbl: 'Na3Citrate' }
+        { k: 'khco3', lbl: 'KHCO3', tip: 'Potassium Bicarbonate — clean acid buffer with zero salty sodium' },
+        { k: 'nahco3', lbl: 'NaHCO3', tip: 'Baking Soda (Sodium Bicarbonate) — easy kitchen buffer; adds trace sodium' },
+        { k: 'k3cit', lbl: 'K3Citrate (pH 5.0 0.45x)', tip: 'Potassium Citrate — buffers acid gently without causing boiler limescale' },
+        { k: 'na3cit', lbl: 'Na3Citrate', tip: 'Sodium Citrate — scale-free gentle buffer for espresso & filter water' }
       ].map(function (sp) {
         return domH('button', {
           type: 'button',
           class: 'bt-lab-chip' + (wt.khSaltKey === sp.k ? ' is-active' : ''),
+          title: sp.tip,
           onclick: function () {
             wt.khSaltKey = sp.k;
             wt.isDiyRecipe = true;
@@ -6593,6 +6963,7 @@
       const tapToggle = domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (wt.tapBlendOn ? ' is-active' : ''),
+        title: 'Show Tap vs RO/ZeroWater dilution ray to calculate exact % Tap + % RO water mix',
         onclick: function () {
           wt.tapBlendOn = !wt.tapBlendOn;
           tapToggle.classList.toggle('is-active', wt.tapBlendOn);
@@ -7021,11 +7392,21 @@
       ),
       domH('div', { class: 'bt-head-actions' }, waterHow.trigger, epistemicBadge('verified_physics'))
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Coffee is 98.5% water. ',
+      labAbbr('GH', 'Total Hardness (Ca²⁺ + Mg²⁺ in ppm) — minerals that grip and pull sweet, fruity flavor compounds out of coffee'),
+      ' (Total Hardness — Ca²⁺ / Mg²⁺) pulls sweet, fruity flavor, while ',
+      labAbbr('KH', 'Carbonate Hardness / Alkalinity Buffer (ppm) — neutralizes sharp acids; too much makes coffee flat and chalky'),
+      ' (Carbonate Buffer) tames sharp sourness. Pick your home water, blend ',
+      labAbbr('Tap vs RO %', 'Diluting hard tap water with 0-ppm Reverse Osmosis / ZeroWater to hit the sweet spot'),
+      ', or drag the droplet on the 2D pad for exact drop/salt recipes.'
+    ]));
     card.appendChild(waterHow.panel);
     card.appendChild(selector4WayCard);
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' }, vibePresets, tapToggle));
     mgSharePill = CK.vernierPill({
       label: 'Mg2+ Share',
+      title: 'Percent of Total Hardness coming from Magnesium (Mg²⁺ highlights bright fruit/berries; Calcium Ca²⁺ adds creamy body)',
       value: Math.round(wt.mgShare * 100),
       min: 0,
       max: 100,
@@ -7038,6 +7419,7 @@
       mgSharePill,
       CK.vernierPill({
         label: 'Batch Vol',
+        title: 'Total liters of brewing water you want to blend or mineralize (1.0 L ≈ 3–4 pour-overs)',
         value: wt.batchL,
         min: 0.25,
         max: 5.0,
@@ -7049,6 +7431,7 @@
       }),
       CK.vernierPill({
         label: 'Boiler Temp',
+        title: 'Kettle or espresso boiler temperature — hotter boilers scale faster when Calcium & KH are high',
         value: wt.brewTempC,
         min: 80,
         max: 100,
@@ -7063,7 +7446,12 @@
       khSaltPills
     ));
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, svg));
+    card.appendChild(buildAxisCaption([
+      { kicker: 'X-Axis (KH Buffer)', text: 'Left: Bright & Tart (Low Buffer) \u2194 Right: Smooth \u2192 Flat/Chalky (High Buffer)' },
+      { kicker: 'Y-Axis (GH Hardness)', text: 'Down: Soft / Light \u2194 Up: Sweet & Fruity Grip (Red Curve = Kettle Scale Risk)' }
+    ], { ariaLabel: 'Water Pad Axis Guide' }));
     card.appendChild(readoutBanner);
+    card.appendChild(waterTakeaway.el);
     card.appendChild(recipeDeck);
     card.appendChild(domH('div', { class: 'bt-lab-btn-row' },
       domH('button', {
@@ -7099,6 +7487,7 @@
     svg.appendChild(vesselG);
 
     const readoutBanner = domH('div', { class: 'bt-studio-readout-banner' });
+    const vesselTakeaway = createTakeawayBox('bt-vessel-takeaway');
     const milkBanner = domH('div', { class: 'bt-lab-subcard bt-milk-lab-card' });
 
     const V_TOP = 36, V_BOT = 256, V_H = 220;
@@ -7211,6 +7600,21 @@
             'Darcy Bed-Depth Factor = ' + darcyScale.toFixed(2) + 'x'
         }));
       }
+      if (vs.flashOn) {
+        const meltPct = fl.iceG > 0 ? Math.round((fl.meltedIceG / fl.iceG) * 100) : 0;
+        vesselTakeaway.set(
+          'Flash-Iced (' + Math.round(vs.iceShare * 100) + '% ice share = ' + fl.iceG + ' g ice + ' + fl.hotPourG + ' g hot pour): ' +
+          meltPct + '% of ice melts (' + fl.meltedIceG + ' g) leaving ' + fl.remIceG + ' g solid cubes at ' + fmtTempPref(fl.finalTempC, 1) +
+          ' and ' + fl.tdsCupPct + '% TDS. ' + (fl.remIceG < 5 ? 'All ice melted — serve over fresh cubes so the drink stays cold.' : 'Crisp 0 °C chill achieved without watering down flavor!'),
+          fl.remIceG < 5 ? 'warn' : 'good'
+        );
+      } else {
+        vesselTakeaway.set(
+          'Hot pour of ' + Math.round(totalW) + ' g water over ' + vs.doseG.toFixed(1) + ' g dry coffee yields ' + Math.round(fl.liquidBeverageG) + ' g liquid in your mug (~' + fl.retainedG + ' g stays trapped in the wet grounds) at ~' + fl.tdsCupPct + '% TDS.' +
+          (vs.paragonOn ? ' Paragon frozen sphere locks in +' + fl.esterBoostPct + '% delicate floral aromatics with zero ice dilution.' : ''),
+          'good'
+        );
+      }
       if (typeof vesselDosePill !== 'undefined' && vesselDosePill && Math.abs(vesselDosePill.getValue() - vs.doseG) > 0.05) {
         vesselDosePill.setValue(vs.doseG, true);
       }
@@ -7232,18 +7636,54 @@
       });
 
       const milkTypes = [
-        { k: 'dairy', lbl: 'Whole Dairy (55-65C)' },
-        { k: 'lactose_free', lbl: 'Lactose-Free (3.1x Sweet)' },
-        { k: 'eisbock', lbl: 'Freeze-Distilled Eisbock' },
-        { k: 'oat', lbl: 'Barista Oat' },
-        { k: 'almond', lbl: 'Almond' },
-        { k: 'soy', lbl: 'Soy' }
+        { k: 'dairy', lbl: 'Whole Dairy (55-65C)', tip: 'Peak natural lactose sweetness at 55–65 °C; proteins scald and taste cooked above 68 °C' },
+        { k: 'lactose_free', lbl: 'Lactose-Free (3.1x Sweet)', tip: 'Enzymatically split into glucose + galactose — tastes ~3× sweeter with zero added sugar' },
+        { k: 'eisbock', lbl: 'Freeze-Distilled Eisbock', tip: 'Freeze milk and thaw half to concentrate natural fats, protein, and lactose for competition lattes' },
+        { k: 'oat', lbl: 'Barista Oat', tip: 'Creamy maltose sweetness; keep <=56 °C with bright light-roast espresso to avoid curdling' },
+        { k: 'almond', lbl: 'Almond', tip: 'Nutty & light-bodied; steam gently <=56 °C and temper into espresso to prevent splitting' },
+        { k: 'soy', lbl: 'Soy', tip: 'Rich plant protein foam; sensitive to high acidity above 58 °C' }
       ].map(function (m) {
         return domH('button', {
           type: 'button',
           class: 'bt-lab-chip' + (vs.milkType === m.k ? ' is-active' : ''),
+          title: m.tip,
           onclick: function () { vs.milkType = m.k; CK.haptic('tick'); redrawMilkLab(); }
         }, m.lbl);
+      });
+
+      /* Compact Milk Steaming Thermal Threshold SVG (55-65C Sweet Spot vs 68C+ Protein Scald) */
+      const mkSvg = CK.svgEl('svg', {
+        viewBox: '0 0 420 62',
+        class: 'bt-chart-svg bt-milk-thermal-svg',
+        'aria-label': 'Milk Steaming Temperature Threshold Bar (45 to 78 degrees Celsius)'
+      });
+      const mkX = function (tC) { return 18 + (clamp((tC - 45) / (78 - 45), 0, 1, 0.5)) * 384; };
+      mkSvg.appendChild(CK.svgEl('rect', { x: '18', y: '24', width: '384', height: '14', rx: '7', class: 'bt-chart-plot-bg' }));
+      mkSvg.appendChild(CK.svgEl('rect', {
+        x: mkX(55).toFixed(1), y: '24', width: (mkX(65) - mkX(55)).toFixed(1), height: '14', rx: '4',
+        fill: 'var(--good, #1B6341)', opacity: '0.28'
+      }));
+      mkSvg.appendChild(CK.svgEl('rect', {
+        x: mkX(68).toFixed(1), y: '24', width: (mkX(78) - mkX(68)).toFixed(1), height: '14', rx: '4',
+        fill: 'var(--bad, #A1231F)', opacity: '0.24'
+      }));
+      const scaldX = mkX(68);
+      mkSvg.appendChild(CK.svgEl('line', {
+        x1: scaldX.toFixed(1), y1: '16', x2: scaldX.toFixed(1), y2: '44',
+        stroke: 'var(--bad, #A1231F)', 'stroke-width': '2', 'stroke-dasharray': '3,2'
+      }));
+      mkSvg.appendChild(CK.svgZoneLabel(mkX(60), 15, '55\u201365 \u00B0C Sweet Spot', { anchor: 'middle', cls: 'is-good' }));
+      mkSvg.appendChild(CK.svgZoneLabel(scaldX + 4, 15, '68 \u00B0C+ Protein Scald', { anchor: 'start', cls: 'is-bad' }));
+      const curMkX = mkX(vs.steamTempC);
+      mkSvg.appendChild(CK.svgEl('circle', {
+        cx: curMkX.toFixed(1), cy: '31', r: '6.5',
+        fill: vs.steamTempC >= 68 ? 'var(--bad, #A1231F)' : (vs.steamTempC >= 55 && vs.steamTempC <= 65 ? 'var(--good, #1B6341)' : 'var(--accent, #9A4212)'),
+        stroke: 'var(--surface, #FFFFFF)', 'stroke-width': '2'
+      }));
+      [45, 55, 65, 68, 78].forEach(function (tc) {
+        const tk = CK.svgEl('text', { x: mkX(tc).toFixed(1), y: '54', 'text-anchor': 'middle', class: 'bt-chart-tick' });
+        tk.textContent = tc + '\u00B0C';
+        mkSvg.appendChild(tk);
       });
 
       milkBanner.appendChild(domH('div', { class: 'bt-lab-card-head' },
@@ -7253,10 +7693,19 @@
         ),
         epistemicBadge('verified_physics')
       ));
+      milkBanner.appendChild(buildWhatBox('What this milk lab does', [
+        'Compare dairy vs plant milk sweetness & foaming heat. Dairy tastes sweetest at ',
+        domH('strong', { text: '55–65 °C (131–149 °F)' }),
+        '; steaming past ',
+        labAbbr('68 °C+ Denaturation', 'Above 68 °C / 154 °F, milk whey proteins irreversibly unfold, releasing cooked/egg-like sulfur notes and collapsing silky microfoam'),
+        ' scalds milk flat (and curdles oat/almond/soy in bright light-roast coffee above 58 °C).'
+      ]));
       milkBanner.appendChild(domH('div', { class: 'bt-lab-chip-row' }, milkTypes));
+      milkBanner.appendChild(domH('div', { class: 'bt-chart-stage' }, mkSvg));
       milkBanner.appendChild(domH('div', { class: 'bt-vernier-row' },
         CK.vernierPill({
           label: 'Milk Mass',
+          title: 'Cold milk weight poured into your steaming pitcher before steaming',
           value: vs.milkG,
           min: 40,
           max: 360,
@@ -7267,6 +7716,7 @@
         }),
         CK.vernierPill({
           label: 'Steam Temp',
+          title: 'Stop-steaming pitcher temperature — 55–65 °C is peak sweetness; 68 °C+ denatures whey protein and scalds milk',
           value: vs.steamTempC,
           min: 45,
           max: 78,
@@ -7277,6 +7727,7 @@
         }),
         vs.milkType === 'eisbock' ? CK.vernierPill({
           label: 'Thaw Draw',
+          title: 'Percent of frozen milk thawed and collected — lower draw % concentrates lactose & fat even more',
           value: Math.round(vs.thawFrac * 100),
           min: 35,
           max: 80,
@@ -7288,6 +7739,23 @@
       ));
 
       const alertCls = mk.curdleDanger || mk.scaldDanger ? ' is-warn' : (mk.inBetaLgWindow ? ' is-good' : '');
+      const milkTakeaway = createTakeawayBox('bt-milk-takeaway');
+      if (mk.scaldDanger) {
+        milkTakeaway.set(
+          'Denaturation Warning (' + fmtTempPref(vs.steamTempC, 0) + ' >= 68 °C): whey proteins are unfolding — expect flat sweetness, cooked sulfur notes, and coarse bubbles. Cut steam at 60–64 °C (140–147 °F).',
+          'bad'
+        );
+      } else if (mk.curdleDanger) {
+        milkTakeaway.set(
+          'Plant-Milk Curdle Risk at ' + fmtTempPref(vs.steamTempC, 0) + ' in acidic coffee (pH ~' + mk.estCupPh.toFixed(2) + '): steam cooler (<=56 °C / 133 °F) and swirl 15 g milk into the espresso first to temper.',
+          'warn'
+        );
+      } else {
+        milkTakeaway.set(
+          'At ' + fmtTempPref(vs.steamTempC, 0) + ', ' + vs.milkG + ' g milk steams to ' + mk.finalMilkG + ' g (+' + mk.steamDilutionG + ' g steam water) with ' + mk.sweetnessMult + '× natural sweetness — safe from 68 °C+ protein denaturation.',
+          mk.inBetaLgWindow ? 'good' : 'info'
+        );
+      }
       milkBanner.appendChild(domH('div', { class: 'bt-milk-verdict' + alertCls },
         domH('strong', {
           class: 'num-tab',
@@ -7327,6 +7795,7 @@
           }, ic('milk-pitcher', { size: 14 }), domH('span', { text: 'Apply Milk Plan to My Drink \u2192' }))
         )
       ));
+      milkBanner.appendChild(milkTakeaway.el);
     }
 
     CK.bindChartSurface(svg, {
@@ -7367,12 +7836,14 @@
     const flashBtn = domH('button', {
       type: 'button',
       class: 'bt-lab-chip' + (vs.flashOn ? ' is-active' : ''),
+      title: 'Japanese Flash-Iced: brew hot coffee directly over a weighed share of ice cubes so the cup chills instantly without diluting',
       onclick: function () { vs.flashOn = !vs.flashOn; flashBtn.classList.toggle('is-active', vs.flashOn); redrawVessel(); }
     }, ic('ice-cube', { size: 14 }), domH('span', { text: '3-Regime Flash-Iced' }));
 
     const paragonBtn = domH('button', {
       type: 'button',
       class: 'bt-lab-chip' + (vs.paragonOn ? ' is-active' : ''),
+      title: 'Extract chilling over a frozen 48 g steel sphere to trap volatile floral aromatics before they evaporate',
       onclick: function () { vs.paragonOn = !vs.paragonOn; paragonBtn.classList.toggle('is-active', vs.paragonOn); redrawVessel(); }
     }, ic('cryo-snowflake', { size: 14 }), domH('span', { text: '48g Paragon Chilling Sphere' }));
 
@@ -7393,9 +7864,19 @@
       ),
       domH('div', { class: 'bt-head-actions' }, vesselHow.trigger, epistemicBadge('verified_physics'))
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Drag the coffee line up/down on the carafe to see exact ',
+      domH('strong', { text: 'mug yield vs water trapped in wet grounds' }),
+      '. Toggle ',
+      domH('strong', { text: 'Flash-Iced' }),
+      ' to split total brew water into hot pour + ice cubes (',
+      labAbbr('% Ice Share', 'Percent of total brew water placed as solid ice in the carafe — ~35–42% chills coffee to 0 °C without watering it down'),
+      ') and check how much ice melts.'
+    ]));
     card.appendChild(vesselHow.panel);
     const vesselDosePill = CK.vernierPill({
       label: 'Dose',
+      title: 'Dry coffee beans weighed in grams before brewing',
       value: vs.doseG,
       min: 6,
       max: 90,
@@ -7407,6 +7888,7 @@
     });
     const vesselRatioPill = CK.vernierPill({
       label: 'Ratio 1:',
+      title: 'Total water (hot pour + ice) per 1 g dry coffee',
       value: vs.ratio,
       min: 2.0,
       max: 22.0,
@@ -7423,6 +7905,7 @@
       vesselRatioPill,
       CK.vernierPill({
         label: 'Ice Share',
+        title: 'Percent of total water placed as solid ice in the carafe — only melted ice dilutes cup strength',
         value: Math.round(vs.iceShare * 100),
         min: 15,
         max: 55,
@@ -7464,7 +7947,12 @@
     }, ic('brew', { size: 16 }), domH('span', { text: 'Apply Carafe / Flash-Iced Recipe to My Brew \u2192' }));
 
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, svg));
+    card.appendChild(buildAxisCaption([
+      { kicker: 'Left Carafe', text: 'Drag liquid line up/down to scale drink volume' },
+      { kicker: 'Right Column', text: 'Bed = water retained in grounds · Cup = drinkable liquid' }
+    ], { ariaLabel: 'Carafe Visualizer Guide' }));
     card.appendChild(readoutBanner);
+    card.appendChild(vesselTakeaway.el);
     card.appendChild(domH('div', { class: 'bt-chart-cta-bar' }, applyVesselBtn));
     card.appendChild(milkBanner);
 
@@ -7478,6 +7966,7 @@
     const r4 = labState.ratio4;
     const card = domH('section', { class: 'bt-studio-card', id: 'bt-studio-ratio-yield' });
     const outBox = domH('div', { class: 'bt-ratio4-out' });
+    const r4Takeaway = createTakeawayBox('bt-ratio4-takeaway');
 
     function solveFromAnchor(changedKey, val) {
       const eyFrac = clamp(r4.eyPct, 2, 36, 20.4) / 100;
@@ -7550,6 +8039,9 @@
       return domH('button', {
         type: 'button',
         class: 'bt-lab-chip' + (r4.cupsBatch === nCups ? ' is-active' : ''),
+        title: nCups === 1
+          ? 'Scale recipe for 1 single mug'
+          : ('Scale coffee & water for ' + nCups + ' cups and coarsen grind ~' + Math.round((Math.pow(nCups, 0.2) - 1) * 100) + '% to keep drawdown time balanced'),
         onclick: function () {
           const factor = nCups / Math.max(1, r4.cupsBatch);
           r4.cupsBatch = nCups;
@@ -7674,6 +8166,13 @@
           }, 'Save Sponge Retention (' + r4.rw.toFixed(2) + ' g/g)')
         )
       ));
+      const r4StrengthWord = r4.ratio <= 4 ? 'concentrated espresso-style' : (r4.ratio < 15 ? 'rich & strong' : (r4.ratio <= 17 ? 'balanced filter' : 'light & tea-like'));
+      r4Takeaway.set(
+        'Using ' + r4.doseG.toFixed(1) + ' g dry coffee and pouring ' + r4.waterG + ' g water (1:' + r4.ratio.toFixed(1) + ', ' + r4StrengthWord + ') puts ' +
+        r4.mugG + ' g drinkable coffee in your mug while ' + (r4.rw * r4.doseG).toFixed(1) + ' g stays soaked in the wet bed. For Cold Brew (1:' +
+        r4.coldBrewDiluteRatio + '), pour ' + cbConcMl + ' g concentrate + ' + cbWaterOrMilkMl + ' g water/milk per ' + r4.coldBrewServeG + ' g glass.',
+        'good'
+      );
     }
 
     card.appendChild(domH('div', { class: 'bt-lab-card-head' },
@@ -7686,27 +8185,46 @@
       ),
       epistemicBadge('verified_physics')
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Type any one number — ',
+      domH('strong', { text: 'Dry Dose' }),
+      ', ',
+      domH('strong', { text: 'Pour Water' }),
+      ', ',
+      labAbbr('Mug Yield', 'Actual drinkable coffee in your mug = Pour Water minus water absorbed by the wet coffee grounds (~2.1 g per 1 g coffee)'),
+      ', or ',
+      labAbbr('Brew Ratio (1:X)', 'Grams of brew water per 1 g of dry coffee — 1:15 is stronger, 1:17 is lighter'),
+      ' — and the other 3 solve automatically. Also calculates exact ',
+      domH('strong', { text: 'Cold Brew Concentrate' }),
+      ' dilution per glass.'
+    ]));
+    card.appendChild(buildStepRibbon([
+      { text: 'Pick Batch Scale (1\u20134 cups)', title: 'Choose how many mugs you are brewing so dose & water scale together' },
+      { text: 'Type any 1 of the 4 anchors', title: 'Edit Dose, Pour Water, Mug Yield, or Ratio — whichever number you know' },
+      { text: 'Other 3 solve automatically', title: 'Apply the solved weights straight to your recipe or calibrate wet-grounds retention' }
+    ]));
     card.appendChild(domH('div', { class: 'bt-lab-chip-row' },
       domH('span', { class: 'bt-lab-inline-lbl', text: 'Batch Scale:' }),
       batchBtns
     ));
     card.appendChild(domH('div', { class: 'bt-ratio4-grid' },
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: '1. Dose (g)' }), doseIn),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: '2. Pour Water (g)' }), waterIn),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: '3. Mug Yield (g)' }), mugIn),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: '4. Ratio (1:X)' }), ratioIn)
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Dry whole-bean coffee weighed in grams before grinding' }, domH('span', { text: '1. Dry Dose (g)' }), doseIn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Total hot water poured from your kettle into the brewer' }, domH('span', { text: '2. Pour Water (g)' }), waterIn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Drinkable liquid coffee in your mug after wet grounds absorb ~2× their weight' }, domH('span', { text: '3. Beverage Mug Yield (g)' }), mugIn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Water-to-coffee ratio (e.g. 1:16 means 16 g water per 1 g coffee)' }, domH('span', { text: '4. Ratio (1:X)' }), ratioIn)
     ));
     card.appendChild(domH('div', { class: 'bt-lab-inline-inputs' },
-      domH('label', { class: 'bt-lab-field-lbl' },
-        domH('span', { text: '5. Measured %TDS' }),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Optional refractometer strength reading to back-calculate Extraction Yield (%EY)' },
+        domH('span', null, '5. Measured ', labAbbr('%TDS', 'Total Dissolved Solids — cup strength')),
         tdsIn
       ),
-      domH('label', { class: 'bt-lab-field-lbl' },
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Weigh your drained wet coffee bed once after brewing to measure exact water absorption (g/g)' },
         domH('span', { text: '1-Brew Sponge Check: Wet Grounds Wt (g)' }),
         wetBedIn
       ),
       CK.vernierPill({
         label: 'Cold Brew Cut 1:',
+        title: 'Parts water or milk added per 1 part cold brew concentrate (e.g. 1:2.5 = 1 part concentrate + 2.5 parts water/milk)',
         value: r4.coldBrewDiluteRatio,
         min: 1.5,
         max: 4.0,
@@ -7718,6 +8236,7 @@
       })
     ));
     card.appendChild(outBox);
+    card.appendChild(r4Takeaway.el);
     syncInputs('');
     _labLiveHooks.ratioYield = function (opts) {
       if (!card.isConnected) return false;
@@ -7772,6 +8291,7 @@
     const stageG = CK.svgEl('g');
     agSvg.appendChild(stageG);
     const agReadout = domH('div', { class: 'bt-studio-readout-banner' });
+    const agtronTakeaway = createTakeawayBox('bt-agtron-takeaway', 'What this result means \u2192');
 
     const AX_L = 44, AX_R = 428, AX_W = 384;
     function mapG(g) { return AX_L + ((clamp(g, 25, 105, 65) - 25) / 80) * AX_W; }
@@ -7805,6 +8325,7 @@
       stageG.appendChild(l2);
 
       /* Multi-Stop Spectrum Bar */
+      stageG.appendChild(CK.svgZoneLabel((AX_L + AX_R) * 0.5, 150, 'Roast Color Map (25 Dark \u2194 65 Medium \u2194 105 Nordic)', { anchor: 'middle' }));
       for (let i = 0; i < 24; i++) {
         const g0 = 25 + (i / 24) * 80;
         stageG.appendChild(CK.svgEl('rect', {
@@ -7868,6 +8389,28 @@
         })
       ));
       agReadout.appendChild(domH('p', { class: 'bt-studio-xray-line', text: scorchMsg }));
+
+      const roastBandName = rf.groundG >= 80
+        ? 'Nordic / Ultra-Light Roast'
+        : (rf.groundG >= 65 ? 'Light-Medium Filter Roast' : (rf.groundG >= 52 ? 'Medium Omni / Espresso Roast' : 'Dark / Classic Roast'));
+      const recBrewTemp = rf.groundG >= 80 ? 95 : (rf.groundG >= 65 ? 93 : (rf.groundG >= 52 ? 90 : 87));
+      if (delta >= 12) {
+        agtronTakeaway.set(
+          roastBandName + ' (Ground ' + rf.groundG.toFixed(1) + ') with a large +' + delta + ' shell-to-core gap: the bean exterior roasted much darker than the inside. Brew gentler (~' + (recBrewTemp - 2) + ' \u00B0C) to keep roasty bitterness out of your cup.',
+          'warn'
+        );
+      } else if (delta < 0) {
+        agtronTakeaway.set(
+          roastBandName + ' (Ground ' + rf.groundG.toFixed(1) + ') reads darker inside than outside (Delta ' + deltaStr + ') — re-check your whole-bean vs ground scan or start around ' + recBrewTemp + ' \u00B0C kettle temp.',
+          'warn'
+        );
+      } else {
+        agtronTakeaway.set(
+          roastBandName + ' (Ground ' + rf.groundG.toFixed(1) + ', even Delta ' + deltaStr + '): start your kettle near ' + recBrewTemp + ' \u00B0C' +
+            (rf.groundG >= 75 ? ' and grind slightly finer for full sweetness.' : (rf.groundG <= 52 ? ' and coarsen a touch so it stays chocolaty, not ashy.' : ' for balanced sweetness and clarity.')),
+          'good'
+        );
+      }
     }
 
     CK.bindChartSurface(agSvg, {
@@ -7913,15 +8456,16 @@
 
     /* ---- Part B: FreshnessFreezerCurve (-18C 12.3x Arrhenius) & 2-Bag Bulk-Trap Silos ---- */
     const frSvg = CK.svgEl('svg', {
-      viewBox: '0 0 440 246',
+      viewBox: '0 0 440 258',
       class: 'bt-chart-svg bt-fresh-svg',
       'aria-label': 'Arrhenius -18C Cryo-Vault Freshness Curve and Freeze Split'
     });
     const frG = CK.svgEl('g');
     frSvg.appendChild(frG);
     const siloBox = domH('div', { class: 'bt-silo-race-box' });
+    const freshTakeaway = createTakeawayBox('bt-freshness-takeaway', 'What this result means \u2192');
 
-    const FP = { L: 42, T: 20, PW: 380, PH: 184, R: 422, B: 204 };
+    const FP = { L: 44, T: 20, PW: 378, PH: 184, R: 422, B: 204 };
     const MAX_DAYS = 60;
 
     function vitalityAt(effDay, groundG) {
@@ -7939,6 +8483,27 @@
 
       const fx = function (d) { return FP.L + (clamp(d, 0, MAX_DAYS, 0) / MAX_DAYS) * FP.PW; };
       const fy = function (v) { return FP.B - (clamp(v, 0, 100, 50) / 100) * FP.PH; };
+
+      /* Y-Axis (Freshness %) & X-Axis (Days Off Roast) Ticks */
+      [100, 50, 0].forEach(function (pct) {
+        const yt = CK.svgEl('text', { x: (FP.L - 6).toFixed(1), y: (fy(pct) + 3.5).toFixed(1), 'text-anchor': 'end', class: 'bt-chart-tick' });
+        yt.textContent = pct + '%';
+        frG.appendChild(yt);
+      });
+      const yUnitLbl = CK.svgEl('text', { x: (FP.L + 4).toFixed(1), y: (FP.T - 6).toFixed(1), class: 'bt-chart-tick' });
+      yUnitLbl.textContent = 'Aroma Freshness (%) \u2191';
+      frG.appendChild(yUnitLbl);
+
+      [0, 15, 30, 45, 60].forEach(function (dayTick) {
+        const xt = CK.svgEl('text', {
+          x: fx(dayTick).toFixed(1),
+          y: (FP.B + 13).toFixed(1),
+          'text-anchor': dayTick === 0 ? 'start' : (dayTick === 60 ? 'end' : 'middle'),
+          class: 'bt-chart-tick'
+        });
+        xt.textContent = dayTick + 'd';
+        frG.appendChild(xt);
+      });
 
       const ambPts = [];
       const cryoPts = [];
@@ -7981,7 +8546,7 @@
       tPin.appendChild(CK.svgEl('circle', { r: '7.5', class: 'bt-fr-today-pin' }));
       frG.appendChild(tPin);
 
-      const flbl = CK.svgEl('text', { x: (FP.L + 8).toFixed(1), y: (FP.B + 16).toFixed(1), class: 'bt-chart-tick' });
+      const flbl = CK.svgEl('text', { x: (FP.L + 2).toFixed(1), y: (FP.B + 32).toFixed(1), class: 'bt-chart-tick' });
       flbl.textContent = isScienceXray()
         ? ('Day ' + Math.round(rf.daysToday) + ' (Eff. Biological Age: ' + tEffToday.toFixed(1) + 'd @ 12.3x -18 °C Arrhenius  ·  +12 um coarser frozen grind)')
         : ('Day ' + Math.round(rf.daysToday) + ' off roast (Freezer Age: ' + tEffToday.toFixed(1) + 'd @ -18 °C · 12× slower aging)');
@@ -8016,6 +8581,7 @@
         domH('button', {
           type: 'button',
           class: 'bt-lab-chip' + (rf.freezeBulk ? ' is-active' : ''),
+          title: 'Toggle whether you freeze the extra portion of a 1 kg bulk bag airtight at -18 °C',
           onclick: function () { rf.freezeBulk = !rf.freezeBulk; CK.haptic('tick'); redrawFreshness(); }
         }, ic('cryo-snowflake', { size: 14 }), domH('span', { text: rf.freezeBulk ? 'Freeze Bulk Excess ON (-18C)' : 'Countertop Only (No Freezer)' }))
       ));
@@ -8040,6 +8606,18 @@
         ));
       });
       siloBox.appendChild(silosRow);
+
+      const curVitality = Math.round(vitalityAt(tEffToday, rf.groundG));
+      const bulkWins = bagB.costPerPeakCup < bagA.costPerPeakCup;
+      const bulkMsg = bulkWins
+        ? ('Bulk bag wins at $' + bagB.costPerPeakCup.toFixed(2) + '/peak cup vs $' + bagA.costPerPeakCup.toFixed(2) + ' retail' + (rf.freezeBulk ? ' (with freezer protection ON).' : '.'))
+        : ('Bulk trap alert: without freezing, ' + bagB.staleCups + ' cups go stale so the 1 kg bag costs $' + bagB.costPerPeakCup.toFixed(2) + '/peak cup vs $' + bagA.costPerPeakCup.toFixed(2) + ' retail — toggle Freeze Bulk Excess ON to save.');
+      freshTakeaway.set(
+        'On Day ' + Math.round(rf.daysToday) + ', your beans are at ~' + curVitality + '% peak aroma' +
+          (rf.freezeOn && rf.daysToday > rf.freezeDay ? (' (frozen since Day ' + rf.freezeDay + ', aging 12\u00D7 slower)') : '') +
+          '. ' + bulkMsg,
+        (curVitality >= 80 && bulkWins) ? 'good' : (curVitality < 60 || !bulkWins ? 'warn' : 'info')
+      );
     }
 
     CK.bindChartSurface(frSvg, {
@@ -8180,13 +8758,30 @@
       domH('div', { class: 'bt-head-actions' }, agtronHow.trigger, epistemicBadge('verified_physics'))
     ));
     card.appendChild(agtronHow.panel);
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Converts ',
+      labAbbr('Agtron #', 'Infrared roast color score from 25 to 105 — higher numbers mean lighter roasts, lower numbers mean darker roasts'),
+      ' across 5 meters, compares ',
+      domH('strong', { text: 'Whole Bean (B)' }),
+      ' vs ',
+      domH('strong', { text: 'Ground Core (G)' }),
+      ' roast evenness, and models ',
+      domH('strong', { text: '-18 \u00B0C freezer storage (~12\u00D7 slower staling)' }),
+      ' against buying a 1 kg bulk bag.'
+    ]));
     card.appendChild(omniAgBar);
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, agSvg));
+    card.appendChild(buildAxisCaption([
+      { label: 'Color Bar (Agtron #)', text: 'Left (25): Very Dark / French \u2194 Center (65): Medium \u2194 Right (105): Nordic Ultra-Light' },
+      { label: 'Draggers', text: '(B) = Whole Bean exterior \u00B7 (G) = Ground interior core' }
+    ]));
     card.appendChild(agReadout);
+    card.appendChild(agtronTakeaway.el);
     const freezeCurveBtn = domH('button', {
       type: 'button',
       class: 'bt-lab-chip' + (rf.freezeOn ? ' is-active' : ''),
       'aria-pressed': String(!!rf.freezeOn),
+      title: 'Show or hide the -18 °C airtight freezer curve (12× slower staling)',
       onclick: function () {
         rf.freezeOn = !rf.freezeOn;
         freezeCurveBtn.classList.toggle('is-active', !!rf.freezeOn);
@@ -8235,6 +8830,7 @@
       }, 'Save to Active Bag Only'),
       CK.vernierPill({
         label: 'Daily Pace',
+        title: 'Grams of whole beans you brew per day (e.g. 18 g = 1 cup/day, 36 g = 2 cups/day)',
         value: rf.paceGPerDay,
         min: 7,
         max: 60,
@@ -8245,6 +8841,7 @@
       }),
       CK.vernierPill({
         label: 'Bulk Price',
+        title: 'Price of a 1 kg bulk bag to compare fresh cups per dollar against a 250 g retail bag',
         value: rf.bagBPrice,
         min: 18,
         max: 120,
@@ -8256,7 +8853,13 @@
       })
     ));
     card.appendChild(domH('div', { class: 'bt-chart-stage' }, frSvg));
+    card.appendChild(buildAxisCaption([
+      { label: 'X-Axis', text: 'Days Off Roast (0d = roast day \u2192 60d)' },
+      { label: 'Y-Axis', text: 'Peak Aroma Vitality (0\u2013100%)' },
+      { label: 'Pins', text: 'Drag Freeze Day & Today pins to simulate -18 \u00B0C storage' }
+    ]));
     card.appendChild(siloBox);
+    card.appendChild(freshTakeaway.el);
 
     redrawAgtron();
     redrawFreshness();
@@ -8281,6 +8884,7 @@
     /* 1. Compare 2 Bags Head-to-Head */
     const cmpCard = domH('section', { class: 'bt-studio-card', id: 'bt-studio-bagcmp' });
     const cmpOut = domH('div', { class: 'bt-bagcmp-out' });
+    const cmpTakeaway = createTakeawayBox('bt-bagcmp-takeaway');
 
     const aNameIn = domH('input', { type: 'text', class: 'bt-lab-text-in', value: bc.aName, 'aria-label': 'Bag A name', oninput: function () { bc.aName = aNameIn.value; paintCmp(); } });
     const aPriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: String(bc.aPrice), 'aria-label': 'Bag A price', oninput: function () { const v = parseFloat(aPriceIn.value); if (Number.isFinite(v)) { bc.aPrice = Math.max(0, v); paintCmp(); } } });
@@ -8319,6 +8923,14 @@
           domH('strong', { text: winner })
         )
       ));
+      const diffPeak = Math.abs(effPeakA - effPeakB);
+      const staleNoteA = bc.aGrams > freshWinG ? (' (' + Math.round(bc.aGrams - freshWinG) + ' g risks staling past 26d unless frozen)') : '';
+      const staleNoteB = bc.bGrams > freshWinG ? (' (' + Math.round(bc.bGrams - freshWinG) + ' g risks staling past 26d unless frozen)') : '';
+      cmpTakeaway.set(
+        winner + ' is the better fresh-cup value by $' + diffPeak.toFixed(2) + '/cup at ' + pace + ' g/day (' + dose + ' g dose)' +
+        (effPeakA <= effPeakB ? staleNoteA : staleNoteB) + '.',
+        'good'
+      );
     }
 
     cmpCard.appendChild(domH('div', { class: 'bt-lab-card-head' },
@@ -8330,6 +8942,13 @@
         )
       )
     ));
+    cmpCard.appendChild(buildWhatBox('What this tool does', [
+      'Roasters sell different bag weights (200 g, 250 g, 12 oz / 340 g, 1 kg). Enter two bags to compare both raw ',
+      domH('strong', { text: '$/cup' }),
+      ' and ',
+      domH('strong', { text: 'fresh $/cup' }),
+      ' — catching when a big bulk bag goes stale before you can finish it.'
+    ]));
     cmpCard.appendChild(domH('div', { class: 'bt-bagcmp-grid' },
       domH('div', { class: 'bt-lab-subcard' },
         domH('strong', { text: 'Bag A' }),
@@ -8349,18 +8968,24 @@
       )
     ));
     cmpCard.appendChild(cmpOut);
+    cmpCard.appendChild(cmpTakeaway.el);
     paintCmp();
 
     /* 2. True Cup Cost, Cafe Savings & Gear Break-Even ROI */
     const roiCard = domH('section', { class: 'bt-studio-card', id: 'bt-studio-cost-roi' });
     const roiOut = domH('div', { class: 'bt-roi-out' });
+    const roiTakeaway = createTakeawayBox('bt-roi-takeaway');
 
     const rBagPriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.5', value: String(roi.bagPrice), 'aria-label': 'Bag price USD', oninput: function () { const v = parseFloat(rBagPriceIn.value); if (Number.isFinite(v)) { roi.bagPrice = Math.max(0, v); paintRoi(); } } });
     const rCafePriceIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '0.25', value: String(roi.cafeDrinkPrice), 'aria-label': 'Cafe drink price USD', oninput: function () { const v = parseFloat(rCafePriceIn.value); if (Number.isFinite(v)) { roi.cafeDrinkPrice = Math.max(0, v); paintRoi(); } } });
     const rGearIn = domH('input', { type: 'number', inputmode: 'decimal', class: 'bt-lab-text-in bt-lab-num-in', step: '10', value: String(roi.gearInvestment), 'aria-label': 'Gear investment USD', oninput: function () { const v = parseFloat(rGearIn.value); if (Number.isFinite(v)) { roi.gearInvestment = Math.max(0, v); paintRoi(); } } });
 
     function paintRoi() {
-      const beanCost = (roi.bagPrice / Math.max(50, roi.bagGrams)) * roi.doseG;
+      const wasteG = clamp(roi.dialInWasteG != null ? roi.dialInWasteG : 18, 0, Math.max(0, roi.bagGrams - roi.doseG), 18);
+      const usableBagG = Math.max(roi.doseG, roi.bagGrams - wasteG);
+      const rawBeanCost = (roi.bagPrice / Math.max(50, roi.bagGrams)) * roi.doseG;
+      const beanCost = (roi.bagPrice / usableBagG) * roi.doseG;
+      const wastePerCup = Math.max(0, beanCost - rawBeanCost);
       const waterCost = (roi.doseG * 16 / 1000) * roi.waterCostPerL;
       const trueCup = beanCost + roi.filterCost + waterCost + roi.milkCostPerCup;
       const netPerCup = roi.cafeDrinkPrice - trueCup;
@@ -8392,8 +9017,22 @@
       ));
       roiOut.appendChild(domH('p', {
         class: 'bt-lab-hint num-tab',
-        text: 'Breakdown: $' + beanCost.toFixed(2) + ' beans (' + roi.doseG + 'g) + $' + roi.filterCost.toFixed(2) + ' paper filter + $' + waterCost.toFixed(2) + ' remineralized water' + (roi.milkCostPerCup > 0 ? (' + $' + roi.milkCostPerCup.toFixed(2) + ' milk') : '') + '.'
+        text: 'Breakdown: $' + rawBeanCost.toFixed(2) + ' beans (' + roi.doseG + 'g) + $' + wastePerCup.toFixed(2) + ' dial-in waste (' + Math.round(wasteG) + 'g/bag) + $' + roi.filterCost.toFixed(2) + ' filter + $' + waterCost.toFixed(2) + ' water' + (roi.milkCostPerCup > 0 ? (' + $' + roi.milkCostPerCup.toFixed(2) + ' milk') : '') + '.'
       }));
+      if (isSaving) {
+        roiTakeaway.set(
+          'Even after accounting for ' + Math.round(wasteG) + ' g of wasted dial-in/purge beans per bag (+$' + wastePerCup.toFixed(2) + '/cup), brewing at home costs $' +
+          trueCup.toFixed(2) + '/cup — saving $' + netPerCup.toFixed(2) + ' every cup (' + annualText + ') and paying off $' + Math.round(roi.gearInvestment) +
+          ' of gear in ' + (roi.gearInvestment <= 0 ? '0 days' : (breakEvenCups + ' cups / ~' + breakEvenDays + ' days')) + '.',
+          'good'
+        );
+      } else {
+        roiTakeaway.set(
+          'Your home cup ($' + trueCup.toFixed(2) + ' incl. ' + Math.round(wasteG) + ' g dial-in waste) currently exceeds your $' +
+          roi.cafeDrinkPrice.toFixed(2) + ' cafe price — cutting dial-in waste or choosing a better-value bag lowers $/cup immediately.',
+          'warn'
+        );
+      }
     }
 
     roiCard.appendChild(domH('div', { class: 'bt-lab-card-head' },
@@ -8401,16 +9040,26 @@
         ic('spark-star', { size: 20 }),
         domH('div', null,
           domH('h3', { text: 'True Cup Cost, Cafe Savings & Gear Break-Even ROI' }),
-          domH('p', { class: 'bt-lab-sub', text: 'Exact beans + filter + water + milk cost per cup vs cafe spend & grinder/brewer payback' })
+          domH('p', { class: 'bt-lab-sub', text: 'Exact beans + dial-in waste + filter + water + milk cost per cup vs cafe spend & grinder/brewer payback' })
         )
       )
     ));
+    roiCard.appendChild(buildWhatBox('What this tool does', [
+      'Calculates your honest home ',
+      domH('strong', { text: '$/cup' }),
+      ' — including beans, ',
+      domH('strong', { text: 'wasted dial-in/purge grams' }),
+      ' per bag, filters, and water — then solves your gear ',
+      labAbbr('ROI', 'Return on Investment — how many home cups until your grinder/brewer savings pay back what you spent on gear'),
+      ' break-even against cafe coffee.'
+    ]));
     roiCard.appendChild(domH('div', { class: 'bt-ratio4-grid' },
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: '250g Bag ($)' }), rBagPriceIn),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Cafe Cup ($)' }), rCafePriceIn),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Gear Spend ($)' }), rGearIn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Retail price of your 250 g coffee bag' }, domH('span', { text: '250g Bag ($)' }), rBagPriceIn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'What you would otherwise pay at a coffee shop for one drink' }, domH('span', { text: 'Cafe Cup ($)' }), rCafePriceIn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Total spent on your grinder, kettle, scale, and brewer' }, domH('span', { text: 'Gear Spend ($)' }), rGearIn),
       CK.vernierPill({
         label: 'Cups / Day',
+        title: 'How many cups you brew at home on an average day',
         value: roi.cupsPerDay,
         min: 0.5,
         max: 6.0,
@@ -8419,9 +9068,22 @@
         unit: '',
         compact: true,
         onChange: function (v) { roi.cupsPerDay = v; paintRoi(); }
+      }),
+      CK.vernierPill({
+        label: 'Dial-In Waste',
+        title: 'Grams of coffee lost per bag to grinder purging or sink-shot dial-in tries (e.g. 18 g = 1 wasted cup per bag)',
+        value: roi.dialInWasteG != null ? roi.dialInWasteG : 18,
+        min: 0,
+        max: 100,
+        step: 2,
+        decimals: 0,
+        unit: 'g/bag',
+        compact: true,
+        onChange: function (v) { roi.dialInWasteG = v; paintRoi(); }
       })
     ));
     roiCard.appendChild(roiOut);
+    roiCard.appendChild(roiTakeaway.el);
     paintRoi();
 
     wrap.appendChild(cmpCard);
@@ -8434,6 +9096,7 @@
     const gl = labState.grinderLab;
     const card = domH('section', { class: 'bt-studio-card', id: 'bt-studio-grinder-lab' });
     const outBox = domH('div', { class: 'bt-grinder-lab-out' });
+    const grinderTakeaway = createTakeawayBox('bt-grinder-takeaway', 'What this result means \u2192');
 
     const fallbackGrinders = [
       { key: 'comandante-c40', name: 'Comandante C40 MK4 (Std Axle)', unit: 'clicks', min: 5, max: 45, umZero: 40, umPerStep: 25.5 },
@@ -8746,13 +9409,24 @@
       style: 'min-width:0;max-width:100%;box-sizing:border-box;'
     },
       domH('div', { class: 'bt-lab-card-head' }, omniPsdBadge, omniPsdPairRow, omniPsdConnRow),
+      buildWhatBox('What this chart shows', [
+        'Plots your grinder\u2019s ',
+        labAbbr('PSD', 'Particle Size Distribution — how evenly your grinder chops coffee into dust (fines), target grounds, and large chunks (boulders)'),
+        '. Narrower ',
+        labAbbr('Span', '(D90 minus D10) / D50 — lower Span means cleaner, sweeter cups with fewer muddy fines'),
+        ' means higher clarity. Lock 2 points on your grinder to calibrate its exact \u00B5m/click slope.'
+      ]),
       domH('div', { class: 'bt-lab-metric-strip' },
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Fines D10' }), kpiD10El),
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Median D50' }), kpiD50El),
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'Boulders D90' }), kpiD90El),
-        domH('div', { class: 'bt-lab-kpi' }, domH('span', { text: 'PSD Span' }), kpiSpanEl)
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', null, labAbbr('Fines D10', 'Smallest 10% of coffee dust — too many fines clog filters and add bitterness')), kpiD10El),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', null, labAbbr('Median D50', 'Middle particle size — the main number used to match grind settings across grinders')), kpiD50El),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', null, labAbbr('Boulders D90', 'Largest 10% of chunks — too many boulders under-extract and taste thin or sour')), kpiD90El),
+        domH('div', { class: 'bt-lab-kpi' }, domH('span', null, labAbbr('PSD Span', 'Spread width (D90 - D10) / D50 — lower is more uniform')), kpiSpanEl)
       ),
       domH('div', { class: 'bt-chart-stage' }, psdSvg),
+      buildAxisCaption([
+        { label: 'X-Axis (Microns \u00B5m)', text: 'Left: Fines (<200 \u00B5m) \u2194 Center: Median D50 \u2194 Right: Boulders (>900 \u00B5m)' },
+        { label: 'Y-Axis', text: 'Share of Grounds (%) in each size bin' }
+      ]),
       domH('div', { class: 'bt-lab-btn-row' },
         domH('button', {
           type: 'button',
@@ -8841,6 +9515,7 @@
       id: 'bt-grinder-swap-btn',
       class: 'bt-lab-btn is-sm bt-grinder-swap-btn',
       style: 'min-height:44px;width:100%;justify-content:center;',
+      title: 'Flip From and To grinders and automatically convert the current grind size into the new source grinder’s setting',
       'aria-label': 'Swap From and To grinders',
       onclick: function () {
         if (gl.fromKey === gl.toKey) {
@@ -8912,6 +9587,12 @@
           ),
           domH('p', { class: 'bt-lab-hint num-tab', text: calHintText })
         ));
+        grinderTakeaway.set(
+          sameGrinder
+            ? ('Both dropdowns are set to ' + gFrom.name + '. Pick a different grinder in "Translate To" to convert clicks across burrs.')
+            : ('Type a click/dial number for ' + gFrom.name + ' above to calculate its median particle size (D50 in \u00B5m) and matching setting on ' + gTo.name + '.'),
+          'info'
+        );
         renderOmniPsdHistogram();
         return;
       }
@@ -8920,6 +9601,23 @@
       const bandMeta = describeGrindReferenceBand(d50Um);
       const targetInfo = umToSettingInfo(gTo, d50Um);
       const targetDisp = targetInfo.display || (targetInfo.num + ' ' + fmtGrinderUnit(gTo.unit, targetInfo.num));
+
+      if (sameGrinder) {
+        grinderTakeaway.set(
+          gFrom.name + ' at this setting produces ~' + d50Um + ' \u00B5m (' + bandMeta.band + '). Choose a different "Translate To" grinder to find its equivalent setting.',
+          'warn'
+        );
+      } else if (targetInfo.incompatible) {
+        grinderTakeaway.set(
+          '~' + d50Um + ' \u00B5m (' + bandMeta.band + ') is outside ' + gTo.name + '\u2019s safe burr range (' + targetDisp + '). Try a slightly coarser or finer grind band for this grinder.',
+          'warn'
+        );
+      } else {
+        grinderTakeaway.set(
+          'Set ' + gTo.name + ' to ' + targetDisp + ' to match ~' + d50Um + ' \u00B5m (' + bandMeta.band + '). Because burr geometry differs, dial \u00B11\u20132 clicks by taste on your first cup.',
+          'good'
+        );
+      }
 
       outBox.appendChild(domH('div', { class: 'bt-studio-readout-banner' },
         domH('div', { class: 'bt-lab-chip-row', style: 'margin-bottom:6px' },
@@ -8989,16 +9687,24 @@
       ),
       epistemicBadge('calibrated_biophysics')
     ));
+    card.appendChild(buildWhatBox('What this tool does', [
+      'Converts a grind setting from one grinder into the matching ',
+      labAbbr('D50 (\u00B5m)', 'Median coffee particle diameter in microns — 250 \u00B5m is espresso-fine, 600 \u00B5m is pour-over, 1000 \u00B5m is French Press'),
+      ' on another grinder. Click ',
+      domH('strong', { text: 'Swap Grinders (<->)' }),
+      ' to reverse the direction and carry the converted grind size over automatically.'
+    ]));
     card.appendChild(domH('div', {
       class: 'bt-lab-inline-inputs bt-grinder-translator-grid',
       style: 'grid-template-columns:repeat(auto-fit,minmax(160px,1fr));align-items:end;'
     },
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'From Grinder' }), fromSel),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Setting' }), fromSetIn),
-      domH('div', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Direction' }), swapGrindersBtn),
-      domH('label', { class: 'bt-lab-field-lbl' }, domH('span', { text: 'Translate To' }), toSel)
+      domH('label', { class: 'bt-lab-field-lbl', title: 'The grinder that your recipe or current click number came from' }, domH('span', { text: 'From Grinder' }), fromSel),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'Current click, dial, or step number on the From Grinder' }, domH('span', { text: 'Setting' }), fromSetIn),
+      domH('div', { class: 'bt-lab-field-lbl', title: 'Flip source and target grinders while preserving particle size' }, domH('span', { text: 'Direction' }), swapGrindersBtn),
+      domH('label', { class: 'bt-lab-field-lbl', title: 'The grinder on your counter that you want the equivalent setting for' }, domH('span', { text: 'Translate To' }), toSel)
     ));
     card.appendChild(outBox);
+    card.appendChild(grinderTakeaway.el);
     card.appendChild(omniPsdCard);
     paintGrinder();
 
@@ -9140,8 +9846,10 @@
       }
       if (ktOn) parts.push('Kettle ' + (st.kettleTempC != null ? (Math.round(+st.kettleTempC) + ' \u00B0C') : 'On'));
       if (xbOn) parts.push('xBloom ' + (st.xbloomStage || 'Ready'));
-      const isNarrowViewport = (typeof window !== 'undefined' && window.innerWidth > 0 && window.innerWidth < 480);
-      const idleStatusTxt = isNarrowViewport ? 'Scale / R2 Standby' : 'Scale / Pressure / R2 / Omni / Kettle Standby';
+      const vwNow = (typeof window !== 'undefined' && window.innerWidth > 0) ? window.innerWidth : 1024;
+      const idleStatusTxt = vwNow < 580
+        ? 'BLE Standby'
+        : (vwNow < 780 ? 'Scale / R2 / Omni Standby' : 'Scale / Pressure / R2 / Omni / Kettle Standby');
       setTextIfChanged(statusTxt, parts.length ? ('Live: ' + parts.join(' \u00B7 ')) : idleStatusTxt);
       quickReadR2Btn.hidden = !(r2On || simOn);
       return barRoot && barRoot.isConnected;
