@@ -514,172 +514,172 @@ function mkRoastTemps(ul, l, ml, m, md, d){
 const METHOD_PHYSICS_V6 = attachByKey([
   {
     key:'v60', label:'Hario V60', short:'V60', category:'cone', type:'flow', icon:'brewer-v60',
-    d50AnchorUm:550, um:[440, 720], ratio:16.5, ratioBounds:[14.5, 17.5], dose:18, water:300,
-    tempByRoastC:mkRoastTemps(98, 96, 94, 92, 89, 85),
+    d50AnchorUm:545, um:[440, 720], ratio:16.5, ratioBounds:[15.0, 17.8], dose:18, water:300,
+    tempByRoastC:mkRoastTemps(99.5, 99, 97.5, 95.5, 92.5, 89.5),
     rWater:2.10, etaTail:0.24, chiRet:0.06, fAbsDefault:1.00, nLayers:3, bedAreaCm2:28.3, deltaPExtKPa:0,
-    defaultFilterId:'cone-bleached', oilPassFrac:0.02, typicalTimeS:[150, 195], targetRef:{ tdsPct:1.35, eyPct:20.0 },
+    defaultFilterId:'cone-bleached', oilPassFrac:0.02, typicalTimeS:[165, 200], targetRef:{ tdsPct:1.36, eyPct:20.4 },
     epistemicTier:'verified_science',
     blurb:'Conical 60-degree percolation with spiral air ribs (~8% wall bypass); laminar 3-5 cm unbroken pour stream.',
     subModes:[
-      { id:'standard', label:'3-Pulse Clarity', d50Um:550, ratio:16.5 },
+      { id:'standard', label:'3-Pulse Clarity', d50Um:545, ratio:16.5 },
       { id:'single-pour', label:'Laminar Single Pour', d50Um:520, ratio:16.5 },
-      { id:'kasuya-46', label:'Kasuya 4:6 (5 Pulses)', d50Um:680, ratio:15.0 }
+      { id:'kasuya-46', label:'Kasuya 4:6 (5 Pulses)', d50Um:670, ratio:15.2 }
     ]
   },
   {
     key:'origami', label:'Origami Dripper', short:'Origami', category:'cone', type:'flow', icon:'brewer-origami',
-    d50AnchorUm:530, um:[430, 740], ratio:16.0, ratioBounds:[14.5, 18.0], dose:15, water:240,
-    tempByRoastC:mkRoastTemps(98, 96, 94, 92, 89, 86),
+    d50AnchorUm:530, um:[430, 740], ratio:16.5, ratioBounds:[15.0, 18.0], dose:15, water:248,
+    tempByRoastC:mkRoastTemps(99.5, 99, 97.5, 95.5, 92.5, 89.5),
     rWater:2.08, etaTail:0.24, chiRet:0.06, fAbsDefault:1.00, nLayers:3, bedAreaCm2:27.5, deltaPExtKPa:0,
-    defaultFilterId:'cone-fast-abaca', oilPassFrac:0.03, typicalTimeS:[135, 195], targetRef:{ tdsPct:1.38, eyPct:20.2 },
+    defaultFilterId:'cone-fast-abaca', oilPassFrac:0.03, typicalTimeS:[155, 195], targetRef:{ tdsPct:1.38, eyPct:20.4 },
     epistemicTier:'verified_science',
-    blurb:'Dual-geometry 20-flute dripper: Cone paper spans channels (fast, high clarity, 530 um) while Kalita Wave paper nests 1:1 for zero-choke flat-bed sweetness (620 um).',
+    blurb:'Dual-geometry 20-flute dripper: Cone paper spans channels (fast, high clarity, 530 um) while Kalita Wave paper nests 1:1 for zero-choke flat-bed sweetness (610 um).',
     subModes:[
-      { id:'origami-cone', label:'Cone Paper (20 Air Channels)', d50Um:530, ratio:16.0, rWater:2.08, filterId:'cone-fast-abaca' },
-      { id:'origami-wave', label:'Kalita Wave Paper (Flat Bed)', d50Um:620, ratio:16.5, rWater:2.15, filterId:'wave-bleached' }
+      { id:'origami-cone', label:'Cone Paper (20 Air Channels)', d50Um:530, ratio:16.5, rWater:2.08, filterId:'cone-fast-abaca' },
+      { id:'origami-wave', label:'Kalita Wave Paper (Flat Bed)', d50Um:610, ratio:16.5, rWater:2.15, filterId:'wave-bleached' }
     ]
   },
   {
     key:'kalita', label:'Kalita Wave', short:'Kalita Wave', category:'flat', type:'flow', icon:'brewer-kalita',
-    d50AnchorUm:640, um:[520, 780], ratio:16.5, ratioBounds:[13.5, 17.5], dose:18, water:300,
-    tempByRoastC:mkRoastTemps(97, 95, 93, 91, 88, 85),
+    d50AnchorUm:615, um:[500, 780], ratio:16.5, ratioBounds:[15.0, 17.8], dose:18, water:300,
+    tempByRoastC:mkRoastTemps(99, 98, 96.5, 95, 92, 89),
     rWater:2.15, etaTail:0.20, chiRet:0.08, fAbsDefault:1.00, nLayers:3, bedAreaCm2:23.8, deltaPExtKPa:0,
-    defaultFilterId:'wave-bleached', oilPassFrac:0.02, typicalTimeS:[165, 210], targetRef:{ tdsPct:1.35, eyPct:20.0 },
+    defaultFilterId:'wave-bleached', oilPassFrac:0.02, typicalTimeS:[170, 210], targetRef:{ tdsPct:1.36, eyPct:20.2 },
     epistemicTier:'verified_science',
     blurb:'Flat-bottom 3-hole restricted percolation with 20-pleat air insulation for uniform 1D plug flow and sweet roundness.',
     subModes:[
-      { id:'wave-185', label:'Wave 185 (15-26 g)', d50Um:640, ratio:16.5 },
-      { id:'wave-155', label:'Wave 155 (10-16 g)', d50Um:590, ratio:16.0 }
+      { id:'wave-185', label:'Wave 185 (15-26 g)', d50Um:615, ratio:16.5 },
+      { id:'wave-155', label:'Wave 155 (10-16 g)', d50Um:580, ratio:16.0 }
     ]
   },
   {
     key:'orea', label:'Orea V3 / V4', short:'Orea', category:'flat', type:'flow', icon:'brewer-orea',
-    d50AnchorUm:580, um:[450, 740], ratio:16.5, ratioBounds:[14.5, 19.5], dose:15, water:250,
-    tempByRoastC:mkRoastTemps(98, 96, 94, 91, 88, 84),
+    d50AnchorUm:565, um:[450, 740], ratio:16.5, ratioBounds:[15.0, 19.5], dose:15, water:250,
+    tempByRoastC:mkRoastTemps(99.5, 98.5, 97, 95, 92, 89),
     rWater:2.05, etaTail:0.18, chiRet:0.05, fAbsDefault:1.00, nLayers:3, bedAreaCm2:21.2, deltaPExtKPa:0,
-    defaultFilterId:'wave-bleached', oilPassFrac:0.03, typicalTimeS:[130, 170], targetRef:{ tdsPct:1.38, eyPct:21.2 },
+    defaultFilterId:'wave-bleached', oilPassFrac:0.03, typicalTimeS:[145, 185], targetRef:{ tdsPct:1.38, eyPct:21.0 },
     epistemicTier:'verified_science',
-    blurb:'Unrestricted open-ring flat-bottom brewer; supports pleated Wave filters (580 um) or Negotiated flush zero-bypass flat papers (610 um, 1:17.5, 21-23% EY).',
+    blurb:'Unrestricted open-ring flat-bottom brewer; supports pleated Wave filters (565 um) or Negotiated flush zero-bypass flat papers (600 um, 1:17.5, 21-23% EY).',
     subModes:[
-      { id:'orea-wave', label:'Pleated Wave Mode', d50Um:580, ratio:16.5, filterId:'wave-bleached' },
-      { id:'orea-negotiated', label:'Negotiated Zero-Bypass Flat', d50Um:610, ratio:17.5, filterId:'orea-flat-negotiated', zeroBypass:true }
+      { id:'orea-wave', label:'Pleated Wave Mode', d50Um:565, ratio:16.5, filterId:'wave-bleached' },
+      { id:'orea-negotiated', label:'Negotiated Zero-Bypass Flat', d50Um:600, ratio:17.5, filterId:'orea-flat-negotiated', zeroBypass:true }
     ]
   },
   {
     key:'pulsar', label:'NextLevel Pulsar / Tricolate', short:'Pulsar', category:'zero-bypass', type:'hybrid', icon:'brewer-pulsar',
-    d50AnchorUm:620, um:[480, 780], ratio:17.5, ratioBounds:[15.0, 22.0], dose:20, water:350,
-    tempByRoastC:mkRoastTemps(99, 97, 95, 92, 89, 85),
+    d50AnchorUm:610, um:[480, 780], ratio:17.5, ratioBounds:[15.5, 22.0], dose:20, water:350,
+    tempByRoastC:mkRoastTemps(99.5, 99, 97.5, 95.5, 92.5, 89.5),
     screenTempCompC:2.0,
     rWater:2.10, etaTail:0.45, chiRet:0.18, fAbsDefault:1.00, nLayers:3, bedAreaCm2:44.2, deltaPExtKPa:0,
-    defaultFilterId:'pulsar-tricolate-disc', oilPassFrac:0.02, typicalTimeS:[195, 300], targetRef:{ tdsPct:1.38, eyPct:22.0 },
+    defaultFilterId:'pulsar-tricolate-disc', oilPassFrac:0.02, typicalTimeS:[195, 285], targetRef:{ tdsPct:1.38, eyPct:22.0 },
     epistemicTier:'verified_science',
     blurb:'75-80 mm zero-bypass cylinder + overhead dispersion screen (+2 C kettle compensation for dual air-fall cooling); Pulsar valve enables closed bloom steep.',
     subModes:[
-      { id:'pulsar-valve', label:'Pulsar Closed-Bloom Hybrid Valve', d50Um:620, ratio:17.5 },
-      { id:'tricolate-open', label:'Tricolate Open Zero-Bypass', d50Um:580, ratio:18.5 }
+      { id:'pulsar-valve', label:'Pulsar Closed-Bloom Hybrid Valve', d50Um:610, ratio:17.5 },
+      { id:'tricolate-open', label:'Tricolate Open Zero-Bypass', d50Um:575, ratio:18.5 }
     ]
   },
   {
     key:'chemex', label:'Chemex', short:'Chemex', category:'cone', type:'flow', icon:'brewer-chemex',
-    d50AnchorUm:760, um:[640, 920], ratio:16.5, ratioBounds:[14.0, 17.5], dose:30, water:500,
-    tempByRoastC:mkRoastTemps(98, 96, 94, 92, 89, 86),
+    d50AnchorUm:740, um:[620, 920], ratio:16.5, ratioBounds:[15.0, 17.8], dose:30, water:500,
+    tempByRoastC:mkRoastTemps(99.5, 99, 98, 96, 93, 90),
     rWater:2.25, etaTail:0.24, chiRet:0.06, fAbsDefault:1.00, nLayers:3, bedAreaCm2:34.0, deltaPExtKPa:0,
-    defaultFilterId:'chemex-bonded', oilPassFrac:0.01, typicalTimeS:[225, 285], targetRef:{ tdsPct:1.33, eyPct:19.8 },
+    defaultFilterId:'chemex-bonded', oilPassFrac:0.01, typicalTimeS:[220, 275], targetRef:{ tdsPct:1.34, eyPct:20.0 },
     epistemicTier:'verified_science',
     blurb:'Heavy lab-grade bonded paper seals to glass hourglass; traps ~99% of lipids and cafestol for sparkling clarity.'
   },
   {
     key:'nel', label:'Cloth Nel Drip (Woodneck)', short:'Nel Drip', category:'cloth', type:'flow', icon:'brewer-nel',
-    d50AnchorUm:680, um:[560, 820], ratio:13.5, ratioBounds:[10.0, 16.5], dose:20, water:270,
-    tempByRoastC:mkRoastTemps(93, 92, 90, 88, 85, 82),
+    d50AnchorUm:670, um:[560, 820], ratio:13.5, ratioBounds:[10.0, 16.5], dose:20, water:270,
+    tempByRoastC:mkRoastTemps(95, 94, 92, 90, 87, 84),
     rWater:2.20, etaTail:0.25, chiRet:0.09, fAbsDefault:1.00, nLayers:3, bedAreaCm2:26.0, deltaPExtKPa:0,
     defaultFilterId:'cloth-nel-flannel', oilPassFrac:0.38, typicalTimeS:[180, 240], targetRef:{ tdsPct:1.55, eyPct:19.2 },
     epistemicTier:'verified_science',
     blurb:'Swollen cotton flannel traps >98% solid fines while passing ~38% coffee lipids for velvety Kissaten silkiness; store wet in cold water or -18 C freezer (never soap).',
     subModes:[
-      { id:'nel-specialty', label:'Modern Specialty (1:13.5)', d50Um:680, ratio:13.5 },
+      { id:'nel-specialty', label:'Modern Specialty (1:13.5)', d50Um:670, ratio:13.5 },
       { id:'nel-kissaten', label:'Classic Kissaten Demitasse (1:10.5)', d50Um:640, ratio:10.5 },
-      { id:'nel-clean', label:'Light Clarity (1:15.0)', d50Um:700, ratio:15.0 }
+      { id:'nel-clean', label:'Light Clarity (1:15.0)', d50Um:690, ratio:15.0 }
     ]
   },
   {
     key:'drip', label:'SCA Batch Brewer', short:'Batch Drip', category:'auto-drip', type:'flow', icon:'brewer-drip',
-    d50AnchorUm:700, batchUmPerGOver500:0.22, um:[580, 920], ratio:17.0, ratioBounds:[14.5, 18.5], dose:60, water:1000,
-    tempByRoastC:mkRoastTemps(95, 94, 93, 93, 92, 91),
+    d50AnchorUm:690, batchUmPerGOver500:0.22, um:[560, 920], ratio:16.8, ratioBounds:[15.5, 18.5], dose:60, water:1000,
+    tempByRoastC:mkRoastTemps(98.5, 97.5, 96.5, 95.5, 93.5, 91.5),
     rWater:2.15, etaTail:0.20, chiRet:0.08, fAbsDefault:1.00, nLayers:3, bedAreaCm2:55.0, deltaPExtKPa:0,
-    defaultFilterId:'wave-bleached', oilPassFrac:0.02, typicalTimeS:[240, 360], targetRef:{ tdsPct:1.30, eyPct:19.8 },
+    defaultFilterId:'wave-bleached', oilPassFrac:0.02, typicalTimeS:[240, 340], targetRef:{ tdsPct:1.33, eyPct:20.0 },
     epistemicTier:'verified_science',
-    blurb:'Automated pulse showerhead (SCA-310 92-95 C); scales grind +0.22 um/g above 500 g (+220 um at 1.5 L) to prevent basket overflow.'
+    blurb:'Automated pulse showerhead (SCA-310 92-96 C slurry); scales grind +0.22 um/g above 500 g (+220 um at 1.5 L) to prevent basket overflow.'
   },
   {
     key:'aiden', label:'Fellow Aiden Precision', short:'Fellow Aiden', category:'smart-brewer', type:'flow', icon:'brewer-aiden',
-    d50AnchorUm:540, batchAnchorUm:720, um:[450, 900], ratio:16.5, ratioBounds:[14.0, 20.0], dose:18, water:300,
-    tempByRoastC:mkRoastTemps(98, 96, 94, 92, 89, 85),
+    d50AnchorUm:545, batchAnchorUm:720, um:[450, 900], ratio:16.5, ratioBounds:[15.0, 20.0], dose:18, water:300,
+    tempByRoastC:mkRoastTemps(99.5, 99, 97.5, 96, 93, 91),
     rWater:2.10, etaTail:0.20, chiRet:0.07, fAbsDefault:1.00, nLayers:3, bedAreaCm2:26.5, batchBedAreaCm2:62.0, deltaPExtKPa:0,
-    defaultFilterId:'cone-bleached', oilPassFrac:0.02, typicalTimeS:[165, 270], targetRef:{ tdsPct:1.38, eyPct:20.5 },
+    defaultFilterId:'cone-bleached', oilPassFrac:0.02, typicalTimeS:[170, 250], targetRef:{ tdsPct:1.38, eyPct:20.5 },
     epistemicTier:'verified_science',
-    blurb:'Sealed steam-retaining PID chamber (<=450 mL Green SS Cone vs >450 mL 62 cm2 Blue Batch Flat basket, 0.5 C declining pulses & 60 C Samo Bloom).'
+    blurb:'Sealed steam-retaining PID chamber (<=450 mL Green SS Cone vs >450 mL 62 cm2 Blue Batch Flat basket; Light 99 C / 1:17, Medium 96 C / 1:16, Dark step-down).'
   },
   {
     key:'xbloom', label:'xBloom Studio / Original', short:'xBloom', category:'smart-brewer', type:'flow', icon:'brewer-xbloom',
-    d50AnchorUm:600, um:[480, 740], ratio:16.0, ratioBounds:[14.5, 18.0], dose:15, water:240,
-    tempByRoastC:mkRoastTemps(96, 95, 93, 91, 88, 85),
+    d50AnchorUm:580, um:[480, 740], ratio:16.0, ratioBounds:[15.0, 18.0], dose:15, water:240,
+    tempByRoastC:mkRoastTemps(97, 96, 95, 93.5, 91.5, 89),
     rWater:2.10, etaTail:0.20, chiRet:0.07, fAbsDefault:1.00, nLayers:3, bedAreaCm2:22.0, deltaPExtKPa:0,
-    defaultFilterId:'wave-bleached', oilPassFrac:0.02, typicalTimeS:[160, 210], targetRef:{ tdsPct:1.38, eyPct:20.0 },
+    defaultFilterId:'wave-bleached', oilPassFrac:0.02, typicalTimeS:[160, 210], targetRef:{ tdsPct:1.38, eyPct:20.2 },
     epistemicTier:'verified_science',
     blurb:'Integrated 48 mm conical burr (60-70 RPM low-fines clarity vs 80-90 balanced vs 100-120 body) + kinematic spout (center/spiral/circular).'
   },
   {
     key:'switch', label:'Hario Switch (02 / 03)', short:'Switch', category:'hybrid', type:'hybrid', icon:'brewer-switch',
-    d50AnchorUm:640, um:[520, 780], ratio:15.5, ratioBounds:[14.0, 17.5], dose:16, water:250,
+    d50AnchorUm:620, um:[500, 780], ratio:16.0, ratioBounds:[15.0, 17.5], dose:16, water:256,
     cap02G:260, cap03G:380,
-    tempByRoastC:mkRoastTemps(97, 95, 93, 91, 88, 85),
+    tempByRoastC:mkRoastTemps(99.5, 98.5, 97, 95, 92, 89),
     rWater:2.20, etaTail:0.55, chiRet:0.75, fAbsDefault:1.00, nLayers:3, bedAreaCm2:28.3, deltaPExtKPa:0,
-    defaultFilterId:'cone-bleached', oilPassFrac:0.02, typicalTimeS:[180, 225], targetRef:{ tdsPct:1.38, eyPct:20.2 },
+    defaultFilterId:'cone-bleached', oilPassFrac:0.02, typicalTimeS:[180, 225], targetRef:{ tdsPct:1.38, eyPct:20.4 },
     epistemicTier:'verified_science',
     blurb:'Ball-valve steep-and-release cone: Pure Steep when W <= cap (02=260 g, 03=380 g) or 2-Stage Open Percolation Flush + Closed Steep when W > cap.'
   },
   {
     key:'clever', label:'Clever Dripper', short:'Clever', category:'hybrid', type:'hybrid', icon:'brewer-clever',
-    d50AnchorUm:660, um:[540, 820], ratio:15.5, ratioBounds:[14.0, 17.5], dose:18, water:280,
-    tempByRoastC:mkRoastTemps(97, 95, 93, 91, 88, 85),
+    d50AnchorUm:635, um:[520, 820], ratio:16.0, ratioBounds:[15.0, 17.5], dose:18, water:288,
+    tempByRoastC:mkRoastTemps(99.5, 98.5, 97, 95, 92, 89),
     rWater:2.20, etaTail:0.95, chiRet:0.92, fAbsDefault:1.00, nLayers:1, bedAreaCm2:32.0, deltaPExtKPa:0,
-    defaultFilterId:'trapezoid-wedge', oilPassFrac:0.02, typicalTimeS:[180, 255], targetRef:{ tdsPct:1.38, eyPct:20.2 },
+    defaultFilterId:'trapezoid-wedge', oilPassFrac:0.02, typicalTimeS:[180, 240], targetRef:{ tdsPct:1.38, eyPct:20.4 },
     epistemicTier:'verified_science',
     blurb:'Lidded trapezoid steep-and-release; supports Water-First stall-free mode (drains 35-50 s faster by keeping micro-fines trapped in upper raft).',
     subModes:[
-      { id:'clever-water-first', label:'Water-First Stall-Free', d50Um:640, ratio:15.5 },
-      { id:'clever-classic', label:'Coffee-First Stirred Steep', d50Um:660, ratio:15.5 }
+      { id:'clever-water-first', label:'Water-First Stall-Free', d50Um:625, ratio:16.0 },
+      { id:'clever-classic', label:'Coffee-First Stirred Steep', d50Um:645, ratio:16.0 }
     ]
   },
   {
     key:'aeropress', label:'AeroPress', short:'AeroPress', category:'immersion', type:'hybrid', icon:'brewer-aeropress',
-    d50AnchorUm:500, um:[340, 680], ratio:15.5, ratioBounds:[4.0, 17.5], dose:15, water:232,
-    tempByRoastC:mkRoastTemps(96, 94, 91, 88, 84, 80),
+    d50AnchorUm:490, um:[340, 680], ratio:16.0, ratioBounds:[4.0, 18.0], dose:15, water:240,
+    tempByRoastC:mkRoastTemps(99, 97.5, 96, 94, 90.5, 87),
     rWater:1.65, etaTail:0.95, chiRet:0.88, fAbsDefault:1.00, nLayers:2, bedAreaCm2:31.2, deltaPExtKPa:28,
-    defaultFilterId:'ap-paper-single', oilPassFrac:0.04, typicalTimeS:[120, 160], targetRef:{ tdsPct:1.38, eyPct:20.2 },
+    defaultFilterId:'ap-paper-single', oilPassFrac:0.04, typicalTimeS:[135, 165], targetRef:{ tdsPct:1.38, eyPct:20.4 },
     epistemicTier:'verified_science',
-    blurb:'Cylindrical immersion + gentle 0.15-0.30 bar forearm press; supports Standard (2:00), Inverted, Concentrate (1:5), and Gagne 9-min Steep.',
+    blurb:'Cylindrical immersion + gentle 0.15-0.30 bar forearm press; supports Standard (2:30), Inverted, Concentrate (1:5), and Gagne 9-min Steep.',
     subModes:[
-      { id:'ap-standard', label:'Standard Upright (2:15)', d50Um:500, ratio:15.5 },
-      { id:'ap-inverted', label:'Inverted Full Steep', d50Um:500, ratio:15.0 },
-      { id:'ap-gagne', label:'Gagne 9-Minute Equilibrium', d50Um:540, ratio:16.0 },
+      { id:'ap-standard', label:'Standard Upright (2:30)', d50Um:490, ratio:16.0 },
+      { id:'ap-inverted', label:'Inverted Full Steep', d50Um:490, ratio:15.5 },
+      { id:'ap-gagne', label:'Gagne 9-Minute Equilibrium', d50Um:530, ratio:16.5 },
       { id:'ap-concentrate', label:'Espresso-Style Concentrate + Bypass', d50Um:380, ratio:5.0 }
     ]
   },
   {
     key:'siphon', label:'Vacuum Siphon', short:'Siphon', category:'immersion', type:'siphon', icon:'brewer-siphon',
-    d50AnchorUm:580, um:[480, 700], ratio:15.5, ratioBounds:[14.0, 17.0], dose:20, water:310,
-    tempByRoastC:mkRoastTemps(94, 93, 92, 92, 91, 90),
+    d50AnchorUm:570, um:[480, 700], ratio:15.8, ratioBounds:[14.5, 17.2], dose:20, water:316,
+    tempByRoastC:mkRoastTemps(96, 95, 94, 93, 91.5, 90),
     rWater:2.00, etaTail:0.92, chiRet:0.95, fAbsDefault:1.00, nLayers:1, bedAreaCm2:38.5, deltaPExtKPa:55,
-    defaultFilterId:'cloth-nel-flannel', oilPassFrac:0.35, typicalTimeS:[105, 150], targetRef:{ tdsPct:1.38, eyPct:20.0 },
+    defaultFilterId:'cloth-nel-flannel', oilPassFrac:0.35, typicalTimeS:[110, 150], targetRef:{ tdsPct:1.38, eyPct:20.2 },
     epistemicTier:'verified_science',
-    blurb:'Vapor-pressure ascent (~91-94 C isothermal upper globe) + gentle bamboo paddle fold + 0.4-0.55 bar vacuum drawdown.'
+    blurb:'Vapor-pressure ascent (~92-95 C isothermal upper globe) + gentle bamboo paddle fold + 0.4-0.55 bar vacuum drawdown.'
   },
   {
     key:'press', label:'French Press', short:'French Press', category:'immersion', type:'immersion', icon:'brewer-press',
-    d50AnchorUm:850, um:[720, 1050], ratio:15.0, ratioBounds:[13.0, 17.0], dose:20, water:300,
-    tempByRoastC:mkRoastTemps(97, 95, 94, 92, 89, 86),
+    d50AnchorUm:820, um:[700, 1050], ratio:15.8, ratioBounds:[14.5, 17.2], dose:20, water:316,
+    tempByRoastC:mkRoastTemps(99.5, 98.5, 97, 95.5, 92.5, 90),
     rWater:2.40, etaTail:1.00, chiRet:1.00, fAbsDefault:1.00, nLayers:1, bedAreaCm2:56.7, deltaPExtKPa:0,
     defaultFilterId:'press-spiral-mesh', oilPassFrac:0.95, typicalTimeS:[480, 570], targetRef:{ tdsPct:1.40, eyPct:20.5 },
     epistemicTier:'verified_science',
@@ -688,7 +688,7 @@ const METHOD_PHYSICS_V6 = attachByKey([
   {
     key:'turkish', label:'Turkish / Ibrik Cezve', short:'Turkish Cezve', category:'decoction', type:'stove', icon:'brewer-turkish',
     d50AnchorUm:90, kineticsPowderUm:85, um:[55, 130], ratio:9.5, ratioBounds:[8.0, 11.5], dose:8, water:76,
-    tempByRoastC:mkRoastTemps(93, 93, 93, 92, 92, 91),
+    tempByRoastC:mkRoastTemps(94, 94, 93.5, 93, 92, 91),
     rWater:1.35, etaTail:1.00, chiRet:1.00, fAbsDefault:1.00, nLayers:1, bedAreaCm2:22.0, deltaPExtKPa:0,
     defaultFilterId:'unfiltered-sediment', oilPassFrac:0.95, typicalTimeS:[135, 180], targetRef:{ tdsPct:2.10, eyPct:19.5 },
     epistemicTier:'verified_science',
@@ -696,15 +696,15 @@ const METHOD_PHYSICS_V6 = attachByKey([
   },
   {
     key:'phin', label:'Vietnamese Phin', short:'Phin', category:'percolation', type:'flow', icon:'brewer-phin',
-    d50AnchorUm:560, um:[450, 680], ratio:4.5, ratioBounds:[3.5, 8.0], dose:20, water:90,
-    tempByRoastC:mkRoastTemps(96, 95, 93, 91, 89, 86),
+    d50AnchorUm:550, um:[450, 680], ratio:4.5, ratioBounds:[3.5, 8.0], dose:20, water:90,
+    tempByRoastC:mkRoastTemps(98, 97, 96, 94.5, 92, 89.5),
     rWater:1.80, etaTail:0.22, chiRet:0.12, fAbsDefault:1.00, nLayers:3, bedAreaCm2:28.3, deltaPExtKPa:0,
-    defaultFilterId:'espresso-precision-basket', oilPassFrac:0.45, typicalTimeS:[240, 360], targetRef:{ tdsPct:3.80, eyPct:19.0 },
+    defaultFilterId:'espresso-precision-basket', oilPassFrac:0.45, typicalTimeS:[240, 360], targetRef:{ tdsPct:3.80, eyPct:19.2 },
     epistemicTier:'verified_science',
     blurb:'Gravity-damped perforated metal drip: Traditional Ca Phe Sua Da (1:4.5 over sweetened condensed milk + ice) or Specialty Black (1:6.0-7.0).',
     subModes:[
       { id:'phin-suada', label:'Traditional Ca Phe Sua Da (1:4.5)', d50Um:540, ratio:4.5 },
-      { id:'phin-black', label:'Specialty Black Phin (1:6.0)', d50Um:580, ratio:6.0 }
+      { id:'phin-black', label:'Specialty Black Phin (1:6.0)', d50Um:570, ratio:6.0 }
     ]
   },
   {
@@ -733,15 +733,15 @@ const METHOD_PHYSICS_V6 = attachByKey([
   },
   {
     key:'espresso', label:'Espresso (9-Bar / Turbo / Soup)', short:'Espresso', category:'espresso', type:'espresso', icon:'brewer-espresso',
-    d50AnchorUm:235, um:[180, 600], ratio:2.0, ratioBounds:[1.3, 5.5], outRatio:true, dose:18, water:36,
-    tempByRoastC:mkRoastTemps(96, 95, 93, 92, 90, 88),
+    d50AnchorUm:230, um:[180, 600], ratio:2.0, ratioBounds:[1.3, 5.5], outRatio:true, dose:18, water:36,
+    tempByRoastC:mkRoastTemps(95.5, 94.5, 93.5, 93, 91.5, 90),
     rWater:1.00, etaTail:0.35, chiRet:0.10, fAbsDefault:0.95, nLayers:3, bedAreaCm2:26.8, deltaPExtKPa:900,
-    defaultFilterId:'espresso-precision-basket', oilPassFrac:0.45, typicalTimeS:[25, 32], targetRef:{ tdsPct:9.8, eyPct:20.0 },
+    defaultFilterId:'espresso-precision-basket', oilPassFrac:0.45, typicalTimeS:[26, 33], targetRef:{ tdsPct:9.8, eyPct:20.4 },
     epistemicTier:'verified_science',
     blurb:'High/low-pressure packed-bed Darcy flow across 5 physics regimes: Classic 9-Bar, Ristretto, 6-Bar Turbo (Cameron & Hendon 2020), Allonge, and Soup / Filter 2.0.',
     subModes:[
-      { id:'esp-9bar', label:'Classic 9-Bar (1:2.0, 28 s)', d50Um:235, ratio:2.0, bar:9.0, timeS:28 },
-      { id:'esp-ristretto', label:'Ristretto (1:1.5, 25 s)', d50Um:215, ratio:1.5, bar:9.0, timeS:25 },
+      { id:'esp-9bar', label:'Classic 9-Bar (1:2.0, 29 s)', d50Um:230, ratio:2.0, bar:9.0, timeS:29 },
+      { id:'esp-ristretto', label:'Ristretto (1:1.5, 26 s)', d50Um:212, ratio:1.5, bar:9.0, timeS:26 },
       { id:'esp-turbo', label:'6-Bar Turbo Shot (1:2.8, 16 s)', d50Um:310, ratio:2.8, bar:6.0, timeS:16, rWater:1.15 },
       { id:'esp-allonge', label:'Allonge (1:4.8, 28 s)', d50Um:290, ratio:4.8, bar:6.5, timeS:28 },
       { id:'esp-soup', label:'Soup / Filter 2.0 (1.5 Bar + Paper + Bypass)', d50Um:480, ratio:3.5, bypassToRatio:16.0, bar:1.5, timeS:26, rWater:0.95, filterId:'ap-paper-single' }
@@ -749,14 +749,14 @@ const METHOD_PHYSICS_V6 = attachByKey([
   },
   {
     key:'lever_espresso', label:'Manual / Spring Lever Espresso', short:'Lever Espresso', category:'espresso', type:'espresso', icon:'brewer-lever-espresso',
-    d50AnchorUm:230, um:[175, 580], ratio:2.2, ratioBounds:[1.5, 4.5], outRatio:true, dose:18, water:40,
-    tempByRoastC:mkRoastTemps(96, 94, 93, 91, 89, 87),
+    d50AnchorUm:228, um:[175, 580], ratio:2.2, ratioBounds:[1.5, 4.5], outRatio:true, dose:18, water:40,
+    tempByRoastC:mkRoastTemps(95.5, 94.5, 93.5, 92.5, 91, 89.5),
     rWater:1.00, etaTail:0.32, chiRet:0.10, fAbsDefault:0.95, nLayers:3, bedAreaCm2:26.4, deltaPExtKPa:850,
     defaultFilterId:'espresso-precision-basket', oilPassFrac:0.45, typicalTimeS:[32, 42], targetRef:{ tdsPct:9.4, eyPct:20.8 },
     epistemicTier:'verified_science',
     blurb:'Flair 58 / Londinium declining lever profile: 1.5-2.0 bar pre-infusion soak (10 s) \u2192 8.5 bar peak \u2192 smooth decay to 4.0 bar as puck erodes, plus cylinder preheat physics.',
     subModes:[
-      { id:'lever-londinium', label:'Londinium Declining (8.5 \u2192 4.0 Bar)', d50Um:230, ratio:2.2, peakBar:8.5, endBar:4.0, timeS:37 },
+      { id:'lever-londinium', label:'Londinium Declining (8.5 \u2192 4.0 Bar)', d50Um:228, ratio:2.2, peakBar:8.5, endBar:4.0, timeS:37 },
       { id:'lever-6bar', label:'Modern 6-Bar Light Lever (6.0 \u2192 3.5 Bar)', d50Um:285, ratio:2.6, peakBar:6.0, endBar:3.5, timeS:25 },
       { id:'lever-turbo', label:'Lever Turbo (6.0 Bar, 17 s)', d50Um:310, ratio:2.8, peakBar:6.0, endBar:4.5, timeS:17 },
       { id:'lever-soup', label:'Lever Soup (1.5 Bar + Bottom Paper)', d50Um:460, ratio:3.5, peakBar:1.5, endBar:1.2, timeS:26, filterId:'ap-paper-single' }
@@ -764,17 +764,17 @@ const METHOD_PHYSICS_V6 = attachByKey([
   },
   {
     key:'moka', label:'Stovetop Moka Pot', short:'Moka Pot', category:'pressure', type:'moka', icon:'brewer-moka',
-    d50AnchorUm:380, um:[310, 470], ratio:7.5, ratioBounds:[6.5, 9.0], dose:18, water:135,
-    tempByRoastC:mkRoastTemps(85, 82, 78, 75, 55, 40),
+    d50AnchorUm:375, um:[310, 470], ratio:7.5, ratioBounds:[6.5, 9.0], dose:18, water:135,
+    tempByRoastC:mkRoastTemps(99, 97, 94, 90, 78, 65),
     rWater:1.35, boilerResidualFrac:0.18, etaTail:0.30, chiRet:0.15, fAbsDefault:1.00, nLayers:3, bedAreaCm2:24.6, deltaPExtKPa:135,
-    defaultFilterId:'espresso-precision-basket', oilPassFrac:0.75, typicalTimeS:[150, 240], targetRef:{ tdsPct:3.85, eyPct:19.2 },
+    defaultFilterId:'espresso-precision-basket', oilPassFrac:0.75, typicalTimeS:[150, 240], targetRef:{ tdsPct:3.85, eyPct:19.4 },
     epistemicTier:'verified_science',
-    blurb:'1.2-1.8 bar steam-driven upward percolation; preheated 75-85 C base water on light/med roasts prevents dry-baking puck (Navarini 2009); quench base before 100 C sputter.'
+    blurb:'1.2-1.8 bar steam-driven upward percolation; boiling base water on light/med roasts maximizes sweet extraction without dry-baking the puck (Hoffmann/Navarini); warm base (65-78 C) tames dark roasts; quench base before sputter.'
   },
   {
     key:'philips5500', label:'Philips 5500 LatteGo', short:'Philips 5500', category:'superauto', type:'auto', machine:true, icon:'brewer-philips5500',
     d50AnchorUm:320, um:[250, 460], ratio:3.8, ratioBounds:[2.0, 18.0], dose:9.3, water:120,
-    tempByRoastC:mkRoastTemps(98, 97, 96, 94, 92, 90),
+    tempByRoastC:mkRoastTemps(98, 97, 96, 94.5, 92.5, 90.5),
     rWater:1.15, etaTail:0.35, chiRet:0.14, fAbsDefault:0.95, nLayers:3, bedAreaCm2:22.9, deltaPExtKPa:650,
     defaultFilterId:'espresso-precision-basket', oilPassFrac:0.45, typicalTimeS:[22, 45], targetRef:{ tdsPct:3.40, eyPct:19.5 },
     epistemicTier:'verified_science',

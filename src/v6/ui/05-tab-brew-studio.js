@@ -2018,7 +2018,7 @@
       var roastStr = String((a.coffee && a.coffee.roast) || 'medium-light').toLowerCase();
       var wKh = waterCfg.kh != null ? +waterCfg.kh : 40;
       var khTempShift = (mObj.key === 'cold' || mObj.key === 'cold_drip' || mObj.key === 'moka' || mObj.key === 'turkish') ? 0 : (wKh > 85 ? 1.0 : (wKh < 18 ? -1.0 : 0));
-      var tFallback = mObj.key === 'cold' ? 4 : mObj.key === 'cold_drip' ? 3 : (roastStr.indexOf('dark') >= 0 ? 87 : roastStr.indexOf('light') >= 0 ? 95 : 92) + khTempShift;
+      var tFallback = mObj.key === 'cold' ? 4 : mObj.key === 'cold_drip' ? 3 : (roastStr.indexOf('dark') >= 0 ? 89.5 : roastStr.indexOf('light') >= 0 ? 98.5 : 95.5) + khTempShift;
       a.brew.dose = dFallback;
       a.brew.ratio = rFallback;
       a.brew.water = (keepBatch && a.brew.water > 0) ? +a.brew.water : (mObj.outRatio ? Math.round(dFallback * rFallback * 2) / 2 : Math.round(dFallback * rFallback));
@@ -2491,7 +2491,7 @@
     var hasStepDown = !!(tp && tp.type === 'step-down' && +tp.startTempC > 0 && +tp.tailTempC > 0);
     if (hasStepDown) {
       push(fmtTempForPrefs(a, tp.startTempC) + ' \u2192 ' + fmtTempForPrefs(a, tp.tailTempC) + ' Step-Down Pour',
-        'Starts hot to open bright aromatics in dense, light-roast beans, then the final pour runs cooler so the cup finishes sweet instead of harsh.',
+        'Blooms hot to unlock sweetness and aroma, then cools the final pour on dark or heavily fermented coffees so late bitter/astringent compounds stay behind.',
         'is-temp');
     }
     var matLbl = { ceramic: 'Ceramic', glass: 'Glass', metal: 'Metal', plastic: 'Plastic' }[(rec && rec.brewerMaterial) || 'plastic'] || 'Brewer';
@@ -2501,7 +2501,7 @@
       var s = String(raw || '').trim();
       if (!s) return;
       if (/step-?down/i.test(s)) {
-        if (!hasStepDown) push(s, 'The final pour runs cooler than the start so light-roast sweetness finishes clean.', 'is-temp');
+        if (!hasStepDown) push(s, 'Blooms hot for sweetness, then runs the final pour cooler on dark or heavily fermented coffees to keep the finish smooth and clean.', 'is-temp');
         return;
       }
       if (/2-?pour|fines\s*guard|low-?agitation/i.test(s)) {

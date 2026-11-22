@@ -2619,4 +2619,300 @@ button.bt-step5-recap-chip:focus-visible {
   box-sizing: border-box;
 }
 
+/* ==================== v7.5 STEP 5 QUICK REVIEW REDESIGN ==================== */
+.bt-step5-quick-card {
+  gap: 12px;
+}
+
+.bt-step5-triage-block {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+/* Always 2 crisp columns on mobile & desktop so all 4 quadrants fit above the fold */
+.bt-tc-diag-grid.bt-step5-diag-v75 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.bt-tc-diag-grid.bt-step5-diag-v75 .bt-tc-diag-card {
+  min-height: 54px;
+  padding: 9px 11px;
+  border-radius: 13px;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bt-tc-diag-grid.bt-step5-diag-v75 .bt-tc-diag-card b {
+  font-size: 0.84rem;
+  line-height: 1.22;
+}
+
+.bt-tc-diag-grid.bt-step5-diag-v75 .bt-tc-diag-card span {
+  font-size: 0.72rem;
+  line-height: 1.28;
+}
+
+.bt-tc-diag-grid.bt-step5-diag-v75 .bt-tc-diag-card.is-featured-sweet {
+  grid-column: 1 / -1;
+  min-height: 50px;
+  border-color: rgba(24, 96, 62, 0.36);
+  background: linear-gradient(135deg, var(--good-bg) 0%, var(--surface) 100%);
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.bt-tc-diag-grid.bt-step5-diag-v75 .bt-tc-diag-card.is-featured-sweet b {
+  color: var(--good);
+  font-size: 0.9rem;
+}
+
+.bt-tc-diag-grid.bt-step5-diag-v75 .bt-tc-diag-card.is-featured-sweet.is-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+}
+
+.bt-tc-diag-grid.bt-step5-diag-v75 .bt-tc-diag-card.is-featured-sweet.is-active b {
+  color: var(--primary-ink);
+}
+
+.bt-tc-diag-grid.bt-step5-diag-v75 .bt-tc-diag-card.is-full-span {
+  grid-column: 1 / -1;
+  min-height: 44px;
+  padding: 7px 11px;
+  background: var(--well);
+  border-style: dashed;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+}
+
+.bt-tc-diag-grid.bt-step5-diag-v75 .bt-tc-diag-card.is-full-span.is-active {
+  background: var(--accent);
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.bt-step5-star-compact {
+  padding: 10px 11px !important;
+  gap: 7px !important;
+}
+
+#bt-nextbrew-fix.bt-tc-hero-fix.is-compact-await {
+  padding: 11px 13px;
+  gap: 7px;
+}
+
+.bt-step5-await-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--accent);
+}
+
+.bt-step5-primary-save-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-soft, var(--line));
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bt-step5-primary-save-row > .bt-tc-primary-btn {
+  flex: 1 1 200px;
+  width: auto;
+  min-height: 52px;
+}
+
+.bt-step5-primary-save-row > .bt-tc-save-home-btn {
+  flex: 0 1 auto;
+  min-height: 52px;
+  padding: 9px 15px;
+}
+
+@media (max-width: 480px) {
+  .bt-tc-diag-grid.bt-step5-diag-v75 .bt-tc-diag-card.is-featured-sweet,
+  .bt-tc-diag-grid.bt-step5-diag-v75 .bt-tc-diag-card.is-full-span {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .bt-step5-primary-save-row {
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .bt-step5-primary-save-row > .bt-tc-primary-btn,
+  .bt-step5-primary-save-row > .bt-tc-save-home-btn {
+    width: 100%;
+    flex: 0 0 auto;
+    min-height: 48px;
+  }
+}
+
+.bt-step5-ghost-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding-top: 2px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bt-step5-ghost-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 4px 2px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-size: 0.77rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-strong, var(--line));
+  cursor: pointer;
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+  overflow-wrap: anywhere;
+  transition: color 0.14s ease, text-decoration-color 0.14s ease;
+}
+
+.bt-step5-ghost-link:hover,
+.bt-step5-ghost-link:focus-visible {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+/* Progressive Disclosure Drawers (Flavor Notes & Balance Map/R2) */
+.bt-step5-drawer {
+  background: var(--surface);
+  border: 1px solid var(--line-soft, var(--line));
+  border-radius: var(--r-lg, 18px);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.bt-step5-drawer[open] {
+  border-color: var(--line-strong, var(--line));
+}
+
+.bt-step5-drawer-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 52px;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--ink);
+  transition: background-color 0.14s ease;
+}
+
+.bt-step5-drawer-summary::-webkit-details-marker {
+  display: none;
+}
+
+.bt-step5-drawer-summary:hover {
+  background: var(--bg-subtle);
+}
+
+.bt-step5-drawer-summary::after {
+  content: "+";
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--well);
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bt-step5-drawer[open] > .bt-step5-drawer-summary::after {
+  content: "\2212";
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.bt-step5-drawer-title {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.bt-step5-drawer-title b {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.bt-step5-drawer-title span {
+  font-size: 0.74rem;
+  color: var(--ink-secondary);
+  line-height: 1.3;
+}
+
+.bt-step5-drawer-body {
+  padding: 2px 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid var(--line-hairline, var(--line-soft));
+  min-width: 0;
+}
+
+.bt-step5-mode-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 11px 13px;
+  border-radius: var(--r-lg, 18px);
+  background: var(--well);
+  border: 1px solid var(--line-soft, var(--line));
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 350px) {
+  .bt-tc-diag-grid.bt-step5-diag-v75 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
 

@@ -165,8 +165,8 @@ function simulateSlurryCurve(cfg){
   const elevM = _clamp(cfg.altitudeM != null ? cfg.altitudeM : cfg.elevM, -430, 5500, 0);
   const boilC = boilingPointC(elevM);
   const isSealedPressure = (methodKey === 'espresso' || methodKey === 'lever_espresso') && (_clamp(cfg.pressureBar, 1, 15, 9) >= 1.2);
-  const rawKettleC = _clamp(cfg.kettleTempC != null ? cfg.kettleTempC : cfg.tempC, 0, 108, 94.0);
-  const maxOpenC = boilC - 0.8;
+  const rawKettleC = _clamp(cfg.kettleTempC != null ? cfg.kettleTempC : cfg.tempC, 0, 108, 96.0);
+  const maxOpenC = boilC - 0.5;
   const cappedByBoil = !isSealedPressure && rawKettleC > maxOpenC;
   const kettleTempC = isSealedPressure ? rawKettleC : Math.min(rawKettleC, maxOpenC);
   const boilDeficitC = (!isSealedPressure && rawKettleC > kettleTempC) ? _rnd(rawKettleC - kettleTempC, 2) : 0;
@@ -1075,10 +1075,10 @@ function smrkeCo2Trajectory(cfg){
    m = 0 (Acids/Volatiles: citric/malic/furans, low Ea = 26 kJ/mol, high polar solubility)
    m = 1 (Sweetness/Maillard/Carbohydrates, mid Ea = 35 kJ/mol)
    m = 2 (Bitters/Polyphenols/Phenylindanes/CGA-lactones, high Ea = 48 kJ/mol, low cold solubility) */
-const SPECIES_EA_KJ = new Float64Array([16.5, 21.5, 42.0]);
+const SPECIES_EA_KJ = new Float64Array([18.5, 25.5, 44.0]);
 const SPECIES_DH_DES_KJ = new Float64Array([0.2, 0.7, 22.0]); /* Liang et al. 2024: polar acids/sugars extract at 4 C (~19% EY) while bitter lactones stay suppressed! */
-const SPECIES_K_FAST_93 = new Float64Array([0.098, 0.056, 0.022]);
-const SPECIES_K_SLOW_93 = new Float64Array([0.019, 0.0102, 0.0040]);
+const SPECIES_K_FAST_93 = new Float64Array([0.082, 0.041, 0.016]);
+const SPECIES_K_SLOW_93 = new Float64Array([0.0145, 0.0072, 0.0029]);
 
 function computeRoastSpeciesMassFracs(agtron, isDecaf){
   const u = _clamp((agtron - 28.0) / 70.0, 0, 1, 0.55);
@@ -1161,18 +1161,20 @@ function simulateBrew(cfg){
       brewTimeS = midTyp;
     } else if (methodKey === 'espresso' || methodKey === 'lever_espresso'){
       /* Darcy-driven shot duration sensitive to d32, pressure, and CO2 gas saturation! */
-      const refD32 = 131.5e-6;
+      const refD32 = 135.0e-6;
       const pEffBar = Math.max(1.2, pressureBar || 9.0);
       const hydScale = Math.pow(refD32 / d32M, 1.85) * Math.pow(9.0 / pEffBar, 0.65) * (waterG / Math.max(18, doseG * 2.0)) / Math.pow((1 - gasSat) / 0.91, 2.0);
-      brewTimeS = _clamp(27.5 * hydScale, 9.0, 95.0, 28.0);
+      brewTimeS = _clamp(28.0 * hydScale, 9.0, 95.0, 28.5);
     } else if (methodKey === 'moka' || methodKey === 'philips5500' || methodKey === 'cold_drip' || methodKey === 'phin'){
       brewTimeS = midTyp;
     } else {
       const refAnchor = mPhys.d50AnchorUm || 580;
       const depthScale = Math.pow(doseG / Math.max(8, mPhys.dose || 18), 0.22);
       const relK = (fInfo.kRel || 1.0) / Math.max(0.2, fDefault.kRel || 1.0);
-      const permScale = Math.pow(refAnchor / psd.d50Um, 1.35) * (blindFactor / 1.85) / relK;
-      brewTimeS = _clamp(midTyp * depthScale * permScale, typ[0] * 0.60, typ[1] * 2.1, midTyp);
+      const defBeta = fDefault.betaBlind != null ? fDefault.betaBlind : 1.0;
+      const blindAnchor = 1.0 + defBeta * 14.5 * Math.pow(0.085, 1.45) * ((mPhys.dose || 18) / 18.0);
+      const permScale = Math.pow(refAnchor / psd.d50Um, 1.25) * Math.pow(blindFactor / Math.max(1.05, blindAnchor), 0.72) / relK;
+      brewTimeS = _clamp(midTyp * depthScale * permScale, typ[0] * 0.72, typ[1] * 2.1, midTyp);
     }
   }
 
@@ -1933,21 +1935,21 @@ function _buildDialBanner(meta){
 
 function _procTempDeltaFor(procKey, isFermentFruit){
   const p = String(procKey || '').toLowerCase();
-  if (p === 'infused' || p === 'thermal-shock') return -2.5;
-  if (p === 'anaerobic' || p === 'carbonic' || p === 'yeast-koji' || p === 'yeast' || p === 'black-honey' || p === 'honey-black') return -2.0;
-  if (p === 'natural' || p === 'red-honey' || p === 'honey-red') return -1.2;
-  if (p === 'yellow-honey' || p === 'honey-yellow' || p === 'honey') return -0.7;
-  if (p === 'white-honey' || p === 'honey-white') return -0.3;
-  if (p === 'wet-hulled') return -1.5;
-  if (p === 'unknown' && isFermentFruit) return -0.8;
+  if (p === 'infused' || p === 'thermal-shock') return -2.0;
+  if (p === 'anaerobic' || p === 'carbonic' || p === 'yeast-koji' || p === 'yeast' || p === 'black-honey' || p === 'honey-black') return -1.5;
+  if (p === 'natural' || p === 'red-honey' || p === 'honey-red') return -0.8;
+  if (p === 'yellow-honey' || p === 'honey-yellow' || p === 'honey') return -0.5;
+  if (p === 'white-honey' || p === 'honey-white') return -0.2;
+  if (p === 'wet-hulled') return -1.0;
+  if (p === 'unknown' && isFermentFruit) return -0.6;
   return 0;
 }
 
 function _procGrindMultFor(procKey){
+  /* Modern extraction consensus (Hedrick/Hoffmann/Rao): when process temp is already nudged down,
+     do NOT simultaneously coarsen grind on naturals/anaerobics or total extraction collapses! */
   const p = String(procKey || '').toLowerCase();
-  if (p === 'infused' || p === 'thermal-shock' || p === 'anaerobic' || p === 'carbonic' || p === 'yeast-koji' || p === 'yeast') return 1.05;
-  if (p === 'natural' || p === 'black-honey' || p === 'honey-black' || p === 'red-honey' || p === 'honey-red') return 1.03;
-  if (p === 'wet-hulled') return 1.04;
+  if (p === 'wet-hulled') return 1.02;
   return 1.0;
 }
 
@@ -2592,10 +2594,9 @@ function synthesizeRecipe(input){
     : (isExplicitSubMode && subModeObj && subModeObj.tempC != null ? subModeObj.tempC : (mPhys.tempByRoastC[roastKey] != null ? mPhys.tempByRoastC[roastKey] : 93)))));
   if (!(preserveInputs && input.tempC > 0) && !(input.tempC > 0) && !hasLockedTemp && !hasAdaptedTemp && !isColdMethod){
     if (bSum.agtron != null && methodKey !== 'moka' && methodKey !== 'turkish'){
-      const tDark = mPhys.tempByRoastC && mPhys.tempByRoastC.dark != null ? mPhys.tempByRoastC.dark : 85.5;
-      const tUL   = mPhys.tempByRoastC && mPhys.tempByRoastC['ultra-light'] != null ? mPhys.tempByRoastC['ultra-light'] : 97.5;
+      const tDark = mPhys.tempByRoastC && mPhys.tempByRoastC.dark != null ? mPhys.tempByRoastC.dark : 89.5;
+      const tUL   = mPhys.tempByRoastC && mPhys.tempByRoastC['ultra-light'] != null ? mPhys.tempByRoastC['ultra-light'] : 99.5;
       baseTempC = _rnd(tDark + uRoast * (tUL - tDark), 1);
-      if (methodKey === 'aiden') baseTempC -= 1.5;
     }
     if (subModeKey === 'ap-concentrate') baseTempC = Math.min(baseTempC, 85.0);
     if (bSum.roastDelta && bSum.roastDelta.tempCompC && methodKey !== 'moka' && methodKey !== 'turkish'){
@@ -2625,7 +2626,7 @@ function synthesizeRecipe(input){
     }
     baseTempC = _clamp(baseTempC, methodKey === 'moka' ? 35 : 78, methodKey === 'turkish' ? 94.0 : 99.5, 93);
   }
-  const maxAllowedC = isSealedEsp ? 102.0 : (methodKey === 'turkish' ? Math.min(94.0, boilC - 4.0) : (boilC - 0.8));
+  const maxAllowedC = isSealedEsp ? 102.0 : (methodKey === 'turkish' ? Math.min(94.0, boilC - 4.0) : (boilC - 0.5));
   let kettleTempC = (methodKey === 'cold' || methodKey === 'cold_drip')
     ? baseTempC
     : _rnd(Math.min(baseTempC, maxAllowedC), 1);
@@ -2735,9 +2736,9 @@ function synthesizeRecipe(input){
         mult *= espFactor;
         explanations.push(makeScienceAtom('decaf-espresso-inversion', decafLbl + '9-Bar Hydraulic Inversion', _rnd((espFactor - 1) * 100, 1) + '% finer um', (blendCtx ? decafNoun + ' carries less CO2 resistance' : (isHalfCaf ? 'Half-caf has half the CO2 resistance' : 'Decaf lacks CO2 gas resistance')) + ' under 9-bar pressure, so we grind finer to prevent a fast gusher.', 'Reduced intragranular CO2 saturation S_g raises Darcy puck permeability k_bed ~ (1 - S_g)^2 on zero-blinding metal baskets.', 'verified_science', 'Darcy-Kozeny two-phase packed-bed physics; Liang et al. 2021'));
       } else if (methodKey !== 'turkish'){
-        const fltFactor = 1.0 + 0.080 * invWeight;
+        const fltFactor = 1.0 + 0.050 * invWeight;
         mult *= fltFactor;
-        explanations.push(makeScienceAtom('decaf-filter-inversion', decafLbl + 'Filter Anti-Stall Guard', '+' + _rnd((fltFactor - 1) * 100, 1) + '% coarser um', decafNoun + ' beans create extra brittle fines that slow paper filters, so we grind coarser for a clean drawdown.', 'Steamed decaf cell walls yield elevated fines fraction phi_f, increasing cellulose pore blinding under gravity head.', 'verified_science', 'Liang, Chan & Ristenpart 2021 Sci Rep 11:6904; Gagne 2021'));
+        explanations.push(makeScienceAtom('decaf-filter-inversion', decafLbl + 'Filter Anti-Stall Guard', '+' + _rnd((fltFactor - 1) * 100, 1) + '% coarser um', decafNoun + ' beans create extra brittle fines that slow paper filters, so we grind slightly coarser for a clean drawdown without under-extracting.', 'Steamed decaf cell walls yield elevated fines fraction phi_f, increasing cellulose pore blinding under gravity head.', 'verified_science', 'Liang, Chan & Ristenpart 2021 Sci Rep 11:6904; Gagne 2021'));
       }
     }
     if (methodKey !== 'turkish'){
@@ -2748,11 +2749,11 @@ function synthesizeRecipe(input){
       else if (spKey === 'liberica' || spKey === 'excelsa') mult *= 1.06;
       else if (spKey === 'eugenioides') mult *= 0.97;
       if (bSum.isEthLandrace && mPhys.chiRet < 0.85 && methodKey !== 'espresso' && methodKey !== 'lever_espresso'){
-        mult *= 1.06;
-        explanations.push(makeScienceAtom('eth-fines-guard', 'Ethiopian Landrace Fines Guard', '+6% coarser um', 'Dense Ethiopian heirloom beans create extra fines, so a touch coarser grind keeps flow lively.', 'Elevated brittle fines mode phi_f (+22%) increases dynamic filter resistance R_filter(t).', 'craft_best_practice', 'Gagne 2021'));
+        mult *= 1.03;
+        explanations.push(makeScienceAtom('eth-fines-guard', 'Ethiopian Landrace Fines Guard', '+3% coarser um', 'Dense Ethiopian heirloom beans shed extra fines — a subtle +3% coarsen paired with near-boiling water keeps flow lively and extraction high.', 'Elevated brittle fines mode phi_f increases dynamic filter resistance R_filter(t); modest coarsening avoids under-extraction.', 'craft_best_practice', 'Gagne 2021'));
       } else if (isPinkOrChiroso && mPhys.chiRet < 0.85 && methodKey !== 'espresso' && methodKey !== 'lever_espresso'){
-        mult *= 1.035;
-        explanations.push(makeScienceAtom('eth-lineage-guard', 'Pink Bourbon / Chiroso Ethiopian Lineage', '+3.5% coarser um', 'Genomic Ethiopian landrace selections fracture densely — slightly coarser highlights florals.', 'SNP genotyping confirms Ethiopian landrace ancestry with elevated brittle fracture fines.', 'verified_science', 'WCR / RD2 Vision Genomics 2023'));
+        mult *= 1.02;
+        explanations.push(makeScienceAtom('eth-lineage-guard', 'Pink Bourbon / Chiroso Ethiopian Lineage', '+2% coarser um', 'Genomic Ethiopian landrace selections fracture densely — slightly coarser highlights florals while keeping sweetness full.', 'SNP genotyping confirms Ethiopian landrace ancestry with elevated brittle fracture fines.', 'verified_science', 'WCR / RD2 Vision Genomics 2023'));
       }
       if (isLargeBean) mult *= 1.04;
       if (isLaurina) mult *= 1.04;
@@ -2863,16 +2864,17 @@ function synthesizeRecipe(input){
       goalTdsPct = _rnd(_clamp(refTds + nelBoost, 1.48, 1.72, refTds), 3);
       goalFactors.push(roastKey + ' roast');
     } else {
-      const roastTdsBoost = Math.max(0, (0.85 - uRoast) * 0.11);
-      const densBoost = densKey === 'low' ? 0.03 : (densKey === 'mid' ? 0.01 : 0);
-      const notesShift = isChocNut ? 0.025 : ((bSum.isGesha || bSum.isFloralTea) ? -0.01 : 0);
-      const procShift = procKey === 'wet-hulled' ? 0.035
-        : (procKey === 'natural' || procKey === 'black-honey' || procKey === 'red-honey' || procKey === 'honey-black' || procKey === 'honey-red') ? 0.015
-        : (procKey === 'infused' || procKey === 'thermal-shock' || procKey === 'anaerobic' || procKey === 'carbonic') ? 0.005 : 0;
-      const solShift = (blendCtx ? 0.04 * decafW : (bSum.isDecaf ? (isHalfCaf ? 0.02 : 0.04) : 0)) + (effAgeDays >= 28 ? 0.025 : 0) + (spKey === 'eugenioides' ? 0.04 : (spKey === 'robusta' ? 0.05 : 0));
-      const minFloorTds = Math.max(1.36, refTds);
-      goalTdsPct = _rnd(_clamp(refTds + roastTdsBoost + densBoost + notesShift + procShift + solShift, minFloorTds, 1.49, 1.38), 3);
-      if (methodKey === 'aeropress') solRatioLo = Math.max(13.5, solRatioLo);
+      const roastTdsBoost = Math.max(0, (0.75 - uRoast) * 0.06);
+      const densBoost = densKey === 'low' ? 0.02 : (densKey === 'mid' ? 0.005 : 0);
+      const notesShift = isChocNut ? 0.02 : ((bSum.isGesha || bSum.isFloralTea) ? -0.015 : 0);
+      const procShift = procKey === 'wet-hulled' ? 0.025
+        : (procKey === 'natural' || procKey === 'black-honey' || procKey === 'red-honey' || procKey === 'honey-black' || procKey === 'honey-red') ? 0.01 : 0;
+      const solShift = (blendCtx ? 0.025 * decafW : (bSum.isDecaf ? (isHalfCaf ? 0.012 : 0.025) : 0)) + (effAgeDays >= 28 ? 0.015 : 0) + (spKey === 'eugenioides' ? 0.03 : (spKey === 'robusta' ? 0.04 : 0));
+      const minFloorTds = Math.max(1.33, refTds - 0.02);
+      goalTdsPct = _rnd(_clamp(refTds + roastTdsBoost + densBoost + notesShift + procShift + solShift, minFloorTds, 1.43, 1.37), 3);
+      if (methodKey === 'aeropress' || methodKey === 'kalita' || methodKey === 'v60' || methodKey === 'origami' || methodKey === 'orea' || methodKey === 'chemex' || methodKey === 'aiden' || methodKey === 'xbloom' || methodKey === 'switch' || methodKey === 'clever' || methodKey === 'press' || methodKey === 'drip') {
+        solRatioLo = Math.max(uRoast >= 0.55 ? 16.0 : 15.0, solRatioLo);
+      }
       goalFactors.push(roastKey + ' roast');
       if (densKey === 'low') goalFactors.push('low-density body');
       if (isChocNut) goalFactors.push('chocolate/nut profile');
@@ -3390,10 +3392,13 @@ function synthesizeRecipe(input){
     const atoms = [];
     const kT = +out.kettleTempC;
 
-    /* Separator 2b: Step-Down Temp Pour (light / ultra-light / SL28-34 Kenyan / Gesha) */
+    /* Separator 2b: Step-Down Temp Pour (Dark / Med-Dark roasts OR heavily fermented Anaerobic/Infused — NEVER cools clean Light roasts!) */
     let tempProfile = null;
-    if (usedPercolationPour && !lockedRow && (uRoast >= 0.62 || bSum.isGesha || isSl28Or34) && kT >= 91 && Array.isArray(out.steps)){
-      const tailTempC = _rnd(Math.max(85, kT - 6.0), 1);
+    const isDarkStepDown = uRoast <= 0.36;
+    const isHeavyFermentStepDown = procKey === 'anaerobic' || procKey === 'carbonic' || procKey === 'infused' || procKey === 'thermal-shock' || procKey === 'yeast-koji' || procKey === 'yeast';
+    if (usedPercolationPour && !lockedRow && (isDarkStepDown || isHeavyFermentStepDown) && kT >= 87.5 && Array.isArray(out.steps)){
+      const dropC = isDarkStepDown ? 5.0 : 4.0;
+      const tailTempC = _rnd(Math.max(83.5, kT - dropC), 1);
       let lastPourIdx = -1;
       for (let i = out.steps.length - 1; i >= 0; i--){ if (out.steps[i] && out.steps[i].actionKind === 'pour'){ lastPourIdx = i; break; } }
       if (lastPourIdx >= 0 && tailTempC < kT){
@@ -3402,7 +3407,7 @@ function synthesizeRecipe(input){
         newSteps[lastPourIdx] = Object.assign({}, st0, {
           targetTempC:tailTempC,
           tempCue:'Pour cooler -> ' + tailTempC + ' C',
-          human:String(st0.human || '') + ' Step the kettle down to ~' + tailTempC + ' C for this pour (lid off ~60 s, or add a small splash of room-temp water to the kettle).'
+          human:String(st0.human || '') + ' Step the kettle down to ~' + tailTempC + ' C for this final pour (lid off ~45 s, or a splash of room-temp water) to keep the finish sweet and clean.'
         });
         out.steps = newSteps;
         if (Array.isArray(out.stepStaircase)){
@@ -3414,14 +3419,17 @@ function synthesizeRecipe(input){
         }
         tempProfile = { type:'step-down', startTempC:kT, tailTempC };
         tags.push('Step-Down Temp');
+        const sdWhy = isDarkStepDown
+          ? 'Darker roasts dissolve fast — blooming hot unlocks caramel sweetness, while stepping down to ~' + tailTempC + ' C on the final pour prevents dry, ashy bitterness.'
+          : 'Heavily fermented coffees extract rapidly — blooming hot builds sweet fruit clarity, while stepping down to ~' + tailTempC + ' C on the tail pour avoids harsh boozy polyphenols.';
         atoms.push(makeScienceAtom(
           'step-down-temp',
           'Step-Down Temp Pour (' + kT + ' -> ' + tailTempC + ' C)',
           kT + ' -> ' + tailTempC + ' C',
-          'Dense light-roast beans need hot water early to open up sweetness, but the last pour mostly pulls drying bitters. Dropping the kettle to ~' + tailTempC + ' C for the final pour keeps the finish clean and juicy.',
-          'Early high-T (' + kT + ' C) accelerates Wave-1/2 acids and sugars (Ea 16.5/21.5 kJ/mol); cooling the tail by ' + _rnd(kT - tailTempC, 1) + ' C suppresses high-Ea (42-48 kJ/mol) CGA-lactone and polyphenol elution exp(-Ea/RT) by ~' + Math.round((1 - Math.exp(-(42000 / R_GAS) * (1 / (tailTempC + 273.15) - 1 / (kT + 273.15)))) * 100) + '%.',
+          sdWhy,
+          'Hot bloom/core (' + kT + ' C) unlocks aromatics & sugars; cooling the tail by ' + _rnd(kT - tailTempC, 1) + ' C suppresses late high-Ea (42-48 kJ/mol) CGA-lactone & bitter polyphenol elution exp(-Ea/RT) by ~' + Math.round((1 - Math.exp(-(42000 / R_GAS) * (1 / (tailTempC + 273.15) - 1 / (kT + 273.15)))) * 100) + '%, matching Fellow Aiden dark/ferment declining-pulse science.',
           'verified_science',
-          'Batali et al. 2020 Sci Rep 10:16450; Liang et al. 2024'
+          'Fellow Aiden Thermal Profile Spec; Batali et al. 2020; Liang et al. 2024'
         ));
       }
     }

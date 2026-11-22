@@ -859,12 +859,12 @@ if (typeof window !== 'undefined') {
   ];
 
   var QUICK_TASTE_SHORTCUTS = [
-    { key: 'sweet',   label: 'Nailed It (Sweet!)',   hint: 'Sweet, balanced & clean finish',                x: 0.00,  y: 0.00,  defStars: 4.50 },
-    { key: 'sour',    label: 'Too Sour / Sharp',     hint: 'Lemony, tangy, fast finish -> grind finer',     x: -0.42, y: 0.00,  defStars: 3.75 },
-    { key: 'bitter',  label: 'Too Bitter / Dry',     hint: 'Ashy cocoa, dry tongue -> grind coarser',       x: 0.42,  y: 0.00,  defStars: 3.75 },
-    { key: 'weak',    label: 'Weak / Watery',        hint: 'Tea-light, hollow -> less water / higher dose', x: 0.00,  y: -0.52, defStars: 3.25 },
-    { key: 'strong',  label: 'Heavy / Muddy',        hint: 'Overwhelming, thick -> splash more water',      x: 0.00,  y: 0.52,  defStars: 3.50 },
-    { key: 'way_off', label: 'Channeling / Uneven',  hint: 'Both sour & bitter/dry -> even pour & grind',   x: -0.72, y: 0.34,  defStars: 2.75 }
+    { key: 'sweet',   label: 'Sweet & Balanced',             hint: 'Smooth, clean finish \u00B7 Ready to save',     x: 0.00,  y: 0.00,  defStars: 4.50, featured: true },
+    { key: 'sour',    label: 'Too Sour / Sharp',             hint: 'Tangy, lemony, fast finish \u2192 grind finer', x: -0.42, y: 0.00,  defStars: 3.50 },
+    { key: 'bitter',  label: 'Too Bitter / Dry',             hint: 'Harsh cocoa, dry tongue \u2192 grind coarser',  x: 0.42,  y: 0.00,  defStars: 3.50 },
+    { key: 'weak',    label: 'Too Weak / Watery',            hint: 'Tea-light or hollow \u2192 less water',         x: 0.00,  y: -0.52, defStars: 3.25 },
+    { key: 'strong',  label: 'Too Strong / Heavy',           hint: 'Thick or intense \u2192 splash more water',     x: 0.00,  y: 0.52,  defStars: 3.50 },
+    { key: 'way_off', label: 'Both Sour & Bitter (Uneven)',  hint: 'Mixed or channeling \u2192 even pour & grind',  x: -0.72, y: 0.34,  defStars: 2.75, fullSpan: true }
   ];
 
   var FLAVOR_TAB_SHORT_LABELS = [
@@ -959,10 +959,12 @@ if (typeof window !== 'undefined') {
       flowTone = 'slow';
     }
 
-    var summaryBadge = methodLabel + ' \u00B7 ' + doseG + ' g : ' + Math.round(waterG) + ' g \u00B7 ' +
+    var useFNow = !(a && a.prefs && a.prefs.tempUnit === 'C');
+    var tempDisp = useFNow ? (Math.round(tempC * 9 / 5 + 32) + ' \u00B0F') : (tempC + ' \u00B0C');
+    var summaryBadge = methodLabel + ' \u00B7 ' + doseG + 'g:' + Math.round(waterG) + 'g \u00B7 ' +
       (actualS > 0 && targetS <= 1200
-        ? ('Actual Time ' + S.fmtMmSs(actualS) + ' (Target ' + S.fmtMmSs(targetS) + ')')
-        : (targetS <= 1200 ? ('Target Time ' + S.fmtMmSs(targetS) + ' \u00B7 ' + tempC + ' \u00B0C') : (tempC + ' \u00B0C')));
+        ? (S.fmtMmSs(actualS) + ' (Target ' + S.fmtMmSs(targetS) + ')')
+        : (targetS <= 1200 ? (S.fmtMmSs(targetS) + ' \u00B7 ' + tempDisp) : tempDisp));
 
     return {
       methodKey: methodKey,
@@ -1433,7 +1435,7 @@ if (typeof window !== 'undefined') {
     var doseG = +brew.dose || +(a.brew && a.brew.dose) || (isEsp ? 18 : 15);
     var waterG = +brew.water || +(a.brew && a.brew.water) || (isEsp ? 36 : 250);
     var curRatio = +brew.ratio || +(a.brew && a.brew.ratio) || Math.round((waterG / Math.max(1, doseG)) * 10) / 10;
-    var curTempC = +brew.temp_c || +(a.brew && a.brew.tempC) || (+brew.tempF > 0 ? Math.round(((+brew.tempF - 32) * 5 / 9) * 2) / 2 : 93);
+    var curTempC = +brew.temp_c || +(a.brew && a.brew.tempC) || (+brew.tempF > 0 ? Math.round(((+brew.tempF - 32) * 5 / 9) * 2) / 2 : 95.5);
     var curUm = +brew.grind_um || +(a.brew && a.brew.grindUm) || +(a.brew && a.brew.grind_um) || (isEsp ? 235 : 550);
     var curAgitation = String(brew.agitation || (a.brew && a.brew.agitation) || 'standard').toLowerCase();
     var outG = +tSt.bevOutG > 0 ? +tSt.bevOutG : (+brew.out_g || +brew.yieldOut || Math.max(18, isEsp ? waterG : Math.round(waterG - doseG * 2.05)));
@@ -1556,7 +1558,7 @@ if (typeof window !== 'undefined') {
       if (movedAny) {
         usedCoreDiag = true;
         nextUm = clamp(Math.round(cUm), isEsp ? 130 : 250, isEsp ? 420 : 1450);
-        nextTempC = clamp(cTemp, 80, 99);
+        nextTempC = clamp(cTemp, 80, 99.5);
         nextRatio = clamp(Math.round(cRat * (isEsp ? 20 : 10)) / (isEsp ? 20 : 10), isEsp ? 1.2 : 11.5, isEsp ? 4.2 : 20.5);
         nextDoseG = cDose;
         nextWaterG = Math.round(cWater);
@@ -1573,7 +1575,20 @@ if (typeof window !== 'undefined') {
           thermalSpilloverNote = 'Fine-Tune Between Grinder Clicks: paired with ' + nextTempC + ' \u00B0C water so extraction lands in the sweet spot.';
         }
         if (coreDiag.primaryActionHuman) {
-          headline = String(coreDiag.primaryActionHuman);
+          var cleanHeadline = String(coreDiag.primaryActionHuman).replace(/^\s*\[[^\]]+\]\s*/, '').replace(/\.$/, '').trim();
+          var useFHl = !(a && a.prefs && a.prefs.tempUnit === 'C');
+          if (useFHl) {
+            cleanHeadline = cleanHeadline
+              .replace(/\+\s*Temp\s*([+-]?\d+(?:\.\d+)?)\s*\u00B0?C\s*\((?:->|\u2192)\s*(\d+(?:\.\d+)?)\s*\u00B0?C\)/gi, function (_, dC, tC) {
+                var dF = Math.round(+dC * 9 / 5);
+                var tF = Math.round(+tC * 9 / 5 + 32);
+                return '+ Water ' + (dF > 0 ? '+' : '') + dF + ' \u00B0F (\u2192 ' + tF + ' \u00B0F)';
+              });
+          }
+          if (lens !== 'scientist') {
+            cleanHeadline = cleanHeadline.replace(/,\s*[+-]?\d+\s*(?:um|\u00B5m)/gi, '');
+          }
+          headline = cleanHeadline || String(coreDiag.primaryActionHuman);
         } else if (primaryLever === 'grind') {
           var gCoreNext = mapNextGrinderDisplay(nextUm, gInfo, a, methodKey);
           var dCl = Math.max(1, Math.abs(Math.round((nextUm - curUm) / Math.max(1, gInfo.umPerStep))));
@@ -1611,11 +1626,11 @@ if (typeof window !== 'undefined') {
 
         if (blockedReason) {
           tabuPivotReason = 'Smart Dial Memory (Skipping Past Dip): ' + blockedReason + ' \u2014 adjusting Water Temp & Ratio instead of repeating that grind move!';
-          var canPivotTemp = wantFiner ? (!tabu.tempUp && curTempC <= 97.5) : (!tabu.tempDown && curTempC >= 83);
+          var canPivotTemp = wantFiner ? (!tabu.tempUp && curTempC <= 98.5) : (!tabu.tempDown && curTempC >= 83);
           if (canPivotTemp && methodKey !== 'cold' && methodKey !== 'cold_drip') {
             primaryLever = 'temp_pivot';
             var dT = wantFiner ? Math.min(3.0, Math.round((1.5 + Math.abs(mx) * 2.0) * 2) / 2) : -Math.min(3.0, Math.round((1.5 + Math.abs(mx) * 2.0) * 2) / 2);
-            nextTempC = clamp(curTempC + dT, 80, 99);
+            nextTempC = clamp(curTempC + dT, 80, 99.5);
             headline = (dT > 0 ? 'Raise' : 'Lower') + ' Water Temp ' + (dT > 0 ? '+' : '') + dT + ' \u00B0C (' + curTempC + ' \u2192 ' + nextTempC + ' \u00B0C) \u00B7 Keep ' + gInfo.grinderLabel + ' steady';
           } else {
             primaryLever = 'ratio_pivot';
@@ -1821,12 +1836,15 @@ if (typeof window !== 'undefined') {
     }
 
     if (Math.abs((+nxt.tempC || 0) - (+cur.tempC || 0)) >= 0.4) {
+      var aPref = S.getApp();
+      var useF = !(aPref && aPref.prefs && aPref.prefs.tempUnit === 'C');
       var dTemp = Math.round((nxt.tempC - cur.tempC) * 10) / 10;
+      var dTempF = Math.round((nxt.tempC * 9 / 5 + 32) - (cur.tempC * 9 / 5 + 32));
       rows.push({
         label: 'Water',
-        before: cur.tempC + '\u00B0C',
-        after: nxt.tempC + '\u00B0C',
-        delta: (dTemp > 0 ? '+' : '') + dTemp + '\u00B0C'
+        before: useF ? (Math.round(cur.tempC * 9 / 5 + 32) + '\u00B0F') : (cur.tempC + '\u00B0C'),
+        after: useF ? (Math.round(nxt.tempC * 9 / 5 + 32) + '\u00B0F') : (nxt.tempC + '\u00B0C'),
+        delta: useF ? ((dTempF > 0 ? '+' : '') + dTempF + '\u00B0F') : ((dTemp > 0 ? '+' : '') + dTemp + '\u00B0C')
       });
     }
 
@@ -3411,9 +3429,12 @@ if (typeof window !== 'undefined') {
         coffeeRef: coffeeId,
         sessionSig: sessionSig,
         hasUserRated: preRated,
+        _manualStarSet: preRated,
         goldLocked: false,
         guideCollapsed: true,
         coolingCardCollapsed: true,
+        notesDrawerOpen: false,
+        mapDrawerOpen: false,
         mode: (opts && opts.initialMode) || 'quick', /* 'quick' | 'guided' | 'cva' */
         stars: preRated ? (+st.stars > 0 ? +st.stars : 4.25) : 0,
         makeAgain: '',
@@ -3508,7 +3529,7 @@ if (typeof window !== 'undefined') {
     var tSt = ensureStep5Session(opts);
     var a = S.getApp();
     var st = S.getState();
-    var root = S.h('div', { class: 'bt-tc-stage has-sticky-cta', id: 'bt-step5-taste-root' });
+    var root = S.h('div', { class: 'bt-tc-stage', id: 'bt-step5-taste-root' });
     var gsTimerId = 0;
 
     /* Programmatic custom event hook ('bt:taste-rate') for tests & external controllers */
@@ -3628,36 +3649,27 @@ if (typeof window !== 'undefined') {
       fixBannerMount.textContent = '';
 
       /* =====================================================================
-         CARD 3: 2. Your Dial-In Verdict & Next-Brew Recipe (#bt-nextbrew-fix)
-         Placed AFTER Card 2 Ratings — NEVER shows Gold Recipe before rating!
+         CARD 2: Your Next-Brew Fix (#bt-nextbrew-fix)
+         Mounted IMMEDIATELY below Card 1 so tapping a taste card reveals the
+         exact fix + Save buttons right in view with zero scrolling!
          ===================================================================== */
       if (!tSt.hasUserRated) {
-        fixBannerMount.className = 'bt-tc-hero-fix is-awaiting';
-        fixBannerMount.appendChild(S.h('div', { class: 'bt-tc-kicker', text: 'Step 2 of 2 \u00B7 Dial-In Verdict \u00B7 ' + cName }));
-        fixBannerMount.appendChild(S.h('h2', { class: 'bt-tc-fix-headline', text: '2. Next-Brew Fix for ' + cName }));
-
-        var coachAvatar = null;
-        if (!tSt.foilRevealed && typeof Beanjamin !== 'undefined' && Beanjamin && typeof Beanjamin.el === 'function') {
-          coachAvatar = Beanjamin.el('curious', { view: 'avatar', size: 52, label: 'Beanjamin waiting for your rating' });
-        } else {
-          coachAvatar = S.iconEl('spark-star', { size: 24 });
-        }
-
-        fixBannerMount.appendChild(S.h('div', { class: 'bt-tc-coach-row' },
-          coachAvatar,
-          S.h('div', { style: 'display:flex;flex-direction:column;gap:4px' },
-            S.h('b', { style: 'font-size:0.92rem;color:var(--ink)', text: 'Rate your ' + cName + ' cup & tap where it landed on the Balance Bullseye above' }),
-            S.h('span', { class: 'bt-tc-sub', style: 'margin:0', text: 'As soon as you rate your sip, BeanTelligence will calculate your exact #1 single-lever tweak for Try #' + rx.nextTryNum + ' (or unlock your Gold Recipe if you nailed the Sweet Spot!).' }),
-            rx.flowDiagnosticClue ? S.h('span', { style: 'font-size:0.78rem;color:var(--warn);font-weight:600', text: 'Timer clue ready: ' + rx.flowDiagnosticClue }) : null
+        fixBannerMount.className = 'bt-tc-hero-fix is-awaiting is-compact-await';
+        fixBannerMount.appendChild(S.h('div', { class: 'bt-step5-await-row' },
+          S.iconEl('spark-star', { size: 18 }),
+          S.h('div', { style: 'min-width:0;flex:1' },
+            S.h('b', { style: 'font-size:0.86rem;color:var(--ink);display:block', text: 'Next-Brew Fix for ' + cName }),
+            S.h('span', { style: 'font-size:0.78rem;color:var(--ink-secondary);line-height:1.35;display:block', text: 'Tap how it tasted above \u2014 we\'ll dial in Try #' + rx.nextTryNum + ' automatically.' }),
+            rx.flowDiagnosticClue ? S.h('span', { style: 'font-size:0.76rem;color:var(--warn);font-weight:600;display:block;margin-top:3px', text: 'Timer clue: ' + rx.flowDiagnosticClue }) : null
           )
         ));
 
-        /* Calm 1-tap Drill-Down Links even before rating (if user wants to inspect last cup or ratings) */
-        fixBannerMount.appendChild(S.h('div', { class: 'bt-step5-drill-bar bt-step5-drill-row', id: 'bt-step5-drill-bar' },
+        /* Quiet secondary links before rating */
+        fixBannerMount.appendChild(S.h('div', { class: 'bt-step5-ghost-links', id: 'bt-step5-drill-bar' },
           S.h('button', {
             type: 'button',
             id: 'bt-step5-drill-ratings-btn',
-            class: 'bt-step5-drill-pill',
+            class: 'bt-step5-ghost-link',
             'aria-label': 'Compare ' + cName + ' in Ratings Journal',
             onclick: function () {
               if (a.tabSegments) a.tabSegments.cellar = 'journal';
@@ -3667,7 +3679,7 @@ if (typeof window !== 'undefined') {
           S.h('button', {
             type: 'button',
             id: 'bt-step5-drill-palate-btn',
-            class: 'bt-step5-drill-pill',
+            class: 'bt-step5-ghost-link',
             'aria-label': 'Inspect your taste profile in Palate DNA',
             onclick: function () {
               if (a.tabSegments) a.tabSegments.palate = 'dna';
@@ -3677,7 +3689,7 @@ if (typeof window !== 'undefined') {
           latestCup ? S.h('button', {
             type: 'button',
             id: 'bt-step5-open-last-cup-btn',
-            class: 'bt-step5-drill-pill bt-last-cup-btn',
+            class: 'bt-step5-ghost-link bt-last-cup-btn',
             'aria-label': 'Open last cup tasting detail for ' + latestCup.coffeeName,
             onclick: function () {
               S.openSheetSafe('screen-detail', { row: latestCup.row, rowIdx: latestCup.rowIdx }, {
@@ -3690,36 +3702,7 @@ if (typeof window !== 'undefined') {
           ) : null
         ));
 
-        /* Unrated Sticky CTA: scrolls smoothly to Card 2 Ratings (plus optional quick log) */
         ctaMount.textContent = '';
-        ctaMount.appendChild(S.h('div', { class: 'bt-tc-sticky-cta' },
-          S.h('button', {
-            type: 'button',
-            class: 'bt-tc-primary-btn is-prompt',
-            onclick: function () {
-              S.haptic('tick');
-              if (rateCardRef && typeof rateCardRef.scrollIntoView === 'function') {
-                try { rateCardRef.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
-              }
-              S.toastSafe('Tap the beans or Balance Bullseye in Card 1 to rate ' + cName + '!');
-            }
-          },
-            S.h('span', { style: 'text-align:left;min-width:0;overflow:hidden' },
-              S.h('span', { style: 'display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap', text: 'Rate Your Cup Above First \u2191' }),
-              S.h('span', { class: 'bt-tc-primary-sub', text: 'Tap beans or Bullseye for ' + cName + ' Try #' + rx.nextTryNum + ' fix' })
-            ),
-            S.iconEl('spark-star', { size: 20 })
-          ),
-          S.h('button', {
-            type: 'button',
-            class: 'bt-tc-pill is-soft',
-            style: 'min-height:54px;padding:7px 11px',
-            'aria-label': 'Back to Brew Timer',
-            text: '\u2190 Timer',
-            onclick: function () { S.navGo('timer'); }
-          })
-        ));
-
         if (typeof Beanjamin !== 'undefined' && Beanjamin && typeof Beanjamin.enforceSinglePerViewport === 'function') {
           Beanjamin.enforceSinglePerViewport(root);
         }
@@ -3730,62 +3713,51 @@ if (typeof window !== 'undefined') {
       fixBannerMount.className = 'bt-tc-hero-fix' + (rx.inGoldZone ? ' is-sweet' : '');
       var heroBox = fixBannerMount;
 
-      heroBox.appendChild(S.h('div', { class: 'bt-tc-kicker', text: 'Step 2 of 2 \u00B7 Dial-In Verdict \u00B7 ' + cTitle }));
-
       heroBox.appendChild(S.h('div', { class: 'bt-tc-row-between' },
         S.h('span', {
           id: 'bt-step5-fix-coffee-badge',
           class: 'bt-tc-badge ' + (rx.inGoldZone ? 'is-good' : 'is-gold'),
           text: rx.inGoldZone
-            ? (tSt.goldLocked ? ('Gold Recipe Locked \u00B7 ' + cName) : ('Sweet Bullseye \u00B7 ' + cName))
-            : ('Next-Brew Fix for ' + cName + ' \u00B7 ' + rx.ringInfo.name)
+            ? (tSt.goldLocked ? ('Gold Recipe Locked \u00B7 ' + cName) : ('Sweet Spot \u00B7 ' + cName))
+            : ('Next-Brew Fix for ' + cName)
         }),
         S.h('span', {
           class: 'mono',
-          style: 'font-size:0.78rem;font-weight:700;color:var(--ink-muted)',
+          style: 'font-size:0.76rem;font-weight:700;color:var(--ink-muted)',
           text: rx.inGoldZone
-            ? ('Try #' + rx.tryNum + ' \u00B7 ' + tSt.stars.toFixed(2) + '/5 Beans')
-            : ('Try #' + rx.tryNum + ' (' + tSt.stars.toFixed(2) + '/5) \u2192 Try #' + rx.nextTryNum)
+            ? ('Try #' + rx.tryNum + ' \u00B7 ' + tSt.stars.toFixed(2) + '\u2605')
+            : ('Try #' + rx.tryNum + ' \u2192 Try #' + rx.nextTryNum)
         })
       ));
 
       if (rx.inGoldZone) {
-        var bjGoldEl = (!tSt.foilRevealed && typeof Beanjamin !== 'undefined' && Beanjamin && typeof Beanjamin.el === 'function')
-          ? Beanjamin.el('celebrating', { view: 'avatar', size: 56, label: 'Beanjamin celebrating your Sweet Spot brew' })
-          : S.buildGoldSealSvg(34);
-
-        heroBox.appendChild(S.h('div', { class: 'bt-tc-coach-row' },
-          bjGoldEl,
-          S.h('div', null,
-            S.h('h2', { class: 'bt-tc-fix-headline', text: '2. Sweet Spot Nailed for ' + cName + ' \u2014 Keep This Recipe!' }),
-            S.h('p', { class: 'bt-tc-sub', style: 'margin:3px 0 0', text: rx.counterfactualLine })
-          )
-        ));
+        heroBox.appendChild(S.h('h2', { class: 'bt-tc-fix-headline', text: 'Sweet Spot Nailed \u2014 Keep This Recipe!' }));
+        heroBox.appendChild(S.h('p', { class: 'bt-tc-sub', style: 'margin:0', text: rx.counterfactualLine }));
       } else {
-        heroBox.appendChild(S.h('h2', { class: 'bt-tc-fix-headline', text: '2. ' + rx.headline }));
+        heroBox.appendChild(S.h('h2', { class: 'bt-tc-fix-headline', text: rx.headline }));
         heroBox.appendChild(S.h('div', { class: 'bt-tc-counterfactual' },
-          S.iconEl('spark-star', { size: 17 }),
+          S.iconEl('spark-star', { size: 16 }),
           S.h('span', { text: rx.counterfactualLine })
         ));
       }
 
       if (rx.tabuPivotReason) {
         heroBox.appendChild(S.h('div', { class: 'bt-tc-tabu-banner' },
-          S.iconEl('vault-shield', { size: 16 }),
+          S.iconEl('vault-shield', { size: 15 }),
           S.h('span', { text: rx.tabuPivotReason })
         ));
       }
 
       if (rx.thermalSpilloverNote) {
-        heroBox.appendChild(S.h('div', { class: 'bt-tc-sub', style: 'font-size:0.8rem;color:var(--accent);font-weight:600', text: rx.thermalSpilloverNote }));
+        heroBox.appendChild(S.h('div', { class: 'bt-tc-sub', style: 'font-size:0.79rem;color:var(--accent);font-weight:600;margin:0', text: rx.thermalSpilloverNote }));
       }
 
       if (rx.ultraFreshNote) {
-        heroBox.appendChild(S.h('div', { class: 'bt-tc-sub', style: 'font-size:0.79rem;color:var(--warn)', text: rx.ultraFreshNote }));
+        heroBox.appendChild(S.h('div', { class: 'bt-tc-sub', style: 'font-size:0.78rem;color:var(--warn);margin:0', text: rx.ultraFreshNote }));
       }
 
       if (lens === 'scientist') {
-        heroBox.appendChild(S.h('div', { class: 'mono', style: 'font-size:0.76rem;color:var(--science);font-weight:700', text: rx.xrayLine }));
+        heroBox.appendChild(S.h('div', { class: 'mono', style: 'font-size:0.75rem;color:var(--science);font-weight:700', text: rx.xrayLine }));
       }
 
       if (!rx.inGoldZone && rx.nextRecipe) {
@@ -3812,12 +3784,16 @@ if (typeof window !== 'undefined') {
 
       var shouldSaveGold = !!(tSt.goldLocked && rx.inGoldZone && !tSt.excludeLearning && !tSt.notMyStyle);
 
-      /* In-Place Gold Recipe Toggle (NEVER yanks/teleports user without explicit Save!) */
+      /* In-Place Gold Recipe Lock Toggle when Sweet Spot nailed */
       if (rx.inGoldZone && !tSt.excludeLearning && !tSt.notMyStyle) {
         var goldCur = rx.curRecipe || {};
+        var useFGold = !(a && a.prefs && a.prefs.tempUnit === 'C');
+        var goldTempStr = goldCur.tempC
+          ? (useFGold ? (Math.round(goldCur.tempC * 9 / 5 + 32) + '\u00B0F') : (goldCur.tempC + '\u00B0C'))
+          : '';
         var goldSummaryTxt = [
           goldCur.grindSetting || (goldCur.grindUm ? (Math.round(goldCur.grindUm) + ' \u00B5m') : ''),
-          goldCur.tempC ? (goldCur.tempC + '\u00B0C') : '',
+          goldTempStr,
           goldCur.ratio ? ('1:' + goldCur.ratio) : '',
           (goldCur.doseG && goldCur.waterG) ? (goldCur.doseG + 'g:' + Math.round(goldCur.waterG) + 'g') : ''
         ].filter(Boolean).join(' \u00B7 ');
@@ -3832,12 +3808,12 @@ if (typeof window !== 'undefined') {
               tSt._goldExplicitlyOff = !tSt.goldLocked;
               S.haptic(tSt.goldLocked ? 'celebrate' : 'tick');
               S.toastSafe(tSt.goldLocked
-                ? 'Locked as your Gold Recipe! Tap "Save Gold Recipe \u2192 Preferences" below when ready.'
+                ? 'Locked as your Gold Recipe! Tap Save below to keep it for future brews.'
                 : 'Gold Recipe lock turned off for this cup.');
               paintFixAndCtaOnly();
             }
           },
-            S.buildGoldSealSvg(20),
+            S.buildGoldSealSvg(18),
             S.h('span', { text: tSt.goldLocked ? 'Locked as My Gold Recipe (Tap to Unlock)' : 'Lock as My Gold Recipe' })
           ),
           shouldSaveGold ? S.h('div', {
@@ -3847,53 +3823,83 @@ if (typeof window !== 'undefined') {
           },
             S.h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap' },
               S.h('span', { style: 'display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--good);letter-spacing:0.03em;text-transform:uppercase' },
-                S.buildGoldSealSvg(16),
+                S.buildGoldSealSvg(15),
                 S.h('span', { text: 'Golden Recipe Locked \u00B7 Try #' + rx.tryNum })
               ),
-              S.h('span', { class: 'bt-tc-badge is-good', style: 'font-size:10.5px;padding:2px 7px', text: tSt.stars.toFixed(2) + '/5 Beans' })
+              S.h('span', { class: 'bt-tc-badge is-good', style: 'font-size:10.5px;padding:2px 7px', text: tSt.stars.toFixed(2) + '/5\u2605' })
             ),
             S.h('div', { class: 'mono', style: 'font-size:12.5px;font-weight:800;color:var(--ink);line-height:1.35;overflow-wrap:anywhere', text: goldSummaryTxt }),
-            S.h('span', { style: 'font-size:11px;color:var(--ink-secondary);line-height:1.3', text: 'Gold Seal Ready \u2014 Tap Save Gold \u2192 Preferences below to lock for future brews.' })
+            S.h('span', { style: 'font-size:11px;color:var(--ink-secondary);line-height:1.3', text: 'Gold Seal Ready \u2014 Tap Save below to lock this recipe for future brews.' })
           ) : null
         ));
       }
 
-      /* Secondary Convenience Pills inside Card 3 (only if user explicitly wants to pull Try #2 right now or jump to Cellar) */
-      heroBox.appendChild(S.h('div', { class: 'bt-tc-pill-wrap bt-tc-verdict-alt-saves', style: 'margin-top:4px' },
+      /* Clean 2-Button Primary Save Action Row RIGHT INSIDE Verdict Card */
+      var primarySaveLabel = shouldSaveGold
+        ? 'Save Gold Recipe & Brew Again'
+        : (rx.inGoldZone ? 'Save & Brew Another Cup' : ('Save & Apply Fix (Try #' + rx.nextTryNum + ')'));
+      var primarySaveSub = (tSt.excludeLearning || tSt.notMyStyle)
+        ? ('Off-Day Shield: saves ' + cName + ' without changing recipe')
+        : shouldSaveGold
+        ? ('Locks Gold Recipe for ' + cName + ' & updates Palate DNA')
+        : (rx.inGoldZone
+          ? ('Saves cup & keeps winning recipe ready')
+          : ('Saves review & loads updated recipe for ' + cName));
+
+      ctaMount.textContent = '';
+      ctaMount.appendChild(S.h('div', { class: 'bt-step5-primary-save-row' },
         S.h('button', {
           type: 'button',
           id: 'bt-step5-save-brew-next-btn',
-          class: 'bt-tc-pill is-compact is-copper',
-          style: 'min-height:44px',
-          text: rx.inGoldZone ? 'Save & Brew Another Cup Now \u2192' : ('Save & Brew Try #' + rx.nextTryNum + ' Now \u2192'),
+          class: 'bt-tc-primary-btn',
+          'aria-label': primarySaveLabel + ' for ' + cName,
           onclick: function () {
             saveStep5TastingAndApply(tSt, rx, {
               lockGold: shouldSaveGold,
               destination: 'brew'
             });
           }
-        }),
+        },
+          S.h('span', { style: 'text-align:left;min-width:0;overflow:hidden' },
+            S.h('span', { style: 'display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap', text: primarySaveLabel }),
+            S.h('span', { class: 'bt-tc-primary-sub', text: primarySaveSub })
+          ),
+          S.iconEl('check-seal', { size: 18 })
+        ),
         S.h('button', {
           type: 'button',
-          id: 'bt-step5-save-cellar-btn',
-          class: 'bt-tc-pill is-compact is-soft',
-          style: 'min-height:44px',
-          text: 'Save \u2192 Cellar',
+          id: 'bt-step5-save-home-btn',
+          class: 'bt-tc-pill is-soft bt-tc-save-home-btn',
+          'aria-label': 'Save tasting for ' + cName + ' and return to Home',
+          title: 'Save tasting (+ next-cup fix) for ' + cName + ' and return Home',
+          text: 'Save & Done',
           onclick: function () {
             saveStep5TastingAndApply(tSt, rx, {
               lockGold: shouldSaveGold,
-              destination: 'cellar'
+              destination: 'door'
             });
           }
         })
       ));
 
-      /* 1-Tap Drill-Down Links right from Step 5 Verdict Summary */
-      heroBox.appendChild(S.h('div', { class: 'bt-step5-drill-bar bt-step5-drill-row', id: 'bt-step5-drill-bar' },
+      /* Calm, low-noise secondary jump links below the 2 primary actions */
+      ctaMount.appendChild(S.h('div', { class: 'bt-step5-ghost-links', id: 'bt-step5-drill-bar' },
+        S.h('button', {
+          type: 'button',
+          id: 'bt-step5-save-prefs-btn',
+          class: 'bt-step5-ghost-link',
+          'aria-label': 'Save ' + cName + ' and view Palate Insights',
+          onclick: function () {
+            saveStep5TastingAndApply(tSt, rx, {
+              lockGold: shouldSaveGold,
+              destination: 'palate'
+            });
+          }
+        }, S.h('span', { text: 'Save & View Insights' })),
         S.h('button', {
           type: 'button',
           id: 'bt-step5-drill-ratings-btn',
-          class: 'bt-step5-drill-pill',
+          class: 'bt-step5-ghost-link',
           'aria-label': 'Save ' + cName + ' and compare in Ratings',
           onclick: function () {
             saveStep5TastingAndApply(tSt, rx, {
@@ -3905,7 +3911,7 @@ if (typeof window !== 'undefined') {
         S.h('button', {
           type: 'button',
           id: 'bt-step5-drill-palate-btn',
-          class: 'bt-step5-drill-pill',
+          class: 'bt-step5-ghost-link',
           'aria-label': 'Save ' + cName + ' and inspect in Palate DNA',
           onclick: function () {
             saveStep5TastingAndApply(tSt, rx, {
@@ -3914,10 +3920,22 @@ if (typeof window !== 'undefined') {
             });
           }
         }, S.h('span', { text: 'Inspect in Palate DNA \u2192' })),
+        S.h('button', {
+          type: 'button',
+          id: 'bt-step5-save-cellar-btn',
+          class: 'bt-step5-ghost-link',
+          'aria-label': 'Save ' + cName + ' and open Cellar',
+          onclick: function () {
+            saveStep5TastingAndApply(tSt, rx, {
+              lockGold: shouldSaveGold,
+              destination: 'cellar'
+            });
+          }
+        }, S.h('span', { text: 'Save \u2192 Cellar' })),
         latestCup ? S.h('button', {
           type: 'button',
           id: 'bt-step5-open-last-cup-btn',
-          class: 'bt-step5-drill-pill bt-last-cup-btn',
+          class: 'bt-step5-ghost-link bt-last-cup-btn',
           'aria-label': 'Open last cup tasting detail for ' + latestCup.coffeeName,
           onclick: function () {
             S.openSheetSafe('screen-detail', { row: latestCup.row, rowIdx: latestCup.rowIdx }, {
@@ -3930,54 +3948,7 @@ if (typeof window !== 'undefined') {
         ) : null
       ));
 
-      /* Sticky Bottom CTA when Rated: Primary "Save -> My Preferences" + Companion "Save -> Home" */
-      ctaMount.textContent = '';
-
-      var ctaLabel = shouldSaveGold
-        ? 'Save Gold \u2192 Preferences'
-        : 'Save & View Insights';
-
-      var ctaSub = (tSt.excludeLearning || tSt.notMyStyle)
-        ? ('Off-Day Shield: logs ' + cName + ' without shifting preferences')
-        : shouldSaveGold
-        ? ('Locks Gold Recipe for ' + cName + ' & updates Palate DNA')
-        : ('Saves Next-Brew Fix for ' + cName + ' & updates Palate DNA');
-
-      ctaMount.appendChild(S.h('div', { class: 'bt-tc-sticky-cta' },
-        S.h('button', {
-          type: 'button',
-          id: 'bt-step5-save-prefs-btn',
-          class: 'bt-tc-primary-btn',
-          'aria-label': ctaLabel + ' for ' + cName,
-          onclick: function () {
-            saveStep5TastingAndApply(tSt, rx, {
-              lockGold: shouldSaveGold,
-              destination: 'palate'
-            });
-          }
-        },
-          S.h('span', { style: 'text-align:left;min-width:0;overflow:hidden' },
-            S.h('span', { style: 'display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap', text: ctaLabel }),
-            S.h('span', { class: 'bt-tc-primary-sub', text: ctaSub })
-          ),
-          S.iconEl('check-seal', { size: 18 })
-        ),
-        S.h('button', {
-          type: 'button',
-          id: 'bt-step5-save-home-btn',
-          class: 'bt-tc-pill is-soft bt-tc-save-home-btn',
-          style: 'min-height:48px',
-          'aria-label': 'Save tasting for ' + cName + ' and return to Home',
-          title: 'Save tasting (+ next-cup fix) for ' + cName + ' and return to Home Page',
-          text: 'Save \u2192 Home',
-          onclick: function () {
-            saveStep5TastingAndApply(tSt, rx, {
-              lockGold: shouldSaveGold,
-              destination: 'door'
-            });
-          }
-        })
-      ));
+      heroBox.appendChild(ctaMount);
 
       if (typeof Beanjamin !== 'undefined' && Beanjamin && typeof Beanjamin.enforceSinglePerViewport === 'function') {
         Beanjamin.enforceSinglePerViewport(root);
@@ -4454,59 +4425,62 @@ if (typeof window !== 'undefined') {
       }
 
       /* =====================================================================
-         CARD 2: 1. Rate & Describe Your Cup
-         Modes: Quick 30s | Guided Tasting | Pro SCA Cupping + 5-Bowl Cupping
+         CARD 1: Effortless 2-Question Quick Review (#bt-step5-rate-card)
+         1) How did it taste? (Instant 1-tap diagnosis RIGHT AT THE TOP)
+         2) How much did you enjoy it? (1–5 stars + ±0.25 + Not my style)
+         Guided & Pro SCA Cupping modes expand cleanly when explicitly selected.
          ===================================================================== */
-      var rateCard = S.h('section', { class: 'bt-tc-card', id: 'bt-step5-rate-card' });
+      var rateCard = S.h('section', { class: 'bt-tc-card bt-step5-quick-card', id: 'bt-step5-rate-card' });
       rateCardRef = rateCard;
+      var isQuickMode = tSt.mode === 'quick';
+
+      function buildModeBarEl() {
+        return S.h('div', { class: 'bt-tc-mode-bar-row' },
+          S.h('div', { class: 'bt-tc-seg-bar bt-tc-mode-seg', role: 'tablist', 'aria-label': 'Sensory Tasting Mode' },
+            [
+              ['quick',  'Quick'],
+              ['guided', 'Guided Tasting'],
+              ['cva',    'Pro SCA Cupping']
+            ].map(function (m) {
+              var on = tSt.mode === m[0];
+              return S.h('button', {
+                type: 'button',
+                role: 'tab',
+                class: 'bt-tc-seg-btn' + (on ? ' is-active' : ''),
+                'aria-selected': String(on),
+                text: m[1],
+                onclick: function () {
+                  tSt.mode = m[0];
+                  S.haptic('tick');
+                  paintAll();
+                }
+              });
+            })
+          ),
+          S.h('button', {
+            type: 'button',
+            id: 'bt-step5-open-sca-btn',
+            class: 'bt-tc-cupping-launch-btn',
+            onclick: function () {
+              S.haptic('snap');
+              S.navGo('sca');
+            }
+          }, S.iconEl('cafe-cup', { size: 16 }), S.h('span', { text: '5-Bowl Blind Cupping \u2192' }))
+        );
+      }
 
       rateCard.appendChild(S.h('div', { class: 'bt-tc-row-between' },
         S.h('div', null,
-          S.h('div', { class: 'bt-tc-kicker', text: 'Step 1 of 2 \u00B7 Sensory Rating & Balance' }),
-          S.h('h2', { class: 'bt-tc-fix-headline', text: '1. Rate & Describe Your Cup' })
+          S.h('h2', { class: 'bt-tc-fix-headline', text: isQuickMode ? 'How Was This Cup?' : (tSt.mode === 'guided' ? 'Guided Tasting' : 'Pro SCA Cupping') })
         ),
         S.h('span', {
           class: 'bt-tc-badge ' + (tSt.hasUserRated ? 'is-good' : 'is-gold'),
           id: 'bt-step5-rated-status-badge',
-          text: tSt.hasUserRated ? ('Rated: ' + tSt.stars.toFixed(2) + '/5') : 'Tap Stars to Rate'
+          text: tSt.hasUserRated ? (tSt.stars.toFixed(2) + '\u2605 \u00B7 ' + starTierWord(tSt.stars)) : 'Quick 10s Review'
         })
       ));
 
-      /* 3 Progressive Sensory Modes Switcher + Prominent 5-Bowl Blind Cupping Launch */
-      rateCard.appendChild(S.h('div', { class: 'bt-tc-mode-bar-row' },
-        S.h('div', { class: 'bt-tc-seg-bar bt-tc-mode-seg', role: 'tablist', 'aria-label': 'Sensory Tasting Mode' },
-          [
-            ['quick',  'Quick 30s'],
-            ['guided', 'Guided Tasting'],
-            ['cva',    'Pro SCA Cupping']
-          ].map(function (m) {
-            var on = tSt.mode === m[0];
-            return S.h('button', {
-              type: 'button',
-              role: 'tab',
-              class: 'bt-tc-seg-btn' + (on ? ' is-active' : ''),
-              'aria-selected': String(on),
-              text: m[1],
-              onclick: function () {
-                tSt.mode = m[0];
-                S.haptic('tick');
-                paintAll();
-              }
-            });
-          })
-        ),
-        S.h('button', {
-          type: 'button',
-          id: 'bt-step5-open-sca-btn',
-          class: 'bt-tc-cupping-launch-btn',
-          onclick: function () {
-            S.haptic('snap');
-            S.navGo('sca');
-          }
-        }, S.iconEl('cafe-cup', { size: 17 }), S.h('span', { text: '5-Bowl Blind Cupping \u2192' }))
-      ));
-
-      /* Live-Updating Score Hero Summary Card (In-Place Update, Zero Scroll Jump!) */
+      /* Mode bar & live SCA score hero ONLY appear at top in Guided / Pro SCA modes (never clutter Quick mode!) */
       var scoreHeroHost = S.h('section', {
         class: 'bt-tc-score-hero',
         id: 'bt-step5-score-hero',
@@ -4514,6 +4488,7 @@ if (typeof window !== 'undefined') {
       });
 
       function paintScoreHeroOnly() {
+        if (tSt.mode === 'quick') return;
         var uni = computeUnifiedSensoryScore(tSt);
         scoreHeroHost.className = 'bt-tc-score-hero' + (uni.heroCls ? (' ' + uni.heroCls) : '');
         scoreHeroHost.textContent = '';
@@ -4543,16 +4518,20 @@ if (typeof window !== 'undefined') {
           })
         ));
       }
-      paintScoreHeroOnly();
-      rateCard.appendChild(scoreHeroHost);
+
+      if (!isQuickMode) {
+        rateCard.appendChild(buildModeBarEl());
+        paintScoreHeroOnly();
+        rateCard.appendChild(scoreHeroHost);
+      }
 
       var ratedStatusBadge = rateCard.querySelector('#bt-step5-rated-status-badge');
       var starDescPill = S.h('span', {
         class: 'bt-tc-star-desc-pill' + (tSt.hasUserRated ? ' is-rated' : ''),
         id: 'bt-step5-star-desc',
         text: tSt.hasUserRated
-          ? (tSt.stars.toFixed(2) + ' \u00B7 ' + starTierWord(tSt.stars))
-          : 'Tap a star (1\u20135) to rate'
+          ? (tSt.stars.toFixed(2) + '\u2605 \u00B7 ' + starTierWord(tSt.stars))
+          : 'Tap stars (1\u20135)'
       });
 
       var starButtons = [];
@@ -4569,10 +4548,11 @@ if (typeof window !== 'undefined') {
         });
       }
 
-      function applyStarRatingInPlace(nextStars, skipFoil) {
+      function applyStarRatingInPlace(nextStars, isManual) {
         tSt.stars = clamp(Math.round(+nextStars * 4) / 4, 0.25, 5.0);
         tSt.hasUserRated = true;
-        if (!tSt.makeAgain) tSt.makeAgain = tSt.stars >= 4.0 ? 'yes' : (tSt.stars >= 3.0 ? 'maybe' : 'no');
+        if (isManual) tSt._manualStarSet = true;
+        if (!tSt.notMyStyle) tSt.makeAgain = tSt.stars >= 4.0 ? 'yes' : (tSt.stars >= 3.0 ? 'maybe' : 'no');
         syncRatingVisuals();
         paintShortcutHighlights();
         paintFixAndCtaOnly();
@@ -4582,12 +4562,12 @@ if (typeof window !== 'undefined') {
       function syncRatingVisuals() {
         if (ratedStatusBadge) {
           ratedStatusBadge.className = 'bt-tc-badge ' + (tSt.hasUserRated ? 'is-good' : 'is-gold');
-          ratedStatusBadge.textContent = tSt.hasUserRated ? ('Rated: ' + tSt.stars.toFixed(2) + '/5') : 'Tap Stars to Rate';
+          ratedStatusBadge.textContent = tSt.hasUserRated ? (tSt.stars.toFixed(2) + '\u2605 \u00B7 ' + starTierWord(tSt.stars)) : 'Quick 10s Review';
         }
         starDescPill.className = 'bt-tc-star-desc-pill' + (tSt.hasUserRated ? ' is-rated' : '');
         starDescPill.textContent = tSt.hasUserRated
-          ? (tSt.stars.toFixed(2) + ' \u00B7 ' + starTierWord(tSt.stars))
-          : 'Tap a star (1\u20135) to rate';
+          ? (tSt.stars.toFixed(2) + '\u2605 \u00B7 ' + starTierWord(tSt.stars))
+          : 'Tap stars (1\u20135)';
         syncStarBarDom();
         paintScoreHeroOnly();
       }
@@ -4603,7 +4583,7 @@ if (typeof window !== 'undefined') {
             var cur = tSt.hasUserRated ? (+tSt.stars || 0) : 0;
             var next = Math.abs(cur - starNum) < 0.05 ? Math.max(0.5, starNum - 0.5) : starNum;
             S.haptic(next >= 4.5 ? 'celebrate' : 'snap');
-            applyStarRatingInPlace(next);
+            applyStarRatingInPlace(next, true);
           }
         });
         starButtons.push(btn);
@@ -4615,6 +4595,24 @@ if (typeof window !== 'undefined') {
         setValue: function () { syncStarBarDom(); paintScoreHeroOnly(); }
       };
 
+      var notMyStyleBtn = S.h('button', {
+        type: 'button',
+        id: 'bt-step5-not-my-style-btn',
+        class: 'bt-tc-pill is-compact' + (tSt.notMyStyle ? ' is-copper is-active' : ' is-soft'),
+        'aria-pressed': String(!!tSt.notMyStyle),
+        text: tSt.notMyStyle ? 'Not My Style (On)' : 'Not My Style',
+        onclick: function () {
+          tSt.notMyStyle = !tSt.notMyStyle;
+          tSt.makeAgain = tSt.notMyStyle ? 'no' : (tSt.stars >= 4.0 ? 'yes' : 'maybe');
+          this.className = 'bt-tc-pill is-compact' + (tSt.notMyStyle ? ' is-copper is-active' : ' is-soft');
+          this.setAttribute('aria-pressed', String(!!tSt.notMyStyle));
+          this.textContent = tSt.notMyStyle ? 'Not My Style (On)' : 'Not My Style';
+          S.haptic('tick');
+          if (!tSt.hasUserRated) applyStarRatingInPlace(2.5, false);
+          else paintFixAndCtaOnly();
+        }
+      });
+
       var fineTuneGroup = S.h('div', { class: 'bt-tc-finetune-group' },
         S.h('button', {
           type: 'button',
@@ -4625,7 +4623,7 @@ if (typeof window !== 'undefined') {
           onclick: function () {
             var base = tSt.hasUserRated && +tSt.stars > 0 ? +tSt.stars : 4.0;
             S.haptic('tick');
-            applyStarRatingInPlace(Math.max(0.5, base - 0.25));
+            applyStarRatingInPlace(Math.max(0.5, base - 0.25), true);
           }
         }),
         S.h('button', {
@@ -4637,53 +4635,22 @@ if (typeof window !== 'undefined') {
           onclick: function () {
             var base = tSt.hasUserRated && +tSt.stars > 0 ? +tSt.stars : 4.0;
             S.haptic('tick');
-            applyStarRatingInPlace(Math.min(5.0, base + 0.25));
+            applyStarRatingInPlace(Math.min(5.0, base + 0.25), true);
           }
         }),
-        starDescPill
+        starDescPill,
+        notMyStyleBtn
       );
 
-      var makeAgainRow = S.h('div', { class: 'bt-tc-row-between', style: 'padding-top:2px' },
-        S.h('span', { style: 'font-size:0.8rem;font-weight:700;color:var(--ink-secondary)', text: 'Make this recipe again?' }),
-        S.h('div', { class: 'bt-tc-pill-wrap' },
-          [
-            ['yes',   'Yes, Love It',  4.50],
-            ['maybe', 'With Next Fix', 3.75],
-            ['no',    'Not For Me',    2.50]
-          ].map(function (mk) {
-            var on = tSt.makeAgain === mk[0];
-            return S.h('button', {
-              type: 'button',
-              class: 'bt-tc-pill is-compact' + (on ? ' is-active' : ' is-soft'),
-              'aria-pressed': String(on),
-              text: mk[1],
-              onclick: function () {
-                tSt.makeAgain = mk[0];
-                tSt.notMyStyle = mk[0] === 'no';
-                var buttons = this.parentNode ? this.parentNode.querySelectorAll('button') : [];
-                Array.prototype.forEach.call(buttons, function (b, bIdx) {
-                  var active = bIdx === (mk[0] === 'yes' ? 0 : (mk[0] === 'maybe' ? 1 : 2));
-                  b.className = 'bt-tc-pill is-compact' + (active ? ' is-active' : ' is-soft');
-                  b.setAttribute('aria-pressed', String(active));
-                });
-                S.haptic('tick');
-                applyStarRatingInPlace(+tSt.stars > 0 && tSt.hasUserRated ? tSt.stars : mk[2]);
-              }
-            });
-          })
-        )
-      );
-
-      rateCard.appendChild(S.h('div', { class: 'bt-tc-star-bar-wrap', id: 'bt-step5-star-bar' },
+      var starBarEl = S.h('div', { class: 'bt-tc-star-bar-wrap bt-step5-star-compact', id: 'bt-step5-star-bar' },
         S.h('div', { class: 'bt-tc-row-between' },
-          S.h('b', { style: 'font-size:0.92rem', text: '1-Tap Star Rating & Fine-Tune (1.0\u20135.0)' }),
-          S.h('span', { style: 'font-size:0.75rem;color:var(--ink-muted)', text: 'Tap star again for half-star' })
+          S.h('b', { style: 'font-size:0.86rem;color:var(--ink)', text: '2. How much did you enjoy it?' }),
+          S.h('span', { style: 'font-size:0.73rem;color:var(--ink-muted)', text: 'Tap again for half-star' })
         ),
-        S.h('div', { class: 'bt-tc-star-row' }, starsGroup, fineTuneGroup),
-        makeAgainRow
-      ));
+        S.h('div', { class: 'bt-tc-star-row' }, starsGroup, fineTuneGroup)
+      );
 
-      /* 2-Column Tactile "How Did It Taste?" Diagnosis Cards + 4-Ring Bullseye + R2 Dual-Pin */
+      /* Quick Taste Triage + Optional Precision Balance Map + R2 Dual-Pin */
       var curMethod = flowInfo.methodKey;
       var isEspNow = curMethod.indexOf('espresso') >= 0;
       var doseNow = flowInfo.doseG;
@@ -4710,30 +4677,33 @@ if (typeof window !== 'undefined') {
         var ak = activeShortcutKey();
         shortcutButtons.forEach(function (item) {
           var isOn = item.key === ak;
-          item.btn.className = 'bt-tc-diag-card' + (isOn ? (' is-active' + (item.key === 'sweet' ? ' is-sweet' : '')) : '');
+          var extra = (item.featured ? ' is-featured-sweet' : '') + (item.fullSpan ? ' is-full-span' : '');
+          item.btn.className = 'bt-tc-diag-card' + extra + (isOn ? (' is-active' + (item.key === 'sweet' ? ' is-sweet' : '')) : '');
           item.btn.setAttribute('aria-pressed', String(isOn));
         });
       }
 
       var shortcutRow = S.h('div', {
-        class: 'bt-tc-diag-grid',
+        class: 'bt-tc-diag-grid bt-step5-diag-v75',
         id: 'bt-step5-diag-grid',
         role: 'group',
-        'aria-label': 'How Did It Taste quick diagnosis cards',
+        'aria-label': 'How did it taste quick diagnosis cards',
         'aria-describedby': 'bt-step5-diag-hint'
       });
       QUICK_TASTE_SHORTCUTS.forEach(function (sc) {
+        var extraCls = (sc.featured ? ' is-featured-sweet' : '') + (sc.fullSpan ? ' is-full-span' : '');
         var btn = S.h('button', {
           type: 'button',
-          class: 'bt-tc-diag-card',
+          class: 'bt-tc-diag-card' + extraCls,
           'aria-label': sc.label + ': ' + sc.hint,
           onclick: function () {
             tSt.padX = sc.x;
             tSt.padY = sc.y;
-            if (!tSt.hasUserRated || !(+tSt.stars > 0)) {
+            if (!tSt._manualStarSet || !tSt.hasUserRated || !(+tSt.stars > 0)) {
               tSt.stars = sc.defStars;
             }
             tSt.hasUserRated = true;
+            if (!tSt.notMyStyle) tSt.makeAgain = tSt.stars >= 4.0 ? 'yes' : (tSt.stars >= 3.0 ? 'maybe' : 'no');
             if (padWidgetRef && typeof padWidgetRef.setXY === 'function') {
               padWidgetRef.setXY(tSt.padX, tSt.padY);
             }
@@ -4748,10 +4718,26 @@ if (typeof window !== 'undefined') {
           S.h('b', { text: sc.label }),
           S.h('span', { text: sc.hint })
         );
-        shortcutButtons.push({ key: sc.key, btn: btn });
+        shortcutButtons.push({ key: sc.key, btn: btn, featured: !!sc.featured, fullSpan: !!sc.fullSpan });
         shortcutRow.appendChild(btn);
       });
       paintShortcutHighlights();
+
+      /* Mount 1. How did it taste? RIGHT AT THE TOP, followed immediately by 2. Stars! */
+      rateCard.appendChild(S.h('div', { class: 'bt-step5-triage-block' },
+        S.h('div', { class: 'bt-tc-row-between' },
+          S.h('b', { style: 'font-size:0.88rem;color:var(--ink)', text: '1. How did it taste?' }),
+          (r2EffectiveOn && +tSt.tdsPct > 0) ? S.h('span', { class: 'bt-tc-badge is-sci', id: 'bt-step5-dual-pin-badge', text: tSt.tdsPct.toFixed(2) + '% TDS' }) : null
+        ),
+        S.h('p', {
+          id: 'bt-step5-diag-hint',
+          class: 'bt-tc-sub',
+          style: 'margin:0;font-size:0.77rem;color:var(--ink-secondary);line-height:1.35',
+          text: 'Tap what stood out most \u2014 your exact next-brew fix appears right below.'
+        }),
+        shortcutRow
+      ));
+      rateCard.appendChild(starBarEl);
 
       var padWidget = null;
       if (tac && typeof tac.BTTastePad2D === 'function') {
@@ -5077,25 +5063,32 @@ if (typeof window !== 'undefined') {
         }
       }
 
-      rateCard.appendChild(S.h('div', { class: 'bt-tc-well', style: 'padding:12px 13px;gap:10px' },
-        S.h('div', { class: 'bt-tc-row-between' },
-          S.h('div', null,
-            S.h('div', { class: 'bt-tc-kicker', text: '4-Ring Taste Balance Bullseye' }),
-            S.h('b', { style: 'font-size:0.96rem', text: 'Where did your cup land? (Sour \u2194 Bitter \u00D7 Weak \u2194 Strong)' })
+      /* Build Optional Precision Balance Map & Refractometer (R2) Drawer (mounted below Next-Brew Fix!) */
+      var autoOpenMapDrawer = !!(tSt.mapDrawerOpen || r2Connected || +tSt.tdsPct > 0 || r2Mode === 'always' || tSt.mode === 'guided');
+      var mapDrawerStatus = +tSt.tdsPct > 0
+        ? (tSt.tdsPct.toFixed(2) + '% TDS')
+        : (r2Connected ? 'R2 Ready' : 'Optional');
+      var mapDrawer = S.h('details', {
+        class: 'bt-step5-drawer',
+        id: 'bt-step5-map-drawer',
+        open: autoOpenMapDrawer ? 'open' : null
+      },
+        S.h('summary', { class: 'bt-step5-drawer-summary' },
+          S.h('span', { class: 'bt-step5-drawer-title' },
+            S.h('b', { text: 'Fine-Tune Balance Map & Refractometer (R2)' }),
+            S.h('span', { text: 'Drag 2D sour/bitter/strength target or log %TDS' })
           ),
-          (r2EffectiveOn && +tSt.tdsPct > 0) ? S.h('span', { class: 'bt-tc-badge is-sci', id: 'bt-step5-dual-pin-badge', text: 'Dual-Pin Active' }) : null
+          S.h('span', { class: 'bt-tc-badge ' + (+tSt.tdsPct > 0 || r2Connected ? 'is-sci' : 'is-gold'), text: mapDrawerStatus })
         ),
-        S.h('p', {
-          id: 'bt-step5-diag-hint',
-          class: 'bt-tc-sub',
-          style: 'margin:0;font-size:0.78rem;color:var(--ink-secondary);line-height:1.35',
-          text: 'Tap a quick shortcut or drag the bullseye dot below: center = Sweet Spot, left/right tunes grind, up/down tunes dose.'
-        }),
-        shortcutRow,
-        padWidget,
-        bullseyeCheatSheet,
-        r2Host
-      ));
+        S.h('div', { class: 'bt-step5-drawer-body' },
+          padWidget,
+          bullseyeCheatSheet,
+          r2Host
+        )
+      );
+      mapDrawer.addEventListener('toggle', function () {
+        tSt.mapDrawerOpen = !!mapDrawer.open;
+      });
 
       /* MODE 2 EXTRA: Guided Tasting — Structured 5-Step Labeled Sensory Bars (In-Place Updates!) */
       if (tSt.mode === 'guided') {
@@ -5368,23 +5361,16 @@ if (typeof window !== 'undefined') {
         ));
       }
 
-      /* Blind-First Rose-Copper Scratch Foil 2.0 inside Card 2 */
-      var rxCheckNow = computeStatefulPrescription(tSt);
-      var allowBjInFoil = !(tSt.hasUserRated && rxCheckNow.inGoldZone);
-      rateCard.appendChild(buildScratchFoilCard(tSt, paintAll, allowBjInFoil));
+      /* Mount Card 1 (Quick Review) followed IMMEDIATELY by Card 2 (Next-Brew Fix + Save) */
       root.appendChild(rateCard);
-      if (tSt.coolingCardCollapsed) {
-        root.appendChild(gsCard);
-      }
-
-      /* =====================================================================
-         CARD 3: 2. Your Dial-In Verdict & Next-Brew Recipe (#bt-nextbrew-fix)
-         Mounted AFTER Card 2 Ratings!
-         ===================================================================== */
       root.appendChild(fixBannerMount);
 
       /* =====================================================================
-         CARD 4: Off-Day Shield & Cup Notes (Plain-English Labels)
+         PROGRESSIVE DISCLOSURE DRAWERS: Optional Depth (Below the Verdict)
+         1) Flavor Notes, Roaster Match, Cup Notes & Off-Day Shield
+         2) Fine-Tune 2D Balance Map & Refractometer (R2)
+         3) Slim Cup Cooling Timer & In-Mug Rescue
+         4) Quiet Mode Switcher (Guided Tasting, Pro SCA, 5-Bowl Blind Cupping)
          ===================================================================== */
       var outlierBadgeHost = S.h('div');
       var histSame = getTrailRowsForActiveCoffee(a, curMethod);
@@ -5399,43 +5385,79 @@ if (typeof window !== 'undefined') {
       }
       paintOutlierBadgeOnly();
 
-      root.appendChild(S.h('section', { class: 'bt-tc-card' },
-        S.h('div', { class: 'bt-tc-row-between' },
-          S.h('span', { class: 'bt-tc-kicker', text: 'Off-Day Taste Shield & Personal Notes' }),
-          outlierBadgeHost
-        ),
-        S.h('button', {
-          type: 'button',
-          class: 'bt-tc-shield-btn',
-          'aria-pressed': String(!!tSt.excludeLearning),
-          onclick: function () {
-            tSt.excludeLearning = !tSt.excludeLearning;
-            S.haptic('snap');
-            paintAll();
-          }
-        },
-          S.h('span', { style: 'display:inline-flex;align-items:center;gap:8px' },
-            S.iconEl('vault-shield', { size: 18 }),
-            S.h('span', { text: 'Off Palate / Sick / Rushed Today (Save Notes Without Changing Recipe)' })
-          ),
-          S.h('b', { class: 'mono', text: tSt.excludeLearning ? 'SHIELD ON' : 'Normal' })
-        ),
-        S.h('p', {
-          class: 'bt-tc-trait-desc',
-          text: 'Ate spicy food, fighting a cold, or distracted mid-pour? Turn this on so an off day never shifts your saved recipe or taste profile.'
-        }),
-        S.h('textarea', {
-          class: 'bt-tc-textarea',
-          rows: '2',
-          placeholder: 'Optional cup notes (aroma, how it changed as it cooled, food pairing)...',
-          'aria-label': 'Tasting notes',
-          value: tSt.notes,
-          oninput: function (e) { tSt.notes = e.target.value; }
-        })
-      ));
+      var rxCheckNow = computeStatefulPrescription(tSt);
+      var allowBjInFoil = !(tSt.hasUserRated && rxCheckNow.inGoldZone);
+      var autoOpenNotesDrawer = !!(tSt.notesDrawerOpen || tSt.foilRevealed || tSt.excludeLearning || (tSt.userNotes && tSt.userNotes.length > 0) || (tSt.notes && tSt.notes.trim().length > 0));
+      var notesDrawerStatus = tSt.excludeLearning
+        ? 'Shield ON'
+        : ((tSt.userNotes && tSt.userNotes.length > 0)
+          ? (tSt.userNotes.length + (tSt.userNotes.length === 1 ? ' Note' : ' Notes'))
+          : (tSt.notes && tSt.notes.trim() ? 'Note Added' : 'Optional'));
 
-      /* Sticky Thumb-Zone Primary CTA */
-      root.appendChild(ctaMount);
+      var notesDrawer = S.h('details', {
+        class: 'bt-step5-drawer',
+        id: 'bt-step5-notes-drawer',
+        open: autoOpenNotesDrawer ? 'open' : null
+      },
+        S.h('summary', { class: 'bt-step5-drawer-summary' },
+          S.h('span', { class: 'bt-step5-drawer-title' },
+            S.h('b', { text: 'Flavor Notes, Roaster Match & Cup Notes' }),
+            S.h('span', { text: 'Tag tasting notes, peel roaster foil, or set Off-Day Shield' })
+          ),
+          S.h('span', { class: 'bt-tc-badge ' + (tSt.excludeLearning ? 'is-warn' : ((tSt.userNotes && tSt.userNotes.length > 0) ? 'is-good' : 'is-gold')), text: notesDrawerStatus })
+        ),
+        S.h('div', { class: 'bt-step5-drawer-body' },
+          buildScratchFoilCard(tSt, paintAll, allowBjInFoil),
+          S.h('textarea', {
+            class: 'bt-tc-textarea',
+            rows: '2',
+            placeholder: 'Optional cup notes (aroma, how it changed as it cooled, food pairing)...',
+            'aria-label': 'Tasting notes',
+            value: tSt.notes,
+            oninput: function (e) { tSt.notes = e.target.value; }
+          }),
+          S.h('div', { class: 'bt-tc-row-between', style: 'padding-top:2px' },
+            S.h('span', { class: 'bt-tc-kicker', text: 'Off-Day Taste Shield' }),
+            outlierBadgeHost
+          ),
+          S.h('button', {
+            type: 'button',
+            id: 'bt-step5-shield-btn',
+            class: 'bt-tc-shield-btn',
+            'aria-pressed': String(!!tSt.excludeLearning),
+            onclick: function () {
+              tSt.excludeLearning = !tSt.excludeLearning;
+              tSt.notesDrawerOpen = true;
+              S.haptic('snap');
+              paintAll();
+            }
+          },
+            S.h('span', { style: 'display:inline-flex;align-items:center;gap:8px' },
+              S.iconEl('vault-shield', { size: 17 }),
+              S.h('span', { text: 'Off Palate / Rushed Today (Save without shifting recipe)' })
+            ),
+            S.h('b', { class: 'mono', text: tSt.excludeLearning ? 'SHIELD ON' : 'Normal' })
+          )
+        )
+      );
+      notesDrawer.addEventListener('toggle', function () {
+        tSt.notesDrawerOpen = !!notesDrawer.open;
+      });
+
+      root.appendChild(notesDrawer);
+      root.appendChild(mapDrawer);
+
+      if (tSt.coolingCardCollapsed) {
+        root.appendChild(gsCard);
+      }
+
+      if (isQuickMode) {
+        root.appendChild(S.h('section', { class: 'bt-step5-mode-footer', id: 'bt-step5-mode-footer' },
+          S.h('div', { class: 'bt-tc-kicker', style: 'margin-bottom:2px', text: 'Need Deeper Scoring or Multi-Bowl Cupping?' }),
+          buildModeBarEl()
+        ));
+      }
+
       paintFixAndCtaOnly();
 
       if (opts.focusFix || a.focusFix) {
