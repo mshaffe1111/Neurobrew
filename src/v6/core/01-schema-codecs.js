@@ -22,10 +22,13 @@ const COLUMNS = [
 const TEXT_COLUMNS = new Set([
   'roaster','coffee_name','origin','process','roast_level','elevation_class','varietal','bag_notes',
   'brew_method','brew_grind_setting','brew_adjustment','brew_filter','brew_grinder_name','brew_pour_notes','brew_technique_detail','details_guessed','aroma_vials','words_fragrance_aroma','words_flavor','words_aftertaste','words_acidity','words_body','aroma_kit',
+  'cool_acidity','cool_sweetness','cool_bitterness','dial_symptom','dial_change','dial_from_id',
   'note_fragrance_aroma','note_flavor','note_aftertaste','note_acidity','note_body','note_balance','note_overall',
   'defect_notes','general_notes','flavors_liked','flavors_not_liked','note_aroma','note_sweetness','defect_type',
   'species','decaf_process','brew_style'
 ]);
+const _BT_FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+function _btSafeKey(k){ return typeof k === 'string' && k.length > 0 && !_BT_FORBIDDEN_KEYS.has(k); }
 const SETUP_COLUMN = 'setup_json';
 const REQUIRED_COLUMNS = ['schema_version','id','coffee_name','total_score'];
 
@@ -119,23 +122,50 @@ function _btExtractionYield(tds, outG, doseG){
   return (isFinite(t) && t > 0 && isFinite(o) && o > 0 && isFinite(d) && d > 0) ? Math.round((t * o / d) * 100) / 100 : null;
 }
 function _btCalibClean(raw){
-  if (typeof calibClean === 'function') return calibClean(raw);
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
-  const out = {};
+  if (typeof calibClean === 'function'){
+    const safeRaw = Object.create(null);
+    Object.keys(raw).forEach(gk => {
+      if (!_btSafeKey(gk)) return;
+      const v = raw[gk];
+      if (v && typeof v === 'object' && !Array.isArray(v)){
+        const sub = Object.create(null);
+        Object.keys(v).forEach(ck => { if (_btSafeKey(ck)) sub[ck] = v[ck]; });
+        safeRaw[gk] = sub;
+      }
+    });
+    return calibClean(safeRaw);
+  }
+  const out = Object.create(null);
   Object.keys(raw).slice(0, 48).forEach(gk => {
+    if (!_btSafeKey(gk)) return;
     const v = raw[gk];
     if (v && typeof v === 'object' && !Array.isArray(v)){
-      const sub = {};
+      const sub = Object.create(null);
       Object.keys(v).slice(0, 24).forEach(ck => {
+        if (!_btSafeKey(ck)) return;
         const cv = v[ck];
-        if (typeof cv === 'number' && isFinite(cv)) sub[ck.slice(0, 32)] = Math.round(cv * 100) / 100;
-        else if (typeof cv === 'string' && cv.length <= 48) sub[ck.slice(0, 32)] = cv;
-        else if (cv && typeof cv === 'object' && !Array.isArray(cv)) sub[ck.slice(0, 32)] = cv;
+        const k2 = ck.slice(0, 32);
+        if (!_btSafeKey(k2)) return;
+        if (typeof cv === 'number' && isFinite(cv)) sub[k2] = Math.round(cv * 100) / 100;
+        else if (typeof cv === 'string' && cv.length <= 48) sub[k2] = cv;
+        else if (cv && typeof cv === 'object' && !Array.isArray(cv)){
+          const leaf = {};
+          Object.keys(cv).slice(0, 12).forEach(lk => {
+            if (!_btSafeKey(lk)) return;
+            const lv = cv[lk];
+            if (typeof lv === 'number' && isFinite(lv)) leaf[lk.slice(0, 24)] = Math.round(lv * 100) / 100;
+            else if (typeof lv === 'string' && lv.length <= 48) leaf[lk.slice(0, 24)] = lv;
+            else if (typeof lv === 'boolean') leaf[lk.slice(0, 24)] = lv;
+          });
+          if (Object.keys(leaf).length) sub[k2] = leaf;
+        }
       });
-      if (Object.keys(sub).length) out[gk.slice(0, 48)] = sub;
+      const k1 = gk.slice(0, 48);
+      if (_btSafeKey(k1) && Object.keys(sub).length) out[k1] = Object.assign({}, sub);
     }
   });
-  return out;
+  return Object.assign({}, out);
 }
 function _btShopOrigin(u){
   if (typeof shopOrigin === 'function') return shopOrigin(u);
@@ -199,11 +229,18 @@ function validStars(v){
 }
 function neutralize(s){
   s = String(s == null ? '' : s);
-  return /^'*[=+\-@\t\r]/.test(s) ? "'" + s : s;
+  return /^[\s']*[=+\-@\t\r]/.test(s) ? "'" + s : s;
 }
 function unneutralize(s){
   s = String(s == null ? '' : s);
-  return /^'+[=+\-@\t\r]/.test(s) ? s.slice(1) : s;
+  return /^'(?=[\s']*[=+\-@\t\r])/.test(s) ? s.slice(1) : s;
+}
+const _JSON_SAFE_COLS = new Set([SETUP_COLUMN, 'recipe_adaptation_json', 'cva_intensity_json']);
+function _neutralizeExportCell(col, val){
+  const v = val == null ? '' : String(val);
+  if (!v || _JSON_SAFE_COLS.has(col)) return v;
+  if (/^-?\d+(\.\d+)?$/.test(v.trim())) return v;
+  return /^\s*[=+\-@\t\r]/.test(v) ? neutralize(v) : v;
 }
 function escapeField(s){
   s = String(s == null ? '' : s);
@@ -221,7 +258,7 @@ function parseCSV(text){
     if (q){
       if (ch === '"'){ if (text[i + 1] === '"'){ f += '"'; i++; } else { q = false; } }
       else f += ch;
-    } else if (ch === '"'){ q = true; }
+    } else if (ch === '"' && f === ''){ q = true; }
     else if (ch === ','){ row.push(f); f = ''; }
     else if (ch === '\n' || ch === '\r'){
       if (ch === '\r' && text[i + 1] === '\n') i++;
@@ -249,21 +286,21 @@ function mergeCSV(existing, newRow){
   const lines = [header];
   const si = header.indexOf(SETUP_COLUMN), fresh = !!(newRow[SETUP_COLUMN] || '');
   existing.rows.forEach(r => { const rr = r.slice(); while (rr.length < header.length) rr.push(''); if (fresh) rr[si] = ''; lines.push(rr); });
-  lines.push(header.map(c => newRow[c] !== undefined ? newRow[c] : ''));
+  lines.push(header.map(c => newRow[c] !== undefined ? _neutralizeExportCell(c, newRow[c]) : ''));
   return toCSV(lines);
 }
 function addRowsToExisting(ex, objs){
   const header = ex.header.slice();
   COLUMNS.forEach(c => { if (!header.includes(c)) header.push(c); });
   const list = (objs || []).filter(o => o && typeof o === 'object');
-  list.forEach(o => Object.keys(o).forEach(k => { if (k !== '_i' && !header.includes(k)) header.push(k); }));
+  list.forEach(o => Object.keys(o).forEach(k => { if (k !== '_i' && _btSafeKey(k) && !header.includes(k)) header.push(k); }));
   const ids = new Set(ex.ids), rows = ex.rows.map(r => { const rr = r.slice(); while (rr.length < header.length) rr.push(''); return rr; });
   let added = 0;
   list.forEach(o => {
     const id = String(o.id == null ? '' : o.id).trim();
     if (id && ids.has(id)) return;
     if (id) ids.add(id);
-    rows.push(header.map(c => c === SETUP_COLUMN || o[c] == null ? '' : String(o[c]))); added++;
+    rows.push(header.map(c => c === SETUP_COLUMN || o[c] == null ? '' : _neutralizeExportCell(c, o[c]))); added++;
   });
   return { header, rows, ids, count:rows.length, added };
 }
@@ -274,7 +311,7 @@ function stampSetupColumn(header, rows, json){
   return { header:hd, rows:rows.map((r, i) => { const rr = r.slice(); while (rr.length < hd.length) rr.push(''); rr[si] = i === rows.length - 1 ? json : ''; return rr; }) };
 }
 function newFileCSV(newRow){
-  return toCSV([COLUMNS, COLUMNS.map(c => newRow[c] !== undefined ? newRow[c] : '')]);
+  return toCSV([COLUMNS, COLUMNS.map(c => newRow[c] !== undefined ? _neutralizeExportCell(c, newRow[c]) : '')]);
 }
 function rowsToObjects(ex){
   if (!ex || !Array.isArray(ex.rows) || !Array.isArray(ex.header)) return [];
@@ -769,7 +806,7 @@ function cvaClean(x){
     const v = cvaScore(x.score && x.score[s.key]); if (v) c.score[s.key] = v;
     const f = cvaScore(x.fin && x.fin[s.key]); if (f && s.retaste && v) c.fin[s.key] = f;
     if (s.skippable && !v && x.skip && x.skip[s.key] === true) c.skip[s.key] = true;
-    if (x.notes && typeof x.notes[s.key] === 'string') c.notes[s.key].slice(0, 500) && (c.notes[s.key] = x.notes[s.key].slice(0, 500));
+    if (x.notes && typeof x.notes[s.key] === 'string' && x.notes[s.key].length) c.notes[s.key] = x.notes[s.key].slice(0, 500);
   });
   if (x.desc && typeof x.desc === 'object' && !Array.isArray(x.desc)){
     Object.keys(x.desc).forEach(k => {
@@ -858,6 +895,7 @@ const _CANON_DENS_LABELS = { low:'Lower', mid:'Mid', high:'High', 'very-high':'V
 const _CANON_BLEND_LABELS = { single:'Single origin', blend:'Blend' };
 
 function cleanLine(v){ return String(v == null ? '' : v).replace(/[\r\n\t]+/g, ' ').replace(/ {2,}/g, ' ').trim(); }
+/* Contract: returns aging DAYS SAVED by freezing (round(frozenSpan * (1 - 1/12.3))), matching 02:effectiveBeanAge(). */
 function computeFreezeOffsetDays(roastDate, frozenDate, brewDate){
   if (!_btValidIsoDate(roastDate) || !_btValidIsoDate(frozenDate)) return null;
   const ref = brewDate && !isNaN(brewDate) ? brewDate : new Date();
@@ -999,8 +1037,8 @@ function tastingEstimateOut(o, dose, water){
   const m = allM.find(x => x.key === mk || x.label === String((o && o.brew_method) || ''));
   if (!m || m.type === 'cold') return null;
   if (typeof expectedYield === 'function' && typeof aboutGrams === 'function'){
-    const e = expectedYield(m.type, +water, +dose, m.key);
-    return e == null ? null : aboutGrams(e, m.type);
+    const e = expectedYield(m.key, +water, +dose);
+    return e == null ? null : aboutGrams(e);
   }
   const d = +dose, w = +water;
   if (!(d > 0 && w > 0)) return null;
@@ -1049,10 +1087,12 @@ function applyTastingEdit(header, rows, idx, edit){
     }
     if ('ey_total' in got) set('brew_ey_total_pct', got.ey_total);
     else if (('dose' in got || 'water' in got || 'tds' in got || 'out_g' in got) && cur.brew_ey_total_pct){
-      const mk = resolveMethod(cur.brew_method), tdsN = parseFloat(val('brew_tds_pct')), dN = parseFloat(val('brew_dose_g')), wN = parseFloat(val('brew_water_g')), oN = parseFloat(val('brew_out_g'));
-      if (typeof steepRead === 'function' && mk){
-        const rd = steepRead(mk, tdsN, oN, dN, wN);
-        set('brew_ey_total_pct', rd && rd.ey != null ? String(rd.ey) : '');
+      const tdsN = parseFloat(val('brew_tds_pct')), dN = parseFloat(val('brew_dose_g')), wN = parseFloat(val('brew_water_g'));
+      if (isFinite(tdsN) && tdsN > 0 && tdsN < 40 && isFinite(dN) && dN > 0 && isFinite(wN) && wN > 0){
+        const eyTot = Math.round(((tdsN / (100 - tdsN)) * (wN / dN) * 100) * 100) / 100;
+        set('brew_ey_total_pct', isFinite(eyTot) && eyTot > 0 && eyTot <= 45 ? String(eyTot) : '');
+      } else {
+        set('brew_ey_total_pct', '');
       }
     }
     if ('style' in b) set('brew_style', neutralize(cleanLine(b.style).slice(0, 32)));
@@ -1238,21 +1278,16 @@ function _btPureGzipCompress(raw){
   out[tr + 4] = sz & 255; out[tr + 5] = (sz >>> 8) & 255; out[tr + 6] = (sz >>> 16) & 255; out[tr + 7] = (sz >>> 24) & 255;
   return out;
 }
-function _btPureGzipDecompress(gzBytes, limit){
-  if (gzBytes.length < 18 || gzBytes[0] !== 0x1f || gzBytes[1] !== 0x8b || gzBytes[2] !== 0x08) throw new Error('bad-gzip');
-  const flg = gzBytes[3];
-  let pos = 10;
-  if (flg & 4){ const xlen = gzBytes[pos] | (gzBytes[pos + 1] << 8); pos += 2 + xlen; }
-  if (flg & 8){ while (pos < gzBytes.length && gzBytes[pos++] !== 0){} }
-  if (flg & 16){ while (pos < gzBytes.length && gzBytes[pos++] !== 0){} }
-  if (flg & 2) pos += 2;
+function _btPureRawInflateCore(bytes, startPos, limit){
+  const maxBytes = (typeof limit === 'number' && limit > 0) ? limit : 30000000;
+  const pos = startPos || 0;
   let bitPos = 0;
   const getBits = n => {
     let v = 0;
     for (let i = 0; i < n; i++){
       const bp = pos + (bitPos >> 3);
-      if (bp >= gzBytes.length) throw new Error('eof');
-      v |= ((gzBytes[bp] >>> (bitPos & 7)) & 1) << i;
+      if (bp >= bytes.length) throw new Error('eof');
+      v |= ((bytes[bp] >>> (bitPos & 7)) & 1) << i;
       bitPos++;
     }
     return v;
@@ -1300,13 +1335,16 @@ function _btPureGzipDecompress(gzBytes, limit){
     if (btype === 0){
       bitPos = (bitPos + 7) & ~7;
       const bp = pos + (bitPos >> 3);
-      const len = gzBytes[bp] | (gzBytes[bp + 1] << 8);
-      const nlen = gzBytes[bp + 2] | (gzBytes[bp + 3] << 8);
+      if (bp + 4 > bytes.length) throw new Error('eof');
+      const len = bytes[bp] | (bytes[bp + 1] << 8);
+      const nlen = bytes[bp + 2] | (bytes[bp + 3] << 8);
       if ((len ^ 0xffff) !== nlen) throw new Error('bad-stored');
       bitPos += 32;
       for (let k = 0; k < len; k++){
-        if (out.length >= limit) throw new Error('bk-too-big');
-        out.push(gzBytes[pos + (bitPos >> 3)]); bitPos += 8;
+        const curBp = pos + (bitPos >> 3);
+        if (curBp >= bytes.length) throw new Error('eof');
+        if (out.length >= maxBytes) throw new Error('bk-too-big');
+        out.push(bytes[curBp]); bitPos += 8;
       }
     } else if (btype === 1 || btype === 2){
       let litTree, distTree;
@@ -1322,9 +1360,9 @@ function _btPureGzipDecompress(gzBytes, limit){
         for (let i = 0; i < hlit + hdist;){
           const s = decodeSym(clTree);
           if (s < 16) allLens[i++] = s;
-          else if (s === 16){ const rep = getBits(2) + 3, prev = allLens[i - 1] || 0; for (let k = 0; k < rep; k++) allLens[i++] = prev; }
-          else if (s === 17){ const rep = getBits(3) + 3; for (let k = 0; k < rep; k++) allLens[i++] = 0; }
-          else { const rep = getBits(7) + 11; for (let k = 0; k < rep; k++) allLens[i++] = 0; }
+          else if (s === 16){ const rep = getBits(2) + 3, prev = allLens[i - 1] || 0; for (let k = 0; k < rep && i < allLens.length; k++) allLens[i++] = prev; }
+          else if (s === 17){ const rep = getBits(3) + 3; for (let k = 0; k < rep && i < allLens.length; k++) allLens[i++] = 0; }
+          else { const rep = getBits(7) + 11; for (let k = 0; k < rep && i < allLens.length; k++) allLens[i++] = 0; }
         }
         litTree = buildTree(allLens.subarray(0, hlit));
         distTree = buildTree(allLens.subarray(hlit));
@@ -1333,21 +1371,43 @@ function _btPureGzipDecompress(gzBytes, limit){
         const sym = decodeSym(litTree);
         if (sym === 256) break;
         if (sym < 256){
-          if (out.length >= limit) throw new Error('bk-too-big');
+          if (out.length >= maxBytes) throw new Error('bk-too-big');
           out.push(sym);
         } else {
           const li = sym - 257, length = lenBase[li] + (lenExtra[li] ? getBits(lenExtra[li]) : 0);
           const di = decodeSym(distTree), dist = distBase[di] + (distExtra[di] ? getBits(distExtra[di]) : 0);
           if (dist > out.length) throw new Error('bad-dist');
           for (let k = 0; k < length; k++){
-            if (out.length >= limit) throw new Error('bk-too-big');
+            if (out.length >= maxBytes) throw new Error('bk-too-big');
             out.push(out[out.length - dist]);
           }
         }
       }
     } else throw new Error('bad-btype');
   }
-  return new Uint8Array(out);
+  const endBytePos = pos + ((bitPos + 7) >> 3);
+  return { bytes:new Uint8Array(out), endBytePos };
+}
+function _btPureRawInflate(rawBytes, limit){
+  return _btPureRawInflateCore(rawBytes, 0, limit).bytes;
+}
+function _btPureGzipDecompress(gzBytes, limit){
+  if (gzBytes.length < 18 || gzBytes[0] !== 0x1f || gzBytes[1] !== 0x8b || gzBytes[2] !== 0x08) throw new Error('bad-gzip');
+  const flg = gzBytes[3];
+  let pos = 10;
+  if (flg & 4){ const xlen = gzBytes[pos] | (gzBytes[pos + 1] << 8); pos += 2 + xlen; }
+  if (flg & 8){ while (pos < gzBytes.length && gzBytes[pos++] !== 0){} }
+  if (flg & 16){ while (pos < gzBytes.length && gzBytes[pos++] !== 0){} }
+  if (flg & 2) pos += 2;
+  const inf = _btPureRawInflateCore(gzBytes, pos, limit);
+  const tr = inf.endBytePos;
+  if (tr + 8 > gzBytes.length) throw new Error('bad-gzip-trailer');
+  const expectedCrc = ((gzBytes[tr]) | (gzBytes[tr + 1] << 8) | (gzBytes[tr + 2] << 16) | (gzBytes[tr + 3] << 24)) >>> 0;
+  const expectedSize = ((gzBytes[tr + 4]) | (gzBytes[tr + 5] << 8) | (gzBytes[tr + 6] << 16) | (gzBytes[tr + 7] << 24)) >>> 0;
+  const actualCrc = parseInt(bkCrc32(inf.bytes), 16) >>> 0;
+  const actualSize = inf.bytes.length >>> 0;
+  if (actualCrc !== expectedCrc || actualSize !== expectedSize) throw new Error('bad-gzip-crc');
+  return inf.bytes;
 }
 
 async function bkPipe(bytes, stream){
@@ -1471,10 +1531,8 @@ function bkpPack(parts, info){
   const all = new Uint8Array(n); let o = 0; chunks.forEach(c => { all.set(c, o); o += c.length; });
   return _btUtf8Decode(all);
 }
-function bkpUnpack(text){
-  const t = String(text == null ? '' : text).replace(/^\uFEFF/, '');
-  if (!/^#(?:BEANTELLIGENCE|NEUROBREW)-PARTS 1(?:\r?\n|$)/.test(t)) return null;
-  const b = _btUtf8Encode(t), out = { made:'', app:'', order:[], parts:{}, damaged:[] };
+function _bkpUnpackBytes(b){
+  const out = { made:'', app:'', order:[], parts:{}, damaged:[] };
   let i = 0;
   const line = () => { let j = i; while (j < b.length && b[j] !== 10) j++; const s = _btUtf8Decode(b.subarray(i, j)).replace(/\r$/, ''); i = j < b.length ? j + 1 : j; return s; };
   line();
@@ -1485,7 +1543,9 @@ function bkpUnpack(text){
     else if ((m = /^#PART ([a-z][a-z0-9-]{0,24}) (\d+) ([0-9a-f]{1,8})$/.exec(l))){
       const id = m[1], len = parseInt(m[2], 10), seen = !!out.parts[id];
       if (i + len > b.length){ if (!seen){ out.parts[id] = { ok:false, text:'', why:'cut' }; out.order.push(id); out.damaged.push(id); } break; }
-      const body = b.subarray(i, i + len); i += len; if (b[i] === 10) i++;
+      const body = b.subarray(i, i + len); i += len;
+      if (b[i] === 13 && b[i + 1] === 10) i += 2;
+      else if (b[i] === 10) i++;
       if (seen) continue;
       const good = bkCrc32(body) === m[3];
       out.parts[id] = good ? { ok:true, text:_btUtf8Decode(body), why:'' } : { ok:false, text:'', why:'check' };
@@ -1493,6 +1553,15 @@ function bkpUnpack(text){
     }
   }
   return out;
+}
+function bkpUnpack(text){
+  const t = String(text == null ? '' : text).replace(/^\uFEFF/, '');
+  if (!/^#(?:BEANTELLIGENCE|NEUROBREW)-PARTS 1(?:\r?\n|$)/.test(t)) return null;
+  const rawRes = _bkpUnpackBytes(_btUtf8Encode(t));
+  if (!rawRes.damaged.length || t.indexOf('\r\n') < 0) return rawRes;
+  /* Retry after normalizing Windows/email CRLF -> LF line endings when raw byte framing had CRC/length drift. */
+  const normRes = _bkpUnpackBytes(_btUtf8Encode(t.replace(/\r\n/g, '\n')));
+  return (normRes.order.length && normRes.damaged.length < rawRes.damaged.length) ? normRes : rawRes;
 }
 function objectsToHistoryCsv(arr){
   if (!Array.isArray(arr) || !arr.length) return '';
@@ -1732,12 +1801,14 @@ function _cleanPocketMicronCalib(raw){
     return Object.keys(rec).length ? rec : null;
   };
   if ('d0OffsetUm' in raw || 'slopeM' in raw || 'grinderKey' in raw) return cleanOne(raw);
-  const map = {};
+  const map = Object.create(null);
   Object.keys(raw).slice(0, 24).forEach(gk => {
+    if (!_btSafeKey(gk)) return;
     const c = cleanOne(raw[gk]);
-    if (c) map[gk.slice(0, 48)] = c;
+    const k = gk.slice(0, 48);
+    if (c && _btSafeKey(k)) map[k] = c;
   });
-  return Object.keys(map).length ? map : null;
+  return Object.keys(map).length ? Object.assign({}, map) : null;
 }
 function _cleanPhilipsProfiles(raw){
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
@@ -1750,8 +1821,9 @@ function _cleanPhilipsProfiles(raw){
   profiles.forEach(pk => {
     const p = raw[pk];
     if (!p || typeof p !== 'object' || Array.isArray(p)) return;
-    const sub = {};
+    const sub = Object.create(null);
     Object.keys(p).slice(0, 24).forEach(dk => {
+      if (!_btSafeKey(dk)) return;
       const dv = p[dk];
       if (!dv || typeof dv !== 'object' || Array.isArray(dv)) return;
       const item = {};
@@ -1759,9 +1831,10 @@ function _cleanPhilipsProfiles(raw){
         if (typeof dv[nk] === 'number' && isFinite(dv[nk]) && dv[nk] >= 0 && dv[nk] <= 1000) item[nk] = Math.round(dv[nk]);
       });
       if (typeof dv.extraShot === 'boolean') item.extraShot = dv.extraShot;
-      if (Object.keys(item).length) sub[dk.slice(0, 24)] = item;
+      const k = dk.slice(0, 24);
+      if (Object.keys(item).length && _btSafeKey(k)) sub[k] = item;
     });
-    if (Object.keys(sub).length) out[pk] = sub;
+    if (Object.keys(sub).length) out[pk] = Object.assign({}, sub);
   });
   return Object.keys(out).length ? out : null;
 }
@@ -1787,15 +1860,17 @@ function cleanPalateSeed(raw){
   try {
     const s = JSON.stringify(raw);
     if (!s || s === '{}' || s.length > 1500) return null;
-    const o = JSON.parse(s), out = {};
+    const o = JSON.parse(s), out = Object.create(null);
     Object.keys(o).slice(0, 20).forEach(k => {
-      if (/apikey|secret|token|auth/i.test(k)) return;
+      if (!_btSafeKey(k) || /apikey|secret|token|auth/i.test(k)) return;
+      const k2 = k.slice(0, 24);
+      if (!_btSafeKey(k2)) return;
       const v = o[k];
-      if (typeof v === 'number' && isFinite(v)) out[k.slice(0, 24)] = Math.round(v * 1000) / 1000;
-      else if (typeof v === 'string' && v.length <= 40) out[k.slice(0, 24)] = v;
+      if (typeof v === 'number' && isFinite(v)) out[k2] = Math.round(v * 1000) / 1000;
+      else if (typeof v === 'string' && v.length <= 40) out[k2] = v;
       else if (typeof v === 'boolean') out[k.slice(0, 24)] = v;
     });
-    return Object.keys(out).length ? out : null;
+    return Object.keys(out).length ? Object.assign({}, out) : null;
   } catch(e){ return null; }
 }
 function cleanOwnedBrewers(raw){
@@ -1870,7 +1945,13 @@ function setupClean(raw, ctx){
     kettle:ket, scale:scl, ownedBrewers:owb, ble:bleCfg
   };
   if (raw.roasterSites && typeof raw.roasterSites === 'object' && !Array.isArray(raw.roasterSites)){
-    Object.keys(raw.roasterSites).slice(0, 60).forEach(k => { const o = _btShopOrigin(raw.roasterSites[k]), kk = _btShopKey(k); if (o && kk) out.roasterSites[kk.slice(0, 60)] = o; });
+    const rsSafe = Object.create(null);
+    Object.keys(raw.roasterSites).slice(0, 60).forEach(k => {
+      if (!_btSafeKey(k)) return;
+      const o = _btShopOrigin(raw.roasterSites[k]), kk = _btShopKey(k).slice(0, 60);
+      if (o && _btSafeKey(kk)) rsSafe[kk] = o;
+    });
+    out.roasterSites = Object.assign({}, rsSafe);
   }
   return out;
 }
@@ -1933,10 +2014,33 @@ function setupChoicesJson(s){ if (!s) return ''; const o = JSON.parse(setupJson(
 function setupSameChoices(a, b){ return !!a && !!b && setupChoicesJson(a) === setupChoicesJson(b); }
 function setupChoicesDefault(s){ return !s || setupChoicesJson(s) === setupChoicesJson(setupDefaults()); }
 function setupMergeExtras(mine, theirs){
-  const calib = JSON.parse(JSON.stringify((mine && mine.calib) || {})), sites = Object.assign({}, (mine && mine.roasterSites) || {});
-  const tc = (theirs && theirs.calib) || {}; Object.keys(tc).forEach(g => { calib[g] = calib[g] || {}; Object.keys(tc[g]).forEach(c => { if (!calib[g][c]) calib[g][c] = tc[g][c]; }); });
-  const ts = (theirs && theirs.roasterSites) || {}; Object.keys(ts).forEach(k => { if (!sites[k] && Object.keys(sites).length < 60) sites[k] = ts[k]; });
-  return { calib:_btCalibClean(calib), roasterSites:sites };
+  const calib = Object.create(null);
+  const sites = Object.create(null);
+  const copyCalib = src => {
+    if (!src || typeof src !== 'object' || Array.isArray(src)) return;
+    Object.keys(src).forEach(g => {
+      if (!_btSafeKey(g)) return;
+      const gv = src[g];
+      if (!gv || typeof gv !== 'object' || Array.isArray(gv)) return;
+      if (!calib[g]) calib[g] = Object.create(null);
+      Object.keys(gv).forEach(c => {
+        if (!_btSafeKey(c)) return;
+        if (!calib[g][c]) calib[g][c] = gv[c];
+      });
+    });
+  };
+  const copySites = src => {
+    if (!src || typeof src !== 'object' || Array.isArray(src)) return;
+    Object.keys(src).forEach(k => {
+      if (!_btSafeKey(k)) return;
+      if (!sites[k] && Object.keys(sites).length < 60) sites[k] = src[k];
+    });
+  };
+  copyCalib(mine && mine.calib);
+  copyCalib(theirs && theirs.calib);
+  copySites(mine && mine.roasterSites);
+  copySites(theirs && theirs.roasterSites);
+  return { calib:_btCalibClean(calib), roasterSites:Object.assign({}, sites) };
 }
 function setupRead(header, rows, ctx){
   const si = (header || []).indexOf(SETUP_COLUMN); if (si < 0) return null;
@@ -2583,9 +2687,15 @@ function priceCsv(list){
   const items = Array.isArray(list) ? list : [];
   const hasRem = items.some(e => e && e.rem_g != null);
   const hasTubes = items.some(e => e && e.tubes_json);
+  const optCols = [
+    ['coffee_id', true], ['is_frozen', false], ['frozen_date', false],
+    ['notes', true], ['bag_notes', true], ['origin', true], ['region', true],
+    ['process', true], ['varietal', true], ['elevation_m', false]
+  ].filter(pair => items.some(e => e && e[pair[0]] != null && String(e[pair[0]]) !== ''));
   const hdr = PRICE_COLUMNS.slice();
   if (hasRem) hdr.push('rem_g');
   if (hasTubes) hdr.push('tubes_json');
+  optCols.forEach(pair => hdr.push(pair[0]));
   const lines = [hdr];
   items.forEach(e => {
     const c = e.dose && e.kind !== 'pods' ? costOne({ price:e.price, size:e.size, unit:e.unit, dose:e.dose, cups:e.cups }) : { ok:false };
@@ -2593,6 +2703,11 @@ function priceCsv(list){
     const row = [neutralize(e.coffee), neutralize(e.roaster), neutralize(e.sym), n(e.price, 2), n(e.size, 2), e.unit, c.ok ? n(e.dose, 1) : '', c.ok ? n(c.perCup, 2) : '', c.ok && c.perDay != null ? n(e.cups, 1) : '', c.ok && c.perMonth != null ? n(c.perMonth, 2) : '', e.date || '', e.kind || 'bag', e.roast || '', e.finished || '', neutralize(e.city || ''), neutralize(e.state || ''), e.rlevel || ''];
     if (hasRem) row.push(e.rem_g != null ? n(e.rem_g, 1) : '');
     if (hasTubes) row.push(e.tubes_json || '');
+    optCols.forEach(pair => {
+      const val = e[pair[0]];
+      if (val == null || String(val) === ''){ row.push(''); return; }
+      row.push(pair[1] ? neutralize(String(val)) : String(val));
+    });
     lines.push(row);
   });
   return toCSV(lines);

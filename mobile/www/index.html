@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="en" data-theme="light" data-science-lens="hybrid" data-lens="comfy">
+<html lang="en" data-science-lens="hybrid" data-lens="comfy">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: http://localhost:* http://127.0.0.1:* http://192.168.*:* http://10.*:* http://172.*:*; object-src 'none'; base-uri 'self';">
 <meta name="theme-color" id="metaThemeLight" content="#FAF6F0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" id="metaThemeDark" content="#13100E" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -10,7 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BeanTelligence">
 <meta name="application-name" content="BeanTelligence">
-<meta name="description" content="BeanTelligence v7.5 — Research-calibrated specialty coffee recipe physics, effortless 10-second tasting review, 2-coffee blend physics, guided audible kitchen timer, 15-family Web Bluetooth telemetry, and Empirical Bayes palate modeling.">
+<meta name="description" content="BeanTelligence v7.6 — Research-calibrated specialty coffee recipe physics, effortless 10-second tasting review, 2-coffee blend physics, guided audible kitchen timer, 15-family Web Bluetooth telemetry, and Empirical Bayes palate modeling.">
 <meta name="referrer" content="no-referrer">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BeanTelligence">
@@ -30,7 +31,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="64x64" href="./icons/icon-64.png">
 <link rel="shortcut icon" href="./icons/icon-192.png">
-<title>BeanTelligence v7.5 — Specialty Coffee Science &amp; Sensory Studio</title>
+<title>BeanTelligence v7.6 — Specialty Coffee Science &amp; Sensory Studio</title>
 <link rel="stylesheet" href="./styles.css">
 
 </head>
@@ -102,7 +103,7 @@
 
     <div class="bt-workspace" id="workspace-grid">
       <main id="mount" tabindex="-1"></main>
-      <div id="detail-pane" aria-label="Selected Detail Inspector"></div>
+      <div id="detail-pane" role="region" aria-label="Selected Detail Inspector"></div>
     </div>
 
     <div id="cta-shelf" class="bt-cta-shelf" hidden></div>
@@ -114,7 +115,7 @@
 </div>
 
 <div id="sheet-backdrop" hidden aria-hidden="true"></div>
-<section id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" data-detent="half" hidden>
+<section id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1" data-detent="half" hidden>
   <div class="bt-sheet-grab-zone" id="sheet-grab-zone" aria-hidden="true">
     <span class="bt-sheet-grab-pill"></span>
   </div>

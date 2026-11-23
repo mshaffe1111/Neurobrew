@@ -241,7 +241,7 @@ const DECAF_PROCESSES = [
   { v:'mountain', caf:'decaf', label:'Mountain Water (MWP)', short:'Mountain Water', hint:'Glacial aqueous osmosis (Pico de Orizaba) · balanced sweetness' },
   { v:'co2', caf:'decaf', label:'Supercritical CO2', short:'Sub/Super CO2', hint:'High-pressure CO2 selectively binds caffeine · high structure retention' },
   { v:'mc', caf:'decaf', label:'Methylene Chloride (MC)', short:'MC Traditional', hint:'Selective low-boiling solvent (FDA <=10 ppm) · retains roast body' },
-  { v:'unknown', caf:'decaf', label:'Decaf (Process Unlisted)', short:'Decaf', hint:'High porosity & brittle micro-fines · +8% coarser filter / -5.5% finer espresso' }
+  { v:'unknown', caf:'decaf', label:'Decaf (Process Unlisted)', short:'Decaf', hint:'High porosity & brittle micro-fines · +5% coarser filter / -5.5% finer espresso' }
 ];
 const BLEND_OPTS = [{ v:'single', label:'Single origin' }, { v:'blend', label:'Blend' }];
 const LEVELS = [
@@ -290,15 +290,15 @@ function storageArrheniusGamma(tempC){
 }
 
 function effectiveBeanAge(c, now){
+  const frozenOn = !!(c && (c.is_frozen === 'yes' || c.is_frozen === true || c.isFrozen === true || c.frozen === 'yes' || c.frozen === true || (!!c.frozen_date && c.is_frozen !== 'no' && c.is_frozen !== false)));
   if (!c || !c.roast_date || !validIsoDate(c.roast_date)) {
-    return { rawDays:null, effectiveDays:null, roomDays:null, frozenDays:0, savedDays:0, isFrozen:false, cryoFactor:CRYO_SLOWDOWN_18C };
+    return { rawDays:null, effectiveDays:null, roomDays:null, frozenDays:0, savedDays:0, isFrozen:frozenOn, cryoFactor:CRYO_SLOWDOWN_18C };
   }
   const n = now || new Date();
   const raw = daysSinceRoast(c.roast_date, n);
   if (raw == null || raw < 0) {
-    return { rawDays:raw, effectiveDays:null, roomDays:null, frozenDays:0, savedDays:0, isFrozen:false, cryoFactor:CRYO_SLOWDOWN_18C };
+    return { rawDays:raw, effectiveDays:null, roomDays:null, frozenDays:0, savedDays:0, isFrozen:frozenOn, cryoFactor:CRYO_SLOWDOWN_18C };
   }
-  const frozenOn = c.is_frozen === 'yes' || c.is_frozen === true || c.isFrozen === true || c.frozen === 'yes' || c.frozen === true || (!!c.frozen_date && c.is_frozen !== 'no' && c.is_frozen !== false);
   if (!frozenOn) {
     return { rawDays:raw, effectiveDays:raw, roomDays:raw, frozenDays:0, savedDays:0, isFrozen:false, cryoFactor:CRYO_SLOWDOWN_18C };
   }
@@ -310,8 +310,10 @@ function effectiveBeanAge(c, now){
       rDays = Math.max(0, raw - fDays);
     }
   } else if (c.freeze_days_offset != null && c.freeze_days_offset !== '' && isFinite(+c.freeze_days_offset) && +c.freeze_days_offset >= 0) {
-    rDays = Math.min(raw, Math.round(+c.freeze_days_offset));
-    fDays = Math.max(0, raw - rDays);
+    /* Aligned with 01-schema-codecs.js computeFreezeOffsetDays: freeze_days_offset stores effective days SAVED by cryo storage */
+    const savedIn = Math.min(raw, Math.max(0, +c.freeze_days_offset));
+    fDays = Math.min(raw, Math.round(savedIn / (1 - 1 / CRYO_SLOWDOWN_18C)));
+    rDays = Math.max(0, raw - fDays);
   } else {
     rDays = Math.min(raw, 7);
     fDays = Math.max(0, raw - rDays);
@@ -774,7 +776,7 @@ const METHOD_PHYSICS_V6 = attachByKey([
   {
     key:'philips5500', label:'Philips 5500 LatteGo', short:'Philips 5500', category:'superauto', type:'auto', machine:true, icon:'brewer-philips5500',
     d50AnchorUm:320, um:[250, 460], ratio:3.8, ratioBounds:[2.0, 18.0], dose:9.3, water:120,
-    tempByRoastC:mkRoastTemps(98, 97, 96, 94.5, 92.5, 90.5),
+    tempByRoastC:mkRoastTemps(93, 93, 93, 91.5, 90, 88.5),
     rWater:1.15, etaTail:0.35, chiRet:0.14, fAbsDefault:0.95, nLayers:3, bedAreaCm2:22.9, deltaPExtKPa:650,
     defaultFilterId:'espresso-precision-basket', oilPassFrac:0.45, typicalTimeS:[22, 45], targetRef:{ tdsPct:3.40, eyPct:19.5 },
     epistemicTier:'verified_science',
@@ -2055,10 +2057,12 @@ function calcWaterLab(p){
   const drops20 = ppm => rnd(dropMl(ppm) * 20, 1);
 
   const presetObj = p.presetKey ? waterPresetFor(p.presetKey) : null;
+  const extraKhCit = (!sKh.citrate && khCit > 0) ? khCit : 0;
+  const citSaltExtra = p.citrateSalt === 'na3cit' ? WATER_IUPAC.SALTS.na3cit : WATER_IUPAC.SALTS.k3cit;
   const chlorideMgL = presetObj && presetObj.clOverrideMgL != null ? presetObj.clOverrideMgL : ((p.extraCl != null ? clampNum(p.extraCl, 0, 500, 0) : 0) + ghMg * sMg.clPerPpm + ghCa * sCa.clPerPpm);
-  const sodiumMgL = presetObj && presetObj.naOverrideMgL != null ? presetObj.naOverrideMgL : (kh * sKh.naPerPpm);
-  const potassiumMgL = kh * (sKh.kPerPpm || 0);
-  const estIonTds = ghMg * sMg.ionTdsPerPpm + ghCa * sCa.ionTdsPerPpm + kh * sKh.ionTdsPerPpm;
+  const sodiumMgL = presetObj && presetObj.naOverrideMgL != null ? presetObj.naOverrideMgL : (kh * sKh.naPerPpm + extraKhCit * (citSaltExtra.naPerPpm || 0));
+  const potassiumMgL = kh * (sKh.kPerPpm || 0) + extraKhCit * (citSaltExtra.kPerPpm || 0);
+  const estIonTds = ghMg * sMg.ionTdsPerPpm + ghCa * sCa.ionTdsPerPpm + kh * sKh.ionTdsPerPpm + extraKhCit * (citSaltExtra.ionTdsPerPpm || 0);
   const chlorideRisk = chlorideMgL > 35;
   const unbufferedRisk = khEffPh5 < 10;
 
@@ -2300,9 +2304,23 @@ function solveKitchenGallonWater(style, opts){
   const sixteenthTspSoda = rnd(bicarbG / 0.30, 2);
   const epsomSpoonTxt = ghStar <= 3 ? '0g (no Epsom salt)' : (Math.abs(eighthTspEpsom - 1) <= 0.25 ? 'level 1/8 tsp Epsom Salt' : (eighthTspEpsom + ' x 1/8 tsp Epsom Salt'));
   const sodaSpoonTxt = sixteenthTspSoda <= 0.62 ? '1 generous pinch (half of 1/16 tsp) Baking Soda' : (Math.abs(sixteenthTspSoda - 1) <= 0.25 ? 'level 1/16 tsp Baking Soda' : (sixteenthTspSoda + ' x 1/16 tsp Baking Soda'));
-  /* 500 mL No-Scale Kitchen Concentrate: 1 level tsp (4.8g) Baking Soda + 2 level tsp (10.4g) Epsom Salt in 500 mL warm pure water -> +4.22 GH & +2.86 KH per mL/L */
-  const concMlPerLiter = rnd(khStar / 2.857, 1);
-  const concMlPerGallon = Math.round(concMlPerLiter * V_GAL_L);
+  /* 500 mL No-Scale Kitchen Concentrate:
+     2 level tsp (10.4g) Epsom Salt + 1 level tsp (4.8g) Baking Soda in 500 mL warm pure water
+     -> 20.8 mg/mL Epsom (+8.446 ppm GH per mL/L) & 9.6 mg/mL NaHCO3 (+5.719 ppm KH per mL/L).
+     (For 0-GH RPavlis, omit Epsom salt from the 500 mL stock bottle.) */
+  const stockVolMl = 500;
+  const stockEpsomG = ghStar <= 3 ? 0 : 10.4;
+  const stockBicarbG = 4.8;
+  const ghPerMlPerL = (stockEpsomG * 1000 / stockVolMl) / WATER_IUPAC.SALTS.epsom.mgPerPpm;
+  const khPerMlPerL = (stockBicarbG * 1000 / stockVolMl) / WATER_IUPAC.SALTS.nahco3.mgPerPpm;
+  const concMlPerLiterExact = khStar / khPerMlPerL;
+  const concMlPerLiter = rnd(concMlPerLiterExact, 1);
+  const concMlPerGallon = Math.round(concMlPerLiterExact * V_GAL_L);
+  const deliveredGH = rnd(concMlPerLiter * ghPerMlPerL, 1);
+  const deliveredKH = rnd(concMlPerLiter * khPerMlPerL, 1);
+  const spoonApproxPerL = concMlPerLiter < 12
+    ? ('~' + rnd(concMlPerLiter / 4.929, 1) + ' tsp')
+    : ('~' + rnd(concMlPerLiter / 14.787, 1) + ' tbsp');
   return {
     ok:true, style:stKey, label:tgt.label,
     volL:rnd(volL, 3), gallons:rnd(volL / V_GAL_L, 2),
@@ -2312,10 +2330,16 @@ function solveKitchenGallonWater(style, opts){
     potassiumBicarbG:rnd((khStar * WATER_IUPAC.SALTS.khco3.mgPerPpm * volL) / 1000, 3),
     spoonRecipeGallon:'Into 1 US Gallon (3.79 L) Distilled/RO water, stir ' + epsomSpoonTxt + ' (' + epsomG + ' g) + ' + sodaSpoonTxt + ' (' + bicarbG + ' g) and shake 10 seconds.',
     noScaleConcentrate:{
-      stockBottle:'Dissolve 2 level tsp (10.4 g) Food-Grade Epsom Salt + 1 level tsp (4.8 g) Baking Soda in 500 mL warm Distilled/RO water.',
+      stockBottle:ghStar <= 3
+        ? 'Dissolve 1 level tsp (4.8 g) Baking Soda (no Epsom salt) in 500 mL warm Distilled/RO water.'
+        : 'Dissolve 2 level tsp (10.4 g) Food-Grade Epsom Salt + 1 level tsp (4.8 g) Baking Soda in 500 mL warm Distilled/RO water.',
+      ghPerMlPerL:rnd(ghPerMlPerL, 3),
+      khPerMlPerL:rnd(khPerMlPerL, 3),
       dosePerLiterMl:concMlPerLiter,
       dosePerGallonMl:concMlPerGallon,
-      doseKitchenTxt:'Add ' + Math.round(concMlPerLiter) + ' mL (~' + rnd(concMlPerLiter / 14.79, 1) + ' tbsp) per 1 L brew water, or ' + concMlPerGallon + ' mL per 1 US Gallon.'
+      deliveredGH,
+      deliveredKH,
+      doseKitchenTxt:'Add ' + concMlPerLiter + ' mL (' + spoonApproxPerL + ') per 1 L brew water (~' + Math.round(deliveredGH) + ' GH / ' + Math.round(deliveredKH) + ' KH), or ' + concMlPerGallon + ' mL per 1 US Gallon.'
     },
     boilerSafe:true, scaleRisk:'none',
     scientistNote:'Pure MgSO4 + ' + khSalt.formula + ' in 0-Ca2+ RO water gives Ca x KH = 0 (thermodynamically zero CaCO3 boiler scale forever).'
@@ -2913,7 +2937,7 @@ function cafEntry(raw){
   else if (e.kind === 'shop') r = cafShop({ drink:e.drink, size:e.size, shots:e.shots, decaf:e.decaf, caffeineMode:e.caffeineMode, venue:e.venue });
   else r = e.mg == null ? { ok:false, why:'mg' } : { ok:true, lo:e.mg, mid:e.mg, hi:e.mg };
   if (!r.ok) return r;
-  const weighed = e.kind === 'home' && (e.how === 'weigh' || e.how === 'scoop') && e.method !== 'espresso' && e.method !== 'lever_espresso';
+  const weighed = e.kind === 'home' && ((e.how === 'weigh' && e.grams > 0) || (e.how === 'scoop' && e.method !== 'espresso' && e.method !== 'lever_espresso'));
   const f = (e.kind === 'other' || weighed ? 1 : CAF_STRENGTH[e.strength]) * e.n;
   return { ok:true, lo:rnd(r.lo * f, 1), mid:rnd(r.mid * f, 1), hi:rnd(r.hi * f, 1), n:e.n };
 }
@@ -3262,8 +3286,9 @@ function freshMonth(coffee, opts){
     const dt = new Date(rDate.getTime() + d * 86400000);
     const iso = dt.toISOString().slice(0, 10);
     const effD = (c.is_frozen === 'yes' && d > 7) ? (7 + (d - 7) / CRYO_SLOWDOWN_18C) : d;
-    const state = effD < win.rest ? 'resting' : effD <= win.best ? 'peak' : effD <= win.fade ? 'good' : 'fading';
-    const vit = state === 'resting' ? Math.round(78 + 20 * (effD / Math.max(1, win.rest))) : state === 'peak' ? Math.round(100 - 12 * ((effD - win.rest) / Math.max(1, win.best - win.rest))) : Math.max(35, Math.round(88 - 1.4 * (effD - win.best)));
+    const restEdge = Math.max(1, +win.ready || 3);
+    const state = effD < restEdge ? 'resting' : effD <= win.best ? 'peak' : effD <= win.fade ? 'good' : 'fading';
+    const vit = state === 'resting' ? Math.round(78 + 20 * (effD / restEdge)) : state === 'peak' ? Math.round(100 - 12 * ((effD - restEdge) / Math.max(1, win.best - restEdge))) : Math.max(35, Math.round(88 - 1.4 * (effD - win.best)));
     days.push({ day:d, effectiveDay:rnd(effD, 1), iso, state, vitalityPct:clampNum(vit, 25, 100, 85) });
   }
   return { ok:true, roastDate:rDate.toISOString().slice(0, 10), window:win, days };

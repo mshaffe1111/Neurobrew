@@ -190,22 +190,22 @@
   display: none;
 }
 
-/* Clean 52px Mobile Top Chrome (<1024px) */
+/* Clean Mobile Top Chrome (<1024px) */
 #top-chrome {
   position: sticky;
   top: 0;
-  z-index: 35;
+  z-index: var(--z-chrome, 35);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
-  padding: var(--safe-top) calc(10px + var(--safe-right)) 0 calc(10px + var(--safe-left));
-  height: calc(52px + var(--safe-top));
-  min-height: calc(52px + var(--safe-top));
+  padding: var(--safe-top) calc(8px + var(--safe-right)) 0 calc(8px + var(--safe-left));
+  height: calc(56px + var(--safe-top));
+  min-height: calc(56px + var(--safe-top));
   background: var(--surface-glass);
   -webkit-backdrop-filter: blur(16px) saturate(1.3);
   backdrop-filter: blur(16px) saturate(1.3);
@@ -216,14 +216,14 @@
 .bt-top-right {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
 }
 
 .bt-top-left {
   flex: 0 1 auto;
   overflow: hidden;
-  gap: 6px;
+  gap: 4px;
 }
 
 .bt-top-right {
@@ -237,7 +237,8 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-height: 34px;
+  min-height: var(--tap-min, 44px);
+  min-width: var(--tap-min, 44px);
   padding: 0 10px 0 8px;
   border-radius: var(--r-pill);
   border: 1.5px solid var(--accent);
@@ -249,11 +250,6 @@
   flex: 0 0 auto;
   box-shadow: var(--shadow-xs);
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.14s var(--spring-snappy);
-}
-.bt-top-back-btn::after {
-  content: "";
-  position: absolute;
-  inset: -5px -2px;
 }
 .bt-top-back-btn .bt-ico {
   color: var(--accent);
@@ -270,9 +266,10 @@
 .bt-top-brand {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  min-height: 44px;
-  min-width: 0;
+  min-height: var(--tap-min, 44px);
+  min-width: var(--tap-min, 44px);
   padding: 4px 4px 4px 2px;
   border-radius: var(--r-sm);
   border: 0;
@@ -304,48 +301,49 @@
 }
 @media (max-width: 640px) {
   #top-chrome {
-    padding-left: calc(8px + var(--safe-left));
-    padding-right: calc(8px + var(--safe-right));
-    gap: 4px;
+    padding-left: calc(6px + var(--safe-left));
+    padding-right: calc(6px + var(--safe-right));
+    gap: 3px;
   }
   .bt-top-left {
     flex: 0 0 auto;
-    gap: 4px;
+    gap: 3px;
   }
   .bt-top-brand {
     flex: 0 0 auto;
-    padding: 4px 2px;
+    padding: 0;
+    min-width: var(--tap-min, 44px);
+    min-height: var(--tap-min, 44px);
   }
   .bt-top-brand-mark {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
   }
   .bt-top-brand-name {
     display: none;
   }
   .bt-top-back-btn {
-    padding: 0 7px;
+    padding: 0 8px;
     font-size: 11px;
-    height: 36px;
-    min-height: 36px;
+    min-height: var(--tap-min, 44px);
+    min-width: var(--tap-min, 44px);
     gap: 3px;
   }
   .bt-top-right {
-    gap: 4px;
+    gap: 3px;
     flex: 0 1 auto;
     min-width: 0;
   }
   .bt-lens-seg button {
-    min-width: 0;
-    min-height: 32px;
-    padding: 4px 6px;
-    font-size: 10.5px;
+    min-width: var(--tap-min, 44px);
+    min-height: var(--tap-min, 44px);
+    padding: 0 6px;
+    font-size: 11px;
   }
   .bt-gear-btn {
-    height: 36px;
-    min-height: 36px;
-    min-width: 0;
-    padding: 0 6px;
+    min-height: var(--tap-min, 44px);
+    min-width: var(--tap-min, 44px);
+    padding: 0 8px;
     font-size: 11px;
     gap: 4px;
     flex: 0 0 auto;
@@ -358,30 +356,29 @@
     display: inline;
   }
   #top-ble-pill {
-    height: 36px;
-    min-height: 36px;
-    min-width: 36px;
+    min-height: var(--tap-min, 44px);
+    min-width: var(--tap-min, 44px);
     padding: 0 8px;
   }
   #top-theme-btn {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    min-height: 36px;
+    width: var(--tap-min, 44px);
+    height: var(--tap-min, 44px);
+    min-width: var(--tap-min, 44px);
+    min-height: var(--tap-min, 44px);
     padding: 0;
   }
 }
 @media (max-width: 410px) {
   #top-chrome {
-    padding-left: calc(6px + var(--safe-left));
-    padding-right: calc(6px + var(--safe-right));
-    gap: 3px;
+    padding-left: calc(4px + var(--safe-left));
+    padding-right: calc(4px + var(--safe-right));
+    gap: 2px;
   }
   .bt-top-left {
-    gap: 3px;
+    gap: 2px;
   }
   .bt-top-brand {
-    padding: 4px 0;
+    padding: 0;
   }
   .bt-top-brand-mark {
     width: 24px;
@@ -391,19 +388,28 @@
   #top-back-btn {
     padding: 0 5px;
     gap: 2px;
-    font-size: 10.5px;
+    font-size: 11px;
+  }
+  .bt-top-left.has-back #top-back-label {
+    display: none;
   }
   .bt-top-right {
     gap: 2px;
   }
+  .bt-lens-seg {
+    padding: 1px;
+    gap: 0;
+  }
   .bt-lens-seg button {
-    padding: 4px 4.5px;
-    font-size: 10px;
+    padding: 0 3px;
+    font-size: 10.5px;
+    min-width: var(--tap-min, 44px);
+    min-height: var(--tap-min, 44px);
   }
   .bt-gear-btn,
   #top-ble-pill {
-    padding: 0 5px;
-    gap: 3px;
+    padding: 0 4px;
+    gap: 2px;
   }
 }
 @media (max-width: 390px) {
@@ -411,42 +417,41 @@
     display: none;
   }
   .bt-lens-seg button {
-    padding: 3px 4px;
-    font-size: 10px;
+    padding: 0 2px;
+    font-size: 10.5px;
   }
   .bt-top-back-btn,
   #top-back-btn {
-    padding: 0 5px;
-    height: 36px;
-    min-height: 36px;
+    padding: 0 4px;
+    min-height: var(--tap-min, 44px);
+    min-width: var(--tap-min, 44px);
   }
   #top-gear-pill,
   .bt-gear-btn,
   #top-ble-pill {
-    height: 36px;
-    min-height: 36px;
-    min-width: 36px;
-    padding: 0 6px;
+    min-height: var(--tap-min, 44px);
+    min-width: var(--tap-min, 44px);
+    padding: 0 5px;
   }
   #top-theme-btn {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    min-height: 36px;
+    width: var(--tap-min, 44px);
+    height: var(--tap-min, 44px);
+    min-width: var(--tap-min, 44px);
+    min-height: var(--tap-min, 44px);
   }
 }
 
 .bt-link-btn {
   background: transparent;
   border: 0;
-  padding: 4px 2px;
+  padding: 6px 4px;
   cursor: pointer;
   font: inherit;
   color: var(--accent);
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-height: 28px;
+  min-height: var(--tap-min, 44px);
 }
 .bt-link-btn:hover {
   text-decoration: underline;
@@ -467,8 +472,8 @@
 
 .bt-lens-seg button {
   position: relative;
-  min-height: 30px;
-  min-width: 38px;
+  min-height: var(--tap-min, 44px);
+  min-width: var(--tap-min, 44px);
   padding: 0 8px;
   border: 0;
   border-radius: var(--r-pill);
@@ -478,12 +483,6 @@
   font-weight: 700;
   white-space: nowrap;
   transition: background 0.16s var(--spring-snappy), color 0.16s ease, box-shadow 0.16s ease;
-}
-/* >= 44px vertical touch hit-slop */
-.bt-lens-seg button::after {
-  content: "";
-  position: absolute;
-  inset: -7px 0;
 }
 .bt-lens-seg button[aria-pressed="true"] {
   background: var(--surface);
@@ -504,8 +503,8 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-height: 36px;
-  min-width: 36px;
+  min-height: var(--tap-min, 44px);
+  min-width: var(--tap-min, 44px);
   padding: 0 8px;
   border-radius: var(--r-pill);
   border: 1px solid var(--line-soft);
@@ -516,16 +515,10 @@
   white-space: nowrap;
   transition: background 0.16s ease, border-color 0.16s ease, transform 0.14s var(--spring-snappy);
 }
-.bt-chrome-pill::after,
-.bt-icon-btn::after {
-  content: "";
-  position: absolute;
-  inset: -4px;
-}
 .bt-icon-btn {
   padding: 0;
-  width: 36px;
-  height: 36px;
+  width: var(--tap-min, 44px);
+  height: var(--tap-min, 44px);
 }
 .bt-chrome-pill:hover,
 .bt-icon-btn:hover {
@@ -653,7 +646,7 @@ html.bt-kb-open #detail-pane {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 38;
+  z-index: var(--z-dock, 38);
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 2px;
@@ -662,8 +655,8 @@ html.bt-kb-open #detail-pane {
   max-width: 100%;
   box-sizing: border-box;
   padding: 2px calc(6px + var(--safe-right)) var(--safe-bottom) calc(6px + var(--safe-left));
-  height: calc(64px + var(--safe-bottom));
-  min-height: calc(64px + var(--safe-bottom));
+  height: calc(var(--dock-h, 64px) + var(--safe-bottom));
+  min-height: calc(var(--dock-h, 64px) + var(--safe-bottom));
   background: var(--surface);
   border-top: 1px solid var(--line-soft);
   box-shadow: var(--shadow-dock);
@@ -746,7 +739,7 @@ html.bt-kb-open #bottom-dock {
     background: var(--bg-subtle);
     border-right: 1px solid var(--line-soft);
     overflow-y: auto;
-    z-index: 36;
+    z-index: var(--z-rail, 36);
   }
 
   .bt-rail-top-group,
@@ -850,7 +843,7 @@ html.bt-kb-open #bottom-dock {
     justify-content: space-between;
     gap: 8px;
     width: 100%;
-    min-height: 36px;
+    min-height: var(--tap-min, 44px);
     padding: 6px 10px;
     border-radius: var(--r-sm);
     border: 1px solid transparent;
@@ -897,7 +890,7 @@ html.bt-kb-open #bottom-dock {
     align-items: center;
     gap: 8px;
     width: 100%;
-    min-height: 40px;
+    min-height: var(--tap-min, 44px);
     padding: 7px 12px;
     border-radius: var(--r-pill);
     border: 1.5px solid var(--accent);
@@ -972,10 +965,10 @@ html.bt-kb-open #bottom-dock {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
-  min-height: 30px;
+  width: var(--tap-min, 44px);
+  height: var(--tap-min, 44px);
+  min-width: var(--tap-min, 44px);
+  min-height: var(--tap-min, 44px);
   padding: 0;
   border-radius: 50%;
   border: 1px solid var(--line-soft);
@@ -983,12 +976,6 @@ html.bt-kb-open #bottom-dock {
   color: var(--ink-secondary);
   flex: 0 0 auto;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-.bt-trail-home::after,
-.bt-trail-back::after {
-  content: "";
-  position: absolute;
-  inset: -7px -3px;
 }
 .bt-trail-home:hover,
 .bt-trail-back:hover {
@@ -1002,9 +989,10 @@ html.bt-kb-open #bottom-dock {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-height: 30px;
-  padding: 0 7px;
+  gap: 5px;
+  min-height: var(--tap-min, 44px);
+  min-width: var(--tap-min, 44px);
+  padding: 0 9px;
   border-radius: var(--r-pill);
   border: 1px solid transparent;
   background: transparent;
@@ -1014,19 +1002,14 @@ html.bt-kb-open #bottom-dock {
   white-space: nowrap;
   transition: background 0.16s var(--spring-snappy), color 0.16s ease, border-color 0.16s ease;
 }
-.bt-trail-step::after {
-  content: "";
-  position: absolute;
-  inset: -7px 0;
-}
 .bt-trail-num {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--track);
   color: var(--ink-secondary);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -1055,28 +1038,29 @@ html.bt-kb-open #bottom-dock {
 
 @media (max-width: 420px) {
   .bt-trail-bar {
-    gap: 2px;
+    gap: 3px;
     padding: 3px 4px;
-    font-size: 10.2px;
+    font-size: 11px;
   }
   .bt-trail-home,
   .bt-trail-back {
-    width: 24px;
-    height: 26px;
-    min-width: 24px;
-    min-height: 26px;
+    width: var(--tap-min, 44px);
+    height: var(--tap-min, 44px);
+    min-width: var(--tap-min, 44px);
+    min-height: var(--tap-min, 44px);
   }
   .bt-trail-step {
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 0 4px;
-    font-size: 10.2px;
-    gap: 2px;
+    flex: 0 0 auto;
+    min-width: var(--tap-min, 44px);
+    min-height: var(--tap-min, 44px);
+    padding: 0 8px;
+    font-size: 11px;
+    gap: 4px;
   }
   .bt-trail-num {
-    width: 14px;
-    height: 14px;
-    font-size: 9px;
+    width: 17px;
+    height: 17px;
+    font-size: 10.5px;
   }
 }
 
@@ -1434,7 +1418,7 @@ select.bt-input {
 #sheet-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: var(--z-sheet-backdrop, 60);
   background: var(--backdrop-scrim);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
@@ -1452,7 +1436,7 @@ select.bt-input {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 65;
+  z-index: var(--z-sheet, 65);
   display: flex;
   flex-direction: column;
   max-height: calc(94dvh - var(--safe-top));
@@ -1570,7 +1554,7 @@ select.bt-input {
 /* ==================== 5. HOLD-TO-X-RAY LOUPE & TOAST HOST ==================== */
 #xray-loupe {
   position: fixed;
-  z-index: 85;
+  z-index: 90;
   max-width: min(360px, calc(100vw - 24px));
   padding: 12px 14px;
   border-radius: var(--r-md);
@@ -1613,7 +1597,7 @@ select.bt-input {
   left: 50%;
   bottom: calc(134px + var(--safe-bottom));
   transform: translateX(-50%);
-  z-index: 9600;
+  z-index: var(--z-toast, 120);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1697,25 +1681,36 @@ select.bt-input {
 .bt-badge.sci  { background: var(--science-bg); color: var(--science); }
 
 .bt-seg-bar {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   gap: 3px;
   padding: 3px;
-  border-radius: var(--r-pill);
+  border-radius: 13px;
   background: var(--well);
   box-shadow: var(--shadow-well-inset);
 }
 .bt-seg-bar > button {
   flex: 1 1 0;
-  min-height: 38px;
-  padding: 4px 10px;
+  min-width: 0;
+  min-height: var(--tap-min, 44px);
+  padding: 5px 8px;
   border: 0;
-  border-radius: var(--r-pill);
+  border-radius: 10px;
   background: transparent;
   color: var(--ink-muted);
-  font-size: 12.5px;
+  font-size: 0.8rem;
   font-weight: 700;
-  transition: background 0.15s ease, color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 .bt-seg-bar > button[aria-pressed="true"],
 .bt-seg-bar > button.is-active {
@@ -1730,8 +1725,8 @@ select.bt-input {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 44px;
-  min-width: 44px;
+  min-height: var(--tap-min, 44px);
+  min-width: var(--tap-min, 44px);
   padding: 10px 16px;
   border-radius: var(--r-md);
   border: 1px solid var(--line);
@@ -1752,12 +1747,14 @@ select.bt-input {
   transform: scale(0.97);
 }
 .bt-btn-primary,
+.bt-btn.is-primary,
 .btn.primary {
   background: var(--primary);
   border-color: var(--primary);
   color: var(--primary-ink);
 }
 .bt-btn-primary:hover,
+.bt-btn.is-primary:hover,
 .btn.primary:hover {
   background: var(--primary-hover);
   border-color: var(--primary-hover);
@@ -1768,7 +1765,7 @@ select.bt-input {
   color: var(--accent-ink);
 }
 .bt-btn-cockpit {
-  min-height: 56px;
+  min-height: var(--tap-cockpit, 56px);
   font-size: var(--text-base);
   border-radius: var(--r-lg);
 }
@@ -1778,8 +1775,8 @@ select.bt-input {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 40px;
-  min-width: 40px;
+  min-height: var(--tap-min, 44px);
+  min-width: var(--tap-min, 44px);
   padding: 6px 13px;
   border-radius: var(--r-pill);
   border: 1px solid var(--line);
@@ -2140,7 +2137,7 @@ select.bt-input {
   position: relative;
   width: min(256px, 100%);
   aspect-ratio: 1 / 0.88;
-  touch-action: pan-y;
+  touch-action: none;
   user-select: none;
 }
 .bt-roast-svg {
@@ -2148,7 +2145,7 @@ select.bt-input {
   width: 100%;
   height: 100%;
   cursor: grab;
-  touch-action: pan-y;
+  touch-action: none;
 }
 .bt-roast-lingo {
   display: flex;
@@ -2167,7 +2164,7 @@ select.bt-input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
+  min-height: var(--tap-min, 44px);
   padding: 5px 11px;
   border-radius: var(--r-pill);
   border: 2px solid transparent;
@@ -2513,7 +2510,7 @@ select.bt-input {
 #keypad-host {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: var(--z-keypad, 80);
   pointer-events: none;
 }
 #keypad-host.is-open {
@@ -3002,7 +2999,7 @@ select.bt-input {
 .bt-ext-phase-pin-lbl {
   fill: var(--ink-secondary);
   font-family: var(--font-sans);
-  font-size: 8px;
+  font-size: 10.5px;
   font-weight: 700;
   paint-order: stroke;
   stroke: var(--well);
@@ -3349,6 +3346,7 @@ textarea:focus-visible {
     --bg: #FFFFFF !important;
     --bg-subtle: #FAF8F5 !important;
     --surface: #FFFFFF !important;
+    --surface-2: #FAF8F5 !important;
     --surface-elevated: #FFFFFF !important;
     --surface-card-grad: #FFFFFF !important;
     --card: #FFFFFF !important;
@@ -3356,6 +3354,7 @@ textarea:focus-visible {
     --well: #F7F5F0 !important;
     --field: #FFFFFF !important;
     --tint: #F7F5F0 !important;
+    --track: #E5E0D8 !important;
     --ink: #111111 !important;
     --ink-primary: #111111 !important;
     --ink-secondary: #333333 !important;
@@ -3370,8 +3369,15 @@ textarea:focus-visible {
     --primary-soft: #EDF5F1 !important;
     --good: #18603E !important;
     --good-bg: #EDF6F1 !important;
+    --good-border: #C3DDD0 !important;
     --warn: #854B04 !important;
     --warn-bg: #FEF6E4 !important;
+    --bad: #8E1F1F !important;
+    --bad-ink: #8E1F1F !important;
+    --bad-bg: #FDF2F2 !important;
+    --bad-border: #E8C4C4 !important;
+    --alert: #8E1F1F !important;
+    --alert-bg: #FEF5E7 !important;
     --science: #16556E !important;
     --science-bg: #EEF6F9 !important;
     --gold-soft: #FEF8EA !important;
@@ -3515,10 +3521,22 @@ textarea:focus-visible {
     color: #111111 !important;
   }
 
-  /* Clean black-on-white cards with page-break guards */
+  /* Outer multi-section wrappers allow natural page flow (no clipped giant blocks) */
   .bt-card,
   .bt-card-v6,
   .bt-studio-card,
+  .bt-tc-card,
+  .bt-drill-panel {
+    background: #FFFFFF !important;
+    background-image: none !important;
+    color: #111111 !important;
+    border: 1px solid #D4CDC4 !important;
+    box-shadow: none !important;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  /* Compact leaf cards, tiles & rows keep page-break guards */
   .bt-tile-v6,
   .bt-kettle-warm-card,
   .bt-step-context-strip,
@@ -3527,14 +3545,13 @@ textarea:focus-visible {
   .bt-spec-tile-v62,
   .bt-pour-row,
   .bt-pour-step,
-  .bt-recipe-science-hero-btn,
   .bt-hero-bag-card,
   .bt-cellar-bag-card,
   .bt-bj-coach-banner,
   .bt-compare-table th,
   .bt-compare-table td,
   .bt-step3-sim-strip,
-  .bt-tc-card,
+  .bt-step3-sim-cell,
   .bt-tc-hero-fix,
   .bt-passport-card,
   .bt-passport-preview,
@@ -3549,7 +3566,6 @@ textarea:focus-visible {
   .bt-lab-what-box,
   .bt-lab-takeaway,
   .bt-drill-drawer,
-  .bt-drill-panel,
   .bt-drill-cup-card,
   .bt-journal-breakdown-card,
   .bt-cupping-history-card,

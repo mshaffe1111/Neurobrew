@@ -47,8 +47,8 @@
 }
 
 .bt-trail-home-btn {
-  min-width: 36px;
-  min-height: 36px;
+  min-width: var(--tap-min, 44px);
+  min-height: var(--tap-min, 44px);
   padding: 0 8px;
   border-radius: var(--r-pill, 9999px);
   border: 1px solid var(--line-soft, var(--line));
@@ -62,7 +62,7 @@
 
 .bt-trail-step-pill {
   flex: 1 0 auto;
-  min-height: 36px;
+  min-height: var(--tap-min, 44px);
   padding: 0 9px;
   border-radius: var(--r-pill, 9999px);
   border: 1px solid transparent;
@@ -85,7 +85,7 @@
   background: var(--track);
   color: var(--ink-secondary);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
@@ -121,8 +121,7 @@
   min-width: 0;
 }
 
-.bt-screen-kicker,
-.bt-kicker {
+.bt-screen-kicker {
   font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -132,6 +131,10 @@
 }
 
 .bt-kicker {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
   color: var(--ink-muted);
   margin-bottom: 0;
 }
@@ -246,7 +249,7 @@
 }
 
 /* ==================== 3. SINGLE-ROW PILL BARS, INPUTS & STICKY CTA ==================== */
-.bt-pill-row,
+/* Canonical .bt-pill-row lives in 02-shell-brand-tactile.css */
 .bt-action-row-1line,
 .bt-submode-strip {
   display: flex;
@@ -260,7 +263,6 @@
   -webkit-overflow-scrolling: touch;
   min-width: 0;
 }
-.bt-pill-row::-webkit-scrollbar,
 .bt-action-row-1line::-webkit-scrollbar,
 .bt-submode-strip::-webkit-scrollbar {
   display: none;
@@ -327,52 +329,14 @@
   border-color: var(--line-soft, var(--line));
 }
 
-/* Segmented Bar */
-.bt-seg-bar {
-  display: inline-flex;
-  align-items: center;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  background: var(--well);
-  box-shadow: var(--shadow-well-inset);
-  border-radius: 13px;
-  padding: 3px;
-  gap: 3px;
-}
-
-.bt-seg-bar > button {
-  flex: 1 1 0;
-  min-width: 0;
-  min-height: 40px;
-  padding: 5px 8px;
-  border-radius: 10px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--ink-muted);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-}
-
+/* Segmented Bar responsive refinement (canonical .bt-seg-bar in 02-shell-brand-tactile.css) */
 @media (max-width: 430px) {
   .bt-seg-bar > button {
-    padding: 4px 4px;
-    font-size: 0.71rem;
+    min-height: var(--tap-min, 44px);
+    padding: 4px 6px;
+    font-size: 0.72rem;
     gap: 3px;
   }
-}
-
-.bt-seg-bar > button[aria-pressed="true"],
-.bt-seg-bar > button.is-active {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: var(--shadow-xs);
 }
 
 /* Accessible 16px Inputs & Selects (Zero iOS Zoom!) */
@@ -394,7 +358,7 @@
   font-weight: 600;
   line-height: 1.35;
   outline: none;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .bt-select-v62 {
@@ -415,6 +379,14 @@
 .bt-textarea-v62:focus {
   background: var(--surface);
   border-color: var(--accent);
+}
+
+.bt-select-v62:focus-visible,
+.bt-input-v62:focus-visible,
+.bt-textarea-v62:focus-visible {
+  outline: 2px solid var(--focus, var(--accent));
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 /* Bottom-Flow Primary Save & Move Bar
@@ -957,13 +929,14 @@
     gap: 4px;
   }
   .bt-spec-why-pill {
-    min-height: 21px;
-    padding: 1px 6px;
-    font-size: 0.62rem;
+    min-height: 28px;
+    padding: 2px 7px;
+    font-size: 0.68rem;
   }
   .bt-spec-tune {
-    padding: 1px 6px;
-    font-size: 0.62rem;
+    min-height: 28px;
+    padding: 2px 7px;
+    font-size: 0.68rem;
   }
 }
 
@@ -1483,11 +1456,11 @@
 }
 
 .bt-timer-audio-card .bt-seg-bar > button {
-  min-height: 32px;
+  min-height: var(--tap-min, 44px);
   min-width: 0;
   width: 100%;
   padding: 0 5px;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   gap: 4px;
   justify-content: center;
   overflow: hidden;
@@ -2022,7 +1995,7 @@
     gap: 3px;
   }
   .bt-tctrl-btn {
-    min-height: 34px;
+    min-height: var(--tap-min, 44px);
   }
 }
 
@@ -2251,9 +2224,57 @@
   .bt-active-step-say {
     -webkit-line-clamp: 1;
   }
+  /* P0-26 Mobile Step 4 Timer: elevate Start/Stop transport right beneath the giant clock so wet-hand buttons are always cleanly above #bottom-dock at 375x812 */
+  .bt-timer-stage-v62 {
+    gap: 5px;
+  }
+  .bt-kettle-warm-card.is-step4-compact {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  .bt-kettle-warm-card.is-step4-compact .bt-kettle-bar-wrap {
+    display: none;
+  }
+  .bt-timer-giant-hero {
+    padding: 5px 9px 6px;
+  }
+  .bt-timer-giant-clock {
+    font-size: clamp(2.85rem, 13.5vw, 4.4rem);
+  }
+  .bt-timer-dial-rhs {
+    display: contents;
+  }
+  .bt-timer-dial-card > .bt-timer-giant-hero { order: 1; }
+  .bt-timer-dial-rhs > .bt-timer-locked-banner { order: 2; }
+  .bt-timer-dial-rhs > .bt-timer-transport-wrap { order: 3; }
+  .bt-timer-dial-card > .bt-timer-approx-grams-hero { order: 4; }
+  .bt-timer-dial-card > #bt-timer-flow-coach,
+  .bt-timer-dial-card > .bt-timer-flow-coach { order: 5; }
+  .bt-timer-dial-card > .bt-timer-agitation-cue { order: 6; }
+  .bt-timer-dial-card > .bt-timer-dial-wrap { order: 7; }
+  .bt-timer-dial-rhs > .bt-active-step-card { order: 8; }
+  .bt-timer-dial-rhs > .bt-timer-waves-card { order: 9; }
   .bt-timer-transport-subrow .bt-tctrl-btn {
-    min-height: 34px;
+    min-height: var(--tap-min, 44px);
     font-size: 0.74rem;
+  }
+  /* Mobile Step 3 fold compression: bring primary Recipe tiles up cleanly above #bottom-dock */
+  .bt-bc-root,
+  .bt-brew-shell,
+  .bt-brew-stage {
+    gap: 10px;
+  }
+  .bt-card-v6 {
+    padding: 12px;
+    gap: 9px;
+  }
+  .bt-step-context-strip {
+    padding: 6px 10px;
+    gap: 4px 8px;
+  }
+  .bt-kettle-warm-card {
+    padding: 8px 10px;
+    gap: 7px;
   }
 }
 
@@ -2365,8 +2386,8 @@
 }
 
 .bt-tctrl-btn {
-  min-height: 40px;
-  padding: 0 7px;
+  min-height: var(--tap-min, 44px);
+  padding: 0 8px;
   border-radius: 11px;
   border: 1px solid var(--line);
   background: var(--well);
@@ -2383,7 +2404,7 @@
 
 @media (min-width: 640px) {
   .bt-tctrl-btn {
-    min-height: 42px;
+    min-height: 46px;
     font-size: 0.82rem;
     padding: 0 10px;
   }
@@ -2527,8 +2548,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-height: 36px;
-  padding: 4px 8px;
+  min-height: var(--tap-min, 44px);
+  padding: 4px 10px;
   border-radius: var(--r-pill, 9999px);
   border: 1px solid rgba(247, 240, 232, 0.18);
   background: rgba(255, 255, 255, 0.05);
@@ -3304,9 +3325,9 @@
 }
 
 .bt-kettle-skip-btn {
-  min-height: 34px;
-  padding: 0 11px;
-  font-size: 0.74rem;
+  min-height: var(--tap-min, 44px);
+  padding: 0 12px;
+  font-size: 0.76rem;
   font-weight: 700;
 }
 
@@ -3480,7 +3501,7 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-height: 40px;
+  min-height: var(--tap-min, 44px);
   padding: 6px 12px;
   border-radius: var(--r-pill, 9999px);
   border: 1px solid var(--line);

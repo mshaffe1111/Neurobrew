@@ -651,7 +651,9 @@ var BTTasteCellarShared = (function () {
       inGoldenSipWindow: inGolden,
       crossed60C: crossed60,
       lidTip: lidTip,
-      vesselLabel: vDef.label
+      vesselLabel: vDef.label,
+      kMin: kEff,
+      kPerSec: kEff / 60
     };
   }
 
@@ -864,7 +866,7 @@ if (typeof window !== 'undefined') {
     { key: 'bitter',  label: 'Too Bitter / Dry',             hint: 'Harsh cocoa, dry tongue \u2192 grind coarser',  x: 0.42,  y: 0.00,  defStars: 3.50 },
     { key: 'weak',    label: 'Too Weak / Watery',            hint: 'Tea-light or hollow \u2192 less water',         x: 0.00,  y: -0.52, defStars: 3.25 },
     { key: 'strong',  label: 'Too Strong / Heavy',           hint: 'Thick or intense \u2192 splash more water',     x: 0.00,  y: 0.52,  defStars: 3.50 },
-    { key: 'way_off', label: 'Both Sour & Bitter (Uneven)',  hint: 'Mixed or channeling \u2192 even pour & grind',  x: -0.72, y: 0.34,  defStars: 2.75, fullSpan: true }
+    { key: 'way_off', label: 'Both Sour & Bitter (Uneven)',  hint: 'Mixed or channeling \u2192 even pour & grind',  x: 0.55,  y: -0.45, defStars: 2.75, fullSpan: true }
   ];
 
   var FLAVOR_TAB_SHORT_LABELS = [
@@ -1449,11 +1451,50 @@ if (typeof window !== 'undefined') {
     var rawDy = clamp(+tSt.padY || 0, -1, 1);
     var ringObj = ringInfoForXY(rawDx, rawDy);
 
+    /* Method-aware thermal & ratio physics bounds so Cold Brew / Phin / Moka / Turkish are never clamped */
+    var isColdMethod = (methodKey === 'cold' || methodKey === 'cold_drip');
+    var minTempC = isColdMethod ? 2.0 : 75.0;
+    var maxTempC = isColdMethod ? 25.0 : 99.5;
+    var coreRef = (typeof window !== 'undefined' && window.BTCoreV6) ? window.BTCoreV6 : null;
+    var mPhysRef = (coreRef && typeof coreRef.methodPhysicsFor === 'function')
+      ? (function () { try { return coreRef.methodPhysicsFor(methodKey); } catch (_) { return null; } })()
+      : null;
+    var rBoundsRef = (mPhysRef && Array.isArray(mPhysRef.ratioBounds) && mPhysRef.ratioBounds.length >= 2) ? mPhysRef.ratioBounds : null;
+    var minRatioBound = rBoundsRef ? Math.min(+rBoundsRef[0], curRatio) : (isEsp ? 1.2 : Math.min(4.0, curRatio));
+    var maxRatioBound = rBoundsRef ? Math.max(+rBoundsRef[1], curRatio) : (isEsp ? 4.2 : Math.max(20.5, curRatio));
+
     /* If user rated < 4.25 while leaving the bullseye puck centered at (0, 0),
-       use actual brew flow timing or a gentle sweetness nudge so we ALWAYS give
-       a real #1 Next-Brew Prescription when rated < 4.25! */
+       derive direction from CVA traits (if in Pro CVA mode), flow timing, or R2 telemetry */
     var dx = rawDx;
     var dy = rawDy;
+    var cvaAcidInt = null, cvaBitterInt = null;
+    if (tSt.mode === 'cva' && tSt.cvaDesc && tSt.cvaHedonic) {
+      var acH = +tSt.cvaHedonic.acidity || 7;
+      var afH = +tSt.cvaHedonic.aftertaste || 7;
+      var flH = +tSt.cvaHedonic.flavor || 7;
+      var swH = +tSt.cvaHedonic.sweetness || 7;
+      var mfH = +tSt.cvaHedonic.mouthfeel || 7;
+      var acD = +tSt.cvaDesc.acidity || 9;
+      var afD = +tSt.cvaDesc.aftertaste || 9;
+      var mfD = +tSt.cvaDesc.mouthfeel || 9;
+      if (acH <= 5 && acD >= 9) cvaAcidInt = 4;
+      if ((afH <= 5 || flH <= 5) && afD >= 9) cvaBitterInt = 4;
+      if (ringObj.ring === 0 && effStars < 4.25) {
+        if (cvaAcidInt >= 4 && cvaBitterInt >= 4) {
+          dx = 0.55; dy = -0.45;
+        } else if (acH < afH && acH <= 6) {
+          dx = clamp(-0.26 - (6 - acH) * 0.14, -0.82, -0.24);
+        } else if (afH <= 6 || (flH <= 5 && acH >= 6)) {
+          dx = clamp(0.26 + (6 - Math.min(afH, flH)) * 0.14, 0.24, 0.82);
+        } else if (swH <= 5) {
+          dx = timeDeltaS > 12 ? 0.34 : -0.34;
+        }
+        if (mfH <= 5) {
+          dy = mfD <= 7 ? -0.44 : (mfD >= 11 ? 0.44 : 0);
+        }
+        ringObj = ringInfoForXY(dx, dy);
+      }
+    }
     if (ringObj.ring === 0 && effStars < 4.25) {
       if (timeDeltaS < -12) dx = -0.38;
       else if (timeDeltaS > 15) dx = 0.38;
@@ -1468,13 +1509,15 @@ if (typeof window !== 'undefined') {
     var nextTryNum = tryNum + 1;
     var measEy = (+tSt.tdsPct > 0 && doseG > 0) ? Math.round(((+tSt.tdsPct * outG) / doseG) * 100) / 100 : null;
 
-    var core = (typeof window !== 'undefined' && window.BTCoreV6) ? window.BTCoreV6 : null;
+    var core = coreRef;
     var coreDiag = null;
     var coreFn = core && (core.computeDialInPrescription || core.diagnoseAndPrescribe || core.solveMakeItPerfect);
-    var obsSymptom = dx < -0.20 ? 'sour'
+    var isExplicitUneven = (tSt.selectedShortcutKey === 'way_off') || (dx > 0.30 && dy < -0.26) || (cvaAcidInt >= 4 && cvaBitterInt >= 4);
+    var obsSymptom = isExplicitUneven ? 'uneven'
+      : (dx < -0.20 ? 'sour'
       : (dx > 0.20 ? (tSt.guidedLike && tSt.guidedLike.finish === 'too_much' ? 'astringent' : 'bitter')
       : (dy < -0.20 ? 'thin'
-      : (dy > 0.20 ? 'strong' : 'balanced')));
+      : (dy > 0.20 ? 'strong' : 'balanced'))));
     if (typeof coreFn === 'function') {
       try {
         coreDiag = coreFn.call(core, {
@@ -1507,6 +1550,8 @@ if (typeof window !== 'undefined') {
           padY: dy,
           ring: ringObj.ring,
           symptom: obsSymptom,
+          acidityIntensity: cvaAcidInt != null ? cvaAcidInt : undefined,
+          bitternessIntensity: cvaBitterInt != null ? cvaBitterInt : undefined,
           actualTimeS: actualS || undefined,
           timeDeltaS: timeDeltaS,
           tds: +tSt.tdsPct > 0 ? +tSt.tdsPct : null,
@@ -1557,9 +1602,9 @@ if (typeof window !== 'undefined') {
       var movedAny = (Math.abs(cUm - curUm) >= 1) || (Math.abs(cTemp - curTempC) >= 0.5) || (Math.abs(cRat - curRatio) >= 0.05) || (cRx.agitation && cRx.agitation !== nextAgitation);
       if (movedAny) {
         usedCoreDiag = true;
-        nextUm = clamp(Math.round(cUm), isEsp ? 130 : 250, isEsp ? 420 : 1450);
-        nextTempC = clamp(cTemp, 80, 99.5);
-        nextRatio = clamp(Math.round(cRat * (isEsp ? 20 : 10)) / (isEsp ? 20 : 10), isEsp ? 1.2 : 11.5, isEsp ? 4.2 : 20.5);
+        nextUm = clamp(Math.round(cUm), isEsp ? 130 : (methodKey === 'turkish' ? 55 : 250), isEsp ? 420 : 1450);
+        nextTempC = clamp(cTemp, minTempC, maxTempC);
+        nextRatio = clamp(Math.round(cRat * (isEsp ? 20 : 10)) / (isEsp ? 20 : 10), minRatioBound, maxRatioBound);
         nextDoseG = cDose;
         nextWaterG = Math.round(cWater);
         if (cRx.agitation) nextAgitation = cRx.agitation;
@@ -1603,7 +1648,7 @@ if (typeof window !== 'undefined') {
       var my = nonlinMag(dy);
       var jx = (Math.abs(mx) * 4.68) / 0.90;
       var jy = (Math.abs(my) * (isEsp ? 1.8 : 0.26)) / (isEsp ? 0.50 : 0.07);
-      var channeling = ((measEy != null && measEy < 19.2 && dx > 0.24) || (dx > 0.30 && dy < -0.26)) && !(timeDeltaS > 22);
+      var channeling = (isExplicitUneven || (measEy != null && measEy < 19.2 && dx > 0.24) || (dx > 0.30 && dy < -0.26)) && !(timeDeltaS > 22);
 
       if (timeDeltaS < -12 && dx < 0) {
         flowNoteInRx = 'Confirmed by timer: cup drained ' + Math.abs(timeDeltaS) + 's faster than target, leaving fruit acids under-extracted.';
@@ -1627,23 +1672,25 @@ if (typeof window !== 'undefined') {
         if (blockedReason) {
           tabuPivotReason = 'Smart Dial Memory (Skipping Past Dip): ' + blockedReason + ' \u2014 adjusting Water Temp & Ratio instead of repeating that grind move!';
           var canPivotTemp = wantFiner ? (!tabu.tempUp && curTempC <= 98.5) : (!tabu.tempDown && curTempC >= 83);
-          if (canPivotTemp && methodKey !== 'cold' && methodKey !== 'cold_drip') {
+          if (canPivotTemp && !isColdMethod) {
             primaryLever = 'temp_pivot';
             var dT = wantFiner ? Math.min(3.0, Math.round((1.5 + Math.abs(mx) * 2.0) * 2) / 2) : -Math.min(3.0, Math.round((1.5 + Math.abs(mx) * 2.0) * 2) / 2);
-            nextTempC = clamp(curTempC + dT, 80, 99.5);
+            nextTempC = clamp(curTempC + dT, minTempC, maxTempC);
             headline = (dT > 0 ? 'Raise' : 'Lower') + ' Water Temp ' + (dT > 0 ? '+' : '') + dT + ' \u00B0C (' + curTempC + ' \u2192 ' + nextTempC + ' \u00B0C) \u00B7 Keep ' + gInfo.grinderLabel + ' steady';
           } else {
             primaryLever = 'ratio_pivot';
             var dR = wantFiner ? (isEsp ? 0.25 : 0.8) : (isEsp ? -0.25 : -0.8);
-            nextRatio = clamp(Math.round((curRatio + dR) * 10) / 10, isEsp ? 1.3 : 12.0, isEsp ? 4.0 : 19.5);
+            nextRatio = clamp(Math.round((curRatio + dR) * 10) / 10, minRatioBound, maxRatioBound);
             nextWaterG = Math.round(doseG * nextRatio);
             headline = (dR > 0 ? 'Widen' : 'Tighten') + ' Ratio 1:' + curRatio + ' \u2192 1:' + nextRatio + ' (' + doseG + ' g : ' + nextWaterG + ' g) \u00B7 Keep grind steady';
           }
         } else if (gInfo.grindLocked) {
           primaryLever = 'preground_temp';
-          var dTPg = wantFiner ? 2.5 : -2.5;
-          nextTempC = clamp(curTempC + dTPg, 80, 99);
-          headline = 'Pre-Ground Fix: ' + (dTPg > 0 ? 'Raise' : 'Lower') + ' Water ' + curTempC + ' \u2192 ' + nextTempC + ' \u00B0C + ' + (wantFiner ? '45s bloom stir' : 'calm single pour');
+          var dTPg = isColdMethod ? 0 : (wantFiner ? 2.5 : -2.5);
+          nextTempC = clamp(curTempC + dTPg, minTempC, maxTempC);
+          headline = isColdMethod
+            ? ('Pre-Ground Cold Fix: ' + (wantFiner ? 'Steep 2h longer' : 'Steep 2h shorter'))
+            : ('Pre-Ground Fix: ' + (dTPg > 0 ? 'Raise' : 'Lower') + ' Water ' + curTempC + ' \u2192 ' + nextTempC + ' \u00B0C + ' + (wantFiner ? '45s bloom stir' : 'calm single pour'));
         } else {
           primaryLever = 'grind';
           var maxSpan = isEsp ? 46 : 150;
@@ -1656,21 +1703,22 @@ if (typeof window !== 'undefined') {
             rawClicks = wantFiner ? -1 : 1;
           }
 
-          if (rawClicks === 0) {
+          if (rawClicks === 0 && !isColdMethod) {
             var spillOnlyT = clamp(Math.round((-0.092 * rawDeltaUm) * 2) / 2, -2.5, 2.5);
             if (Math.abs(spillOnlyT) < 1.0) spillOnlyT = wantFiner ? 1.5 : -1.5;
-            nextTempC = clamp(curTempC + spillOnlyT, 80, 99);
+            nextTempC = clamp(curTempC + spillOnlyT, minTempC, maxTempC);
             thermalSpilloverNote = lens === 'scientist'
               ? ('Fine-Tune Between Grinder Clicks: 1 click (' + gInfo.umPerStep + ' \u00B5m) exceeds ideal ' + Math.abs(Math.round(rawDeltaUm)) + ' \u00B5m micro-tweak \u2014 shifting kettle ' + (spillOnlyT > 0 ? '+' : '') + spillOnlyT + ' \u00B0C instead.')
               : ('Fine-Tune Between Grinder Clicks: 1 click would be too big a jump here, so nudging water temp ' + (spillOnlyT > 0 ? '+' : '') + spillOnlyT + ' \u00B0C instead!');
             headline = 'Keep ' + gInfo.grinderLabel + ' at ' + gInfo.curDisplay + ' & ' + (spillOnlyT > 0 ? 'raise' : 'lower') + ' water ' + curTempC + ' \u2192 ' + nextTempC + ' \u00B0C';
           } else {
-            nextUm = clamp(curUm + rawClicks * gInfo.umPerStep, isEsp ? 130 : 250, isEsp ? 420 : 1450);
+            if (rawClicks === 0) rawClicks = wantFiner ? -1 : 1;
+            nextUm = clamp(curUm + rawClicks * gInfo.umPerStep, isEsp ? 130 : (methodKey === 'turkish' ? 55 : 250), isEsp ? 420 : 1450);
             var residualUm = rawDeltaUm - (rawClicks * gInfo.umPerStep);
-            if (Math.abs(residualUm) >= 9 && methodKey !== 'cold') {
+            if (Math.abs(residualUm) >= 9 && !isColdMethod) {
               var spillT = clamp(Math.round((-0.092 * residualUm) * 2) / 2, -2.0, 2.0);
               if (Math.abs(spillT) >= 0.5) {
-                nextTempC = clamp(curTempC + spillT, 80, 99);
+                nextTempC = clamp(curTempC + spillT, minTempC, maxTempC);
                 thermalSpilloverNote = lens === 'scientist'
                   ? ('Fine-Tune Between Grinder Clicks: paired with ' + (spillT > 0 ? '+' : '') + spillT + ' \u00B0C (' + nextTempC + ' \u00B0C) to balance ' + Math.round(Math.abs(residualUm)) + ' \u00B5m step residual.')
                   : ('Fine-Tune Between Grinder Clicks: paired with ' + nextTempC + ' \u00B0C water so the grind step lands right in the sweet spot.');
@@ -1691,14 +1739,15 @@ if (typeof window !== 'undefined') {
         if (ratBlocked) {
           tabuPivotReason = 'Smart Dial Memory (Skipping Past Dip): ' + ratBlocked + ' \u2014 adjusting Grind instead of repeating that ratio change!';
           var pivClicks = wantTighter ? -1 : 1;
-          nextUm = clamp(curUm + pivClicks * gInfo.umPerStep, isEsp ? 130 : 250, isEsp ? 420 : 1450);
+          nextUm = clamp(curUm + pivClicks * gInfo.umPerStep, isEsp ? 130 : (methodKey === 'turkish' ? 55 : 250), isEsp ? 420 : 1450);
           var gPiv = mapNextGrinderDisplay(nextUm, gInfo, a, methodKey);
           headline = 'Move ' + gInfo.grinderLabel + ' 1 ' + gInfo.unit.replace(/s$/, '') + ' ' + (pivClicks < 0 ? 'finer' : 'coarser') + ' (' + gInfo.curClicks + ' \u2192 ' + gPiv.clicks + ')';
         } else {
           var maxRatSpan = isEsp ? 0.85 : 3.0;
-          var dRatio = Math.round((-my * maxRatSpan) * (isEsp ? 20 : 10)) / (isEsp ? 20 : 10);
+          /* Weak (dy < 0, my < 0) -> negative dRatio (tighter / less water); Strong (dy > 0, my > 0) -> positive dRatio (wider / more water) */
+          var dRatio = Math.round((my * maxRatSpan) * (isEsp ? 20 : 10)) / (isEsp ? 20 : 10);
           if (Math.abs(dRatio) < (isEsp ? 0.15 : 0.5)) dRatio = dy < 0 ? (isEsp ? -0.2 : -0.7) : (isEsp ? 0.2 : 0.7);
-          nextRatio = clamp(Math.round((curRatio + dRatio) * (isEsp ? 20 : 10)) / (isEsp ? 20 : 10), isEsp ? 1.2 : 11.5, isEsp ? 4.2 : 20.5);
+          nextRatio = clamp(Math.round((curRatio + dRatio) * (isEsp ? 20 : 10)) / (isEsp ? 20 : 10), minRatioBound, maxRatioBound);
           nextWaterG = Math.round(doseG * nextRatio);
           headline = (dRatio < 0 ? 'Use Less Water (Richer)' : 'Add Water (Lighter)') + ': Ratio 1:' + curRatio + ' \u2192 1:' + nextRatio + ' (' + doseG + ' g : ' + nextWaterG + ' g)';
         }
@@ -2505,8 +2554,8 @@ if (typeof window !== 'undefined') {
           if (parsedAd && typeof parsedAd === 'object' && !Array.isArray(parsedAd)) adapObj = parsedAd;
         }
         adapObj.dial_symptom = sym;
-        adapObj.dial_change = built.dial_change;
-        if (rx && rx.nextRecipe) {
+        adapObj.dial_change = (!tSt.excludeLearning && !tSt.notMyStyle) ? built.dial_change : '';
+        if (!tSt.excludeLearning && !tSt.notMyStyle && rx && rx.nextRecipe) {
           var prevGInfo = rx.grinderInfo || {};
           adapObj.next_recipe = {
             methodKey: rx.nextRecipe.methodKey,
@@ -2534,6 +2583,11 @@ if (typeof window !== 'undefined') {
           };
           co.pendingNextRecipe = adapObj.next_recipe;
           if (a.coffee && a.coffee !== co) a.coffee.pendingNextRecipe = adapObj.next_recipe;
+        } else if (tSt.excludeLearning || tSt.notMyStyle) {
+          /* Honor Off-Day Taste Shield / Not My Style: never persist a shifted next_recipe to row or Vault */
+          delete adapObj.next_recipe;
+          co.pendingNextRecipe = null;
+          if (a.coffee && a.coffee !== co) a.coffee.pendingNextRecipe = null;
         }
         built.recipe_adaptation_json = JSON.stringify(adapObj);
       } catch (_) {}
@@ -2750,9 +2804,17 @@ if (typeof window !== 'undefined') {
     }
 
     if (storage && typeof storage.upsertCoffeeVaultRecord === 'function' && !blendCtx) {
-      try { storage.upsertCoffeeVaultRecord(co, built); } catch (_) {}
+      try { storage.upsertCoffeeVaultRecord(co, built, (tSt.excludeLearning || tSt.notMyStyle) ? { allowClear: true } : undefined); } catch (_) {}
     }
 
+    a.cupBrew = null;
+    if (a.brew) {
+      delete a.brew._preDeducted;
+      a.brew.actualSecs = null;
+      a.brew.actualFromTimer = false;
+      a.brew.measuredBeverageG = null;
+    }
+    a.adjust = { grind: 0, ratio: 0, agit: '', tempC: 0 };
     st.id = mintFreshRowId();
     st.measuredTds = 0;
     st.measuredEy = 0;
@@ -2763,12 +2825,11 @@ if (typeof window !== 'undefined') {
     st.brewFinishedAtMs = 0;
     st.quick = { make: '', sym: '', areas: {}, liked: [], notLiked: [] };
     a.taste = {};
-    a.cupBrew = null;
-    if (a.brew) {
-      a.brew.actualSecs = null;
-      a.brew.actualFromTimer = false;
-      a.brew.measuredBeverageG = null;
+    if (typeof _activeStep5Cleanup === 'function') {
+      try { _activeStep5Cleanup(); } catch (_) {}
+      _activeStep5Cleanup = null;
     }
+    _activeRepaintHook = null;
     _step5Session = null;
     _lastLiveR2 = null;
     try {
@@ -3219,6 +3280,7 @@ if (typeof window !== 'undefined') {
   /* Main Step 5 Session, Module-Scoped DiFluid R2 Live Auto-Sync & Repaint Hook */
   var _step5Session = null;
   var _activeRepaintHook = null;
+  var _activeStep5Cleanup = null;
   var _r2BleBound = false;
   var _r2BleSubscribed = false;
   var _lastLiveR2 = null;
@@ -3434,7 +3496,10 @@ if (typeof window !== 'undefined') {
         guideCollapsed: true,
         coolingCardCollapsed: true,
         notesDrawerOpen: false,
+        notesDrawerUserClosed: false,
         mapDrawerOpen: false,
+        mapDrawerUserClosed: false,
+        selectedShortcutKey: '',
         mode: (opts && opts.initialMode) || 'quick', /* 'quick' | 'guided' | 'cva' */
         stars: preRated ? (+st.stars > 0 ? +st.stars : 4.25) : 0,
         makeAgain: '',
@@ -3526,11 +3591,33 @@ if (typeof window !== 'undefined') {
 
   function renderStep5(containerEl, opts) {
     opts = opts || {};
+    if (typeof _activeStep5Cleanup === 'function') {
+      try { _activeStep5Cleanup(); } catch (_) {}
+      _activeStep5Cleanup = null;
+    }
     var tSt = ensureStep5Session(opts);
     var a = S.getApp();
     var st = S.getState();
     var root = S.h('div', { class: 'bt-tc-stage', id: 'bt-step5-taste-root' });
     var gsTimerId = 0;
+    var activeNativeClock = null;
+
+    function disposeCoolingTimers() {
+      if (gsTimerId) { clearInterval(gsTimerId); gsTimerId = 0; }
+      if (activeNativeClock) {
+        if (typeof activeNativeClock.dispose === 'function') {
+          try { activeNativeClock.dispose(); } catch (_) {}
+        }
+        activeNativeClock = null;
+      }
+    }
+
+    function cleanupStep5Resources() {
+      disposeCoolingTimers();
+      if (_activeRepaintHook === repaintHookFn) _activeRepaintHook = null;
+      if (_activeStep5Cleanup === cleanupStep5Resources) _activeStep5Cleanup = null;
+    }
+    _activeStep5Cleanup = cleanupStep5Resources;
 
     /* Programmatic custom event hook ('bt:taste-rate') for tests & external controllers */
     if (!root._rateListenerAttached) {
@@ -3900,24 +3987,23 @@ if (typeof window !== 'undefined') {
           type: 'button',
           id: 'bt-step5-drill-ratings-btn',
           class: 'bt-step5-ghost-link',
-          'aria-label': 'Save ' + cName + ' and compare in Ratings',
+          'aria-label': 'Compare in Ratings without saving this cup yet',
           onclick: function () {
-            saveStep5TastingAndApply(tSt, rx, {
-              lockGold: shouldSaveGold,
-              destination: 'journal'
-            });
+            cleanupStep5Resources();
+            S.closeSheetSafe();
+            S.navGo('journal');
           }
         }, S.h('span', { text: 'Compare in Ratings \u2192' })),
         S.h('button', {
           type: 'button',
           id: 'bt-step5-drill-palate-btn',
           class: 'bt-step5-ghost-link',
-          'aria-label': 'Save ' + cName + ' and inspect in Palate DNA',
+          'aria-label': 'Inspect Palate DNA without saving this cup yet',
           onclick: function () {
-            saveStep5TastingAndApply(tSt, rx, {
-              lockGold: shouldSaveGold,
-              destination: 'palate'
-            });
+            cleanupStep5Resources();
+            S.closeSheetSafe();
+            if (a.tabSegments) a.tabSegments.palate = 'dna';
+            S.navGo('palate');
           }
         }, S.h('span', { text: 'Inspect in Palate DNA \u2192' })),
         S.h('button', {
@@ -3956,7 +4042,7 @@ if (typeof window !== 'undefined') {
     }
 
     function paintAll() {
-      if (gsTimerId) { clearInterval(gsTimerId); gsTimerId = 0; }
+      disposeCoolingTimers();
       root.textContent = '';
       var tac = (typeof window !== 'undefined' && window.BTTactile) ? window.BTTactile : null;
       var lens = S.experienceLensSafe();
@@ -3974,6 +4060,7 @@ if (typeof window !== 'undefined') {
           style: 'min-height:44px;padding:6px 12px;font-size:0.78rem',
           'aria-label': 'Back to Brew Timer',
           onclick: function () {
+            cleanupStep5Resources();
             S.closeSheetSafe();
             S.navGo('timer');
           }
@@ -4282,15 +4369,27 @@ if (typeof window !== 'undefined') {
           ? tac.BTGoldenSipClock({
               tempC: gsInit.tempC,
               secsToGolden: gsInit.secsToGolden,
-              lidTip: gsInit.lidTip
+              lidTip: gsInit.lidTip,
+              kMin: gsInit.kMin,
+              onReset: function () {
+                st.brewFinishedAtMs = Date.now();
+                tSt.bell60Fired = false;
+              }
             })
           : null;
-        if (nativeClock) gsCard.appendChild(nativeClock);
+        if (nativeClock) {
+          activeNativeClock = nativeClock;
+          gsCard.appendChild(nativeClock);
+        }
       }
 
       /* Live 1-second cooling countdown ticker (updates both compact readout AND expanded dial!) */
       gsTimerId = setInterval(function () {
-        if (!gsCard.isConnected) { clearInterval(gsTimerId); gsTimerId = 0; return; }
+        if (!gsCard.isConnected) {
+          if (!root.isConnected) cleanupStep5Resources();
+          else disposeCoolingTimers();
+          return;
+        }
         var elNow = st.brewFinishedAtMs ? Math.max(0, (Date.now() - st.brewFinishedAtMs) / 1000) : 0;
         var curGs = S.computeGoldenSipState({ vesselKey: tSt.vessel, bevMassG: tSt.bevOutG, elapsedS: elNow, lidOff: tSt.lidOff });
         slimCoolingLabel.textContent = 'Cup Cooling: ~' + curGs.tempC.toFixed(0) + ' \u00B0C \u00B7 ' + (curGs.secsToGolden > 0 ? (curGs.countdownMmSs + ' to 60 \u00B0C') : '60 \u00B0C Sweet Sip Ready');
@@ -4667,8 +4766,8 @@ if (typeof window !== 'undefined') {
       function activeShortcutKey() {
         if (!tSt.hasUserRated) return '';
         var r = Math.hypot(tSt.padX, tSt.padY);
+        if (tSt.selectedShortcutKey === 'way_off' || (tSt.padX > 0.30 && tSt.padY < -0.26) || r > 0.76) return 'way_off';
         if (r <= 0.20) return 'sweet';
-        if (r > 0.76) return 'way_off';
         if (Math.abs(tSt.padX) >= Math.abs(tSt.padY)) return tSt.padX < 0 ? 'sour' : 'bitter';
         return tSt.padY < 0 ? 'weak' : 'strong';
       }
@@ -4697,6 +4796,7 @@ if (typeof window !== 'undefined') {
           class: 'bt-tc-diag-card' + extraCls,
           'aria-label': sc.label + ': ' + sc.hint,
           onclick: function () {
+            tSt.selectedShortcutKey = sc.key;
             tSt.padX = sc.x;
             tSt.padY = sc.y;
             if (!tSt._manualStarSet || !tSt.hasUserRated || !(+tSt.stars > 0)) {
@@ -4756,6 +4856,7 @@ if (typeof window !== 'undefined') {
             targetEy: 20.2,
             onChange: function (pt) {
               if (!pt) return;
+              tSt.selectedShortcutKey = '';
               tSt.padX = clamp(+pt.x || 0, -1, 1);
               tSt.padY = clamp(+pt.y || 0, -1, 1);
               var rIdx = ringInfoForXY(tSt.padX, tSt.padY).ring;
@@ -4901,6 +5002,9 @@ if (typeof window !== 'undefined') {
             }
           }, S.iconEl('ble-wave', { size: 13 }), S.h('span', { 'data-scale-mug-txt': '1', text: scaleMugBtnLabel }));
 
+          var useFR2 = !(a && a.prefs && a.prefs.tempUnit === 'C');
+          var r2DispTempVal = useFR2 ? Math.round((tSt.r2TempC * 9 / 5 + 32) * 10) / 10 : Math.round(tSt.r2TempC * 10) / 10;
+
           r2Host = S.h('div', { class: 'bt-tc-r2-card', id: 'bt-step5-r2-card' },
             S.h('div', { class: 'bt-tc-row-between' },
               S.h('div', { class: 'bt-tc-pill-wrap', style: 'gap:6px' },
@@ -4935,8 +5039,8 @@ if (typeof window !== 'undefined') {
                     inputmode: 'decimal',
                     step: '0.01',
                     min: '0',
-                    max: '24',
-                    placeholder: isEspNow ? '9.40' : '1.38',
+                    max: tSt.r2InputUnit === 'brix' ? '28' : '24',
+                    placeholder: tSt.r2InputUnit === 'brix' ? (isEspNow ? '11.06' : '1.62') : (isEspNow ? '9.40' : '1.38'),
                     value: +tSt.tdsPct > 0 ? String(tSt.r2InputUnit === 'brix' ? Math.round((tSt.tdsPct / 0.85) * 100) / 100 : tSt.tdsPct) : '',
                     onchange: function (e) {
                       var v = parseFloat(e.target.value);
@@ -4971,6 +5075,7 @@ if (typeof window !== 'undefined') {
                       tSt._userEditedBevOut = true;
                       tSt.bevOutG = clamp(+e.target.value || 215, 10, 2000);
                       tSt.rescueMugG = Math.max(25, tSt.bevOutG);
+                      if (a.brew) a.brew.measuredBeverageG = tSt.bevOutG;
                       paintAll();
                     }
                   })
@@ -4978,18 +5083,20 @@ if (typeof window !== 'undefined') {
                 scaleMugBtn
               ),
               S.h('label', { style: 'display:flex;flex-direction:column;gap:4px;font-size:0.76rem;font-weight:700' },
-                S.h('span', { text: 'Drop Temp (\u00B0C)' }),
+                S.h('span', { text: useFR2 ? 'Drop Temp (\u00B0F)' : 'Drop Temp (\u00B0C)' }),
                 S.h('div', { class: 'bt-tc-spotlight', style: 'min-height:44px' },
                   S.h('input', {
                     type: 'number',
                     id: 'bt-step5-r2-temp-input',
                     inputmode: 'decimal',
                     step: '0.5',
-                    min: '10',
-                    max: '75',
-                    value: String(tSt.r2TempC),
+                    min: useFR2 ? '50' : '10',
+                    max: useFR2 ? '167' : '75',
+                    value: String(r2DispTempVal),
                     onchange: function (e) {
-                      tSt.r2TempC = clamp(+e.target.value || 23.5, 10, 75);
+                      var rawT = parseFloat(e.target.value);
+                      var cVal = isFinite(rawT) ? (useFR2 ? (rawT - 32) * 5 / 9 : rawT) : 23.5;
+                      tSt.r2TempC = Math.round(clamp(cVal, 10, 75) * 10) / 10;
                       paintAll();
                     }
                   })
@@ -5002,7 +5109,13 @@ if (typeof window !== 'undefined') {
                 type: 'button',
                 class: 'bt-tc-pill is-compact is-soft',
                 text: 'Use ~' + Math.round(waterNow - doseNow * 2.05) + ' g',
-                onclick: function () { tSt.bevOutG = Math.max(18, Math.round(waterNow - doseNow * 2.05)); paintAll(); }
+                onclick: function () {
+                  tSt._userEditedBevOut = true;
+                  tSt.bevOutG = Math.max(18, Math.round(waterNow - doseNow * 2.05));
+                  tSt.rescueMugG = Math.max(25, tSt.bevOutG);
+                  if (a.brew) a.brew.measuredBeverageG = tSt.bevOutG;
+                  paintAll();
+                }
               })
             ) : null,
             S.h('div', { class: 'bt-tc-row-between' },
@@ -5064,7 +5177,7 @@ if (typeof window !== 'undefined') {
       }
 
       /* Build Optional Precision Balance Map & Refractometer (R2) Drawer (mounted below Next-Brew Fix!) */
-      var autoOpenMapDrawer = !!(tSt.mapDrawerOpen || r2Connected || +tSt.tdsPct > 0 || r2Mode === 'always' || tSt.mode === 'guided');
+      var autoOpenMapDrawer = !tSt.mapDrawerUserClosed && !!(tSt.mapDrawerOpen || r2Connected || +tSt.tdsPct > 0 || r2Mode === 'always' || tSt.mode === 'guided');
       var mapDrawerStatus = +tSt.tdsPct > 0
         ? (tSt.tdsPct.toFixed(2) + '% TDS')
         : (r2Connected ? 'R2 Ready' : 'Optional');
@@ -5088,6 +5201,7 @@ if (typeof window !== 'undefined') {
       );
       mapDrawer.addEventListener('toggle', function () {
         tSt.mapDrawerOpen = !!mapDrawer.open;
+        tSt.mapDrawerUserClosed = !mapDrawer.open;
       });
 
       /* MODE 2 EXTRA: Guided Tasting — Structured 5-Step Labeled Sensory Bars (In-Place Updates!) */
@@ -5111,6 +5225,7 @@ if (typeof window !== 'undefined') {
                 class: 'bt-tc-scale-step',
                 'aria-pressed': String(curInt === iv),
                 onclick: function () {
+                  tSt.selectedShortcutKey = '';
                   tSt.guidedInt[dim.key] = iv;
                   scaleBarBtns.forEach(function (b, bIdx) {
                     b.setAttribute('aria-pressed', String(bIdx + 1 === iv));
@@ -5148,6 +5263,7 @@ if (typeof window !== 'undefined') {
                 'aria-pressed': String(curLike === lk[0]),
                 text: lk[1],
                 onclick: function () {
+                  tSt.selectedShortcutKey = '';
                   tSt.guidedLike[dim.key] = lk[0];
                   likeBarBtns.forEach(function (b, bIdx) {
                     b.setAttribute('aria-pressed', String(likeOpts[bIdx][0] === lk[0]));
@@ -5228,7 +5344,11 @@ if (typeof window !== 'undefined') {
                 class: 'bt-tc-pill is-compact is-soft',
                 'aria-pressed': String(isSkip),
                 text: isSkip ? 'Skipped (Auto-Averaged)' : 'Skip Smell Step',
-                onclick: function () { tSt.cvaSkipped[attr.key] = !isSkip; paintAll(); }
+                onclick: function () {
+                  tSt.cvaSkipped[attr.key] = !isSkip;
+                  syncCvaScoreInPlace();
+                  paintAll();
+                }
               }) : null
             ),
             S.h('p', { class: 'bt-tc-trait-desc', text: attr.desc }),
@@ -5250,6 +5370,8 @@ if (typeof window !== 'undefined') {
                   strongLabelEl.textContent = 'How Strong: ' + tSt.cvaDesc[attr.key] + ' / 15';
                   if (!tSt.hasUserRated) {
                     syncCvaScoreInPlace();
+                  } else {
+                    paintFixAndCtaOnly();
                   }
                 }
               })
@@ -5387,7 +5509,7 @@ if (typeof window !== 'undefined') {
 
       var rxCheckNow = computeStatefulPrescription(tSt);
       var allowBjInFoil = !(tSt.hasUserRated && rxCheckNow.inGoldZone);
-      var autoOpenNotesDrawer = !!(tSt.notesDrawerOpen || tSt.foilRevealed || tSt.excludeLearning || (tSt.userNotes && tSt.userNotes.length > 0) || (tSt.notes && tSt.notes.trim().length > 0));
+      var autoOpenNotesDrawer = !tSt.notesDrawerUserClosed && !!(tSt.notesDrawerOpen || tSt.foilRevealed || tSt.excludeLearning || (tSt.userNotes && tSt.userNotes.length > 0) || (tSt.notes && tSt.notes.trim().length > 0));
       var notesDrawerStatus = tSt.excludeLearning
         ? 'Shield ON'
         : ((tSt.userNotes && tSt.userNotes.length > 0)
@@ -5428,6 +5550,7 @@ if (typeof window !== 'undefined') {
             onclick: function () {
               tSt.excludeLearning = !tSt.excludeLearning;
               tSt.notesDrawerOpen = true;
+              tSt.notesDrawerUserClosed = false;
               S.haptic('snap');
               paintAll();
             }
@@ -5442,6 +5565,7 @@ if (typeof window !== 'undefined') {
       );
       notesDrawer.addEventListener('toggle', function () {
         tSt.notesDrawerOpen = !!notesDrawer.open;
+        tSt.notesDrawerUserClosed = !notesDrawer.open;
       });
 
       root.appendChild(notesDrawer);
@@ -5471,13 +5595,15 @@ if (typeof window !== 'undefined') {
       }
     }
 
-    _activeRepaintHook = function () {
+    var repaintHookFn = function () {
       if (root.isConnected) {
         paintAll();
         return true;
       }
+      cleanupStep5Resources();
       return false;
     };
+    _activeRepaintHook = repaintHookFn;
 
     paintAll();
 
@@ -5493,6 +5619,11 @@ if (typeof window !== 'undefined') {
     renderStep5: renderStep5,
     getSession: function () { return ensureStep5Session(); },
     resetSession: function () {
+      if (typeof _activeStep5Cleanup === 'function') {
+        try { _activeStep5Cleanup(); } catch (_) {}
+      }
+      _activeStep5Cleanup = null;
+      _activeRepaintHook = null;
       _step5Session = null;
       _lastLiveR2 = null;
       try {

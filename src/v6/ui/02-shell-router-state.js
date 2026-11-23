@@ -72,10 +72,12 @@ function h(tag, props) {
         el.value = String(v);
       } else if (k === 'style' && typeof v === 'object') {
         for (const sk in v) {
+          if (!Object.prototype.hasOwnProperty.call(v, sk)) continue;
           if (v[sk] != null) el.style.setProperty(sk.replace(/[A-Z]/g, function(m) { return '-' + m.toLowerCase(); }), String(v[sk]));
         }
       } else if (k === 'dataset' && typeof v === 'object') {
         for (const dk in v) {
+          if (!Object.prototype.hasOwnProperty.call(v, dk)) continue;
           if (v[dk] != null && v[dk] !== false) el.dataset[dk] = String(v[dk]);
         }
       } else if (k.slice(0, 2) === 'on' && typeof v === 'function') {
@@ -410,7 +412,7 @@ function newApp() {
       machineProfile: null
     },
     prefs: {
-      waterUnit: 'g', coffeeUnit: 'g', tempUnit: 'F', elevUnit: 'm', theme: 'light',
+      waterUnit: 'g', coffeeUnit: 'g', tempUnit: 'F', elevUnit: 'm', theme: 'system',
       scienceLens: 'hybrid', experienceLens: 'comfy', immersionBasis: 'liang',
       cupMode: '', coachTips: true, palateSeed: null, palateTargets: null, palateBias: null, toolModes: _defaultToolModes(),
       waterProfileKey: '', kettle: '', scale: '', ownedBrewers: ['v60', 'aeropress', 'switch', 'espresso'],
@@ -476,7 +478,7 @@ let _lastCommittedNav = null;
 let _suppressHistoryPush = false;
 
 function normalizeTheme(t) {
-  return (t === 'light' || t === 'dark' || t === 'system') ? t : 'light';
+  return (t === 'light' || t === 'dark' || t === 'system') ? t : 'system';
 }
 
 function resolvedTheme(t) {
@@ -491,7 +493,26 @@ function resolvedTheme(t) {
   return m;
 }
 
+let _themeMediaBound = false;
+function _bindSystemThemeWatcher() {
+  if (_themeMediaBound || typeof window === 'undefined' || !window.matchMedia) return;
+  _themeMediaBound = true;
+  try {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = function() {
+      if (app && app.prefs && normalizeTheme(app.prefs.theme) === 'system') {
+        applyTheme('system');
+        if (typeof paintChrome === 'function') paintChrome();
+        if (typeof paintStudioAside === 'function') paintStudioAside();
+      }
+    };
+    if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onChange);
+    else if (typeof mq.addListener === 'function') mq.addListener(onChange);
+  } catch (e) {}
+}
+
 function applyTheme(t) {
+  _bindSystemThemeWatcher();
   const pref = normalizeTheme(t);
   const actual = resolvedTheme(pref);
   if (typeof document !== 'undefined' && document.documentElement) {
@@ -520,9 +541,11 @@ function applyTheme(t) {
 
 /* ==================== EXPERIENCE LENS NORMALIZATION (ROUND-TRIP SAFE) ==================== */
 function normalizeExperienceLevel(m) {
-  if (m === 'scientist' || m === 'xray' || m === 'expert' || m === 'on' || m === true) return 'scientist';
-  if (m === 'starter' || m === 'surface' || m === 'new') return 'starter';
-  if (m === 'comfy' || m === 'hybrid' || m === 'comfortable') return 'comfy';
+  if (m === true) return 'scientist';
+  const s = typeof m === 'string' ? m.trim().toLowerCase() : m;
+  if (s === 'scientist' || s === 'xray' || s === 'lab' || s === 'expert' || s === 'on') return 'scientist';
+  if (s === 'starter' || s === 'surface' || s === 'new') return 'starter';
+  if (s === 'comfy' || s === 'hybrid' || s === 'comfortable') return 'comfy';
   return 'comfy';
 }
 
@@ -1285,6 +1308,8 @@ const BTTimerAudio = (function() {
     return normalizeTimerAudioMode(app.prefs.timerAudioMode || app.prefs.sound || 'voice');
   }
 
+  let speechPrimed = false;
+
   function setMode(m) {
     const clean = normalizeTimerAudioMode(m);
     if (app && app.prefs) {
@@ -1294,7 +1319,8 @@ const BTTimerAudio = (function() {
     }
     if (clean !== 'voice') {
       stopSpeech();
-    } else {
+    }
+    if (clean === 'voice' || clean === 'chimes') {
       unlock();
     }
     writePrefsMirror();
@@ -1312,28 +1338,36 @@ const BTTimerAudio = (function() {
   }
 
   function unlock() {
+    let ok = false;
     try {
-      if (typeof window === 'undefined') return false;
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return false;
-      if (!audioCtx) {
-        audioCtx = new AC();
+      if (typeof window !== 'undefined') {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          if (!audioCtx) {
+            audioCtx = new AC();
+          }
+          if (audioCtx.state === 'suspended' && typeof audioCtx.resume === 'function') {
+            audioCtx.resume().catch(function() {});
+          }
+          if (!unlocked && audioCtx && typeof audioCtx.createBuffer === 'function') {
+            const silentBuf = audioCtx.createBuffer(1, 1, 22050);
+            const src = audioCtx.createBufferSource();
+            src.buffer = silentBuf;
+            src.connect(audioCtx.destination);
+            if (typeof src.start === 'function') src.start(0);
+            unlocked = true;
+          }
+          ok = true;
+        }
+        if (!speechPrimed && window.speechSynthesis && typeof window.SpeechSynthesisUtterance === 'function' && !window.speechSynthesis.speaking) {
+          speechPrimed = true;
+          const prime = new window.SpeechSynthesisUtterance('');
+          prime.volume = 0;
+          window.speechSynthesis.speak(prime);
+        }
       }
-      if (audioCtx.state === 'suspended' && typeof audioCtx.resume === 'function') {
-        audioCtx.resume().catch(function() {});
-      }
-      if (!unlocked && audioCtx && typeof audioCtx.createBuffer === 'function') {
-        const silentBuf = audioCtx.createBuffer(1, 1, 22050);
-        const src = audioCtx.createBufferSource();
-        src.buffer = silentBuf;
-        src.connect(audioCtx.destination);
-        if (typeof src.start === 'function') src.start(0);
-        unlocked = true;
-      }
-      return true;
-    } catch (e) {
-      return false;
-    }
+    } catch (e) {}
+    return ok;
   }
 
   function _playTone(freqHz, durationSec, peakGain, delaySec, oscType) {
@@ -1602,6 +1636,7 @@ const _sheetTitles = {
   'onboarding-tour':     'Welcome to BeanTelligence',
   'about-charter':       'Science & Epistemic Charter',
   'share-qr-passport':   'Share QR Recipe Passport',
+  'passport-qr':         'Share QR Recipe Passport',
   'recipe-science-why':  'Why These Numbers?',
   'screen-detail':       'Tasting Passport',
   'screen-tasting-edit': 'Edit Tasting'
@@ -1780,10 +1815,90 @@ function _resolveSheetTitleWithCoffee(key, baseTitle, payload) {
   return raw || 'Studio';
 }
 
+const _FOCUSABLE_SEL = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function _getFocusableEls(containerEl) {
+  if (!containerEl || !containerEl.querySelectorAll) return [];
+  const raw = containerEl.querySelectorAll(_FOCUSABLE_SEL);
+  const out = [];
+  for (let i = 0; i < raw.length; i++) {
+    const el = raw[i];
+    if (!el || el.hidden || el.closest('[hidden]')) continue;
+    if (el.getAttribute('aria-hidden') === 'true') continue;
+    try {
+      const cs = typeof getComputedStyle === 'function' ? getComputedStyle(el) : null;
+      if (cs && (cs.display === 'none' || cs.visibility === 'hidden')) continue;
+    } catch (e) {}
+    out.push(el);
+  }
+  return out;
+}
+
+function trapFocus(containerEl, onEscape) {
+  if (!containerEl || typeof document === 'undefined') {
+    return { release: function() {} };
+  }
+  if (!containerEl.hasAttribute('tabindex')) {
+    containerEl.setAttribute('tabindex', '-1');
+  }
+  function onKeyDown(e) {
+    if (!containerEl || containerEl.hidden || !containerEl.isConnected) return;
+    if (e.key === 'Escape' && typeof onEscape === 'function') {
+      e.preventDefault();
+      e.stopPropagation();
+      onEscape(e);
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const focusables = _getFocusableEls(containerEl);
+    if (!focusables.length) {
+      e.preventDefault();
+      try { containerEl.focus({ preventScroll: true }); } catch (err) {}
+      return;
+    }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey) {
+      if (active === first || active === containerEl || !containerEl.contains(active)) {
+        e.preventDefault();
+        try { last.focus({ preventScroll: true }); } catch (err) {}
+      }
+    } else {
+      if (active === last || !containerEl.contains(active)) {
+        e.preventDefault();
+        try { first.focus({ preventScroll: true }); } catch (err) {}
+      }
+    }
+  }
+  document.addEventListener('keydown', onKeyDown, true);
+  return {
+    release: function() {
+      document.removeEventListener('keydown', onKeyDown, true);
+    }
+  };
+}
+
 const BTSheet = (function() {
   let activeSheetKey = '';
   let lastFocusEl = null;
   let activeOnClose = null;
+  let activeFocusTrap = null;
+
+  function _setBackgroundInert(flag) {
+    const shell = $('app-shell');
+    if (!shell) return;
+    try { shell.inert = !!flag; } catch (e) {}
+    if (flag) shell.setAttribute('aria-hidden', 'true');
+    else shell.removeAttribute('aria-hidden');
+  }
+
+  function _releaseTrap() {
+    if (activeFocusTrap && typeof activeFocusTrap.release === 'function') {
+      try { activeFocusTrap.release(); } catch (e) {}
+    }
+    activeFocusTrap = null;
+  }
 
   function isOpen() {
     const s = $('sheet');
@@ -1845,6 +1960,7 @@ const BTSheet = (function() {
     if (!isOpen() && typeof document !== 'undefined') {
       lastFocusEl = document.activeElement;
     }
+    _releaseTrap();
 
     activeSheetKey = key;
     activeOnClose = onClose;
@@ -1880,7 +1996,16 @@ const BTSheet = (function() {
     }
     sheetEl.hidden = false;
     sheetEl.classList.add('is-open');
+    _setBackgroundInert(true);
     paintChrome();
+
+    /* Move focus synchronously into the dialog & engage Tab/Escape focus trap */
+    const focusables = _getFocusableEls(sheetEl);
+    const focusTarget = focusables.length ? focusables[0] : sheetEl;
+    if (focusTarget && typeof focusTarget.focus === 'function') {
+      try { focusTarget.focus({ preventScroll: true }); } catch (e) {}
+    }
+    activeFocusTrap = trapFocus(sheetEl, close);
 
     try {
       if (window.BTHaptics && window.BTHaptics.snap) window.BTHaptics.snap();
@@ -1892,6 +2017,7 @@ const BTSheet = (function() {
     const backdropEl = $('sheet-backdrop');
     if (!sheetEl || sheetEl.hidden) return;
 
+    _releaseTrap();
     sheetEl.classList.remove('is-open');
     sheetEl.hidden = true;
     sheetEl.removeAttribute('data-sheet');
@@ -1899,6 +2025,7 @@ const BTSheet = (function() {
       backdropEl.classList.remove('is-open');
       backdropEl.hidden = true;
     }
+    _setBackgroundInert(false);
     const bodyEl = $('sheet-body');
     if (bodyEl) bodyEl.textContent = '';
 
@@ -1909,9 +2036,10 @@ const BTSheet = (function() {
     if (typeof cb === 'function') {
       try { cb(); } catch (e) {}
     }
-    if (lastFocusEl && typeof lastFocusEl.focus === 'function') {
-      try { lastFocusEl.focus({ preventScroll: true }); } catch (e) {}
-      lastFocusEl = null;
+    const restoreEl = (lastFocusEl && lastFocusEl.isConnected && typeof lastFocusEl.focus === 'function') ? lastFocusEl : $('mount');
+    lastFocusEl = null;
+    if (restoreEl && typeof restoreEl.focus === 'function') {
+      try { restoreEl.focus({ preventScroll: true }); } catch (e) {}
     }
   }
 
@@ -2036,7 +2164,7 @@ function _renderWorkflowToolsSheet(bodyEl, payload, api) {
   const quickActionsCard = h('div', { class: 'bt-card', style: 'margin-bottom:12px;display:flex;flex-wrap:wrap;gap:8px' },
     h('button', {
       type: 'button',
-      class: 'bt-btn is-primary',
+      class: 'bt-btn bt-btn-primary',
       style: 'flex:1 1 200px',
       onclick: function() {
         api.close();
@@ -2136,7 +2264,7 @@ function _renderWorkflowToolsSheet(bodyEl, payload, api) {
       h('button', {
         type: 'button',
         class: 'bt-chip',
-        style: 'min-height:36px;font-size:12px',
+        style: 'min-height:var(--tap-min,44px);font-size:12px',
         onclick: function() {
           api.close();
           go('method');
@@ -2176,7 +2304,7 @@ function _renderWorkflowToolsSheet(bodyEl, payload, api) {
         return h('button', {
           type: 'button',
           class: 'bt-chip',
-          style: 'min-height:36px;padding:4px 11px;font-size:12px',
+          style: 'min-height:var(--tap-min,44px);padding:6px 12px;font-size:12px',
           'aria-pressed': String(isOwned),
           onclick: function() {
             if (ownedSet.has(br[0])) ownedSet.delete(br[0]);
@@ -2315,7 +2443,7 @@ function _renderWorkflowToolsSheet(bodyEl, payload, api) {
       h('button', {
         type: 'button',
         class: 'bt-chip',
-        style: 'min-height:30px;padding:2px 9px;font-size:11.5px',
+        style: 'min-height:var(--tap-min,44px);padding:6px 11px;font-size:12px',
         onclick: function() {
           api.close();
           go('water');
@@ -2327,7 +2455,7 @@ function _renderWorkflowToolsSheet(bodyEl, payload, api) {
         return h('button', {
           type: 'button',
           class: 'bt-chip',
-          style: 'min-height:34px;padding:4px 10px;font-size:12px',
+          style: 'min-height:var(--tap-min,44px);padding:6px 12px;font-size:12px',
           'aria-pressed': String(curWaterKey === wq[0]),
           text: wq[1],
           onclick: function() { setWaterProfile(wq[0]); }
@@ -2385,7 +2513,7 @@ function _renderWorkflowToolsSheet(bodyEl, payload, api) {
     h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--line-hairline)' },
       h('button', {
         type: 'button',
-        class: 'bt-btn is-primary',
+        class: 'bt-btn bt-btn-primary',
         style: 'flex:1 1 200px',
         onclick: openBleBench
       }, BTIcons.el('ble-wave', { size: 16 }), h('span', { text: 'Open Bluetooth Hardware Bench' })),
@@ -2498,6 +2626,7 @@ const ROUTE_MAP = {
   tools:        { tab: 'lab',     segment: 'ey' },
   calculators:  { tab: 'lab',     segment: 'ey' },
   ey:           { tab: 'lab',     segment: 'ey' },
+  vessel:       { tab: 'lab',     segment: 'vessel' },
   yield:        { tab: 'lab',     segment: 'vessel', sub: 'yield' },
   ratio:        { tab: 'lab',     segment: 'vessel', sub: 'ratio' },
   water:        { tab: 'lab',     segment: 'water' },
@@ -3211,13 +3340,13 @@ function go(routeOrTabKey, payload) {
       if (_renderSeq === beforeSeq) {
         render();
       }
-      if (info.sheet) {
+      if (info.sheet && !(BTSheet.isOpen() && BTSheet.currentKey() === info.sheet)) {
         BTSheet.open(info.sheet, effPayload, { detent: info.detent || 'half', title: _sheetTitles[info.sheet] });
       }
       navNote(_navNoteSeq === beforeNoteSeq ? !fromBack : false);
     } else {
       render();
-      if (info.sheet) {
+      if (info.sheet && !(BTSheet.isOpen() && BTSheet.currentKey() === info.sheet)) {
         BTSheet.open(info.sheet, effPayload, { detent: info.detent || 'half', title: _sheetTitles[info.sheet] });
       }
       navNote(!fromBack);
@@ -3681,14 +3810,21 @@ function paintChrome() {
   /* 0. Universal Top-Chrome & Desktop Rail Back Buttons */
   const hasBack = canGoBack();
   const destLabel = backLabel();
+  const mountElForBack = $('mount');
+  const inGuidedTrailStep = !!(app && app.activeTab === 'brew' && normalizeBrewStep(app.brewStep || app.screen || 'door') !== 'door');
+  const mountHasVisibleBack = !BTSheet.isOpen() && (
+    inGuidedTrailStep ||
+    !!(mountElForBack && mountElForBack.querySelector && mountElForBack.querySelector('.bt-trail-back:not([hidden]), .bt-back-pill:not([hidden]), .bt-tc-back-pill:not([hidden])'))
+  );
+  const showTopBack = hasBack && !mountHasVisibleBack;
   const topBackBtn = $('top-back-btn');
   if (topBackBtn) {
-    topBackBtn.hidden = !hasBack;
+    topBackBtn.hidden = !showTopBack;
     const tip = 'Back to ' + destLabel;
     topBackBtn.setAttribute('aria-label', tip);
     topBackBtn.title = tip;
     if (topBackBtn.parentNode && topBackBtn.parentNode.classList) {
-      topBackBtn.parentNode.classList.toggle('has-back', hasBack);
+      topBackBtn.parentNode.classList.toggle('has-back', showTopBack);
     }
   }
   const railBackBtn = $('rail-back-btn');
@@ -3878,7 +4014,7 @@ function paintStudioAside() {
 
   const avatarBox = h('div', { class: 'bt-aside-avatar' });
   if (!mountHasBj && typeof Beanjamin !== 'undefined' && Beanjamin && typeof Beanjamin.svg === 'function') {
-    avatarBox.innerHTML = Beanjamin.svg(bjMood, { view: 'avatar', anim: true, label: 'Beanjamin Studio Coach' });
+    avatarBox.innerHTML = Beanjamin.svg(bjMood, { view: 'avatar', animate: true, label: 'Beanjamin Studio Coach' });
   } else {
     avatarBox.innerHTML = BTBrand.logoSvg({ optical: 'micro' });
   }
@@ -4047,8 +4183,7 @@ function paintStudioAside() {
       : dialRawSummary)
     : '';
 
-  const printIcon = h('span', { 'aria-hidden': 'true', style: 'display:inline-flex;align-items:center' });
-  printIcon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+  const printIcon = BTIcons.el('printer', { size: 14 });
 
   const shopActive = !!(app.shopDraft && app.shopDraft.on && (app.shopDraft.name || app.shopDraft.shop || app.shopDraft.drink));
   /* v7.4: applied declining temperature profile (96 -> 90 °C step-down) */
@@ -4140,14 +4275,14 @@ function paintStudioAside() {
   const latestCup = _resolveLatestTastingRow();
   let lastCupCard = null;
   if (latestCup) {
-    const ratingTxt = latestCup.stars
-      ? (latestCup.stars.toFixed(1) + '\u2605')
-      : (latestCup.score ? (latestCup.score.toFixed(0) + ' pt') : 'Logged');
+    const ratingBadgeKids = latestCup.stars
+      ? [h('span', { text: latestCup.stars.toFixed(1) }), BTIcons.el('spark-star', { size: 12 })]
+      : [h('span', { text: latestCup.score ? (latestCup.score.toFixed(0) + ' pt') : 'Logged' })];
     const metaSub = [latestCup.roaster, latestCup.method, latestCup.date].filter(Boolean).join(' \u00B7 ');
     lastCupCard = h('div', { class: 'bt-passport-card', id: 'bt-aside-last-cup-card' },
       h('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px' },
         h('span', { style: 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-muted)', text: 'Last Cup Logged' }),
-        h('span', { class: 'bt-badge good mono', text: ratingTxt })
+        h('span', { class: 'bt-badge good mono' }, ratingBadgeKids)
       ),
       h('button', {
         type: 'button',
@@ -4267,6 +4402,7 @@ const BTShell = {
   GEAR_PREHEAT_HABITS: GEAR_PREHEAT_HABITS,
   formatPalateBiasSummary: formatPalateBiasSummary,
   BTSheet: BTSheet,
+  trapFocus: trapFocus,
   BTScienceLens: BTScienceLens,
   BTTimerAudio: BTTimerAudio,
   btToolMode: btToolMode,

@@ -104,7 +104,12 @@ public static class BtJsSyntaxChecker {
         bool closed = false;
         while (i < n) {
           char sc = code[i];
-          if (sc == '\\') { i += 2; continue; }
+          if (sc == '\\') {
+            if (i + 2 < n && code[i + 1] == '\r' && code[i + 2] == '\n') { line++; col = 0; i += 3; continue; }
+            if (i + 1 < n && code[i + 1] == '\n') { line++; col = 0; }
+            i += 2;
+            continue;
+          }
           if (sc == '\n') return "Unescaped newline in string starting at line " + startLine;
           if (sc == quote) { closed = true; break; }
           i++;
@@ -273,8 +278,7 @@ foreach ($m in $modules) {
     if ($rawBytes.Length -ge 3 -and $rawBytes[0] -eq 0xEF -and $rawBytes[1] -eq 0xBB -and $rawBytes[2] -eq 0xBF) {
       $cleanBytes = New-Object byte[] ($rawBytes.Length - 3)
       [System.Buffer]::BlockCopy($rawBytes, 3, $cleanBytes, 0, $cleanBytes.Length)
-      [System.IO.File]::WriteAllBytes($fullPath, $cleanBytes)
-      Write-Warning "Stripped accidental UTF-8 BOM from $($m.path)"
+      Write-Warning "Ignored UTF-8 BOM in $($m.path) during assembly (source file untouched)"
       $rawBytes = $cleanBytes
     }
     $content = $utf8NoBom.GetString($rawBytes)
@@ -370,7 +374,18 @@ if ($EmitCapacitorWww) {
 
   foreach ($asset in @('manifest.webmanifest', 'sw.js')) {
     $srcAsset = Join-Path $root $asset
-    if (Test-Path -LiteralPath $srcAsset) { Copy-Item -LiteralPath $srcAsset -Destination (Join-Path $wwwFull $asset) -Force }
+    if (Test-Path -LiteralPath $srcAsset) {
+      $dstAsset = Join-Path $wwwFull $asset
+      if ($asset -eq 'sw.js') {
+        $swRaw = [System.IO.File]::ReadAllText($srcAsset, [System.Text.Encoding]::UTF8)
+        if ($swRaw -notmatch 'bt-core\.js') {
+          $swRaw = $swRaw -replace "'./manifest\.webmanifest',", "'./manifest.webmanifest',`n  './styles.css',`n  './bt-core.js',`n  './bt-platform.js',`n  './bt-ui.js',"
+        }
+        [System.IO.File]::WriteAllText($dstAsset, $swRaw, $utf8NoBom)
+      } else {
+        Copy-Item -LiteralPath $srcAsset -Destination $dstAsset -Force
+      }
+    }
   }
   $iconsSrc = Join-Path $root 'icons'
   if (Test-Path -LiteralPath $iconsSrc) {

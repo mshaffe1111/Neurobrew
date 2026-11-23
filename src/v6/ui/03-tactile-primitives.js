@@ -148,48 +148,56 @@ function BTR2ReadinessBadge(cfg) {
 const BTPrecisionKeypad = (function() {
   let keyHandler = null;
   let activeClose = null;
+  let prevFocusEl = null;
+  let prevAppInert = false;
 
   const BUILTIN_UNITS = {
-    'g':      { label: 'g',      toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 1 },
-    'oz':     { label: 'oz',     toDisplay: function(v) { return v / 28.349523125; },   fromDisplay: function(v) { return v * 28.349523125; },   dec: 2 },
-    'tbsp':   { label: 'tbsp',   toDisplay: function(v) { return v / 5.3; },            fromDisplay: function(v) { return v * 5.3; },            dec: 1 },
-    'mL':     { label: 'mL',     toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 0 },
-    'fl oz':  { label: 'fl oz',  toDisplay: function(v) { return v / 29.57352956; },    fromDisplay: function(v) { return v * 29.57352956; },    dec: 1 },
-    'cups':   { label: 'cups',   toDisplay: function(v) { return v / 236.588; },        fromDisplay: function(v) { return v * 236.588; },        dec: 2 },
-    'C':      { label: '°C',     toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 1 },
-    '°C':     { label: '°C',     toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 1 },
-    'F':      { label: '°F',     toDisplay: function(v) { return v * 9 / 5 + 32; },     fromDisplay: function(v) { return (v - 32) * 5 / 9; },   dec: 0 },
-    '°F':     { label: '°F',     toDisplay: function(v) { return v * 9 / 5 + 32; },     fromDisplay: function(v) { return (v - 32) * 5 / 9; },   dec: 0 },
-    'm':      { label: 'm',      toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 0 },
-    'masl':   { label: 'masl',   toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 0 },
-    'ft':     { label: 'ft',     toDisplay: function(v) { return v * 3.28084; },        fromDisplay: function(v) { return v / 3.28084; },        dec: 0 },
-    '% TDS':  { label: '% TDS',  toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 2 },
-    'Brix':   { label: '°Bx',    toDisplay: function(v) { return v / 0.85; },           fromDisplay: function(v) { return v * 0.85; },           dec: 2 }
+    'g':      { label: 'g',      toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 1, step: 0.5 },
+    'oz':     { label: 'oz',     toDisplay: function(v) { return v / 28.349523125; },   fromDisplay: function(v) { return v * 28.349523125; },   dec: 2, step: 0.05 },
+    'tbsp':   { label: 'tbsp',   toDisplay: function(v) { return v / 5.3; },            fromDisplay: function(v) { return v * 5.3; },            dec: 1, step: 0.5 },
+    'mL':     { label: 'mL',     toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 0, step: 5 },
+    'fl oz':  { label: 'fl oz',  toDisplay: function(v) { return v / 29.57352956; },    fromDisplay: function(v) { return v * 29.57352956; },    dec: 1, step: 0.5 },
+    'cups':   { label: 'cups',   toDisplay: function(v) { return v / 236.588; },        fromDisplay: function(v) { return v * 236.588; },        dec: 2, step: 0.25 },
+    'C':      { label: '°C',     toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 1, step: 0.5 },
+    '°C':     { label: '°C',     toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 1, step: 0.5 },
+    'F':      { label: '°F',     toDisplay: function(v) { return v * 9 / 5 + 32; },     fromDisplay: function(v) { return (v - 32) * 5 / 9; },   dec: 0, step: 1 },
+    '°F':     { label: '°F',     toDisplay: function(v) { return v * 9 / 5 + 32; },     fromDisplay: function(v) { return (v - 32) * 5 / 9; },   dec: 0, step: 1 },
+    'm':      { label: 'm',      toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 0, step: 50 },
+    'masl':   { label: 'masl',   toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 0, step: 50 },
+    'ft':     { label: 'ft',     toDisplay: function(v) { return v * 3.28084; },        fromDisplay: function(v) { return v / 3.28084; },        dec: 0, step: 100 },
+    '% TDS':  { label: '% TDS',  toDisplay: function(v) { return v; },                  fromDisplay: function(v) { return v; },                  dec: 2, step: 0.05 },
+    'Brix':   { label: '°Bx',    toDisplay: function(v) { return v / 0.85; },           fromDisplay: function(v) { return v * 0.85; },           dec: 2, step: 0.05 }
   };
 
-  function normalizeUnits(unitStr, unitsList, decimals) {
+  function normalizeUnits(unitStr, unitsList, decimals, baseStep) {
     const baseKey = unitStr || '';
+    const dStep = typeof baseStep === 'number' && baseStep > 0 ? baseStep : 1;
     if (!Array.isArray(unitsList) || !unitsList.length) {
       return [{
         key: baseKey,
         label: baseKey,
         toDisplay: function(v) { return v; },
         fromDisplay: function(v) { return v; },
-        dec: typeof decimals === 'number' ? decimals : 1
+        dec: typeof decimals === 'number' ? decimals : 1,
+        step: dStep,
+        isBase: true
       }];
     }
-    return unitsList.map(function(u) {
+    return unitsList.map(function(u, idx) {
       if (typeof u === 'string') {
         const b = BUILTIN_UNITS[u];
-        if (b) return { key: u, label: b.label, toDisplay: b.toDisplay, fromDisplay: b.fromDisplay, dec: b.dec };
-        return { key: u, label: u, toDisplay: function(v) { return v; }, fromDisplay: function(v) { return v; }, dec: decimals || 1 };
+        const isBase = idx === 0 && (u === baseKey || (b && b.label === baseKey));
+        if (b) return { key: u, label: b.label, toDisplay: b.toDisplay, fromDisplay: b.fromDisplay, dec: isBase ? (typeof decimals === 'number' ? decimals : b.dec) : b.dec, step: isBase ? dStep : b.step, isBase: isBase };
+        return { key: u, label: u, toDisplay: function(v) { return v; }, fromDisplay: function(v) { return v; }, dec: typeof decimals === 'number' ? decimals : 1, step: dStep, isBase: idx === 0 };
       }
       return {
         key: u.key || u.label || '',
         label: u.label || u.key || '',
         toDisplay: u.toDisplay || function(v) { return v; },
         fromDisplay: u.fromDisplay || function(v) { return v; },
-        dec: typeof u.dec === 'number' ? u.dec : (decimals || 1)
+        dec: typeof u.dec === 'number' ? u.dec : (typeof decimals === 'number' ? decimals : 1),
+        step: typeof u.step === 'number' && u.step > 0 ? u.step : dStep,
+        isBase: !!u.isBase
       };
     });
   }
@@ -210,6 +218,18 @@ const BTPrecisionKeypad = (function() {
       host.hidden = true;
       host.textContent = '';
     }
+    const shell = $('app-shell');
+    if (shell) {
+      const sheetHost = $('sheet-host');
+      const sheetStillOpen = !!(sheetHost && sheetHost.classList.contains('is-open') && !sheetHost.hidden);
+      shell.inert = prevAppInert || sheetStillOpen;
+    }
+    prevAppInert = false;
+    const toFocus = prevFocusEl;
+    prevFocusEl = null;
+    if (toFocus && toFocus.isConnected && typeof toFocus.focus === 'function') {
+      try { toFocus.focus({ preventScroll: true }); } catch (e) {}
+    }
     if (typeof activeClose === 'function') {
       const fn = activeClose;
       activeClose = null;
@@ -223,13 +243,26 @@ const BTPrecisionKeypad = (function() {
     const host = $('keypad-host');
     if (!host) return;
 
+    prevFocusEl = (typeof document !== 'undefined' && document.activeElement) ? document.activeElement : null;
+    const shell = $('app-shell');
+    prevAppInert = !!(shell && shell.inert);
+    if (shell) shell.inert = true;
+
     const min = typeof cfg.min === 'number' ? cfg.min : 0;
     const max = typeof cfg.max === 'number' ? cfg.max : 9999;
     const step = typeof cfg.step === 'number' && cfg.step > 0 ? cfg.step : 1;
     const defaultDec = typeof cfg.decimals === 'number' ? cfg.decimals : (String(step).split('.')[1] || '').length;
-    const unitDefs = normalizeUnits(cfg.unit || '', cfg.units, defaultDec);
+    const unitDefs = normalizeUnits(cfg.unit || '', cfg.units, defaultDec, step);
     let unitIdx = 0;
-    let baseVal = _clamp(isFinite(+cfg.value) ? +cfg.value : min, min, max);
+    if (cfg.initialUnit) {
+      const want = String(cfg.initialUnit).toLowerCase();
+      const found = unitDefs.findIndex(function(u) {
+        return String(u.key || '').toLowerCase() === want || String(u.label || '').toLowerCase() === want;
+      });
+      if (found >= 0) unitIdx = found;
+    }
+    const origBaseVal = _clamp(isFinite(+cfg.value) ? +cfg.value : min, min, max);
+    let baseVal = origBaseVal;
     let buffer = '';
     let freshBuffer = true;
     activeClose = cfg.onClose || null;
@@ -249,15 +282,35 @@ const BTPrecisionKeypad = (function() {
       }
     }
 
+    function activeStepLabel() {
+      const u = unitDefs[unitIdx];
+      const s = u.step > 0 ? u.step : step;
+      const sDec = (String(s).split('.')[1] || '').length;
+      return s < 1 ? s.toFixed(Math.min(2, sDec)) : String(s);
+    }
+
     const valSpan = h('span', { class: 'bt-keypad-val', text: fmtCurrent() });
     const unitSpan = h('span', { class: 'mono', style: 'font-size:1rem;color:var(--ink-muted);font-weight:700', text: unitDefs[unitIdx].label });
     const rangeHint = h('span', { class: 'mono', style: 'font-size:0.75rem;color:var(--ink-muted)' });
+    let decStepBtn = null;
+    let incStepBtn = null;
 
     function paintDisplay() {
       const u = unitDefs[unitIdx];
       valSpan.textContent = fmtCurrent();
       unitSpan.textContent = u.label;
-      rangeHint.textContent = u.toDisplay(min).toFixed(u.dec) + ' – ' + u.toDisplay(max).toFixed(u.dec) + ' ' + u.label;
+      const dMin = Math.min(u.toDisplay(min), u.toDisplay(max));
+      const dMax = Math.max(u.toDisplay(min), u.toDisplay(max));
+      rangeHint.textContent = dMin.toFixed(u.dec) + ' – ' + dMax.toFixed(u.dec) + ' ' + u.label;
+      const sTxt = activeStepLabel();
+      if (decStepBtn) {
+        decStepBtn.textContent = '−' + sTxt;
+        decStepBtn.setAttribute('aria-label', 'Decrease by ' + sTxt + (u.label ? ' ' + u.label : ''));
+      }
+      if (incStepBtn) {
+        incStepBtn.textContent = '+' + sTxt;
+        incStepBtn.setAttribute('aria-label', 'Increase by ' + sTxt + (u.label ? ' ' + u.label : ''));
+      }
     }
 
     function pushDigit(ch) {
@@ -270,7 +323,6 @@ const BTPrecisionKeypad = (function() {
         if (buffer.length >= 8) return;
         buffer = (buffer === '0' && ch !== '.') ? ch : (buffer + ch);
       }
-      syncBufferToBase();
       paintDisplay();
     }
 
@@ -283,8 +335,6 @@ const BTPrecisionKeypad = (function() {
       buffer = buffer.slice(0, -1);
       if (!buffer) {
         freshBuffer = true;
-      } else {
-        syncBufferToBase();
       }
       paintDisplay();
     }
@@ -293,7 +343,15 @@ const BTPrecisionKeypad = (function() {
       syncBufferToBase();
       freshBuffer = true;
       buffer = '';
-      baseVal = _quantize(baseVal + delta * step, step, min, max);
+      const u = unitDefs[unitIdx];
+      const dStep = u.step > 0 ? u.step : step;
+      if (u.isBase || unitDefs.length === 1) {
+        baseVal = _quantize(baseVal + delta * dStep, step, min, max);
+      } else {
+        const curDisp = u.toDisplay(baseVal);
+        const nextDisp = Math.round((curDisp + delta * dStep) / dStep) * dStep;
+        baseVal = _clamp(u.fromDisplay(nextDisp), min, max);
+      }
       _hapticTick();
       paintDisplay();
       if (typeof cfg.onInput === 'function') cfg.onInput(baseVal);
@@ -301,7 +359,10 @@ const BTPrecisionKeypad = (function() {
 
     function commit() {
       syncBufferToBase();
-      const finalVal = _quantize(baseVal, step, min, max);
+      const u = unitDefs[unitIdx];
+      const finalVal = (u.isBase || unitDefs.length === 1)
+        ? _quantize(baseVal, step, min, max)
+        : _clamp(Math.round(baseVal * 1000) / 1000, min, max);
       _hapticSnap();
       if (typeof cfg.onCommit === 'function') cfg.onCommit(finalVal, unitDefs[unitIdx].key);
       close();
@@ -339,17 +400,21 @@ const BTPrecisionKeypad = (function() {
       }, label);
     }
 
-    const stepTxt = (step < 1 ? step.toFixed(defaultDec) : String(step));
+    const stepTxt = activeStepLabel();
+    decStepBtn = keyBtn('−' + stepTxt, 'is-step', function() { stepBy(-1); }, 'Decrease by ' + stepTxt);
+    incStepBtn = keyBtn('+' + stepTxt, 'is-step', function() { stepBy(1); }, 'Increase by ' + stepTxt);
+    const doneBtn = keyBtn('Done', 'is-commit', commit, 'Apply value');
+
     const grid = h('div', { class: 'bt-keypad-grid' },
       keyBtn('7', '', function() { pushDigit('7'); }),
       keyBtn('8', '', function() { pushDigit('8'); }),
       keyBtn('9', '', function() { pushDigit('9'); }),
-      keyBtn('−' + stepTxt, 'is-step', function() { stepBy(-1); }, 'Decrease by ' + stepTxt),
+      decStepBtn,
 
       keyBtn('4', '', function() { pushDigit('4'); }),
       keyBtn('5', '', function() { pushDigit('5'); }),
       keyBtn('6', '', function() { pushDigit('6'); }),
-      keyBtn('+' + stepTxt, 'is-step', function() { stepBy(1); }, 'Increase by ' + stepTxt),
+      incStepBtn,
 
       keyBtn('1', '', function() { pushDigit('1'); }),
       keyBtn('2', '', function() { pushDigit('2'); }),
@@ -359,30 +424,34 @@ const BTPrecisionKeypad = (function() {
         freshBuffer = true;
         buffer = '';
         if (cfg.recValue != null && isFinite(+cfg.recValue)) baseVal = _clamp(+cfg.recValue, min, max);
+        else baseVal = origBaseVal;
         paintDisplay();
-      }, cfg.recValue != null ? 'Reset to recommended value' : 'Clear input'),
+      }, cfg.recValue != null ? 'Reset to recommended value' : 'Clear input to original value'),
 
       keyBtn('.', '', function() { pushDigit('.'); }, 'Decimal point'),
       keyBtn('0', '', function() { pushDigit('0'); }),
       keyBtn(BTIcons.el('backspace', { size: 20 }), '', backspace, 'Backspace'),
-      keyBtn('Done', 'is-commit', commit, 'Apply value')
+      doneBtn
     );
+
+    const closeBtn = h('button', {
+      type: 'button',
+      class: 'bt-icon-btn',
+      'aria-label': 'Close keypad',
+      onclick: close
+    }, BTIcons.el('close-x', { size: 18 }));
 
     const sheet = h('div', {
       class: 'bt-keypad-sheet',
       role: 'dialog',
       'aria-modal': 'true',
+      tabindex: '-1',
       'aria-label': (cfg.label || 'Value') + ' numeric keypad'
     },
       h('div', { class: 'bt-keypad-top' },
         h('strong', { text: cfg.label || 'Set Value' }),
         rangeHint,
-        h('button', {
-          type: 'button',
-          class: 'bt-icon-btn',
-          'aria-label': 'Close keypad',
-          onclick: close
-        }, BTIcons.el('close-x', { size: 18 }))
+        closeBtn
       ),
       h('div', { class: 'bt-keypad-display' }, valSpan, unitSpan),
       unitsBar,
@@ -395,8 +464,27 @@ const BTPrecisionKeypad = (function() {
     host.hidden = false;
     host.classList.add('is-open');
 
+    try { doneBtn.focus({ preventScroll: true }); } catch (e) {
+      try { sheet.focus({ preventScroll: true }); } catch (e2) {}
+    }
+
     if (typeof window !== 'undefined') {
       keyHandler = function(e) {
+        if (e.key === 'Tab') {
+          const focusables = sheet.querySelectorAll('button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+          if (focusables.length) {
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            if (e.shiftKey && (document.activeElement === first || !sheet.contains(document.activeElement))) {
+              e.preventDefault();
+              last.focus();
+            } else if (!e.shiftKey && (document.activeElement === last || !sheet.contains(document.activeElement))) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+          return;
+        }
         if (e.key >= '0' && e.key <= '9') { e.preventDefault(); pushDigit(e.key); }
         else if (e.key === '.') { e.preventDefault(); pushDigit('.'); }
         else if (e.key === 'Backspace') { e.preventDefault(); backspace(); }
@@ -424,20 +512,42 @@ function BTDrumWheel(cfg) {
   let curVal = _quantize(isFinite(+cfg.value) ? +cfg.value : min, step, min, max);
   let isLocked = !!cfg.locked;
   let rafId = 0;
+  let activeDisplayUnit = cfg.displayUnit || cfg.unit || '';
+
+  const UNIT_FMT_CONV = {
+    'g':     { factor: 1,            dec: decimals, label: 'g' },
+    'oz':    { factor: 28.349523125, dec: 2,        label: 'oz' },
+    'tbsp':  { factor: 5.3,          dec: 1,        label: 'tbsp' },
+    'mL':    { factor: 1,            dec: 0,        label: 'mL' },
+    'ml':    { factor: 1,            dec: 0,        label: 'mL' },
+    'fl oz': { factor: 29.57352956,  dec: 1,        label: 'fl oz' },
+    'floz':  { factor: 29.57352956,  dec: 1,        label: 'fl oz' },
+    'cups':  { factor: 236.588,      dec: 2,        label: 'cups' }
+  };
 
   function fmtVal(v) {
     if (typeof cfg.format === 'function') return cfg.format(v);
+    const uDef = UNIT_FMT_CONV[activeDisplayUnit];
+    if (uDef && (cfg.unit === 'g' || cfg.unit === 'mL')) {
+      return (v / uDef.factor).toFixed(uDef.dec);
+    }
     return v.toFixed(decimals);
   }
 
+  function unitDisplayLabel() {
+    const uDef = UNIT_FMT_CONV[activeDisplayUnit];
+    return uDef ? uDef.label : (activeDisplayUnit || cfg.unit || '');
+  }
+
   const valNode = h('span', { text: fmtVal(curVal) });
-  const unitNode = cfg.unit ? h('span', { class: 'bt-drum-unit', text: cfg.unit }) : null;
+  const unitNode = (cfg.unit || activeDisplayUnit) ? h('span', { class: 'bt-drum-unit', text: unitDisplayLabel() }) : null;
 
   const readoutBtn = h('button', {
     type: 'button',
     class: 'bt-drum-readout',
-    'aria-label': (cfg.label || 'Value') + ': ' + fmtVal(curVal) + (cfg.unit ? ' ' + cfg.unit : '') + '. Tap for precision keypad.',
+    'aria-label': (cfg.label || 'Value') + ': ' + fmtVal(curVal) + (unitDisplayLabel() ? ' ' + unitDisplayLabel() : '') + '. Tap for precision keypad.',
     onclick: function() {
+      if (isLocked) { _hapticTick(); return; }
       if (typeof cfg.onTapKeypad === 'function') {
         cfg.onTapKeypad(curVal);
         return;
@@ -450,6 +560,7 @@ function BTDrumWheel(cfg) {
         step: step,
         decimals: decimals,
         unit: cfg.unit || '',
+        initialUnit: unitDisplayLabel() || cfg.unit || '',
         units: cfg.units,
         recValue: cfg.recValue,
         onCommit: function(nextV) {
@@ -500,8 +611,32 @@ function BTDrumWheel(cfg) {
     'aria-valuemin': min,
     'aria-valuemax': max,
     'aria-valuenow': curVal,
-    'aria-valuetext': fmtVal(curVal) + (cfg.unit ? ' ' + cfg.unit : '')
+    'aria-valuetext': fmtVal(curVal) + (unitDisplayLabel() ? ' ' + unitDisplayLabel() : '')
   }, trackSvg, h('span', { class: 'bt-drum-hairline', 'aria-hidden': 'true' }));
+
+  const decNudgeBtn = h('button', {
+    type: 'button',
+    class: 'bt-drum-nudge',
+    'aria-label': 'Decrease ' + (cfg.label || 'value'),
+    onclick: function() {
+      if (isLocked) { _hapticTick(); return; }
+      setValue(_quantize(curVal - step, step, min, max), false);
+      _hapticTick();
+      if (typeof cfg.onCommit === 'function') cfg.onCommit(curVal);
+    }
+  }, '−');
+
+  const incNudgeBtn = h('button', {
+    type: 'button',
+    class: 'bt-drum-nudge',
+    'aria-label': 'Increase ' + (cfg.label || 'value'),
+    onclick: function() {
+      if (isLocked) { _hapticTick(); return; }
+      setValue(_quantize(curVal + step, step, min, max), false);
+      _hapticTick();
+      if (typeof cfg.onCommit === 'function') cfg.onCommit(curVal);
+    }
+  }, '+');
 
   const root = h('div', { class: 'bt-drum' + (isLocked ? ' is-locked' : '') },
     h('div', { class: 'bt-drum-head' },
@@ -509,31 +644,19 @@ function BTDrumWheel(cfg) {
       lockBtn
     ),
     h('div', { class: 'bt-drum-mid' },
-      h('button', {
-        type: 'button',
-        class: 'bt-drum-nudge',
-        'aria-label': 'Decrease ' + (cfg.label || 'value'),
-        onclick: function() {
-          setValue(_quantize(curVal - step, step, min, max), false);
-          _hapticTick();
-        }
-      }, '−'),
+      decNudgeBtn,
       readoutBtn,
-      h('button', {
-        type: 'button',
-        class: 'bt-drum-nudge',
-        'aria-label': 'Increase ' + (cfg.label || 'value'),
-        onclick: function() {
-          setValue(_quantize(curVal + step, step, min, max), false);
-          _hapticTick();
-        }
-      }, '+')
+      incNudgeBtn
     ),
     track
   );
 
   function syncLockUi() {
     root.classList.toggle('is-locked', isLocked);
+    decNudgeBtn.disabled = isLocked;
+    incNudgeBtn.disabled = isLocked;
+    readoutBtn.setAttribute('aria-disabled', String(isLocked));
+    track.setAttribute('aria-disabled', String(isLocked));
     if (lockBtn) {
       lockBtn.setAttribute('aria-pressed', String(isLocked));
       lockBtn.setAttribute('aria-label', (isLocked ? 'Unlock ' : 'Lock ') + (cfg.label || 'parameter'));
@@ -557,10 +680,12 @@ function BTDrumWheel(cfg) {
     const q = _quantize(nextVal, step, min, max);
     const changedVal = q !== curVal;
     curVal = q;
+    const uLbl = unitDisplayLabel();
     valNode.textContent = fmtVal(curVal);
-    readoutBtn.setAttribute('aria-label', (cfg.label || 'Value') + ': ' + fmtVal(curVal) + (cfg.unit ? ' ' + cfg.unit : '') + '. Tap for precision keypad.');
+    if (unitNode) unitNode.textContent = uLbl;
+    readoutBtn.setAttribute('aria-label', (cfg.label || 'Value') + ': ' + fmtVal(curVal) + (uLbl ? ' ' + uLbl : '') + '. Tap for precision keypad.');
     track.setAttribute('aria-valuenow', String(curVal));
-    track.setAttribute('aria-valuetext', fmtVal(curVal) + (cfg.unit ? ' ' + cfg.unit : ''));
+    track.setAttribute('aria-valuetext', fmtVal(curVal) + (uLbl ? ' ' + uLbl : ''));
     paintTrackOffset(curVal);
     if (changedVal && !silent && typeof cfg.onChange === 'function') {
       cfg.onChange(curVal);
@@ -578,6 +703,7 @@ function BTDrumWheel(cfg) {
 
   track.addEventListener('pointerdown', function(e) {
     if (e.button && e.button !== 0) return;
+    if (isLocked) { _hapticTick(); return; }
     cancelAnimationFrame(rafId);
     pActive = true;
     lockedHorizontal = false;
@@ -588,7 +714,7 @@ function BTDrumWheel(cfg) {
   });
 
   track.addEventListener('pointermove', function(e) {
-    if (!pActive) return;
+    if (!pActive || isLocked) return;
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
     if (!lockedHorizontal) {
@@ -622,7 +748,7 @@ function BTDrumWheel(cfg) {
     lockedHorizontal = false;
     root.classList.remove('is-dragging');
 
-    if (wasHoriz && samples.length >= 2 && !_prefersReducedMotion()) {
+    if (wasHoriz && !isLocked && samples.length >= 2 && !_prefersReducedMotion()) {
       const first = samples[0];
       const last = samples[samples.length - 1];
       const dt = Math.max(1, last.t - first.t);
@@ -632,10 +758,12 @@ function BTDrumWheel(cfg) {
         let lastFrame = performance.now();
         const t0 = lastFrame;
         function coast(now) {
+          if (!root.isConnected || isLocked) { rafId = 0; return; }
           const frameDt = Math.min(32, now - lastFrame);
           lastFrame = now;
           const vNow = vx * Math.exp(-(now - t0) / 180);
           if (Math.abs(vNow) < 0.03) {
+            rafId = 0;
             if (typeof cfg.onCommit === 'function') cfg.onCommit(curVal);
             return;
           }
@@ -656,19 +784,23 @@ function BTDrumWheel(cfg) {
   track.addEventListener('pointercancel', endPointer);
 
   track.addEventListener('keydown', function(e) {
+    if (isLocked) return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
       e.preventDefault();
       setValue(curVal + step, false);
       _hapticTick();
+      if (typeof cfg.onCommit === 'function') cfg.onCommit(curVal);
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
       e.preventDefault();
       setValue(curVal - step, false);
       _hapticTick();
+      if (typeof cfg.onCommit === 'function') cfg.onCommit(curVal);
     }
   });
 
   root.setValue = setValue;
   root.getValue = function() { return curVal; };
+  root.setDisplayUnit = function(u) { activeDisplayUnit = u || cfg.unit || ''; setValue(curVal, true); };
   root.setLocked = function(b) { isLocked = !!b; syncLockUi(); };
   root.isLocked = function() { return isLocked; };
   return root;
@@ -677,16 +809,30 @@ function BTDrumWheel(cfg) {
 /* ==================== 3. BTLinkedDrumTrio (Dose <-> Water <-> Ratio) ==================== */
 function BTLinkedDrumTrio(cfg) {
   cfg = cfg || {};
-  const isEsp = !!(cfg.isEspresso || cfg.methodKey === 'espresso' || cfg.methodKey === 'lever_espresso');
+  const mKey = String(cfg.methodKey || '').toLowerCase();
+  const mPhys = (typeof window !== 'undefined' && window.BTCoreV6 && typeof window.BTCoreV6.methodPhysicsFor === 'function')
+    ? (function() { try { return window.BTCoreV6.methodPhysicsFor(mKey || 'v60'); } catch (e) { return null; } })()
+    : null;
+  const isEsp = !!(cfg.isEspresso || mKey === 'espresso' || mKey === 'lever_espresso' || (mPhys && mPhys.outRatio));
   let dose = isFinite(+cfg.dose) && +cfg.dose > 0 ? +cfg.dose : (isEsp ? 18.0 : 15.0);
   let water = isFinite(+cfg.water) && +cfg.water > 0 ? +cfg.water : (isEsp ? 36.0 : 250);
   let ratio = isFinite(+cfg.ratio) && +cfg.ratio > 0 ? +cfg.ratio : +(water / Math.max(1, dose)).toFixed(1);
-  let anchor = cfg.lockedKey === 'dose' || cfg.lockedKey === 'water' || cfg.lockedKey === 'ratio' ? cfg.lockedKey : 'ratio';
+  let anchor = cfg.lockedKey === 'dose' || cfg.lockedKey === 'water' || cfg.lockedKey === 'ratio' || cfg.lockedKey === '' ? cfg.lockedKey : 'ratio';
   let prewet = cfg.prewet !== false;
+  let coffeeUnit = cfg.coffeeUnit || 'g';
+  let waterUnit = cfg.waterUnit || 'g';
 
-  const doseRange = isEsp ? { min: 7, max: 26, step: 0.1 } : { min: 6, max: 95, step: 0.1 };
-  const waterRange = isEsp ? { min: 14, max: 120, step: 0.5 } : { min: 80, max: 1500, step: 1 };
-  const ratioRange = isEsp ? { min: 1.0, max: 5.0, step: 0.1 } : { min: 8.0, max: 22.0, step: 0.1 };
+  const rBounds = (mPhys && Array.isArray(mPhys.ratioBounds) && mPhys.ratioBounds.length >= 2) ? mPhys.ratioBounds : null;
+  const minRat = isEsp ? Math.min(1.0, ratio, rBounds ? +rBounds[0] : 1.0) : Math.min(rBounds ? +rBounds[0] : 4.0, ratio, 4.0);
+  const maxRat = isEsp ? Math.max(5.0, ratio, rBounds ? +rBounds[1] : 5.0) : Math.max(rBounds ? +rBounds[1] : 22.0, ratio, 22.0);
+  const minWat = isEsp ? Math.min(14, water) : Math.min(40, water);
+  const maxWat = isEsp ? Math.max(150, water) : Math.max(1800, water);
+  const minDose = Math.min(isEsp ? 7 : 5, dose);
+  const maxDose = Math.max(isEsp ? 28 : 140, dose);
+
+  const doseRange = { min: minDose, max: maxDose, step: 0.1 };
+  const waterRange = { min: minWat, max: maxWat, step: isEsp ? 0.5 : 1 };
+  const ratioRange = { min: Math.max(0.8, +minRat.toFixed(1)), max: +maxRat.toFixed(1), step: 0.1 };
 
   const presets = Array.isArray(cfg.presets) ? cfg.presets : (
     isEsp
@@ -707,13 +853,28 @@ function BTLinkedDrumTrio(cfg) {
   let ratioDrum = null;
   const footerText = h('span', { class: 'mono' });
 
+  function fmtCoffeeAmt(gVal) {
+    if (coffeeUnit === 'oz') return (gVal / 28.349523125).toFixed(2) + ' oz';
+    if (coffeeUnit === 'tbsp') return (gVal / 5.3).toFixed(1) + ' tbsp';
+    return gVal.toFixed(1) + 'g';
+  }
+  function fmtWaterAmt(gVal) {
+    if (waterUnit === 'floz' || waterUnit === 'fl oz') return (gVal / 29.57352956).toFixed(1) + ' fl oz';
+    if (waterUnit === 'cups') return (gVal / 236.588).toFixed(2) + ' cups';
+    if (waterUnit === 'ml' || waterUnit === 'mL') return Math.round(gVal) + ' mL';
+    return (isEsp ? gVal.toFixed(1) : Math.round(gVal)) + 'g';
+  }
+
   function updateFooter() {
     if (isEsp) {
-      footerText.textContent = 'Beverage Yield: ' + water.toFixed(1) + ' g  ·  Strength Ratio 1:' + ratio.toFixed(1);
+      footerText.textContent = 'Beverage Yield: ' + fmtWaterAmt(water) + '  ·  Strength Ratio 1:' + ratio.toFixed(1);
     } else {
-      const retention = 2.1;
+      const retention = (mPhys && isFinite(+mPhys.lrr) && +mPhys.lrr > 0) ? +mPhys.lrr : 2.0;
       const inMug = Math.max(0, Math.round(water - dose * retention));
-      const kettleFill = Math.round(water + (prewet ? 80 : 30));
+      const rinseG = prewet ? ((mPhys && isFinite(+mPhys.rinseG)) ? +mPhys.rinseG : 80) : 0;
+      const kettleFill = typeof cfg.computeKettleFill === 'function'
+        ? Math.round(cfg.computeKettleFill(water, prewet))
+        : Math.round(water + rinseG + 55);
       footerText.textContent = 'In Mug: ~' + inMug + ' g (' + (inMug / 29.5735).toFixed(1) + ' fl oz)  ·  Kettle Fill: ' + kettleFill + ' g';
     }
   }
@@ -739,17 +900,28 @@ function BTLinkedDrumTrio(cfg) {
     step: doseRange.step,
     decimals: 1,
     unit: 'g',
+    displayUnit: coffeeUnit,
     units: ['g', 'oz', 'tbsp'],
     locked: anchor === 'dose',
     showLock: true,
-    onToggleLock: function() { anchor = 'dose'; syncLocks(); emitChange(); },
+    onToggleLock: function(nextLocked) { anchor = nextLocked ? 'dose' : ''; syncLocks(); emitChange(); },
     onChange: function(nextDose) {
       dose = nextDose;
       if (anchor === 'water') {
-        ratio = _quantize(water / Math.max(0.5, dose), ratioRange.step, ratioRange.min, ratioRange.max);
+        const rawR = water / Math.max(0.5, dose);
+        ratio = _quantize(rawR, ratioRange.step, ratioRange.min, ratioRange.max);
+        if (Math.abs(rawR - ratio) > ratioRange.step) {
+          dose = _quantize(water / Math.max(0.5, ratio), doseRange.step, doseRange.min, doseRange.max);
+          doseDrum.setValue(dose, true);
+        }
         ratioDrum.setValue(ratio, true);
       } else {
-        water = _quantize(dose * ratio, waterRange.step, waterRange.min, waterRange.max);
+        const rawW = dose * ratio;
+        water = _quantize(rawW, waterRange.step, waterRange.min, waterRange.max);
+        if (Math.abs(rawW - water) > waterRange.step) {
+          dose = _quantize(water / Math.max(0.5, ratio), doseRange.step, doseRange.min, doseRange.max);
+          doseDrum.setValue(dose, true);
+        }
         waterDrum.setValue(water, true);
       }
       emitChange();
@@ -764,17 +936,28 @@ function BTLinkedDrumTrio(cfg) {
     step: waterRange.step,
     decimals: isEsp ? 1 : 0,
     unit: 'g',
+    displayUnit: waterUnit,
     units: ['g', 'mL', 'fl oz', 'cups'],
     locked: anchor === 'water',
     showLock: true,
-    onToggleLock: function() { anchor = 'water'; syncLocks(); emitChange(); },
+    onToggleLock: function(nextLocked) { anchor = nextLocked ? 'water' : ''; syncLocks(); emitChange(); },
     onChange: function(nextWater) {
       water = nextWater;
       if (anchor === 'dose') {
-        ratio = _quantize(water / Math.max(0.5, dose), ratioRange.step, ratioRange.min, ratioRange.max);
+        const rawR = water / Math.max(0.5, dose);
+        ratio = _quantize(rawR, ratioRange.step, ratioRange.min, ratioRange.max);
+        if (Math.abs(rawR - ratio) > ratioRange.step) {
+          water = _quantize(dose * ratio, waterRange.step, waterRange.min, waterRange.max);
+          waterDrum.setValue(water, true);
+        }
         ratioDrum.setValue(ratio, true);
       } else {
-        dose = _quantize(water / Math.max(0.5, ratio), doseRange.step, doseRange.min, doseRange.max);
+        const rawD = water / Math.max(0.5, ratio);
+        dose = _quantize(rawD, doseRange.step, doseRange.min, doseRange.max);
+        if (Math.abs(rawD - dose) > doseRange.step) {
+          water = _quantize(dose * ratio, waterRange.step, waterRange.min, waterRange.max);
+          waterDrum.setValue(water, true);
+        }
         doseDrum.setValue(dose, true);
       }
       emitChange();
@@ -791,14 +974,24 @@ function BTLinkedDrumTrio(cfg) {
     format: function(v) { return '1:' + v.toFixed(1); },
     locked: anchor === 'ratio',
     showLock: true,
-    onToggleLock: function() { anchor = 'ratio'; syncLocks(); emitChange(); },
+    onToggleLock: function(nextLocked) { anchor = nextLocked ? 'ratio' : ''; syncLocks(); emitChange(); },
     onChange: function(nextRatio) {
       ratio = nextRatio;
       if (anchor === 'water') {
-        dose = _quantize(water / Math.max(0.5, ratio), doseRange.step, doseRange.min, doseRange.max);
+        const rawD = water / Math.max(0.5, ratio);
+        dose = _quantize(rawD, doseRange.step, doseRange.min, doseRange.max);
+        if (Math.abs(rawD - dose) > doseRange.step) {
+          ratio = _quantize(water / Math.max(0.5, dose), ratioRange.step, ratioRange.min, ratioRange.max);
+          ratioDrum.setValue(ratio, true);
+        }
         doseDrum.setValue(dose, true);
       } else {
-        water = _quantize(dose * ratio, waterRange.step, waterRange.min, waterRange.max);
+        const rawW = dose * ratio;
+        water = _quantize(rawW, waterRange.step, waterRange.min, waterRange.max);
+        if (Math.abs(rawW - water) > waterRange.step) {
+          ratio = _quantize(water / Math.max(0.5, dose), ratioRange.step, ratioRange.min, ratioRange.max);
+          ratioDrum.setValue(ratio, true);
+        }
         waterDrum.setValue(water, true);
       }
       emitChange();
@@ -812,9 +1005,9 @@ function BTLinkedDrumTrio(cfg) {
         class: 'bt-chip',
         text: p.label,
         onclick: function() {
-          dose = p.dose;
-          water = p.water;
-          ratio = p.ratio;
+          dose = _quantize(p.dose, doseRange.step, doseRange.min, doseRange.max);
+          water = _quantize(p.water, waterRange.step, waterRange.min, waterRange.max);
+          ratio = _quantize(p.ratio, ratioRange.step, ratioRange.min, ratioRange.max);
           doseDrum.setValue(dose, true);
           waterDrum.setValue(water, true);
           ratioDrum.setValue(ratio, true);
@@ -854,8 +1047,8 @@ function BTLinkedDrumTrio(cfg) {
   ];
 
   function syncSummaryTiles() {
-    summaryTiles[0].valNode.textContent = dose.toFixed(1) + 'g';
-    summaryTiles[1].valNode.textContent = (isEsp ? water.toFixed(1) : Math.round(water)) + 'g';
+    summaryTiles[0].valNode.textContent = fmtCoffeeAmt(dose);
+    summaryTiles[1].valNode.textContent = fmtWaterAmt(water);
     summaryTiles[2].valNode.textContent = '1:' + ratio.toFixed(1);
     if (cfg.compact) {
       doseDrum.hidden = activeMobileKey !== 'dose';
@@ -870,22 +1063,46 @@ function BTLinkedDrumTrio(cfg) {
     origEmitChange();
   };
 
+  function selectCompactTab(nextKey, focusBtn) {
+    activeMobileKey = nextKey;
+    if (compactTabs) {
+      const allBtns = compactTabs.querySelectorAll('.bt-drum-tab-btn');
+      for (let k = 0; k < allBtns.length; k++) {
+        const on = summaryTiles[k].key === activeMobileKey;
+        allBtns[k].classList.toggle('is-active', on);
+        allBtns[k].setAttribute('aria-selected', String(on));
+        allBtns[k].setAttribute('tabindex', on ? '0' : '-1');
+        if (on && focusBtn) { try { allBtns[k].focus(); } catch (e) {} }
+      }
+    }
+    syncSummaryTiles();
+    _hapticTick();
+  }
+
   const compactTabs = cfg.compact ? h('div', { class: 'bt-drum-compact-tabs', role: 'tablist', 'aria-label': 'Select brew parameter to tune' },
-    summaryTiles.map(function(t) {
+    summaryTiles.map(function(t, idx) {
+      const isInit = t.key === activeMobileKey;
       const btn = h('button', {
         type: 'button',
-        class: 'bt-drum-tab-btn' + (t.key === activeMobileKey ? ' is-active' : ''),
-        'aria-selected': String(t.key === activeMobileKey),
-        onclick: function() {
-          activeMobileKey = t.key;
-          const allBtns = compactTabs.querySelectorAll('.bt-drum-tab-btn');
-          for (let k = 0; k < allBtns.length; k++) {
-            const on = summaryTiles[k].key === activeMobileKey;
-            allBtns[k].classList.toggle('is-active', on);
-            allBtns[k].setAttribute('aria-selected', String(on));
+        role: 'tab',
+        tabindex: isInit ? '0' : '-1',
+        class: 'bt-drum-tab-btn' + (isInit ? ' is-active' : ''),
+        'aria-selected': String(isInit),
+        onclick: function() { selectCompactTab(t.key, false); },
+        onkeydown: function(e) {
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectCompactTab(summaryTiles[(idx + 1) % summaryTiles.length].key, true);
+          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectCompactTab(summaryTiles[(idx - 1 + summaryTiles.length) % summaryTiles.length].key, true);
+          } else if (e.key === 'Home') {
+            e.preventDefault();
+            selectCompactTab(summaryTiles[0].key, true);
+          } else if (e.key === 'End') {
+            e.preventDefault();
+            selectCompactTab(summaryTiles[summaryTiles.length - 1].key, true);
           }
-          syncSummaryTiles();
-          _hapticTick();
         }
       }, h('span', { class: 'bt-drum-lbl', text: t.lbl }), t.valNode);
       return btn;
@@ -907,6 +1124,12 @@ function BTLinkedDrumTrio(cfg) {
     if (isFinite(+next.dose) && +next.dose > 0) { dose = +next.dose; doseDrum.setValue(dose, true); }
     if (isFinite(+next.water) && +next.water > 0) { water = +next.water; waterDrum.setValue(water, true); }
     if (isFinite(+next.ratio) && +next.ratio > 0) { ratio = +next.ratio; ratioDrum.setValue(ratio, true); }
+    syncSummaryTiles();
+    updateFooter();
+  };
+  container.setUnits = function(cUnit, wUnit) {
+    if (cUnit) { coffeeUnit = cUnit; doseDrum.setDisplayUnit(cUnit); }
+    if (wUnit) { waterUnit = wUnit; waterDrum.setDisplayUnit(wUnit); }
     syncSummaryTiles();
     updateFooter();
   };
@@ -1092,29 +1315,34 @@ function BTRoastArc(cfg) {
     const scaledBean = _convertAgtronScale(beanG, scaleKey);
     const scaledGround = _convertAgtronScale(groundG, scaleKey);
     const scorched = delta >= 12 ? ' · High Surface-Core Gradient (-1.5°C late pulse)' : '';
-    xrayTelemetry.textContent = scaleKey.toUpperCase() + ' Bean ' + scaledBean + ' / Ground ' + scaledGround + ' · Roast Delta ' + (delta >= 0 ? '+' : '') + delta + scorched;
+    const deltaLabel = scaleKey === 'gourmet' ? ('Roast Delta ' + (delta >= 0 ? '+' : '') + delta) : ('Gourmet Δ ' + (delta >= 0 ? '+' : '') + delta);
+    xrayTelemetry.textContent = scaleKey.toUpperCase() + ' Bean ' + scaledBean + ' / Ground ' + scaledGround + ' · ' + deltaLabel + scorched;
 
     svgEl.setAttribute('aria-valuenow', String(Math.round(beanG)));
     svgEl.setAttribute('aria-valuetext', stop.label + ', Agtron ' + beanG.toFixed(1));
   }
 
-  function hitRingOrCore(e) {
+  function pointerDist(e) {
     const rect = svgEl.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / Math.max(1, rect.width)) * 280;
     const y = ((e.clientY - rect.top) / Math.max(1, rect.height)) * 232;
-    const dist = Math.hypot(x - cx, y - cy);
-    return (dist >= 54 && dist <= 126) || (isXrayActive() && dist < 44);
+    return { x: x, y: y, dx: x - cx, dy: y - cy, dist: Math.hypot(x - cx, y - cy) };
   }
 
+  function hitRingOrCore(e) {
+    const p = pointerDist(e);
+    return (p.dist >= 54 && p.dist <= 126) || (isXrayActive() && p.dist < 44);
+  }
+
+  let dragging = false;
+  let activeRing = 'bean'; /* locked at pointerdown so dragging inward never switches rings mid-gesture */
+
   function updateFromPointer(e) {
-    const rect = svgEl.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / Math.max(1, rect.width)) * 280;
-    const y = ((e.clientY - rect.top) / Math.max(1, rect.height)) * 232;
-    const dx = x - cx, dy = y - cy;
-    const dist = Math.hypot(dx, dy);
+    const p = pointerDist(e);
+    const dx = p.dx, dy = p.dy;
 
     /* Dragging inner core in X-Ray adjusts Ground Agtron (Roast Delta) */
-    if (isXrayActive() && dist < 44) {
+    if (activeRing === 'ground' && isXrayActive()) {
       let ang = (Math.atan2(dy, dx) * 180) / Math.PI;
       if (ang > 90) ang -= 360;
       const uCore = _clamp((ang - startDeg) / spanDeg, 0, 1);
@@ -1159,9 +1387,10 @@ function BTRoastArc(cfg) {
     }
   }
 
-  let dragging = false;
   svgEl.addEventListener('pointerdown', function(e) {
     if (!hitRingOrCore(e)) return;
+    const p = pointerDist(e);
+    activeRing = (isXrayActive() && p.dist < 44) ? 'ground' : 'bean';
     dragging = true;
     try { svgEl.setPointerCapture(e.pointerId); } catch (err) {}
     updateFromPointer(e);
@@ -1170,17 +1399,20 @@ function BTRoastArc(cfg) {
     if (dragging) updateFromPointer(e);
   });
   ['pointerup', 'pointercancel'].forEach(function(ev) {
-    svgEl.addEventListener(ev, function() { dragging = false; });
+    svgEl.addEventListener(ev, function() { dragging = false; activeRing = 'bean'; });
   });
 
   svgEl.addEventListener('keydown', function(e) {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      beanG = _clamp(beanG - (isXrayActive() ? 1 : 11), 25, 105);
-      _hapticTick(); paint(); emit();
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    const prevDelta = groundG - beanG;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
       e.preventDefault();
       beanG = _clamp(beanG + (isXrayActive() ? 1 : 11), 25, 105);
+      groundG = _clamp(+(beanG + (isXrayActive() ? prevDelta : _clamp(0.18 * beanG - 3.2, 1.0, 12.5))).toFixed(1), 25, 110);
+      _hapticTick(); paint(); emit();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      beanG = _clamp(beanG - (isXrayActive() ? 1 : 11), 25, 105);
+      groundG = _clamp(+(beanG + (isXrayActive() ? prevDelta : _clamp(0.18 * beanG - 3.2, 1.0, 12.5))).toFixed(1), 25, 110);
       _hapticTick(); paint(); emit();
     }
   });
@@ -1366,6 +1598,51 @@ function BTGrinderDial(cfg) {
     class: 'bt-drum-readout',
     style: 'justify-content:flex-start;padding:4px 8px',
     onclick: function() {
+      const g = activeGrinder();
+      const canClicks = !!(g && g.kind !== 'preground' && typeof g.min === 'number' && typeof g.max === 'number' && g.max > g.min);
+      if (canClicks) {
+        const gLo = g.min, gHi = g.max;
+        const gUnit = g.unit || 'clicks';
+        const umToClick = function(uVal) {
+          if (typeof window !== 'undefined' && window.BTCoreV6 && window.BTCoreV6.psd && typeof window.BTCoreV6.psd.mapMicronsToGrinder === 'function') {
+            try {
+              const m = window.BTCoreV6.psd.mapMicronsToGrinder(uVal, g.key);
+              if (m && isFinite(+m.settingNum)) return +m.settingNum;
+              if (m && isFinite(+m.clicks)) return +m.clicks;
+            } catch (e) {}
+          }
+          return gLo + _clamp((uVal - 180) / (1100 - 180), 0, 1) * (gHi - gLo);
+        };
+        const clickToUm = function(cVal) {
+          if (typeof window !== 'undefined' && window.BTCoreV6 && window.BTCoreV6.psd && typeof window.BTCoreV6.psd.grinderToMicrons === 'function') {
+            try {
+              const u = window.BTCoreV6.psd.grinderToMicrons(cVal, g.key);
+              if (isFinite(+u) && +u > 0) return _clamp(+u, 80, 1300);
+            } catch (e) {}
+          }
+          return _clamp(180 + _clamp((cVal - gLo) / Math.max(1, gHi - gLo), 0, 1) * (1100 - 180), 80, 1300);
+        };
+        BTPrecisionKeypad.open({
+          label: (g.short || g.name || 'Grinder') + ' Setting',
+          value: um,
+          min: 80,
+          max: 1300,
+          step: 10,
+          decimals: 0,
+          unit: 'µm',
+          initialUnit: gUnit,
+          units: [
+            { key: gUnit, label: gUnit, toDisplay: umToClick, fromDisplay: clickToUm, dec: g.step && g.step < 1 ? 1 : 0, step: g.step && g.step > 0 ? g.step : 1 },
+            { key: 'µm', label: 'µm', toDisplay: function(v) { return v; }, fromDisplay: function(v) { return v; }, dec: 0, step: 10, isBase: true }
+          ],
+          onCommit: function(nextUm) {
+            um = _clamp(Math.round(nextUm), 80, 1300);
+            paint();
+            emit();
+          }
+        });
+        return;
+      }
       BTPrecisionKeypad.open({
         label: 'Target Grind Size (D50)',
         value: um,
@@ -1416,14 +1693,16 @@ function BTGrinderDial(cfg) {
     }
   }
 
-  let dragStartAngle = 0;
+  let lastDragAngle = 0;
+  let accumAngle = 0;
   let dragStartUm = um;
   let dragging = false;
 
   collarSvg.addEventListener('pointerdown', function(e) {
     dragging = true;
     const r = collarSvg.getBoundingClientRect();
-    dragStartAngle = Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2));
+    lastDragAngle = Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2));
+    accumAngle = 0;
     dragStartUm = um;
     try { collarSvg.setPointerCapture(e.pointerId); } catch (err) {}
   });
@@ -1431,10 +1710,12 @@ function BTGrinderDial(cfg) {
     if (!dragging) return;
     const r = collarSvg.getBoundingClientRect();
     const ang = Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2));
-    let delta = ang - dragStartAngle;
-    if (delta > Math.PI) delta -= 2 * Math.PI;
-    if (delta < -Math.PI) delta += 2 * Math.PI;
-    const next = _quantize(dragStartUm + (delta * 180 / Math.PI) * 3.5, stepUm, 80, 1300);
+    let stepDelta = ang - lastDragAngle;
+    if (stepDelta > Math.PI) stepDelta -= 2 * Math.PI;
+    if (stepDelta < -Math.PI) stepDelta += 2 * Math.PI;
+    lastDragAngle = ang;
+    accumAngle += stepDelta;
+    const next = _quantize(dragStartUm + (accumAngle * 180 / Math.PI) * 3.5, stepUm, 80, 1300);
     if (next !== um) {
       um = next;
       _hapticTick();
@@ -1534,6 +1815,7 @@ function BTThermalBar(cfg) {
         step: 0.5,
         decimals: 1,
         unit: '°C',
+        initialUnit: unit === 'F' ? '°F' : '°C',
         units: ['°C', '°F'],
         onCommit: function(nextC) {
           tempC = _clamp(nextC, minC, boilCapC);
@@ -1681,12 +1963,12 @@ function BTThermalBar(cfg) {
 
 /* ==================== 7. BTTastePad2D (4-Ring Bullseye + Macro-to-Micro Scaling) ==================== */
 function _grinderStepProfile(grinderKey) {
-  const k = String(grinderKey || '').toLowerCase();
+  const k = String(grinderKey || '').toLowerCase().replace(/_/g, '-');
   if (k.indexOf('j-ultra') >= 0 || k.indexOf('j-max') >= 0) return { umPerUnit: 9, unitSingular: 'click', unitPlural: 'clicks', isNumbered: false };
   if (k.indexOf('kinu') >= 0) return { umPerUnit: 10, unitSingular: 'div', unitPlural: 'divs', isNumbered: false };
   if (k.indexOf('jx-pro') >= 0 || k.indexOf('x-ultra') >= 0 || k.indexOf('red-clix') >= 0 || k.indexOf('c3esp') >= 0) return { umPerUnit: 13.5, unitSingular: 'click', unitPlural: 'clicks', isNumbered: false };
   if (k.indexOf('kingrinder') >= 0 || k.indexOf('s3') >= 0 || k.indexOf('xbloom-studio') >= 0) return { umPerUnit: 16.5, unitSingular: 'click', unitPlural: 'clicks', isNumbered: false };
-  if (k.indexOf('k-ultra') >= 0 || k.indexOf('zp6') >= 0) return { umPerUnit: 20, unitSingular: 'click', unitPlural: 'clicks', isNumbered: false };
+  if (k.indexOf('k-ultra') >= 0 || k.indexOf('kultra') >= 0 || k.indexOf('zp6') >= 0) return { umPerUnit: 20, unitSingular: 'click', unitPlural: 'clicks', isNumbered: false };
   if (k.indexOf('ode') >= 0 || k.indexOf('sculptor') >= 0 || k.indexOf('opus') >= 0 || k.indexOf('lagom-p64') >= 0) return { umPerUnit: 60, unitSingular: 'full number', unitPlural: 'full numbers', isNumbered: true };
   if (k.indexOf('encore') >= 0 || k.indexOf('virtuoso') >= 0 || k.indexOf('uniform') >= 0 || k.indexOf('svart') >= 0) return { umPerUnit: 28, unitSingular: 'step', unitPlural: 'steps', isNumbered: false };
   if (k.indexOf('df64') >= 0 || k.indexOf('df54') >= 0 || k.indexOf('niche') >= 0) return { umPerUnit: 14, unitSingular: 'mark', unitPlural: 'marks', isNumbered: false };
@@ -1774,8 +2056,10 @@ function _solvePadColumns(x, y, ctx) {
     const strPhrase = effY < 0 ? (sevPrefix + 'Weak / Watery') : (effY > 0 ? (sevPrefix + 'Strong / Heavy') : 'Good Strength');
 
     /* Special Bottom-Right Channeling / Bypass Trap */
+    let isChannelingZone = false;
     if (x > 0.30 && y < -0.30) {
-      sym = 'astringent';
+      isChannelingZone = true;
+      sym = 'uneven';
       zoneLabel = ringMeta.label + ' · Weak & Bitter';
       tastedText = sevPrefix + 'Weak & Bitter (Thin & Dry — Uneven Channeling)';
       fixText = (ringIdx >= 2 ? 'Level bed, stir/swirl bloom & pour gentler in center' : 'Calm pour stream') +
@@ -1804,6 +2088,7 @@ function _solvePadColumns(x, y, ctx) {
 
   const predDeltaEy = +(-mx * 3.1).toFixed(2);
   const predDeltaTds = +(-my * 0.28).toFixed(2);
+  const isChanOut = !!(ringIdx > 0 && x > 0.30 && y < -0.30);
 
   return {
     ringIndex: ringIdx,
@@ -1819,12 +2104,13 @@ function _solvePadColumns(x, y, ctx) {
     fixText: fixText,
     mx: +mx.toFixed(3),
     my: +my.toFixed(3),
-    deltaUm: deltaUm,
-    grindStepLabel: grindStepLabel,
+    deltaUm: isChanOut ? 0 : deltaUm,
+    isChannelingZone: isChanOut,
+    grindStepLabel: isChanOut ? '' : grindStepLabel,
     deltaRatio: deltaRatio,
     deltaDoseG: deltaDoseG,
     deltaWaterG: deltaWaterG,
-    deltaTempC: deltaTempC,
+    deltaTempC: isChanOut ? 0 : deltaTempC,
     pourShift: pourShift,
     predDeltaEy: predDeltaEy,
     predDeltaTds: predDeltaTds,
@@ -1987,7 +2273,9 @@ function BTTastePad2D(cfg) {
     );
 
     svgEl.setAttribute('aria-valuenow', String(Math.round(px * 100)));
-    svgEl.setAttribute('aria-valuetext', solved.tastedText + '. Next Brew Fix: ' + solved.fixText);
+    const tasteAxisTxt = px < -0.15 ? ('Sour ' + Math.round(Math.abs(px) * 100) + '%') : (px > 0.15 ? ('Bitter ' + Math.round(px * 100) + '%') : 'Balanced Extraction');
+    const strengthAxisTxt = py < -0.15 ? ('Weak ' + Math.round(Math.abs(py) * 100) + '%') : (py > 0.15 ? ('Strong ' + Math.round(py * 100) + '%') : 'Balanced Strength');
+    svgEl.setAttribute('aria-valuetext', 'Taste: ' + tasteAxisTxt + ', Strength: ' + strengthAxisTxt + ' — ' + solved.tastedText + '. Next Brew Fix: ' + solved.fixText);
 
     if (showDragLoupe) {
       loupeEl.hidden = false;
@@ -2002,13 +2290,19 @@ function BTTastePad2D(cfg) {
       ? (BTScienceLens.level() === 'scientist')
       : false;
 
+    const isChannelingActive = !!(solved.isChannelingZone || (measEy != null && measEy < 19.0 && px > 0.32));
+    const grindShiftTxt = isChannelingActive
+      ? 'Hold grind (calm pour / bed prep)'
+      : ('Grind shift ' + (solved.deltaUm >= 0 ? '+' : '') + solved.deltaUm + ' µm');
     const gnSummary = solved.ringLabel + ' · Pad (' + (px >= 0 ? '+' : '') + px.toFixed(2) + ', ' + (py >= 0 ? '+' : '') + py.toFixed(2) + ')' +
-      ' \u2192 Grind shift ' + (solved.deltaUm >= 0 ? '+' : '') + solved.deltaUm + ' µm, Ratio shift ' + (solved.deltaRatio >= 0 ? '+' : '') + solved.deltaRatio +
+      ' \u2192 ' + grindShiftTxt + ', Ratio shift ' + (solved.deltaRatio >= 0 ? '+' : '') + solved.deltaRatio +
       ', Est. Extraction (%EY) shift ' + (solved.predDeltaEy >= 0 ? '+' : '') + solved.predDeltaEy + '%';
 
     if (measEy != null) {
+      const isEspPad = typeof cfg.isEspresso === 'boolean' ? cfg.isEspresso : (tgtTds >= 4.0);
+      const tdsDivisor = isEspPad ? 2.5 : 0.35;
       const mxSvg = _clamp((measEy - tgtEy) / 3.5, -0.92, 0.92);
-      const mySvg = measTds != null ? _clamp((measTds - tgtTds) / 0.35, -0.92, 0.92) : 0;
+      const mySvg = measTds != null ? _clamp((measTds - tgtTds) / tdsDivisor, -0.92, 0.92) : 0;
       const mpt = normToSvg(mxSvg, mySvg);
       measuredPinGroup.hidden = false;
       measuredPinGroup.setAttribute('transform', 'translate(' + mpt[0] + ' ' + mpt[1] + ')');
@@ -2224,13 +2518,35 @@ function BTBeanSweep(cfg) {
 
     const btn = h('button', {
       type: 'button',
+      role: 'radio',
       class: 'bt-bean-btn',
+      'aria-checked': 'false',
       'aria-label': 'Rate ' + i + ' of 5 beans',
       onclick: function(e) {
-        const rect = btn.getBoundingClientRect();
-        const localFrac = _clamp((e.clientX - rect.left) / Math.max(1, rect.width), 0.25, 1);
-        const qLocal = Math.ceil(localFrac / step) * step;
-        setValue(_quantize((i - 1) + qLocal, step, step, 5), false);
+        if (wasSwept) { wasSwept = false; return; }
+        /* Keyboard activation (Enter/Space: detail === 0) or clean tap on Bean i sets exact i.00 */
+        setValue(_quantize(i, step, step, 5), false);
+      },
+      onkeydown: function(e) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          setValue(val + step, false);
+          const nextIdx = _clamp(Math.ceil(val) - 1, 0, 4);
+          try { beanButtons[nextIdx].focus(); } catch (err) {}
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          setValue(val - step, false);
+          const prevIdx = _clamp(Math.max(1, Math.ceil(val)) - 1, 0, 4);
+          try { beanButtons[prevIdx].focus(); } catch (err) {}
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          setValue(step, false);
+          try { beanButtons[0].focus(); } catch (err) {}
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          setValue(5, false);
+          try { beanButtons[4].focus(); } catch (err) {}
+        }
       }
     }, beanSvg);
 
@@ -2241,23 +2557,22 @@ function BTBeanSweep(cfg) {
 
   const track = h('div', {
     class: 'bt-bean-track',
-    role: 'slider',
-    tabindex: '0',
-    'aria-label': cfg.label || 'Coffee bean rating (0 to 5 in 0.25 steps)',
-    'aria-valuemin': 0,
-    'aria-valuemax': 5
+    role: 'radiogroup',
+    'aria-label': cfg.label || 'Coffee bean rating (0 to 5 in 0.25 steps)'
   }, beanButtons);
 
   function paint() {
+    const activeBeanIdx = val > 0 ? _clamp(Math.ceil(val) - 1, 0, 4) : 0;
     for (let i = 0; i < 5; i++) {
       const fillFrac = _clamp(val - i, 0, 1);
       const pct = Math.round(fillFrac * 100) + '%';
       gradStops[i].s1.setAttribute('offset', pct);
       gradStops[i].s2.setAttribute('offset', pct);
+      const checked = val > 0 && i === activeBeanIdx;
+      beanButtons[i].setAttribute('aria-checked', String(checked));
+      beanButtons[i].setAttribute('tabindex', i === activeBeanIdx ? '0' : '-1');
     }
     readout.textContent = val > 0 ? (val.toFixed(2).replace(/\.00$/, '.0') + ' / 5') : 'Unrated';
-    track.setAttribute('aria-valuenow', String(val));
-    track.setAttribute('aria-valuetext', val > 0 ? (val.toFixed(2) + ' out of 5 beans') : 'Unrated');
   }
 
   function setValue(nextVal, silent) {
@@ -2282,20 +2597,22 @@ function BTBeanSweep(cfg) {
   }
 
   let sweeping = false;
+  let sweepStartX = 0;
+  let wasSwept = false;
   track.addEventListener('pointerdown', function(e) {
     sweeping = true;
+    wasSwept = false;
+    sweepStartX = e.clientX;
   });
   track.addEventListener('pointermove', function(e) {
     if (!sweeping) return;
-    scrubTrack(e.clientX);
+    if (!wasSwept && Math.abs(e.clientX - sweepStartX) > 6) {
+      wasSwept = true;
+    }
+    if (wasSwept) scrubTrack(e.clientX);
   });
   ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(ev) {
     track.addEventListener(ev, function() { sweeping = false; });
-  });
-
-  track.addEventListener('keydown', function(e) {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); setValue(val + step, false); }
-    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); setValue(val - step, false); }
   });
 
   paint();
@@ -2417,8 +2734,8 @@ function BTGoldenSipClock(cfg) {
   const CX = 160, CY = 146;
   const START_DEG = 135, SPAN_DEG = 270; /* 135 deg (84 C) -> 405 deg (38 C) */
   const T_MAX = 84.0, T_MIN = 38.0;
-  const T_AMB = 22.5;
-  const K_COOL = 0.0022; /* Newton cooling constant (~2.5 min from 78 C to 60 C) */
+  const T_AMB = isFinite(+cfg.ambientTempC) ? +cfg.ambientTempC : 22.0;
+  let kCoolPerSec = (isFinite(+cfg.kPerSec) && +cfg.kPerSec > 0) ? +cfg.kPerSec : ((isFinite(+cfg.kMin) && +cfg.kMin > 0) ? (+cfg.kMin / 60) : 0.0022);
 
   const startTempDefault = isFinite(+cfg.tempC) ? +cfg.tempC : 76.0;
   let liveState = {
@@ -2434,7 +2751,6 @@ function BTGoldenSipClock(cfg) {
   let clockRunning = cfg.autoStart !== false;
   let internalOriginMs = Date.now();
   let internalStartTempC = startTempDefault;
-  let manualOverrideUntilMs = 0;
   let lastExternalUpdateMs = 0;
 
   function degForTemp(tC) {
@@ -2695,7 +3011,13 @@ function BTGoldenSipClock(cfg) {
     }
   });
 
+  const pauseCoolingBtnIco = h('span', { style: 'display:inline-flex;align-items:center' }, BTIcons.el(clockRunning ? 'pause' : 'play', { size: 13 }));
   const pauseCoolingBtnText = h('span', { text: clockRunning ? 'Pause' : 'Start' });
+  function syncPauseBtnUi() {
+    pauseCoolingBtnIco.textContent = '';
+    pauseCoolingBtnIco.appendChild(BTIcons.el(clockRunning ? 'pause' : 'play', { size: 13 }));
+    pauseCoolingBtnText.textContent = clockRunning ? 'Pause' : 'Resume';
+  }
   const pauseCoolingBtn = h('button', {
     type: 'button',
     class: 'bt-chip',
@@ -2705,13 +3027,13 @@ function BTGoldenSipClock(cfg) {
       if (clockRunning) {
         internalOriginMs = Date.now();
         internalStartTempC = liveState.tempC > 40 ? liveState.tempC : 78.0;
-        manualOverrideUntilMs = Date.now() + 600000;
+        ensureInternalTicker();
       }
-      pauseCoolingBtnText.textContent = clockRunning ? 'Pause' : 'Resume';
+      syncPauseBtnUi();
       _hapticTick();
       paint();
     }
-  }, BTIcons.el(clockRunning ? 'pause' : 'play', { size: 13 }), pauseCoolingBtnText);
+  }, pauseCoolingBtnIco, pauseCoolingBtnText);
 
   const startResetBtn = h('button', {
     type: 'button',
@@ -2722,13 +3044,12 @@ function BTGoldenSipClock(cfg) {
       clockRunning = true;
       internalStartTempC = isFinite(+cfg.resetTempC) ? +cfg.resetTempC : 78.0;
       internalOriginMs = Date.now();
-      manualOverrideUntilMs = Date.now() + 600000;
       liveState.tempC = internalStartTempC;
-      liveState.secsToGolden = Math.max(10, Math.round(Math.log((internalStartTempC - T_AMB) / (60.5 - T_AMB)) / K_COOL));
+      liveState.secsToGolden = Math.max(10, Math.round(Math.log(Math.max(1.01, (internalStartTempC - T_AMB) / (60.5 - T_AMB))) / Math.max(0.0001, kCoolPerSec)));
       liveState.countdownMmSs = _fmtMmSs(liveState.secsToGolden);
       liveState.zoneLabel = '';
       liveState.stageDetail = '';
-      pauseCoolingBtnText.textContent = 'Pause';
+      syncPauseBtnUi();
       _hapticSnap();
       if (typeof cfg.onReset === 'function') {
         try { cfg.onReset(); } catch (e) {}
@@ -2768,19 +3089,19 @@ function BTGoldenSipClock(cfg) {
   let internalTickId = 0;
   function stepInternalNewton() {
     if (typeof document === 'undefined') return;
-    if (root.parentNode == null && root.isConnected === false) {
+    if (root.parentNode == null || root.isConnected === false) {
       if (internalTickId) { clearInterval(internalTickId); internalTickId = 0; }
       return;
     }
     if (!clockRunning || scrubTempC != null) return;
     const now = Date.now();
-    if (now > manualOverrideUntilMs && (now - lastExternalUpdateMs) < 1600) return;
+    if ((now - lastExternalUpdateMs) < 1600) return;
 
     const dtSec = Math.max(0, (now - internalOriginMs) / 1000);
-    const nextT = T_AMB + (internalStartTempC - T_AMB) * Math.exp(-K_COOL * dtSec);
+    const nextT = T_AMB + (internalStartTempC - T_AMB) * Math.exp(-kCoolPerSec * dtSec);
     liveState.tempC = +_clamp(nextT, T_MIN, T_MAX).toFixed(1);
     if (liveState.tempC > 60.5) {
-      liveState.secsToGolden = Math.max(0, Math.round(Math.log((liveState.tempC - T_AMB) / (60.5 - T_AMB)) / K_COOL));
+      liveState.secsToGolden = Math.max(0, Math.round(Math.log(Math.max(1.01, (liveState.tempC - T_AMB) / (60.5 - T_AMB))) / Math.max(0.0001, kCoolPerSec)));
     } else {
       liveState.secsToGolden = 0;
     }
@@ -2919,12 +3240,18 @@ function BTGoldenSipClock(cfg) {
   root.update = function(next) {
     if (!next || typeof next !== 'object') return;
     lastExternalUpdateMs = Date.now();
-    if (Date.now() < manualOverrideUntilMs && !next.force) {
+    if (next.kPerSec != null && isFinite(+next.kPerSec) && +next.kPerSec > 0) kCoolPerSec = +next.kPerSec;
+    else if (next.kMin != null && isFinite(+next.kMin) && +next.kMin > 0) kCoolPerSec = +next.kMin / 60;
+    if (!clockRunning && !next.force) {
       if (typeof next.lidTip === 'string') liveState.lidTip = next.lidTip;
       paint();
       return;
     }
-    if (next.tempC != null && isFinite(+next.tempC)) liveState.tempC = +next.tempC;
+    if (next.tempC != null && isFinite(+next.tempC)) {
+      liveState.tempC = +next.tempC;
+      internalStartTempC = +next.tempC;
+      internalOriginMs = Date.now();
+    }
     if (next.secsToGolden != null && isFinite(+next.secsToGolden)) liveState.secsToGolden = +next.secsToGolden;
     else if (next.secondsToGoldenSip != null && isFinite(+next.secondsToGoldenSip)) liveState.secsToGolden = +next.secondsToGoldenSip;
     else if (next.etaSec != null && isFinite(+next.etaSec)) liveState.secsToGolden = +next.etaSec;
@@ -2940,11 +3267,10 @@ function BTGoldenSipClock(cfg) {
     clockRunning = true;
     internalStartTempC = isFinite(+startTC) ? +startTC : 78.0;
     internalOriginMs = Date.now();
-    manualOverrideUntilMs = Date.now() + 600000;
     liveState.tempC = internalStartTempC;
-    liveState.secsToGolden = Math.max(10, Math.round(Math.log((internalStartTempC - T_AMB) / (60.5 - T_AMB)) / K_COOL));
+    liveState.secsToGolden = Math.max(10, Math.round(Math.log(Math.max(1.01, (internalStartTempC - T_AMB) / (60.5 - T_AMB))) / Math.max(0.0001, kCoolPerSec)));
     liveState.countdownMmSs = _fmtMmSs(liveState.secsToGolden);
-    pauseCoolingBtnText.textContent = 'Pause';
+    syncPauseBtnUi();
     ensureInternalTicker();
     paint();
   };
@@ -3071,7 +3397,8 @@ function BTChronoDial(cfg) {
     waves: Object.assign({ thetaA: 0, thetaS: 0, thetaB: 0 }, cfg.waves || cfg.waveState || {})
   };
 
-  const phases = _normalizeChronoPhases(cfg.phases || cfg.steps, st.totalTargetS, mode);
+  let phases = _normalizeChronoPhases(cfg.phases || cfg.steps, st.totalTargetS, mode);
+  const rawInitPhases = cfg.phases || cfg.steps || null;
 
   const inkMain = isCockpit ? '#F5EDE4' : 'var(--ink)';
   const inkSub = isCockpit ? '#C8B6A6' : 'var(--ink-secondary)';
@@ -3119,24 +3446,30 @@ function BTChronoDial(cfg) {
 
   /* 2. Perimeter Phase-Arc Sectors (r = 133) */
   const R_SECTOR = 133;
-  const sectorNodes = [];
+  let sectorNodes = [];
   const sectorGroup = h('g', { 'aria-hidden': 'true' });
-  phases.forEach(function(ph) {
-    const d0 = -90 + (ph.startS / st.totalTargetS) * 360 + 1.4;
-    const d1 = -90 + (ph.endS / st.totalTargetS) * 360 - 1.4;
-    if (d1 > d0) {
-      const pathNode = h('path', {
-        d: _horoArc(CX, CY, R_SECTOR, d0, d1),
-        fill: 'none',
-        stroke: ph.color,
-        'stroke-width': 5,
-        'stroke-linecap': 'round',
-        opacity: '0.36'
-      });
-      sectorGroup.appendChild(pathNode);
-      sectorNodes.push({ meta: ph, node: pathNode, active: false });
-    }
-  });
+  function rebuildPhaseSectors() {
+    sectorGroup.textContent = '';
+    sectorNodes = [];
+    const totSec = Math.max(1, st.totalTargetS);
+    phases.forEach(function(ph) {
+      const d0 = -90 + (Math.min(ph.startS, totSec) / totSec) * 360 + 1.4;
+      const d1 = -90 + (Math.min(ph.endS, totSec) / totSec) * 360 - 1.4;
+      if (d1 > d0) {
+        const pathNode = h('path', {
+          d: _horoArc(CX, CY, R_SECTOR, d0, d1),
+          fill: 'none',
+          stroke: ph.color,
+          'stroke-width': 5,
+          'stroke-linecap': 'round',
+          opacity: '0.36'
+        });
+        sectorGroup.appendChild(pathNode);
+        sectorNodes.push({ meta: ph, node: pathNode, active: false });
+      }
+    });
+  }
+  rebuildPhaseSectors();
 
   /* 3. Outer Time Comet Sweep + Amber Overtime Ring (r = 120) */
   const R_TIME = 120;
@@ -3524,7 +3857,18 @@ function BTChronoDial(cfg) {
     if (!live || typeof live !== 'object') return;
     if (live.elapsedS != null && isFinite(+live.elapsedS)) st.elapsedS = Math.max(0, +live.elapsedS);
     const nextTot = live.totalTargetS != null ? +live.totalTargetS : (live.targetS != null ? +live.targetS : null);
-    if (nextTot != null && nextTot > 0) st.totalTargetS = nextTot;
+    let needSectorRebuild = false;
+    if (nextTot != null && nextTot > 0 && Math.abs(nextTot - st.totalTargetS) >= 0.5) {
+      st.totalTargetS = nextTot;
+      needSectorRebuild = true;
+    }
+    if (Array.isArray(live.phases) || Array.isArray(live.steps)) {
+      phases = _normalizeChronoPhases(live.phases || live.steps, st.totalTargetS, mode);
+      needSectorRebuild = true;
+    } else if (needSectorRebuild) {
+      phases = _normalizeChronoPhases(rawInitPhases, st.totalTargetS, mode);
+    }
+    if (needSectorRebuild) rebuildPhaseSectors();
     if (live.liveWeightG !== undefined) st.liveWeightG = live.liveWeightG != null ? +live.liveWeightG : null;
     if (live.targetWaterG != null && +live.targetWaterG > 0) st.targetWaterG = +live.targetWaterG;
     if (live.ghostWeightG !== undefined) st.ghostWeightG = live.ghostWeightG != null ? +live.ghostWeightG : null;

@@ -39,7 +39,8 @@
   min-width: 0;
 }
 
-.bt-kicker {
+.bt-page-hero .bt-kicker,
+.bt-studio-card .bt-kicker {
   display: inline-block;
   font-size: 0.74rem;
   font-weight: 700;
@@ -307,6 +308,7 @@
 
 .bt-chart-surface {
   outline: none;
+  touch-action: none;
 }
 
 .bt-chart-surface:focus-visible {
@@ -327,7 +329,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 40;
+  z-index: var(--z-loupe, 34);
   pointer-events: none;
   padding: 6px 11px;
   border-radius: 9999px;
@@ -392,7 +394,7 @@
   min-width: 86px;
   padding: 3px 10px;
   cursor: ew-resize;
-  touch-action: pan-y;
+  touch-action: none;
 }
 
 .bt-vp-label {
@@ -420,7 +422,7 @@
 .bt-vernier-keypad-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 950;
+  z-index: var(--z-keypad, 80);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -557,12 +559,7 @@
   font-size: 0.88rem;
 }
 
-.bt-ble-slot-readout {
-  font-size: 0.96rem;
-  font-weight: 700;
-  color: var(--accent, #9A4212);
-}
-
+/* Canonical .bt-ble-slot-readout recessed OLED style lives in Section 10 below */
 .bt-ble-slot-fams {
   margin: 0;
   font-size: 0.75rem;
@@ -683,7 +680,7 @@
 
 .bt-chart-tick {
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 600;
   fill: var(--ink-muted, #6E5849);
 }
@@ -704,7 +701,7 @@
 
 .bt-bc-isolabel {
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 8.5px;
+  font-size: 10px;
   fill: var(--ink-muted, #6E5849);
 }
 
@@ -729,7 +726,7 @@
 }
 
 .bt-bc-zone-lbl {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   fill: var(--good, #1B6341);
 }
@@ -764,12 +761,16 @@
   fill: rgba(180, 76, 16, 0.22);
   stroke: var(--accent, #9A4212);
   stroke-width: 2;
+  touch-action: none;
+  cursor: grab;
 }
 
 .bt-bc-puck-core {
   fill: var(--accent, #9A4212);
   stroke: #FFFDF9;
   stroke-width: 2;
+  touch-action: none;
+  cursor: grab;
 }
 
 .bt-bc-r2-diamond {
@@ -855,7 +856,7 @@
 }
 
 .bt-pk-gate-lbl {
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 700;
 }
 
@@ -878,7 +879,7 @@
 }
 
 .bt-pk-token-txt {
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 700;
   fill: #FFFDF9;
   pointer-events: none;
@@ -952,7 +953,7 @@
 }
 
 .bt-vs-meniscus-txt {
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 700;
   fill: #FFFDF9;
   pointer-events: none;
@@ -972,7 +973,7 @@
 
 .bt-vs-ret-sponge { fill: rgba(120, 82, 54, 0.35); stroke: var(--line-strong, #8A725F); }
 .bt-vs-bev-col { fill: rgba(180, 76, 16, 0.25); stroke: var(--accent, #9A4212); }
-.bt-vs-col-txt { font-size: 10px; font-weight: 700; fill: var(--ink, #1C130E); }
+.bt-vs-col-txt { font-size: 10.5px; font-weight: 700; fill: var(--ink, #1C130E); }
 
 .bt-milk-verdict {
   padding: 10px 12px;
@@ -994,9 +995,9 @@
 
 .bt-ag-caliper { stroke: #FFFDF9; stroke-width: 3; }
 .bt-ag-puck { fill: var(--surface, #FFFFFF); stroke: var(--ink, #1C130E); stroke-width: 2.2; }
-.bt-ag-puck-lbl { font-size: 9.5px; font-weight: 800; fill: var(--ink, #1C130E); pointer-events: none; }
-.bt-ag-ruler-name { font-size: 10px; font-weight: 700; fill: var(--ink-secondary, #534034); }
-.bt-ag-ruler-val { font-size: 10px; font-weight: 700; fill: var(--ink, #1C130E); }
+.bt-ag-puck-lbl { font-size: 10.5px; font-weight: 800; fill: var(--ink, #1C130E); pointer-events: none; }
+.bt-ag-ruler-name { font-size: 10.5px; font-weight: 700; fill: var(--ink-secondary, #534034); }
+.bt-ag-ruler-val { font-size: 10.5px; font-weight: 700; fill: var(--ink, #1C130E); }
 
 .bt-fr-amb-curve { stroke: var(--good, #1B6341); stroke-width: 2.4; }
 .bt-fr-cryo-curve { stroke: var(--science, #195A73); stroke-width: 2.4; stroke-dasharray: 5 3; }
@@ -1069,8 +1070,8 @@
 
 .bt-dial-sparkline { width: 100%; height: auto; display: block; }
 .bt-spark-sweet-band { fill: rgba(27, 99, 65, 0.14); }
-.bt-spark-zone-lbl { font-size: 9px; font-weight: 700; fill: var(--good, #1B6341); }
-.bt-spark-axis { font-size: 9.5px; fill: var(--ink-muted, #6E5849); }
+.bt-spark-zone-lbl { font-size: 10px; font-weight: 700; fill: var(--good, #1B6341); }
+.bt-spark-axis { font-size: 10.5px; fill: var(--ink-muted, #6E5849); }
 .bt-spark-curve { stroke: var(--ink, #1C130E); stroke-width: 2.2; }
 .bt-spark-curve.is-multi { stroke-dasharray: 6 3 2 3; }
 .bt-spark-pred-line { stroke: var(--accent, #9A4212); stroke-width: 1.8; stroke-dasharray: 4 4; }
@@ -1078,7 +1079,7 @@
 .bt-spark-node { fill: var(--ink, #1C130E); stroke: #FFFDF9; stroke-width: 1.5; }
 .bt-spark-node.is-sweet,
 .bt-spark-node.is-locked { fill: var(--good, #1B6341); }
-.bt-spark-delta { font-size: 9px; font-weight: 700; fill: var(--ink-secondary, #534034); }
+.bt-spark-delta { font-size: 10px; font-weight: 700; fill: var(--ink-secondary, #534034); }
 .bt-spark-delta.is-helped { fill: var(--good, #1B6341); }
 .bt-spark-delta.is-hurt { fill: var(--bad, #A1231F); }
 .bt-spark-empty { font-size: 11px; fill: var(--ink-muted, #6E5849); }
@@ -1086,7 +1087,7 @@
 /* ---- Tab 3: Palate Radar, World Passport, Trait Boards, Scanner & Wheel ---- */
 .bt-radar-ring { fill: none; stroke: var(--line, #DCCDBE); stroke-width: 1; }
 .bt-radar-spoke { stroke: var(--line, #DCCDBE); stroke-width: 1; }
-.bt-radar-lbl { font-size: 10px; font-weight: 700; fill: var(--ink, #1C130E); }
+.bt-radar-lbl { font-size: 10.5px; font-weight: 700; fill: var(--ink, #1C130E); }
 .bt-radar-ci-band { fill: rgba(25, 90, 115, 0.18); }
 .bt-radar-poly { fill: rgba(180, 76, 16, 0.24); stroke: var(--accent, #9A4212); stroke-width: 2.3; }
 .bt-radar-dot { fill: var(--accent, #9A4212); stroke: #FFFDF9; stroke-width: 1.6; }
@@ -1687,7 +1688,7 @@ html[data-theme="dark"] .bt-chrono-digits {
 }
 
 .bt-chrono-phase {
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.05em;
   fill: var(--science, #195A73);
@@ -2013,7 +2014,7 @@ html[data-theme="dark"] .bt-r2-reconcile-card {
 }
 
 .bt-pk-flag-txt {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   fill: var(--good-ink, #FFFDF9);
 }
@@ -2028,7 +2029,7 @@ html[data-theme="dark"] .bt-r2-reconcile-card {
 
 .bt-map-lat-lbl {
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 8.5px;
+  font-size: 10px;
   font-weight: 600;
   fill: var(--ink-muted, #6E5849);
 }
@@ -2047,7 +2048,7 @@ html[data-theme="dark"] .bt-r2-reconcile-card {
 }
 
 .bt-map-pin-lbl {
-  font-size: 6.5px;
+  font-size: 9px;
   font-weight: 700;
   fill: var(--ink, #1C130E);
   pointer-events: none;
@@ -2425,7 +2426,7 @@ button.bt-trait-row:hover {
 
 .bt-ch-pill-txt {
   fill: #FFFDF9;
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 700;
 }
 
@@ -2448,7 +2449,7 @@ button.bt-trait-row:hover {
 
 .bt-bc-cur-lbl {
   fill: var(--science, #195A73);
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 800;
 }
 
@@ -2477,7 +2478,7 @@ button.bt-trait-row:hover {
 
 .bt-bc-aim-tag-txt {
   fill: #FFFDF9;
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
@@ -2537,7 +2538,7 @@ button.bt-trait-row:hover {
 
 .bt-wave-cutoff-pill-txt {
   fill: #FFFDF9;
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 800;
 }
 
@@ -2609,7 +2610,7 @@ button.bt-trait-row:hover {
 
 .bt-pk-thresh-lbl {
   fill: var(--good, #1B6341);
-  font-size: 9px;
+  font-size: 10.5px;
   font-weight: 700;
 }
 
@@ -2843,7 +2844,9 @@ button.bt-trait-row:hover {
   color: #D7C8B9;
 }
 
-.bt-passport-grid {
+/* Scoped to Palate Origin Passport card & #mount so #studio-aside keeps its 2-column grid (02-shell-brand-tactile.css) */
+.bt-origin-passport-card .bt-passport-grid,
+#mount .bt-passport-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
   gap: 9px;
@@ -4161,7 +4164,7 @@ button.bt-trait-row:hover {
 .bt-chart-zone-lbl {
   fill: var(--ink-secondary);
   font-family: var(--font-sans);
-  font-size: 9px;
+  font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.02em;
   paint-order: stroke;

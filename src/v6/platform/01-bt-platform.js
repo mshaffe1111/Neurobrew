@@ -1025,6 +1025,11 @@
     swUpdateListeners.forEach(function(fn){
       try { fn({ updateAvailable:swUpdateAvailable }); } catch(e){}
     });
+    try {
+      if (typeof global.dispatchEvent === 'function' && typeof CustomEvent === 'function'){
+        global.dispatchEvent(new CustomEvent('bt-sw-update-ready', { detail:{ updateAvailable:swUpdateAvailable } }));
+      }
+    } catch(e){}
   }
 
   async function registerServiceWorker(swPath){

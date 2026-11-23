@@ -5765,7 +5765,7 @@ const SCA = {
   rounds:3,                                      /* 6.3.1: at least three rounds of liquoring */
   cupsDesc:[3, 5], cupsAff:5, cupsMin:2,         /* 5.3 and 7.5: three to five cups to describe; five to judge, so uniformity can be rated. The app lets you cup with as few as 2 (some cuppings only pour two) and says when that is under the standard. */
   stdMax:6, maxCoffees:6,                        /* 7.2: at most 6 coffees in a session (the standard); the app allows all 6 */
-  water:[['Chlorine', 'none'], ['Calcium hardness', '50 to 175 ppm as CaCO3'], ['Alkalinity', 'at or near 40 to 70 ppm as CaCO3'], ['pH', '6 to 8']]   /* 7.4, Table 2 */
+  water:[['Chlorine', 'none'], ['Total hardness (GH)', '50 to 175 ppm as CaCO3'], ['Alkalinity', 'at or near 40 to 70 ppm as CaCO3'], ['pH', '6 to 8']]   /* 7.4, Table 2 */
 };
 const SCA_CITE = 'SCA Standard 102-2024, Coffee Value Assessment: Sample Preparation and Tasting Mechanics';
 const SCA_NOTICE = 'This guide follows ' + SCA_CITE + ', in our own words. The SCA has not reviewed it. It walks you through the steps and gives no scores: how coffees are described and judged is in SCA Standards 103 and 104.';
@@ -5776,7 +5776,7 @@ const SCA_CHECKS = [
   { key:'cups', q:'Are your cups identical, tempered glass or ceramic, 200 to 350 mL, 75 to 90 mm across the top?', sec:'5.2.1', short:'cups', dev:'Cups: not identical tempered glass or ceramic cups of 200 to 350 mL and 75 to 90 mm across the top.' },
   { key:'scale', q:'Can you weigh to 0.1 g?', sec:'5.2.2', short:'scale', dev:'Scale: not good to 0.1 g.' },
   { key:'grind', q:'Is the grinder set to the standard\u2019s grind: slightly coarser than paper-filter drip, with 70 to 75 % of the grounds through an 850 micrometre sieve? Answer Not sure if you have no sieve.', sec:'5.2.3', short:'grind', dev:'Grind: not the grind the standard calls for (70 to 75 % of the grounds through an 850 micrometre sieve).' },
-  { key:'water', q:'Does your water meet the water table below (no chlorine, pH 6 to 8, and so on)?', sec:'7.4', short:'water', dev:'Water: did not meet the specification (no chlorine, calcium hardness 50 to 175 ppm, alkalinity near 40 to 70 ppm, pH 6 to 8).' },
+  { key:'water', q:'Does your water meet the water table below (no chlorine, pH 6 to 8, and so on)?', sec:'7.4', short:'water', dev:'Water: did not meet the specification (no chlorine, total hardness (GH) 50 to 175 ppm, alkalinity near 40 to 70 ppm, pH 6 to 8).' },
   { key:'temp', q:'Can you check that the water is 90 to 96\u00B0C (194 to 205\u00B0F) before you pour?', sec:'7.3', short:'water temperature', dev:'Water temperature: not checked to be 93 \u00B1 3 \u00B0C.' }
 ];
 /* the sections tasted during liquoring (4.4, 6.3.1); "aff" ones belong to judging quality and liking */
@@ -8281,7 +8281,7 @@ const FOLK_B = [
       'An SCA magazine article by a coffee researcher argues that alkalinity matters more than pH for the acidity you taste. It says hardness had an insignificant effect on extraction between 20 and 250 ppm, citing unnamed measurements.',
       'Part of that article concerns scale in equipment, which is a separate matter from taste.',
       'The 2009 SCAA water standard gives calcium hardness of 68 mg/L (acceptable 17 to 85) and alkalinity at or near 40 mg/L.',
-      'The SCA-102 standard of 2024 is written for water used in sample tasting. It gives calcium hardness of 50 to 175 ppm and alkalinity of 40 to 70 ppm, both as calcium carbonate.',
+      'The SCA-102 standard of 2024 is written for water used in sample tasting. It gives total hardness (GH, Ca + Mg) of 50 to 175 ppm and alkalinity of 40 to 70 ppm, both as calcium carbonate.',
       'An importer\'s own panel of five tasted one coffee in several waters. Distilled water scored highest and an SCA-style water second, with no statistics.'],
     limits:['The 2009 SCAA brewing water standard (~40 mg/L alkalinity, ~68 mg/L hardness) and the 2024 SCA-102 cupping sample standard (40–70 mg/L alkalinity, 50–175 mg/L hardness as CaCO3) address general brewing and cupping standardization respectively.',
       'The 2026 study used one coffee, one brew method and a small trained panel. A Danish innovation fund paid for it, and the authors thank two people at a water company for starting it.',

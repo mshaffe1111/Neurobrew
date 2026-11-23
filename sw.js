@@ -1,13 +1,16 @@
 /* ============================================================================
- * BeanTelligence v7.5 — Offline-First Non-Intrusive Service Worker (sw.js)
- * Cache Version: bt-pwa-v7.5.0
+ * BeanTelligence v7.6 — Offline-First Non-Intrusive Service Worker (sw.js)
+ * Cache Version: bt-pwa-v7.6.0
  * Brew-Safe Guarantee: Never forces mid-session takeover or reload during brews
  * ============================================================================ */
 'use strict';
 
-const CACHE_NAME = 'bt-pwa-v7.5.0';
+const CACHE_NAME = 'bt-pwa-v7.6.0';
+const CRITICAL_PRECACHE_URLS = [
+  './index.html',
+  './manifest.webmanifest'
+];
 const PRECACHE_URLS = [
-  './',
   './index.html',
   './manifest.webmanifest',
   './icons/icon-64.png',
@@ -15,12 +18,24 @@ const PRECACHE_URLS = [
   './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './icons/icon-maskable-512.png',
-  './icons/icon-1024.png',
-  './icons/og-beanjamin.png'
+  './icons/icon-maskable-512.png'
 ];
 
-let clientBrewTimerActive = false;
+/* Per-client active brew timer tracking (safe across multiple tabs) */
+const activeBrewClients = new Map();
+
+async function isAnyClientBrewing(){
+  try {
+    const live = await self.clients.matchAll({ type:'window', includeUncontrolled:true });
+    const liveIds = new Set(live.map(function(c){ return c.id; }));
+    activeBrewClients.forEach(function(_, cid){
+      if (cid !== 'default' && !liveIds.has(cid)) activeBrewClients.delete(cid);
+    });
+  } catch(e){}
+  let busy = false;
+  activeBrewClients.forEach(function(v){ if (v) busy = true; });
+  return busy;
+}
 
 async function notifyControlledClients(payload){
   try {
@@ -34,14 +49,20 @@ async function notifyControlledClients(payload){
 self.addEventListener('install', function(event){
   event.waitUntil((async function(){
     const cache = await caches.open(CACHE_NAME);
+    const criticalSet = new Set(CRITICAL_PRECACHE_URLS);
     for (let i = 0; i < PRECACHE_URLS.length; i++){
+      const url = PRECACHE_URLS[i];
       try {
-        const req = new Request(PRECACHE_URLS[i], { cache:'reload' });
+        const req = new Request(url, { cache:'reload' });
         const res = await fetch(req);
         if (res && res.ok){
-          await cache.put(PRECACHE_URLS[i], res.clone());
+          await cache.put(url, res.clone());
+        } else if (criticalSet.has(url)){
+          throw new Error('Critical precache failed (' + (res ? res.status : 'no-response') + '): ' + url);
         }
-      } catch(e){}
+      } catch(e){
+        if (criticalSet.has(url)) throw e;
+      }
     }
     /* Deliberately wait rather than forcing skipWaiting while any window is open */
   })());
@@ -65,15 +86,18 @@ self.addEventListener('activate', function(event){
 
 self.addEventListener('message', function(event){
   const data = (event && event.data) || {};
+  const cid = (event && event.source && event.source.id) ? String(event.source.id) : 'default';
   if (data.type === 'BT_BREW_STATUS'){
-    clientBrewTimerActive = !!data.brewActive;
+    if (data.brewActive) activeBrewClients.set(cid, true);
+    else activeBrewClients.delete(cid);
     return;
   }
   if (data.type === 'BT_SKIP_WAITING'){
-    if (data.brewActive === true || clientBrewTimerActive){
-      return;
-    }
-    self.skipWaiting();
+    if (data.brewActive === true) return;
+    event.waitUntil((async function(){
+      if (await isAnyClientBrewing()) return;
+      self.skipWaiting();
+    })());
   }
 });
 
@@ -103,8 +127,12 @@ self.addEventListener('fetch', function(event){
       if (netRes && netRes.ok && netRes.type === 'basic'){
         const prevEtag = cached ? cached.headers.get('etag') : null;
         const nextEtag = netRes.headers.get('etag');
-        await cache.put(req, netRes.clone());
-        if (isNavigation && cached && prevEtag && nextEtag && prevEtag !== nextEtag && !clientBrewTimerActive){
+        const prevLm = cached ? cached.headers.get('last-modified') : null;
+        const nextLm = netRes.headers.get('last-modified');
+        await cache.put(isNavigation ? './index.html' : req, netRes.clone());
+        const changed = (prevEtag && nextEtag && prevEtag !== nextEtag) ||
+          (!prevEtag && prevLm && nextLm && prevLm !== nextLm);
+        if (isNavigation && cached && changed && !(await isAnyClientBrewing())){
           await notifyControlledClients({ type:'BT_SW_UPDATE_READY', version:CACHE_NAME });
         }
       }
@@ -122,7 +150,7 @@ self.addEventListener('fetch', function(event){
     if (fresh) return fresh;
 
     if (isNavigation){
-      const fallbackShell = await cache.match('./') || await cache.match('./index.html');
+      const fallbackShell = await cache.match('./index.html') || await cache.match('./');
       if (fallbackShell) return fallbackShell;
     }
     return new Response('Offline - BeanTelligence app shell not cached yet.', {

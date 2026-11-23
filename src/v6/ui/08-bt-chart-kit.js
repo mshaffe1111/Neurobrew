@@ -201,13 +201,42 @@ const BTChartKit = (function () {
     return settled ? { pos: tgt, vel: 0, settled: true } : { pos: nextPos, vel: nextVel, settled: false };
   }
 
-  function createSpringAnimator(onFrame) {
+  function createSpringAnimator(onFrame, opts) {
     let rafId = 0;
     let lastTs = 0;
     let running = false;
+    const watchEl = opts && opts.nodeType === 1 ? opts : (opts && opts.el && opts.el.nodeType === 1 ? opts.el : null);
+    let visBound = false;
+
+    function stopAnim() {
+      running = false;
+      lastTs = 0;
+      if (rafId && typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(rafId);
+      }
+      rafId = 0;
+      if (visBound && typeof document !== 'undefined' && document.removeEventListener) {
+        document.removeEventListener('visibilitychange', onVisChange);
+        visBound = false;
+      }
+    }
+
+    function onVisChange() {
+      if (typeof document !== 'undefined' && document.hidden) {
+        stopAnim();
+      }
+    }
 
     function tick(ts) {
       if (!running) return;
+      if (watchEl && !watchEl.isConnected) {
+        stopAnim();
+        return;
+      }
+      if (typeof document !== 'undefined' && document.hidden) {
+        stopAnim();
+        return;
+      }
       const dt = lastTs > 0 ? Math.min(0.064, Math.max(0.001, (ts - lastTs) / 1000)) : 0.016;
       lastTs = ts;
       let keepAlive = false;
@@ -216,35 +245,31 @@ const BTChartKit = (function () {
       } catch (_) {
         keepAlive = false;
       }
-      if (keepAlive && typeof requestAnimationFrame === 'function') {
+      if (running && keepAlive && (!watchEl || watchEl.isConnected) && typeof requestAnimationFrame === 'function') {
         rafId = requestAnimationFrame(tick);
       } else {
-        running = false;
-        rafId = 0;
-        lastTs = 0;
+        stopAnim();
       }
     }
 
     return {
       wake: function () {
         if (running) return;
+        if (watchEl && !watchEl.isConnected) return;
         running = true;
         lastTs = 0;
+        if (!visBound && typeof document !== 'undefined' && document.addEventListener) {
+          document.addEventListener('visibilitychange', onVisChange);
+          visBound = true;
+        }
         if (typeof requestAnimationFrame === 'function') {
           rafId = requestAnimationFrame(tick);
         } else {
           onFrame(0.064, Date.now());
-          running = false;
+          stopAnim();
         }
       },
-      stop: function () {
-        running = false;
-        lastTs = 0;
-        if (rafId && typeof cancelAnimationFrame === 'function') {
-          cancelAnimationFrame(rafId);
-        }
-        rafId = 0;
-      },
+      stop: stopAnim,
       isRunning: function () {
         return running;
       }
@@ -282,12 +307,16 @@ const BTChartKit = (function () {
     const tag = el && el.tagName ? el.tagName.toLowerCase() : '';
     const par = tag === 'svg' ? (el.getAttribute('preserveAspectRatio') || 'xMidYMid meet') : 'none';
     let ux, uy;
+    let pxPerUnitX = rw / vb.w;
+    let pxPerUnitY = rh / vb.h;
     if (tag === 'svg' && par.indexOf('none') < 0) {
       const scale = Math.min(rw / vb.w, rh / vb.h);
       const padX = (rw - vb.w * scale) * 0.5;
       const padY = (rh - vb.h * scale) * 0.5;
       ux = vb.x + (cx - rect.left - padX) / Math.max(1e-6, scale);
       uy = vb.y + (cy - rect.top - padY) / Math.max(1e-6, scale);
+      pxPerUnitX = scale;
+      pxPerUnitY = scale;
     } else {
       ux = vb.x + ((cx - rect.left) / rw) * vb.w;
       uy = vb.y + ((cy - rect.top) / rh) * vb.h;
@@ -306,8 +335,8 @@ const BTChartKit = (function () {
       pxY: pxY,
       rect: rect,
       viewBox: vb,
-      pxPerUnitX: rw / vb.w,
-      pxPerUnitY: rh / vb.h
+      pxPerUnitX: pxPerUnitX,
+      pxPerUnitY: pxPerUnitY
     };
   }
 
@@ -377,7 +406,7 @@ const BTChartKit = (function () {
       if (c.loupe === false || !content) return;
       const lp = getLoupe();
       if (typeof content === 'string') {
-        if (opts && opts.allowHtml) lp.innerHTML = content;
+        if (opts && Object.prototype.hasOwnProperty.call(opts, 'allowHtml') && opts.allowHtml) lp.innerHTML = content;
         else lp.textContent = content;
       } else if (content && content.nodeType === 1) {
         lp.textContent = '';
@@ -403,7 +432,7 @@ const BTChartKit = (function () {
       const clampedLeft = clamp(relX - lw * 0.5, 8, hw - lw - 8, 8);
       /* 48px vertical offset above thumb; flip cleanly below only if clipped at very top */
       const rawTop = relY - 48 - lh * 0.5;
-      const clampedTop = rawTop < 4 ? Math.min(hh - lh - 6, relY + 28) : clamp(rawTop, 4, hh - lh - 6, 4);
+      const clampedTop = rawTop < 4 ? Math.min(hh - lh - 6, relY + 34) : clamp(rawTop, 4, hh - lh - 6, 4);
       lp.style.transform = 'translate3d(' + clampedLeft.toFixed(1) + 'px,' + clampedTop.toFixed(1) + 'px,0)';
     }
 
@@ -422,6 +451,8 @@ const BTChartKit = (function () {
     let lastMoveTs = 0;
     let lastPxX = 0;
     let lastPxY = 0;
+    let lastClientX = 0;
+    let lastClientY = 0;
     let velPxX = 0;
     let velPxY = 0;
 
@@ -519,6 +550,8 @@ const BTChartKit = (function () {
       startPxY = pt.pxY;
       lastPxX = pt.pxX;
       lastPxY = pt.pxY;
+      lastClientX = numOr(e.clientX, 0);
+      lastClientY = numOr(e.clientY, 0);
       velPxX = 0;
       velPxY = 0;
 
@@ -585,6 +618,8 @@ const BTChartKit = (function () {
       lastMoveTs = now;
       lastPxX = pt.pxX;
       lastPxY = pt.pxY;
+      lastClientX = numOr(e.clientX, lastClientX);
+      lastClientY = numOr(e.clientY, lastClientY);
 
       const payload = buildPayload(e, pt, 'move');
       let res = null;
@@ -615,7 +650,9 @@ const BTChartKit = (function () {
           svgOrCanvasEl.releasePointerCapture(pid);
         }
       } catch (_) {}
-      const pt = mapClientToSurface(svgOrCanvasEl, e ? e.clientX : lastPxX, e ? e.clientY : lastPxY, c);
+      const useClientX = (e && e.type !== 'lostpointercapture' && Number.isFinite(e.clientX) && (e.clientX !== 0 || e.clientY !== 0)) ? e.clientX : lastClientX;
+      const useClientY = (e && e.type !== 'lostpointercapture' && Number.isFinite(e.clientY) && (e.clientX !== 0 || e.clientY !== 0)) ? e.clientY : lastClientY;
+      const pt = mapClientToSurface(svgOrCanvasEl, useClientX, useClientY, c);
       if (wasPendingTap && !cancelled) {
         dispatchStart(e, pt);
       }
@@ -704,17 +741,18 @@ const BTChartKit = (function () {
     }
     if (raw.length <= 1) return raw;
     raw.sort(function (a, b) { return a.x - b.x; });
-    /* Coalesce coincident x values to prevent h_k = 0 division by zero */
-    const out = [raw[0]];
+    /* Coalesce coincident x values using exact arithmetic mean to prevent h_k = 0 division by zero */
+    const out = [{ x: raw[0].x, y: raw[0].y, _cnt: 1 }];
     for (let j = 1; j < raw.length; j++) {
       const prev = out[out.length - 1];
       if (Math.abs(raw[j].x - prev.x) <= 1e-7) {
-        prev.y = (prev.y + raw[j].y) * 0.5;
+        prev._cnt++;
+        prev.y += (raw[j].y - prev.y) / prev._cnt;
       } else {
-        out.push(raw[j]);
+        out.push({ x: raw[j].x, y: raw[j].y, _cnt: 1 });
       }
     }
-    return out;
+    return out.map(function (p) { return { x: p.x, y: p.y }; });
   }
 
   function monotoneCubicControlPoints(pts) {
@@ -873,8 +911,8 @@ const BTChartKit = (function () {
   const _KDE_SH = 40 + _KDE_PAD * 2; /* 50 */
   const _kdeSplat = new Float32Array(_KDE_SW * _KDE_SH);
   const _kdeTmp = new Float32Array(_KDE_SH * 48);
-  const _kdeKerX = new Float32Array(33);
-  const _kdeKerY = new Float32Array(33);
+  const _kdeKerX = new Float32Array(65);
+  const _kdeKerY = new Float32Array(65);
   const _MS_MAX_CELLS = 52 * 44;
   const _msPadBuf = new Float32Array(_MS_MAX_CELLS);
   const _msNbr0Buf = new Int16Array(_MS_MAX_CELLS * 2);
@@ -1103,7 +1141,7 @@ const BTChartKit = (function () {
         const st = extractStarRating(p);
         validCount++;
         if (st >= starCut) {
-          const dSt = st - 3.5;
+          const dSt = Math.max(0, st - 3.5);
           const baseW = dSt * dSt > 0.05 ? dSt * dSt : 0.05;
           likedX.push(px);
           likedY.push(py);
@@ -1138,9 +1176,25 @@ const BTChartKit = (function () {
       return emptyRes('insufficient_points');
     }
 
-    /* IQR = 0 degenerate bandwidth floor guarantees zero division by zero */
-    const hx = Math.max(minHx, computeIqr(likedX) / 1.349);
-    const hy = Math.max(minHy, computeIqr(likedY) / 1.349);
+    /* Silverman's rule of thumb with n^(-1/5) shrinkage & IQR=0 degenerate floor */
+    function computeStd(arr) {
+      if (!arr || arr.length < 2) return 0;
+      let mean = 0;
+      for (let k = 0; k < arr.length; k++) mean += arr[k];
+      mean /= arr.length;
+      let ss = 0;
+      for (let k = 0; k < arr.length; k++) { const dv = arr[k] - mean; ss += dv * dv; }
+      return Math.sqrt(ss / (arr.length - 1));
+    }
+    const iqrScaleX = computeIqr(likedX) / 1.349;
+    const iqrScaleY = computeIqr(likedY) / 1.349;
+    const stdScaleX = computeStd(likedX);
+    const stdScaleY = computeStd(likedY);
+    const robScaleX = (iqrScaleX > 0 && stdScaleX > 0) ? Math.min(stdScaleX, iqrScaleX) : Math.max(iqrScaleX, stdScaleX);
+    const robScaleY = (iqrScaleY > 0 && stdScaleY > 0) ? Math.min(stdScaleY, iqrScaleY) : Math.max(iqrScaleY, stdScaleY);
+    const nShrink = 0.9 * Math.pow(Math.max(1, nLiked), -0.2);
+    const hx = Math.max(minHx, robScaleX * nShrink);
+    const hy = Math.max(minHy, robScaleY * nShrink);
 
     const stepX = (xMax - xMin) / (GW - 1);
     const stepY = (yMax - yMin) / (GH - 1);
@@ -1174,8 +1228,8 @@ const BTChartKit = (function () {
     if (splatted > 0) {
       const sigX = Math.sqrt(Math.max(0.45, (hx * invStepX) * (hx * invStepX) - 0.08));
       const sigY = Math.sqrt(Math.max(0.45, (hy * invStepY) * (hy * invStepY) - 0.08));
-      const radX = Math.min(14, Math.ceil(2.7 * sigX));
-      const radY = Math.min(14, Math.ceil(2.7 * sigY));
+      const radX = Math.min(30, Math.ceil(2.7 * sigX));
+      const radY = Math.min(30, Math.ceil(2.7 * sigY));
       const inv2SigX2 = -0.5 / (sigX * sigX);
       const inv2SigY2 = -0.5 / (sigY * sigY);
 
@@ -1332,12 +1386,17 @@ const BTChartKit = (function () {
     let buf = String(cfg.value !== undefined ? cfg.value : '');
     let fresh = true;
 
+    const prevFocused = (typeof document !== 'undefined' && document.activeElement && typeof document.activeElement.focus === 'function')
+      ? document.activeElement
+      : null;
+
     const back = document.createElement('div');
     back.className = 'bt-vernier-keypad-backdrop';
     const sheet = document.createElement('div');
     sheet.className = 'bt-vernier-keypad-sheet';
     sheet.setAttribute('role', 'dialog');
     sheet.setAttribute('aria-modal', 'true');
+    sheet.setAttribute('tabindex', '-1');
     sheet.setAttribute('aria-label', cfg.label || 'Enter precision value');
 
     const head = document.createElement('div');
@@ -1353,11 +1412,41 @@ const BTChartKit = (function () {
 
     const grid = document.createElement('div');
     grid.className = 'bt-vk-grid';
-    const keys = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '.', '0', 'Bksp'];
+    const keys = min < 0
+      ? ['7', '8', '9', '4', '5', '6', '1', '2', '3', '.', '0', 'Bksp', '+/-']
+      : ['7', '8', '9', '4', '5', '6', '1', '2', '3', '.', '0', 'Bksp'];
+
+    function onPadKeyDown(ev) {
+      if (ev.key === 'Escape') {
+        ev.preventDefault();
+        closePad();
+      } else if (ev.key === 'Enter' && (!ev.target || ev.target.tagName !== 'BUTTON')) {
+        ev.preventDefault();
+        commitPad();
+      } else if (ev.key === 'Tab') {
+        const focusables = sheet.querySelectorAll('button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (ev.shiftKey && (document.activeElement === first || document.activeElement === sheet)) {
+          ev.preventDefault();
+          last.focus();
+        } else if (!ev.shiftKey && document.activeElement === last) {
+          ev.preventDefault();
+          first.focus();
+        }
+      }
+    }
 
     function closePad() {
+      if (typeof document !== 'undefined' && document.removeEventListener) {
+        document.removeEventListener('keydown', onPadKeyDown, true);
+      }
       if (back.parentNode) back.parentNode.removeChild(back);
       fallbackPadBackdrop = null;
+      if (prevFocused && prevFocused.isConnected) {
+        try { prevFocused.focus(); } catch (_) {}
+      }
     }
 
     function commitPad() {
@@ -1381,6 +1470,10 @@ const BTChartKit = (function () {
           if (k === 'Bksp') {
             buf = fresh ? '' : buf.slice(0, -1);
             fresh = false;
+          } else if (k === '+/-') {
+            fresh = false;
+            if (buf.startsWith('-')) buf = buf.slice(1);
+            else if (buf && buf !== '0') buf = '-' + buf;
           } else if (k === '.') {
             if (fresh) { buf = '0.'; fresh = false; }
             else if (buf.indexOf('.') < 0) buf += '.';
@@ -1444,6 +1537,10 @@ const BTChartKit = (function () {
     back.addEventListener('click', function (ev) { if (ev.target === back) closePad(); });
     document.body.appendChild(back);
     fallbackPadBackdrop = back;
+    if (typeof document !== 'undefined' && document.addEventListener) {
+      document.addEventListener('keydown', onPadKeyDown, true);
+    }
+    try { doneB.focus(); } catch (_) {}
   }
 
   function vernierPill(cfg) {
@@ -1615,6 +1712,7 @@ const BTChartKit = (function () {
 
     track.addEventListener('pointerup', function (e) { finishPointer(e, false); });
     track.addEventListener('pointercancel', function (e) { finishPointer(e, true); });
+    track.addEventListener('lostpointercapture', function (e) { finishPointer(e, true); });
 
     track.addEventListener('keydown', function (e) {
       const m = e.shiftKey ? 5 : 1;
@@ -1624,12 +1722,13 @@ const BTChartKit = (function () {
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
         e.preventDefault();
         applyValue(curVal - step * m, true);
-      } else if (e.key === 'Enter' || e.key === ' ') {
+      } else if ((e.key === 'Enter' || e.key === ' ') && c.keypad !== false) {
         e.preventDefault();
         openFallbackPrecisionKeypad({
           label: c.label || 'Precision Value',
           value: curVal,
           unit: c.unit || '',
+          units: c.units || null,
           min: min,
           max: max,
           step: step,
@@ -1666,13 +1765,17 @@ const BTChartKit = (function () {
 
     const list = Array.isArray(attempts) ? attempts.filter(Boolean) : [];
     const isPts = list.some(function (a) {
-      const v = numOr(a.score !== undefined ? a.score : a.val, 0);
+      const v = numOr(a.score !== undefined ? a.score : (a.total_score !== undefined ? a.total_score : a.val), 0);
       return v > 10;
     });
     const yMin = isPts ? 70 : 1.0;
     const yMax = isPts ? 95 : 5.0;
     const sweetLo = isPts ? 85 : 4.25;
     const sweetHi = yMax;
+
+    function starsToScaPts(st) {
+      return clamp(70 + ((clamp(st, 0.5, 5.0, 3.5) - 2.5) / 2.5) * 22, 70, 95, 80);
+    }
 
     const mapY = function (v) {
       return B - clamp((numOr(v, yMin) - yMin) / (yMax - yMin), 0, 1, 0) * PH;
@@ -1684,9 +1787,21 @@ const BTChartKit = (function () {
     };
 
     const pts = list.map(function (a, idx) {
-      const raw = isPts
-        ? numOr(a.score !== undefined ? a.score : a.total_score, 80)
-        : extractStarRating(a) || numOr(a.val, 3.5);
+      let raw;
+      if (isPts) {
+        const directSca = numOr(
+          a.score !== undefined ? a.score : (a.total_score !== undefined ? a.total_score : (numOr(a.val, 0) > 10 ? a.val : NaN)),
+          NaN
+        );
+        if (Number.isFinite(directSca) && directSca > 10) {
+          raw = directSca;
+        } else {
+          const stFallback = extractStarRating(a) || numOr(a.val, NaN);
+          raw = Number.isFinite(stFallback) && stFallback > 0 ? starsToScaPts(stFallback) : 80;
+        }
+      } else {
+        raw = extractStarRating(a) || numOr(a.val, 3.5);
+      }
       return {
         x: mapX(idx),
         y: mapY(raw),
@@ -1734,7 +1849,9 @@ const BTChartKit = (function () {
     /* Predicted Cup #(k+1) Dashed Bridge & Node */
     if (predictedNext && pts.length >= 1) {
       const last = pts[pts.length - 1];
-      const predVal = numOr(predictedNext.val !== undefined ? predictedNext.val : (isPts ? 88 : 4.7), isPts ? 88 : 4.7);
+      let predVal = numOr(predictedNext.val !== undefined ? predictedNext.val : (isPts ? 88 : 4.7), isPts ? 88 : 4.7);
+      if (isPts && predVal <= 10) predVal = starsToScaPts(predVal);
+      else if (!isPts && predVal > 10) predVal = clamp(2.5 + ((predVal - 70) / 22) * 2.5, 0.5, 5.0, 4.7);
       const px = mapX(pts.length);
       const py = mapY(predVal);
       svg += '<line x1="' + last.x.toFixed(1) + '" y1="' + last.y.toFixed(1) +

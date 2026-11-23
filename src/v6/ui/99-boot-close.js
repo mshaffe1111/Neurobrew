@@ -17,6 +17,57 @@ function _isBrewActivelyRunning() {
   return false;
 }
 
+function _promptSwUpdateToast() {
+  try {
+    if (_isBrewActivelyRunning()) return;
+    const pwa = (typeof window !== 'undefined' && window.BTPlatform && window.BTPlatform.pwa) ? window.BTPlatform.pwa : null;
+    if (typeof document !== 'undefined' && document.body) {
+      let bar = $('bt-sw-update-toast');
+      if (!bar) {
+        bar = h('div', {
+          id: 'bt-sw-update-toast',
+          role: 'status',
+          'aria-live': 'polite',
+          style: 'position:fixed;bottom:84px;left:50%;transform:translateX(-50%);z-index:115;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:var(--surface-raised,#FFFDF9);color:var(--ink,#1C130E);border:1.5px solid var(--primary,#1B4D38);box-shadow:0 8px 24px rgba(0,0,0,0.18);max-width:calc(100vw - 24px)'
+        },
+          h('span', { style: 'font-size:0.86rem;font-weight:700', text: 'A new BeanTelligence update is ready.' }),
+          h('button', {
+            type: 'button',
+            id: 'bt-sw-update-apply-btn',
+            class: 'bt-lab-btn is-primary',
+            style: 'min-height:36px;padding:4px 12px;font-weight:800',
+            onclick: function() {
+              if (_isBrewActivelyRunning()) {
+                toast('Finish your active brew first — update stays ready.');
+                return;
+              }
+              if (typeof window !== 'undefined') window.__btUserRequestedSwReload = true;
+              if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
+              if (pwa && typeof pwa.applyPendingUpdateIfSafe === 'function') {
+                const res = pwa.applyPendingUpdateIfSafe();
+                if (!res || !res.activated) {
+                  try { if (typeof location !== 'undefined' && location.reload) location.reload(); } catch (_) {}
+                }
+              } else {
+                try { if (typeof location !== 'undefined' && location.reload) location.reload(); } catch (_) {}
+              }
+            }
+          }, h('span', { text: 'Update Now' })),
+          h('button', {
+            type: 'button',
+            class: 'bt-lab-btn',
+            style: 'min-height:36px;padding:4px 10px',
+            onclick: function() { if (bar && bar.parentNode) bar.parentNode.removeChild(bar); }
+          }, h('span', { text: 'Later' }))
+        );
+        document.body.appendChild(bar);
+        return;
+      }
+    }
+    toast('App update cached for your next reload.', { duration: 4000 });
+  } catch (e) {}
+}
+
 function _registerServiceWorkerSafely() {
   try {
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
@@ -25,13 +76,26 @@ function _registerServiceWorkerSafely() {
     if (!isSecureWeb) return;
     if (_isTimerOrCockpitRunning()) return;
 
+    if (typeof window !== 'undefined' && !window.__btSwControllerBound) {
+      window.__btSwControllerBound = true;
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (window.__btUserRequestedSwReload && !_isBrewActivelyRunning()) {
+          window.__btUserRequestedSwReload = false;
+          try { if (typeof location !== 'undefined' && location.reload) location.reload(); } catch (_) {}
+        }
+      });
+      window.addEventListener('bt-sw-update-ready', function(ev) {
+        if (ev && ev.detail && ev.detail.updateAvailable) _promptSwUpdateToast();
+      });
+    }
+
     const pwa = (typeof window !== 'undefined' && window.BTPlatform && window.BTPlatform.pwa) ? window.BTPlatform.pwa : null;
     if (pwa && typeof pwa.registerServiceWorker === 'function') {
       if (typeof pwa.onUpdateReady === 'function' && (typeof window === 'undefined' || !window.__btSwUpdateListenerBound)) {
         if (typeof window !== 'undefined') window.__btSwUpdateListenerBound = true;
         pwa.onUpdateReady(function(info) {
           if (info && info.updateAvailable && !_isTimerOrCockpitRunning()) {
-            toast('App update cached for your next reload.', { duration: 4000 });
+            _promptSwUpdateToast();
           }
         });
       }
@@ -46,7 +110,7 @@ function _registerServiceWorkerSafely() {
         if (!installing) return;
         installing.addEventListener('statechange', function() {
           if (installing.state === 'installed' && navigator.serviceWorker.controller && !_isTimerOrCockpitRunning()) {
-            toast('App update cached for your next reload.', { duration: 4000 });
+            _promptSwUpdateToast();
           }
         });
       });
@@ -190,8 +254,46 @@ function _checkAndOfferWebSaveRestore(rawHashStr) {
     if (typeof window !== 'undefined' && window.__btSelfAppliedSaveHash && window.__btSelfAppliedSaveHash === hashVal) return;
 
     const localIsEmpty = _isLocalVaultCurrentlyEmpty(st);
+    const BOOT_AUTO_INFLATE_CAP = 2097152; /* 2 MB cap on unauthenticated boot-time auto-inflation */
 
-    Promise.resolve(st.decodeWebSaveUrl(hashVal)).then(function(decodedBundle) {
+    function mountLargeSavePrompt() {
+      const oldBanner = $('bt-web-save-banner');
+      if (oldBanner && oldBanner.parentNode) oldBanner.parentNode.removeChild(oldBanner);
+      const largeBanner = h('section', {
+        id: 'bt-web-save-banner',
+        role: 'region',
+        'aria-label': 'Large Save Link Detected',
+        style: 'margin:10px 14px 4px;padding:13px 15px;border-radius:14px;border:2px solid var(--primary,#1B4D38);background:var(--good-bg,#E2F4EB);color:var(--ink,#1C130E);display:flex;flex-direction:column;gap:10px'
+      },
+        h('strong', { style: 'font-size:0.95rem;color:var(--good,#1B6341)', text: 'Large Save Link Detected (> 2 MB)' }),
+        h('p', { style: 'margin:0;font-size:0.84rem;color:var(--ink-secondary,#534034)', text: 'For safety, large compressed save links are not unpacked automatically at boot. Confirm below if you trust this link.' }),
+        h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
+          h('button', {
+            type: 'button',
+            class: 'bt-lab-btn is-primary',
+            style: 'min-height:44px;font-weight:800',
+            onclick: function() {
+              _dismissWebSaveRestorePrompt();
+              _checkAndOfferWebSaveRestore(hashVal, { allowLarge: true });
+            }
+          }, h('span', { text: 'Unpack Large Save Link' })),
+          h('button', {
+            type: 'button',
+            class: 'bt-lab-btn',
+            style: 'min-height:44px',
+            onclick: _dismissWebSaveRestorePrompt
+          }, h('span', { text: 'Dismiss' }))
+        )
+      );
+      const centerStage = $('center-stage');
+      const wsGrid = $('workspace-grid');
+      const mountNode = $('mount');
+      if (centerStage && wsGrid && wsGrid.parentNode === centerStage) centerStage.insertBefore(largeBanner, wsGrid);
+      else if (mountNode && mountNode.parentNode) mountNode.parentNode.insertBefore(largeBanner, mountNode);
+    }
+
+    const decodeOpts = (arguments.length > 1 && arguments[1] && arguments[1].allowLarge) ? { maxBytes: 30000000 } : { maxBytes: BOOT_AUTO_INFLATE_CAP };
+    Promise.resolve(st.decodeWebSaveUrl(hashVal, decodeOpts)).then(function(decodedBundle) {
       if (!decodedBundle || !decodedBundle.keys) return;
       const cCnt = decodedBundle.coffeeCount || 0;
       const bCnt = decodedBundle.brewCount || 0;
@@ -316,7 +418,11 @@ function _checkAndOfferWebSaveRestore(rawHashStr) {
           }
         });
       }
-    }).catch(function() {});
+    }).catch(function(err) {
+      if (err && err.message === 'bk-too-big' && decodeOpts.maxBytes === BOOT_AUTO_INFLATE_CAP) {
+        mountLargeSavePrompt();
+      }
+    });
   } catch (e) {}
 }
 

@@ -23,7 +23,7 @@ jobs:
         shell: powershell
         run: |
           if (Test-Path scripts\build_app.ps1) {
-            powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_app.ps1 -EmitCapacitorWww
+            powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_app.ps1 -EmitCapacitorWww -WwwDir www
           } else {
             New-Item -ItemType Directory -Path www -Force | Out-Null
             Copy-Item index.html, manifest.webmanifest, sw.js -Destination www\ -Force
@@ -65,10 +65,10 @@ jobs:
       - name: Initialize Capacitor 6+ Android Project
         run: |
           npm init -y
-          npm install @capacitor/core@^6.2.0 @capacitor/cli@^6.2.0 @capacitor/android@^6.2.0 \
-            @capacitor-community/bluetooth-le@^6.0.0 @capacitor-community/keep-awake@^6.0.0 \
-            @capacitor/haptics@^6.0.0 @capacitor/filesystem@^6.0.0 @capacitor/share@^6.0.0 \
-            @capacitor/camera@^6.0.0 @capacitor/status-bar@^6.0.0 @capacitor/splash-screen@^6.0.0
+          npm install --no-audit --no-fund @capacitor/core@6.2.0 @capacitor/cli@6.2.0 @capacitor/android@6.2.0 \
+            @capacitor-community/bluetooth-le@6.0.1 @capacitor-community/keep-awake@6.0.0 \
+            @capacitor/haptics@6.0.2 @capacitor/filesystem@6.0.2 @capacitor/share@6.0.3 \
+            @capacitor/camera@6.0.3 @capacitor/status-bar@6.0.2 @capacitor/splash-screen@6.0.3
           cp mobile/capacitor.config.ts ./capacitor.config.ts
           npx cap add android
           cp mobile/android-template/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
@@ -107,10 +107,10 @@ jobs:
       - name: Initialize Capacitor 6+ iOS Project
         run: |
           npm init -y
-          npm install @capacitor/core@^6.2.0 @capacitor/cli@^6.2.0 @capacitor/ios@^6.2.0 \
-            @capacitor-community/bluetooth-le@^6.0.0 @capacitor-community/keep-awake@^6.0.0 \
-            @capacitor/haptics@^6.0.0 @capacitor/filesystem@^6.0.0 @capacitor/share@^6.0.0 \
-            @capacitor/camera@^6.0.0 @capacitor/status-bar@^6.0.0 @capacitor/splash-screen@^6.0.0
+          npm install --no-audit --no-fund @capacitor/core@6.2.0 @capacitor/cli@6.2.0 @capacitor/ios@6.2.0 \
+            @capacitor-community/bluetooth-le@6.0.1 @capacitor-community/keep-awake@6.0.0 \
+            @capacitor/haptics@6.0.2 @capacitor/filesystem@6.0.2 @capacitor/share@6.0.3 \
+            @capacitor/camera@6.0.3 @capacitor/status-bar@6.0.2 @capacitor/splash-screen@6.0.3
           cp mobile/capacitor.config.ts ./capacitor.config.ts
           npx cap add ios
           cp mobile/ios-template/Info.plist ios/App/App/Info.plist

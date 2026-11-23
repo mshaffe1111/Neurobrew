@@ -49,6 +49,54 @@ var BTStorage;
     'brew-and-cup-difluid-auth-v1'
   ];
   const ALL_18_LS_KEYS = PROTECTED_LS_KEYS.concat(ADDITIVE_LS_KEYS);
+  /* Strict portable export/import allowlist: never export or overwrite local credentials or rollback metadata */
+  const NON_EXPORTABLE_LS_KEYS = new Set([
+    DIFLUID_AUTH_LS_KEY,
+    SNAPSHOT_DATA_LS_KEY,
+    SNAPSHOT_META_LS_KEY
+  ]);
+  const EXPORTABLE_LS_KEYS = ALL_18_LS_KEYS.filter(k => !NON_EXPORTABLE_LS_KEYS.has(k));
+
+  /* Toxic CSV / draft sanitization helpers (prevents NaN masl, 99.00 stars, and 1900/9999 roast_date leaks) */
+  function _cleanElevM(v){
+    if (v == null || v === '') return '';
+    const n = typeof v === 'number'
+      ? v
+      : parseFloat(String(v).replace(/,/g, '').replace(/\s*(?:m|masl)\s*$/i, '').trim());
+    return (Number.isFinite(n) && n > 0 && n <= 4000) ? String(Math.round(n)) : '';
+  }
+  function _cleanRoastIsoDate(v){
+    if (!_btValidIsoDateRef(v)) return '';
+    const s = String(v).trim();
+    const y = parseInt(s.slice(0, 4), 10);
+    const maxY = new Date().getFullYear() + 1;
+    if (!Number.isFinite(y) || y < 2015 || y > maxY) return '';
+    const t = Date.parse(s + 'T00:00:00Z');
+    if (!Number.isFinite(t) || t > Date.now() + 7 * 86400000) return '';
+    return s;
+  }
+  function _clampRatingStars(v){
+    const s = validStars(v);
+    return (Number.isFinite(s) && s >= 0.5 && s <= 5) ? s : 0;
+  }
+  let _lastQuotaToastAt = 0;
+  function _notifyQuotaExceeded(err){
+    storageFailed = true;
+    const now = Date.now();
+    if (now - _lastQuotaToastAt > 5000){
+      _lastQuotaToastAt = now;
+      try {
+        if (_g.BTShell && typeof _g.BTShell.toast === 'function'){
+          _g.BTShell.toast('Browser storage is full — export a backup to avoid losing changes.');
+        }
+      } catch(e){}
+      try {
+        if (typeof _g.dispatchEvent === 'function' && typeof CustomEvent === 'function'){
+          _g.dispatchEvent(new CustomEvent('bt-storage-quota-exceeded', { detail:{ error:String(err && err.message || err || 'QuotaExceededError') } }));
+        }
+      } catch(e){}
+    }
+  }
 
   /* Both IndexedDB databases preserved at exact schema version 1 */
   const PICK_DB = 'brew-and-cup-files';
@@ -302,7 +350,7 @@ var BTStorage;
         localStorage.setItem(PREFS_MIRROR_LS_KEY, JSON.stringify(cleanFullPrefs(a.prefs)));
         _g.__btPrefsRev = (_g.__btPrefsRev || 0) + 1;
       }
-    } catch(e){}
+    } catch(e){ _notifyQuotaExceeded(e); }
   }
   function applyFullPrefs(raw){
     if (!raw || typeof raw !== 'object') return false;
@@ -343,7 +391,7 @@ var BTStorage;
       if (safeApp.prefs) safeApp.prefs = cleanFullPrefs(safeApp.prefs);
       localStorage.setItem(DRAFT_LS_KEY, JSON.stringify({ app:safeApp, state:s, at:Date.now() }));
       mirrorPrefsNow();
-    } catch(e){}
+    } catch(e){ _notifyQuotaExceeded(e); }
   }
   function loadDraftIntoApp(){
     const a = _getApp();
@@ -353,7 +401,14 @@ var BTStorage;
       if (raw){
         const d = JSON.parse(raw);
         if (d && d.app && typeof d.app === 'object'){
-          if (d.app.coffee && typeof d.app.coffee === 'object') a.coffee = Object.assign(a.coffee || {}, d.app.coffee);
+          if (d.app.coffee && typeof d.app.coffee === 'object'){
+            a.coffee = Object.assign(a.coffee || {}, d.app.coffee);
+            const cleanEl = _cleanElevM(a.coffee.elevation_m);
+            a.coffee.elevation_m = cleanEl;
+            if (cleanEl) a.coffee.elevText = cleanEl + ' masl';
+            else if (a.coffee.elevText && /nan|infinity/i.test(String(a.coffee.elevText))) a.coffee.elevText = '';
+            if (a.coffee.roast_date && !_cleanRoastIsoDate(a.coffee.roast_date)) a.coffee.roast_date = '';
+          }
           if (d.app.brew && typeof d.app.brew === 'object') a.brew = Object.assign(a.brew || {}, d.app.brew);
           if (d.app.adjust && typeof d.app.adjust === 'object') a.adjust = Object.assign(a.adjust || {}, d.app.adjust);
           if (d.app.cupBrew && typeof d.app.cupBrew === 'object') a.cupBrew = d.app.cupBrew;
@@ -437,7 +492,7 @@ var BTStorage;
       } else {
         localStorage.removeItem(ACADEMY_LS_KEY);
       }
-    } catch(e){}
+    } catch(e){ _notifyQuotaExceeded(e); }
     return clean;
   }
   function recordPalateGymTrial(trial){
@@ -471,7 +526,7 @@ var BTStorage;
     histDirty = 0; undoBuf = null; _persistDirty();
     histEdited = 0; editUndo = null; _persistEdited();
     histAdded = 0; _persistAdded();
-    try { localStorage.setItem(HISTORY_LS_KEY, text); } catch(e){ storageFailed = true; }
+    try { localStorage.setItem(HISTORY_LS_KEY, text); } catch(e){ _notifyQuotaExceeded(e); }
     _scheduleNativeVaultMirror();
   }
   function _keepInBrowserImpl(csvOrRow){
@@ -516,7 +571,7 @@ var BTStorage;
     historyState.objs = rowsToObjects(ex);
     historyState.text = toCSV([ex.header].concat(rows));
     _bumpHistoryRev();
-    try { localStorage.setItem(HISTORY_LS_KEY, historyState.text); } catch(e){ storageFailed = true; }
+    try { localStorage.setItem(HISTORY_LS_KEY, historyState.text); } catch(e){ _notifyQuotaExceeded(e); }
     _scheduleNativeVaultMirror();
     _autoSyncHistoryHandle();
   }
@@ -1195,11 +1250,11 @@ var BTStorage;
     c.freeze_days_offset = (o && o.freeze_days_offset) ? String(o.freeze_days_offset) : '';
     c.roast = resolveRoast(g('roast_level')) || '';
     c.process = resolveProcess(g('process')) || '';
-    c.density = resolveDensity(g('elevation_class'), o && o.elevation_m) || '';
-    c.elevation_m = (o && o.elevation_m) ? String(o.elevation_m).trim() : '';
+    c.density = resolveDensity(g('elevation_class'), _cleanElevM(o && o.elevation_m)) || '';
+    c.elevation_m = _cleanElevM(o && o.elevation_m);
     c.elevText = c.elevation_m ? (c.elevation_m + ' masl') : '';
     c.blend = resolveBlend(g('blend')) || '';
-    c.roast_date = _btValidIsoDateRef(o && o.roast_date) ? o.roast_date : '';
+    c.roast_date = _cleanRoastIsoDate(o && o.roast_date);
     const adMeta = _readRowAdaptationMeta(o);
     if (adMeta){
       if (adMeta.agtron != null) c.agtron = String(adMeta.agtron);
@@ -1271,7 +1326,10 @@ var BTStorage;
     const c = built.coffee, adMeta = built.adMeta;
     const objs = (historyState && historyState.objs) || [];
     const att = objs.filter(x => o.coffee_id && x.coffee_id === o.coffee_id).map(x => parseInt(x.brew_attempt, 10) || 0);
-    a.coffee = Object.assign(a.coffee || {}, c);
+    const freshCoffeeBase = (typeof newCoffee === 'function') ? newCoffee() : {};
+    a.coffee = Object.assign(freshCoffeeBase, c);
+    if (!c.isBlend){ a.coffee.isBlend = false; a.coffee.blendComponents = null; a.coffee.blendId = ''; }
+    delete a.coffee.pendingNextRecipe;
     a.attempt = att.length ? Math.max.apply(null, att) : 0;
     const mKey = resolveMethod(o.brew_method);
     if (mKey && a.brew) a.brew.method = mKey;
@@ -1308,7 +1366,7 @@ var BTStorage;
       else localStorage.removeItem(PRICES_LS_KEY);
       if (prState.changes > 0) localStorage.setItem(PRICES_CHANGES_LS_KEY, String(prState.changes));
       else localStorage.removeItem(PRICES_CHANGES_LS_KEY);
-    } catch(e){}
+    } catch(e){ _notifyQuotaExceeded(e); }
     _unifiedIndexCache.key = '';
     _scheduleNativeVaultMirror();
   }
@@ -1716,7 +1774,7 @@ var BTStorage;
       if (shState.changes > 0) localStorage.setItem(SHOPS_CHANGES_LS_KEY, String(shState.changes));
       else localStorage.removeItem(SHOPS_CHANGES_LS_KEY);
       shState.failed = false;
-    } catch(e){ shState.failed = true; }
+    } catch(e){ shState.failed = true; _notifyQuotaExceeded(e); }
     _scheduleNativeVaultMirror();
   }
   function _loadShopsImpl(){
@@ -2545,19 +2603,37 @@ var BTStorage;
 
   function _applyVerifiedSafetySnapshot(snap, opts){
     if (!snap || !snap.keys || typeof snap.keys !== 'object') return { ok:false, error:'No safety snapshot found to restore.' };
-    const crcs = snap.crcs || {};
+    const crcs = snap.crcs && typeof snap.crcs === 'object' ? snap.crcs : null;
     for (const k of Object.keys(snap.keys)){
       const raw = String(snap.keys[k]);
-      if (crcs[k] && bkCrc32(_utf8Bytes(raw)) !== crcs[k]){
-        return { ok:false, error:'Snapshot checksum mismatch on ' + k + '; live data left untouched.' };
+      if (crcs){
+        if (!Object.prototype.hasOwnProperty.call(crcs, k) || !crcs[k] || bkCrc32(_utf8Bytes(raw)) !== crcs[k]){
+          return { ok:false, error:'Snapshot checksum mismatch on ' + k + '; live data left untouched.' };
+        }
       }
     }
+    const prevValues = Object.create(null);
+    PROTECTED_LS_KEYS.forEach(k => {
+      try { prevValues[k] = localStorage.getItem(k); } catch(e){ prevValues[k] = null; }
+    });
+    const written = [];
     try {
       PROTECTED_LS_KEYS.forEach(k => {
+        written.push(k);
         if (Object.prototype.hasOwnProperty.call(snap.keys, k)) localStorage.setItem(k, String(snap.keys[k]));
         else localStorage.removeItem(k);
       });
-    } catch(e){ return { ok:false, error:'Browser storage refused the restore write.' }; }
+    } catch(e){
+      /* Atomic rollback of any partial writes if QuotaExceededError threw mid-restore */
+      written.forEach(k => {
+        try {
+          if (prevValues[k] !== null && prevValues[k] !== undefined) localStorage.setItem(k, String(prevValues[k]));
+          else localStorage.removeItem(k);
+        } catch(e2){}
+      });
+      _notifyQuotaExceeded(e);
+      return { ok:false, error:'Browser storage refused the restore write; previous data preserved.' };
+    }
     historyState = null;
     _loadHistoryImpl();
     _loadPricesImpl();
@@ -2570,7 +2646,7 @@ var BTStorage;
         if (Object.prototype.hasOwnProperty.call(snap.keys, k)) localStorage.setItem(k, String(snap.keys[k]));
         else localStorage.removeItem(k);
       });
-    } catch(e){}
+    } catch(e){ _notifyQuotaExceeded(e); }
     mirrorPrefsNow();
     return { ok:true, restoredKeys:Object.keys(snap.keys).length, vaultKey:snap.vaultKey || opts.snapshotKey || 'pre-v6-raw' };
   }
@@ -2741,7 +2817,7 @@ var BTStorage;
         _coffeesVaultCache.raw = null;
         _coffeesVaultCache.list = [];
       }
-    } catch(e){ storageFailed = true; }
+    } catch(e){ _notifyQuotaExceeded(e); }
     _vaultRev++;
     _unifiedIndexCache.key = '';
     _scheduleNativeVaultMirror();
@@ -3084,8 +3160,18 @@ var BTStorage;
 
   function _upsertVaultFromPriceList(list){
     if (!Array.isArray(list) || !list.length) return;
-    for (let i = 0; i < list.length; i++){
-      const bag = list[i];
+    /* Process finished/older bags first and newest OPEN bags last so the newest active bag wins */
+    const ordered = list.map((bag, idx) => ({ bag, idx })).sort((a, b) => {
+      const aFin = (a.bag && a.bag.finished) ? 0 : 1;
+      const bFin = (b.bag && b.bag.finished) ? 0 : 1;
+      if (aFin !== bFin) return aFin - bFin;
+      const ad = (a.bag && (a.bag.roast || a.bag.date)) || '';
+      const bd = (b.bag && (b.bag.roast || b.bag.date)) || '';
+      if (ad !== bd) return ad < bd ? -1 : 1;
+      return a.idx - b.idx;
+    });
+    for (let i = 0; i < ordered.length; i++){
+      const bag = ordered[i].bag;
       if (!bag || bag.kind === 'pods' || !bag.coffee) continue;
       const totalG = costGrams(bag.size, bag.unit);
       const loc = [bag.city, bag.state].filter(Boolean).join(', ');
@@ -3099,9 +3185,9 @@ var BTStorage;
         region:bag.region || '',
         process:bag.process || '',
         varietal:bag.varietal || '',
-        elevation_m:bag.elevation_m || '',
+        elevation_m:_cleanElevM(bag.elevation_m),
         roast:bag.rlevel || '',
-        roast_date:_btValidIsoDateRef(bag.roast) ? bag.roast : '',
+        roast_date:_cleanRoastIsoDate(bag.roast),
         is_frozen:bag.is_frozen === 'yes' ? 'yes' : '',
         frozen_date:_btValidIsoDateRef(bag.frozen_date) ? bag.frozen_date : '',
         bag_notes:bag.bag_notes || bag.notes || '',
@@ -3286,8 +3372,11 @@ var BTStorage;
         if (row.decaf_process) rec.decaf_process = (row.decaf_process.charCodeAt(0) === 39 ? unneutralize(row.decaf_process) : row.decaf_process).trim();
       }
       if (row.elevation_m && !rec.elevation_m){
-        rec.elevation_m = String(row.elevation_m).trim();
-        rec.elevText = rec.elevation_m + ' masl';
+        const clEl = _cleanElevM(row.elevation_m);
+        if (clEl){
+          rec.elevation_m = clEl;
+          rec.elevText = clEl + ' masl';
+        }
       }
       if (row.elevation_class && !rec.elevation_class){
         const eCls = (row.elevation_class.charCodeAt(0) === 39 ? unneutralize(row.elevation_class) : row.elevation_class).trim();
@@ -3299,8 +3388,8 @@ var BTStorage;
         if (bn && bn.length > rec.bag_notes.length){ rec.bag_notes = bn; rec.notes = bn; }
       }
 
-      const rDate = row.roast_date;
-      if (rDate && rDate.length === 10 && (!rec.roast_date || rDate >= rec.roast_date) && _btValidIsoDateRef(rDate)) rec.roast_date = rDate;
+      const rDate = _cleanRoastIsoDate(row.roast_date);
+      if (rDate && (!rec.roast_date || rDate >= rec.roast_date)) rec.roast_date = rDate;
       if (row.is_frozen === 'yes'){
         rec.is_frozen = 'yes';
         if (_btValidIsoDateRef(row.frozen_date)) rec.frozen_date = row.frozen_date;
@@ -3383,8 +3472,9 @@ var BTStorage;
 
       const excludedLearn = (row.cva_intensity_json && row.cva_intensity_json.indexOf('exclude_learning') >= 0) ? isRowExcludedFromLearning(row) : (row.exclude_learning === true);
       const rs = row.my_rating_stars;
-      const st = rs === '5' ? 5 : rs === '4.5' ? 4.5 : rs === '4' ? 4 : rs === '3.5' ? 3.5 : rs === '3' ? 3 : (rs ? validStars(rs) : 0);
-      const tScore = row.total_score ? +row.total_score : NaN;
+      const st = rs === '5' ? 5 : rs === '4.5' ? 4.5 : rs === '4' ? 4 : rs === '3.5' ? 3.5 : rs === '3' ? 3 : (rs ? _clampRatingStars(rs) : 0);
+      const rawTs = row.total_score ? +row.total_score : NaN;
+      const tScore = (Number.isFinite(rawTs) && rawTs >= 0 && rawTs <= 100) ? rawTs : NaN;
       const effStars = excludedLearn ? 0 : (st > 0 ? st : (tScore > 0 ? Math.max(0.5, Math.min(5, Math.round((3.5 + (tScore - 82) * 0.2) * 100) / 100)) : 0));
       if (!excludedLearn && (effStars > rec.bestStars || (effStars === rec.bestStars && (!rec.bestBrew || isNewerOrEqRow(row, rec.bestBrew))))){
         if (effStars > 0 || !rec.bestBrew){
@@ -3405,7 +3495,8 @@ var BTStorage;
       if (!rec.name) rec.name = bag.coffee;
       if (!rec.roaster && bag.roaster) rec.roaster = bag.roaster;
       if ((!rec.roast || rec.roast === 'unknown') && bag.rlevel) rec.roast = fastRoast(bag.rlevel) || bag.rlevel;
-      if (_btValidIsoDateRef(bag.roast) && (!rec.roast_date || bag.roast >= rec.roast_date)) rec.roast_date = bag.roast;
+      const cleanBagRoast = _cleanRoastIsoDate(bag.roast);
+      if (cleanBagRoast && (!rec.roast_date || cleanBagRoast >= rec.roast_date)) rec.roast_date = cleanBagRoast;
       if (bag.is_frozen === 'yes') rec.is_frozen = 'yes';
       if (_btValidIsoDateRef(bag.frozen_date)) rec.frozen_date = bag.frozen_date;
       const bagNotesTxt = String(bag.bag_notes || bag.notes || '').trim();
@@ -3418,9 +3509,12 @@ var BTStorage;
       if (bag.process && (!rec.process || rec.process === 'unknown')) rec.process = fastProc(bag.process) || bag.process;
       if (bag.varietal && !rec.varietal) rec.varietal = bag.varietal;
       if (bag.elevation_m && !rec.elevation_m){
-        rec.elevation_m = String(bag.elevation_m);
-        rec.elevText = rec.elevation_m + ' masl';
-        if (!rec.density) rec.density = resolveDensity('', rec.elevation_m);
+        const clBagEl = _cleanElevM(bag.elevation_m);
+        if (clBagEl){
+          rec.elevation_m = clBagEl;
+          rec.elevText = clBagEl + ' masl';
+          if (!rec.density) rec.density = resolveDensity('', rec.elevation_m);
+        }
       }
       if (!rec.roaster_location && (bag.city || bag.state)) rec.roaster_location = [bag.city, bag.state].filter(Boolean).join(', ');
       const bagTotalG = costGrams(bag.size, bag.unit);
@@ -3554,9 +3648,13 @@ var BTStorage;
       }
       if (rec.bag_notes && !rec.notes) rec.notes = rec.bag_notes;
       if (rec.notes && !rec.bag_notes) rec.bag_notes = rec.notes;
-      if (rec.elevation_m && !rec.elevText) rec.elevText = rec.elevation_m + ' masl';
-      if (rec.elevation_m && !rec.density) rec.density = resolveDensity('', rec.elevation_m);
-      const activeRoast = (rec.openBag && rec.openBag.roast) ? rec.openBag.roast : rec.roast_date;
+      const clFinalEl = _cleanElevM(rec.elevation_m);
+      rec.elevation_m = clFinalEl;
+      if (clFinalEl && !rec.elevText) rec.elevText = clFinalEl + ' masl';
+      else if (!clFinalEl && rec.elevText && /nan|infinity/i.test(String(rec.elevText))) rec.elevText = '';
+      if (clFinalEl && !rec.density) rec.density = resolveDensity('', clFinalEl);
+      const activeRoast = (rec.openBag && _cleanRoastIsoDate(rec.openBag.roast)) ? _cleanRoastIsoDate(rec.openBag.roast) : _cleanRoastIsoDate(rec.roast_date);
+      rec.roast_date = _cleanRoastIsoDate(rec.roast_date);
       rec.daysSinceRoast = activeRoast ? priceDaysSince(activeRoast, todayStr) : null;
       rec.isGoldenLocked = !!rec.lockedBrew;
       rec.isDialedIn = !!(rec.lockedBrew || rec.bestStars >= 4.5);
@@ -3665,12 +3763,29 @@ var BTStorage;
     setIfMeaningful('species', rec.species);
     if (rec.decaf === 'yes' || rec.decaf === true) c.decaf = 'yes';
     setIfMeaningful('decaf_process', rec.decaf_process);
-    setIfMeaningful('density', resolveDensity(rec.density, rec.elevation_m) || rec.density);
-    if (rec.elevation_m != null && String(rec.elevation_m).trim() !== ''){
-      c.elevation_m = String(rec.elevation_m).trim();
-      c.elevText = rec.elevText || (c.elevation_m + ' masl');
-    } else if (rec.elevText && !_isUnknownToken(rec.elevText)){
+    setIfMeaningful('density', resolveDensity(rec.density, _cleanElevM(rec.elevation_m)) || rec.density);
+    const clRecEl = _cleanElevM(rec.elevation_m);
+    if (clRecEl){
+      c.elevation_m = clRecEl;
+      c.elevText = clRecEl + ' masl';
+    } else if (rec.elevText && !_isUnknownToken(rec.elevText) && !/nan|infinity/i.test(String(rec.elevText))){
       c.elevText = String(rec.elevText);
+    } else if (!_cleanElevM(c.elevation_m)){
+      c.elevation_m = '';
+      c.elevText = '';
+    }
+    if (rec.isBlend && Array.isArray(rec.blendComponents)){
+      const cleanedBc = _cleanBlendComponents(rec.blendComponents);
+      if (cleanedBc){
+        c.isBlend = true;
+        c.blendComponents = cleanedBc;
+        c.blend = 'blend';
+        if (rec.blendId) c.blendId = String(rec.blendId);
+      }
+    } else if (!c.isBlend){
+      c.isBlend = false;
+      c.blendComponents = null;
+      c.blendId = '';
     }
     const notesVal = String(rec.bag_notes || rec.notes || c.bag_notes || c.notes || '').trim();
     if (notesVal){
@@ -3696,7 +3811,7 @@ var BTStorage;
     if (rec.roasterGuide && typeof rec.roasterGuide === 'object') c.roasterGuide = _cloneObj(rec.roasterGuide);
     if (rec.recommended_rest_days != null && isFinite(+rec.recommended_rest_days)) c.recommended_rest_days = Math.round(+rec.recommended_rest_days);
 
-    const bestRoastDate = (rec.openBag && _btValidIsoDateRef(rec.openBag.roast)) ? rec.openBag.roast : (rec.roast_date || c.roast_date || '');
+    const bestRoastDate = (rec.openBag && _cleanRoastIsoDate(rec.openBag.roast)) ? _cleanRoastIsoDate(rec.openBag.roast) : (_cleanRoastIsoDate(rec.roast_date) || _cleanRoastIsoDate(c.roast_date) || '');
     c.roast_date = bestRoastDate;
     c.is_frozen = rec.is_frozen || c.is_frozen || '';
     c.frozen_date = rec.frozen_date || c.frozen_date || '';
@@ -3728,7 +3843,10 @@ var BTStorage;
     c.date_unknown = c.dateUnsure;
     c.notes_unknown = c.notesUnsure;
 
-    a.coffee = Object.assign(a.coffee || {}, c);
+    const freshCoffeeBase = (typeof newCoffee === 'function') ? newCoffee() : {};
+    a.coffee = Object.assign(freshCoffeeBase, c);
+    if (!c.isBlend){ a.coffee.isBlend = false; a.coffee.blendComponents = null; a.coffee.blendId = ''; }
+    delete a.coffee.pendingNextRecipe;
     a.attempt = rec.n_cups || 0;
 
     let methodKey = (opts.methodKey && resolveMethod(opts.methodKey)) || '';
@@ -4183,7 +4301,7 @@ var BTStorage;
     } catch(e){}
 
     const keys = {};
-    ALL_18_LS_KEYS.forEach(k => {
+    EXPORTABLE_LS_KEYS.forEach(k => {
       let val = null;
       try { val = localStorage.getItem(k); } catch(e){ val = null; }
       keys[k] = val !== null ? String(val) : null;
@@ -4288,14 +4406,13 @@ var BTStorage;
         }
       }
     } catch(e){}
-    return 'https://mshaffe1111.github.io/Neurobrew/';
+    return './';
   }
 
   function _packWireFromBundle(bundleInput){
     const b = (bundleInput && typeof bundleInput === 'object' && bundleInput.keys) ? bundleInput : _exportFullSaveBundleImpl();
     const compactKeys = {};
-    ALL_18_LS_KEYS.forEach(k => {
-      if (k === SNAPSHOT_DATA_LS_KEY || k === SNAPSHOT_META_LS_KEY || k === DIFLUID_AUTH_LS_KEY) return;
+    EXPORTABLE_LS_KEYS.forEach(k => {
       const v = b.keys && b.keys[k];
       if (v !== null && v !== undefined && v !== '') compactKeys[k] = String(v);
     });
@@ -4321,7 +4438,7 @@ var BTStorage;
     const srcKeys = (parsed.keys && typeof parsed.keys === 'object') ? parsed.keys : ((parsed.k && typeof parsed.k === 'object') ? parsed.k : null);
     if (!srcKeys) return null;
     const fullKeys = {};
-    ALL_18_LS_KEYS.forEach(k => {
+    EXPORTABLE_LS_KEYS.forEach(k => {
       const v = srcKeys[k];
       fullKeys[k] = (v !== null && v !== undefined && v !== '') ? String(v) : null;
     });
@@ -4364,25 +4481,27 @@ var BTStorage;
     return '';
   }
 
-  function _inflateRawDeflateSync(rawDeflateBytes){
-    if (typeof _btPureGzipDecompress !== 'function') throw new Error('no-sync-inflate');
-    const wrapped = new Uint8Array(10 + rawDeflateBytes.length + 8);
-    wrapped[0] = 0x1f; wrapped[1] = 0x8b; wrapped[2] = 0x08;
-    wrapped.set(rawDeflateBytes, 10);
-    return _btPureGzipDecompress(wrapped, 30000000);
+  function _inflateRawDeflateSync(rawDeflateBytes, maxBytes){
+    const cap = (typeof maxBytes === 'number' && maxBytes > 0) ? maxBytes : 30000000;
+    if (typeof _btPureRawInflate === 'function'){
+      return _btPureRawInflate(rawDeflateBytes, cap);
+    }
+    throw new Error('no-sync-inflate');
   }
 
-  function _decodeWebSaveSync(urlOrCode){
+  function _decodeWebSaveSync(urlOrCode, opts){
     const tok = _extractWebSaveToken(urlOrCode);
     if (!tok) return null;
+    const cap = (opts && typeof opts.maxBytes === 'number' && opts.maxBytes > 0) ? opts.maxBytes : 30000000;
     const prefix = tok.slice(0, 2);
     const b64Body = tok.slice(2);
     const rawBytes = bkB64Decode(b64Body);
     let jsonStr = '';
     if (prefix === 'j.'){
+      if (rawBytes.length > cap) throw new Error('bk-too-big');
       jsonStr = _btUtf8Decode(rawBytes);
     } else if (prefix === 'z.'){
-      const inflated = _inflateRawDeflateSync(rawBytes);
+      const inflated = _inflateRawDeflateSync(rawBytes, cap);
       jsonStr = _btUtf8Decode(inflated);
     } else {
       return null;
@@ -4417,27 +4536,30 @@ var BTStorage;
     return _resolveWebSaveBaseUrl() + '#btsave=' + payload;
   }
 
-  async function _decodeWebSaveUrlImpl(urlOrCode){
+  async function _decodeWebSaveUrlImpl(urlOrCode, opts){
     if (urlOrCode && typeof urlOrCode === 'object' && urlOrCode.keys){
       return _unpackWireToBundle(urlOrCode);
     }
+    const cap = (opts && typeof opts.maxBytes === 'number' && opts.maxBytes > 0) ? opts.maxBytes : 30000000;
     const tok = _extractWebSaveToken(urlOrCode);
     if (!tok) throw new Error('No valid #btsave=... link or save code found.');
     const prefix = tok.slice(0, 2);
     const compBytes = bkB64Decode(tok.slice(2));
     let utf8BytesOut = null;
     if (prefix === 'j.'){
+      if (compBytes.length > cap) throw new Error('bk-too-big');
       utf8BytesOut = compBytes;
     } else if (prefix === 'z.'){
       if (typeof DecompressionStream === 'function'){
         try {
-          utf8BytesOut = await bkPipeLimit(compBytes, new DecompressionStream('deflate-raw'), 30000000);
+          utf8BytesOut = await bkPipeLimit(compBytes, new DecompressionStream('deflate-raw'), cap);
         } catch(e){
+          if (e && e.message === 'bk-too-big') throw e;
           utf8BytesOut = null;
         }
       }
       if (!utf8BytesOut){
-        utf8BytesOut = _inflateRawDeflateSync(compBytes);
+        utf8BytesOut = _inflateRawDeflateSync(compBytes, cap);
       }
     } else {
       throw new Error('Unsupported web save prefix.');
@@ -4521,7 +4643,7 @@ var BTStorage;
   function _capturePreImportVaultSnapshot(){
     try {
       const snapKeys = {}, snapCrcs = {};
-      ALL_18_LS_KEYS.concat([EXTRA_VAULT_COFFEES_KEY, EXTRA_AROMA_KIT_KEY]).forEach(k => {
+      EXPORTABLE_LS_KEYS.concat([EXTRA_VAULT_COFFEES_KEY, EXTRA_AROMA_KIT_KEY]).forEach(k => {
         let v = null;
         try { v = localStorage.getItem(k); } catch(e){ v = null; }
         if (v !== null && v !== ''){
@@ -4766,17 +4888,16 @@ var BTStorage;
     let coffeesImported = 0;
 
     if (mode === 'replace'){
-      /* Cleanly replace data keys while keeping safety snapshot metadata intact */
-      const preserveOnNull = new Set([SNAPSHOT_DATA_LS_KEY, SNAPSHOT_META_LS_KEY]);
-      ALL_18_LS_KEYS.forEach(k => {
+      /* Cleanly replace ONLY allowlisted portable user-data keys; never overwrite or wipe local credentials or rollback metadata */
+      EXPORTABLE_LS_KEYS.forEach(k => {
         const v = km[k];
         try {
           if (v !== null && v !== undefined && v !== ''){
             localStorage.setItem(k, String(v));
-          } else if (!preserveOnNull.has(k)){
+          } else {
             localStorage.removeItem(k);
           }
-        } catch(e){}
+        } catch(e){ _notifyQuotaExceeded(e); }
       });
       [EXTRA_VAULT_COFFEES_KEY, EXTRA_AROMA_KIT_KEY].forEach(xk => {
         const xv = xm[xk] != null ? xm[xk] : km[xk];
@@ -5057,12 +5178,58 @@ var BTStorage;
     };
   }
 
+  /* Cross-tab localStorage synchronization: reload in-memory stores when another tab commits writes */
+  const _SYNCED_STORAGE_KEYS = new Set([
+    HISTORY_LS_KEY, PRICES_LS_KEY, SHOPS_LS_KEY, SHOP_DRAFT_LS_KEY,
+    EXTRA_VAULT_COFFEES_KEY, PREFS_MIRROR_LS_KEY, DRAFT_LS_KEY, ACADEMY_LS_KEY
+  ]);
+  if (typeof _g.addEventListener === 'function'){
+    _g.addEventListener('storage', function(ev){
+      try {
+        const k = ev && ev.key;
+        if (k !== null && k !== undefined && !_SYNCED_STORAGE_KEYS.has(k)) return;
+        let touched = false;
+        if (!k || k === HISTORY_LS_KEY){ historyState = null; _loadHistoryImpl(); touched = true; }
+        if (!k || k === PRICES_LS_KEY){ _loadPricesImpl(); touched = true; }
+        if (!k || k === SHOPS_LS_KEY){ _loadShopsImpl(); touched = true; }
+        if (!k || k === SHOP_DRAFT_LS_KEY){ _loadShopDraftImpl(); touched = true; }
+        if (!k || k === EXTRA_VAULT_COFFEES_KEY){ _coffeesVaultCache.raw = null; _coffeesVaultCache.list = []; _vaultRev++; touched = true; }
+        if (!k || k === PREFS_MIRROR_LS_KEY){
+          try {
+            const rawP = localStorage.getItem(PREFS_MIRROR_LS_KEY);
+            if (rawP){
+              const parsedP = JSON.parse(rawP);
+              if (parsedP && typeof parsedP === 'object'){
+                const a = _getApp();
+                a.prefs = cleanFullPrefs(Object.assign({}, a.prefs || {}, parsedP));
+                _g.__btPrefs = a.prefs;
+                _g.__btPrefsRev = (_g.__btPrefsRev || 0) + 1;
+              }
+            }
+          } catch(e2){}
+          touched = true;
+        }
+        if (touched){
+          _unifiedIndexCache.key = '';
+          _bumpHistoryRev();
+          try {
+            if (typeof _g.dispatchEvent === 'function' && typeof CustomEvent === 'function'){
+              _g.dispatchEvent(new CustomEvent('bt-storage-external-sync', { detail:{ key:k || '*' } }));
+            }
+          } catch(e3){}
+          _triggerRender();
+        }
+      } catch(e){}
+    });
+  }
+
   /* Export window.BTStorage matching Blueprint Section 5.1 + full Data Vault toolkit */
   BTStorage = {
     PROTECTED_LS_KEYS:PROTECTED_LS_KEYS.slice(),
     ADDITIVE_LS_KEYS:ADDITIVE_LS_KEYS.slice(),
     ALL_18_LS_KEYS:ALL_18_LS_KEYS.slice(),
-    getHistory:() => historyState,
+    EXPORTABLE_LS_KEYS:EXPORTABLE_LS_KEYS.slice(),
+    getHistory:() => historyState || { ex:null, text:'', objs:[] },
     loadHistory:_loadHistoryImpl,
     forgetHistory:_forgetHistoryImpl,
     keepInBrowser:_keepInBrowserImpl,

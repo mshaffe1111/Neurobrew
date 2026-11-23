@@ -1,6 +1,6 @@
 {
   "name": "BeanTelligence",
-  "version": "6.2.0",
+  "version": "7.6.0",
   "schema": 1,
   "description": "Deterministic Zero-Node ordered module concatenation manifest for BeanTelligence v6.2 standalone web PWA and Horizon-2 Capacitor www bundle.",
   "encoding": "utf-8-nobom",

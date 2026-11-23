@@ -1,4 +1,4 @@
-# BeanTelligence (v6.0)
+# BeanTelligence (v7.6)
 
 **BeanTelligence** (formerly *NeuroBrew*) is a local-first, offline-capable, zero-form specialty coffee brewing studio, 5-slot / 15-family Web Bluetooth smart hardware bench, `"The Chart IS The Input"` interactive physics lab, Bayesian sensory palate engine, sensory calibration gym, and peer-reviewed coffee science academy — delivered as a standalone zero-CDN web application and installable PWA (`index.html` + `./manifest.webmanifest` + `./sw.js`), with turnkey Capacitor 6+ iOS/Android native readiness.
 

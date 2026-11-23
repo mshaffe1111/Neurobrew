@@ -36,8 +36,12 @@ public sealed class BtPreviewServerV6 : IDisposable {
     public long Ticks;
     public long Length;
     public byte[] Bytes;
+    public string ETag;
+    public string LastModified;
   }
 
+  private const int MaxCacheEntries = 64;
+  private const long MaxCacheFileBytes = 16 * 1024 * 1024;
   private readonly string _rootTrimmed;
   private readonly string _rootWithSep;
   private readonly int _port;
@@ -134,12 +138,18 @@ public sealed class BtPreviewServerV6 : IDisposable {
   }
 
   public bool ProcessHttpExchange(Stream stream) {
-    string reqLine = ReadRequestHead(stream);
+    string hostHeader;
+    string reqLine = ReadRequestHead(stream, out hostHeader);
     if (string.IsNullOrEmpty(reqLine)) return false;
 
     string[] parts = reqLine.Split(' ');
     string method = parts.Length >= 1 ? parts[0].Trim().ToUpperInvariant() : "GET";
     string rawUrl = parts.Length >= 2 ? parts[1].Trim() : "/";
+
+    if (!IsAllowedLocalHost(hostHeader)) {
+      WriteResponse(stream, 403, "Forbidden", "text/plain; charset=utf-8", Encoding.UTF8.GetBytes("403 Forbidden: invalid Host"), method == "HEAD", null, null);
+      return true;
+    }
 
     int qIdx = rawUrl.IndexOf('?');
     string cleanPath = qIdx >= 0 ? rawUrl.Substring(0, qIdx) : rawUrl;
@@ -153,18 +163,18 @@ public sealed class BtPreviewServerV6 : IDisposable {
     try {
       candidate = Path.GetFullPath(Path.Combine(_rootWithSep, rel));
     } catch {
-      WriteResponse(stream, 400, "Bad Request", "text/plain; charset=utf-8", Encoding.UTF8.GetBytes("400 Bad Request"), method == "HEAD");
+      WriteResponse(stream, 400, "Bad Request", "text/plain; charset=utf-8", Encoding.UTF8.GetBytes("400 Bad Request"), method == "HEAD", null, null);
       return true;
     }
 
     if (!candidate.StartsWith(_rootWithSep, StringComparison.OrdinalIgnoreCase) &&
         !string.Equals(candidate, _rootTrimmed, StringComparison.OrdinalIgnoreCase)) {
-      WriteResponse(stream, 403, "Forbidden", "text/plain; charset=utf-8", Encoding.UTF8.GetBytes("403 Forbidden"), method == "HEAD");
+      WriteResponse(stream, 403, "Forbidden", "text/plain; charset=utf-8", Encoding.UTF8.GetBytes("403 Forbidden"), method == "HEAD", null, null);
       return true;
     }
 
     if (method != "GET" && method != "HEAD") {
-      WriteResponse(stream, 405, "Method Not Allowed", "text/plain; charset=utf-8", Encoding.UTF8.GetBytes("405 Method Not Allowed"), method == "HEAD");
+      WriteResponse(stream, 405, "Method Not Allowed", "text/plain; charset=utf-8", Encoding.UTF8.GetBytes("405 Method Not Allowed"), method == "HEAD", null, null);
       return true;
     }
 
@@ -172,18 +182,51 @@ public sealed class BtPreviewServerV6 : IDisposable {
       candidate = Path.Combine(candidate, "index.html");
     }
 
-    byte[] body = TryReadAssetBytes(candidate);
-    if (body == null) {
-      WriteResponse(stream, 404, "Not Found", "text/plain; charset=utf-8", Encoding.UTF8.GetBytes("404 Not Found: " + cleanPath), method == "HEAD");
+    if (!IsAllowedPreviewAsset(candidate)) {
+      WriteResponse(stream, 403, "Forbidden", "text/plain; charset=utf-8", Encoding.UTF8.GetBytes("403 Forbidden"), method == "HEAD", null, null);
+      return true;
+    }
+
+    CachedAsset asset = TryReadAsset(candidate);
+    if (asset == null || asset.Bytes == null) {
+      WriteResponse(stream, 404, "Not Found", "text/plain; charset=utf-8", Encoding.UTF8.GetBytes("404 Not Found: " + cleanPath), method == "HEAD", null, null);
       return true;
     }
 
     string mime = GetMimeType(Path.GetExtension(candidate));
-    WriteResponse(stream, 200, "OK", mime, body, method == "HEAD");
+    WriteResponse(stream, 200, "OK", mime, asset.Bytes, method == "HEAD", asset.ETag, asset.LastModified);
     return true;
   }
 
-  private static string ReadRequestHead(Stream stream) {
+  private static bool IsAllowedLocalHost(string hostHeader) {
+    if (string.IsNullOrWhiteSpace(hostHeader)) return true;
+    string h = hostHeader.Trim().ToLowerInvariant();
+    if (h.StartsWith("[::1]")) {
+      return h == "[::1]" || h.StartsWith("[::1]:");
+    }
+    int colon = h.IndexOf(':');
+    string name = colon >= 0 ? h.Substring(0, colon) : h;
+    return name == "localhost" || name == "127.0.0.1";
+  }
+
+  private bool IsAllowedPreviewAsset(string fullPath) {
+    if (string.IsNullOrEmpty(fullPath)) return false;
+    if (!fullPath.StartsWith(_rootWithSep, StringComparison.OrdinalIgnoreCase)) return false;
+    string rel = fullPath.Substring(_rootWithSep.Length).Replace('\\', '/');
+    if (string.IsNullOrEmpty(rel)) return false;
+    string[] segs = rel.Split('/');
+    for (int i = 0; i < segs.Length; i++) {
+      if (segs[i].StartsWith(".", StringComparison.Ordinal)) return false;
+    }
+    string top = segs[0].ToLowerInvariant();
+    if (top == "index.html" || top == "sw.js" || top == "manifest.webmanifest") return segs.Length == 1;
+    if (top == "icons") return true;
+    if (top == "mobile" && segs.Length >= 2 && string.Equals(segs[1], "www", StringComparison.OrdinalIgnoreCase)) return true;
+    return false;
+  }
+
+  private static string ReadRequestHead(Stream stream, out string hostHeader) {
+    hostHeader = null;
     byte[] buf = new byte[8192];
     int total = 0;
     while (total < buf.Length) {
@@ -193,10 +236,17 @@ public sealed class BtPreviewServerV6 : IDisposable {
       if (HasHeaderTerminator(buf, total)) break;
     }
     if (total <= 0) return null;
-    int eol = 0;
-    while (eol < total && buf[eol] != (byte)'\r' && buf[eol] != (byte)'\n') eol++;
-    if (eol <= 0) return null;
-    return Encoding.ASCII.GetString(buf, 0, eol);
+    string headText = Encoding.ASCII.GetString(buf, 0, total);
+    string[] lines = headText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+    if (lines.Length == 0 || string.IsNullOrEmpty(lines[0])) return null;
+    for (int i = 1; i < lines.Length; i++) {
+      if (string.IsNullOrEmpty(lines[i])) break;
+      if (lines[i].StartsWith("Host:", StringComparison.OrdinalIgnoreCase)) {
+        hostHeader = lines[i].Substring(5).Trim();
+        break;
+      }
+    }
+    return lines[0];
   }
 
   private static bool HasHeaderTerminator(byte[] buf, int len) {
@@ -208,19 +258,23 @@ public sealed class BtPreviewServerV6 : IDisposable {
     return false;
   }
 
-  private byte[] TryReadAssetBytes(string fullPath) {
+  private CachedAsset TryReadAsset(string fullPath) {
     for (int attempt = 0; attempt < 3; attempt++) {
       try {
         var fi = new FileInfo(fullPath);
         if (!fi.Exists) return null;
+        if ((fi.Attributes & FileAttributes.ReparsePoint) != 0) return null;
         long ticks = fi.LastWriteTimeUtc.Ticks;
         long len = fi.Length;
+        string etag = "\"" + len.ToString("x") + "-" + ticks.ToString("x") + "\"";
+        string lastMod = fi.LastWriteTimeUtc.ToString("R");
         CachedAsset cached;
         if (_cache.TryGetValue(fullPath, out cached) && cached != null &&
             cached.Ticks == ticks && cached.Length == len && cached.Bytes != null) {
-          return cached.Bytes;
+          return cached;
         }
         using (var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete)) {
+          if (fs.Length > 64 * 1024 * 1024) return null;
           int byteLen = (int)fs.Length;
           byte[] data = new byte[byteLen];
           int read = 0;
@@ -234,8 +288,12 @@ public sealed class BtPreviewServerV6 : IDisposable {
             Buffer.BlockCopy(data, 0, trimmed, 0, read);
             data = trimmed;
           }
-          _cache[fullPath] = new CachedAsset { Ticks = ticks, Length = data.Length, Bytes = data };
-          return data;
+          var entry = new CachedAsset { Ticks = ticks, Length = data.Length, Bytes = data, ETag = etag, LastModified = lastMod };
+          if (data.Length <= MaxCacheFileBytes) {
+            if (_cache.Count >= MaxCacheEntries) _cache.Clear();
+            _cache[fullPath] = entry;
+          }
+          return entry;
         }
       } catch (IOException) {
         Thread.Sleep(15);
@@ -246,15 +304,18 @@ public sealed class BtPreviewServerV6 : IDisposable {
     return null;
   }
 
-  private static void WriteResponse(Stream stream, int code, string statusText, string mime, byte[] body, bool headOnly) {
+  private static void WriteResponse(Stream stream, int code, string statusText, string mime, byte[] body, bool headOnly, string etag, string lastModified) {
     int len = body != null ? body.Length : 0;
-    string hdr = "HTTP/1.1 " + code + " " + statusText + "\r\n" +
-      "Content-Type: " + mime + "\r\n" +
-      "Content-Length: " + len + "\r\n" +
-      "Cache-Control: no-store, no-cache, must-revalidate\r\n" +
-      "X-Content-Type-Options: nosniff\r\n" +
-      "Connection: close\r\n\r\n";
-    byte[] hdrBytes = Encoding.ASCII.GetBytes(hdr);
+    var sb = new StringBuilder(256);
+    sb.Append("HTTP/1.1 ").Append(code).Append(' ').Append(statusText).Append("\r\n");
+    sb.Append("Content-Type: ").Append(mime).Append("\r\n");
+    sb.Append("Content-Length: ").Append(len).Append("\r\n");
+    sb.Append("Cache-Control: no-store, no-cache, must-revalidate\r\n");
+    if (!string.IsNullOrEmpty(etag)) sb.Append("ETag: ").Append(etag).Append("\r\n");
+    if (!string.IsNullOrEmpty(lastModified)) sb.Append("Last-Modified: ").Append(lastModified).Append("\r\n");
+    sb.Append("X-Content-Type-Options: nosniff\r\n");
+    sb.Append("Connection: close\r\n\r\n");
+    byte[] hdrBytes = Encoding.ASCII.GetBytes(sb.ToString());
     stream.Write(hdrBytes, 0, hdrBytes.Length);
     if (!headOnly && len > 0) {
       stream.Write(body, 0, len);

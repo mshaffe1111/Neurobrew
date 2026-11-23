@@ -15,6 +15,15 @@ function _btEsc(s) {
   });
 }
 
+function _btSafeCls(s) {
+  return String(s == null ? '' : s).replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function _btSafeSize(n) {
+  const v = Number(n);
+  return (isFinite(v) && v > 0 && v <= 2048) ? Math.round(v * 100) / 100 : 0;
+}
+
 /* ==================== 1. BTBrand ("THE REFRACTING PRISM DROP") ==================== */
 const BTBrand = (function() {
   let logoSeq = 0;
@@ -166,7 +175,8 @@ const BTBrand = (function() {
     opts = opts || {};
     const theme = String(opts.theme || opts.variant || opts.mode || '').toLowerCase();
     const optical = resolveOptical(opts);
-    const szStyle = typeof opts.size === 'number' ? ' style="width:' + opts.size + 'px;height:' + opts.size + 'px"' : '';
+    const safeSz = _btSafeSize(opts.size);
+    const szStyle = safeSz ? ' style="width:' + safeSz + 'px;height:' + safeSz + 'px"' : '';
     const aria = opts.label ? 'role="img" aria-label="' + _btEsc(opts.label) + '"' : 'aria-hidden="true"';
 
     if (theme === 'androidadaptive') {
@@ -264,20 +274,20 @@ const BTBrand = (function() {
   function spriteSymbolsMarkup() {
     return '<symbol id="bt-mark" viewBox="0 0 200 200"><g transform="translate(100 100) scale(0.215) translate(-518 -500)">' +
       '<path d="' + PRISM_LEFT + '" fill="var(--bt-prism-left,#2E160B)"/>' +
-      '<path d="' + PRISM_RIGHT + '" fill="var(--bt-prism-right,#9A4212)"/>' +
+      '<path d="' + PRISM_RIGHT + '" fill="var(--bt-prism-right,#9A4A1E)"/>' +
       '<path d="' + PRISM_CROWN + '" fill="var(--bt-prism-crown,#D98B26)"/>' +
       '<path d="' + PRISM_HEART_L + '" fill="var(--bt-prism-heart,#F6BE58)"/>' +
-      '<path d="' + PRISM_HEART_R + '" fill="var(--bt-prism-right,#9A4212)" fill-opacity="0.88"/>' +
+      '<path d="' + PRISM_HEART_R + '" fill="var(--bt-prism-right,#9A4A1E)" fill-opacity="0.88"/>' +
       '<path d="' + BEAM_IN + '" fill="var(--bt-prism-beam,#381C0D)"/>' +
       '<path d="' + WAVE_1_ACID + '" fill="var(--bt-prism-wave1,#E09224)"/>' +
-      '<path d="' + WAVE_2_SUGAR + '" fill="var(--bt-prism-wave2,#B84A14)"/>' +
-      '<path d="' + WAVE_3_SWEET + '" fill="var(--bt-prism-wave3,#1B7A52)"/>' +
+      '<path d="' + WAVE_2_SUGAR + '" fill="var(--bt-prism-wave2,#9A4A1E)"/>' +
+      '<path d="' + WAVE_3_SWEET + '" fill="var(--bt-prism-wave3,#1C4A36)"/>' +
       '<circle cx="912" cy="303" r="12" fill="var(--bt-prism-wave1,#E09224)"/>' +
-      '<circle cx="928" cy="468" r="11" fill="var(--bt-prism-wave2,#B84A14)"/>' +
-      '<circle cx="906" cy="621" r="11" fill="var(--bt-prism-wave3,#1B7A52)"/>' +
+      '<circle cx="928" cy="468" r="11" fill="var(--bt-prism-wave2,#9A4A1E)"/>' +
+      '<circle cx="906" cy="621" r="11" fill="var(--bt-prism-wave3,#1C4A36)"/>' +
       '<path d="' + MENISCUS_ARC + '" fill="var(--bt-prism-crown,#D98B26)"/></g></symbol>' +
       '<symbol id="bt-medal" viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="var(--bj-stage-bg,#F4EBDD)" stroke="var(--bt-prism-crown,#D98B26)" stroke-width="3"/><circle cx="60" cy="60" r="46" fill="none" stroke="var(--bt-prism-crown,#D98B26)" stroke-width="1.4" stroke-dasharray="2 4" opacity="0.65"/><use href="#bt-mark" x="18" y="18" width="84" height="84"/></symbol>' +
-      '<symbol id="bt-badge" viewBox="0 0 400 356"><rect x="24" y="18" width="352" height="320" rx="36" fill="var(--card,#FFFFFF)" stroke="var(--line,#D8C8B6)" stroke-width="2"/><circle cx="200" cy="142" r="82" fill="var(--bj-stage-bg,#F4EBDD)" stroke="var(--bj-stage-border,#DCC9B0)" stroke-width="1.5"/><use href="#bt-mark" x="122" y="64" width="156" height="156"/><text x="200" y="268" text-anchor="middle" font-family="Lora,Georgia,serif" font-weight="700" font-size="30" letter-spacing="-0.5" fill="var(--bt-wordmark-bean,#1A1412)">Bean<tspan fill="var(--bt-wordmark-accent,#9A4212)">Telligence</tspan></text><text x="200" y="296" text-anchor="middle" font-family="Plus Jakarta Sans,-apple-system,sans-serif" font-weight="600" font-size="12.5" letter-spacing="1.2" fill="var(--bt-wordmark-sub,#665142)">A LITTLE SCIENCE, A LOT OF DELICIOUS.</text></symbol>';
+      '<symbol id="bt-badge" viewBox="0 0 400 356"><rect x="24" y="18" width="352" height="320" rx="36" fill="var(--card,#FFFDF9)" stroke="var(--line,#D8C8B6)" stroke-width="2"/><circle cx="200" cy="142" r="82" fill="var(--bj-stage-bg,#F4EBDD)" stroke="var(--bj-stage-border,#DCC9B0)" stroke-width="1.5"/><use href="#bt-mark" x="122" y="64" width="156" height="156"/><text x="200" y="268" text-anchor="middle" font-family="Lora,Georgia,serif" font-weight="700" font-size="30" letter-spacing="-0.5" fill="var(--bt-wordmark-bean,#1F1712)">Bean<tspan fill="var(--bt-wordmark-accent,#9A4A1E)">Telligence</tspan></text><text x="200" y="296" text-anchor="middle" font-family="Plus Jakarta Sans,-apple-system,sans-serif" font-weight="600" font-size="12.5" letter-spacing="1.2" fill="var(--bt-wordmark-sub,#685244)">A LITTLE SCIENCE, A LOT OF DELICIOUS.</text></symbol>';
   }
 
   function spriteSvg() {
@@ -295,7 +305,7 @@ const BTBrand = (function() {
   function celebrationSealSvg(opts) {
     opts = opts || {};
     const u = 'bt_seal_' + (++logoSeq);
-    const sz = typeof opts.size === 'number' && opts.size > 0 ? opts.size : 0;
+    const sz = _btSafeSize(opts.size);
     const szStyle = sz ? ' style="width:' + sz + 'px;height:' + sz + 'px"' : '';
     const aria = opts.label
       ? 'role="img" aria-label="' + _btEsc(opts.label) + '"'
@@ -344,11 +354,13 @@ const BTBrand = (function() {
   function celebrationSealEl(opts) {
     opts = opts || {};
     const wrap = document.createElement('span');
-    wrap.className = 'bt-celebration-seal-wrap' + (opts.cls ? ' ' + opts.cls : '');
+    const safeCls = _btSafeCls(opts.cls);
+    const safeSz = _btSafeSize(opts.size);
+    wrap.className = 'bt-celebration-seal-wrap' + (safeCls ? ' ' + safeCls : '');
     wrap.setAttribute('data-beanjamin', '1');
-    if (typeof opts.size === 'number' && opts.size > 0) {
-      wrap.style.width = opts.size + 'px';
-      wrap.style.height = opts.size + 'px';
+    if (safeSz) {
+      wrap.style.width = safeSz + 'px';
+      wrap.style.height = safeSz + 'px';
     }
     wrap.innerHTML = celebrationSealSvg(opts);
     return wrap;
@@ -450,7 +462,8 @@ const Beanjamin = (function() {
     const isAvatar = opts.view === 'avatar' || opts.view === 'bust' || opts.compact === true;
     const animCls = opts.animate === false ? '' : ' bj-anim';
     const vb = isAvatar ? meta.vbAvatar : '8 4 224 220';
-    const szStyle = typeof opts.size === 'number' ? ' style="width:' + opts.size + 'px;height:' + opts.size + 'px"' : '';
+    const safeSz = _btSafeSize(opts.size);
+    const szStyle = safeSz ? ' style="width:' + safeSz + 'px;height:' + safeSz + 'px"' : '';
 
     let defs = '<defs>' +
       '<radialGradient id="' + u + '_b" cx="0.34" cy="0.24" r="0.76"><stop offset="0%" stop-color="#D9904E"/><stop offset="46%" stop-color="#9A5425"/><stop offset="84%" stop-color="#623012"/><stop offset="100%" stop-color="#441E0A"/></radialGradient>' +
@@ -586,7 +599,8 @@ const Beanjamin = (function() {
         '<circle cx="0" cy="15" r="3.6" fill="#F0A83A"/></g></g></g>';
     }
 
-    const extraCls = requested !== key ? (' bj-state-' + _btEsc(requested)) : '';
+    const safeReq = _btSafeCls(requested).replace(/\s+/g, '-');
+    const extraCls = requested !== key && safeReq ? (' bj-state-' + safeReq) : '';
     const aria = opts.label ? 'role="img" aria-label="' + _btEsc(opts.label) + '"' : 'aria-hidden="true"';
     return '<svg xmlns="http://www.w3.org/2000/svg" class="mk-svg bj-svg bj-state-' + key + extraCls + animCls + '" data-beanjamin-state="' + key + '" viewBox="' + vb + '"' + szStyle + ' ' + aria + ' focusable="false">' + defs + content + '</svg>';
   }
@@ -594,11 +608,13 @@ const Beanjamin = (function() {
   function el(stateKey, opts) {
     opts = opts || {};
     const wrap = document.createElement('span');
-    wrap.className = 'bj-host' + (opts.medallion ? ' bj-medallion' : '') + (opts.cls ? ' ' + opts.cls : '');
+    const safeCls = _btSafeCls(opts.cls);
+    const safeSz = _btSafeSize(opts.size);
+    wrap.className = 'bj-host' + (opts.medallion ? ' bj-medallion' : '') + (safeCls ? ' ' + safeCls : '');
     wrap.setAttribute('data-beanjamin', '1');
-    if (typeof opts.size === 'number') {
-      wrap.style.width = opts.size + 'px';
-      wrap.style.height = opts.size + 'px';
+    if (safeSz) {
+      wrap.style.width = safeSz + 'px';
+      wrap.style.height = safeSz + 'px';
     }
     wrap.innerHTML = svg(stateKey, opts);
     return wrap;
@@ -665,7 +681,8 @@ function brandBadge() {
 
 function medalSvg(cls) {
   const box = document.createElement('span');
-  box.className = 'cmd-medal-ico' + (cls ? ' ' + cls : '');
+  const safeCls = _btSafeCls(cls);
+  box.className = 'cmd-medal-ico' + (safeCls ? ' ' + safeCls : '');
   box.setAttribute('aria-hidden', 'true');
   box.innerHTML = '<svg viewBox="0 0 120 120" focusable="false"><use href="#bt-medal"/></svg>';
   return box;
@@ -1148,7 +1165,11 @@ const BTIcons = (function() {
     'flame-wave':
       T('M 11.2 3.2 C 14.6 7.2 17.5 9.6 17.5 13.8 A 6.2 6.2 0 0 1 5.2 13.8 C 5.2 10.4 7.3 8.2 8.5 6.4 C 8.9 8.2 10.1 8.8 10.4 8.8 C 10.4 6.4 10.6 4.8 11.2 3.2 Z') +
       S('M 11.2 3.2 C 14.6 7.2 17.5 9.6 17.5 13.8 A 6.2 6.2 0 0 1 5.2 13.8 C 5.2 10.4 7.3 8.2 8.5 6.4 C 8.9 8.2 10.1 8.8 10.4 8.8 C 10.4 6.4 10.6 4.8 11.2 3.2 Z') +
-      A('M 4 20.2 Q 7.8 18.4 11.8 20.2 T 20 20.2 M 19.2 7.2 Q 21 9.8 19.2 12.4')
+      A('M 4 20.2 Q 7.8 18.4 11.8 20.2 T 20 20.2 M 19.2 7.2 Q 21 9.8 19.2 12.4'),
+    'printer':
+      T('M 6 14 H 18 V 21 H 6 Z M 6 3 H 18 V 9 H 6 Z') +
+      S('M 6 9 V 3 H 18 V 9 M 6 18 H 4 A 2 2 0 0 1 2 16 V 11 A 2 2 0 0 1 4 9 H 20 A 2 2 0 0 1 22 11 V 16 A 2 2 0 0 1 20 18 H 18 M 6 14 H 18 V 21 H 6 Z') +
+      A('M 9 17.5 H 15')
   };
 
   const BREWER_MAP = {
@@ -1221,7 +1242,7 @@ const BTIcons = (function() {
     'altitude': 'altitude-peaks', 'mountain': 'altitude-peaks', 'globe': 'origin-globe', 'origin': 'origin-globe',
     'plus': 'plus-add', 'add': 'plus-add', 'minus': 'minus-step',
     'edit': 'edit-pen', 'info': 'info-circle', 'warn': 'alert-triangle', 'warning': 'alert-triangle',
-    'clock': 'caffeine-clock', 'timer': 'caffeine-clock', 'paragon': 'paragon-sphere'
+    'clock': 'caffeine-clock', 'timer': 'caffeine-clock', 'paragon': 'paragon-sphere', 'print': 'printer'
   };
 
   /* Graceful geometric Extraction-Drop fallback if an unknown alias is ever requested */
@@ -1257,9 +1278,11 @@ const BTIcons = (function() {
     const key = resolve(name);
     const body = DEFS[key] || FALLBACK_BODY;
     const safeClsKey = key.replace(/[^a-z0-9-]/g, '-');
-    const cls = 'bt-ico bti-' + safeClsKey + (opts.cls ? ' ' + opts.cls : '');
+    const safeExtraCls = _btSafeCls(opts.cls);
+    const cls = 'bt-ico bti-' + safeClsKey + (safeExtraCls ? ' ' + safeExtraCls : '');
     const aria = opts.label ? 'role="img" aria-label="' + _btEsc(opts.label) + '"' : 'aria-hidden="true"';
-    const sz = opts.size ? ' style="width:' + opts.size + 'px;height:' + opts.size + 'px"' : '';
+    const safeSz = _btSafeSize(opts.size);
+    const sz = safeSz ? ' style="width:' + safeSz + 'px;height:' + safeSz + 'px"' : '';
     return '<svg xmlns="http://www.w3.org/2000/svg" class="' + cls + '" data-bti="' + _btEsc(safeClsKey) + '" viewBox="0 0 24 24"' + sz + ' ' + aria + ' focusable="false">' + body + '</svg>';
   }
 
@@ -1284,9 +1307,11 @@ const BTIcons = (function() {
     opts = opts || {};
     const key = resolve(name);
     const target = DEFS[key] ? key : 'brew';
-    const cls = 'bt-ico bti-' + target + (opts.cls ? ' ' + opts.cls : '');
+    const safeExtraCls = _btSafeCls(opts.cls);
+    const cls = 'bt-ico bti-' + target + (safeExtraCls ? ' ' + safeExtraCls : '');
     const aria = opts.label ? 'role="img" aria-label="' + _btEsc(opts.label) + '"' : 'aria-hidden="true"';
-    const sz = opts.size ? ' style="width:' + opts.size + 'px;height:' + opts.size + 'px"' : '';
+    const safeSz = _btSafeSize(opts.size);
+    const sz = safeSz ? ' style="width:' + safeSz + 'px;height:' + safeSz + 'px"' : '';
     return '<svg xmlns="http://www.w3.org/2000/svg" class="' + cls + '" viewBox="0 0 24 24"' + sz + ' ' + aria + ' focusable="false"><use href="#bti-' + target + '"/></svg>';
   }
 

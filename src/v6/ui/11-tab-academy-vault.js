@@ -1,5 +1,5 @@
 /* ============================================================================
- * BeanTelligence v6.2 — Tab 5 ('academy'): Learn & Vault
+ * BeanTelligence v7.5 — Tab 5 ('academy'): Learn & Vault
  *   1. 19 Mini-Courses (Accordion Modules & 19 Lessons + Quiz Checkpoints)
  *   2. 5-Bowl Cupping & Calibrate (Voice-Guided SCA/CVA 1-5 Bowl Table +
  *      6-Cup Kitchen Sour-vs-Bitter Calibrator + 3-Cup Salami + Blind Triangle)
@@ -121,11 +121,73 @@
       const lbl = badgeVal.label || badgeVal.text || badgeVal.title || badgeVal.tier || '';
       if (typeof lbl === 'string' && lbl.trim()) return lbl.trim();
     }
-    const t = String(fallbackTier || '').toLowerCase();
+    const t = String(fallbackTier || '').trim().toLowerCase();
     if (t.indexOf('myth') >= 0 || t === 'not') return '[Myth Debunked]';
-    if (t.indexOf('craft') >= 0 || t.indexOf('practice') >= 0) return '[Craft Best Practice]';
-    if (t.indexOf('active') >= 0 || t.indexOf('research') >= 0 || t === 'c') return '[Active Research]';
+    if (t === 'b' || t.indexOf('craft') >= 0 || t.indexOf('practice') >= 0) return '[Craft Best Practice]';
+    if (t === 'c' || t === 'd' || t.indexOf('active') >= 0 || t.indexOf('research') >= 0 || t.indexOf('nuanced') >= 0 || t.indexOf('partly') >= 0 || t.indexOf('calibrated') >= 0) return '[Active Research]';
     return '[Verified Science]';
+  }
+
+  function deriveLessonTier(ls) {
+    if (!ls || typeof ls !== 'object') return 'verified_science';
+    const rawTier = (ls.epistemicTier != null && String(ls.epistemicTier).trim())
+      ? String(ls.epistemicTier).trim()
+      : ((ls.rate != null && String(ls.rate).trim()) ? String(ls.rate).trim() : '');
+    if (rawTier) {
+      const t = rawTier.toLowerCase();
+      if (t === 'a' || t === 'verified_science' || t === 'solid') return 'verified_science';
+      if (t === 'b' || t.indexOf('craft') >= 0 || t.indexOf('practice') >= 0) return 'craft_best_practice';
+      if (t === 'c' || t === 'd' || t.indexOf('active') >= 0 || t.indexOf('research') >= 0 || t.indexOf('nuanced') >= 0 || t.indexOf('partly') >= 0 || t.indexOf('calibrated') >= 0) return 'active_research';
+      if (t.indexOf('myth') >= 0 || t === 'not') return 'myth_debunked';
+      return rawTier;
+    }
+    const bStr = extractBadgeLabel(ls.badge, ls.epistemic || '').toLowerCase();
+    if (bStr.indexOf('myth') >= 0) return 'myth_debunked';
+    if (bStr.indexOf('craft') >= 0 || bStr.indexOf('practice') >= 0) return 'craft_best_practice';
+    if (bStr.indexOf('active') >= 0 || bStr.indexOf('research') >= 0) return 'active_research';
+    return 'verified_science';
+  }
+
+  function extractLessonFields(ls) {
+    if (!ls || typeof ls !== 'object') {
+      return { hook: '', plain: '', why: '', paras: [], nums: '', limits: '', sources: [], tips: [], hasRealContent: false };
+    }
+    const hook = typeof ls.hook === 'string' ? ls.hook.trim() : '';
+    const plain = typeof ls.plain === 'string' ? ls.plain.trim() : '';
+    const why = typeof ls.why === 'string' ? ls.why.trim() : '';
+    const nums = typeof ls.nums === 'string' ? ls.nums.trim() : '';
+    const limits = typeof ls.limits === 'string' ? ls.limits.trim() : '';
+    const paras = [];
+    if (plain) paras.push(plain);
+    if (why) paras.push(why);
+    if (!paras.length) {
+      if (Array.isArray(ls.paras) && ls.paras.length) {
+        ls.paras.forEach(function (p) { if (p) paras.push(String(p).trim()); });
+      } else {
+        const fb = ls.lead || ls.summary || ls.body || '';
+        if (fb) paras.push(String(fb).trim());
+      }
+    }
+    const sources = [];
+    const rawSrc = Array.isArray(ls.src) ? ls.src : (Array.isArray(ls.sources) ? ls.sources : []);
+    rawSrc.forEach(function (s) {
+      if (!s) return;
+      if (typeof s === 'string') {
+        const cleanStr = s.trim();
+        if (cleanStr) sources.push({ cite: cleanStr, short: cleanStr, link: '' });
+      } else if (typeof s === 'object') {
+        const rawLink = String(s.link || s.url || s.doi || '').trim();
+        const safeLink = /^https?:\/\//i.test(rawLink) ? rawLink : '';
+        sources.push({
+          cite: String(s.cite || s.title || s.short || 'Peer-reviewed source').trim(),
+          short: String(s.short || s.cite || s.title || 'Source').trim(),
+          link: safeLink
+        });
+      }
+    });
+    const tips = Array.isArray(ls.tips) ? ls.tips.filter(Boolean).map(String) : [];
+    const hasRealContent = !!(hook || paras.length || nums || limits || sources.length || tips.length);
+    return { hook: hook, plain: plain, why: why, paras: paras, nums: nums, limits: limits, sources: sources, tips: tips, hasRealContent: hasRealContent };
   }
 
   function openNamedSheet(sheetKey, payload, opts) {
@@ -152,15 +214,16 @@
   }
 
   function epistemicPill(tier, explicitBadge) {
-    const raw = extractBadgeLabel(explicitBadge, tier);
-    const t = (String(tier || '') + ' ' + raw).toLowerCase();
-    if (t.indexOf('myth') >= 0 || t === 'not') {
+    const tierTrim = String(tier || '').trim().toLowerCase();
+    const raw = tierTrim ? extractBadgeLabel('', tierTrim) : extractBadgeLabel(explicitBadge, '');
+    const t = (tierTrim + ' ' + raw).toLowerCase();
+    if (tierTrim === 'not' || t.indexOf('myth') >= 0) {
       return domH('span', { class: 'bt-epistemic-pill is-myth' }, ic('close-x', { size: 13 }), domH('span', { text: '[Myth Debunked]' }));
     }
-    if (t.indexOf('craft') >= 0 || t.indexOf('practice') >= 0) {
+    if (tierTrim === 'b' || t.indexOf('craft') >= 0 || t.indexOf('practice') >= 0) {
       return domH('span', { class: 'bt-epistemic-pill is-craft' }, ic('spark-star', { size: 13 }), domH('span', { text: '[Craft Best Practice]' }));
     }
-    if (t.indexOf('nuanced') >= 0 || t.indexOf('partly') >= 0 || t.indexOf('calibrated') >= 0 || t.indexOf('active') >= 0 || t.indexOf('research') >= 0) {
+    if (tierTrim === 'c' || tierTrim === 'd' || t.indexOf('nuanced') >= 0 || t.indexOf('partly') >= 0 || t.indexOf('calibrated') >= 0 || t.indexOf('active') >= 0 || t.indexOf('research') >= 0) {
       return domH('span', { class: 'bt-epistemic-pill is-research' }, ic('xray-loupe', { size: 13 }), domH('span', { text: '[Active Research]' }));
     }
     return domH('span', { class: 'bt-epistemic-pill is-verified' }, ic('check-seal', { size: 13 }), domH('span', { text: '[Verified Science]' }));
@@ -178,6 +241,9 @@
       palateGymHistory: {
         triangleTrials: 0,
         triangleCorrect: 0,
+        triangleSessionTrials: 0,
+        triangleSessionCorrect: 0,
+        triangleSessionStreak: 0,
         kitchenCalibRuns: 0,
         kitchenCalibCorrect: 0,
         salamiRuns: 0,
@@ -195,14 +261,23 @@
       if (!p || typeof p !== 'object') return defaultAcademyData();
       const def = defaultAcademyData();
       const gh = p.palateGymHistory && typeof p.palateGymHistory === 'object' ? p.palateGymHistory : {};
+      const triTrials = clamp(parseInt(gh.triangleTrials, 10) || 0, 0, 10000, 0);
+      const triCorrect = clamp(parseInt(gh.triangleCorrect, 10) || 0, 0, triTrials, 0);
+      const hasSess = gh.triangleSessionTrials !== undefined && gh.triangleSessionTrials !== null;
+      const triSessTrials = hasSess ? clamp(parseInt(gh.triangleSessionTrials, 10) || 0, 0, 10000, 0) : triTrials;
+      const triSessCorrect = hasSess ? clamp(parseInt(gh.triangleSessionCorrect, 10) || 0, 0, triSessTrials, 0) : triCorrect;
+      const triSessStreak = clamp(parseInt(gh.triangleSessionStreak != null ? gh.triangleSessionStreak : gh.triangleStreak, 10) || 0, 0, triSessCorrect, 0);
       return {
         bookmarkedIds: Array.isArray(p.bookmarkedIds) ? p.bookmarkedIds.filter(function (x) { return typeof x === 'string'; }) : [],
         completedModuleIds: Array.isArray(p.completedModuleIds) ? p.completedModuleIds.filter(function (x) { return typeof x === 'string'; }) : [],
         completedLessonIds: Array.isArray(p.completedLessonIds) ? p.completedLessonIds.filter(function (x) { return typeof x === 'string'; }) : [],
         quizPassedIds: Array.isArray(p.quizPassedIds) ? p.quizPassedIds.filter(function (x) { return typeof x === 'string'; }) : [],
         palateGymHistory: {
-          triangleTrials: Math.max(0, parseInt(gh.triangleTrials, 10) || 0),
-          triangleCorrect: Math.max(0, parseInt(gh.triangleCorrect, 10) || 0),
+          triangleTrials: triTrials,
+          triangleCorrect: triCorrect,
+          triangleSessionTrials: triSessTrials,
+          triangleSessionCorrect: triSessCorrect,
+          triangleSessionStreak: triSessStreak,
           kitchenCalibRuns: Math.max(0, parseInt(gh.kitchenCalibRuns, 10) || 0),
           kitchenCalibCorrect: Math.max(0, parseInt(gh.kitchenCalibCorrect, 10) || 0),
           salamiRuns: Math.max(0, parseInt(gh.salamiRuns, 10) || 0),
@@ -223,6 +298,11 @@
       quizPassedIds: Array.from(new Set(next.quizPassedIds || [])),
       palateGymHistory: Object.assign(defaultAcademyData().palateGymHistory, next.palateGymHistory || {})
     };
+    clean.palateGymHistory.triangleTrials = clamp(parseInt(clean.palateGymHistory.triangleTrials, 10) || 0, 0, 10000, 0);
+    clean.palateGymHistory.triangleCorrect = clamp(parseInt(clean.palateGymHistory.triangleCorrect, 10) || 0, 0, clean.palateGymHistory.triangleTrials, 0);
+    clean.palateGymHistory.triangleSessionTrials = clamp(parseInt(clean.palateGymHistory.triangleSessionTrials, 10) || 0, 0, 10000, 0);
+    clean.palateGymHistory.triangleSessionCorrect = clamp(parseInt(clean.palateGymHistory.triangleSessionCorrect, 10) || 0, 0, clean.palateGymHistory.triangleSessionTrials, 0);
+    clean.palateGymHistory.triangleSessionStreak = clamp(parseInt(clean.palateGymHistory.triangleSessionStreak, 10) || 0, 0, clean.palateGymHistory.triangleSessionCorrect, 0);
     try {
       localStorage.setItem(ACADEMY_LS_KEY, JSON.stringify(clean));
     } catch (_) {}
@@ -233,39 +313,65 @@
   window.writeAcademyState = writeAcademyState;
 
   function exactTriangleBinomialPValue(nTrials, kCorrect) {
-    const N = Math.max(0, Math.floor(nTrials));
-    const K = Math.max(0, Math.min(N, Math.floor(kCorrect)));
-    if (N === 0 || K === 0) return 1.0;
-
-    function logFact(m) {
-      let s = 0;
-      for (let i = 2; i <= m; i++) s += Math.log(i);
-      return s;
+    if (nTrials === null || nTrials === undefined || nTrials === '' ||
+        kCorrect === null || kCorrect === undefined || kCorrect === '') {
+      return 1.0;
     }
-    const lfN = logFact(N);
+    const nNum = Number(nTrials);
+    const kNum = Number(kCorrect);
+    if (!Number.isFinite(nNum) || !Number.isFinite(kNum)) return 1.0;
+    let N = Math.max(0, Math.floor(nNum));
+    let K = Math.max(0, Math.floor(kNum));
+    if (N > 10000) {
+      K = Math.round((K / N) * 10000);
+      N = 10000;
+    }
+    if (N === 0 || K === 0) return 1.0;
+    if (K > N) return 0.0;
+
+    /* Exact O(N) log-space recurrence: P(X=j+1)/P(X=j) = ((N-j)/(j+1)) * ((1/3)/(2/3)) */
+    const m = Math.min(K, N - K);
+    let logComb = 0;
+    for (let i = 1; i <= m; i++) {
+      logComb += Math.log(N - m + i) - Math.log(i);
+    }
     const logP = Math.log(1 / 3);
     const logQ = Math.log(2 / 3);
-    let pSum = 0;
-    for (let j = K; j <= N; j++) {
-      const logComb = lfN - logFact(j) - logFact(N - j);
-      pSum += Math.exp(logComb + j * logP + (N - j) * logQ);
+    const logRatio = Math.log(0.5);
+    let logTerm = logComb + K * logP + (N - K) * logQ;
+    let pSum = Math.exp(logTerm);
+    const meanPos = N / 3;
+    for (let j = K; j < N; j++) {
+      logTerm += Math.log(N - j) - Math.log(j + 1) + logRatio;
+      if (j > meanPos && logTerm < -745) break;
+      pSum += Math.exp(logTerm);
     }
     return clamp(pSum, 0, 1, 1);
   }
 
   window.exactTriangleBinomialPValue = exactTriangleBinomialPValue;
 
-  /* Exact CVA 104-2024 Affective Formula: S = 0.65625 * sum8 + 52.75 - 2*u - 4*d */
+  /* Exact CVA 104-2024 Affective Formula: S = 0.65625 * sum8 + 52.75 - 2*u - 4*d (u + d <= 5) */
+  function clampBowlCupDefects(nonUniformRaw, defectiveRaw) {
+    const u = clamp(Math.floor(Number(nonUniformRaw) || 0), 0, 5, 0);
+    const d = clamp(Math.floor(Number(defectiveRaw) || 0), 0, Math.max(0, 5 - u), 0);
+    return { nonUniformCups: u, defectiveCups: d };
+  }
+
   function computeCvaBowlScore(bowl) {
-    const hArr = Array.isArray(bowl && bowl.hVals) && bowl.hVals.length === 8 ? bowl.hVals : [6.143, 6.143, 6.143, 6.143, 6.143, 6.143, 6.143, 6.143];
+    const def = clampBowlCupDefects(bowl && bowl.nonUniformCups, bowl && bowl.defectiveCups);
+    if (bowl && bowl.scoringMode === 'quick_sca' && Number.isFinite(Number(bowl.quickBaseSca))) {
+      const quickBase = clamp(Number(bowl.quickBaseSca), 50, 100, 85);
+      const rawQ = quickBase - 2 * def.nonUniformCups - 4 * def.defectiveCups;
+      return +(Math.round(clamp(rawQ, 0, 100, 85) * 4) / 4).toFixed(2);
+    }
+    const hArr = Array.isArray(bowl && bowl.hVals) && bowl.hVals.length === 8 ? bowl.hVals : [6, 6, 6, 6, 6, 6, 6, 6];
     let sum8 = 0;
     for (let i = 0; i < 8; i++) {
-      sum8 += clamp(hArr[i], 1, 9, 6.143);
+      sum8 += Math.round(clamp(hArr[i], 1, 9, 6));
     }
-    const u = clamp((bowl && bowl.nonUniformCups) || 0, 0, 5, 0);
-    const d = clamp((bowl && bowl.defectiveCups) || 0, 0, 5, 0);
-    const raw = 0.65625 * sum8 + 52.75 - 2 * u - 4 * d;
-    return +(Math.round(clamp(raw, 0, 100, 85) * 4) / 4).toFixed(2);
+    const raw = 0.65625 * sum8 + 52.75 - 2 * def.nonUniformCups - 4 * def.defectiveCups;
+    return +(Math.round(clamp(raw, 0, 100, 84.25) * 4) / 4).toFixed(2);
   }
 
   function computeBowlStars(sc) {
@@ -280,10 +386,21 @@
   }
 
   function setBowlTargetScaBase(bowl, targetBaseSca) {
-    const h = clamp((targetBaseSca - 52.75) / 5.25, 1, 9, 6.143);
-    bowl.hVals = [h, h, h, h, h, h, h, h];
+    const cleanTarget = +(Math.round(clamp(Number(targetBaseSca), 58, 100, 85) * 4) / 4).toFixed(2);
+    bowl.scoringMode = 'quick_sca';
+    bowl.quickBaseSca = cleanTarget;
+    if (!Array.isArray(bowl.hVals) || bowl.hVals.length !== 8) {
+      bowl.hVals = [6, 6, 6, 6, 6, 6, 6, 6];
+    } else {
+      bowl.hVals = bowl.hVals.map(function (v) { return Math.round(clamp(v, 1, 9, 6)); });
+    }
     bowl.score = computeCvaBowlScore(bowl);
     return bowl.score;
+  }
+
+  function normalizeCvaTraitToIntensity5(val1to9) {
+    const v = clamp(Number(val1to9), 1, 9, 5);
+    return +(Math.round((1 + (v - 1) * 0.5) * 10) / 10).toFixed(1);
   }
 
   /* ==========================================================================
@@ -303,7 +420,7 @@
     {
       id: 'm3-processing', num: 3, title: 'Post-Harvest Processing & All 4 Decaf Chemistries', tier: 'verified_science',
       sub: 'Washed, Honey, Natural, Anaerobic/Koji, Swiss Water, EA Sugarcane, CO2 & Decaf Inversion',
-      body: 'Decaffeinated beans exhibit higher cellular porosity and brittle micro-fines generation: start +8% coarser on gravity filter to prevent fines blinding, yet -5.5% finer on 9-bar espresso due to reduced CO2 puck resistance.'
+      body: 'Decaffeinated beans exhibit higher cellular porosity and brittle micro-fines generation: start +5% coarser on gravity filter to prevent fines blinding, yet -5.5% finer on 9-bar espresso due to reduced CO2 puck resistance.'
     },
     {
       id: 'm4-roasting', num: 4, title: 'Roasting Physics, Bitter Chemistry & Cryo-Vault', tier: 'verified_science',
@@ -323,42 +440,154 @@
     {
       id: 'm7-sensory', num: 7, title: 'Sensory Neurogastronomy & Calibration Flights', tier: 'verified_science',
       sub: 'Retronasal aroma sweetness, 70 \u2192 42 °C cup cooling & modern SCA Cupping',
-      body: 'Above 65 °C heat masks sweetness; between 58 °C and 42 °C, warm taste receptors unlock peak perceived sweetness and fruit ester clarity (Talavera et al. 2005; Ristenpart et al. 2022).'
+      body: 'Above 65 °C heat masks flavor; consumer hedonic liking peaks near 55–62 °C (Ristenpart et al. 2022), while cooling toward 50–35 °C sharpens TRPM5 sweet signaling and fruit ester clarity (Talavera et al. 2005).'
     }
   ];
 
   const FALLBACK_LESSONS_19 = [
-    { id: 'seed-cherry', title: '1. From Cherry to Green Seed', badge: '[Verified Science]', paras: ['A coffee bean is the dense endosperm seed inside a ripe Coffea fruit cherry surrounded by skin, sweet mucilage, and parchment.'] },
-    { id: 'family', title: '2. The Rubiaceae Botanical Family', badge: '[Verified Science]', paras: ['Over 130 Coffea species grow naturally across tropical Africa, Madagascar, and Asia.'] },
-    { id: 'species', title: '3. Arabica, Robusta, Liberica & Eugenioides', badge: '[Verified Science]', paras: ['Arabica holds ~1.2% caffeine and complex sugars/lipids; Robusta holds ~2.2% caffeine; Eugenioides holds ~0.2% caffeine with natural sweetness.'] },
-    { id: 'terroir', title: '4. Elevation, Night Cooling & Bean Density', badge: '[Active Research]', paras: ['Cooler high-elevation nights slow fruit ripening, packing denser cell walls and vibrant malic, citric, and phosphoric brightness.'] },
-    { id: 'processing', title: '5. Washed, Honey, Natural & Anaerobic Ferments', badge: '[Verified Science]', paras: ['Removing fruit mucilage cleanly yields floral clarity (Washed); drying inside whole fruit builds berry esters and body (Natural).'] },
-    { id: 'decaf', title: '6. How Swiss Water, Sugarcane EA & CO2 Decaf Work', badge: '[Verified Science]', paras: ['Modern decaffeination removes 99.7% of caffeine while preserving polyphenols; porous cell walls drain differently than regular beans.'] },
-    { id: 'roast', title: '7. Maillard Browning, First Crack & Roast Solubility', badge: '[Verified Science]', paras: ['Light roasts preserve origin acids and floral terpenes; darker roasts open porous cell structure so solubles extract faster at cooler temps.'] },
-    { id: 'freshness', title: '8. Degassing Rest Windows vs Oxidation Staling', badge: '[Craft Best Practice]', paras: ['Freshly roasted beans trap CO2 that repels brew water for 4–14 days depending on roast depth and brew pressure.'] },
-    { id: 'freezing', title: '9. Airtight Storage & -18 °C Freezer Vaulting', badge: '[Verified Science]', paras: ['Sealing rested single-dose tubes or bags at -18 °C slows volatile loss and lipid oxidation ~12.3x with zero condensation if thawed sealed.'] },
-    { id: 'grind', title: '10. Grind Size, Fines & Darcy Bed Resistance', badge: '[Verified Science]', paras: ['Finer grinding multiplies surface area exponentially while micro-fines (<100 um) govern filter drawdown speed.'] },
-    { id: 'ratio', title: '11. Dose, Pour Water, Bed Retention & Ratio', badge: '[Verified Science]', paras: ['Dry filter grounds retain ~2.0–2.2 g of water per gram of coffee; ratio sets strength (%TDS) while grind/temp/contact set %EY.'] },
-    { id: 'ey-tds', title: '12. Strength (%TDS) vs Extraction Yield (%EY)', badge: '[Verified Science]', paras: ['Strength is how concentrated the cup feels; Extraction Yield is what fraction of the bean dissolved (early acids \u2192 mid sugars \u2192 late bitters).'] },
-    { id: 'temp', title: '13. Kettle Setpoint vs Actual Slurry Temperature', badge: '[Verified Science]', paras: ['Cold ceramic drippers can steal 4–6 °C from your slurry; preheating and matching temp to roast solubility keeps extraction balanced.'] },
-    { id: 'water', title: '14. Brew Water Hardness (GH) & Alkalinity Buffer (KH)', badge: '[Verified Science]', paras: ['Mg2+ and Ca2+ aid flavor extraction while bicarbonate (KH ~30–50 ppm) buffers sharp acids without chalky flatness or boiler limescale.'] },
-    { id: 'channeling', title: '15. Evenness, Agitation & Why Channeling Tastes Sour+Bitter', badge: '[Verified Science]', paras: ['When water carves fast channels, paths along the channel over-extract into dry astringency while bypassed clumps under-extract sour!'] },
-    { id: 'cold', title: '16. Flash-Iced Pour-Over vs Cold Brew Immersion', badge: '[Verified Science]', paras: ['Brewing hot directly onto calculated ice locks bright aromatics that 16-hour cold water steeping never dissolves, then chills instantly.'] },
-    { id: 'caffeine', title: '17. Caffeine Half-Life, Adenosine & Deep Sleep Cutoff', badge: '[Verified Science]', paras: ['Caffeine blocks adenosine receptors with a ~5h typical half-life (3h–13h by CYP1A2 genetics); keeping bedtime active mg <=35 mg protects deep N3 sleep.'] },
-    { id: 'cooling', title: '18. Why Coffee Tastes Sweetest at 55–58 °C', badge: '[Verified Science]', paras: ['Piping-hot >70 °C liquid triggers heat-pain channels and mutes TRPM5 sweet signaling — wait 4–6 minutes for the Golden Sip!'] },
-    { id: 'dialin', title: '19. One-Variable Dial-In: Sour vs Bitter Compass', badge: '[Craft Best Practice]', paras: ['Change one variable at a time: sour/thin \u2192 grind finer; bitter/dry \u2192 grind coarser or pull 15s early; strong/weak \u2192 adjust ratio or hot bypass.'] }
+    { id: 'seed', title: '1. From Cherry to Green Seed', rate: 'B', epistemicTier: 'craft_best_practice', paras: ['A coffee bean is the dense endosperm seed inside a ripe Coffea fruit cherry surrounded by skin, sweet mucilage, and parchment.'] },
+    { id: 'family', title: '2. Where Arabica Came From', rate: 'A', epistemicTier: 'verified_science', paras: ['Coffea arabica arose from a single natural cross between maternal C. eugenioides and paternal C. canephora ~350k–610k years ago.'] },
+    { id: 'species', title: '3. Arabica and Robusta', rate: 'B', epistemicTier: 'craft_best_practice', paras: ['Arabica holds ~1.0–1.5% caffeine and more sugars/lipids; Robusta holds ~1.8–2.6% caffeine with stronger bitterness.'] },
+    { id: 'liberica', title: '4. Liberica, Excelsa & Stenophylla', rate: 'A', epistemicTier: 'verified_science', paras: ['Kew Gardens phylogenomics (2025) resolved C. liberica, C. dewevrei (Excelsa), and C. klainei as distinct species; C. stenophylla tolerates far hotter climates.'] },
+    { id: 'altitude', title: '5. Altitude, Latitude & Bean Density', rate: 'B', epistemicTier: 'craft_best_practice', paras: ['Cooler night maturation slows fruit ripening, packing denser cell walls and vibrant brightness — modulated by latitude and trade winds.'] },
+    { id: 'origin', title: '6. Does Country Matter?', rate: 'B', epistemicTier: 'craft_best_practice', paras: ['Origin is a strong statistical clue to cup character, though individual farms, cultivars, and processing still vary widely.'] },
+    { id: 'roasting', title: '7. What Roasting Does', rate: 'A', epistemicTier: 'verified_science', paras: ['Light-to-medium roasts build Maillard aromatics and pleasant CGA lactones; dark roasts degrade lactones into harsher phenylindanes.'] },
+    { id: 'taste', title: '8. Sour, Bitter, Sweet & Cooling', rate: 'A', epistemicTier: 'verified_science', paras: ['Black coffee (<0.05% sugar) tastes sweet via retronasal aroma (OISE); hedonic liking peaks near 55–62 °C (Ristenpart 2022) and TRPM5 sweet signaling sharpens across 50–35 °C (Talavera 2005).'] },
+    { id: 'caffeine', title: '9. Caffeine: Weight vs. Scoop', rate: 'A', epistemicTier: 'verified_science', paras: ['By weight, light and dark Arabica carry nearly identical caffeine (~1.1–1.2%); by scoop, denser light beans pack ~10–15% more weight.'] },
+    { id: 'decaf', title: '10. How Decaf Works (All 4 Methods)', rate: 'A', epistemicTier: 'verified_science', paras: ['Modern decaffeination removes 97–99.9% of caffeine while preserving polyphenols; porous decaf grinds +5% coarser on filter and -5.5% finer on espresso.'] },
+    { id: 'grind', title: '11. Grinding, Static & Freezing', rate: 'A', epistemicTier: 'verified_science', paras: ['Finer grinding multiplies surface area while micro-fines (<100 um) govern flow; ~0.1 mL RDT water per 20g quenches static clumping.'] },
+    { id: 'extraction', title: '12. Strength (TDS) and Extraction (EY)', rate: 'A', epistemicTier: 'verified_science', paras: ['Strength (%TDS) is beverage concentration; Extraction Yield (%EY) is the dry bean fraction dissolved (acids \u2192 sugars \u2192 bitters).'] },
+    { id: 'temperature', title: '13. Hot, But How Hot?', rate: 'A', epistemicTier: 'verified_science', paras: ['Hotter brew water (93–96 °C) speeds extraction of dense light roasts; cooler water (86–90 °C) slows late bitter extraction in dark roasts.'] },
+    { id: 'fresh', title: '14. Why Fresh Matters', rate: 'A', epistemicTier: 'verified_science', paras: ['Up to 75% of trapped CO2 vents during grinding and the first 90 seconds; darker roasts release more CO2 than light roasts.'] },
+    { id: 'rest', title: '15. How Long to Rest', rate: 'C', epistemicTier: 'active_research', paras: ['Post-roast degassing rest windows vary by roast porosity and brew method and remain active sensory research plus roaster convention.'] },
+    { id: 'storage', title: '16. Keeping Beans Fresh', rate: 'A', epistemicTier: 'verified_science', paras: ['Oxygen, heat, moisture, and pre-grinding accelerate staling; keep whole beans in an opaque valve bag or airtight canister and grind fresh.'] },
+    { id: 'freeze', title: '17. Freezing Tips', rate: 'B', epistemicTier: 'craft_best_practice', paras: ['Freezing whole beans for 9 weeks kept aroma markedly closer to fresh in Cotter & Hopfer (2018); thawing sealed prevents condensation.'] },
+    { id: 'water', title: '18. Water Is Most of It', rate: 'A', epistemicTier: 'verified_science', paras: ['Mg2+ and Ca2+ aid extraction while bicarbonate alkalinity (target ~40–70 mg/L CaCO3) buffers sharp acids without flattening fruit brightness.'] },
+    { id: 'cold', title: '19. Cold Brew Is Not Iced Coffee', rate: 'A', epistemicTier: 'verified_science', paras: ['Cold steeping leaves behind high-activation-energy bitter/rubbery roast compounds that extract at 92 °C, yielding a rounder, more floral-sweet profile.'] }
   ];
 
+  const LESSON_QUIZ_BY_ID = {
+    seed: {
+      q: 'What is a coffee "peaberry" inside a coffee cherry?',
+      opts: ['A tiny defective husk', 'A single round seed (~5–7% of harvest) when only one ovule develops', 'A dark-roasted Robusta bean'],
+      ans: 1
+    },
+    family: {
+      q: 'How did Coffea arabica (2n = 4x = 44) originate in East African forests?',
+      opts: ['A natural cross between maternal C. eugenioides and paternal C. canephora', 'Selective breeding in 19th-century Brazil', 'Mutation from tea shrubs'],
+      ans: 0
+    },
+    species: {
+      q: 'How do Arabica and Robusta typically compare in caffeine and sucrose?',
+      opts: ['Arabica has twice the caffeine of Robusta', 'Robusta holds more caffeine (~1.8–2.6%) and less sugar/fat than Arabica (~1.0–1.5%)', 'Both species carry identical caffeine and sugar levels'],
+      ans: 1
+    },
+    liberica: {
+      q: 'What did the 2025 Kew Gardens phylogenomic study (Davis et al.) resolve about Liberica and Excelsa?',
+      opts: ['They are identical cultivars of Arabica', 'C. liberica, C. dewevrei (Excelsa), and C. klainei are distinct species', 'Excelsa is a high-altitude Robusta'],
+      ans: 1
+    },
+    altitude: {
+      q: 'Why can coffee grown at ~600 m in Hawaii Kona ripen like 1,800 m equatorial coffee?',
+      opts: ['Altitude is a proxy for cool maturation nights (16–21 °C), which latitude and oceanic trade winds shift', 'Island volcanoes double atmospheric pressure', 'Low elevation always produces sweeter beans'],
+      ans: 0
+    },
+    origin: {
+      q: 'What do Coffee Quality Institute cupping records show about a coffee\'s country of origin?',
+      opts: ['Country guarantees an exact score for every lot', 'Country is a helpful statistical clue, though farm, cultivar, and process still vary widely', 'Country has no relationship to flavor'],
+      ans: 1
+    },
+    roasting: {
+      q: 'What happens to chlorogenic acid bitter compounds as beans roast past light-medium into dark second crack?',
+      opts: ['All bitterness evaporates completely', 'Pleasant chlorogenic acid lactones break down into harsher, lingering phenylindanes', 'Caffeine triples during second crack'],
+      ans: 1
+    },
+    taste: {
+      q: 'How do drinking temperature and aroma shape perceived sweetness in black coffee (<0.05% sugar)?',
+      opts: ['Cooling creates new sucrose in the mug', 'Hedonic liking peaks near 55–62 °C (Ristenpart) while cooling through 50–35 °C sharpens TRPM5 sweet signaling & retronasal aroma (OISE)', 'Coffee tastes sweetest piping hot above 75 °C'],
+      ans: 1
+    },
+    caffeine: {
+      q: 'Why does a level tablespoon scoop of light roast hold ~10–15% more caffeine than a scoop of dark roast?',
+      opts: ['Dark roasting burns away half the caffeine', 'Denser light-roast beans pack more grams per scoop, while caffeine by weight is nearly equal', 'Light roasts contain hidden Robusta'],
+      ans: 1
+    },
+    decaf: {
+      q: 'Why does porous decaf coffee invert grind strategy between gravity filter and 9-bar espresso?',
+      opts: ['Brittle fines slow paper filters (+5% coarser), while low-CO2 pucks flow fast under 9 bar (-5.5% finer)', 'Decaf must always be ground coarser on every brewer', 'Decaf cannot extract above 85 °C'],
+      ans: 0
+    },
+    grind: {
+      q: 'What does a tiny RDT water spritz (~0.1 mL per 20 g whole beans) before grinding accomplish?',
+      opts: ['Pre-extracts espresso fruit acids', 'Quenches triboelectric static charging so fines stop clumping and clinging', 'Raises bean moisture to 25%'],
+      ans: 1
+    },
+    extraction: {
+      q: 'What is the difference between Strength (TDS %) and Extraction Yield (EY %)?',
+      opts: ['They are two names for the same reading', 'TDS is beverage concentration; EY is the share of dry coffee mass dissolved (acids \u2192 sugars \u2192 bitters)', 'EY measures caffeine and TDS measures water hardness'],
+      ans: 1
+    },
+    temperature: {
+      q: 'In a fixed-grind home brew, how does hotter vs. cooler brew water change extraction?',
+      opts: ['Boiling water burns roasted coffee grounds', 'Hotter water (93–96 °C) speeds extraction of dense light roasts; cooler water (86–90 °C) slows late bitter extraction in dark roasts', 'Water temperature never changes extraction rate'],
+      ans: 1
+    },
+    fresh: {
+      q: 'How much of roasted coffee\'s trapped CO2 gas escapes during grinding and the first 90 seconds?',
+      opts: ['Less than 5%', 'Up to ~75% of trapped CO2 escapes rapidly upon grinding', 'None until hot water touches it'],
+      ans: 1
+    },
+    rest: {
+      q: 'What does current evidence say about post-roast resting windows?',
+      opts: ['Every coffee peaks at day 14 by universal law', 'Very fresh coffee degasses heavily, but optimal rest windows vary by roast/method and remain active research & craft practice', 'Whole beans go stale within 48 hours of roasting'],
+      ans: 1
+    },
+    storage: {
+      q: 'What is the best everyday way to keep opened whole coffee beans tasting fresh?',
+      opts: ['In an open bowl in the humid fridge', 'Grind the whole bag immediately on day 1', 'Store whole beans in an opaque one-way-valve bag or airtight canister in a cool dark cupboard and grind fresh'],
+      ans: 2
+    },
+    freeze: {
+      q: 'In Cotter & Hopfer (2018), what happened to whole beans frozen for 9 weeks vs. kept at room temperature?',
+      opts: ['Freezing ruined all aroma compounds', 'Frozen beans kept aroma closer to fresh (especially dark roasts); thawing sealed prevents condensation', 'Freezing added caffeine'],
+      ans: 1
+    },
+    water: {
+      q: 'What does excess bicarbonate alkalinity (>120 mg/L KH) in brew water do to bright filter coffee?',
+      opts: ['Boosts crisp citrus acidity', 'Neutralizes coffee organic acids, leaving a flat, muted, chalky cup', 'Prevents grounds from absorbing water'],
+      ans: 1
+    },
+    cold: {
+      q: 'Why does cold-steeped coffee taste less bitter and less sour than hot coffee chilled over ice at matched strength?',
+      opts: ['Ice melts only bitter molecules', 'High-activation-energy bitter/rubbery roast compounds extract readily at 92 °C but poorly at 4–22 °C', 'Cold water extracts twice as much citric acid'],
+      ans: 1
+    },
+    /* Fallback ID aliases for resilience */
+    'seed-cherry': null,
+    terroir: null,
+    roast: null,
+    freshness: null,
+    freezing: null,
+    'ey-tds': null,
+    temp: null,
+    cooling: null
+  };
+  LESSON_QUIZ_BY_ID['seed-cherry'] = LESSON_QUIZ_BY_ID.seed;
+  LESSON_QUIZ_BY_ID.terroir = LESSON_QUIZ_BY_ID.altitude;
+  LESSON_QUIZ_BY_ID.roast = LESSON_QUIZ_BY_ID.roasting;
+  LESSON_QUIZ_BY_ID.freshness = LESSON_QUIZ_BY_ID.fresh;
+  LESSON_QUIZ_BY_ID.freezing = LESSON_QUIZ_BY_ID.freeze;
+  LESSON_QUIZ_BY_ID['ey-tds'] = LESSON_QUIZ_BY_ID.extraction;
+  LESSON_QUIZ_BY_ID.temp = LESSON_QUIZ_BY_ID.temperature;
+  LESSON_QUIZ_BY_ID.cooling = LESSON_QUIZ_BY_ID.taste;
+
   function getQuizForLesson(idx, ls) {
-    const bank = [
-      { q: 'What comes out of coffee grounds LAST during extraction?', opts: ['Bright fruit acids', 'Dry, slow-diffusing bitter polyphenols', 'CO2 gas bubbles'], ans: 1 },
-      { q: 'Why can a cup taste BOTH sour and drying/bitter at the same time?', opts: ['Water was too pure', 'Uneven channeling (fast over-extracted paths + bypassed clumps)', 'Mug was pre-warmed'], ans: 1 },
-      { q: 'At what drinking temperature do TRPM5 receptors unlock peak perceived sweetness?', opts: ['Piping hot >75 °C', 'Warm Golden Sip window (55–58 °C down to 45 °C)', 'Boiling 100 °C'], ans: 1 },
-      { q: 'What does excess bicarbonate alkalinity (>120 ppm KH) in brew water do to light roasts?', opts: ['Makes them taste extra fruity', 'Neutralizes fruit acids into a flat, chalky cup', 'Doubles caffeine'], ans: 1 },
-      { q: 'How does storing sealed coffee at -18 °C in the freezer affect aging speed?', opts: ['Slows staling ~12x via Arrhenius kinetics', 'Roasts the beans darker', 'Adds caffeine'], ans: 0 }
-    ];
     if (ls && ls.quiz && Array.isArray(ls.quiz.opts)) return ls.quiz;
-    return bank[idx % bank.length];
+    const key = ls ? String(ls.id || ls.key || '').trim().toLowerCase() : '';
+    if (key && LESSON_QUIZ_BY_ID[key]) return LESSON_QUIZ_BY_ID[key];
+    const fallbackKeys = ['seed', 'family', 'species', 'liberica', 'altitude', 'origin', 'roasting', 'taste', 'caffeine', 'decaf', 'grind', 'extraction', 'temperature', 'fresh', 'rest', 'storage', 'freeze', 'water', 'cold'];
+    const fk = fallbackKeys[((idx || 0) % fallbackKeys.length + fallbackKeys.length) % fallbackKeys.length];
+    return LESSON_QUIZ_BY_ID[fk] || LESSON_QUIZ_BY_ID.extraction;
   }
 
   const FALLBACK_FOLK_8 = [
@@ -366,7 +595,7 @@
     { id: 'zone-18-22', claim: '18 to 22% extraction is a strict universal law for everyone.', tier: 'not', verdict: 'Historical 1950s Lockhart convention — modern UC Davis consumer trials show drinkers split across multiple sweet spots.', app: 'BeanTelligence builds your personal 2D KDE Sweet-Spot Island from your own 4.0+ rated cups.', cite: 'Cotter et al. (2021), J. Food Sci. 86:194', doi: 'https://doi.org/10.1111/1750-3841.15561' },
     { id: 'rdt-static', claim: 'RDT water spritzing is merely cosmetic for static chaff.', tier: 'solid', verdict: 'Solid Science: 0.1 mL/20g quenches tribocharging, prevents fine-clump aggregates, and increases espresso consistency.', app: 'Covered in Module 5 & Espresso puck diagnostics.', cite: 'Mendez Harper & Hendon (2023), Matter 6:4408', doi: 'https://doi.org/10.1016/j.matt.2023.11.005' },
     { id: 'cortisol-90', claim: 'Everyone must delay morning coffee 90 minutes for cortisol.', tier: 'not', verdict: 'Unproven internet lore: No RCT demonstrates a 90-minute wait prevents afternoon fatigue; pushing caffeine later risks deep N3 sleep.', app: 'Models 24h Borbely Process C/S & Gardiner 2023 SWS bedtime cutoffs.', cite: 'Gardiner et al. (2023), Sleep Med. Rev. 69:101764', doi: 'https://doi.org/10.1016/j.smrv.2023.101764' },
-    { id: 'serve-hot', claim: 'Black coffee tastes sweetest when served piping hot (>70 °C).', tier: 'not', verdict: 'Contradicted by TRPM5 biophysics & 3,186 consumer tastings: acceptance and perceived sweetness peak at 58–45 °C.', app: 'Golden Sip Clock tracks 70 \u2192 55 \u2192 42 °C sensory unlocking.', cite: 'Ristenpart, Cotter & Guinard (2022), Sci. Rep. 12:20621', doi: 'https://doi.org/10.1038/s41598-022-23904-4' },
+    { id: 'serve-hot', claim: 'Black coffee tastes sweetest when served piping hot (>70 °C).', tier: 'not', verdict: 'Contradicted by 3,186 consumer tastings (Ristenpart et al. 2022: hedonic optimum ~55–62 °C) and TRPM5 thermal taste biophysics (35–50 °C sweet sensitivity; Talavera et al. 2005).', app: 'Golden Sip Clock tracks 70 \u2192 58 \u2192 42 °C sensory unlocking.', cite: 'Ristenpart, Cotter & Guinard (2022), Sci. Rep. 12:20621', doi: 'https://doi.org/10.1038/s41598-022-23904-4' },
     { id: 'decaf-chem', claim: 'Decaf coffee lacks antioxidants and microbiome benefits.', tier: 'not', verdict: 'Debunked: Chlorogenic polyphenols remain intact, driving near-identical Lawsonibacter enrichment and cardiometabolic benefits.', app: 'First-class decaf hydraulic & residual caffeine (0.40 mg/g) support.', cite: 'Manghi et al. (2024), Nat. Microbiol. 9:3120', doi: 'https://doi.org/10.1038/s41564-024-01858-9' },
     { id: 'cold-grind', claim: 'Grinding frozen beans from -18 °C alters particle size distribution.', tier: 'solid', verdict: 'Solid Science: Cryogenic brittle fracture narrows PSD span and shifts median size slightly finer at fixed burr gap.', app: 'Cryo-Vault applies automatic +12 um coarser frozen-grind offset.', cite: 'Uman, Colonna-Dashwood & Hendon (2016), Sci. Rep. 6:24483', doi: 'https://doi.org/10.1038/srep24483' },
     { id: 'dark-stomach', claim: 'Light roast is always gentler on stomach acid than dark roast.', tier: 'not', verdict: 'Darker roasts form 2–3x more N-methylpyridinium (NMP), which downregulates gastric parietal proton secretion.', app: 'Explained in Module 6 & Glossary.', cite: 'Rubach, Hofmann & Somoza (2014), Mol. Nutr. Food Res.', doi: 'https://doi.org/10.1002/mnfr.201300890' }
@@ -378,7 +607,7 @@
     { term: 'Darcy-Kozeny Law', cat: 'Brewing & Physics', def: 'Fluid percolation equation governing flow through a porous coffee bed; permeability scales with Sauter mean diameter squared.' },
     { term: 'Astringency', cat: 'Tasting & Sensory', def: 'Tactile dry sandpaper sensation caused when polyphenols precipitate lubricating salivary proline-rich proteins — distinct from bitter taste.' },
     { term: 'Retronasal Olfaction (OISE)', cat: 'Tasting & Sensory', def: 'Aroma volatiles rising behind the soft palate on exhale that create perceived sweetness in <0.05%-sugar black coffee.' },
-    { term: 'TRPM5 Channel', cat: 'Tasting & Sensory', def: 'Thermosensitive taste-bud cation channel that unlocks maximum sweet perception as coffee cools into 55–40 °C.' },
+    { term: 'TRPM5 Channel', cat: 'Tasting & Sensory', def: 'Thermosensitive taste-bud cation channel that boosts sweet perception across warm temperatures (~35–50 °C, below the 55–62 °C hedonic optimum).' },
     { term: 'Chlorogenic Acid Lactones', cat: 'Roasting & Freshness', def: 'Pleasant coffee-bitter compounds formed in light-to-medium roasting before degrading into harsh phenylindanes in dark roasts.' },
     { term: 'Cafestol & Kahweol', cat: 'Water & Chemistry', def: 'Lipid-soluble coffee diterpenes that raise serum LDL cholesterol in unfiltered brews; paper filters trap 95–99%.' },
     { term: 'Alkalinity (KH)', cat: 'Water & Chemistry', def: 'Proton-buffering capacity in brew water (target 30–65 ppm as CaCO3); excess KH flattens lively fruit acids.' },
@@ -415,7 +644,7 @@
   function getReleasesList() {
     if (typeof RELEASES !== 'undefined' && Array.isArray(RELEASES) && RELEASES.length) return RELEASES;
     if (window.RELEASES && Array.isArray(window.RELEASES) && window.RELEASES.length) return window.RELEASES;
-    return [{ v: 'v6.2', title: 'Actionable Charts, 5-Step Guided Home Brew, Web Audio & Empirical Bayes', notes: '148+ cumulative releases.' }];
+    return [{ v: 'v7.6', title: 'Full Red-Team Security, Physics, UX, Accessibility & Memory Hardening', notes: '149+ cumulative releases.' }];
   }
 
   /* ==========================================================================
@@ -423,22 +652,49 @@
    * ========================================================================== */
   function makeDefaultScaBowl(idx, name, scaDefault) {
     const code = String.fromCharCode(65 + idx);
-    const targetSca = scaDefault || 85.0;
-    const h = clamp((targetSca - 52.75) / 5.25, 1, 9, 6.143);
     const bowl = {
       code: code,
-      name: name || ('Sample #' + (idx + 1)),
+      coffee_id: '',
+      name: name || '',
       roaster: '',
       origin: '',
       process: '',
-      hVals: [h, h, h, h, h, h, h, h],
+      roast: '',
+      varietal: '',
+      farm: '',
+      elevation_m: '',
+      agtron: '',
+      bag_notes: '',
+      flavors: [],
+      hVals: [6, 6, 6, 6, 6, 6, 6, 6],
+      scoringMode: 'cva_traits', /* 'cva_traits' | 'quick_sca' */
+      traitsCustomized: false,
+      quickBaseSca: scaDefault || 84.25,
       nonUniformCups: 0,
       defectiveCups: 0,
+      defects: 0,
+      defect_notes: '',
       notes: '',
-      score: targetSca
+      touched: false,
+      includeInSave: false,
+      score: 84.25
     };
-    bowl.score = computeCvaBowlScore(bowl);
+    if (typeof scaDefault === 'number' && Number.isFinite(scaDefault) && Math.abs(scaDefault - 84.25) > 0.05) {
+      setBowlTargetScaBase(bowl, scaDefault);
+    } else {
+      bowl.score = computeCvaBowlScore(bowl);
+    }
     return bowl;
+  }
+
+  function makeFreshScaBowls() {
+    return [
+      makeDefaultScaBowl(0),
+      makeDefaultScaBowl(1),
+      makeDefaultScaBowl(2),
+      makeDefaultScaBowl(3),
+      makeDefaultScaBowl(4)
+    ];
   }
 
   const acadUi = {
@@ -453,24 +709,23 @@
       bowlMl: 150,
       running: false,
       elapsedSec: 0,
+      _baseSec: 0,
+      _t0Ms: 0,
       rafId: 0,
       blindMode: false,
       revealed: true,
       spoken4m: false,
       spoken8m: false,
       spoken12m: false,
+      _lastSavedSig: '',
+      _isSaving: false,
       historyCoffeeFilter: '',
       historyTraitFilter: '',
+      historyScaleFilter: 'cva_9', /* 'cva_9' | 'sca_10' */
       historyCompareOpen: true,
       historyCmpA: 0,
       historyCmpB: 1,
-      bowls: [
-        makeDefaultScaBowl(0, 'Ethiopia Washed', 85.0),
-        makeDefaultScaBowl(1, 'Colombia Pink Bourbon', 86.5),
-        makeDefaultScaBowl(2, 'Kenya SL28', 88.5),
-        makeDefaultScaBowl(3, 'Costa Rica Honey', 84.0),
-        makeDefaultScaBowl(4, 'Brazil Natural', 82.5)
-      ]
+      bowls: makeFreshScaBowls()
     },
 
     /* 6-Cup Kitchen Taste Calibrator (Sour vs Bitter Confusion Check) */
@@ -478,10 +733,7 @@
       waterMl: 250,
       citricHydrate: 'anhydrous', /* 'anhydrous' | 'monohydrate' (1.094x) */
       roundIdx: 0,
-      quizAnswered: '',
-      sessionScore: 0,
-      sessionAsked: 0,
-      stockHelperOpen: false
+      quizAnswered: ''
     },
 
     /* Beanjamin 2.0 Palate Gym Live Coach State (Single-per-viewport safe!) */
@@ -498,15 +750,18 @@
       mode: 'pourover', /* 'pourover' | 'espresso' */
       running: false,
       elapsedSec: 0,
+      _baseSec: 0,
+      _t0Ms: 0,
       rafId: 0,
-      verdict: ''
+      spokenG2: false,
+      spokenG3: false
     },
 
     /* Self-Blind Turntable Triangle Cupping */
     triangle: {
-      oddIndex: 1,
-      dotMap: ['1 underside dot', '2 underside dots', '3 underside dots'],
-      pickedIndex: -1,
+      oddDots: 2, /* Secret underside dot code (1 | 2 | 3) for Brew B */
+      prepCodeVisible: false,
+      pickedDots: 0,
       revealed: false,
       streak: 0
     },
@@ -516,8 +771,7 @@
       deckIdx: 0,
       guessedTier: '',
       BrowseAll: false,
-      query: '',
-      filterTier: 'all'
+      query: ''
     },
 
     /* 774-Term A-Z Glossary (Zero Nested Scroll Trap, View-40 Pagination) */
@@ -531,19 +785,87 @@
     tourStep: 0
   };
 
-  function resetTriangleRound() {
-    const rnd = Math.floor(Math.random() * 3);
-    const dots = ['1 underside dot', '2 underside dots', '3 underside dots'];
-    for (let i = dots.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      const tmp = dots[i]; dots[i] = dots[j]; dots[j] = tmp;
+  function cancelScaRaf() {
+    if (acadUi.sca.rafId) {
+      try { cancelAnimationFrame(acadUi.sca.rafId); } catch (_) {}
+      acadUi.sca.rafId = 0;
     }
-    acadUi.triangle.oddIndex = rnd;
-    acadUi.triangle.dotMap = dots;
-    acadUi.triangle.pickedIndex = -1;
+  }
+
+  function cancelSalamiRaf() {
+    if (acadUi.salami.rafId) {
+      try { cancelAnimationFrame(acadUi.salami.rafId); } catch (_) {}
+      acadUi.salami.rafId = 0;
+    }
+  }
+
+  function resetTriangleRound() {
+    acadUi.triangle.oddDots = 1 + Math.floor(Math.random() * 3);
+    acadUi.triangle.prepCodeVisible = false;
+    acadUi.triangle.pickedDots = 0;
     acadUi.triangle.revealed = false;
   }
   resetTriangleRound();
+  try {
+    acadUi.triangle.streak = readAcademyState().palateGymHistory.triangleSessionStreak || 0;
+  } catch (_) {}
+
+  function resetAcademyInMemoryState() {
+    cancelScaRaf();
+    cancelSalamiRaf();
+    acadUi.quizChoices = {};
+    acadUi.openLessonsSet = new Set();
+    acadUi.sca.bowlCount = 3;
+    acadUi.sca.bowlMl = 150;
+    acadUi.sca.running = false;
+    acadUi.sca.elapsedSec = 0;
+    acadUi.sca._baseSec = 0;
+    acadUi.sca._t0Ms = 0;
+    acadUi.sca.blindMode = false;
+    acadUi.sca.revealed = true;
+    acadUi.sca.spoken4m = false;
+    acadUi.sca.spoken8m = false;
+    acadUi.sca.spoken12m = false;
+    acadUi.sca._lastSavedSig = '';
+    acadUi.sca._isSaving = false;
+    acadUi.sca.historyCoffeeFilter = '';
+    acadUi.sca.historyTraitFilter = '';
+    acadUi.sca.historyScaleFilter = 'cva_9';
+    acadUi.sca.historyCmpA = 0;
+    acadUi.sca.historyCmpB = 1;
+    acadUi.sca.bowls = makeFreshScaBowls();
+    acadUi.kitchen.waterMl = 250;
+    acadUi.kitchen.citricHydrate = 'anhydrous';
+    acadUi.kitchen.roundIdx = 0;
+    acadUi.kitchen.quizAnswered = '';
+    acadUi.gymCoach = {
+      mood: 'curious',
+      title: 'Welcome to the Palate Gym!',
+      speech: 'Play a 60-second Kitchen Taste Round or Blind Triangle Cup below — sharpening Sour vs. Bitter unlocks effortless dial-ins!'
+    };
+    acadUi.salami.mode = 'pourover';
+    acadUi.salami.running = false;
+    acadUi.salami.elapsedSec = 0;
+    acadUi.salami._baseSec = 0;
+    acadUi.salami._t0Ms = 0;
+    acadUi.salami.spokenG2 = false;
+    acadUi.salami.spokenG3 = false;
+    acadUi.triangle.streak = 0;
+    resetTriangleRound();
+    acadUi.folk.deckIdx = 0;
+    acadUi.folk.guessedTier = '';
+    acadUi.folk.query = '';
+    acadUi.glossary.query = '';
+    acadUi.glossary.letter = 'ALL';
+    acadUi.glossary.cat = 'All';
+    acadUi.glossary.limit = 40;
+    if (typeof _saveCenterUi !== 'undefined' && _saveCenterUi) {
+      _saveCenterUi.webUrlConfirmMsg = '';
+      _saveCenterUi.lastGeneratedUrl = '';
+      _saveCenterUi.feedbackMsg = '';
+      _saveCenterUi.webUrlDraft = '';
+    }
+  }
 
   /* ==========================================================================
    * SEGMENT 1: 19 MINI-COURSES (Accordion Modules & Lessons + Quiz Checkpoints)
@@ -609,9 +931,14 @@
     const roast = String(c.roast || '').trim() || 'Light';
     const isDecaf = c.decaf === 'yes' || c.decaf === true || /decaf/i.test(String(c.decaf || '')) || bInfo.hasDecaf;
 
-    const acExp = /light/i.test(roast) ? 84 : (/dark/i.test(roast) ? 38 : 62);
-    const swExp = /honey|natural/i.test(proc) ? 88 : 78;
-    const bdExp = /natural|wet|dark/i.test(proc + ' ' + roast) ? 82 : 54;
+    const roastLow = roast.toLowerCase();
+    const acExp = /ultra[- ]?light/.test(roastLow) ? 90
+      : (/medium[- ]?light/.test(roastLow) ? 74
+        : (/light/.test(roastLow) ? 84
+          : (/medium[- ]?dark/.test(roastLow) ? 48
+            : (/dark/.test(roastLow) ? 38 : 62))));
+    const swExp = /honey|natural|anaerobic/i.test(proc) ? 88 : 78;
+    const bdExp = /natural|wet|dark/i.test(proc + ' ' + roast) ? 82 : (/medium[- ]?dark/i.test(roast) ? 72 : 54);
     const subText = bInfo.isBlend
       ? (bInfo.pillText + ' · ' + bInfo.namesLine)
       : (name + ' · ' + origin + ' · ' + proc + ' · ' + roast);
@@ -625,7 +952,7 @@
             domH('p', { class: 'bt-lab-sub', text: subText })
           )
         ),
-        epistemicPill('verified_science')
+        epistemicPill('craft_best_practice')
       ),
       domH('div', { class: 'bt-expect-bars' },
         [
@@ -645,7 +972,7 @@
       domH('p', {
         class: 'bt-lab-hint',
         text: isDecaf
-          ? 'Decaf Physics Active: Porous cellular walls generate more micro-fines — start +8% coarser on pour-over or -5.5% finer on 9-bar espresso.'
+          ? 'Decaf Physics Active: Porous cellular walls generate more micro-fines — start +5% coarser on pour-over or -5.5% finer on 9-bar espresso.'
           : (proc + ' processing paired with ' + roast + ' roast governs solubility and CO2 bloom outgassing.')
       })
     );
@@ -683,32 +1010,50 @@
         lessons.map(function (ls, idx) {
           const lid = String(ls.id || ls.key || ('ls_' + idx));
           const passed = st.quizPassedIds.indexOf(lid) >= 0 || st.completedLessonIds.indexOf(lid) >= 0;
-          const badgeText = extractBadgeLabel(ls.badge, ls.epistemicTier || ls.rate);
-          const paras = Array.isArray(ls.paras) && ls.paras.length
-            ? ls.paras
-            : [ls.lead || ls.summary || ls.body || 'Verified coffee science lesson.'];
+          const lessonTier = deriveLessonTier(ls);
+          const fields = extractLessonFields(ls);
           const quiz = getQuizForLesson(idx, ls);
           const pickedOpt = acadUi.quizChoices[lid];
           const isWrongPicked = pickedOpt != null && pickedOpt !== quiz.ans;
           const isRightPicked = pickedOpt != null && pickedOpt === quiz.ans;
+          const lessonTitle = (ls.order ? (ls.order + '. ') : '') + (ls.title || ls.name || lid);
 
           const detEl = domH('details', {
             class: 'bt-lab-details bt-lesson-accordion' + (passed ? ' is-completed' : ''),
             open: acadUi.openLessonsSet.has(lid)
           },
             domH('summary', { class: 'bt-lesson-summary' },
-              domH('span', { class: 'bt-lesson-title', text: (ls.title || ls.name || lid) }),
+              domH('span', { class: 'bt-lesson-title', text: lessonTitle }),
               domH('span', { class: 'bt-lesson-meta' },
-                domH('span', { class: 'bt-lesson-badge-txt', text: badgeText }),
+                epistemicPill(lessonTier),
                 passed ? domH('span', { class: 'bt-lesson-done-pill', text: 'Mastered' }) : null
               )
             ),
             domH('div', { class: 'bt-lesson-body' },
-              paras.slice(0, 4).map(function (pTxt) {
-                return domH('p', { class: 'bt-module-body', text: String(pTxt) });
-              }),
-              Array.isArray(ls.tips) && ls.tips.length ? domH('ul', { class: 'bt-lab-list' },
-                ls.tips.slice(0, 3).map(function (t) { return domH('li', { text: String(t) }); })
+              fields.hook ? domH('p', { class: 'bt-lab-sub', style: 'margin:0 0 6px;font-weight:700', text: fields.hook }) : null,
+              fields.paras.length
+                ? fields.paras.slice(0, 4).map(function (pTxt) {
+                  return domH('p', { class: 'bt-module-body', text: String(pTxt) });
+                })
+                : domH('p', { class: 'bt-module-body', text: 'Coffee science curriculum note.' }),
+              fields.nums ? domH('div', { class: 'bt-lab-subcard', style: 'margin:6px 0;padding:8px 10px' },
+                domH('strong', { style: 'font-size:0.8rem;display:block;margin-bottom:3px', text: 'Numbers & Evidence' }),
+                domH('p', { class: 'bt-module-body num-tab', style: 'margin:0', text: fields.nums })
+              ) : null,
+              fields.limits ? domH('p', { class: 'bt-lab-hint', style: 'margin:4px 0 6px', text: 'Study Limits: ' + fields.limits }) : null,
+              fields.tips.length ? domH('ul', { class: 'bt-lab-list' },
+                fields.tips.slice(0, 3).map(function (t) { return domH('li', { text: String(t) }); })
+              ) : null,
+              fields.sources.length ? domH('div', { style: 'margin:6px 0' },
+                domH('strong', { style: 'font-size:0.78rem;display:block;margin-bottom:3px', text: 'Citations & Sources' }),
+                domH('ul', { class: 'bt-doi-list' },
+                  fields.sources.map(function (src) {
+                    return domH('li', null,
+                      domH('span', { text: src.cite + ' ' }),
+                      src.link ? domH('a', { href: src.link, target: '_blank', rel: 'noopener noreferrer', class: 'bt-doi-link', text: '[Source \u2197]' }) : null
+                    );
+                  })
+                )
               ) : null,
               domH('div', { class: 'bt-lesson-quiz-box' },
                 domH('strong', { text: 'Quick Check: ' + quiz.q }),
@@ -977,7 +1322,10 @@
     const o = opts || {};
     const isSheet = !!o.isSheet;
     const sca = acadUi.sca;
-    const dosePerBowlG = +((8.25 * sca.bowlMl) / 150).toFixed(2);
+    cancelScaRaf();
+    function getDosePerBowlG() {
+      return +((8.25 * sca.bowlMl) / 150).toFixed(2);
+    }
 
     const card = domH('section', {
       class: 'bt-studio-card bt-sca-cockpit-card',
@@ -986,18 +1334,26 @@
     });
     const phaseBanner = domH('p', { class: 'bt-lab-hint', text: '' });
     const liveClockPill = domH('span', { class: 'bt-sca-mmss-pill num-tab', id: 'bt-sca-live-mmss', text: fmtMmSs(sca.elapsedSec || 0) + ' · ~93 °C' });
+    const headerSubEl = domH('p', {
+      class: 'bt-lab-sub num-tab',
+      style: 'overflow-wrap:anywhere',
+      text: 'Dose: ' + getDosePerBowlG() + ' g per ' + sca.bowlMl + ' mL bowl (93 °C) · Voice cues at 04:00 Break, 08:00 Skim & 12:00 Slurp'
+    });
 
+    const step1DescEl = domH('p', {
+      text: 'Weigh ' + getDosePerBowlG() + 'g medium-coarse coffee per ' + sca.bowlMl + ' mL bowl, smell dry grounds, then pour 93 °C water to rim.'
+    });
     const stepCardsData = [
-      { idx: 0, time: '0:00', title: '1. Smell Dry & Pour', desc: 'Weigh ' + dosePerBowlG + 'g medium-coarse coffee per ' + sca.bowlMl + ' mL bowl, smell dry grounds, then pour 93 °C water to rim.' },
+      { idx: 0, time: '0:00', title: '1. Smell Dry & Pour', descEl: step1DescEl },
       { idx: 1, time: '4:00', title: '2. Break Crust & Smell', desc: 'Put nose close to bowl and gently push top grounds 3× with spoon to release trapped aroma.' },
       { idx: 2, time: '8:00', title: '3. Skim Foam', desc: 'Use 2 spoons to skim off floating grounds and foam so the cup cools cleanly.' },
-      { idx: 3, time: '12:00+', title: '4. Slurp Warm & Score', desc: 'Slurp briskly from spoon as bowls cool (65 °C \u2192 45 °C) and rate Overall Enjoyment (1–9) below!' }
+      { idx: 3, time: '12:00+', title: '4. Slurp Warm & Score', desc: 'Slurp briskly from spoon as bowls cool (62 °C \u2192 42 °C) and rate Overall Enjoyment (1–9) below!' }
     ];
     const stepCardNodes = stepCardsData.map(function (st) {
       return domH('div', { class: 'bt-cupping-step-card' },
         domH('span', { class: 'bt-cupping-step-time num-tab', text: st.time }),
         domH('strong', { text: st.title }),
-        domH('p', { text: st.desc })
+        st.descEl || domH('p', { text: st.desc })
       );
     });
 
@@ -1006,7 +1362,7 @@
       if (s < 240) return 'Steeping Untouched \u2192 04:00';
       if (s < 480) return '04:00 Break Crust & Smell';
       if (s < 720) return '08:00 Skim & Cool to 70 °C';
-      return '12:00 Golden Slurp (58–62 °C)';
+      return '12:00 Golden Slurp (55–62 °C)';
     }
 
     const scaChrono = mountGymChronoDial({
@@ -1024,6 +1380,7 @@
     });
 
     function syncScaChrono(secFloat) {
+      const doseG = getDosePerBowlG();
       const s = Math.floor(secFloat);
       const estTempC = +(22 + 71 * Math.exp(-secFloat / 720)).toFixed(1);
       liveClockPill.textContent = fmtMmSs(secFloat) + ' · Est. ~' + estTempC + ' °C';
@@ -1032,16 +1389,48 @@
       stepCardNodes.forEach(function (nd, idx) {
         nd.classList.toggle('is-active-phase', idx === activeStepIdx);
       });
-      if (s === 0) phaseBanner.textContent = 'Step 1: Weigh ' + dosePerBowlG + ' g per ' + sca.bowlMl + ' mL bowl (1:18.18). Smell dry fragrance, then pour 93 °C water to the rim & press Start.';
+      if (s === 0) phaseBanner.textContent = 'Step 1: Weigh ' + doseG + ' g per ' + sca.bowlMl + ' mL bowl (1:18.18). Smell dry fragrance, then pour 93 °C water to the rim & press Start.';
       else if (s < 240) phaseBanner.textContent = 'Steeping untouched (' + fmtMmSs(240 - s) + ' left until 04:00 Break Crust voice cue).';
       else if (s < 480) phaseBanner.textContent = '04:00 BREAK CRUST: Push top crust gently 3× nose-close to smell wet aroma, then get ready to skim!';
       else if (s < 720) phaseBanner.textContent = '08:00–10:00 SKIM & COOL TO ~70 °C: Skim floating foam and take your first warm slurp from a spoon across all bowls.';
-      else phaseBanner.textContent = '12:00+ GOLDEN SLURP (~58 °C \u2192 42 °C): Peak sweetness & fruit clarity! Score Overall Enjoyment (1–9) & cup consistency below.';
+      else phaseBanner.textContent = '12:00+ GOLDEN SLURP (~62 °C \u2192 42 °C): Hedonic peak (55–62 °C) into TRPM5 clarity (50–35 °C)! Score Overall Enjoyment (1–9) & cup consistency below.';
     }
 
+    function syncBowlSizeReadouts() {
+      const doseG = getDosePerBowlG();
+      headerSubEl.textContent = 'Dose: ' + doseG + ' g per ' + sca.bowlMl + ' mL bowl (93 °C) · Voice cues at 04:00 Break, 08:00 Skim & 12:00 Slurp';
+      step1DescEl.textContent = 'Weigh ' + doseG + 'g medium-coarse coffee per ' + sca.bowlMl + ' mL bowl, smell dry grounds, then pour 93 °C water to rim.';
+      syncScaChrono(sca.elapsedSec || 0);
+    }
+
+    const SCA_MAX_SEC = 1800; /* 30-minute auto-stop safety cap */
+    const initStartLbl = sca.running
+      ? 'Pause Cupping Timer'
+      : ((sca.elapsedSec || 0) > 0 && (sca.elapsedSec || 0) < SCA_MAX_SEC ? 'Resume Cupping Timer' : 'Start Voice Cupping Timer');
+    const startBtnLbl = domH('span', { text: initStartLbl });
+
     function tickScaRaf() {
-      if (!sca.running) return;
+      if (!sca.running) {
+        cancelScaRaf();
+        return;
+      }
+      if (!card.isConnected) {
+        cancelScaRaf();
+        sca.running = false;
+        sca._baseSec = sca.elapsedSec || 0;
+        return;
+      }
       const nowElapsed = (sca._baseSec || 0) + (performance.now() - (sca._t0Ms || performance.now())) / 1000;
+      if (nowElapsed >= SCA_MAX_SEC) {
+        sca.elapsedSec = SCA_MAX_SEC;
+        sca._baseSec = SCA_MAX_SEC;
+        sca.running = false;
+        cancelScaRaf();
+        startBtnLbl.textContent = 'Start Voice Cupping Timer';
+        syncScaChrono(SCA_MAX_SEC);
+        notify('Cupping timer auto-stopped at 30:00.');
+        return;
+      }
       sca.elapsedSec = nowElapsed;
       if (!sca.spoken4m && nowElapsed >= 240) {
         sca.spoken4m = true;
@@ -1112,24 +1501,25 @@
           const bInfo = extractAcademyRowBlendInfo(rawC);
           const safeStr = function (v) { return (v == null || String(v) === 'undefined' || String(v) === 'NaN') ? '' : String(v).trim(); };
           const bNotes = safeStr(rawC.bag_notes || rawC.notes || (Array.isArray(rawC.flavors) ? rawC.flavors.join(', ') : ''));
-          sca.bowls[i].coffee_id = safeStr(rawC.coffee_id || rawC.id || b.coffee_id || b.id);
-          sca.bowls[i].name = safeStr(rawC.name || rawC.coffee || b.name || b.coffee) || (bInfo.isBlend ? bInfo.namesLine : ('Sample #' + (i + 1)));
-          sca.bowls[i].roaster = safeStr(rawC.roaster || b.roaster);
-          sca.bowls[i].origin = safeStr(rawC.origin || b.origin) || (bInfo.isBlend ? '2-Coffee Blend' : '');
-          sca.bowls[i].process = safeStr(rawC.process || b.process);
-          sca.bowls[i].roast = safeStr(rawC.roast || rawC.rlevel || b.roast || b.rlevel);
-          sca.bowls[i].varietal = safeStr(rawC.varietal || b.varietal);
-          sca.bowls[i].farm = safeStr(rawC.farm || rawC.farm_or_station || b.farm);
-          sca.bowls[i].elevation_m = safeStr(rawC.elevation_m || b.elevation_m);
-          sca.bowls[i].agtron = safeStr(rawC.agtron || b.agtron);
-          sca.bowls[i].bag_notes = bNotes;
-          sca.bowls[i].notes = bNotes;
-          sca.bowls[i].flavors = Array.isArray(rawC.flavors) ? rawC.flavors.filter(Boolean) : (bNotes ? bNotes.split(/[,;/]+/).map(function (s) { return s.trim(); }).filter(Boolean) : []);
-          sca.bowls[i].nonUniformCups = 0;
-          sca.bowls[i].defectiveCups = 0;
-          sca.bowls[i].defects = 0;
-          sca.bowls[i].defect_notes = '';
-          setBowlTargetScaBase(sca.bowls[i], 85.0);
+          const fresh = makeDefaultScaBowl(i);
+          fresh.coffee_id = safeStr(rawC.coffee_id || rawC.id || b.coffee_id || b.id);
+          fresh.name = safeStr(rawC.name || rawC.coffee || b.name || b.coffee) || (bInfo.isBlend ? bInfo.namesLine : ('Sample #' + (i + 1)));
+          fresh.roaster = safeStr(rawC.roaster || b.roaster);
+          fresh.origin = safeStr(rawC.origin || b.origin) || (bInfo.isBlend ? '2-Coffee Blend' : '');
+          fresh.process = safeStr(rawC.process || b.process);
+          fresh.roast = safeStr(rawC.roast || rawC.rlevel || b.roast || b.rlevel);
+          fresh.varietal = safeStr(rawC.varietal || b.varietal);
+          fresh.farm = safeStr(rawC.farm || rawC.farm_or_station || b.farm);
+          fresh.elevation_m = safeStr(rawC.elevation_m || b.elevation_m);
+          fresh.agtron = safeStr(rawC.agtron || b.agtron);
+          /* Keep roaster bag_notes separate from live blind tasting notes so blind mode never leaks bag identity */
+          fresh.bag_notes = bNotes;
+          fresh.notes = '';
+          fresh.flavors = Array.isArray(rawC.flavors) ? rawC.flavors.filter(Boolean) : (bNotes ? bNotes.split(/[,;/]+/).map(function (s) { return s.trim(); }).filter(Boolean) : []);
+          fresh.touched = true;
+          fresh.includeInSave = true;
+          fresh.score = computeCvaBowlScore(fresh);
+          sca.bowls[i] = fresh;
         }
         CK.haptic('snap');
         notify('Loaded ' + take + ' coffee(s) from My Beans into Cupping Bowls!');
@@ -1144,6 +1534,7 @@
       class: 'bt-lab-chip' + (!sca.revealed ? ' is-active' : ''),
       onclick: function () {
         sca.revealed = !sca.revealed;
+        sca.blindMode = !sca.revealed;
         CK.haptic(sca.revealed ? 'celebrate' : 'tick');
         if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
         else rerenderAcademyTab();
@@ -1165,6 +1556,27 @@
     }, acadUi.voiceEnabled ? 'Voice Cues ON' : 'Voice Cues Muted');
 
     const scaHeroHost = domH('div', { id: 'bt-sca-score-hero', style: 'display:flex;flex-direction:column;gap:8px' });
+    const saveAllBtnLbl = domH('span', { text: '' });
+
+    function getSelectedBowlsForSave() {
+      const out = [];
+      for (let i = 0; i < sca.bowlCount; i++) {
+        const b = sca.bowls[i];
+        if (b && b.includeInSave) out.push(b);
+      }
+      return out;
+    }
+
+    function syncSaveAllBtnLabel() {
+      const sel = getSelectedBowlsForSave();
+      if (!sel.length) {
+        saveAllBtnLbl.textContent = 'Score or Check Bowls to Save to Journal';
+      } else if (sel.length === 1) {
+        saveAllBtnLbl.textContent = 'Save 1 Selected Cupping Bowl to Journal \u2192';
+      } else {
+        saveAllBtnLbl.textContent = 'Save ' + sel.length + ' Selected Cupping Bowls to Journal \u2192';
+      }
+    }
 
     function paintScaHeroOnly() {
       scaHeroHost.textContent = '';
@@ -1183,7 +1595,7 @@
           domH('div', { style: 'display:flex;align-items:center;gap:8px;min-width:0' },
             ic('check-seal', { size: 20 }),
             domH('div', null,
-              domH('strong', { style: 'font-size:0.9rem;display:block', text: 'Coffees Revealed \u00B7 Top Cup: Bowl ' + topBowl.code + ' (' + (topBowl.name || 'Sample') + ')' }),
+              domH('strong', { style: 'font-size:0.9rem;display:block', text: 'Coffees Revealed \u00B7 Top Cup: Bowl ' + topBowl.code + ' (' + (topBowl.name || ('Sample ' + topBowl.code)) + ')' }),
               domH('span', { class: 'bt-lab-hint', text: topBowl.score.toFixed(1) + ' / 100 SCA \u00B7 ' + computeBowlStars(topBowl.score).toFixed(2) + ' / 5 Stars \u00B7 ' + bowlQualityTier(topBowl.score).text })
             )
           ),
@@ -1191,13 +1603,14 @@
         ));
       } else {
         scaHeroHost.appendChild(domH('div', { class: 'bt-tc-well', style: 'padding:9px 12px;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px' },
-          domH('span', { style: 'font-size:0.84rem;font-weight:700', text: 'Blind Mode Active \u2014 Score all bowls without bias, then reveal coffees!' }),
+          domH('span', { style: 'font-size:0.84rem;font-weight:700', text: 'Blind Mode Active \u2014 Coffee names & pre-loaded bag notes are hidden until reveal!' }),
           domH('button', {
             type: 'button',
             class: 'bt-tc-pill is-compact is-copper',
             text: 'Reveal Coffees \u2192',
             onclick: function () {
               sca.revealed = true;
+              sca.blindMode = false;
               CK.haptic('celebrate');
               if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
               else rerenderAcademyTab();
@@ -1214,7 +1627,7 @@
           const dispName = sca.revealed ? (b.name || ('Sample ' + b.code)) : ('Blind Bowl ' + b.code);
           return domH('div', { class: 'bt-sca-bowl-mini' + (isLeader ? ' is-leader' : '') },
             domH('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:6px' },
-              domH('strong', { style: 'font-size:0.8rem', text: 'Bowl ' + b.code }),
+              domH('strong', { style: 'font-size:0.8rem', text: 'Bowl ' + b.code + (b.includeInSave ? ' \u2713' : '') }),
               domH('span', { class: 'bt-tc-badge ' + tier.tone, style: 'font-size:0.68rem;padding:2px 7px', text: tier.text })
             ),
             domH('span', { style: 'font-size:0.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis', text: dispName }),
@@ -1225,6 +1638,7 @@
           );
         })
       ));
+      syncSaveAllBtnLabel();
     }
 
     const bowlsGrid = domH('div', { class: 'bt-sca-bowls-grid' });
@@ -1232,49 +1646,228 @@
 
     for (let i = 0; i < sca.bowlCount; i++) {
       (function (bObj) {
+        const clampedDef = clampBowlCupDefects(bObj.nonUniformCups, bObj.defectiveCups);
+        bObj.nonUniformCups = clampedDef.nonUniformCups;
+        bObj.defectiveCups = clampedDef.defectiveCups;
         bObj.score = computeCvaBowlScore(bObj);
+
         const scoreBadge = domH('strong', { class: 'bt-sca-score-live num-tab', text: bObj.score.toFixed(2) + ' / 100 SCA \u00B7 ' + computeBowlStars(bObj.score).toFixed(2) + ' / 5' });
         const tierBadge = domH('span', { class: 'bt-tc-badge ' + bowlQualityTier(bObj.score).tone, text: bowlQualityTier(bObj.score).text });
 
-        const nameInput = domH('input', {
-          type: sca.revealed ? 'text' : 'password',
-          class: 'bt-lab-text-in',
-          value: bObj.name,
-          placeholder: 'Sample ' + bObj.code + ' coffee name...',
-          'aria-label': 'Bowl ' + bObj.code + ' coffee name',
-          oninput: function () { bObj.name = nameInput.value; paintScaHeroOnly(); }
+        const includeChk = domH('input', {
+          type: 'checkbox',
+          checked: !!bObj.includeInSave,
+          'aria-label': 'Include Bowl ' + bObj.code + ' when saving to Journal',
+          onchange: function () {
+            bObj.includeInSave = !!includeChk.checked;
+            if (bObj.includeInSave) bObj.touched = true;
+            paintScaHeroOnly();
+          }
         });
+        const includeWrap = domH('label', {
+          class: 'bt-sca-include-toggle',
+          style: 'display:inline-flex;align-items:center;gap:5px;font-size:0.76rem;font-weight:700;cursor:pointer'
+        }, includeChk, domH('span', { text: 'Save' }));
+
+        function markTouched() {
+          bObj.touched = true;
+          bObj.includeInSave = true;
+          includeChk.checked = true;
+          sca._lastSavedSig = '';
+        }
+
+        /* In Blind Mode, render a static non-input label (NEVER type="password") and hide pre-loaded bag_notes */
+        const nameFieldEl = sca.revealed
+          ? domH('input', {
+            type: 'text',
+            class: 'bt-lab-text-in',
+            value: bObj.name || '',
+            placeholder: 'Sample ' + bObj.code + ' coffee name (optional)...',
+            'aria-label': 'Bowl ' + bObj.code + ' coffee name',
+            oninput: function (ev) {
+              bObj.name = ev.target.value;
+              if (bObj.name.trim()) markTouched();
+              paintScaHeroOnly();
+            }
+          })
+          : domH('div', {
+            class: 'bt-lab-text-in bt-sca-blind-label',
+            role: 'note',
+            'aria-label': 'Blind Bowl ' + bObj.code + ' hidden coffee identity',
+            style: 'display:flex;align-items:center;justify-content:space-between;font-weight:700;opacity:0.88'
+          },
+            domH('span', { text: 'Blind Bowl ' + bObj.code }),
+            domH('span', { style: 'font-size:0.74rem;opacity:0.75', text: 'Hidden until reveal' })
+          );
+
+        const bagNotesHintEl = (bObj.bag_notes && String(bObj.bag_notes).trim())
+          ? domH('p', {
+            class: 'bt-lab-hint',
+            style: 'margin:0;font-size:0.76rem',
+            text: sca.revealed ? ('Bag notes: ' + bObj.bag_notes) : 'Pre-loaded bag notes hidden until reveal.'
+          })
+          : null;
 
         const notesInput = domH('input', {
           type: 'text',
           class: 'bt-lab-text-in',
           value: bObj.notes || '',
-          placeholder: 'Bowl ' + bObj.code + ' flavor notes (e.g. jasmine, peach, juicy)...',
+          placeholder: sca.revealed
+            ? ('Bowl ' + bObj.code + ' tasting notes (e.g. jasmine, peach, juicy)...')
+            : ('Blind Bowl ' + bObj.code + ' live tasting notes...'),
           'aria-label': 'Bowl ' + bObj.code + ' tasting notes',
-          oninput: function () { bObj.notes = notesInput.value; }
+          oninput: function () {
+            bObj.notes = notesInput.value;
+            if (bObj.notes.trim()) markTouched();
+            paintScaHeroOnly();
+          }
         });
 
         const presetBtns = [];
         const traitPillRefs = [];
+        const modeNoticeEl = domH('div', {
+          style: 'display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:0.75rem'
+        });
+
+        const minusBtn = domH('button', {
+          type: 'button',
+          class: 'bt-tc-finetune-btn',
+          'aria-label': 'Bowl ' + bObj.code + ' minus 0.25',
+          text: '-0.25',
+          onclick: function () {
+            if (bObj.traitsCustomized) {
+              notify('8-Trait CVA mode is active — adjust 1–9 traits below or switch to Quick Score.');
+              return;
+            }
+            const curBase = bObj.score + 2 * (bObj.nonUniformCups || 0) + 4 * (bObj.defectiveCups || 0);
+            setBowlTargetScaBase(bObj, clamp(curBase - 0.25, 58, 100, 84.75));
+            markTouched();
+            CK.haptic('tick');
+            syncBowlCardVisuals();
+          }
+        });
+
+        const plusBtn = domH('button', {
+          type: 'button',
+          class: 'bt-tc-finetune-btn',
+          'aria-label': 'Bowl ' + bObj.code + ' plus 0.25',
+          text: '+0.25',
+          onclick: function () {
+            if (bObj.traitsCustomized) {
+              notify('8-Trait CVA mode is active — adjust 1–9 traits below or switch to Quick Score.');
+              return;
+            }
+            const curBase = bObj.score + 2 * (bObj.nonUniformCups || 0) + 4 * (bObj.defectiveCups || 0);
+            setBowlTargetScaBase(bObj, clamp(curBase + 0.25, 58, 100, 85.25));
+            markTouched();
+            CK.haptic('tick');
+            syncBowlCardVisuals();
+          }
+        });
+
+        const taintBtn = domH('button', {
+          type: 'button',
+          class: 'bt-tc-pill is-compact' + (bObj.nonUniformCups > 0 ? ' is-copper' : ' is-soft'),
+          title: 'CVA 104-2024 Non-Uniform Cup (-2 pts each; non-uniform + defective <= 5 cups)',
+          'aria-pressed': String(bObj.nonUniformCups > 0),
+          text: 'Non-Uniform (-2): ' + bObj.nonUniformCups + '/5',
+          onclick: function () {
+            const maxU = Math.max(0, 5 - (bObj.defectiveCups || 0));
+            bObj.nonUniformCups = maxU > 0 ? ((bObj.nonUniformCups + 1) % (maxU + 1)) : 0;
+            markTouched();
+            CK.haptic('tick');
+            syncBowlCardVisuals();
+          }
+        });
+
+        const faultBtn = domH('button', {
+          type: 'button',
+          class: 'bt-tc-pill is-compact' + (bObj.defectiveCups > 0 ? ' is-copper' : ' is-soft'),
+          title: 'CVA 104-2024 Defective Cup (-4 pts each; non-uniform + defective <= 5 cups)',
+          'aria-pressed': String(bObj.defectiveCups > 0),
+          text: 'Defective (-4): ' + bObj.defectiveCups + '/5',
+          onclick: function () {
+            const maxD = Math.max(0, 5 - (bObj.nonUniformCups || 0));
+            bObj.defectiveCups = maxD > 0 ? ((bObj.defectiveCups + 1) % (maxD + 1)) : 0;
+            markTouched();
+            CK.haptic('tick');
+            syncBowlCardVisuals();
+          }
+        });
+
+        const defectResetBtn = domH('button', {
+          type: 'button',
+          class: 'bt-tc-pill is-compact is-soft',
+          text: 'Clean (0/5)',
+          onclick: function () {
+            bObj.nonUniformCups = 0;
+            bObj.defectiveCups = 0;
+            CK.haptic('tick');
+            syncBowlCardVisuals();
+          }
+        });
 
         function syncBowlCardVisuals() {
+          const defC = clampBowlCupDefects(bObj.nonUniformCups, bObj.defectiveCups);
+          bObj.nonUniformCups = defC.nonUniformCups;
+          bObj.defectiveCups = defC.defectiveCups;
           bObj.score = computeCvaBowlScore(bObj);
           const stars = computeBowlStars(bObj.score);
           const tier = bowlQualityTier(bObj.score);
           scoreBadge.textContent = bObj.score.toFixed(2) + ' / 100 SCA \u00B7 ' + stars.toFixed(2) + ' / 5';
           tierBadge.className = 'bt-tc-badge ' + tier.tone;
           tierBadge.textContent = tier.text;
-          const baseBeforeDef = bObj.score + 2 * (bObj.nonUniformCups || 0) + 4 * (bObj.defectiveCups || 0);
+
+          const baseBeforeDef = bObj.score + 2 * bObj.nonUniformCups + 4 * bObj.defectiveCups;
+          const lockedByTraits = !!bObj.traitsCustomized;
           presetBtns.forEach(function (pb) {
-            const on = Math.abs(baseBeforeDef - pb.val * 10) < 0.13;
+            const on = !lockedByTraits && bObj.scoringMode === 'quick_sca' && Math.abs(baseBeforeDef - pb.val * 10) < 0.13;
             pb.btn.className = 'bt-tc-pill is-compact num-tab' + (on ? ' is-active' : ' is-soft');
             pb.btn.setAttribute('aria-pressed', String(on));
+            pb.btn.disabled = lockedByTraits;
           });
+          minusBtn.disabled = lockedByTraits;
+          plusBtn.disabled = lockedByTraits;
+
+          taintBtn.className = 'bt-tc-pill is-compact' + (bObj.nonUniformCups > 0 ? ' is-copper' : ' is-soft');
+          taintBtn.setAttribute('aria-pressed', String(bObj.nonUniformCups > 0));
+          taintBtn.textContent = 'Non-Uniform (-2): ' + bObj.nonUniformCups + '/5';
+          faultBtn.className = 'bt-tc-pill is-compact' + (bObj.defectiveCups > 0 ? ' is-copper' : ' is-soft');
+          faultBtn.setAttribute('aria-pressed', String(bObj.defectiveCups > 0));
+          faultBtn.textContent = 'Defective (-4): ' + bObj.defectiveCups + '/5';
+
+          modeNoticeEl.textContent = '';
+          if (lockedByTraits) {
+            modeNoticeEl.appendChild(domH('span', {
+              class: 'bt-lab-hint',
+              style: 'margin:0',
+              text: '8-Trait CVA 1–9 active (\u00B10.25 locked so your integer traits stay intact).'
+            }));
+            modeNoticeEl.appendChild(domH('button', {
+              type: 'button',
+              class: 'bt-lab-chip',
+              style: 'font-size:0.72rem;padding:2px 8px;min-height:28px',
+              onclick: function () {
+                bObj.traitsCustomized = false;
+                setBowlTargetScaBase(bObj, clamp(baseBeforeDef, 58, 100, 85));
+                markTouched();
+                CK.haptic('tick');
+                syncBowlCardVisuals();
+              }
+            }, 'Use Quick Score'));
+          } else if (bObj.scoringMode === 'quick_sca') {
+            modeNoticeEl.appendChild(domH('span', {
+              class: 'bt-lab-hint',
+              style: 'margin:0',
+              text: 'Quick SCA mode active (tapping any 1–9 trait below switches cleanly to CVA 104-2024).'
+            }));
+          }
+
           traitPillRefs.forEach(function (tr) {
-            const curH = Math.round(bObj.hVals[tr.aIdx] || 7);
-            tr.valSpan.textContent = (+bObj.hVals[tr.aIdx]).toFixed(1).replace(/\.0$/, '') + ' / 9';
+            const curH = Math.round(clamp(bObj.hVals[tr.aIdx], 1, 9, 6));
+            tr.valSpan.textContent = curH + ' / 9';
             tr.btns.forEach(function (tb, bIdx) {
-              const on = (bIdx + 1) === curH;
+              const on = bObj.scoringMode === 'cva_traits' && (bIdx + 1) === curH;
               tb.className = 'bt-tc-pill is-compact num-tab' + (on ? ' is-active' : ' is-soft');
               tb.setAttribute('aria-pressed', String(on));
             });
@@ -1289,7 +1882,12 @@
               class: 'bt-tc-pill is-compact is-soft num-tab',
               text: String(pv),
               onclick: function () {
+                if (bObj.traitsCustomized) {
+                  notify('8-Trait CVA mode is active — click "Use Quick Score" to switch.');
+                  return;
+                }
                 setBowlTargetScaBase(bObj, pv * 10);
+                markTouched();
                 CK.haptic('tick');
                 syncBowlCardVisuals();
               }
@@ -1300,103 +1898,34 @@
         );
 
         const stepperRow = domH('div', { class: 'bt-sca-stepper-row' },
-          domH('div', { style: 'display:flex;align-items:center;gap:6px' },
-            domH('button', {
-              type: 'button',
-              class: 'bt-tc-finetune-btn',
-              'aria-label': 'Bowl ' + bObj.code + ' minus 0.25',
-              text: '-0.25',
-              onclick: function () {
-                const curBase = bObj.score + 2 * (bObj.nonUniformCups || 0) + 4 * (bObj.defectiveCups || 0);
-                setBowlTargetScaBase(bObj, clamp(curBase - 0.25, 58, 100, 84.75));
-                CK.haptic('tick');
-                syncBowlCardVisuals();
-              }
-            }),
-            domH('button', {
-              type: 'button',
-              class: 'bt-tc-finetune-btn',
-              'aria-label': 'Bowl ' + bObj.code + ' plus 0.25',
-              text: '+0.25',
-              onclick: function () {
-                const curBase = bObj.score + 2 * (bObj.nonUniformCups || 0) + 4 * (bObj.defectiveCups || 0);
-                setBowlTargetScaBase(bObj, clamp(curBase + 0.25, 58, 100, 85.25));
-                CK.haptic('tick');
-                syncBowlCardVisuals();
-              }
-            })
-          ),
+          domH('div', { style: 'display:flex;align-items:center;gap:6px' }, minusBtn, plusBtn),
           tierBadge
         );
 
-        const taintBtn = domH('button', {
-          type: 'button',
-          class: 'bt-tc-pill is-compact' + (bObj.nonUniformCups > 0 ? ' is-copper' : ' is-soft'),
-          'aria-pressed': String(bObj.nonUniformCups > 0),
-          text: 'Taint (-2): ' + bObj.nonUniformCups + '/5',
-          onclick: function () {
-            bObj.nonUniformCups = (bObj.nonUniformCups + 1) % 6;
-            this.className = 'bt-tc-pill is-compact' + (bObj.nonUniformCups > 0 ? ' is-copper' : ' is-soft');
-            this.setAttribute('aria-pressed', String(bObj.nonUniformCups > 0));
-            this.textContent = 'Taint (-2): ' + bObj.nonUniformCups + '/5';
-            CK.haptic('tick');
-            syncBowlCardVisuals();
-          }
-        });
-
-        const faultBtn = domH('button', {
-          type: 'button',
-          class: 'bt-tc-pill is-compact' + (bObj.defectiveCups > 0 ? ' is-copper' : ' is-soft'),
-          'aria-pressed': String(bObj.defectiveCups > 0),
-          text: 'Fault (-4): ' + bObj.defectiveCups + '/5',
-          onclick: function () {
-            bObj.defectiveCups = (bObj.defectiveCups + 1) % 6;
-            this.className = 'bt-tc-pill is-compact' + (bObj.defectiveCups > 0 ? ' is-copper' : ' is-soft');
-            this.setAttribute('aria-pressed', String(bObj.defectiveCups > 0));
-            this.textContent = 'Fault (-4): ' + bObj.defectiveCups + '/5';
-            CK.haptic('tick');
-            syncBowlCardVisuals();
-          }
-        });
-
-        const defectResetBtn = domH('button', {
-          type: 'button',
-          class: 'bt-tc-pill is-compact is-soft',
-          text: 'Clean (0)',
-          onclick: function () {
-            bObj.nonUniformCups = 0;
-            bObj.defectiveCups = 0;
-            taintBtn.className = 'bt-tc-pill is-compact is-soft';
-            taintBtn.setAttribute('aria-pressed', 'false');
-            taintBtn.textContent = 'Taint (-2): 0/5';
-            faultBtn.className = 'bt-tc-pill is-compact is-soft';
-            faultBtn.setAttribute('aria-pressed', 'false');
-            faultBtn.textContent = 'Fault (-4): 0/5';
-            CK.haptic('tick');
-            syncBowlCardVisuals();
-          }
-        });
-
         const attrDetails = domH('details', { class: 'bt-lab-details' },
-          domH('summary', { text: 'Score All 8 Traits (1\u20139 Enjoyment)' }),
+          domH('summary', { text: 'Score All 8 CVA Traits (Integer 1\u20139)' }),
           domH('p', {
             class: 'bt-lab-hint',
-            text: 'Tap 1 to 9 for each trait (5 Okay \u00B7 7 Good \u00B7 8 Great \u00B7 9 Extraordinary). Updates your 100-pt SCA score instantaneously.'
+            text: 'Tap integer 1 to 9 for each CVA 104-2024 trait (5 Okay \u00B7 6 Very Good \u00B7 7 Great \u00B7 8 Excellent \u00B7 9 Extraordinary).'
           }),
           domH('div', { class: 'bt-cva-attr-grid' },
             CUPPING_TRAIT_GUIDES.map(function (tg, aIdx) {
-              const valSpan = domH('span', { class: 'num-tab bt-cva-val-pill', text: (+bObj.hVals[aIdx]).toFixed(1).replace(/\.0$/, '') + ' / 9' });
+              const initH = Math.round(clamp(bObj.hVals[aIdx], 1, 9, 6));
+              const valSpan = domH('span', { class: 'num-tab bt-cva-val-pill', text: initH + ' / 9' });
               const tBtns = [];
               const pillGroup = domH('div', { class: 'bt-sca-trait-pills', role: 'radiogroup', 'aria-label': 'Bowl ' + bObj.code + ' ' + tg.name },
                 [1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (v9) {
                   const tb = domH('button', {
                     type: 'button',
-                    class: 'bt-tc-pill is-compact num-tab' + (Math.round(bObj.hVals[aIdx]) === v9 ? ' is-active' : ' is-soft'),
+                    class: 'bt-tc-pill is-compact num-tab' + (bObj.scoringMode === 'cva_traits' && initH === v9 ? ' is-active' : ' is-soft'),
                     style: 'min-width:34px;min-height:36px;padding:3px 7px',
-                    'aria-pressed': String(Math.round(bObj.hVals[aIdx]) === v9),
+                    'aria-pressed': String(bObj.scoringMode === 'cva_traits' && initH === v9),
                     text: String(v9),
                     onclick: function () {
                       bObj.hVals[aIdx] = v9;
+                      bObj.scoringMode = 'cva_traits';
+                      bObj.traitsCustomized = true;
+                      markTouched();
                       CK.haptic('tick');
                       syncBowlCardVisuals();
                     }
@@ -1423,14 +1952,17 @@
         bowlsGrid.appendChild(domH('div', { class: 'bt-sca-bowl-card', style: 'min-width:0;max-width:100%;box-sizing:border-box' },
           domH('div', { class: 'bt-sca-bowl-top', style: 'flex-wrap:wrap;min-width:0;gap:6px' },
             domH('span', { class: 'bt-sca-bowl-badge', text: 'Bowl ' + bObj.code }),
-            scoreBadge
+            scoreBadge,
+            includeWrap
           ),
-          nameInput,
+          nameFieldEl,
+          bagNotesHintEl,
           notesInput,
           domH('div', { class: 'bt-sca-quick-wrap', style: 'display:flex;flex-direction:column;gap:8px' },
-            domH('span', { class: 'bt-lab-inline-lbl', text: 'SCA 6.00\u201310.00 Quick Presets & \u00B10.25 Stepper:' }),
+            domH('span', { class: 'bt-lab-inline-lbl', text: 'Quick SCA Score (75\u201390) & \u00B10.25 Stepper:' }),
             presetRow,
             stepperRow,
+            modeNoticeEl,
             domH('div', { class: 'bt-sca-defect-row' }, taintBtn, faultBtn, defectResetBtn)
           ),
           attrDetails
@@ -1439,7 +1971,6 @@
     }
     paintScaHeroOnly();
 
-    const startBtnLbl = domH('span', { text: sca.running ? 'Pause Cupping Timer' : 'Start Voice Cupping Timer' });
     const startBtn = domH('button', {
       type: 'button',
       class: 'bt-lab-btn is-primary',
@@ -1447,10 +1978,18 @@
         unlockAudioSafe();
         if (sca.running) {
           sca.running = false;
-          if (sca.rafId) cancelAnimationFrame(sca.rafId);
+          cancelScaRaf();
           sca._baseSec = sca.elapsedSec;
           startBtnLbl.textContent = 'Resume Cupping Timer';
         } else {
+          if ((sca.elapsedSec || 0) >= SCA_MAX_SEC) {
+            sca.elapsedSec = 0;
+            sca._baseSec = 0;
+            sca.spoken4m = false;
+            sca.spoken8m = false;
+            sca.spoken12m = false;
+          }
+          cancelScaRaf();
           sca.running = true;
           sca._baseSec = sca.elapsedSec || 0;
           sca._t0Ms = performance.now();
@@ -1464,17 +2003,26 @@
       }
     }, ic('play', { size: 15 }), startBtnLbl);
 
-    /* 1-Tap Save All Cupped Samples to History */
+    /* 1-Tap Save Selected Cupped Samples to History (never writes untouched/unselected bowls!) */
     const saveAllBtn = domH('button', {
       type: 'button',
       class: 'bt-lab-btn is-primary bt-chart-cta-btn',
       onclick: function () {
         if (sca._isSaving) return;
+        const selectedBowls = getSelectedBowlsForSave();
+        if (!selectedBowls.length) {
+          CK.haptic('snap');
+          notify('Edit a bowl or check "Save" on at least 1 bowl first so empty bowls never pollute your Journal.');
+          return;
+        }
+        const dosePerBowlG = getDosePerBowlG();
         const flightSigParts = [sca.bowlCount, sca.bowlMl];
-        for (let si = 0; si < sca.bowlCount; si++) {
-          const sb = sca.bowls[si] || {};
-          const shArr = Array.isArray(sb.hVals) ? sb.hVals.map(function (x) { return (+x || 0).toFixed(2); }).join(',') : '';
-          flightSigParts.push([sb.code, sb.name, sb.notes, shArr, sb.nonUniformCups || 0, sb.defectiveCups || 0].join('~'));
+        for (let si = 0; si < selectedBowls.length; si++) {
+          const sb = selectedBowls[si] || {};
+          const shArr = sb.scoringMode === 'cva_traits' && Array.isArray(sb.hVals)
+            ? sb.hVals.map(function (x) { return String(Math.round(clamp(x, 1, 9, 6))); }).join(',')
+            : ('Q:' + (+sb.quickBaseSca || sb.score || 85).toFixed(2));
+          flightSigParts.push([sb.code, sb.name, sb.notes, sb.scoringMode, shArr, sb.nonUniformCups || 0, sb.defectiveCups || 0].join('~'));
         }
         const flightSig = flightSigParts.join('|');
         if (sca._lastSavedSig && sca._lastSavedSig === flightSig) {
@@ -1488,14 +2036,13 @@
           const todayIso = new Date().toISOString().slice(0, 10);
           const nowIso = new Date().toISOString();
           const batchTs = Date.now().toString(36);
-          const fmtTrait = function (v) {
-            const n = clamp(v, 1, 9, 6.14);
-            return String(Math.abs(n - Math.round(n)) < 0.01 ? Math.round(n) : +n.toFixed(2));
+          const fmtIntTrait = function (v) {
+            return String(Math.round(clamp(v, 1, 9, 6)));
           };
           let savedN = 0;
 
-          for (let i = 0; i < sca.bowlCount; i++) {
-            const b = sca.bowls[i];
+          for (let i = 0; i < selectedBowls.length; i++) {
+            const b = selectedBowls[i];
             const sc = computeCvaBowlScore(b);
             const stars = computeBowlStars(sc);
             const cId = b.coffee_id || ('cf_sca_' + batchTs + '_' + i);
@@ -1506,17 +2053,41 @@
               ? b.flavors.slice()
               : (cupNotes ? cupNotes.split(/[,;/]+/).map(function (x) { return x.trim(); }).filter(Boolean) : (bagNotes ? bagNotes.split(/[,;/]+/).map(function (x) { return x.trim(); }).filter(Boolean) : []));
             const flavorsStr = cupNotes || flavorsArr.join(', ') || bagNotes;
-            const coffeeName = b.name || ('Cupping Bowl ' + b.code);
+            const coffeeName = String(b.name || '').trim() || ('Cupping Bowl ' + b.code);
             const ratioVal = Math.round((sca.bowlMl / Math.max(1, dosePerBowlG)) * 10) / 10;
             const cupSummary = 'Multi-Bowl Cupping (' + sc.toFixed(2) + ' / 100)' + (cupNotes ? (' · ' + cupNotes) : '');
-            const hArr = (Array.isArray(b.hVals) && b.hVals.length === 8) ? b.hVals : [6.14, 6.14, 6.14, 6.14, 6.14, 6.14, 6.14, 6.14];
-            const nonUnif = clamp(b.nonUniformCups || 0, 0, 5, 0);
-            const defec = clamp(b.defectiveCups || 0, 0, 5, 0);
+            const isCvaTraits = b.scoringMode !== 'quick_sca';
+            const hArr = (Array.isArray(b.hVals) && b.hVals.length === 8)
+              ? b.hVals.map(function (v) { return Math.round(clamp(v, 1, 9, 6)); })
+              : [6, 6, 6, 6, 6, 6, 6, 6];
+            const clampedDef = clampBowlCupDefects(b.nonUniformCups, b.defectiveCups);
+            const nonUnif = clampedDef.nonUniformCups;
+            const defec = clampedDef.defectiveCups;
             const defDeduct = 2 * nonUnif + 4 * defec;
             const rowObj = (typeof emptyRowObj === 'function') ? emptyRowObj() : {};
             if (typeof COLUMNS !== 'undefined' && Array.isArray(COLUMNS)) {
               COLUMNS.forEach(function (ck) { if (rowObj[ck] === undefined) rowObj[ck] = ''; });
             }
+            const traitFields = isCvaTraits
+              ? {
+                fragrance: fmtIntTrait(hArr[0]),
+                aroma: fmtIntTrait(hArr[1]),
+                fragrance_aroma: String(+((hArr[0] + hArr[1]) / 2).toFixed(1)),
+                flavor: fmtIntTrait(hArr[2]),
+                aftertaste: fmtIntTrait(hArr[3]),
+                acidity: fmtIntTrait(hArr[4]),
+                sweetness: fmtIntTrait(hArr[5]),
+                q_sweetness: fmtIntTrait(hArr[5]),
+                body: fmtIntTrait(hArr[6]),
+                overall: fmtIntTrait(hArr[7]),
+                acidity_intensity: String(normalizeCvaTraitToIntensity5(hArr[4])),
+                sweetness_intensity: String(normalizeCvaTraitToIntensity5(hArr[5])),
+                body_intensity: String(normalizeCvaTraitToIntensity5(hArr[6])),
+                score_kind: 'cva_affective'
+              }
+              : {
+                score_kind: 'quick_sca'
+              };
             Object.assign(rowObj, {
               schema_version: '6.0',
               id: 'cup_sca_' + batchTs + '_' + i + '_' + Math.random().toString(36).slice(2, 6),
@@ -1541,25 +2112,14 @@
               brew_ratio: String(ratioVal),
               brew_temp_c: '93',
               brew_temp_f: '200',
-              fragrance: fmtTrait(hArr[0]),
-              aroma: fmtTrait(hArr[1]),
-              fragrance_aroma: fmtTrait((+hArr[0] + +hArr[1]) / 2),
-              flavor: fmtTrait(hArr[2]),
-              aftertaste: fmtTrait(hArr[3]),
-              acidity: fmtTrait(hArr[4]),
-              sweetness: fmtTrait(hArr[5]),
-              q_sweetness: fmtTrait(hArr[5]),
-              body: fmtTrait(hArr[6]),
-              overall: fmtTrait(hArr[7]),
               taint_cups: String(nonUnif),
               fault_cups: String(defec),
               defect_deduction: String(defDeduct),
               total_score: sc.toFixed(2),
-              score_kind: 'cva_affective',
               my_rating_stars: String(stars),
               flavors_liked: flavorsStr,
               general_notes: cupSummary
-            });
+            }, traitFields);
             let rowSaved = false;
             if (typeof st.keepInBrowser === 'function') {
               rowSaved = !!st.keepInBrowser(rowObj);
@@ -1611,7 +2171,7 @@
             acadUi.gymCoach = {
               mood: 'celebrating',
               title: 'Cupping Flight Logged!',
-              speech: 'Saved all ' + savedN + ' cupping bowl(s) straight into your Tasting Journal!'
+              speech: 'Saved ' + savedN + ' selected cupping bowl(s) straight into your Tasting Journal!'
             };
             CK.haptic('celebrate');
             notify('Saved ' + savedN + ' cupping bowl(s) to your Taste History!');
@@ -1624,7 +2184,7 @@
           sca._isSaving = false;
         }
       }
-    }, ic('check-seal', { size: 16 }), domH('span', { text: 'Save All ' + sca.bowlCount + ' Cupping Bowls to Journal \u2192' }));
+    }, ic('check-seal', { size: 16 }), saveAllBtnLbl);
 
     const canBack = isSheet || acadUi.scaReturnToTaste || (typeof sh().canGoBack === 'function' && sh().canGoBack());
     const topEscapeBtn = canBack ? domH('button', {
@@ -1633,6 +2193,7 @@
       id: 'bt-sca-back-btn',
       onclick: function () {
         if (isSheet && typeof sh().closeSheet === 'function') {
+          cancelScaRaf();
           sh().closeSheet();
           return;
         }
@@ -1657,7 +2218,7 @@
         ic('cafe-cup', { size: 22 }),
         domH('div', { style: 'min-width:0;flex:1 1 160px' },
           domH('h3', { style: 'margin:0;overflow-wrap:anywhere', text: '1–5 Bowl Side-by-Side Coffee Cupping Table' }),
-          domH('p', { class: 'bt-lab-sub num-tab', style: 'overflow-wrap:anywhere', text: 'Dose: ' + dosePerBowlG + ' g per ' + sca.bowlMl + ' mL bowl (93 °C) · Voice cues at 04:00 Break, 08:00 Skim & 12:00 Slurp' })
+          headerSubEl
         )
       ),
       domH('div', { class: 'bt-lab-chip-row', style: 'flex-wrap:wrap;min-width:0;max-width:100%;gap:6px' }, topEscapeBtn, epistemicPill('verified_science'))
@@ -1683,8 +2244,7 @@
           compact: true,
           onChange: function (v) {
             sca.bowlMl = v;
-            if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
-            else rerenderAcademyTab();
+            syncBowlSizeReadouts();
           }
         })
       )
@@ -1704,7 +2264,7 @@
             class: 'bt-lab-btn',
             onclick: function () {
               sca.running = false;
-              if (sca.rafId) cancelAnimationFrame(sca.rafId);
+              cancelScaRaf();
               sca.elapsedSec = 0;
               sca._baseSec = 0;
               sca.spoken4m = false;
@@ -1718,7 +2278,7 @@
             type: 'button',
             class: 'bt-lab-btn',
             onclick: function () {
-              /* Shuffle bowls for self-blind cupping */
+              /* Shuffle bowls for self-blind cupping and hide names + bag_notes */
               const activeSlice = sca.bowls.slice(0, sca.bowlCount);
               for (let s = activeSlice.length - 1; s > 0; s--) {
                 const j = Math.floor(Math.random() * (s + 1));
@@ -1729,8 +2289,9 @@
                 sca.bowls[idx] = activeSlice[idx];
               }
               sca.revealed = false;
+              sca.blindMode = true;
               CK.haptic('snap');
-              notify('Shuffled bowl order & hid coffee names for blind cupping!');
+              notify('Shuffled bowl order & hid coffee identities + bag notes for blind cupping!');
               if (isSheet && o.hostEl) renderScaCuppingSheet(o.hostEl);
               else rerenderAcademyTab();
             }
@@ -1742,7 +2303,10 @@
     card.appendChild(domH('div', { class: 'bt-chart-cta-bar' }, saveAllBtn));
 
     syncScaChrono(sca.elapsedSec || 0);
-    if (sca.running) sca.rafId = requestAnimationFrame(tickScaRaf);
+    if (sca.running) {
+      cancelScaRaf();
+      sca.rafId = requestAnimationFrame(tickScaRaf);
+    }
     return card;
   }
 
@@ -1792,24 +2356,48 @@
 
   function buildKitchenTasteCalibratorCard() {
     const kt = acadUi.kitchen;
-    const scale = kt.waterMl / 250;
-    const hydMult = kt.citricHydrate === 'monohydrate' ? 1.094 : 1.0;
-    const citricG = +(0.15 * scale * hydMult).toFixed(2);
-    const sugarG = +(2.0 * scale).toFixed(1);
-    const saltG = +(0.18 * scale).toFixed(2);
 
-    const cups6 = [
-      { n: 1, title: 'Cup 1: Sour Anchor', kitchen: '1/8 tsp fresh lemon juice (or ' + citricG + ' g citric acid)', feel: 'Immediate side-of-tongue zip + watering salivation (fast fade).' },
-      { n: 2, title: 'Cup 2: Sweet Anchor', kitchen: '1/2 tsp (' + sugarG + ' g) white sugar', feel: 'Front/mid-tongue roundness that softens sourness when sipped after Cup 1.' },
-      { n: 3, title: 'Cup 3: Salty Anchor', kitchen: 'Small pinch (' + saltG + ' g) table salt', feel: 'Mineral fullness — notice how 1 drop in Cup 4 blocks bitterness!' },
-      { n: 4, title: 'Cup 4: Bitter Anchor', kitchen: '1/4 tsp 100% unsweetened cocoa (or tonic water)', feel: 'Slow-building back-of-tongue linger with ZERO salivation.' },
-      { n: 5, title: 'Cup 5: Savory / Umami', kitchen: 'Tiny pinch MSG or 4 drops soy/mushroom broth', feel: 'Mouth-coating savory brothiness (common in aged/savory Kenyans).' },
-      { n: 6, title: 'Cup 6: Pure Water Control', kitchen: kt.waterMl + ' mL plain brew water', feel: 'Palate-reset baseline so sensory adaptation never tricks you.' }
-    ];
+    function buildKitchenCupTexts() {
+      const scale = kt.waterMl / 250;
+      const hydMult = kt.citricHydrate === 'monohydrate' ? 1.094 : 1.0;
+      const citricG = +(0.15 * scale * hydMult).toFixed(2);
+      const sugarG = +(2.0 * scale).toFixed(1);
+      const saltG = +(0.18 * scale).toFixed(2);
+      return [
+        { n: 1, title: 'Cup 1: Sour Anchor', kitchen: '1/8 tsp fresh lemon juice (or ' + citricG + ' g citric acid)', feel: 'Immediate side-of-tongue zip + watering salivation (fast fade).' },
+        { n: 2, title: 'Cup 2: Sweet Anchor', kitchen: '1/2 tsp (' + sugarG + ' g) white sugar', feel: 'Front/mid-tongue roundness that softens sourness when sipped after Cup 1.' },
+        { n: 3, title: 'Cup 3: Salty Anchor', kitchen: 'Small pinch (' + saltG + ' g) table salt', feel: 'Mineral fullness — notice how 1 drop in Cup 4 blocks bitterness!' },
+        { n: 4, title: 'Cup 4: Bitter Anchor', kitchen: '1/4 tsp 100% unsweetened cocoa (or tonic water)', feel: 'Slow-building back-of-tongue linger with ZERO salivation.' },
+        { n: 5, title: 'Cup 5: Savory / Umami', kitchen: 'Tiny pinch MSG or 4 drops soy/mushroom broth', feel: 'Mouth-coating savory brothiness (common in aged/savory Kenyans).' },
+        { n: 6, title: 'Cup 6: Pure Water Control', kitchen: kt.waterMl + ' mL plain brew water', feel: 'Palate-reset baseline so sensory adaptation never tricks you.' }
+      ];
+    }
+
+    const cups6 = buildKitchenCupTexts();
+    const cupRecipeSpans = [];
+    function syncKitchenRecipesInPlace() {
+      const nextCups = buildKitchenCupTexts();
+      nextCups.forEach(function (c, i) {
+        if (cupRecipeSpans[i]) {
+          cupRecipeSpans[i].textContent = 'In ' + kt.waterMl + ' mL water: ' + c.kitchen;
+        }
+      });
+    }
 
     const rIdx = ((kt.roundIdx || 0) % KITCHEN_GAME_ROUNDS.length + KITCHEN_GAME_ROUNDS.length) % KITCHEN_GAME_ROUNDS.length;
     const curRound = KITCHEN_GAME_ROUNDS[rIdx];
     const acHist = readAcademyState().palateGymHistory;
+
+    const hydBtn = isScienceXray() ? domH('button', {
+      type: 'button',
+      class: 'bt-lab-chip' + (kt.citricHydrate === 'monohydrate' ? ' is-active' : ''),
+      onclick: function () {
+        kt.citricHydrate = kt.citricHydrate === 'monohydrate' ? 'anhydrous' : 'monohydrate';
+        hydBtn.className = 'bt-lab-chip' + (kt.citricHydrate === 'monohydrate' ? ' is-active' : '');
+        hydBtn.textContent = kt.citricHydrate === 'monohydrate' ? 'Citric Monohydrate (1.094x)' : 'Anhydrous Citric (1.00x)';
+        syncKitchenRecipesInPlace();
+      }
+    }, kt.citricHydrate === 'monohydrate' ? 'Citric Monohydrate (1.094x)' : 'Anhydrous Citric (1.00x)') : null;
 
     return domH('section', { class: 'bt-studio-card', id: 'bt-kitchen-calibrator' },
       domH('div', { class: 'bt-lab-card-head' },
@@ -1834,22 +2422,20 @@
           step: 50,
           unit: 'mL',
           compact: true,
-          onChange: function (v) { kt.waterMl = v; rerenderAcademyTab(); }
-        }),
-        isScienceXray() ? domH('button', {
-          type: 'button',
-          class: 'bt-lab-chip' + (kt.citricHydrate === 'monohydrate' ? ' is-active' : ''),
-          onclick: function () {
-            kt.citricHydrate = kt.citricHydrate === 'monohydrate' ? 'anhydrous' : 'monohydrate';
-            rerenderAcademyTab();
+          onChange: function (v) {
+            kt.waterMl = v;
+            syncKitchenRecipesInPlace();
           }
-        }, kt.citricHydrate === 'monohydrate' ? 'Citric Monohydrate (1.094x)' : 'Anhydrous Citric (1.00x)') : null
+        }),
+        hydBtn
       ),
       domH('div', { class: 'bt-kitchen-6grid' },
         cups6.map(function (c) {
+          const recSpan = domH('span', { class: 'bt-kitchen-recipe num-tab', text: 'In ' + kt.waterMl + ' mL water: ' + c.kitchen });
+          cupRecipeSpans.push(recSpan);
           return domH('div', { class: 'bt-lab-subcard bt-kitchen-cup-card' },
             domH('strong', { text: c.title }),
-            domH('span', { class: 'bt-kitchen-recipe num-tab', text: 'In ' + kt.waterMl + ' mL water: ' + c.kitchen }),
+            recSpan,
             domH('p', { class: 'bt-lab-hint', text: c.feel })
           );
         })
@@ -1901,11 +2487,12 @@
   function buildGymBeanjaminScorecardBanner(acState) {
     const gh = acState.palateGymHistory;
     const coach = acadUi.gymCoach || { mood: 'curious', title: 'Palate Gym Coach', speech: 'Ready to calibrate your palate!' };
-    const nTri = gh.triangleTrials || 0;
-    const kTri = gh.triangleCorrect || 0;
-    const pVal = exactTriangleBinomialPValue(nTri, kTri);
-    const totalWins = (gh.kitchenCalibCorrect || 0) + kTri + (gh.blindBowlsRuns || 0);
-    const rankTitle = (pVal < 0.05 && nTri >= 3)
+    const nSess = gh.triangleSessionTrials || 0;
+    const kSess = gh.triangleSessionCorrect || 0;
+    const sStreak = gh.triangleSessionStreak || acadUi.triangle.streak || 0;
+    const pVal = exactTriangleBinomialPValue(nSess, kSess);
+    const totalWins = (gh.kitchenCalibCorrect || 0) + (gh.triangleCorrect || 0) + (gh.blindBowlsRuns || 0);
+    const rankTitle = (pVal < 0.05 && nSess >= 3)
       ? 'Q-Grader Eagle'
       : (totalWins >= 5 ? 'Calibrated Palate' : (totalWins >= 1 ? 'Rising Taster' : 'Curious Sipper'));
 
@@ -1933,7 +2520,7 @@
         ),
         domH('div', { class: 'bt-gym-mini-kpi' },
           domH('span', { text: 'Blind Triangle' }),
-          domH('strong', { text: kTri + '/' + nTri + (acadUi.triangle.streak > 1 ? (' (' + acadUi.triangle.streak + ' streak!)') : '') })
+          domH('strong', { text: kSess + '/' + nSess + (sStreak > 1 ? (' (' + sStreak + ' streak!)') : '') })
         ),
         domH('div', { class: 'bt-gym-mini-kpi' },
           domH('span', { text: 'Cupping Flights' }),
@@ -1955,6 +2542,24 @@
       return Number.isFinite(n) && n > 0 ? n : null;
     };
 
+    const detectEntryTraitScale = function (r) {
+      const sk = String((r && r.score_kind) || '').toLowerCase();
+      if (sk === 'cva_affective' || sk === 'cva_104') return 'cva_9';
+      if (sk === 'sca_5cup' || sk === 'sca_2004' || sk === 'classic' || sk === 'sca_classic') return 'sca_10';
+      let mx = 0;
+      let mn = 99;
+      let hasQuarter = false;
+      CUPPING_TRAIT_GUIDES.forEach(function (tg) {
+        const v = getTraitVal(r, tg);
+        if (v == null) return;
+        if (v > mx) mx = v;
+        if (v < mn) mn = v;
+        if (Math.abs(v - Math.round(v)) >= 0.2) hasQuarter = true;
+      });
+      if (mx > 9.05 || (hasQuarter && mn >= 6 && mx <= 10)) return 'sca_10';
+      return 'cva_9';
+    };
+
     const cuppingEntries = [];
     allRows.forEach(function (r, idx) {
       if (!r || typeof r !== 'object') return;
@@ -1962,7 +2567,7 @@
       const sk = String(r.score_kind || '').toLowerCase();
       let traitCount = 0;
       CUPPING_TRAIT_GUIDES.forEach(function (tg) { if (getTraitVal(r, tg) != null) traitCount++; });
-      if (mk === 'cupping' || sk === 'cva_affective' || traitCount >= 4) {
+      if (mk === 'cupping' || sk === 'cva_affective' || sk === 'quick_sca' || traitCount >= 4) {
         const bInfo = extractAcademyRowBlendInfo(r);
         const rawSca = parseFloat(r.total_score);
         const rawStars = parseFloat(r.my_rating_stars);
@@ -1975,6 +2580,8 @@
           sca: Number.isFinite(rawSca) && rawSca > 0 ? rawSca : 0,
           stars: Number.isFinite(rawStars) && rawStars > 0 ? rawStars : 0,
           notes: un(r.flavors_liked || r.bag_notes || ''),
+          scale: detectEntryTraitScale(r),
+          traitCount: traitCount,
           blendInfo: bInfo
         });
       }
@@ -2015,7 +2622,7 @@
         domH('p', {
           class: 'bt-lab-hint',
           style: 'margin:0',
-          text: 'No cupping rounds logged yet. Score 1\u20135 bowls in the table above and tap "Save All Cupping Bowls to Journal" to unlock your 8-trait strengths, min\u2013max spread & side-by-side history!'
+          text: 'No cupping rounds logged yet. Score 1\u20135 bowls in the table above and tap "Save Selected Cupping Bowls to Journal" to unlock your 8-trait strengths, min\u2013max spread & side-by-side history!'
         })
       ));
       return card;
@@ -2063,10 +2670,23 @@
       })
     ));
 
-    /* 8-Trait Strengths & Weaknesses Grid (Fragrance..Overall) */
+    /* Separate CVA 1–9 entries from Legacy SCA 6–10 entries so averages never mix scales */
+    const cvaEntries = visibleEntries.filter(function (ce) { return ce.traitCount > 0 && ce.scale === 'cva_9'; });
+    const legacyEntries = visibleEntries.filter(function (ce) { return ce.traitCount > 0 && ce.scale === 'sca_10'; });
+    const hasBothScales = cvaEntries.length > 0 && legacyEntries.length > 0;
+    let activeScale = sca.historyScaleFilter === 'sca_10' ? 'sca_10' : 'cva_9';
+    if (activeScale === 'sca_10' && !legacyEntries.length && cvaEntries.length) activeScale = 'cva_9';
+    if (activeScale === 'cva_9' && !cvaEntries.length && legacyEntries.length) activeScale = 'sca_10';
+    sca.historyScaleFilter = activeScale;
+
+    const scaleEntries = activeScale === 'sca_10' ? legacyEntries : cvaEntries;
+    const maxScale = activeScale === 'sca_10' ? 10 : 9;
+    const scaleLabel = activeScale === 'sca_10' ? 'Legacy SCA 6\u201310' : 'CVA 104-2024 (1\u20139)';
+
+    /* 8-Trait Strengths & Weaknesses Grid (Fragrance..Overall) within single scale */
     const traitAgg = CUPPING_TRAIT_GUIDES.map(function (tg) {
       const vals = [];
-      visibleEntries.forEach(function (ce) {
+      scaleEntries.forEach(function (ce) {
         const v = getTraitVal(ce.r, tg);
         if (v != null) vals.push({ v: v, ce: ce });
       });
@@ -2077,7 +2697,6 @@
       return { tg: tg, n: vals.length, avg: +(sum / vals.length).toFixed(2), min: mn, max: mx, vals: vals };
     });
     const scoredTraits = traitAgg.filter(function (t) { return t.n > 0; });
-    const maxScale = scoredTraits.some(function (t) { return t.max > 9.05; }) ? 10 : 9;
     const hiAvg = scoredTraits.length ? Math.max.apply(null, scoredTraits.map(function (t) { return t.avg; })) : 0;
     const loAvg = scoredTraits.length ? Math.min.apply(null, scoredTraits.map(function (t) { return t.avg; })) : 0;
     const topTrait = scoredTraits.find(function (t) { return Math.abs(t.avg - hiAvg) < 0.01; }) || null;
@@ -2086,19 +2705,35 @@
     const drillBox = domH('div', { class: 'bt-drill-drawer' },
       domH('div', { class: 'bt-drill-drawer-head' },
         domH('div', { style: 'min-width:0;flex:1' },
-          domH('div', { class: 'bt-pref-tile-lbl', text: '8-TRAIT ATTRIBUTE COMPARISON (TAP TO RANK ROUNDS)' }),
+          domH('div', { class: 'bt-pref-tile-lbl', text: '8-TRAIT ATTRIBUTE COMPARISON \u00B7 ' + scaleLabel.toUpperCase() + ' (TAP TO RANK ROUNDS)' }),
           domH('strong', {
             class: 'bt-drill-drawer-title',
             text: (topTrait && lowTrait && hiAvg - loAvg >= 0.15)
-              ? ('Strongest: ' + topTrait.tg.name + ' (' + topTrait.avg.toFixed(1) + ') \u00B7 Opportunity: ' + lowTrait.tg.name + ' (' + lowTrait.avg.toFixed(1) + ')')
-              : ('Balanced Profile Across ' + visibleEntries.length + ' Logged Round' + (visibleEntries.length === 1 ? '' : 's'))
+              ? ('Strongest: ' + topTrait.tg.name + ' (' + topTrait.avg.toFixed(1) + '/' + maxScale + ') \u00B7 Opportunity: ' + lowTrait.tg.name + ' (' + lowTrait.avg.toFixed(1) + '/' + maxScale + ')')
+              : ('Balanced Profile Across ' + (scaleEntries.length || visibleEntries.length) + ' Logged Round' + ((scaleEntries.length || visibleEntries.length) === 1 ? '' : 's'))
           })
         ),
-        sca.historyTraitFilter ? domH('button', {
-          type: 'button',
-          class: 'bt-drill-close-btn bt-lab-btn is-sm',
-          onclick: function () { sca.historyTraitFilter = ''; CK.haptic('tick'); rerenderAcademyTab(); }
-        }, 'Clear Trait \u00D7') : null
+        domH('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;align-items:center' },
+          hasBothScales ? domH('div', { class: 'bt-lab-chip-row', role: 'group', 'aria-label': 'Cupping trait scale filter' },
+            domH('button', {
+              type: 'button',
+              class: 'bt-lab-chip' + (activeScale === 'cva_9' ? ' is-active' : ''),
+              'aria-pressed': String(activeScale === 'cva_9'),
+              onclick: function () { sca.historyScaleFilter = 'cva_9'; CK.haptic('tick'); rerenderAcademyTab(); }
+            }, 'CVA 1\u20139 (' + cvaEntries.length + ')'),
+            domH('button', {
+              type: 'button',
+              class: 'bt-lab-chip' + (activeScale === 'sca_10' ? ' is-active' : ''),
+              'aria-pressed': String(activeScale === 'sca_10'),
+              onclick: function () { sca.historyScaleFilter = 'sca_10'; CK.haptic('tick'); rerenderAcademyTab(); }
+            }, 'Legacy SCA 6\u201310 (' + legacyEntries.length + ')')
+          ) : null,
+          sca.historyTraitFilter ? domH('button', {
+            type: 'button',
+            class: 'bt-drill-close-btn bt-lab-btn is-sm',
+            onclick: function () { sca.historyTraitFilter = ''; CK.haptic('tick'); rerenderAcademyTab(); }
+          }, 'Clear Trait \u00D7') : null
+        )
       ),
       domH('div', { class: 'bt-sca-attr-grid', id: 'bt-academy-cva-attr-grid' },
         traitAgg.map(function (ta) {
@@ -2135,11 +2770,12 @@
       drillBox.appendChild(domH('p', {
         class: 'bt-lab-hint',
         style: 'margin:0',
-        text: activeTraitObj.tg.name + ': ' + activeTraitObj.tg.hint + ' \u2014 rounds below are ranked highest to lowest on ' + activeTraitObj.tg.name + '.'
+        text: activeTraitObj.tg.name + ': ' + activeTraitObj.tg.hint + ' \u2014 rounds below are ranked highest to lowest on ' + activeTraitObj.tg.name + ' (' + scaleLabel + ').'
       }));
     }
 
-    const sortedRounds = visibleEntries.slice().sort(function (a, b) {
+    const roundsPool = (activeTraitObj || hasBothScales) && scaleEntries.length ? scaleEntries : visibleEntries;
+    const sortedRounds = roundsPool.slice().sort(function (a, b) {
       if (activeTraitObj) {
         const va = getTraitVal(a.r, activeTraitObj.tg) || 0;
         const vb = getTraitVal(b.r, activeTraitObj.tg) || 0;
@@ -2151,6 +2787,7 @@
 
     drillBox.appendChild(domH('div', { class: 'bt-drill-cup-list' },
       sortedRounds.slice(0, 8).map(function (ce) {
+        const ceScaleMax = ce.scale === 'sca_10' ? 10 : 9;
         const selVal = activeTraitObj ? getTraitVal(ce.r, activeTraitObj.tg) : null;
         /* Find this round's strongest & lowest trait */
         let bestT = null, lowT = null;
@@ -2161,18 +2798,18 @@
           if (!lowT || v < lowT.v) lowT = { name: tg.name.replace(' (Mouthfeel)', ''), v: v };
         });
         const traitSummary = (bestT && lowT && bestT.v - lowT.v >= 0.25)
-          ? ('Top: ' + bestT.name + ' (' + bestT.v.toFixed(1).replace(/\.0$/, '') + ') \u00B7 Low: ' + lowT.name + ' (' + lowT.v.toFixed(1).replace(/\.0$/, '') + ')')
-          : (bestT ? ('Uniform ~' + bestT.v.toFixed(1).replace(/\.0$/, '') + '/' + maxScale + ' across traits') : '');
+          ? ('Top: ' + bestT.name + ' (' + bestT.v.toFixed(1).replace(/\.0$/, '') + '/' + ceScaleMax + ') \u00B7 Low: ' + lowT.name + ' (' + lowT.v.toFixed(1).replace(/\.0$/, '') + '/' + ceScaleMax + ')')
+          : (bestT ? ('Uniform ~' + bestT.v.toFixed(1).replace(/\.0$/, '') + '/' + ceScaleMax + ' across traits') : '');
 
         return domH('article', { class: 'bt-drill-cup-card' },
           domH('div', { class: 'bt-drill-cup-head' },
             domH('div', { style: 'min-width:0;flex:1 1 170px' },
-              domH('div', { class: 'bt-drill-cup-sub', text: [ce.roaster, ce.date].filter(Boolean).join(' \u00B7 ') || 'Cupping Table Round' }),
+              domH('div', { class: 'bt-drill-cup-sub', text: [ce.roaster, ce.date, ce.scale === 'sca_10' ? 'Legacy SCA 6\u201310' : 'CVA 1\u20139'].filter(Boolean).join(' \u00B7 ') }),
               domH('strong', { class: 'bt-drill-cup-title', text: ce.coffee })
             ),
             domH('div', { style: 'display:flex;gap:5px;flex-wrap:wrap;align-items:center' },
               ce.blendInfo && ce.blendInfo.isBlend ? domH('span', { class: 'bt-tc-badge bt-journal-blend-badge is-copper', text: ce.blendInfo.pillText }) : null,
-              selVal != null ? domH('span', { class: 'bt-tc-badge is-gold num-tab', text: activeTraitObj.tg.name.replace(' (Mouthfeel)', '') + ' ' + selVal.toFixed(1).replace(/\.0$/, '') + '/' + maxScale }) : null,
+              selVal != null ? domH('span', { class: 'bt-tc-badge is-gold num-tab', text: activeTraitObj.tg.name.replace(' (Mouthfeel)', '') + ' ' + selVal.toFixed(1).replace(/\.0$/, '') + '/' + ceScaleMax }) : null,
               ce.sca > 0 ? domH('span', { class: 'bt-tc-badge is-good num-tab', text: ce.sca.toFixed(1) + ' SCA' }) : null,
               ce.stars > 0 ? domH('span', { class: 'bt-tc-badge is-sci num-tab', text: ce.stars.toFixed(2) + ' \u2605' }) : null
             )
@@ -2196,15 +2833,36 @@
               type: 'button',
               class: 'bt-drill-action-pill bt-lab-btn is-sm',
               onclick: function () {
-                sca.bowls[0].coffee_id = ce.r.coffee_id || '';
-                sca.bowls[0].name = ce.coffee;
-                sca.bowls[0].roaster = ce.roaster || '';
-                sca.bowls[0].origin = un(ce.r.origin);
-                sca.bowls[0].process = un(ce.r.process);
-                sca.bowls[0].notes = ce.notes || '';
+                /* Reset ALL Bowl A fields cleanly so prior coffee traits/metadata/defects never leak */
+                const freshA = makeDefaultScaBowl(0, ce.coffee);
+                freshA.coffee_id = ce.r.coffee_id || '';
+                freshA.name = ce.coffee;
+                freshA.roaster = ce.roaster || '';
+                freshA.origin = un(ce.r.origin);
+                freshA.process = un(ce.r.process);
+                freshA.roast = un(ce.r.roast_level || ce.r.roast || '');
+                freshA.varietal = un(ce.r.varietal || '');
+                freshA.farm = un(ce.r.farm || ce.r.farm_or_station || '');
+                freshA.elevation_m = un(ce.r.elevation_m || '');
+                freshA.agtron = un(ce.r.agtron || ce.r.ground_agtron || '');
+                freshA.bag_notes = un(ce.r.bag_notes || '');
+                freshA.notes = '';
+                freshA.flavors = [];
+                freshA.hVals = [6, 6, 6, 6, 6, 6, 6, 6];
+                freshA.scoringMode = 'cva_traits';
+                freshA.traitsCustomized = false;
+                freshA.quickBaseSca = 84.25;
+                freshA.nonUniformCups = 0;
+                freshA.defectiveCups = 0;
+                freshA.defects = 0;
+                freshA.defect_notes = '';
+                freshA.touched = true;
+                freshA.includeInSave = true;
+                freshA.score = computeCvaBowlScore(freshA);
+                sca.bowls[0] = freshA;
                 sca._lastSavedSig = '';
                 CK.haptic('snap');
-                notify('Loaded "' + ce.coffee + '" into Bowl A for re-cupping!');
+                notify('Loaded "' + ce.coffee + '" into Bowl A with clean traits & defects for re-cupping!');
                 rerenderAcademyTab();
               }
             }, 'Re-Cup in Bowl A')
@@ -2224,6 +2882,9 @@
       sca.historyCmpB = idxB;
       const eA = cmpPool[idxA];
       const eB = cmpPool[idxB];
+      const sameScale = eA.scale === eB.scale;
+      const maxA = eA.scale === 'sca_10' ? 10 : 9;
+      const maxB = eB.scale === 'sca_10' ? 10 : 9;
 
       const cmpBox = domH('div', { id: 'bt-academy-cupping-compare', style: 'margin-top:10px;display:flex;flex-direction:column;gap:8px' },
         domH('div', { class: 'bt-drill-drawer-head' },
@@ -2249,7 +2910,8 @@
             onchange: function (ev) { onSet(parseInt(ev.target.value, 10) || 0); }
           },
             cmpPool.map(function (ce, ci) {
-              const opt = domH('option', { value: String(ci), text: ce.coffee + (ce.sca > 0 ? (' (' + ce.sca.toFixed(1) + ')') : '') });
+              const sTag = ce.scale === 'sca_10' ? '6\u201310' : '1\u20139';
+              const opt = domH('option', { value: String(ci), text: ce.coffee + (ce.sca > 0 ? (' (' + ce.sca.toFixed(1) + ', ' + sTag + ')') : '') });
               if (ci === curIdx) opt.selected = true;
               return opt;
             })
@@ -2261,17 +2923,28 @@
           domH('span', { class: 'bt-pref-tile-lbl', text: 'vs' }),
           mkSel(idxB, 'Select Cupping Round B', function (v) { sca.historyCmpB = v; rerenderAcademyTab(); })
         ));
+        if (!sameScale) {
+          cmpBox.appendChild(domH('p', {
+            class: 'bt-lab-hint',
+            style: 'margin:0',
+            text: 'Round A uses ' + (maxA === 10 ? 'Legacy SCA 6\u201310' : 'CVA 1\u20139') + ' traits while Round B uses ' + (maxB === 10 ? 'Legacy SCA 6\u201310' : 'CVA 1\u20139') + ' — per-trait deltas are omitted across differing scales (Total 0\u2013100 SCA remains directly comparable).'
+          }));
+        }
 
         const tbody = domH('tbody');
         CUPPING_TRAIT_GUIDES.forEach(function (tg) {
           const vA = getTraitVal(eA.r, tg);
           const vB = getTraitVal(eB.r, tg);
-          const diff = (vA != null && vB != null) ? +(vA - vB).toFixed(2) : null;
-          const diffTxt = diff == null ? '\u2014' : (Math.abs(diff) < 0.01 ? '0.0' : ((diff > 0 ? '+' : '') + diff.toFixed(1).replace(/\.0$/, '')));
+          const diff = (sameScale && vA != null && vB != null) ? +(vA - vB).toFixed(2) : null;
+          const diffTxt = !sameScale
+            ? 'Diff. scale'
+            : (diff == null ? '\u2014' : (Math.abs(diff) < 0.01 ? '0.0' : ((diff > 0 ? '+' : '') + diff.toFixed(1).replace(/\.0$/, ''))));
+          const txtA = vA != null ? (vA.toFixed(1).replace(/\.0$/, '') + (sameScale ? '' : ('/' + maxA))) : '\u2014';
+          const txtB = vB != null ? (vB.toFixed(1).replace(/\.0$/, '') + (sameScale ? '' : ('/' + maxB))) : '\u2014';
           tbody.appendChild(domH('tr', { class: diff != null && Math.abs(diff) >= 0.25 ? 'is-diff' : '' },
             domH('td', null, domH('strong', { text: tg.name.replace(' (Mouthfeel)', '') })),
-            domH('td', { class: 'num-tab' + (diff != null && diff > 0.05 ? ' bt-compare-winner-col' : ''), text: vA != null ? vA.toFixed(1).replace(/\.0$/, '') : '\u2014' }),
-            domH('td', { class: 'num-tab' + (diff != null && diff < -0.05 ? ' bt-compare-winner-col' : ''), text: vB != null ? vB.toFixed(1).replace(/\.0$/, '') : '\u2014' }),
+            domH('td', { class: 'num-tab' + (diff != null && diff > 0.05 ? ' bt-compare-winner-col' : ''), text: txtA }),
+            domH('td', { class: 'num-tab' + (diff != null && diff < -0.05 ? ' bt-compare-winner-col' : ''), text: txtB }),
             domH('td', { class: 'num-tab' + (diff != null && diff > 0.05 ? ' is-pos' : (diff != null && diff < -0.05 ? ' is-neg' : '')), text: diffTxt })
           ));
         });
@@ -2305,6 +2978,7 @@
   }
 
   function renderPalateGymView() {
+    cancelSalamiRaf();
     const wrap = domH('div', { class: 'bt-academy-seg' });
     const acState = readAcademyState();
     const sal = acadUi.salami;
@@ -2368,24 +3042,44 @@
       });
     }
 
-    const salBtnLbl = domH('span', { text: sal.running ? 'Pause Split Timer' : 'Start 3-Glass Salami Timer' });
+    const initSalBtnTxt = sal.running
+      ? 'Pause Split Timer'
+      : ((sal.elapsedSec || 0) >= totalSalSec
+        ? 'Replay 3-Glass Split'
+        : ((sal.elapsedSec || 0) > 0 ? 'Resume Split Timer' : 'Start 3-Glass Salami Timer'));
+    const salBtnLbl = domH('span', { text: initSalBtnTxt });
+
+    let salamiCard = null;
     function tickSalRaf() {
-      if (!sal.running) return;
-      const prevS = sal.elapsedSec || 0;
+      if (!sal.running) {
+        cancelSalamiRaf();
+        return;
+      }
+      if (!salamiCard || !salamiCard.isConnected) {
+        cancelSalamiRaf();
+        sal.running = false;
+        sal._baseSec = sal.elapsedSec || 0;
+        return;
+      }
       const nowS = (sal._baseSec || 0) + (performance.now() - (sal._t0Ms || performance.now())) / 1000;
       sal.elapsedSec = nowS;
-      if (prevS < stepDur && nowS >= stepDur) {
+      if (!sal.spokenG2 && nowS >= stepDur) {
+        sal.spokenG2 = true;
         CK.haptic('sweetSpotLock');
         speakCueSafe('Swap to Glass Two now. Caramel sugars wave.', 'step');
         notify('SWAP TO GLASS #2 (Caramel & Natural Sugars) NOW!');
-      } else if (prevS < stepDur * 2 && nowS >= stepDur * 2) {
+      }
+      if (!sal.spokenG3 && nowS >= stepDur * 2) {
+        sal.spokenG3 = true;
         CK.haptic('sweetSpotLock');
         speakCueSafe('Swap to Glass Three now. Late bitters wave.', 'step');
         notify('SWAP TO GLASS #3 (Late Bitter Tail) NOW!');
       }
       if (nowS >= totalSalSec) {
         sal.running = false;
+        cancelSalamiRaf();
         sal.elapsedSec = totalSalSec;
+        sal._baseSec = totalSalSec;
         salBtnLbl.textContent = 'Replay 3-Glass Split';
         const cur = readAcademyState();
         cur.palateGymHistory.salamiRuns++;
@@ -2399,7 +3093,7 @@
       sal.rafId = requestAnimationFrame(tickSalRaf);
     }
 
-    const salamiCard = domH('section', { class: 'bt-studio-card' },
+    salamiCard = domH('section', { class: 'bt-studio-card' },
       domH('div', { class: 'bt-lab-card-head' },
         domH('div', { class: 'bt-lab-title-group' },
           ic('salami-cups', { size: 22 }),
@@ -2413,12 +3107,30 @@
         domH('button', {
           type: 'button',
           class: 'bt-lab-chip' + (sal.mode === 'pourover' ? ' is-active' : ''),
-          onclick: function () { sal.running = false; if (sal.rafId) cancelAnimationFrame(sal.rafId); sal.mode = 'pourover'; sal.elapsedSec = 0; rerenderAcademyTab(); }
+          onclick: function () {
+            sal.running = false;
+            cancelSalamiRaf();
+            sal.mode = 'pourover';
+            sal.elapsedSec = 0;
+            sal._baseSec = 0;
+            sal.spokenG2 = false;
+            sal.spokenG3 = false;
+            rerenderAcademyTab();
+          }
         }, 'Pour-Over (3 × 55s)'),
         domH('button', {
           type: 'button',
           class: 'bt-lab-chip' + (sal.mode === 'espresso' ? ' is-active' : ''),
-          onclick: function () { sal.running = false; if (sal.rafId) cancelAnimationFrame(sal.rafId); sal.mode = 'espresso'; sal.elapsedSec = 0; rerenderAcademyTab(); }
+          onclick: function () {
+            sal.running = false;
+            cancelSalamiRaf();
+            sal.mode = 'espresso';
+            sal.elapsedSec = 0;
+            sal._baseSec = 0;
+            sal.spokenG2 = false;
+            sal.spokenG3 = false;
+            rerenderAcademyTab();
+          }
         }, 'Espresso Salami Shot (3 × 9s)')
       ),
       domH('div', { class: 'bt-chrono-gym-deck' },
@@ -2433,11 +3145,17 @@
                 unlockAudioSafe();
                 if (sal.running) {
                   sal.running = false;
-                  if (sal.rafId) cancelAnimationFrame(sal.rafId);
+                  cancelSalamiRaf();
                   sal._baseSec = sal.elapsedSec;
                   salBtnLbl.textContent = 'Resume Split Timer';
                 } else {
-                  if (sal.elapsedSec >= totalSalSec) sal.elapsedSec = 0;
+                  if (sal.elapsedSec >= totalSalSec) {
+                    sal.elapsedSec = 0;
+                    sal._baseSec = 0;
+                    sal.spokenG2 = false;
+                    sal.spokenG3 = false;
+                  }
+                  cancelSalamiRaf();
                   sal.running = true;
                   sal._baseSec = sal.elapsedSec || 0;
                   sal._t0Ms = performance.now();
@@ -2452,9 +3170,11 @@
               class: 'bt-lab-btn',
               onclick: function () {
                 sal.running = false;
-                if (sal.rafId) cancelAnimationFrame(sal.rafId);
+                cancelSalamiRaf();
                 sal.elapsedSec = 0;
                 sal._baseSec = 0;
+                sal.spokenG2 = false;
+                sal.spokenG3 = false;
                 salBtnLbl.textContent = 'Start 3-Glass Salami Timer';
                 syncSalamiVisuals(0);
               }
@@ -2464,68 +3184,120 @@
       )
     );
     syncSalamiVisuals(sal.elapsedSec || 0);
-    if (sal.running) sal.rafId = requestAnimationFrame(tickSalRaf);
+    if (sal.running) {
+      cancelSalamiRaf();
+      sal.rafId = requestAnimationFrame(tickSalRaf);
+    }
     wrap.appendChild(salamiCard);
 
-    /* 4. Self-Blind Turntable Triangle Cupping */
-    const nTri = acState.palateGymHistory.triangleTrials;
-    const kTri = acState.palateGymHistory.triangleCorrect;
-    const pVal = exactTriangleBinomialPValue(nTri, kTri);
-    const pBadgeTxt = nTri === 0
-      ? '0 trials logged — run your first blind triad!'
-      : (kTri + '/' + nTri + ' Correct  ·  Exact Binomial p = ' + (pVal * 100).toFixed(2) + '% ' +
-        (pVal < 0.05 ? '(Statistically Calibrated!)' : '(Keep calibrating toward p < 5%)'));
+    /* 4. Self-Blind Turntable Triangle Cupping (Secret Odd Dot Code + Physical Cup Flip Grading!) */
+    const nSess = acState.palateGymHistory.triangleSessionTrials;
+    const kSess = acState.palateGymHistory.triangleSessionCorrect;
+    const nAll = acState.palateGymHistory.triangleTrials;
+    const kAll = acState.palateGymHistory.triangleCorrect;
+    const pVal = exactTriangleBinomialPValue(nSess, kSess);
+    const pBadgeTxt = nSess === 0
+      ? ('Session: 0 trials logged — run your first blind triad!' + (nAll > 0 ? (' (All-time: ' + kAll + '/' + nAll + ')') : ''))
+      : ('Session: ' + kSess + '/' + nSess + ' Correct \u00B7 Exact Binomial p = ' + (pVal * 100).toFixed(2) + '% ' +
+        (pVal < 0.05 ? '(Statistically Calibrated!)' : '(Keep calibrating toward p < 5%)') +
+        (nAll > nSess ? (' \u00B7 All-time: ' + kAll + '/' + nAll) : ''));
 
-    wrap.appendChild(domH('section', { class: 'bt-studio-card' },
+    const oddDotsLabel = function (d) { return d === 1 ? '1 underside dot' : (d + ' underside dots'); };
+
+    wrap.appendChild(domH('section', { class: 'bt-studio-card', id: 'bt-triangle-test-card' },
       domH('div', { class: 'bt-lab-card-head' },
         domH('div', { class: 'bt-lab-title-group' },
           ic('check-seal', { size: 22 }),
           domH('div', null,
-            domH('h3', { text: 'Self-Blind Triangle Test (Exact Binomial p-Value)' }),
+            domH('h3', { text: 'Self-Blind Triangle Test (ISO 4120 Exact Binomial p-Value)' }),
             domH('p', { class: 'bt-lab-sub num-tab', text: pBadgeTxt })
           )
-        )
+        ),
+        domH('button', {
+          type: 'button',
+          class: 'bt-lab-btn is-sm',
+          onclick: function () {
+            const cur = readAcademyState();
+            cur.palateGymHistory.triangleSessionTrials = 0;
+            cur.palateGymHistory.triangleSessionCorrect = 0;
+            cur.palateGymHistory.triangleSessionStreak = 0;
+            writeAcademyState(cur);
+            tri.streak = 0;
+            resetTriangleRound();
+            CK.haptic('tick');
+            notify('Triangle Test session reset to 0/0 for your new coffee pair!');
+            rerenderAcademyTab();
+          }
+        }, 'Reset Session')
       ),
       domH('p', {
         class: 'bt-lab-hint',
-        text: 'Stick 1, 2, and 3 tape dots under 3 identical cups. Pour 2 cups of Brew A and 1 cup of Brew B (' + tri.dotMap[tri.oddIndex] + ' is the odd cup), spin tray eyes-closed, sip all 3, and tap the Odd Cup Out!'
+        text: '1) Stick 1, 2, and 3 tape dots under 3 identical cups. 2) Tap "Peek Prep Code" to see which dot cup gets Brew B (odd cup), pour Brew A into the other two, then hide the code. 3) Spin the tray eyes-closed, taste all 3 cups, pick your odd cup, flip it over, and tap how many dots are underneath!'
+      }),
+      !tri.revealed ? domH('div', { class: 'bt-tc-well', style: 'padding:9px 12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px' },
+        tri.prepCodeVisible
+          ? domH('span', { style: 'font-size:0.84rem;font-weight:700', text: 'Pour Prep Code: Pour Brew B (Odd Cup) into the cup with ' + oddDotsLabel(tri.oddDots) + ', then hide & spin!' })
+          : domH('span', { style: 'font-size:0.84rem;font-weight:700', text: 'Secret Odd Dot Code: Hidden (blinded for tasting)' }),
+        domH('button', {
+          type: 'button',
+          class: 'bt-lab-chip' + (tri.prepCodeVisible ? ' is-active' : ''),
+          onclick: function () {
+            tri.prepCodeVisible = !tri.prepCodeVisible;
+            CK.haptic('tick');
+            rerenderAcademyTab();
+          }
+        }, tri.prepCodeVisible ? 'Hide Code & Spin Tray' : 'Peek Prep Code (Pour Brew B)')
+      ) : null,
+      domH('p', {
+        class: 'bt-lab-inline-lbl',
+        style: 'margin:8px 0 4px',
+        text: 'Flip your picked cup \u2014 how many dots are underneath? (1 / 2 / 3)'
       }),
       domH('div', { class: 'bt-triangle-cups-row' },
-        ['Cup Left', 'Cup Center', 'Cup Right'].map(function (lbl, idx) {
-          const isPicked = tri.pickedIndex === idx;
-          const isOdd = tri.oddIndex === idx;
+        [1, 2, 3].map(function (dotsNum) {
+          const isPicked = tri.pickedDots === dotsNum;
+          const isOdd = tri.oddDots === dotsNum;
           let stateCls = '';
           if (tri.revealed) {
             if (isOdd) stateCls = ' is-odd-truth';
             else if (isPicked) stateCls = ' is-wrong-pick';
           }
+          const lbl = dotsNum === 1 ? '1 Dot Underneath' : (dotsNum + ' Dots Underneath');
           return domH('button', {
             type: 'button',
             class: 'bt-triangle-cup-btn' + stateCls,
             onclick: function () {
               if (tri.revealed) return;
-              tri.pickedIndex = idx;
+              tri.pickedDots = dotsNum;
+              tri.prepCodeVisible = false;
               tri.revealed = true;
-              const hit = idx === tri.oddIndex;
-              tri.streak = hit ? ((tri.streak || 0) + 1) : 0;
+              const hit = dotsNum === tri.oddDots;
               const cur = readAcademyState();
               cur.palateGymHistory.triangleTrials++;
-              if (hit) cur.palateGymHistory.triangleCorrect++;
+              cur.palateGymHistory.triangleSessionTrials++;
+              if (hit) {
+                cur.palateGymHistory.triangleCorrect++;
+                cur.palateGymHistory.triangleSessionCorrect++;
+                cur.palateGymHistory.triangleSessionStreak = (cur.palateGymHistory.triangleSessionStreak || 0) + 1;
+              } else {
+                cur.palateGymHistory.triangleSessionStreak = 0;
+              }
+              tri.streak = cur.palateGymHistory.triangleSessionStreak;
               cur.palateGymHistory.lastPlayedAt = new Date().toISOString();
               writeAcademyState(cur);
-              const nextP = exactTriangleBinomialPValue(cur.palateGymHistory.triangleTrials, cur.palateGymHistory.triangleCorrect);
+              const nextP = exactTriangleBinomialPValue(cur.palateGymHistory.triangleSessionTrials, cur.palateGymHistory.triangleSessionCorrect);
               acadUi.gymCoach = hit
                 ? {
                   mood: nextP < 0.05 ? 'celebrating' : 'eureka',
-                  title: 'Odd Cup Found! (' + cur.palateGymHistory.triangleCorrect + '/' + cur.palateGymHistory.triangleTrials + ')',
+                  title: 'Odd Cup Found! (' + cur.palateGymHistory.triangleSessionCorrect + '/' + cur.palateGymHistory.triangleSessionTrials + ')',
                   speech: nextP < 0.05
                     ? ('Statistically proven palate (p = ' + (nextP * 100).toFixed(1) + '% < 5%)! You beat random guessing hands-down.')
-                    : ('Sharp tongue! ' + tri.dotMap[idx] + ' was indeed the odd cup out — shuffle another triad to lock in p < 5%!')
+                    : ('Sharp tongue! ' + oddDotsLabel(dotsNum) + ' was indeed the odd cup out — run another triad to lock in p < 5%!')
                 }
                 : {
                   mood: 'sympathetic',
                   title: 'Blind Tasting Is Humbling!',
-                  speech: 'The odd cup was ' + ['Cup Left', 'Cup Center', 'Cup Right'][tri.oddIndex] + ' (' + tri.dotMap[tri.oddIndex] + '). Let the cups cool toward 55 °C where differences pop loudest!'
+                  speech: 'You picked ' + oddDotsLabel(dotsNum) + ', while Brew B was under ' + oddDotsLabel(tri.oddDots) + '. Let the cups cool toward 55–42 °C where differences pop loudest!'
                 };
               CK.haptic(hit ? 'celebrate' : 'snap');
               rerenderAcademyTab();
@@ -2533,7 +3305,7 @@
           },
           ic('cafe-cup', { size: 24 }),
           domH('strong', { text: lbl }),
-          domH('span', { text: tri.revealed ? (isOdd ? ('ODD CUP (' + tri.dotMap[idx] + ')') : ('Pair (' + tri.dotMap[idx] + ')')) : 'Tap as Odd Cup Out' }));
+          domH('span', { text: tri.revealed ? (isOdd ? ('ODD CUP (' + oddDotsLabel(dotsNum) + ')') : ('Pair (' + oddDotsLabel(dotsNum) + ')')) : 'Tap Dot Count Found' }));
         })
       ),
       tri.revealed ? domH('div', { class: 'bt-lab-btn-row' },
@@ -2557,6 +3329,26 @@
     const wrap = domH('div', { class: 'bt-academy-seg' });
     const card = domH('section', { class: 'bt-studio-card', id: 'bt-glossary-card' });
 
+    /* Pre-index lowercase search fields once per render O(N) */
+    const indexedTerms = allTerms.map(function (item) {
+      const term = String(item.term || item[0] || '');
+      const def = String(item.def || item[1] || '');
+      const cat = String(item.cat || item.group || '');
+      const alsoStr = String(item.also || '');
+      const altsStr = Array.isArray(item.alts) ? item.alts.join(' ') : String(item.alts || '');
+      const hiddenStr = Array.isArray(item.hidden) ? item.hidden.join(' ') : String(item.hidden || '');
+      return {
+        item: item,
+        term: term,
+        tLow: term.trim().toLowerCase(),
+        def: def,
+        dLow: def.toLowerCase(),
+        cat: cat,
+        aLow: (alsoStr + ' ' + altsStr).trim().toLowerCase(),
+        hLow: hiddenStr.trim().toLowerCase()
+      };
+    });
+
     const searchIn = domH('input', {
       type: 'search',
       class: 'bt-lab-text-in bt-glossary-search',
@@ -2567,82 +3359,127 @@
 
     /* Extract distinct categories */
     const catSet = new Set(['All']);
-    allTerms.forEach(function (it) {
-      const c = it.cat || it.group || '';
-      if (c && catSet.size < 13) catSet.add(c);
+    indexedTerms.forEach(function (it) {
+      if (it.cat && catSet.size < 13) catSet.add(it.cat);
     });
     const catList = Array.from(catSet);
+    const catBtnRefs = [];
+    const letterBtnRefs = [];
+
+    function syncFilterChipStates() {
+      catBtnRefs.forEach(function (ref) {
+        const on = gl.cat === ref.val;
+        ref.btn.className = 'bt-lab-chip' + (on ? ' is-active' : '');
+        ref.btn.setAttribute('aria-pressed', String(on));
+      });
+      letterBtnRefs.forEach(function (ref) {
+        const on = gl.letter === ref.val;
+        ref.btn.className = 'bt-lab-chip' + (on ? ' is-active' : '');
+        ref.btn.setAttribute('aria-pressed', String(on));
+      });
+    }
 
     function filterTerms() {
       resultsHost.textContent = '';
       const q = gl.query.trim().toLowerCase();
-      const filtered = allTerms.filter(function (item) {
-        const term = String(item.term || item[0] || '');
-        const def = String(item.def || item[1] || '');
-        const also = String(item.also || '');
-        const cat = String(item.cat || item.group || '');
-        if (gl.cat !== 'All' && cat !== gl.cat) return false;
-        if (gl.letter !== 'ALL' && term.charAt(0).toUpperCase() !== gl.letter) return false;
+      const filtered = indexedTerms.filter(function (rec) {
+        if (gl.cat !== 'All' && rec.cat !== gl.cat) return false;
+        if (gl.letter === '0\u20139') {
+          if (!/^[0-9]/.test(rec.term)) return false;
+        } else if (gl.letter !== 'ALL') {
+          if (rec.term.charAt(0).toUpperCase() !== gl.letter) return false;
+        }
         if (!q) return true;
-        return term.toLowerCase().indexOf(q) >= 0 || also.toLowerCase().indexOf(q) >= 0 || def.toLowerCase().indexOf(q) >= 0;
+        return rec.tLow.indexOf(q) >= 0 ||
+          rec.aLow.indexOf(q) >= 0 ||
+          rec.hLow.indexOf(q) >= 0 ||
+          rec.dLow.indexOf(q) >= 0;
       });
 
+      let ordered = filtered;
       if (q && filtered.length > 1) {
+        /* Decorate-sort-undecorate: compute rank ONCE per match in O(N) */
         const escQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const wordRe = new RegExp('(?:^|\\b|\\()' + escQ + '(?:$|\\b|\\))');
-        const rankItem = function (it) {
-          const tLow = String(it.term || it[0] || '').trim().toLowerCase();
-          if (tLow === q) return 0;
-          if (tLow.indexOf(q) === 0) return 1;
-          if (wordRe.test(tLow)) return 2;
-          if (tLow.indexOf(q) >= 0) return 3;
-          if (String(it.also || '').toLowerCase().indexOf(q) >= 0) return 4;
-          return 5;
-        };
-        filtered.sort(function (a, b) {
-          const ra = rankItem(a), rb = rankItem(b);
-          if (ra !== rb) return ra - rb;
-          const ta = String(a.term || a[0] || '');
-          const tb = String(b.term || b[0] || '');
-          if (ta.length !== tb.length) return ta.length - tb.length;
-          return ta.localeCompare(tb);
+        const decorated = filtered.map(function (rec) {
+          let rnk = 6;
+          if (rec.tLow === q) rnk = 0;
+          else if (rec.tLow.indexOf(q) === 0) rnk = 1;
+          else if (wordRe.test(rec.tLow)) rnk = 2;
+          else if (rec.tLow.indexOf(q) >= 0) rnk = 3;
+          else if (rec.aLow.indexOf(q) >= 0) rnk = 4;
+          else if (rec.hLow.indexOf(q) >= 0) rnk = 5;
+          return { rec: rec, rank: rnk, len: rec.term.length, term: rec.term };
         });
+        decorated.sort(function (a, b) {
+          if (a.rank !== b.rank) return a.rank - b.rank;
+          if (a.len !== b.len) return a.len - b.len;
+          return a.term.localeCompare(b.term);
+        });
+        ordered = decorated.map(function (d) { return d.rec; });
       }
 
-      if (!filtered.length) {
-        let sugg = [];
+      if (!ordered.length) {
+        let suggRaw = [];
         if (q && typeof glSuggest === 'function') {
-          try { sugg = glSuggest(allTerms, q) || []; } catch (_) { sugg = []; }
+          try { suggRaw = glSuggest(allTerms, q, 5) || []; } catch (_) { suggRaw = []; }
         }
+        const suggTerms = (Array.isArray(suggRaw) ? suggRaw : [])
+          .map(function (s) {
+            if (typeof s === 'string') return s.trim();
+            if (s && typeof s === 'object') return String(s.term || s[0] || '').trim();
+            return '';
+          })
+          .filter(Boolean)
+          .slice(0, 5);
+
         resultsHost.appendChild(domH('p', {
           class: 'bt-lab-hint',
-          text: 'No matching terms for "' + (gl.query || gl.letter) + '"' + (sugg.length ? (' — did you mean: ' + sugg.slice(0, 4).join(', ') + '?') : '. Try "tds", "lactone", "agtron", or reset filters.')
+          text: 'No matching terms for "' + (gl.query.trim() || gl.letter) + '"' +
+            (suggTerms.length ? ' \u2014 did you mean:' : '. Try "tds", "lactone", "agtron", or reset filters.')
         }));
+        if (suggTerms.length) {
+          resultsHost.appendChild(domH('div', { class: 'bt-lab-chip-row', role: 'group', 'aria-label': 'Glossary spelling suggestions' },
+            suggTerms.map(function (sTerm) {
+              return domH('button', {
+                type: 'button',
+                class: 'bt-lab-chip',
+                onclick: function () {
+                  gl.query = sTerm;
+                  gl.letter = 'ALL';
+                  gl.cat = 'All';
+                  gl.limit = 40;
+                  searchIn.value = sTerm;
+                  syncFilterChipStates();
+                  CK.haptic('tick');
+                  filterTerms();
+                }
+              }, sTerm);
+            })
+          ));
+        }
         return;
       }
 
       const maxShow = Math.max(40, gl.limit || 40);
-      const shown = filtered.slice(0, maxShow);
+      const shown = ordered.slice(0, maxShow);
       if (!q) {
         const ctxMsg = gl.letter !== 'ALL'
-          ? ('Letter "' + gl.letter + '" \u2014 ' + filtered.length + ' term' + (filtered.length === 1 ? '' : 's') + (gl.cat !== 'All' ? (' in ' + gl.cat) : ''))
-          : ('Showing ' + shown.length + ' of ' + filtered.length + ' terms' + (gl.cat !== 'All' ? (' in ' + gl.cat) : ' (All A\u2013Z)'));
+          ? ('Filter "' + gl.letter + '" \u2014 ' + ordered.length + ' term' + (ordered.length === 1 ? '' : 's') + (gl.cat !== 'All' ? (' in ' + gl.cat) : ''))
+          : ('Showing ' + shown.length + ' of ' + ordered.length + ' terms' + (gl.cat !== 'All' ? (' in ' + gl.cat) : ' (All 0\u20139 & A\u2013Z)'));
         resultsHost.appendChild(domH('p', { class: 'bt-lab-hint', style: 'margin-bottom:6px', text: ctxMsg }));
       }
-      shown.forEach(function (entry) {
-        const tName = entry.term || entry[0] || '';
-        const tDef = entry.def || entry[1] || '';
-        const tCat = entry.cat || entry.group || '';
+      shown.forEach(function (rec) {
         resultsHost.appendChild(domH('div', { class: 'bt-glossary-item' },
           domH('div', { class: 'bt-glossary-head' },
-            domH('strong', { text: tName }),
-            tCat ? domH('span', { class: 'bt-glossary-cat', text: tCat }) : null
+            domH('strong', { text: rec.term }),
+            rec.cat ? domH('span', { class: 'bt-glossary-cat', text: rec.cat }) : null
           ),
-          domH('p', { text: tDef })
+          domH('p', { text: rec.def })
         ));
       });
 
-      if (filtered.length > shown.length) {
+      if (ordered.length > shown.length) {
         resultsHost.appendChild(domH('div', { class: 'bt-chart-cta-bar' },
           domH('button', {
             type: 'button',
@@ -2652,35 +3489,59 @@
               CK.haptic('tick');
               filterTerms();
             }
-          }, 'Show 40 More Terms (' + (filtered.length - shown.length) + ' remaining) \u2192')
+          }, 'Show 40 More Terms (' + (ordered.length - shown.length) + ' remaining) \u2192')
         ));
       }
     }
 
+    let glSearchTimer = 0;
     searchIn.addEventListener('input', function () {
       gl.query = searchIn.value;
       gl.limit = 40;
-      filterTerms();
+      if (glSearchTimer) clearTimeout(glSearchTimer);
+      glSearchTimer = setTimeout(function () {
+        glSearchTimer = 0;
+        if (!resultsHost.isConnected && !card.isConnected) return;
+        filterTerms();
+      }, 100);
     });
 
-    const catBar = domH('div', { class: 'bt-lab-chip-row' },
+    const catBar = domH('div', { class: 'bt-lab-chip-row', role: 'group', 'aria-label': 'Glossary categories' },
       catList.map(function (cName) {
-        return domH('button', {
+        const btn = domH('button', {
           type: 'button',
           class: 'bt-lab-chip' + (gl.cat === cName ? ' is-active' : ''),
-          onclick: function () { gl.cat = cName; gl.limit = 40; rerenderAcademyTab(); }
+          'aria-pressed': String(gl.cat === cName),
+          onclick: function () {
+            gl.cat = cName;
+            gl.limit = 40;
+            syncFilterChipStates();
+            CK.haptic('tick');
+            filterTerms();
+          }
         }, cName);
+        catBtnRefs.push({ val: cName, btn: btn });
+        return btn;
       })
     );
 
-    const letters27 = ['ALL'].concat('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''));
-    const alphaBar = domH('div', { class: 'bt-lab-chip-row bt-alpha-bar' },
-      letters27.map(function (ltr) {
-        return domH('button', {
+    const letters28 = ['ALL', '0\u20139'].concat('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''));
+    const alphaBar = domH('div', { class: 'bt-lab-chip-row bt-alpha-bar', role: 'group', 'aria-label': 'Glossary 0 to 9 and A to Z filter' },
+      letters28.map(function (ltr) {
+        const btn = domH('button', {
           type: 'button',
           class: 'bt-lab-chip' + (gl.letter === ltr ? ' is-active' : ''),
-          onclick: function () { gl.letter = ltr; gl.limit = 40; rerenderAcademyTab(); }
+          'aria-pressed': String(gl.letter === ltr),
+          onclick: function () {
+            gl.letter = ltr;
+            gl.limit = 40;
+            syncFilterChipStates();
+            CK.haptic('tick');
+            filterTerms();
+          }
         }, ltr);
+        letterBtnRefs.push({ val: ltr, btn: btn });
+        return btn;
       })
     );
 
@@ -2689,7 +3550,7 @@
         ic('search-filter', { size: 22 }),
         domH('div', null,
           domH('h3', { text: 'A–Z Coffee Science & Sensory Glossary (' + allTerms.length + ' Terms)' }),
-          domH('p', { class: 'bt-lab-sub', text: 'Full-page 60fps scrolling (zero nested scroll trap) — filter by category, A–Z letter, or instant search' })
+          domH('p', { class: 'bt-lab-sub', text: 'Full-page 60fps scrolling (zero nested scroll trap) — filter by category, 0–9 / A–Z letter, or instant search' })
         )
       )
     ));
@@ -2876,18 +3737,8 @@
   }
 
   /* ==========================================================================
-   * v6.5 3-CARD SAVE & RESTORE CENTER ('save-backup-center' + Inline Vault)
+   * v7.5 3-CARD SAVE & RESTORE CENTER ('save-backup-center' + Inline Vault)
    * ========================================================================== */
-  const _SAVE_CENTER_CANON_IDS = [
-    'bt-save-web-url-btn',
-    'bt-load-web-url-input',
-    'bt-load-web-url-btn',
-    'bt-replace-web-url-btn',
-    'bt-export-json-save-btn',
-    'bt-import-save-file-btn',
-    'bt-export-csv-save-btn'
-  ];
-
   let _saveCenterUi = {
     fileImportMode: 'merge', /* 'merge' | 'replace' */
     webUrlConfirmMsg: '',
@@ -2896,29 +3747,6 @@
     feedbackTone: 'good',
     webUrlDraft: ''
   };
-
-  function _yieldInlineSaveIdsForSheet() {
-    if (typeof document === 'undefined') return;
-    _SAVE_CENTER_CANON_IDS.forEach(function (cid) {
-      const existing = document.getElementById(cid);
-      if (existing && (!existing.closest || !existing.closest('#sheet'))) {
-        existing.setAttribute('data-yielded-save-id', cid);
-        existing.removeAttribute('id');
-      }
-    });
-  }
-
-  function _restoreInlineSaveIdsAfterSheet() {
-    if (typeof document === 'undefined') return;
-    const list = document.querySelectorAll('[data-yielded-save-id]');
-    for (let i = 0; i < list.length; i++) {
-      const cid = list[i].getAttribute('data-yielded-save-id');
-      if (cid && !document.getElementById(cid)) {
-        list[i].id = cid;
-      }
-      list[i].removeAttribute('data-yielded-save-id');
-    }
-  }
 
   function _formatBackupTimestampHuman(ms) {
     const t = Number(ms) || 0;
@@ -2977,14 +3805,10 @@
     opts = opts || {};
     const isSheet = !!opts.isSheet;
     const st = window.BTStorage || {};
-    const sheetCurrentlyOpen = !isSheet && typeof document !== 'undefined' && (function () {
-      const shEl = document.getElementById('sheet');
-      return !!(shEl && !shEl.hidden && shEl.getAttribute('data-sheet') === 'save-backup-center');
-    })();
 
+    /* Scoped IDs + semantic data-save-role eliminate duplicate-ID collisions without mutating DOM IDs */
     function assignId(canonId) {
-      if (isSheet) return canonId;
-      return sheetCurrentlyOpen ? ('inline-' + canonId) : canonId;
+      return isSheet ? canonId : ('bt-vault-' + String(canonId).replace(/^bt-/, ''));
     }
 
     const holder = domH('div', {
@@ -3034,6 +3858,7 @@
     const urlInput = domH('input', {
       type: 'text',
       id: assignId('bt-load-web-url-input'),
+      'data-save-role': 'load-web-url-input',
       class: 'bt-lab-text-in',
       style: 'font-size:1rem;min-height:44px;width:100%;max-width:100%;min-width:0;box-sizing:border-box',
       placeholder: 'Paste #btsave=... web address or save code...',
@@ -3102,6 +3927,7 @@
       domH('button', {
         type: 'button',
         id: assignId('bt-save-web-url-btn'),
+        'data-save-role': 'save-web-url-btn',
         class: 'bt-lab-btn is-primary',
         style: 'width:100%;max-width:100%;min-width:0;min-height:48px;font-size:0.88rem;font-weight:800;white-space:normal;line-height:1.22;text-align:center',
         onclick: async function () {
@@ -3161,6 +3987,7 @@
           domH('button', {
             type: 'button',
             id: assignId('bt-load-web-url-btn'),
+            'data-save-role': 'load-web-url-btn',
             class: 'bt-lab-btn is-primary',
             style: 'flex:1 1 180px;min-width:0;max-width:100%;white-space:normal;line-height:1.2',
             onclick: function () { runWebUrlRestore('merge'); }
@@ -3168,6 +3995,7 @@
           domH('button', {
             type: 'button',
             id: assignId('bt-replace-web-url-btn'),
+            'data-save-role': 'replace-web-url-btn',
             class: 'bt-lab-btn',
             style: 'flex:0 1 auto;min-width:0',
             onclick: function () { runWebUrlRestore('replace'); }
@@ -3234,6 +4062,7 @@
         domH('button', {
           type: 'button',
           id: assignId('bt-export-json-save-btn'),
+          'data-save-role': 'export-json-save-btn',
           class: 'bt-lab-btn is-primary',
           style: 'flex:1 1 180px;min-width:0;max-width:100%;white-space:normal;line-height:1.2',
           onclick: function () {
@@ -3250,6 +4079,7 @@
         domH('button', {
           type: 'button',
           id: assignId('bt-export-csv-save-btn'),
+          'data-save-role': 'export-csv-save-btn',
           class: 'bt-lab-btn',
           style: 'flex:1 1 190px',
           onclick: function () {
@@ -3297,6 +4127,7 @@
         domH('button', {
           type: 'button',
           id: assignId('bt-import-save-file-btn'),
+          'data-save-role': 'import-save-file-btn',
           class: 'bt-lab-btn is-accent',
           style: 'width:100%;max-width:100%;min-width:0;min-height:46px;font-weight:700;white-space:normal;line-height:1.2',
           onclick: function () { saveFilePicker.click(); }
@@ -3366,7 +4197,6 @@
 
   function renderSaveBackupCenterSheet(arg0) {
     const hostEl = arg0 && arg0.nodeType === 1 ? arg0 : null;
-    _yieldInlineSaveIdsForSheet();
     const sheetWrap = domH('div', {
       class: 'bt-sheet-content bt-vault-sheet',
       id: 'bt-save-backup-center-sheet'
@@ -3385,13 +4215,11 @@
       title: 'Backup & Load Saves',
       detent: 'full',
       onClose: function () {
-        _restoreInlineSaveIdsAfterSheet();
         if (lastAcademyMount && acadUi.subView === 'vault') {
           rerenderAcademyTab();
         }
       }
     }, opts || {});
-    _yieldInlineSaveIdsForSheet();
     const shell = sh();
     if (shell.BTSheet && typeof shell.BTSheet.open === 'function') {
       shell.BTSheet.open('save-backup-center', payload || null, opts);
@@ -3458,7 +4286,7 @@
         format: 'beantelligence-backup',
         version: 2,
         madeAt: new Date().toISOString(),
-        appVersion: '6.8.0',
+        appVersion: '7.6.0',
         historyCsv: hist && hist.text ? hist.text : '',
         pricesCsv: pr && pr.list && typeof priceCsv === 'function' ? priceCsv(pr.list) : '',
         shopsCsv: shStore && shStore.store && typeof shopCsv === 'function' ? shopCsv(shStore.store) : '',
@@ -3481,7 +4309,7 @@
         if (pr && pr.list && pr.list.length && typeof priceCsv === 'function') parts.push({ id: 'prices', text: priceCsv(pr.list) });
         if (shStore && shStore.store && typeof shopCsv === 'function') parts.push({ id: 'shops', text: shopCsv(shStore.store) });
         parts.push({ id: 'academy', text: JSON.stringify(readAcademyState()) });
-        const made = await makeEverythingCode(parts, { made: new Date().toISOString(), app: '6.2.0' });
+        const made = await makeEverythingCode(parts, { made: new Date().toISOString(), app: '7.5.0' });
         downloadTextBlob(made.text || String(made), 'BeanTelligence Backup - Everything.txt', 'text/plain;charset=utf-8');
         statusLine.textContent = 'Downloaded BeanTelligence Backup - Everything.txt (#BEANTELLIGENCE-PARTS 1).';
         return;
@@ -3772,9 +4600,22 @@
           const fn = st.restoreSafetySnapshot || window.restoreSafetySnapshot;
           if (typeof fn === 'function') {
             const res = await fn(snapKey);
-            statusLine.textContent = res && res.ok
-              ? ('Restored ' + (res.restoredKeys || 'all') + ' saved records from backup snapshot!')
-              : ('No automatic backup snapshot recorded for "' + labelTxt + '" on this browser yet.');
+            if (res && res.ok) {
+              resetAcademyInMemoryState();
+              if (typeof window.__btResetPalateState === 'function') {
+                try { window.__btResetPalateState(); } catch (_) {}
+              }
+              const okMsg = 'Restored ' + (res.restoredKeys || 'all') + ' saved records from "' + labelTxt + '"!';
+              _saveCenterUi.feedbackTone = 'good';
+              _saveCenterUi.feedbackMsg = okMsg;
+              statusLine.textContent = okMsg;
+              CK.haptic('celebrate');
+              notify(okMsg);
+              if (hostEl) renderDataVaultSheet(hostEl);
+              else rerenderAcademyTab();
+            } else {
+              statusLine.textContent = 'No backup snapshot recorded for "' + labelTxt + '" on this browser yet.';
+            }
           } else {
             statusLine.textContent = 'Backup snapshot verified ready.';
           }
@@ -3800,7 +4641,19 @@
         else {
           try { localStorage.removeItem('brew-and-cup-difluid-auth-v1'); localStorage.removeItem(ACADEMY_LS_KEY); } catch (_) {}
         }
-        statusLine.textContent = 'Cleared browser storage cleanly (your downloaded backup files on disk are untouched).';
+        try { localStorage.removeItem(ACADEMY_LS_KEY); } catch (_) {}
+        resetAcademyInMemoryState();
+        if (typeof window.__btResetPalateState === 'function') {
+          try { window.__btResetPalateState(); } catch (_) {}
+        }
+        const clearedMsg = 'Cleared browser storage & reset live session state cleanly (your downloaded backup files on disk are untouched).';
+        _saveCenterUi.feedbackTone = 'good';
+        _saveCenterUi.feedbackMsg = clearedMsg;
+        statusLine.textContent = clearedMsg;
+        CK.haptic('snap');
+        notify('Cleared all saved browser data on this device.');
+        if (hostEl) renderDataVaultSheet(hostEl);
+        else rerenderAcademyTab();
       }
     }, 'Clear Everything on This Device (2-Tap)');
 
@@ -3819,19 +4672,10 @@
           handleList,
 
           domH('section', { class: 'bt-lab-subcard' },
-            domH('strong', { text: 'Multi-Part Archive (.txt) & Extra Spreadsheet (.csv) Exports' }),
+            domH('strong', { text: 'Multi-Part Archive (.txt) & Extra Spreadsheets (.csv)' }),
             domH('div', { class: 'bt-lab-btn-row' },
               domH('button', { type: 'button', class: 'bt-lab-btn is-primary', onclick: handleSaveEverything },
                 ic('vault-shield', { size: 16 }), domH('span', { text: 'Save Everything Backup (.txt)' })),
-              domH('button', {
-                type: 'button',
-                class: 'bt-lab-btn',
-                onclick: function () {
-                  const csv = (hist && hist.text) || (typeof COLUMNS !== 'undefined' ? COLUMNS.join(',') + '\n' : 'schema_version,id,coffee_name,total_score\n');
-                  downloadTextBlob(csv, 'BeanTelligence Taste History.csv', 'text/csv;charset=utf-8');
-                  statusLine.textContent = 'Exported BeanTelligence Taste History.csv!';
-                }
-              }, 'Export Tasting History (.csv)'),
               domH('button', {
                 type: 'button',
                 class: 'bt-lab-btn',
@@ -3849,21 +4693,7 @@
                   downloadTextBlob(csv, 'BeanTelligence Coffee Shops.csv', 'text/csv;charset=utf-8');
                   statusLine.textContent = 'Exported BeanTelligence Coffee Shops.csv!';
                 }
-              }, 'Export Cafes (.csv)'),
-              domH('button', {
-                type: 'button',
-                class: 'bt-lab-btn',
-                onclick: async function () {
-                  try {
-                    if (navigator.storage && typeof navigator.storage.persist === 'function') {
-                      const granted = await navigator.storage.persist();
-                      statusLine.textContent = granted ? 'Durable Browser Storage locked against OS eviction!' : 'Browser storage active (download .json backups or bookmark your #btsave link on iOS).';
-                    } else {
-                      statusLine.textContent = 'Local storage active.';
-                    }
-                  } catch (_) {}
-                }
-              }, 'Lock Durable Storage')
+              }, 'Export Cafes (.csv)')
             )
           ),
 
@@ -3880,10 +4710,12 @@
                 class: 'bt-lab-btn is-sm is-primary',
                 onclick: async function () {
                   const fn = st.ensurePreMigrationSnapshot || window.ensurePreMigrationSnapshot;
-                  if (typeof fn === 'function') await fn({ targetSchema: '6.2', forceManual: true });
-                  statusLine.textContent = 'Captured verified safety snapshot of all your saved data!';
+                  if (typeof fn === 'function') await fn({ targetSchema: '7.6', forceManual: true });
+                  statusLine.textContent = 'Captured verified manual safety snapshot ("latest-manual") of all your saved data!';
+                  notify('Manual safety snapshot captured!');
                 }
               }, 'Save Safety Snapshot Now'),
+              makeRollbackBtn('latest-manual', 'Restore Manual Snapshot'),
               makeRollbackBtn('pre-import-safety', 'Undo Last Save Import'),
               makeRollbackBtn('pre-v6-raw', 'Restore Pre-Update Backup (v6)'),
               makeRollbackBtn('pre-v5-raw', 'Restore Legacy Backup (v5)'),
@@ -3973,7 +4805,7 @@
     if (window.BTBrand && typeof window.BTBrand.wordmarkSvg === 'function') {
       wm.innerHTML = window.BTBrand.wordmarkSvg();
     } else {
-      wm.textContent = 'BeanTelligence v6.2 — A little science, a lot of delicious.';
+      wm.textContent = 'BeanTelligence v7.6 — A little science, a lot of delicious.';
     }
 
     const box = domH('div', { class: 'bt-sheet-content bt-about-sheet' },
@@ -3995,7 +4827,9 @@
             const desc = rel.notes || rel.body || rel.text || '';
             return domH('div', { class: 'bt-glossary-item' },
               domH('strong', { text: title || 'Release' }),
-              desc ? domH('p', { text: String(desc) }) : null
+              Array.isArray(desc)
+                ? domH('ul', { class: 'bt-lab-list' }, desc.map(function (ln) { return domH('li', { text: String(ln) }); }))
+                : (desc ? domH('p', { text: String(desc) }) : null)
             );
           })
         )
@@ -4029,6 +4863,8 @@
   }
 
   function renderAcademyTab(mountEl, ctx) {
+    cancelScaRaf();
+    cancelSalamiRaf();
     if (mountEl && mountEl.nodeType === 1) lastAcademyMount = mountEl;
     const a = getApp();
     a.tabSegments = a.tabSegments || {};
@@ -4115,13 +4951,15 @@
     }
     if (typeof shell.registerSheet === 'function') {
       shell.registerSheet('save-backup-center', renderSaveBackupCenterSheet, { title: 'Backup & Load Saves', detent: 'full' });
-      shell.registerSheet('data-vault', renderDataVaultSheet);
-      shell.registerSheet('onboarding-tour', renderOnboardingTourSheet);
-      shell.registerSheet('about-charter', renderAboutCharterSheet);
-      shell.registerSheet('sca-cupping', renderScaCuppingSheet);
+      shell.registerSheet('data-vault', renderDataVaultSheet, { title: 'Backup & Data Vault', detent: 'full' });
+      shell.registerSheet('onboarding-tour', renderOnboardingTourSheet, { title: 'Interactive Feature Tour', detent: 'full' });
+      shell.registerSheet('about-charter', renderAboutCharterSheet, { title: 'About BeanTelligence & Epistemic Charter', detent: 'full' });
+      shell.registerSheet('sca-cupping', renderScaCuppingSheet, { title: '5-Bowl SCA/CVA Cupping Table', detent: 'full' });
     }
     if (typeof shell.registerRoute === 'function') {
-      /* NOTE: Never register 'coffee' or 'loadshared' here — owned by Guided Home Brew in 02 & 05! */
+      /* NOTE: Never register 'coffee' or 'loadshared' here — owned by Guided Home Brew in 02 & 05!
+         Also never duplicate 'tour'/'guide'/'about' here: 02-shell-router-state.js ROUTE_MAP already
+         maps them to 'onboarding-tour'/'about-charter' and opens BTSheet once cleanly. */
       shell.registerRoute('academy', function () { jumpToAcademy('curriculum'); });
       shell.registerRoute('learn', function () { jumpToAcademy('curriculum'); });
       shell.registerRoute('folk', function () { jumpToAcademy('folk'); });
@@ -4133,9 +4971,6 @@
         const cameFromTaste = !!(a && (a.activeTab === 'brew' || a.brewStep === 'taste' || a.screen === 'taste'));
         jumpToAcademy('gym', cameFromTaste);
       });
-      shell.registerRoute('tour', function () { openNamedSheet('onboarding-tour', null, { detent: 'full', title: 'Interactive Feature Tour' }); });
-      shell.registerRoute('guide', function () { openNamedSheet('onboarding-tour', null, { detent: 'full', title: 'Interactive Feature Tour' }); });
-      shell.registerRoute('about', function () { openNamedSheet('about-charter', null, { detent: 'full', title: 'About BeanTelligence & Epistemic Charter' }); });
       shell.registerRoute('every', function () { jumpToAcademy('vault'); });
       shell.registerRoute('backup', function () { jumpToAcademy('vault'); });
       shell.registerRoute('files', function () { jumpToAcademy('vault'); });
@@ -4144,10 +4979,18 @@
 
   registerAcademyAndVaultBindings();
 
+  /* Chain onto storage clear hook so external Clear Everything calls also reset Academy in-memory state */
+  const _prevOnClearEverything = typeof window.__btOnClearEverything === 'function' ? window.__btOnClearEverything : null;
+  window.__btOnClearEverything = function () {
+    if (_prevOnClearEverything) {
+      try { _prevOnClearEverything(); } catch (_) {}
+    }
+    try { resetAcademyInMemoryState(); } catch (_) {}
+  };
+
   window.BTBackupCenter = {
     open: openSaveBackupCenterModal,
     close: function () {
-      _restoreInlineSaveIdsAfterSheet();
       const shell = sh();
       if (shell.closeSheet) shell.closeSheet();
       else if (typeof BTSheet !== 'undefined' && BTSheet && typeof BTSheet.close === 'function') BTSheet.close();
@@ -4165,6 +5008,13 @@
     renderScaCuppingSheet: renderScaCuppingSheet,
     exactTriangleBinomialPValue: exactTriangleBinomialPValue,
     computeCvaBowlScore: computeCvaBowlScore,
+    clampBowlCupDefects: clampBowlCupDefects,
+    normalizeCvaTraitToIntensity5: normalizeCvaTraitToIntensity5,
+    deriveLessonTier: deriveLessonTier,
+    extractLessonFields: extractLessonFields,
+    getQuizForLesson: getQuizForLesson,
+    resetTriangleRound: resetTriangleRound,
+    resetAcademyInMemoryState: resetAcademyInMemoryState,
     readAcademyState: readAcademyState,
     writeAcademyState: writeAcademyState,
     state: acadUi

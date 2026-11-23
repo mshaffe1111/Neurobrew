@@ -1025,6 +1025,11 @@
     swUpdateListeners.forEach(function(fn){
       try { fn({ updateAvailable:swUpdateAvailable }); } catch(e){}
     });
+    try {
+      if (typeof global.dispatchEvent === 'function' && typeof CustomEvent === 'function'){
+        global.dispatchEvent(new CustomEvent('bt-sw-update-ready', { detail:{ updateAvailable:swUpdateAvailable } }));
+      }
+    } catch(e){}
   }
 
   async function registerServiceWorker(swPath){
@@ -1641,10 +1646,10 @@
     eurekaTimerStop: function(){ return new Uint8Array([0xAA, 0x02, 0x34, 0x34]); },
     eurekaTimerReset: function(){ return new Uint8Array([0xAA, 0x02, 0x35, 0x35]); },
 
-    /* 10. Hiroia Jimmy */
+    /* 10. Hiroia Jimmy (0x05 toggles start/pause; 0x06 resets to 00:00) */
     hiroiaTare: function(){ return new Uint8Array([0x07, 0x00]); },
     hiroiaTimerStart: function(){ return new Uint8Array([0x05, 0x00]); },
-    hiroiaTimerStop: function(){ return new Uint8Array([0x06, 0x00]); },
+    hiroiaTimerStop: function(){ return new Uint8Array([0x05, 0x00]); },
     hiroiaTimerReset: function(){ return new Uint8Array([0x06, 0x00]); },
     hiroiaToggleUnit: function(){ return new Uint8Array([0x08, 0x00]); },
 
@@ -1748,20 +1753,29 @@
     };
   }
 
-  function canParseAcaiaSubEvents(b, pos, payloadEnd){
+  function canParseAcaiaSubEvents(b, pos, payloadEnd, memo){
     if (pos === payloadEnd) return true;
     if (pos > payloadEnd) return false;
+    if (!memo) memo = new Uint8Array(payloadEnd + 1);
+    const cached = memo[pos];
+    if (cached !== 0) return cached === 2;
     const ev = b[pos];
+    let ok = false;
     if (ev === 0x05){
-      const try6 = pos + 7 <= payloadEnd && b[pos + 5] <= 6 && canParseAcaiaSubEvents(b, pos + 7, payloadEnd);
-      if (try6) return true;
-      return pos + 6 <= payloadEnd && b[pos + 4] <= 6 && canParseAcaiaSubEvents(b, pos + 6, payloadEnd);
+      const try6 = pos + 7 <= payloadEnd && b[pos + 5] <= 6 && canParseAcaiaSubEvents(b, pos + 7, payloadEnd, memo);
+      if (try6) ok = true;
+      else ok = pos + 6 <= payloadEnd && b[pos + 4] <= 6 && canParseAcaiaSubEvents(b, pos + 6, payloadEnd, memo);
+    } else if (ev === 0x06 && pos + 2 <= payloadEnd){
+      ok = canParseAcaiaSubEvents(b, pos + 2, payloadEnd, memo);
+    } else if (ev === 0x07 && pos + 4 <= payloadEnd){
+      ok = canParseAcaiaSubEvents(b, pos + 4, payloadEnd, memo);
+    } else if (ev === 0x08 && pos + 2 <= payloadEnd){
+      ok = canParseAcaiaSubEvents(b, pos + 2, payloadEnd, memo);
+    } else if (ev === 0x0B && pos + 3 <= payloadEnd){
+      ok = canParseAcaiaSubEvents(b, pos + 3, payloadEnd, memo);
     }
-    if (ev === 0x06 && pos + 2 <= payloadEnd) return canParseAcaiaSubEvents(b, pos + 2, payloadEnd);
-    if (ev === 0x07 && pos + 4 <= payloadEnd) return canParseAcaiaSubEvents(b, pos + 4, payloadEnd);
-    if (ev === 0x08 && pos + 2 <= payloadEnd) return canParseAcaiaSubEvents(b, pos + 2, payloadEnd);
-    if (ev === 0x0B && pos + 3 <= payloadEnd) return canParseAcaiaSubEvents(b, pos + 3, payloadEnd);
-    return false;
+    memo[pos] = ok ? 2 : 1;
+    return ok;
   }
 
   function decodeAcaiaFrame(frame){
@@ -1774,11 +1788,12 @@
       const cks = acaiaChecksum(b.subarray(3, 3 + payloadLen));
       const checksumValid = (b[3 + payloadLen] === cks[0] && b[4 + payloadLen] === cks[1]);
       if (!checksumValid) return null;
+      const rawBat8 = b[4] & 0x7F;
       return {
         brand: 'acaia',
         slot: 'scale',
         packetType: 'status',
-        batteryPct: b[4] & 0x7F,
+        batteryPct: rawBat8 <= 100 ? rawBat8 : null,
         checksumValid: checksumValid
       };
     }
@@ -1812,12 +1827,13 @@
         if (!w5) return null;
         return Object.assign(out, { packetType:'weight' }, w5);
       }
+      const subMemo = new Uint8Array(payloadEnd + 1);
       let idx = 4;
       while (idx < payloadEnd){
         const ev = b[idx];
         if (ev === 0x05){
-          const can6 = idx + 7 <= payloadEnd && b[idx + 5] <= 6 && canParseAcaiaSubEvents(b, idx + 7, payloadEnd);
-          const can5 = idx + 6 <= payloadEnd && b[idx + 4] <= 6 && canParseAcaiaSubEvents(b, idx + 6, payloadEnd);
+          const can6 = idx + 7 <= payloadEnd && b[idx + 5] <= 6 && canParseAcaiaSubEvents(b, idx + 7, payloadEnd, subMemo);
+          const can5 = idx + 6 <= payloadEnd && b[idx + 4] <= 6 && canParseAcaiaSubEvents(b, idx + 6, payloadEnd, subMemo);
           const use6 = can6 && (!can5 || (b[idx + 4] === 0 && (b[idx + 6] & 0xF0) === 0));
           const use5 = !use6 && (can5 || (!can6 && idx + 6 <= payloadEnd && b[idx + 4] <= 6 && idx + 7 > payloadEnd));
           if (use6 || (!use5 && idx + 7 <= payloadEnd && b[idx + 5] <= 6 && (b[idx + 6] & 0xFC) === 0)){
@@ -1832,7 +1848,8 @@
             break;
           }
         } else if (ev === 0x06 && idx + 2 <= payloadEnd){
-          out.batteryPct = b[idx + 1] & 0x7F;
+          const rawBat6 = b[idx + 1] & 0x7F;
+          out.batteryPct = rawBat6 <= 100 ? rawBat6 : null;
           idx += 2;
         } else if (ev === 0x07 && idx + 4 <= payloadEnd){
           out.timeS = +(b[idx + 1] * 60 + b[idx + 2] + b[idx + 3] * 0.1).toFixed(1);
@@ -2063,10 +2080,13 @@
     const rawFlow = (b[11] << 8) | b[12];
     let wVal = wSign * (rawWeight / 100);
     let fVal = fSign * (rawFlow / 100);
-    if (unitCode === 1){
+    /* Bookoo Themis BLE spec reports grams for unitCode 0x00/0x01; only convert oz when explicitly 0x02 */
+    const isOzUnit = (unitCode === 0x02);
+    if (isOzUnit){
       wVal *= 28.3495231;
       fVal *= 28.3495231;
     }
+    if (Math.abs(wVal) > 10000) return null;
     const weightG = +(wVal.toFixed(2));
     const flowRateGs = +(fVal.toFixed(2));
     const batteryPct = b[13] <= 100 ? b[13] : null;
@@ -2077,7 +2097,7 @@
       packetType: 'weight',
       weightG: cleanZero(weightG),
       flowRateGs: cleanZero(flowRateGs),
-      unit: unitCode === 1 ? 'oz' : 'g',
+      unit: isOzUnit ? 'oz' : 'g',
       timeS: +(timeMs / 1000).toFixed(2),
       batteryPct: batteryPct,
       stable: Math.abs(flowRateGs) < 0.05,
@@ -2151,18 +2171,15 @@
       };
     }
 
-    if (b.length >= 9 && b[0] !== 0xA5 &&
-        !(b[0] === 0xEF && b[1] === 0xDD) &&
-        !(b[0] === 0xDF && b[1] === 0xDF) &&
+    if (b.length >= 9 && b.length <= 20 &&
+        (b[0] === 0x00 || b[0] === 0x01 || b[0] === 0x02) &&
         !(b[0] === 0x01 && b[1] === 0x02) &&
-        !(b[0] === 0x03 && (b[1] === 0x0B || b[1] === 0xCE || b[1] === 0xCA || b[1] === 0x0A || b[1] === 0xAA)) &&
-        b[0] !== 0x58 && b[0] !== 0xAA && b[0] !== 0xFA && b[0] !== 0xFB && b[0] !== 0x55 &&
         !isPrintableAsciiScaleFrame(b)){
       const w1 = readTimemoreWeightLE(dv, b, 1);
-      if (!Number.isFinite(w1) || Math.abs(w1) > 10000) return null;
+      if (!Number.isFinite(w1) || Math.abs(w1) > 5000) return null;
       const w2 = b.length >= 9 ? readTimemoreWeightLE(dv, b, 5) : NaN;
       const weightG = +(w1.toFixed(1));
-      const secondaryWeightG = Number.isFinite(w2) && Math.abs(w2) <= 10000 ? +(w2.toFixed(1)) : null;
+      const secondaryWeightG = Number.isFinite(w2) && Math.abs(w2) <= 5000 ? +(w2.toFixed(1)) : null;
       return {
         brand: 'timemore',
         slot: 'scale',
@@ -2361,14 +2378,13 @@
       const timeS = b[4] | (b[5] << 8);
       const sign = (b[6] === 1 || b[6] === 0x2D || (b[6] & 0x80) !== 0) ? -1 : 1;
       const rawW = b[7] | (b[8] << 8);
-      if (rawW > 50000) return null;
+      if (rawW > 30000) return null;
       const weightG = +(sign * (rawW / 10)).toFixed(1);
       const batteryPct = (b.length >= 11 && b[9] <= 100) ? b[9] : null;
       const lastIdx = b.length - 1;
       const ckXor = xorChecksum(b, lastIdx, 0);
       const ckBodyXor = xorChecksum(b, lastIdx, 2);
-      const ckSum = sum8Checksum(b, lastIdx, 0);
-      const checksumValid = (b[lastIdx] === ckXor || b[lastIdx] === ckBodyXor || b[lastIdx] === ckSum);
+      const checksumValid = (b[lastIdx] === ckXor || b[lastIdx] === ckBodyXor);
       if (!checksumValid) return null;
       return {
         brand: 'eureka',
@@ -2384,13 +2400,13 @@
     if (b[1] === 0x09 && b[2] === 0x41 && b.length === 9){
       const timeS9 = b[3] * 60 + b[4];
       const sign9 = (b[5] === 1 || b[5] === 0x2D || (b[5] & 0x80) !== 0) ? -1 : 1;
-      const rawW9 = (b[6] << 8) | b[7];
-      if (rawW9 > 50000) return null;
+      /* CFS-9002 / Eureka Precisa transmits weight in Little-Endian */
+      const rawW9 = b[6] | (b[7] << 8);
+      if (rawW9 > 30000) return null;
       const weightG9 = +(sign9 * (rawW9 / 10)).toFixed(1);
       const ckXor9 = xorChecksum(b, 8, 0);
       const ckBodyXor9 = xorChecksum(b, 8, 2);
-      const ckSum9 = sum8Checksum(b, 8, 0);
-      const checksumValid9 = (b[8] === ckXor9 || b[8] === ckBodyXor9 || b[8] === ckSum9);
+      const checksumValid9 = (b[8] === ckXor9 || b[8] === ckBodyXor9);
       if (!checksumValid9) return null;
       return {
         brand: 'eureka',
@@ -2402,16 +2418,15 @@
         checksumValid: checksumValid9
       };
     }
-    /* Compact 8-byte 0xAA OEM variant: [0xAA, status, sign, wHi, wLo, min, sec, xor] */
-    if (b.length >= 8 && !(b[1] === 0x09 && b[2] === 0x41)){
+    /* Compact 8-byte 0xAA OEM variant: [0xAA, status, sign, wLo, wHi, min, sec, xor] */
+    if (b.length === 8 && !(b[1] === 0x09 && b[2] === 0x41)){
       const ckXor8 = xorChecksum(b, 7, 0);
       const ckBodyXor8 = xorChecksum(b, 7, 1);
-      const ckSum8 = sum8Checksum(b, 7, 0);
-      const checksumValid8 = (b[7] === ckXor8 || b[7] === ckBodyXor8 || b[7] === ckSum8);
+      const checksumValid8 = (b[7] === ckXor8 || b[7] === ckBodyXor8);
       if (!checksumValid8) return null;
       const sign = (b[2] === 1 || b[2] === 0x2D || (b[2] & 0x80) !== 0) ? -1 : 1;
-      const rawW = (b[3] << 8) | b[4];
-      if (rawW > 50000) return null;
+      const rawW = b[3] | (b[4] << 8);
+      if (rawW > 30000) return null;
       const weightG = +(sign * (rawW / 10)).toFixed(1);
       return {
         brand: 'eureka',
@@ -2451,12 +2466,15 @@
   /* --- 11. Bluetooth SIG `0x181D` Weight Scale (`0x2A9D`) --- */
   function decodeWeightSig(input){
     const b = toU8(input);
-    if (b.length < 3) return null;
+    if (b.length < 3 || b.length > 16) return null;
     const flags = b[0];
+    /* Bluetooth SIG 0x2A9D RFU bits 4-7 must be 0 */
+    if ((flags & 0xF0) !== 0) return null;
     const raw = b[1] | (b[2] << 8);
     if (raw === 0xFFFF) return null;
     const isImperial = (flags & 0x01) === 1;
     const weightG = isImperial ? +(raw * 4.5359237).toFixed(2) : +(raw * 5.0).toFixed(1);
+    if (weightG < 0 || weightG > 10000) return null;
     return {
       brand: 'sig',
       slot: 'scale',
@@ -2469,7 +2487,7 @@
   /* --- 12. Pressensor / Smart Espresso Profiler / BLE SIG ESS (`0x181A` `0x2A6D` `0.1 Pa` + `0x2A6E` `0.01 C` + `873ae82a` `mbar`) --- */
   function decodePressensor(input, opts){
     const b = toU8(input);
-    if (b.length < 2) return null;
+    if (b.length < 2 || b.length > 8) return null;
     const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
     const chrNorm = (opts && opts.charUuid) ? normUuid(opts.charUuid) : '';
     const svcNorm = (opts && opts.serviceUuid) ? normUuid(opts.serviceUuid) : '';
@@ -2488,18 +2506,19 @@
       return null;
     }
 
-    let rawMbar = dv.getInt16(0, false);
-    /* Official GATT ESS 0x2A6D Pressure (uint32 LE, 0.1 Pa -> / 1,000,000 = bar; up to 25 bar = 25,000,000)
-       Preserves Gate 5 Pressensor 4B BE [0x23, 0x28, 0x03, 0xA2] -> 9.0 bar / 93.0C when not on ESS 0x2A6D */
     const isExplicitEss2A6D = (chrNorm === UUID.PRESSENSOR_SIG_CHAR || svcNorm === UUID.ESS_SVC || !!(opts && opts.ess2A6D));
+    if (!isExplicitEss2A6D && b.length !== 2 && b.length !== 4) return null;
+    let rawMbar = dv.getInt16(0, false);
+    /* Official GATT ESS 0x2A6D Pressure (uint32 LE, 0.1 Pa -> / 1,000,000 = bar; up to 20 bar = 20,000,000)
+       Preserves Gate 5 Pressensor 4B BE [0x23, 0x28, 0x03, 0xA2] -> 9.0 bar / 93.0C when not on ESS 0x2A6D */
     const looksLikeDeciPaLE = b.length === 4 && (
       isExplicitEss2A6D ||
-      Math.abs(rawMbar) > 22000 ||
+      (Math.abs(rawMbar) > 20000 && b[3] <= 0x02) ||
       (b[3] === 0x00 && (b[2] > 0x06 || dv.getInt16(2, false) > 1500 || dv.getInt16(2, false) < -200))
     );
     if (looksLikeDeciPaLE){
       const deciPa = dv.getUint32(0, true);
-      if (deciPa <= 25000000){
+      if (deciPa <= 20000000){
         const barFromEss = +(deciPa / 1000000).toFixed(2);
         return {
           brand: 'pressensor',
@@ -2510,9 +2529,10 @@
           tempC: null
         };
       }
+      return null;
     }
-    if (rawMbar < -1500 || rawMbar > 25000) return null;
-    const pressureBar = +(Math.max(-1, rawMbar / 1000)).toFixed(2);
+    if (rawMbar < -500 || rawMbar > 20000) return null;
+    const pressureBar = +(Math.max(-0.5, rawMbar / 1000)).toFixed(2);
     let tempC = null;
     if (b.length >= 4){
       const rawTemp = dv.getInt16(2, false);
@@ -4339,11 +4359,16 @@
         inFlight++;
         if (inFlight > maxConcurrent) maxConcurrent = inFlight;
         let timerId = null;
+        let timedOut = false;
+        const opPromise = Promise.resolve().then(item.fn);
+        /* Prevent unhandled rejection if op settles after timeout */
+        opPromise.catch(function(){});
         try {
           const result = await Promise.race([
-            Promise.resolve().then(item.fn),
+            opPromise,
             new Promise(function(_, reject){
               timerId = setTimeout(function(){
+                timedOut = true;
                 reject(new Error('BTWriteQueue GATT operation timed out after ' + itemTmo + 'ms'));
               }, itemTmo);
             })
@@ -4354,9 +4379,13 @@
           item.resolve(result);
         } catch(err){
           if (timerId) clearTimeout(timerId);
+          item.reject(err);
+          /* Never overlap a second GATT operation while a timed-out op is still pending in Chromium BLE */
+          if (timedOut){
+            try { await opPromise; } catch(_){}
+          }
           inFlight--;
           lastCompletedAt = perfNow();
-          item.reject(err);
         }
       }
       active = false;
@@ -4594,14 +4623,25 @@
       const svcCache = {};
       const charCache = {};
       const activeNotifyCleanups = [];
+      let listenerAttached = false;
+      function cleanupTransportListeners(stopRemote){
+        if (listenerAttached && typeof raw.removeEventListener === 'function'){
+          try { raw.removeEventListener('gattserverdisconnected', discListener); } catch(e){}
+          listenerAttached = false;
+        }
+        while (activeNotifyCleanups.length > 0){
+          const fn = activeNotifyCleanups.pop();
+          try { fn(stopRemote); } catch(e){}
+        }
+      }
 
       const discListener = function(){
+        cleanupTransportListeners(false);
         writeQueue.clear();
         if (typeof onDisconnect === 'function'){
           try { onDisconnect(transportDevice.deviceId); } catch(e){}
         }
       };
-      let listenerAttached = false;
       if (typeof raw.addEventListener === 'function'){
         raw.addEventListener('gattserverdisconnected', discListener);
         listenerAttached = true;
@@ -4776,10 +4816,10 @@
             } else if (props.indicate && typeof ch.startIndications === 'function'){
               await ch.startIndications();
             }
-            const stopFn = async function(){
+            const stopFn = async function(stopRemote){
               try {
                 if (typeof ch.removeEventListener === 'function') ch.removeEventListener('characteristicvaluechanged', handler);
-                if (typeof ch.stopNotifications === 'function') await ch.stopNotifications();
+                if (stopRemote !== false && typeof ch.stopNotifications === 'function') await ch.stopNotifications();
               } catch(e){}
             };
             activeNotifyCleanups.push(stopFn);
@@ -4849,9 +4889,7 @@
             try { await fn(); } catch(e){}
           }
           try {
-            if (typeof raw.removeEventListener === 'function'){
-              raw.removeEventListener('gattserverdisconnected', discListener);
-            }
+            cleanupTransportListeners(false);
             if (raw.gatt && raw.gatt.connected){
               raw.gatt.disconnect();
             }
@@ -4990,19 +5028,24 @@
         const ble = await ensureInit();
         const deviceId = transportDevice.deviceId;
         const writeQueue = createWriteQueue(40, 4500);
+        let connected = false;
+        const activeNotifySubs = [];
 
         await ble.connect({ deviceId:deviceId }, function(){
+          connected = false;
+          activeNotifySubs.length = 0;
           writeQueue.clear();
           if (typeof onDisconnect === 'function'){
             try { onDisconnect(deviceId); } catch(e){}
           }
         });
+        connected = true;
 
         return {
           deviceId: deviceId,
           name: transportDevice.name || '',
           writeQueue: writeQueue,
-          isConnected: function(){ return true; },
+          isConnected: function(){ return connected; },
           discoverServices: function(){
             return writeQueue.enqueue(async function(){
               const res = await ble.getServices({ deviceId:deviceId });
@@ -5035,7 +5078,11 @@
                 if (typeof onBytes === 'function') onBytes(nativeValueToU8(ev));
               };
               await ble.startNotifications({ deviceId:deviceId, service:su, characteristic:cu }, cb);
+              const sub = { service:su, characteristic:cu };
+              activeNotifySubs.push(sub);
               return async function(){
+                const idx = activeNotifySubs.indexOf(sub);
+                if (idx >= 0) activeNotifySubs.splice(idx, 1);
                 try { await ble.stopNotifications({ deviceId:deviceId, service:su, characteristic:cu }); } catch(e){}
               };
             });
@@ -5077,7 +5124,12 @@
             });
           },
           disconnect: async function(){
+            connected = false;
             writeQueue.clear();
+            while (activeNotifySubs.length > 0){
+              const sub = activeNotifySubs.pop();
+              try { await ble.stopNotifications({ deviceId:deviceId, service:sub.service, characteristic:sub.characteristic }); } catch(e){}
+            }
             try { await ble.disconnect({ deviceId:deviceId }); } catch(e){}
           }
         };
@@ -6242,14 +6294,31 @@
       }
     }
 
+    let scaleReconnectGen = 0;
+    let scaleReconnectTimer = null;
+
     async function establishScaleSession(transportDev, preferredBrand, isReconnect){
       const transport = getTransport();
       const query = buildScaleQuery(preferredBrand || 'auto');
       let intentional = false;
 
+      if (sessions.scale && sessions.scale.gatt){
+        const prevScale = sessions.scale;
+        sessions.scale = null;
+        try { prevScale.markIntentional(); } catch(e){}
+        try { await prevScale.gatt.disconnect(); } catch(e){}
+      }
+
       const onUnexpectedDrop = function(){
         clearScaleTimers();
-        if (intentional || sessions.scale && sessions.scale.intentional) return;
+        if (intentional || (sessions.scale && sessions.scale.intentional)) return;
+        const myGen = ++scaleReconnectGen;
+        if (scaleReconnectTimer){ clearTimeout(scaleReconnectTimer); scaleReconnectTimer = null; }
+        if (sessions.scale && sessions.scale.gatt){
+          const droppedSess = sessions.scale;
+          sessions.scale = null;
+          try { droppedSess.gatt.disconnect(); } catch(e){}
+        }
         const heldNet = state.weightG;
         dropRecovery = {
           active: true,
@@ -6267,15 +6336,18 @@
         const delays = [400, 900, 1800, 3200, 5000];
         let attempt = 0;
         const retry = function(){
-          if (intentional || !state.scaleReconnecting) return;
+          scaleReconnectTimer = null;
+          if (intentional || myGen !== scaleReconnectGen || !state.scaleReconnecting) return;
           establishScaleSession(transportDev, preferredBrand, true).then(function(){
+            if (myGen !== scaleReconnectGen) return;
             state.scaleReconnecting = false;
             state.lastStatusText = 'Reconnected to ' + state.scaleName + ' (tare continuity preserved)';
             emit();
           }).catch(function(){
+            if (intentional || myGen !== scaleReconnectGen || !state.scaleReconnecting) return;
             attempt++;
             if (attempt < delays.length){
-              setTimeout(retry, delays[attempt]);
+              scaleReconnectTimer = setTimeout(retry, delays[attempt]);
             } else {
               state.scaleReconnecting = false;
               state.lastStatusText = 'Scale disconnected - tap Reconnect to resume.';
@@ -6283,55 +6355,62 @@
             }
           });
         };
-        setTimeout(retry, delays[0]);
+        scaleReconnectTimer = setTimeout(retry, delays[0]);
       };
 
       const gatt = await transport.connectGatt(transportDev, onUnexpectedDrop);
-      const services = await gatt.discoverServices(query.optionalServices);
-      const profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name, 'scale');
-      if (!profile || !profile.notifyUuid){
-        await gatt.disconnect();
-        throw new Error('Selected Bluetooth device did not expose a supported coffee scale characteristic.');
-      }
+      let services, profile;
+      try {
+        services = await gatt.discoverServices(query.optionalServices);
+        profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name, 'scale');
+        if (!profile || !profile.notifyUuid){
+          throw new Error('Selected Bluetooth device did not expose a supported coffee scale characteristic.');
+        }
 
-      /* If device on 0x1820 turned out to be Stagg EKG+ kettle, route cleanly to machine slot */
-      if (profile.family === 'stagg_ekg_plus'){
-        await gatt.disconnect();
-        return connectKettleWithDevice(transportDev);
-      }
+        /* If device on 0x1820 turned out to be Stagg EKG+ kettle, route cleanly to machine slot */
+        if (profile.family === 'stagg_ekg_plus'){
+          intentional = true;
+          await gatt.disconnect();
+          return connectKettleWithDevice(transportDev);
+        }
 
-      clearScaleTimers();
-      scaleReceivedWeightThisSession = false;
-      tarePendingZeroCheck = false;
-      if (!isReconnect){
-        resetFlowFilter();
-        softwareTareOffsetG = 0;
-        dropRecovery.active = false;
-      }
+        clearScaleTimers();
+        scaleReceivedWeightThisSession = false;
+        tarePendingZeroCheck = false;
+        if (!isReconnect){
+          resetFlowFilter();
+          softwareTareOffsetG = 0;
+          dropRecovery.active = false;
+        }
 
-      scaleTimemoreVariant = profile.variant || '';
-      const charStream = Codecs.streams.createCharacteristicStream(profile.family, {
-        slot: 'scale',
-        deviceName: gatt.name || transportDev.name,
-        serviceUuid: profile.serviceUuid,
-        charUuid: profile.notifyUuid,
-        autoPromote: true
-      });
+        scaleTimemoreVariant = profile.variant || '';
+        const charStream = Codecs.streams.createCharacteristicStream(profile.family, {
+          slot: 'scale',
+          deviceName: gatt.name || transportDev.name,
+          serviceUuid: profile.serviceUuid,
+          charUuid: profile.notifyUuid,
+          autoPromote: true
+        });
 
-      await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
-        recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
-        const res = charStream.push(u8);
-        if (res.promoted && res.family){
-          state.scaleBrand = res.family;
-          state.slots.scale.brand = res.family;
-          if (res.family === 'decent' && (profile.writeUuid || profile.altWriteUuid)){
-            armDecentHeartbeatLoop(gatt, profile);
+        await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
+          recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
+          const res = charStream.push(u8);
+          if (res.promoted && res.family){
+            state.scaleBrand = res.family;
+            state.slots.scale.brand = res.family;
+            if (res.family === 'decent' && (profile.writeUuid || profile.altWriteUuid)){
+              armDecentHeartbeatLoop(gatt, profile);
+            }
           }
-        }
-        for (let i = 0; i < res.frames.length; i++){
-          processDecodedScaleFrame(res.frames[i]);
-        }
-      });
+          for (let i = 0; i < res.frames.length; i++){
+            processDecodedScaleFrame(res.frames[i]);
+          }
+        });
+      } catch(setupErr){
+        intentional = true;
+        try { await gatt.disconnect(); } catch(e){}
+        throw setupErr;
+      }
 
       if (Array.isArray(profile.extraNotifyUuids)){
         for (let ei = 0; ei < profile.extraNotifyUuids.length; ei++){
@@ -6475,6 +6554,8 @@
     }
 
     async function disconnectScale(){
+      scaleReconnectGen++;
+      if (scaleReconnectTimer){ clearTimeout(scaleReconnectTimer); scaleReconnectTimer = null; }
       clearScaleTimers();
       state.scaleReconnecting = false;
       dropRecovery.active = false;
@@ -6633,26 +6714,32 @@
         state.lastStatusText = (state.pressureName || 'Pressure sensor') + ' disconnected.';
         emit();
       });
-      const services = await gatt.discoverServices(optionalServices);
-      const profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name, 'pressure');
-      if (!profile || !profile.notifyUuid){
-        await gatt.disconnect();
-        throw new Error('No supported espresso pressure GATT characteristic found (Pressensor / Bookoo EM / ESS 0x181A).');
+      let services, profile;
+      try {
+        services = await gatt.discoverServices(optionalServices);
+        profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name, 'pressure');
+        if (!profile || !profile.notifyUuid){
+          throw new Error('No supported espresso pressure GATT characteristic found (Pressensor / Bookoo EM / ESS 0x181A).');
+        }
+
+        state.peakPressureBar = 0;
+        const stream = Codecs.streams.createCharacteristicStream(profile.family, {
+          slot: 'pressure',
+          deviceName: gatt.name || transportDev.name,
+          serviceUuid: profile.serviceUuid,
+          charUuid: profile.notifyUuid
+        });
+
+        await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
+          recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
+          const res = stream.push(u8);
+          for (let i = 0; i < res.frames.length; i++) handleDecodedPressureFrame(res.frames[i]);
+        });
+      } catch(setupErr){
+        intentional = true;
+        try { await gatt.disconnect(); } catch(e){}
+        throw setupErr;
       }
-
-      state.peakPressureBar = 0;
-      const stream = Codecs.streams.createCharacteristicStream(profile.family, {
-        slot: 'pressure',
-        deviceName: gatt.name || transportDev.name,
-        serviceUuid: profile.serviceUuid,
-        charUuid: profile.notifyUuid
-      });
-
-      await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
-        recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
-        const res = stream.push(u8);
-        for (let i = 0; i < res.frames.length; i++) handleDecodedPressureFrame(res.frames[i]);
-      });
 
       if (Array.isArray(profile.extraNotifyUuids)){
         for (let ei = 0; ei < profile.extraNotifyUuids.length; ei++){
@@ -6909,27 +6996,33 @@
         state.lastStatusText = 'DiFluid R2 disconnected.';
         emit();
       });
-      const services = await gatt.discoverServices(optionalServices);
-      const profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name, 'refractometer');
-      if (!profile || !profile.notifyUuid){
-        await gatt.disconnect();
-        throw new Error('DiFluid R2 GATT service (0x00FF / 0x00EE / 0xFFE0 / 0xFFF0) not found on selected device.');
-      }
-
-      const stream = Codecs.streams.createCharacteristicStream('difluid_r2', {
-        slot: 'refractometer',
-        deviceName: gatt.name || transportDev.name,
-        serviceUuid: profile.serviceUuid,
-        charUuid: profile.notifyUuid
-      });
-
-      await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
-        recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
-        const res = stream.push(u8);
-        for (let i = 0; i < res.frames.length; i++){
-          handleRefractometerFrame(res.frames[i]);
+      let services, profile;
+      try {
+        services = await gatt.discoverServices(optionalServices);
+        profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name, 'refractometer');
+        if (!profile || !profile.notifyUuid){
+          throw new Error('DiFluid R2 GATT service (0x00FF / 0x00EE / 0xFFE0 / 0xFFF0) not found on selected device.');
         }
-      });
+
+        const stream = Codecs.streams.createCharacteristicStream('difluid_r2', {
+          slot: 'refractometer',
+          deviceName: gatt.name || transportDev.name,
+          serviceUuid: profile.serviceUuid,
+          charUuid: profile.notifyUuid
+        });
+
+        await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
+          recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
+          const res = stream.push(u8);
+          for (let i = 0; i < res.frames.length; i++){
+            handleRefractometerFrame(res.frames[i]);
+          }
+        });
+      } catch(setupErr){
+        intentional = true;
+        try { await gatt.disconnect(); } catch(e){}
+        throw setupErr;
+      }
 
       /* Subscribe to all secondary notify/indicate characteristics on R2 (e.g. 0xAA02 alongside 0xAA01, or 0xFFF2/0xFFE2) */
       if (Array.isArray(profile.extraNotifyUuids)){
@@ -7162,25 +7255,31 @@
         state.lastStatusText = 'DiFluid Omni disconnected.';
         emit();
       });
-      const services = await gatt.discoverServices(optionalServices);
-      const profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name, 'omni');
-      if (!profile || !profile.notifyUuid){
-        await gatt.disconnect();
-        throw new Error('DiFluid Omni service (0x00FC / 0x00FF / 0e140001) not found on selected device.');
+      let services, profile;
+      try {
+        services = await gatt.discoverServices(optionalServices);
+        profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name, 'omni');
+        if (!profile || !profile.notifyUuid){
+          throw new Error('DiFluid Omni service (0x00FC / 0x00FF / 0e140001) not found on selected device.');
+        }
+
+        const stream = Codecs.streams.createCharacteristicStream('difluid_omni', {
+          slot: 'omni',
+          deviceName: gatt.name || transportDev.name,
+          serviceUuid: profile.serviceUuid,
+          charUuid: profile.notifyUuid
+        });
+
+        await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
+          recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
+          const res = stream.push(u8);
+          for (let i = 0; i < res.frames.length; i++) handleOmniFrame(res.frames[i]);
+        });
+      } catch(setupErr){
+        intentional = true;
+        try { await gatt.disconnect(); } catch(e){}
+        throw setupErr;
       }
-
-      const stream = Codecs.streams.createCharacteristicStream('difluid_omni', {
-        slot: 'omni',
-        deviceName: gatt.name || transportDev.name,
-        serviceUuid: profile.serviceUuid,
-        charUuid: profile.notifyUuid
-      });
-
-      await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
-        recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
-        const res = stream.push(u8);
-        for (let i = 0; i < res.frames.length; i++) handleOmniFrame(res.frames[i]);
-      });
 
       if (Array.isArray(profile.extraNotifyUuids)){
         for (let ei = 0; ei < profile.extraNotifyUuids.length; ei++){
@@ -7365,11 +7464,17 @@
         state.lastStatusText = 'xBloom disconnected.';
         emit();
       });
-      const services = await gatt.discoverServices(optionalServices);
-      const profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name || 'xBloom', 'machine');
-      if (!profile || !profile.writeUuid){
-        await gatt.disconnect();
-        throw new Error('xBloom BLE write characteristic (FFE1) not found - close official xBloom app first.');
+      let services, profile;
+      try {
+        services = await gatt.discoverServices(optionalServices);
+        profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name || 'xBloom', 'machine');
+        if (!profile || !profile.writeUuid){
+          throw new Error('xBloom BLE write characteristic (FFE1) not found - close official xBloom app first.');
+        }
+      } catch(setupErr){
+        intentional = true;
+        try { await gatt.disconnect(); } catch(e){}
+        throw setupErr;
       }
 
       const handleXBloomRx = function(u8, chrUuid, streamObj){
@@ -7497,13 +7602,7 @@
         state.lastStatusText = 'Fellow Stagg EKG+ disconnected.';
         emit();
       });
-      const services = await gatt.discoverServices(optionalServices);
-      const profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name || 'Stagg EKG+', 'kettle');
-      if (!profile || !profile.notifyUuid){
-        await gatt.disconnect();
-        throw new Error('Fellow Stagg EKG+ service (0x1820 / 0x2A80) not found.');
-      }
-
+      let services, profile;
       const handleKettleFrames = function(frames){
         for (let i = 0; i < frames.length; i++){
           const fr = frames[i];
@@ -7518,19 +7617,30 @@
           }
         }
       };
+      try {
+        services = await gatt.discoverServices(optionalServices);
+        profile = Codecs.detectGattProfile(services, gatt.name || transportDev.name || 'Stagg EKG+', 'kettle');
+        if (!profile || !profile.notifyUuid){
+          throw new Error('Fellow Stagg EKG+ service (0x1820 / 0x2A80) not found.');
+        }
 
-      const stream = Codecs.streams.createCharacteristicStream('stagg_ekg_plus', {
-        slot: 'machine',
-        deviceName: gatt.name || transportDev.name || 'Stagg EKG+',
-        serviceUuid: profile.serviceUuid,
-        charUuid: profile.notifyUuid
-      });
+        const stream = Codecs.streams.createCharacteristicStream('stagg_ekg_plus', {
+          slot: 'machine',
+          deviceName: gatt.name || transportDev.name || 'Stagg EKG+',
+          serviceUuid: profile.serviceUuid,
+          charUuid: profile.notifyUuid
+        });
 
-      await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
-        recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
-        const res = stream.push(u8);
-        handleKettleFrames(res.frames);
-      });
+        await gatt.startNotifications(profile.serviceUuid, profile.notifyUuid, function(u8){
+          recordRxTelemetry(u8, profile.serviceUuid, profile.notifyUuid);
+          const res = stream.push(u8);
+          handleKettleFrames(res.frames);
+        });
+      } catch(setupErr){
+        intentional = true;
+        try { await gatt.disconnect(); } catch(e){}
+        throw setupErr;
+      }
 
       if (Array.isArray(profile.extraNotifyUuids)){
         for (let ki = 0; ki < profile.extraNotifyUuids.length; ki++){
@@ -8927,7 +9037,7 @@
       const baseUrl = o.baseUrl ? cleanUrl(o.baseUrl) : cfg.baseUrl;
       const apiKey = o.apiKey !== undefined ? String(o.apiKey || '').trim() : cfg.apiKey;
       const type = String(o.type || 'all').toLowerCase();
-      const isLocalBridge = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.|10\.)/i.test(baseUrl);
+      const isLocalBridge = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(baseUrl);
 
       if (!apiKey && !isLocalBridge){
         return {
@@ -8956,15 +9066,25 @@
       }
 
       let res = null;
+      const timeoutMs = (typeof o.timeoutMs === 'number' && o.timeoutMs > 0) ? Math.min(60000, o.timeoutMs) : 15000;
+      const ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
+      const fetchTimer = ctrl ? setTimeout(function(){ try { ctrl.abort(); } catch(e){} }, timeoutMs) : null;
       try {
-        res = await fetchFn(endpoint, { method:'GET', headers:headers, mode:'cors' });
+        const fetchOpts = { method:'GET', headers:headers, mode:'cors', credentials:'omit' };
+        if (ctrl) fetchOpts.signal = ctrl.signal;
+        res = await fetchFn(endpoint, fetchOpts);
       } catch(netErr){
+        const isAbort = !!(netErr && (netErr.name === 'AbortError' || /abort/i.test(String(netErr.message || ''))));
         return {
           ok: false, source: 'cloud', r2: [], scale: [], omni: [],
           latestR2: null, latestScale: null, latestOmni: null,
-          errorCode: 'cors_or_network',
-          message: 'Could not reach ' + baseUrl + ' from browser due to CORS/network policy. Use Zero-Key DiFluid Cafe CSV/JSON/Paste Import or Direct Web Bluetooth.'
+          errorCode: isAbort ? 'timeout' : 'cors_or_network',
+          message: isAbort
+            ? ('Request to ' + baseUrl + ' timed out after ' + Math.round(timeoutMs / 1000) + 's. Check your network or use Zero-Key DiFluid Cafe CSV/JSON Import.')
+            : ('Could not reach ' + baseUrl + ' from browser due to CORS/network policy. Use Zero-Key DiFluid Cafe CSV/JSON/Paste Import or Direct Web Bluetooth.')
         };
+      } finally {
+        if (fetchTimer) clearTimeout(fetchTimer);
       }
 
       if (res.status === 401 || res.status === 403){

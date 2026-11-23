@@ -521,10 +521,10 @@
     eurekaTimerStop: function(){ return new Uint8Array([0xAA, 0x02, 0x34, 0x34]); },
     eurekaTimerReset: function(){ return new Uint8Array([0xAA, 0x02, 0x35, 0x35]); },
 
-    /* 10. Hiroia Jimmy */
+    /* 10. Hiroia Jimmy (0x05 toggles start/pause; 0x06 resets to 00:00) */
     hiroiaTare: function(){ return new Uint8Array([0x07, 0x00]); },
     hiroiaTimerStart: function(){ return new Uint8Array([0x05, 0x00]); },
-    hiroiaTimerStop: function(){ return new Uint8Array([0x06, 0x00]); },
+    hiroiaTimerStop: function(){ return new Uint8Array([0x05, 0x00]); },
     hiroiaTimerReset: function(){ return new Uint8Array([0x06, 0x00]); },
     hiroiaToggleUnit: function(){ return new Uint8Array([0x08, 0x00]); },
 
@@ -628,20 +628,29 @@
     };
   }
 
-  function canParseAcaiaSubEvents(b, pos, payloadEnd){
+  function canParseAcaiaSubEvents(b, pos, payloadEnd, memo){
     if (pos === payloadEnd) return true;
     if (pos > payloadEnd) return false;
+    if (!memo) memo = new Uint8Array(payloadEnd + 1);
+    const cached = memo[pos];
+    if (cached !== 0) return cached === 2;
     const ev = b[pos];
+    let ok = false;
     if (ev === 0x05){
-      const try6 = pos + 7 <= payloadEnd && b[pos + 5] <= 6 && canParseAcaiaSubEvents(b, pos + 7, payloadEnd);
-      if (try6) return true;
-      return pos + 6 <= payloadEnd && b[pos + 4] <= 6 && canParseAcaiaSubEvents(b, pos + 6, payloadEnd);
+      const try6 = pos + 7 <= payloadEnd && b[pos + 5] <= 6 && canParseAcaiaSubEvents(b, pos + 7, payloadEnd, memo);
+      if (try6) ok = true;
+      else ok = pos + 6 <= payloadEnd && b[pos + 4] <= 6 && canParseAcaiaSubEvents(b, pos + 6, payloadEnd, memo);
+    } else if (ev === 0x06 && pos + 2 <= payloadEnd){
+      ok = canParseAcaiaSubEvents(b, pos + 2, payloadEnd, memo);
+    } else if (ev === 0x07 && pos + 4 <= payloadEnd){
+      ok = canParseAcaiaSubEvents(b, pos + 4, payloadEnd, memo);
+    } else if (ev === 0x08 && pos + 2 <= payloadEnd){
+      ok = canParseAcaiaSubEvents(b, pos + 2, payloadEnd, memo);
+    } else if (ev === 0x0B && pos + 3 <= payloadEnd){
+      ok = canParseAcaiaSubEvents(b, pos + 3, payloadEnd, memo);
     }
-    if (ev === 0x06 && pos + 2 <= payloadEnd) return canParseAcaiaSubEvents(b, pos + 2, payloadEnd);
-    if (ev === 0x07 && pos + 4 <= payloadEnd) return canParseAcaiaSubEvents(b, pos + 4, payloadEnd);
-    if (ev === 0x08 && pos + 2 <= payloadEnd) return canParseAcaiaSubEvents(b, pos + 2, payloadEnd);
-    if (ev === 0x0B && pos + 3 <= payloadEnd) return canParseAcaiaSubEvents(b, pos + 3, payloadEnd);
-    return false;
+    memo[pos] = ok ? 2 : 1;
+    return ok;
   }
 
   function decodeAcaiaFrame(frame){
@@ -654,11 +663,12 @@
       const cks = acaiaChecksum(b.subarray(3, 3 + payloadLen));
       const checksumValid = (b[3 + payloadLen] === cks[0] && b[4 + payloadLen] === cks[1]);
       if (!checksumValid) return null;
+      const rawBat8 = b[4] & 0x7F;
       return {
         brand: 'acaia',
         slot: 'scale',
         packetType: 'status',
-        batteryPct: b[4] & 0x7F,
+        batteryPct: rawBat8 <= 100 ? rawBat8 : null,
         checksumValid: checksumValid
       };
     }
@@ -692,12 +702,13 @@
         if (!w5) return null;
         return Object.assign(out, { packetType:'weight' }, w5);
       }
+      const subMemo = new Uint8Array(payloadEnd + 1);
       let idx = 4;
       while (idx < payloadEnd){
         const ev = b[idx];
         if (ev === 0x05){
-          const can6 = idx + 7 <= payloadEnd && b[idx + 5] <= 6 && canParseAcaiaSubEvents(b, idx + 7, payloadEnd);
-          const can5 = idx + 6 <= payloadEnd && b[idx + 4] <= 6 && canParseAcaiaSubEvents(b, idx + 6, payloadEnd);
+          const can6 = idx + 7 <= payloadEnd && b[idx + 5] <= 6 && canParseAcaiaSubEvents(b, idx + 7, payloadEnd, subMemo);
+          const can5 = idx + 6 <= payloadEnd && b[idx + 4] <= 6 && canParseAcaiaSubEvents(b, idx + 6, payloadEnd, subMemo);
           const use6 = can6 && (!can5 || (b[idx + 4] === 0 && (b[idx + 6] & 0xF0) === 0));
           const use5 = !use6 && (can5 || (!can6 && idx + 6 <= payloadEnd && b[idx + 4] <= 6 && idx + 7 > payloadEnd));
           if (use6 || (!use5 && idx + 7 <= payloadEnd && b[idx + 5] <= 6 && (b[idx + 6] & 0xFC) === 0)){
@@ -712,7 +723,8 @@
             break;
           }
         } else if (ev === 0x06 && idx + 2 <= payloadEnd){
-          out.batteryPct = b[idx + 1] & 0x7F;
+          const rawBat6 = b[idx + 1] & 0x7F;
+          out.batteryPct = rawBat6 <= 100 ? rawBat6 : null;
           idx += 2;
         } else if (ev === 0x07 && idx + 4 <= payloadEnd){
           out.timeS = +(b[idx + 1] * 60 + b[idx + 2] + b[idx + 3] * 0.1).toFixed(1);
@@ -943,10 +955,13 @@
     const rawFlow = (b[11] << 8) | b[12];
     let wVal = wSign * (rawWeight / 100);
     let fVal = fSign * (rawFlow / 100);
-    if (unitCode === 1){
+    /* Bookoo Themis BLE spec reports grams for unitCode 0x00/0x01; only convert oz when explicitly 0x02 */
+    const isOzUnit = (unitCode === 0x02);
+    if (isOzUnit){
       wVal *= 28.3495231;
       fVal *= 28.3495231;
     }
+    if (Math.abs(wVal) > 10000) return null;
     const weightG = +(wVal.toFixed(2));
     const flowRateGs = +(fVal.toFixed(2));
     const batteryPct = b[13] <= 100 ? b[13] : null;
@@ -957,7 +972,7 @@
       packetType: 'weight',
       weightG: cleanZero(weightG),
       flowRateGs: cleanZero(flowRateGs),
-      unit: unitCode === 1 ? 'oz' : 'g',
+      unit: isOzUnit ? 'oz' : 'g',
       timeS: +(timeMs / 1000).toFixed(2),
       batteryPct: batteryPct,
       stable: Math.abs(flowRateGs) < 0.05,
@@ -1031,18 +1046,15 @@
       };
     }
 
-    if (b.length >= 9 && b[0] !== 0xA5 &&
-        !(b[0] === 0xEF && b[1] === 0xDD) &&
-        !(b[0] === 0xDF && b[1] === 0xDF) &&
+    if (b.length >= 9 && b.length <= 20 &&
+        (b[0] === 0x00 || b[0] === 0x01 || b[0] === 0x02) &&
         !(b[0] === 0x01 && b[1] === 0x02) &&
-        !(b[0] === 0x03 && (b[1] === 0x0B || b[1] === 0xCE || b[1] === 0xCA || b[1] === 0x0A || b[1] === 0xAA)) &&
-        b[0] !== 0x58 && b[0] !== 0xAA && b[0] !== 0xFA && b[0] !== 0xFB && b[0] !== 0x55 &&
         !isPrintableAsciiScaleFrame(b)){
       const w1 = readTimemoreWeightLE(dv, b, 1);
-      if (!Number.isFinite(w1) || Math.abs(w1) > 10000) return null;
+      if (!Number.isFinite(w1) || Math.abs(w1) > 5000) return null;
       const w2 = b.length >= 9 ? readTimemoreWeightLE(dv, b, 5) : NaN;
       const weightG = +(w1.toFixed(1));
-      const secondaryWeightG = Number.isFinite(w2) && Math.abs(w2) <= 10000 ? +(w2.toFixed(1)) : null;
+      const secondaryWeightG = Number.isFinite(w2) && Math.abs(w2) <= 5000 ? +(w2.toFixed(1)) : null;
       return {
         brand: 'timemore',
         slot: 'scale',
@@ -1241,14 +1253,13 @@
       const timeS = b[4] | (b[5] << 8);
       const sign = (b[6] === 1 || b[6] === 0x2D || (b[6] & 0x80) !== 0) ? -1 : 1;
       const rawW = b[7] | (b[8] << 8);
-      if (rawW > 50000) return null;
+      if (rawW > 30000) return null;
       const weightG = +(sign * (rawW / 10)).toFixed(1);
       const batteryPct = (b.length >= 11 && b[9] <= 100) ? b[9] : null;
       const lastIdx = b.length - 1;
       const ckXor = xorChecksum(b, lastIdx, 0);
       const ckBodyXor = xorChecksum(b, lastIdx, 2);
-      const ckSum = sum8Checksum(b, lastIdx, 0);
-      const checksumValid = (b[lastIdx] === ckXor || b[lastIdx] === ckBodyXor || b[lastIdx] === ckSum);
+      const checksumValid = (b[lastIdx] === ckXor || b[lastIdx] === ckBodyXor);
       if (!checksumValid) return null;
       return {
         brand: 'eureka',
@@ -1264,13 +1275,13 @@
     if (b[1] === 0x09 && b[2] === 0x41 && b.length === 9){
       const timeS9 = b[3] * 60 + b[4];
       const sign9 = (b[5] === 1 || b[5] === 0x2D || (b[5] & 0x80) !== 0) ? -1 : 1;
-      const rawW9 = (b[6] << 8) | b[7];
-      if (rawW9 > 50000) return null;
+      /* CFS-9002 / Eureka Precisa transmits weight in Little-Endian */
+      const rawW9 = b[6] | (b[7] << 8);
+      if (rawW9 > 30000) return null;
       const weightG9 = +(sign9 * (rawW9 / 10)).toFixed(1);
       const ckXor9 = xorChecksum(b, 8, 0);
       const ckBodyXor9 = xorChecksum(b, 8, 2);
-      const ckSum9 = sum8Checksum(b, 8, 0);
-      const checksumValid9 = (b[8] === ckXor9 || b[8] === ckBodyXor9 || b[8] === ckSum9);
+      const checksumValid9 = (b[8] === ckXor9 || b[8] === ckBodyXor9);
       if (!checksumValid9) return null;
       return {
         brand: 'eureka',
@@ -1282,16 +1293,15 @@
         checksumValid: checksumValid9
       };
     }
-    /* Compact 8-byte 0xAA OEM variant: [0xAA, status, sign, wHi, wLo, min, sec, xor] */
-    if (b.length >= 8 && !(b[1] === 0x09 && b[2] === 0x41)){
+    /* Compact 8-byte 0xAA OEM variant: [0xAA, status, sign, wLo, wHi, min, sec, xor] */
+    if (b.length === 8 && !(b[1] === 0x09 && b[2] === 0x41)){
       const ckXor8 = xorChecksum(b, 7, 0);
       const ckBodyXor8 = xorChecksum(b, 7, 1);
-      const ckSum8 = sum8Checksum(b, 7, 0);
-      const checksumValid8 = (b[7] === ckXor8 || b[7] === ckBodyXor8 || b[7] === ckSum8);
+      const checksumValid8 = (b[7] === ckXor8 || b[7] === ckBodyXor8);
       if (!checksumValid8) return null;
       const sign = (b[2] === 1 || b[2] === 0x2D || (b[2] & 0x80) !== 0) ? -1 : 1;
-      const rawW = (b[3] << 8) | b[4];
-      if (rawW > 50000) return null;
+      const rawW = b[3] | (b[4] << 8);
+      if (rawW > 30000) return null;
       const weightG = +(sign * (rawW / 10)).toFixed(1);
       return {
         brand: 'eureka',
@@ -1331,12 +1341,15 @@
   /* --- 11. Bluetooth SIG `0x181D` Weight Scale (`0x2A9D`) --- */
   function decodeWeightSig(input){
     const b = toU8(input);
-    if (b.length < 3) return null;
+    if (b.length < 3 || b.length > 16) return null;
     const flags = b[0];
+    /* Bluetooth SIG 0x2A9D RFU bits 4-7 must be 0 */
+    if ((flags & 0xF0) !== 0) return null;
     const raw = b[1] | (b[2] << 8);
     if (raw === 0xFFFF) return null;
     const isImperial = (flags & 0x01) === 1;
     const weightG = isImperial ? +(raw * 4.5359237).toFixed(2) : +(raw * 5.0).toFixed(1);
+    if (weightG < 0 || weightG > 10000) return null;
     return {
       brand: 'sig',
       slot: 'scale',
@@ -1349,7 +1362,7 @@
   /* --- 12. Pressensor / Smart Espresso Profiler / BLE SIG ESS (`0x181A` `0x2A6D` `0.1 Pa` + `0x2A6E` `0.01 C` + `873ae82a` `mbar`) --- */
   function decodePressensor(input, opts){
     const b = toU8(input);
-    if (b.length < 2) return null;
+    if (b.length < 2 || b.length > 8) return null;
     const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
     const chrNorm = (opts && opts.charUuid) ? normUuid(opts.charUuid) : '';
     const svcNorm = (opts && opts.serviceUuid) ? normUuid(opts.serviceUuid) : '';
@@ -1368,18 +1381,19 @@
       return null;
     }
 
-    let rawMbar = dv.getInt16(0, false);
-    /* Official GATT ESS 0x2A6D Pressure (uint32 LE, 0.1 Pa -> / 1,000,000 = bar; up to 25 bar = 25,000,000)
-       Preserves Gate 5 Pressensor 4B BE [0x23, 0x28, 0x03, 0xA2] -> 9.0 bar / 93.0C when not on ESS 0x2A6D */
     const isExplicitEss2A6D = (chrNorm === UUID.PRESSENSOR_SIG_CHAR || svcNorm === UUID.ESS_SVC || !!(opts && opts.ess2A6D));
+    if (!isExplicitEss2A6D && b.length !== 2 && b.length !== 4) return null;
+    let rawMbar = dv.getInt16(0, false);
+    /* Official GATT ESS 0x2A6D Pressure (uint32 LE, 0.1 Pa -> / 1,000,000 = bar; up to 20 bar = 20,000,000)
+       Preserves Gate 5 Pressensor 4B BE [0x23, 0x28, 0x03, 0xA2] -> 9.0 bar / 93.0C when not on ESS 0x2A6D */
     const looksLikeDeciPaLE = b.length === 4 && (
       isExplicitEss2A6D ||
-      Math.abs(rawMbar) > 22000 ||
+      (Math.abs(rawMbar) > 20000 && b[3] <= 0x02) ||
       (b[3] === 0x00 && (b[2] > 0x06 || dv.getInt16(2, false) > 1500 || dv.getInt16(2, false) < -200))
     );
     if (looksLikeDeciPaLE){
       const deciPa = dv.getUint32(0, true);
-      if (deciPa <= 25000000){
+      if (deciPa <= 20000000){
         const barFromEss = +(deciPa / 1000000).toFixed(2);
         return {
           brand: 'pressensor',
@@ -1390,9 +1404,10 @@
           tempC: null
         };
       }
+      return null;
     }
-    if (rawMbar < -1500 || rawMbar > 25000) return null;
-    const pressureBar = +(Math.max(-1, rawMbar / 1000)).toFixed(2);
+    if (rawMbar < -500 || rawMbar > 20000) return null;
+    const pressureBar = +(Math.max(-0.5, rawMbar / 1000)).toFixed(2);
     let tempC = null;
     if (b.length >= 4){
       const rawTemp = dv.getInt16(2, false);
